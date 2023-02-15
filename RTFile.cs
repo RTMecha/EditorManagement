@@ -1,0 +1,143 @@
+﻿using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Linq;
+using System.IO;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace EditorManagement
+{
+	public static class RTFile
+	{
+		public static void SaveTexture(Texture2D _texture, string _path)
+        {
+			if (!_texture)
+			{
+				UnityEngine.Debug.LogWarning("Texture is null, maybe it was destroyed?");
+			}
+			else
+			{
+				if (string.IsNullOrEmpty(_path))
+				{
+					UnityEngine.Debug.LogWarning("Save path cannot be empty!");
+				}
+				else
+				{
+					if (!_path.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
+					{
+						_path += ".png";
+					}
+					if (File.Exists(_path))
+					{
+						File.Delete(_path);
+					}
+					RTTexture.SaveTextureAsPNG(_texture, _path);
+				}
+			}
+		}
+
+		public static string GetApplicationDirectory()
+		{
+			return Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/";
+		}
+
+		public static bool FileExists(string _filePath)
+		{
+			return !string.IsNullOrEmpty(_filePath) && File.Exists(_filePath);
+		}
+
+		public static bool DirectoryExists(string _directoryPath)
+		{
+			return !string.IsNullOrEmpty(_directoryPath) && Directory.Exists(_directoryPath);
+		}
+
+		public static void WriteToFile(string path, string json)
+		{
+			StreamWriter streamWriter = new StreamWriter(path);
+			streamWriter.Write(json);
+			streamWriter.Flush();
+			streamWriter.Close();
+		}
+
+		public static class OpenInFileBrowser
+		{
+			public static bool IsInMacOS
+			{
+				get
+				{
+					return SystemInfo.operatingSystem.IndexOf("Mac OS") != -1;
+				}
+			}
+
+			public static bool IsInWinOS
+			{
+				get
+				{
+					return SystemInfo.operatingSystem.IndexOf("Windows") != -1;
+				}
+			}
+
+			public static void OpenInMac(string path)
+			{
+				bool flag = false;
+				string text = path.Replace("\\", "/");
+				if (Directory.Exists(text))
+				{
+					flag = true;
+				}
+				if (!text.StartsWith("\""))
+				{
+					text = "\"" + text;
+				}
+				if (!text.EndsWith("\""))
+				{
+					text += "\"";
+				}
+				string arguments = (flag ? "" : "-R ") + text;
+				try
+				{
+					Process.Start("open", arguments);
+				}
+				catch (Win32Exception ex)
+				{
+					ex.HelpLink = "";
+				}
+			}
+
+			public static void OpenInWin(string path)
+			{
+				bool flag = false;
+				string text = path.Replace("/", "\\");
+				if (Directory.Exists(text))
+				{
+					flag = true;
+				}
+				try
+				{
+					Process.Start("explorer.exe", (flag ? "/root," : "/select,") + text);
+				}
+				catch (Win32Exception ex)
+				{
+					ex.HelpLink = "";
+				}
+			}
+
+			public static void Open(string path)
+			{
+				if (RTFile.OpenInFileBrowser.IsInWinOS)
+				{
+					RTFile.OpenInFileBrowser.OpenInWin(path);
+					return;
+				}
+				if (RTFile.OpenInFileBrowser.IsInMacOS)
+				{
+					RTFile.OpenInFileBrowser.OpenInMac(path);
+					return;
+				}
+				RTFile.OpenInFileBrowser.OpenInWin(path);
+				RTFile.OpenInFileBrowser.OpenInMac(path);
+			}
+		}
+	}
+}
