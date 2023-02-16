@@ -16,7 +16,7 @@ using DG.Tweening;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.5.3")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.5.5")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	public class Plugin : BaseUnityPlugin
 	{
@@ -814,20 +814,6 @@ namespace EditorManagement
 		public static string levelListPath = "beatmaps/editor";
 		public static string levelListSlash = "beatmaps/editor/";
 
-		//"beatmaps/" + editorPath + "/"
-
-		//[HarmonyPatch(typeof(Player), "FixedUpdate")]
-		//[HarmonyTranspiler]
-		//private static IEnumerable<CodeInstruction> PlayerTestTranspiler(IEnumerable<CodeInstruction> instructions)
-		//{
-		//	return new CodeMatcher(instructions)
-		//		.Start()
-		//		.Advance(34)
-		//		.ThrowIfNotMatch("Is not player tail length")
-		//		.SetInstruction(new CodeInstruction(OpCodes.Ldc_R4, 2f))
-		//		.InstructionEnumeration();
-		//}
-
 		[HarmonyPatch(typeof(EditorManager), "RenderTimeline")]
 		[HarmonyPostfix]
 		private static void RenderLayers()
@@ -1314,6 +1300,37 @@ namespace EditorManagement
 			loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
 			float sizeRandom = 64 * UnityEngine.Random.Range(0.5f, 1f);
 			loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
+
+			transform.Find("snap/bpm/slider").GetComponent<Slider>().onValueChanged.RemoveAllListeners();
+			transform.Find("snap/bpm/slider").GetComponent<Slider>().onValueChanged.AddListener(delegate (float _val)
+			{
+				DataManager.inst.metaData.song.BPM = _val;
+				SettingEditor.inst.SnapBPM = _val;
+				transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
+			});
+			transform.Find("snap/bpm/input").GetComponent<InputField>().onValueChanged.RemoveAllListeners();
+			transform.Find("snap/bpm/input").GetComponent<InputField>().onValueChanged.AddListener(delegate (string _val)
+			{
+				DataManager.inst.metaData.song.BPM = float.Parse(_val);
+				SettingEditor.inst.SnapBPM = float.Parse(_val);
+				transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
+			});
+			transform.Find("snap/bpm/<").GetComponent<Button>().onClick.RemoveAllListeners();
+			transform.Find("snap/bpm/<").GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				DataManager.inst.metaData.song.BPM -= 1f;
+				SettingEditor.inst.SnapBPM -= 1f;
+				transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
+				transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
+			});
+			transform.Find("snap/bpm/>").GetComponent<Button>().onClick.RemoveAllListeners();
+			transform.Find("snap/bpm/>").GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				DataManager.inst.metaData.song.BPM += 1f;
+				SettingEditor.inst.SnapBPM += 1f;
+				transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
+				transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
+			});
 		}
 
 		//Set Time Stuff
@@ -2000,7 +2017,7 @@ namespace EditorManagement
 			if (EditorManager.inst.layer == 5)
 			{
 				beatmapObject.editorData.Layer = EditorManager.inst.lastLayer;
-				Plugin.SetLayer(EditorManager.inst.lastLayer);
+				SetLayer(EditorManager.inst.lastLayer);
 			}
             else
             {
@@ -2252,6 +2269,7 @@ namespace EditorManagement
 				jsonnode["timeline"]["l"] = EditorManager.inst.layer;
 				jsonnode["editor"]["t"] = itsTheTime;
 				jsonnode["editor"]["a"] = openAmount;
+				jsonnode["misc"]["sn"] = SettingEditor.inst.SnapActive;
 
 				RTFile.WriteToFile("beatmaps/" + editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse", jsonnode.ToString(3));
 			}
@@ -2264,6 +2282,7 @@ namespace EditorManagement
 				jsonnode["timeline"]["l"] = EditorManager.inst.layer;
 				jsonnode["editor"]["t"] = itsTheTime;
 				jsonnode["editor"]["a"] = openAmount;
+				jsonnode["misc"]["sn"] = SettingEditor.inst.SnapActive;
 
 				RTFile.WriteToFile("beatmaps/" + editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse", jsonnode.ToString(3));
 			}
@@ -2298,6 +2317,7 @@ namespace EditorManagement
 					jsonnode["timeline"]["l"] = EditorManager.inst.layer;
 					jsonnode["editor"]["t"] = itsTheTime;
 					jsonnode["editor"]["a"] = openAmount;
+					jsonnode["misc"]["sn"] = SettingEditor.inst.SnapActive;
 
 					RTFile.WriteToFile("beatmaps/" + editorPath + "/" + EditorManager.inst.saveAsLevelName + "/editor.lse", jsonnode.ToString(3));
 				}
@@ -2310,6 +2330,7 @@ namespace EditorManagement
 					jsonnode["timeline"]["l"] = EditorManager.inst.layer;
 					jsonnode["editor"]["t"] = itsTheTime;
 					jsonnode["editor"]["a"] = openAmount;
+					jsonnode["misc"]["sn"] = SettingEditor.inst.SnapActive;
 
 					RTFile.WriteToFile("beatmaps/" + editorPath + "/" + EditorManager.inst.saveAsLevelName + "/editor.lse", jsonnode.ToString(3));
 				}
@@ -2420,6 +2441,9 @@ namespace EditorManagement
 					timeEdit = jsonnode["editor"]["t"];
 					openAmount = jsonnode["editor"]["a"];
 					openAmount += 1;
+
+					SettingEditor.inst.SnapActive = jsonnode["misc"]["sn"];
+					SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
 				}
 				else
 				{

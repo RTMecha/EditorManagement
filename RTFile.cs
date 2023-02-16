@@ -10,33 +10,6 @@ namespace EditorManagement
 {
 	public static class RTFile
 	{
-		public static void SaveTexture(Texture2D _texture, string _path)
-        {
-			if (!_texture)
-			{
-				UnityEngine.Debug.LogWarning("Texture is null, maybe it was destroyed?");
-			}
-			else
-			{
-				if (string.IsNullOrEmpty(_path))
-				{
-					UnityEngine.Debug.LogWarning("Save path cannot be empty!");
-				}
-				else
-				{
-					if (!_path.EndsWith(".png", StringComparison.InvariantCultureIgnoreCase))
-					{
-						_path += ".png";
-					}
-					if (File.Exists(_path))
-					{
-						File.Delete(_path);
-					}
-					RTTexture.SaveTextureAsPNG(_texture, _path);
-				}
-			}
-		}
-
 		public static string GetApplicationDirectory()
 		{
 			return Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/";
