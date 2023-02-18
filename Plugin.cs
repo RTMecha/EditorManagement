@@ -368,21 +368,35 @@ namespace EditorManagement
 
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").gameObject.SetActive(true);
 
+				GameObject scrollView = UnityEngine.Object.Instantiate<GameObject>(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
+				scrollView.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				LSHelpers.DeleteChildren(scrollView.transform.Find("Viewport/Content"), false);
+				scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(383f, 690f);
+
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).gameObject.SetActive(true);
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).gameObject.name = "label layer";
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).GetChild(0).gameObject.GetComponent<Text>().text = "Set Group Layer";
 
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(3).gameObject.SetActive(true);
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(3).gameObject.name = "label depth";
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(3).GetChild(0).gameObject.GetComponent<Text>().text = "Set Group Depth";
 
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).SetParent(scrollView.transform.Find("Viewport/Content"));
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(2).SetParent(scrollView.transform.Find("Viewport/Content"));
+
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<Text>().text = EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<Text>().text.Replace("The current version of the editor doesn't support any editing functionality.", "On the left you'll see all the multi object editor tools you'll need. If you have any suggestions, feel free to let me (Mecha, the mod maker) know!");
-				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<Text>().fontSize = 25;
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<Text>().fontSize = 22;
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -125f);
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<RectTransform>().sizeDelta = new Vector2(-68f, 0f);
 
 				GameObject multiLayerSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
-				multiLayerSet.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
-				multiLayerSet.transform.SetSiblingIndex(2);
+				multiLayerSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiLayerSet.name = "layer";
+				multiLayerSet.transform.SetSiblingIndex(1);
 				multiLayerSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text = "1";
+				multiLayerSet.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter layer...";
+
+				multiLayerSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
 				GameObject multiLB = UnityEngine.Object.Instantiate<GameObject>(multiLayerSet.transform.GetChild(0).Find("<").gameObject);
 				multiLB.transform.SetParent(multiLayerSet.transform.GetChild(0));
@@ -451,9 +465,12 @@ namespace EditorManagement
 				});
 
 				GameObject multiDepthSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
-				multiDepthSet.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
-				multiDepthSet.transform.SetSiblingIndex(5);
+				multiDepthSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiDepthSet.name = "depth";
 				multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text = "15";
+				multiDepthSet.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter depth...";
+
+				multiDepthSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
 				GameObject multiDB = UnityEngine.Object.Instantiate<GameObject>(multiDepthSet.transform.GetChild(0).Find("<").gameObject);
 				multiDB.transform.SetParent(multiDepthSet.transform.GetChild(0));
@@ -493,15 +510,21 @@ namespace EditorManagement
 					}
 				});
 
+				scrollView.transform.Find("Viewport/Content/label layer").SetSiblingIndex(0);
+
 				//Song Time
-				GameObject multiTextSongT = UnityEngine.Object.Instantiate<GameObject>(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).gameObject);
-				multiTextSongT.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				GameObject multiTextSongT = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextSongT.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextSongT.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Song Time";
 				multiTextSongT.name = "label";
 
 				GameObject multiTimeSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
-				multiTimeSet.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				multiTimeSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTimeSet.name = "time";
 				multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text = "0";
+				multiTimeSet.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter time...";
+
+				multiTimeSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
 				GameObject multiTB = UnityEngine.Object.Instantiate<GameObject>(multiTimeSet.transform.GetChild(0).Find("<").gameObject);
 				multiTB.transform.SetParent(multiTimeSet.transform.GetChild(0));
@@ -545,14 +568,85 @@ namespace EditorManagement
 					}
 				});
 
+				//Name
+				GameObject multiTextName = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextName.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTextName.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Name";
+				multiTextName.name = "label";
+
+				GameObject multiNameSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
+				multiNameSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiNameSet.name = "name";
+				multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
+				multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().characterLimit = 0;
+				multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text = "name";
+				multiNameSet.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter name...";
+
+				multiNameSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
+
+				GameObject multiNB = UnityEngine.Object.Instantiate<GameObject>(multiNameSet.transform.GetChild(0).Find("<").gameObject);
+				multiNB.transform.SetParent(multiNameSet.transform.GetChild(0));
+				multiNB.transform.SetSiblingIndex(2);
+				multiNB.name = "|";
+				multiNB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
+
+				multiNB.GetComponent<Button>().onClick.RemoveAllListeners();
+				multiNB.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						objectSelection.GetObjectData().name = multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text;
+
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+					}
+				});
+
+				UnityEngine.Object.Destroy(multiNameSet.transform.GetChild(0).Find("<").gameObject);
+				Button mtnLeft = multiNameSet.transform.GetChild(0).Find("<").GetComponent<Button>();
+
+				Button mtnRight = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Button>();
+
+				string jpgFileLocation = RTFile.GetApplicationDirectory() + "BepInEx/plugins/Assets/add.png";
+
+				if (RTFile.FileExists("BepInEx/plugins/Assets/add.png"))
+				{
+					Image spriteReloader = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Image>();
+
+					EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+					{
+						spriteReloader.sprite = cover;
+					}, delegate (string errorFile)
+					{
+						spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+					}));
+				}
+
+				LayoutElement mtnLeftLE = multiNameSet.transform.GetChild(0).Find(">").gameObject.AddComponent<LayoutElement>();
+				mtnLeftLE.ignoreLayout = true;
+
+				RectTransform mtnLeftRT = multiNameSet.transform.GetChild(0).Find(">").GetComponent<RectTransform>();
+				mtnLeftRT.anchoredPosition = new Vector2(339f, 0f);
+				mtnLeftRT.sizeDelta = new Vector2(32f, 32f);
+
+				mtnRight.GetComponent<Button>().onClick.RemoveAllListeners();
+				mtnRight.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						objectSelection.GetObjectData().name += multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text;
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+					}
+				});
+
 				//Song Time Autokill
-				GameObject multiTextSongAK = UnityEngine.Object.Instantiate<GameObject>(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).gameObject);
-				multiTextSongAK.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
-				multiTextSongAK.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Song Time Autokill to Current Time";
+				GameObject multiTextSongAK = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextSongAK.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTextSongAK.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Song Time Autokill to Current";
 				multiTextSongAK.name = "label";
 
 				GameObject setAutokill = UnityEngine.Object.Instantiate<GameObject>(eventButton);
-				setAutokill.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				setAutokill.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				setAutokill.name = "set autokill";
 
 				setAutokill.transform.GetChild(0).GetComponent<Text>().text = "Set";
 				setAutokill.GetComponent<Image>().color = bcol;
@@ -573,13 +667,14 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiTextTypeCycle = UnityEngine.Object.Instantiate<GameObject>(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetChild(1).gameObject);
-				multiTextTypeCycle.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				GameObject multiTextTypeCycle = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextTypeCycle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextTypeCycle.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Cycle object type";
 				multiTextTypeCycle.name = "label";
 
 				GameObject cycleObjType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
-				cycleObjType.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				cycleObjType.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				cycleObjType.name = "cycle obj type";
 
 				cycleObjType.transform.GetChild(0).GetComponent<Text>().text = "Cycle";
 				cycleObjType.GetComponent<Image>().color = bcol;
@@ -602,6 +697,444 @@ namespace EditorManagement
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
 					}
 				});
+
+				GameObject multiTextLockSwap = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextLockSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTextLockSwap.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Swap each object's lock state";
+				multiTextLockSwap.name = "label";
+
+				GameObject lockSwap = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				lockSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				lockSwap.name = "lock swap";
+
+				lockSwap.transform.GetChild(0).GetComponent<Text>().text = "Swap Lock";
+				lockSwap.GetComponent<Image>().color = bcol;
+
+				lockSwap.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+				lockSwap.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+				lockSwap.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+				lockSwap.GetComponent<Button>().onClick.RemoveAllListeners();
+				lockSwap.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						objectSelection.GetObjectData().editorData.locked = !objectSelection.GetObjectData().editorData.locked;
+
+						ObjectManager.inst.updateObjects(objectSelection, false);
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+					}
+				});
+
+				GameObject multiTextLockToggle = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextLockToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTextLockToggle.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Toggle all object's lock state";
+				multiTextLockToggle.name = "label";
+
+				GameObject lockToggle = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				lockToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				lockToggle.name = "lock toggle";
+
+				lockToggle.transform.GetChild(0).GetComponent<Text>().text = "Toggle Lock";
+				lockToggle.GetComponent<Image>().color = bcol;
+
+				bool loggle = false;
+
+				lockToggle.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+				lockToggle.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+				lockToggle.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+				lockToggle.GetComponent<Button>().onClick.RemoveAllListeners();
+				lockToggle.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					loggle = !loggle;
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						if (loggle == false)
+						{
+							objectSelection.GetObjectData().editorData.locked = false;
+						}
+						if (loggle == true)
+						{
+							objectSelection.GetObjectData().editorData.locked = true;
+						}
+
+						ObjectManager.inst.updateObjects(objectSelection, false);
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+					}
+				});
+
+				GameObject multiTextCollapseSwap = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextCollapseSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTextCollapseSwap.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Swap each object's collapse state";
+				multiTextCollapseSwap.name = "label";
+
+				GameObject collapseSwap = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				collapseSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				collapseSwap.name = "collapse swap";
+
+				collapseSwap.transform.GetChild(0).GetComponent<Text>().text = "Swap Collapse";
+				collapseSwap.GetComponent<Image>().color = bcol;
+
+				collapseSwap.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+				collapseSwap.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+				collapseSwap.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+				collapseSwap.GetComponent<Button>().onClick.RemoveAllListeners();
+				collapseSwap.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						objectSelection.GetObjectData().editorData.collapse = !objectSelection.GetObjectData().editorData.collapse;
+
+						ObjectManager.inst.updateObjects(objectSelection, false);
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+					}
+				});
+
+				GameObject multiTextCollapseToggle = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				multiTextCollapseToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				multiTextCollapseToggle.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Toggle all object's collapse state";
+				multiTextCollapseToggle.name = "label";
+
+				GameObject collapseToggle = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				collapseToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+				collapseToggle.name = "collapse toggle";
+
+				collapseToggle.transform.GetChild(0).GetComponent<Text>().text = "Toggle Collapse";
+				collapseToggle.GetComponent<Image>().color = bcol;
+
+				bool coggle = false;
+
+				collapseToggle.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+				collapseToggle.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+				collapseToggle.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+				collapseToggle.GetComponent<Button>().onClick.RemoveAllListeners();
+				collapseToggle.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					coggle = !coggle;
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						if (coggle == false)
+						{
+							objectSelection.GetObjectData().editorData.collapse = false;
+						}
+						if (coggle == true)
+						{
+							objectSelection.GetObjectData().editorData.collapse = true;
+						}
+
+						ObjectManager.inst.updateObjects(objectSelection, false);
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+					}
+				});
+
+                //Sync object selection
+                {
+					GameObject multiTextSync = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+					multiTextSync.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+					multiTextSync.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Sync to first selected object";
+					multiTextSync.name = "label";
+
+					GameObject multiSync = new GameObject("sync layout");
+					multiSync.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+					RectTransform multiSyncRT = multiSync.AddComponent<RectTransform>();
+					GridLayoutGroup multiSyncGLG = multiSync.AddComponent<GridLayoutGroup>();
+					multiSyncGLG.spacing = new Vector2(4f, 4f);
+					multiSyncGLG.cellSize = new Vector2(61.6f, 49f);
+
+					GameObject syncStartTime = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncStartTime.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncStartTime.name = "start time";
+
+					syncStartTime.transform.GetChild(0).GetComponent<Text>().text = "ST";
+					syncStartTime.GetComponent<Image>().color = bcol;
+
+					syncStartTime.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncStartTime.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncStartTime.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncStartTime.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncStartTime.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().StartTime = ObjEditor.inst.selectedObjects[0].GetObjectData().StartTime;
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncName = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncName.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncName.name = "name";
+
+					syncName.transform.GetChild(0).GetComponent<Text>().text = "N";
+					syncName.GetComponent<Image>().color = bcol;
+
+					syncName.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncName.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncName.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncName.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncName.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().name = ObjEditor.inst.selectedObjects[0].GetObjectData().name;
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncObjectType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncObjectType.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncObjectType.name = "object type";
+
+					syncObjectType.transform.GetChild(0).GetComponent<Text>().text = "OT";
+					syncObjectType.GetComponent<Image>().color = bcol;
+
+					syncObjectType.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncObjectType.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncObjectType.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncObjectType.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncObjectType.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().objectType = ObjEditor.inst.selectedObjects[0].GetObjectData().objectType;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncAutokillType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncAutokillType.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncAutokillType.name = "autokill type";
+
+					syncAutokillType.transform.GetChild(0).GetComponent<Text>().text = "AKT";
+					syncAutokillType.GetComponent<Image>().color = bcol;
+
+					syncAutokillType.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncAutokillType.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncAutokillType.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncAutokillType.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncAutokillType.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().autoKillType = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillType;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncAutokillOffset = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncAutokillOffset.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncAutokillOffset.name = "autokill offset";
+
+					syncAutokillOffset.transform.GetChild(0).GetComponent<Text>().text = "AKO";
+					syncAutokillOffset.GetComponent<Image>().color = bcol;
+
+					syncAutokillOffset.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncAutokillOffset.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncAutokillOffset.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncAutokillOffset.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncAutokillOffset.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().autoKillOffset = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillOffset;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncParent = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncParent.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncParent.name = "parent";
+
+					syncParent.transform.GetChild(0).GetComponent<Text>().text = "P";
+					syncParent.GetComponent<Image>().color = bcol;
+
+					syncParent.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncParent.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncParent.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncParent.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncParent.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().parent = ObjEditor.inst.selectedObjects[0].GetObjectData().parent;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncParentType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncParentType.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncParentType.name = "parent type";
+
+					syncParentType.transform.GetChild(0).GetComponent<Text>().text = "PT";
+					syncParentType.GetComponent<Image>().color = bcol;
+
+					syncParentType.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncParentType.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncParentType.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncParentType.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncParentType.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							for (int i = 0; i < 3; i++)
+							{
+								objectSelection.GetObjectData().SetParentType(i, ObjEditor.inst.selectedObjects[0].GetObjectData().GetParentType(i));
+							}
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncParentOffset = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncParentOffset.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncParentOffset.name = "parent offset";
+
+					syncParentOffset.transform.GetChild(0).GetComponent<Text>().text = "PT";
+					syncParentOffset.GetComponent<Image>().color = bcol;
+
+					syncParentOffset.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncParentOffset.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncParentOffset.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncParentOffset.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncParentOffset.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							for (int i = 0; i < 3; i++)
+							{
+								objectSelection.GetObjectData().SetParentOffset(i, ObjEditor.inst.selectedObjects[0].GetObjectData().getParentOffset(i));
+							}
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncOrigin = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncOrigin.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncOrigin.name = "origin";
+
+					syncOrigin.transform.GetChild(0).GetComponent<Text>().text = "O";
+					syncOrigin.GetComponent<Image>().color = bcol;
+
+					syncOrigin.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncOrigin.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncOrigin.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncOrigin.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncOrigin.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().origin = ObjEditor.inst.selectedObjects[0].GetObjectData().origin;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncShape = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncShape.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncShape.name = "shape";
+
+					syncShape.transform.GetChild(0).GetComponent<Text>().text = "S";
+					syncShape.GetComponent<Image>().color = bcol;
+
+					syncShape.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncShape.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncShape.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncShape.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncShape.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().shape = ObjEditor.inst.selectedObjects[0].GetObjectData().shape;
+							objectSelection.GetObjectData().shapeOption = ObjEditor.inst.selectedObjects[0].GetObjectData().shapeOption;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncText = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncText.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncText.name = "text";
+
+					syncText.transform.GetChild(0).GetComponent<Text>().text = "T";
+					syncText.GetComponent<Image>().color = bcol;
+
+					syncText.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncText.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncText.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncText.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncText.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().text = ObjEditor.inst.selectedObjects[0].GetObjectData().text;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					GameObject syncDepth = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					syncDepth.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+					syncDepth.name = "depth";
+
+					syncDepth.transform.GetChild(0).GetComponent<Text>().text = "D";
+					syncDepth.GetComponent<Image>().color = bcol;
+
+					syncDepth.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					syncDepth.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					syncDepth.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					syncDepth.GetComponent<Button>().onClick.RemoveAllListeners();
+					syncDepth.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+						{
+							objectSelection.GetObjectData().Depth = ObjEditor.inst.selectedObjects[0].GetObjectData().Depth;
+
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+					});
+
+					//ISSUE: Causes newly selected objects to retain the values of the previous object for some reason
+					//GameObject syncKeyframes = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					//syncKeyframes.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
+
+					//syncKeyframes.transform.GetChild(0).GetComponent<Text>().text = "KF";
+					//syncKeyframes.GetComponent<Image>().color = bcol;
+
+					//syncKeyframes.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					//syncKeyframes.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					//syncKeyframes.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					//syncKeyframes.GetComponent<Button>().onClick.RemoveAllListeners();
+					//syncKeyframes.GetComponent<Button>().onClick.AddListener(delegate ()
+					//{
+					//	for (int i = 1; i < ObjEditor.inst.selectedObjects.Count; i++)
+					//    {
+					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[0] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[0];
+					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[1] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[1];
+					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[2] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[2];
+					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[3] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[3];
+					//
+					//		ObjectManager.inst.updateObjects(ObjEditor.inst.selectedObjects[i], false);
+					//		ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.selectedObjects[i]);
+					//	}
+					//});
+				}
+
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
 			}
 		}
 
@@ -2236,7 +2769,18 @@ namespace EditorManagement
 				}
 			}
 			itsTheTime = timeEdit + Time.time;
+
+			if (EditorManager.inst.GetDialog("Multi Object Editor").Dialog.gameObject.activeSelf == true && EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta != new Vector2(810f, 730.11f))
+            {
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
+			}
+			if (EditorManager.inst.GetDialog("Multi Object Editor").Dialog.gameObject.activeSelf == true && EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta != new Vector2(355f, 730f))
+            {
+				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
+			}
 		}
+
+		public static bool multiObjectState = true;
 
 		[HarmonyPatch(typeof(EditorManager), "SaveBeatmap")]
 		[HarmonyPostfix]
