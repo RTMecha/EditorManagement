@@ -9,6 +9,8 @@ Features this mod contains:
 
 ![2023-02-16_04 27 37](https://user-images.githubusercontent.com/125487712/219107098-69ce2d9f-473a-4970-bbb3-7b10a8e0c8d8.png)
 
+https://user-images.githubusercontent.com/125487712/219871989-d8198341-0c4a-4d11-9982-e4426cc241a0.mp4
+
 -More tooltips.
 
 -Level list that can load from any directory within "application path/beatmaps" and can be sorted by different types such as level name and artist name.
