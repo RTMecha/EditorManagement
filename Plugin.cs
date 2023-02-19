@@ -16,7 +16,7 @@ using DG.Tweening;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.5.5")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.5.6")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	public class Plugin : BaseUnityPlugin
 	{
@@ -110,95 +110,114 @@ namespace EditorManagement
 
 		private static ConfigEntry<WaveformType> WaveformMode { get; set; }
 		private static ConfigEntry<bool> GenerateWaveform { get; set; }
+		private static ConfigEntry<bool> ShowObjectsOnLayer { get; set; }
+		private static ConfigEntry<float> ShowObjectsAlpha { get; set; }
+		private static ConfigEntry<bool> ShowEmpties { get; set; }
+		private static ConfigEntry<bool> ShowDamagable { get; set; }
+		private static ConfigEntry<bool> HighlightObjects { get; set; }
+		private static ConfigEntry<Color> HighlightColor { get; set; }
+		private static ConfigEntry<Color> HighlightDoubleColor { get; set; }
+		private static ConfigEntry<bool> PreviewSelectFix { get; set; }
 
 		private void Awake()
 		{
 			base.Logger.LogInfo("Plugin Editor Management is loaded!");
 
 			//AutoSave Config
-			AutoSaveRepeat = base.Config.Bind<float>("AutoSave", "Repeat", 600f, "The repeat time of autosave.");
-			AutoSaveLimit = base.Config.Bind<int>("AutoSave", "Limit", 3, "If autosave count reaches this number, delete the first autosave.");
+			AutoSaveRepeat = Config.Bind("AutoSave", "Repeat", 600f, "The repeat time of autosave.");
+			AutoSaveLimit = Config.Bind("AutoSave", "Limit", 3, "If autosave count reaches this number, delete the first autosave.");
 
 			//General Editor stuff
-			IfEditorStartTime = base.Config.Bind<bool>("General Editor", "Load Saved Time", true, "If enabled, sets the audio time to the last saved timeline position on level load.");
-			IfEditorPauses = base.Config.Bind<bool>("General Editor", "Editor Pauses", false, "If enabled, the editor pauses on level load.");
+			IfEditorStartTime = Config.Bind("General Editor", "Load Saved Time", true, "If enabled, sets the audio time to the last saved timeline position on level load.");
+			IfEditorPauses = Config.Bind("General Editor", "Editor Pauses", false, "If enabled, the editor pauses on level load.");
 
 			//New Markers Config
-			MarkerColN0 = base.Config.Bind<Color>("Markers", "Color 0", Color.white, "Color 0 of the second set of marker colors.");
-			MarkerColN1 = base.Config.Bind<Color>("Markers", "Color 1", Color.white, "Color 1 of the second set of marker colors.");
-			MarkerColN2 = base.Config.Bind<Color>("Markers", "Color 2", Color.white, "Color 2 of the second set of marker colors.");
-			MarkerColN3 = base.Config.Bind<Color>("Markers", "Color 3", Color.white, "Color 3 of the second set of marker colors.");
-			MarkerColN4 = base.Config.Bind<Color>("Markers", "Color 4", Color.white, "Color 4 of the second set of marker colors.");
-			MarkerColN5 = base.Config.Bind<Color>("Markers", "Color 5", Color.white, "Color 5 of the second set of marker colors.");
-			MarkerColN6 = base.Config.Bind<Color>("Markers", "Color 6", Color.white, "Color 6 of the second set of marker colors.");
-			MarkerColN7 = base.Config.Bind<Color>("Markers", "Color 7", Color.white, "Color 7 of the second set of marker colors.");
-			MarkerColN8 = base.Config.Bind<Color>("Markers", "Color 8", Color.white, "Color 8 of the second set of marker colors.");
+			MarkerColN0 = Config.Bind("Markers", "Color 0", Color.white, "Color 0 of the second set of marker colors.");
+			MarkerColN1 = Config.Bind("Markers", "Color 1", Color.white, "Color 1 of the second set of marker colors.");
+			MarkerColN2 = Config.Bind("Markers", "Color 2", Color.white, "Color 2 of the second set of marker colors.");
+			MarkerColN3 = Config.Bind("Markers", "Color 3", Color.white, "Color 3 of the second set of marker colors.");
+			MarkerColN4 = Config.Bind("Markers", "Color 4", Color.white, "Color 4 of the second set of marker colors.");
+			MarkerColN5 = Config.Bind("Markers", "Color 5", Color.white, "Color 5 of the second set of marker colors.");
+			MarkerColN6 = Config.Bind("Markers", "Color 6", Color.white, "Color 6 of the second set of marker colors.");
+			MarkerColN7 = Config.Bind("Markers", "Color 7", Color.white, "Color 7 of the second set of marker colors.");
+			MarkerColN8 = Config.Bind("Markers", "Color 8", Color.white, "Color 8 of the second set of marker colors.");
 
-			MarkerLoop = base.Config.Bind<bool>("Markers", "Marker Loop Active", false, "If the marker should loop between markers.");
-			MarkerStartIndex = base.Config.Bind<int>("Markers", "Marker Loop Begin", 0, "Audio time gets set to this marker.");
-			MarkerEndIndex = base.Config.Bind<int>("Markers", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.");
+			MarkerLoop = Config.Bind("Markers", "Marker Loop Active", false, "If the marker should loop between markers.");
+			MarkerStartIndex = Config.Bind("Markers", "Marker Loop Begin", 0, "Audio time gets set to this marker.");
+			MarkerEndIndex = Config.Bind("Markers", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.");
 
 			//Open File Popup Configs
-			ORLAnchoredPos = base.Config.Bind<Vector2>("Open File Popup Base", "00 Anchored Pos", Vector2.zero, "The position of the open file popup.");
-			ORLLocalRot = base.Config.Bind<Quaternion>("Open File Popup Base", "01 Local Rot", new Quaternion(0f, 0f, 0f, 1f), "Local rotation of the open file popup.");
-			ORLSizeDelta = base.Config.Bind<Vector2>("Open File Popup Base", "02 Size Delta", new Vector2(600f, 400f), "The size of the open file popup.");
-			ORLPathPos = base.Config.Bind<Vector2>("Open File Popup Base", "03 Editor Path Pos", new Vector2(125f, 16f), "The position of the editor path input field.");
-			ORLPathLength = base.Config.Bind<float>("Open File Popup Base", "04 Editor Path Length", 254f, "The length of the editor path input field.");
-			ORLRefreshPos = base.Config.Bind<Vector2>("Open File Popup Base", "05 List Refresh Pos", new Vector2(260f, 432f), "The position of the refresh button.");
-			ORLTogglePos = base.Config.Bind<Vector2>("Open File Popup Base", "06 Toggle Pos", new Vector2(600f, 16f), "The position of the descending toggle.");
-			ORLDropdownPos = base.Config.Bind<Vector2>("Open File Popup Base", "07 Dropdown Pos", new Vector2(501f, 416f), "The position of the sort dropdown.");
+			ORLAnchoredPos = Config.Bind("Open File Popup Base", "00 Anchored Pos", Vector2.zero, "The position of the open file popup.");
+			ORLLocalRot = Config.Bind("Open File Popup Base", "01 Local Rot", new Quaternion(0f, 0f, 0f, 1f), "Local rotation of the open file popup.");
+			ORLSizeDelta = Config.Bind("Open File Popup Base", "02 Size Delta", new Vector2(600f, 400f), "The size of the open file popup.");
+			ORLPathPos = Config.Bind("Open File Popup Base", "03 Editor Path Pos", new Vector2(125f, 16f), "The position of the editor path input field.");
+			ORLPathLength = Config.Bind("Open File Popup Base", "04 Editor Path Length", 254f, "The length of the editor path input field.");
+			ORLRefreshPos = Config.Bind("Open File Popup Base", "05 List Refresh Pos", new Vector2(260f, 432f), "The position of the refresh button.");
+			ORLTogglePos = Config.Bind("Open File Popup Base", "06 Toggle Pos", new Vector2(600f, 16f), "The position of the descending toggle.");
+			ORLDropdownPos = Config.Bind("Open File Popup Base", "07 Dropdown Pos", new Vector2(501f, 416f), "The position of the sort dropdown.");
 
-			OGLVLCellSize = base.Config.Bind<Vector2>("Open File Popup Cells", "00 Cell Size", new Vector2(584f, 32f), "Size of each cell.");
-			OGLVLConstraint = base.Config.Bind<GridLayoutGroup.Constraint>("Open File Popup Cells", "01 Constraint Type", GridLayoutGroup.Constraint.FixedColumnCount, "How the cells are layed out.");
-			OGLVLConstraintCount = base.Config.Bind<int>("Open File Popup Cells", "02 Constraint Count", 1, "How many rows / columns there are, depending on Constraint Type.");
-			OGLVLSpacing = base.Config.Bind<Vector2>("Open File Popup Cells", "03 Spacing", new Vector2(0f, 8f), "The space between each cell.");
+			OGLVLCellSize = Config.Bind("Open File Popup Cells", "00 Cell Size", new Vector2(584f, 32f), "Size of each cell.");
+			OGLVLConstraint = Config.Bind("Open File Popup Cells", "01 Constraint Type", GridLayoutGroup.Constraint.FixedColumnCount, "How the cells are layed out.");
+			OGLVLConstraintCount = Config.Bind("Open File Popup Cells", "02 Constraint Count", 1, "How many rows / columns there are, depending on Constraint Type.");
+			OGLVLSpacing = Config.Bind("Open File Popup Cells", "03 Spacing", new Vector2(0f, 8f), "The space between each cell.");
 
 			//Folder Button Configs
-			FButtonHWrap = base.Config.Bind<HorizontalWrapMode>("Open File Popup Buttons", "00 Horizontal Wrap", HorizontalWrapMode.Wrap, "Horizontal Wrap Mode of the folder button text.");
-			FButtonVWrap = base.Config.Bind<VerticalWrapMode>("Open File Popup Buttons", "01 Vertical Wrap", VerticalWrapMode.Truncate, "Vertical Wrap Mode of the folder button text.");
-			FButtonTextColor = base.Config.Bind<Color>("Open File Popup Buttons", "02 Text Color", new Color(0.9373f, 0.9216f, 0.9373f, 1f), "Color of the folder button text.");
-			FButtonTextInvert = base.Config.Bind<bool>("Open File Popup Buttons", "03 Text Invert", true, "If the text should invert if the difficulty color is dark.");
-			FButtonFontSize = base.Config.Bind<int>("Open File Popup Buttons", "04 Text Font Size", 20, "Font size of the folder button text.");
+			FButtonHWrap = Config.Bind("Open File Popup Buttons", "00 Horizontal Wrap", HorizontalWrapMode.Wrap, "Horizontal Wrap Mode of the folder button text.");
+			FButtonVWrap = Config.Bind("Open File Popup Buttons", "01 Vertical Wrap", VerticalWrapMode.Truncate, "Vertical Wrap Mode of the folder button text.");
+			FButtonTextColor = Config.Bind("Open File Popup Buttons", "02 Text Color", new Color(0.9373f, 0.9216f, 0.9373f, 1f), "Color of the folder button text.");
+			FButtonTextInvert = Config.Bind("Open File Popup Buttons", "03 Text Invert", true, "If the text should invert if the difficulty color is dark.");
+			FButtonFontSize = Config.Bind("Open File Popup Buttons", "04 Text Font Size", 20, "Font size of the folder button text.");
 
-			FButtonFoldClamp = base.Config.Bind<int>("Open File Popup Buttons", "05 Folder Name Clamp", 14, "Limited length of the folder name.");
-			FButtonSongClamp = base.Config.Bind<int>("Open File Popup Buttons", "06 Song Name Clamp", 22, "Limited length of the song name.");
-			FButtonArtiClamp = base.Config.Bind<int>("Open File Popup Buttons", "07 Artist Name Clamp", 16, "Limited length of the artist name.");
-			FButtonCreaClamp = base.Config.Bind<int>("Open File Popup Buttons", "08 Creator Name Clamp", 16, "Limited length of the creator name.");
-			FButtonDescClamp = base.Config.Bind<int>("Open File Popup Buttons", "09 Description Clamp", 16, "Limited length of the description.");
-			FButtonFormat = base.Config.Bind<string>("Open File Popup Buttons", "0A Formatting", ".  /{0} : {1} by {2}", "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty and {5} is description.");
+			FButtonFoldClamp = Config.Bind("Open File Popup Buttons", "05 Folder Name Clamp", 14, "Limited length of the folder name.");
+			FButtonSongClamp = Config.Bind("Open File Popup Buttons", "06 Song Name Clamp", 22, "Limited length of the song name.");
+			FButtonArtiClamp = Config.Bind("Open File Popup Buttons", "07 Artist Name Clamp", 16, "Limited length of the artist name.");
+			FButtonCreaClamp = Config.Bind("Open File Popup Buttons", "08 Creator Name Clamp", 16, "Limited length of the creator name.");
+			FButtonDescClamp = Config.Bind("Open File Popup Buttons", "09 Description Clamp", 16, "Limited length of the description.");
+			FButtonFormat = Config.Bind("Open File Popup Buttons", "0A Formatting", ".  /{0} : {1} by {2}", "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty and {5} is description.");
 
-			FButtonDifColor = base.Config.Bind<bool>("Open File Popup Buttons", "10 Difficulty Color", false, "If each button matches its associated difficulty color.");
-			FButtonDifColorMult = base.Config.Bind<float>("Open File Popup Buttons", "11 Difficulty Multiply", 1.5f, "How much each buttons' color multiplies by difficulty color.");
+			FButtonDifColor = Config.Bind("Open File Popup Buttons", "10 Difficulty Color", false, "If each button matches its associated difficulty color.");
+			FButtonDifColorMult = Config.Bind("Open File Popup Buttons", "11 Difficulty Multiply", 1.5f, "How much each buttons' color multiplies by difficulty color.");
 
-			FButtonNColor = base.Config.Bind<Color>("Open File Popup Buttons", "12 Normal Color", new Color(0.1647f, 0.1647f, 0.1647f, 1f), "Normal color of the folder button.");
-			FButtonHColor = base.Config.Bind<Color>("Open File Popup Buttons", "13 Highlighted Color", new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Highlighted color of the folder button.");
-			FButtonPColor = base.Config.Bind<Color>("Open File Popup Buttons", "14 Pressed Color", new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Pressed color of the folder button.");
-			FButtonSColor = base.Config.Bind<Color>("Open File Popup Buttons", "15 Selected Color", new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Selected color of the folder button.");
-			FButtonFadeDColor = base.Config.Bind<float>("Open File Popup Buttons", "16 Fade Duration", 0.2f, "Fade duration of the folder button.");
+			FButtonNColor = Config.Bind("Open File Popup Buttons", "12 Normal Color", new Color(0.1647f, 0.1647f, 0.1647f, 1f), "Normal color of the folder button.");
+			FButtonHColor = Config.Bind("Open File Popup Buttons", "13 Highlighted Color", new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Highlighted color of the folder button.");
+			FButtonPColor = Config.Bind("Open File Popup Buttons", "14 Pressed Color", new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Pressed color of the folder button.");
+			FButtonSColor = Config.Bind("Open File Popup Buttons", "15 Selected Color", new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Selected color of the folder button.");
+			FButtonFadeDColor = Config.Bind("Open File Popup Buttons", "16 Fade Duration", 0.2f, "Fade duration of the folder button.");
 
 			//Cover Art Configs
-			FBIconPos = base.Config.Bind<Vector2>("Open File Popup Buttons", "17 Cover Position", new Vector2(-276f, 0f), "Position of the level cover.");
-			FBIconSca = base.Config.Bind<Vector2>("Open File Popup Buttons", "18 Cover Size", new Vector2(26f, 26f), "Size of the level cover.");
+			FBIconPos = Config.Bind("Open File Popup Buttons", "17 Cover Position", new Vector2(-276f, 0f), "Position of the level cover.");
+			FBIconSca = Config.Bind("Open File Popup Buttons", "18 Cover Size", new Vector2(26f, 26f), "Size of the level cover.");
 
-			IfReloadLList = base.Config.Bind<bool>("Open File Popup Buttons", "Changes Refresh List (Read desc)", false, "If the level list reloads whenever a change is made. DO NOT SET AS ENABLED IF YOU HAVE LOADS OF LEVELS!!");
+			IfReloadLList = Config.Bind("Open File Popup Buttons", "Changes Refresh List (Read desc)", false, "If the level list reloads whenever a change is made. DO NOT SET AS ENABLED IF YOU HAVE LOADS OF LEVELS!!");
 
-			TimeModify = base.Config.Bind<float>("Timeline Bar", "Time Scroll Input", 0.1f, "The amount the time input increases when you scroll on it.");
+			TimeModify = Config.Bind("Timeline Bar", "Time Scroll Input", 0.1f, "The amount the time input increases when you scroll on it.");
 
 			//Zoom Cap Config
-			ObjZoomBounds = base.Config.Bind<Vector2>("Zoom Bounds", "Object timeline", new Vector2(1f, 512f), "The cap of the object timeline zoom.");
-			ETLZoomBounds = base.Config.Bind<Vector2>("Zoom Bounds", "Editor timeline", new Vector2(16f, 512f), "The cap of the editor timeline zoom.");
+			ObjZoomBounds = Config.Bind("Zoom Bounds", "Object timeline", new Vector2(1f, 512f), "The cap of the object timeline zoom.");
+			ETLZoomBounds = Config.Bind("Zoom Bounds", "Editor timeline", new Vector2(16f, 512f), "The cap of the editor timeline zoom.");
 
-			RenderTimeline = base.Config.Bind<bool>("Timeline", "00 Re-render Timeline", false, "If the timeline waveform should update when value is changed.");
-			TimelineBGColor = base.Config.Bind<Color>("Timeline", "01 BG Color", Color.clear, "Color of the background of the timeline. (Only for Legacy waveform type)");
-			TimelineTopColor = base.Config.Bind<Color>("Timeline", "02 Top Color", LSColors.red300, "Color of the top part of the timeline. (Only for Legacy waveform type)");
-			TimelineBottomColor = base.Config.Bind<Color>("Timeline", "03 Bottom Color", LSColors.blue300, "Color of the bottom part of the timeline waveform. (Only for Legacy waveform type)");
+			RenderTimeline = Config.Bind("Timeline", "00 Re-render Timeline", false, "If the timeline waveform should update when value is changed.");
+			TimelineBGColor = Config.Bind("Timeline", "01 BG Color", Color.clear, "Color of the background of the timeline. (Only for Legacy waveform type)");
+			TimelineTopColor = Config.Bind("Timeline", "02 Top Color", LSColors.red300, "Color of the top part of the timeline. (Only for Legacy waveform type)");
+			TimelineBottomColor = Config.Bind("Timeline", "03 Bottom Color", LSColors.blue300, "Color of the bottom part of the timeline waveform. (Only for Legacy waveform type)");
 			WaveformMode = Config.Bind("Timeline", "04 Mode", WaveformType.Legacy, "The mode of the timeline waveform.");
 			GenerateWaveform = Config.Bind("Timeline", "05 Generate?", true, "If disabled, timeline will not generate when you load into a level and will decrease load time.");
 
-			ReminderActive = base.Config.Bind<bool>("Reminder", "Active", true, "A little reminder will popup every now and then reminding you to have a break.");
-			ReminderRepeat = base.Config.Bind<float>("Reminder", "Repeat", 600f, "How often the reminder will occur.");
+			ReminderActive = Config.Bind("Reminder", "Active", true, "A little reminder will popup every now and then reminding you to have a break.");
+			ReminderRepeat = Config.Bind("Reminder", "Repeat", 600f, "How often the reminder will occur.");
 
-			base.Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(Plugin.UpdateEditorManagementConfigs);
+			ShowObjectsOnLayer = Config.Bind("Preview", "00 Show only objects on current layer?", false, "If enabled, all objects not on current layer will be set to transparent");
+			ShowObjectsAlpha = Config.Bind("Preview", "01 Visible object opacity", 0.2f, "Opacity of the objects not on the current layer.");
+			ShowEmpties = Config.Bind("Preview", "02 Show empties?", false, "If enabled, show all objects that are set to the empty object type.");
+			ShowDamagable = Config.Bind("Preview", "03 Only Show Damagable?", false, "If enabled, only objects that can damage the player will be shown.");
+			HighlightObjects = Config.Bind("Preview", "04 Highlight Objects?", true, "If enabled and if cursor hovers over an object, it will be highlighted.");
+			HighlightColor = Config.Bind("Preview", "05 Object Highlight Amount", new Color(0.1f, 0.1f, 0.1f), "If an object is hovered, it adds this amount of color to the hovered object.");
+			HighlightDoubleColor = Config.Bind("Preview", "06 Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to all color channels.");
+			PreviewSelectFix = Config.Bind("Preview", "07 Empties not selectable in preview?", false, "If enabled, empties will not be selectable in preview.");
+			emptyDisable = PreviewSelectFix.Value;
+			emptyVisible = ShowEmpties.Value;
+
+			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
 			//Code written by Enchart
 			Harmony harmony = new Harmony("anything here");
@@ -317,7 +336,25 @@ namespace EditorManagement
 			EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().anchoredPosition = ORLPathPos.Value;
 			EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(ORLPathLength.Value, 34f);
 			EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("reload").gameObject.GetComponent<RectTransform>().anchoredPosition = ORLRefreshPos.Value;
+
+			if (PreviewSelectFix.Value != emptyDisable)
+            {
+				emptyDisable = PreviewSelectFix.Value;
+				ObjectManager.inst.updateObjects();
+            }
+			if (ShowEmpties.Value != emptyVisible)
+            {
+				emptyVisible = ShowEmpties.Value;
+				ObjectManager.inst.updateObjects();
+			}
+			if (ShowDamagable.Value == false)
+            {
+				ObjectManager.inst.updateObjects();
+			}
 		}
+
+		public static bool emptyDisable;
+		public static bool emptyVisible;
 
 		[HarmonyPatch(typeof(ObjEditor), "Awake")]
 		[HarmonyPostfix]
@@ -353,6 +390,101 @@ namespace EditorManagement
 			tbarLayersRT.sizeDelta = new Vector2(100f, 32f);
 			ObjEditor.inst.ObjectView.transform.Find("editor/bin").GetComponent<RectTransform>().sizeDelta = new Vector2(237f, 32f);
 		}
+
+		[HarmonyPatch(typeof(ObjectManager), "Awake")]
+		[HarmonyPostfix]
+		private static void ObjectAwakePatch()
+        {
+			for (int i = 0; i < ObjectManager.inst.objectPrefabs.Count; i++)
+			{
+				if (i != 4)
+				{
+					for (int j = 0; j < ObjectManager.inst.objectPrefabs[i].options.Count; j++)
+					{
+						ObjectManager.inst.objectPrefabs[i].options[j].transform.GetChild(0).gameObject.AddComponent<RTObject>();
+					}
+				}
+			}
+        }
+
+		[HarmonyPatch(typeof(ObjectManager), "Update")]
+		[HarmonyPostfix]
+		private static void ObjectUpdatePatch()
+		{
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+			{
+				ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+				if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && PreviewSelectFix.Value == true)
+                {
+					if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
+                    {
+						Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
+					}
+					if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
+                    {
+						Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
+					}
+				}
+
+				if (ShowEmpties.Value == true)
+                {
+					if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
+                    {
+						MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
+						gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
+
+						mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
+
+						gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
+					}
+				}
+
+				if (ShowDamagable.Value == true)
+                {
+					if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
+                    {
+						ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+						gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
+                    }
+                }
+			}
+		}
+
+		[HarmonyPatch(typeof(GameManager), "Update")]
+		[HarmonyPostfix]
+		private static void GameUpdatePatch()
+        {
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+            {
+				ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+
+				if (EditorManager.inst != null && EditorManager.inst.isEditing == true && gameObjectRef.mat && gameObjectRef.obj.GetComponentInChildren<RTObject>() && gameObjectRef.obj.GetComponentInChildren<RTObject>().selected == true && HighlightObjects.Value == true)
+                {
+					if (Input.GetKey(KeyCode.LeftShift))
+					{
+						Color colorHover = new Color(HighlightDoubleColor.Value.r, HighlightDoubleColor.Value.g, HighlightDoubleColor.Value.b);
+
+						if (gameObjectRef.mat.color.r > 0.9f && gameObjectRef.mat.color.g > 0.9f && gameObjectRef.mat.color.b > 0.9f)
+						{
+							colorHover = new Color(-HighlightDoubleColor.Value.r, -HighlightDoubleColor.Value.g, -HighlightDoubleColor.Value.b);
+						}
+
+						gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+					}
+					else
+					{
+						Color colorHover = new Color(HighlightColor.Value.r, HighlightColor.Value.g, HighlightColor.Value.b);
+
+						if (gameObjectRef.mat.color.r > 0.95f && gameObjectRef.mat.color.g > 0.95f && gameObjectRef.mat.color.b > 0.95f)
+						{
+							colorHover = new Color(-HighlightColor.Value.r, -HighlightColor.Value.g, -HighlightColor.Value.b);
+						}
+
+						gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+					}
+				}
+            }
+        }
 
 		public static void CreateMultiObjectEditor()
         {
@@ -1886,7 +2018,7 @@ namespace EditorManagement
 
 			iFtimeObj.onValueChanged.AddListener(delegate (string _value)
 			{
-				Plugin.SetNewTime(_value);
+				SetNewTime(_value);
 			});
 
 			timeObj.AddComponent<EventTrigger>();
@@ -2599,6 +2731,7 @@ namespace EditorManagement
 				EventEditor.inst.CreateEventObjects();
 				CheckpointEditor.inst.CreateCheckpoints();
 				ObjEditor.inst.RenderTimelineObjects("");
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/6").GetComponent<Toggle>().isOn = true;
 			}
 			else if (EditorManager.inst.layer != 5 && EditorManager.inst.lastLayer == 5)
 			{
@@ -2628,10 +2761,12 @@ namespace EditorManagement
 					CheckpointEditor.inst.checkpoints.Clear();
 				}
 				CheckpointEditor.inst.CreateGhostCheckpoints();
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/6").GetComponent<Toggle>().isOn = false;
 			}
 			else
 			{
 				ObjEditor.inst.RenderTimelineObjects("");
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/6").GetComponent<Toggle>().isOn = false;
 			}
 
 			if (_layer < EditorManager.inst.layerSelectors.Count)
@@ -2778,6 +2913,19 @@ namespace EditorManagement
             {
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
 			}
+
+			if (ShowObjectsOnLayer.Value == true)
+            {
+				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+                {
+					if (beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
+                    {
+						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+						Color objColor = gameObjectRef.mat.color;
+						gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ShowObjectsAlpha.Value);
+                    }
+                }
+            }
 		}
 
 		public static bool multiObjectState = true;
@@ -3492,6 +3640,74 @@ namespace EditorManagement
 					AudioManager.inst.CurrentAudioSource.time = DataManager.inst.gameData.beatmapData.markers[markerStart].time;
 				}
 			}
+
+
+			if (EditorManager.inst.GetDialog("Marker Editor").Dialog.gameObject.activeSelf == true)
+            {
+				GameObject markerList = EditorManager.inst.GetDialog("Marker Editor").Dialog.Find("data/right/markers/list").gameObject;
+				GameObject eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+				Color bcol = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+				if (!markerList.transform.Find("sort markers"))
+				{
+					GameObject sortMarkers = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					sortMarkers.transform.SetParent(markerList.transform);
+					sortMarkers.transform.SetAsFirstSibling();
+					sortMarkers.name = "sort markers";
+
+					sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Sort Markers";
+					sortMarkers.GetComponent<Image>().color = bcol;
+
+					sortMarkers.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+					sortMarkers.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+					sortMarkers.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+					sortMarkers.GetComponent<Button>().onClick.RemoveAllListeners();
+					sortMarkers.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						List<DataManager.GameData.BeatmapData.Marker> result = new List<DataManager.GameData.BeatmapData.Marker>();
+						result = (from x in DataManager.inst.gameData.beatmapData.markers
+								  orderby x.time ascending
+								  select x).ToList<DataManager.GameData.BeatmapData.Marker>();
+
+						DataManager.inst.gameData.beatmapData.markers = result;
+						MarkerEditor.inst.UpdateMarkerList();
+					});
+
+					HoverTooltip markerHoverTooltip = sortMarkers.AddComponent<HoverTooltip>();
+					HoverTooltip.Tooltip markerTip = new HoverTooltip.Tooltip();
+
+					markerTip.desc = "Sort markers by time.";
+					markerTip.hint = "Clicking this will sort and update all markers in the list by song time.<br><#FF0000><b>WARNING!</color></b><br>This is not reversible. Only click this if you really want to sort your markers. (This will only affect the internal marker list, you don't have to worry about the markers in the timeline changing.)";
+
+					markerHoverTooltip.tooltipLangauges.Add(markerTip);
+				}
+
+				if (markerList.transform.GetChild(0).name != "sort markers")
+				{
+					markerList.transform.Find("sort markers").SetAsFirstSibling();
+				}
+
+				foreach (var marker in DataManager.inst.gameData.beatmapData.markers)
+				{
+					var regex = new System.Text.RegularExpressions.Regex(@"hideObjects\((.*?)\)");
+					var match = regex.Match(marker.desc);
+					if (match.Success)
+					{
+						if (ShowObjectsOnLayer.Value == true)
+						{
+							foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+							{
+								if (beatmapObject.editorData.Layer != int.Parse(match.Groups[1].ToString()))
+								{
+									ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+									Color objColor = gameObjectRef.mat.color;
+									gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ShowObjectsAlpha.Value);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		private static void SetNewTime(string _value)
@@ -3525,6 +3741,15 @@ namespace EditorManagement
 				new DataManager.LinkType("Youtube Music", "https://www.youtube.com/user/{0}"),
 				new DataManager.LinkType("Newgrounds", "https://{0}.newgrounds.com/")
 			};
+
+			bool no = false;
+            {
+				if (no == true)
+                {
+					DataManager.inst.AnimationList[1].Animation.keys[1].m_Time = 0.9999f;
+					DataManager.inst.AnimationList[1].Animation.keys[1].m_Value = 0f;
+				}
+            }
 		}
 
 		[HarmonyPatch(typeof(ObjEditor), "Start")]
@@ -3538,7 +3763,7 @@ namespace EditorManagement
 		[HarmonyPostfix]
 		private static void MarkerStart()
         {
-			Plugin.SetNewMarkerColors();
+			SetNewMarkerColors();
 
 			Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/MarkerDialog/data/left").transform;
 			Text textFont = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/MarkerDialog/data/left/label/text").GetComponent<Text>();
@@ -3565,17 +3790,46 @@ namespace EditorManagement
 			ttindex.alignment = TextAnchor.MiddleLeft;
 			ttindex.fontSize = 24;
 			ttindex.horizontalOverflow = HorizontalWrapMode.Overflow;
-
 		}
 
 		[HarmonyPatch(typeof(MarkerEditor), "OpenDialog")]
 		[HarmonyPostfix]
-		private static void MarkerOpenDialog()
+		private static void MarkerOpenDialog(MarkerEditor __instance, int __0)
         {
-			Plugin.SetNewMarkerColors();
+			SetNewMarkerColors();
 			GameObject.Find("EditorDialogs/MarkerDialog/data/left/color").GetComponent<GridLayoutGroup>().spacing = new Vector2(8f, 8f);
 			GameObject.Find("EditorDialogs/MarkerDialog/data/left/index/text").GetComponent<Text>().text = "Index: " + MarkerEditor.inst.currentMarker.ToString();
+
+			var regex = new System.Text.RegularExpressions.Regex(@"setLayer\((.*?)\)");
+			var match = regex.Match(DataManager.inst.gameData.beatmapData.markers[__0].desc);
+			if (match.Success)
+			{
+				if (match.Groups[1].ToString().ToLower() == "events" || match.Groups[1].ToString().ToLower() == "check" || match.Groups[1].ToString().ToLower() == "event/check")
+                {
+					SetLayer(5);
+				}
+				else
+                {
+					if (int.Parse(match.Groups[1].ToString()) > 0)
+					{
+						if (int.Parse(match.Groups[1].ToString()) < 6)
+						{
+							SetLayer(int.Parse(match.Groups[1].ToString()) - 1);
+						}
+						else
+						{
+							SetLayer(int.Parse(match.Groups[1].ToString()));
+						}
+					}
+					else
+					{
+						SetLayer(0);
+					}
+				}
+			}
 		}
+
+
 		private static void SetNewMarkerColors()
         {
 			MarkerEditor.inst.markerColors = new List<Color>
