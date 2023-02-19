@@ -2920,10 +2920,19 @@ namespace EditorManagement
                 {
 					if (beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
                     {
-						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-						Color objColor = gameObjectRef.mat.color;
-						gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ShowObjectsAlpha.Value);
-                    }
+						if (beatmapObject.shape != 4)
+						{
+							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+							Color objColor = gameObjectRef.mat.color;
+							gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ShowObjectsAlpha.Value);
+						}
+						else
+						{
+							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+							Color objColor = gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color;
+							gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ShowObjectsAlpha.Value);
+						}
+					}
                 }
             }
 		}
