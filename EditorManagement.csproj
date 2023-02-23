@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net46</TargetFramework>
@@ -35,6 +35,9 @@
     </Reference>
     <Reference Include="DOTween">
       <HintPath>..\lib\DOTween.dll</HintPath>
+    </Reference>
+    <Reference Include="InControl">
+      <HintPath>..\lib\InControl.dll</HintPath>
     </Reference>
     <Reference Include="Unity.TextMeshPro">
       <HintPath>..\EventsCore\bin\Debug\net46\Unity.TextMeshPro.dll</HintPath>

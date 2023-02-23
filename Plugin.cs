@@ -16,7 +16,7 @@ using DG.Tweening;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.5.6")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.5.8")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	public class Plugin : BaseUnityPlugin
 	{
@@ -413,40 +413,43 @@ namespace EditorManagement
 		{
 			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 			{
-				ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-				if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && PreviewSelectFix.Value == true)
-                {
-					if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
-                    {
-						Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
+				if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
+				{
+					ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+					if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && PreviewSelectFix.Value == true)
+					{
+						if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
+						{
+							Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
+						}
+						if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
+						{
+							Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
+						}
 					}
-					if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
-                    {
-						Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
+
+					if (ShowEmpties.Value == true)
+					{
+						if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
+						{
+							MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
+							gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
+
+							mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
+
+							gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
+						}
+					}
+
+					if (ShowDamagable.Value == true)
+					{
+						if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
+						{
+							ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+							gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
+						}
 					}
 				}
-
-				if (ShowEmpties.Value == true)
-                {
-					if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
-                    {
-						MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
-						gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
-
-						mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
-
-						gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
-					}
-				}
-
-				if (ShowDamagable.Value == true)
-                {
-					if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
-                    {
-						ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-						gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
-                    }
-                }
 			}
 		}
 
@@ -455,32 +458,35 @@ namespace EditorManagement
 		private static void GameUpdatePatch()
         {
 			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-            {
-				ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+			{
+				if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
+				{
+					ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
 
-				if (EditorManager.inst != null && EditorManager.inst.isEditing == true && gameObjectRef.mat && gameObjectRef.obj.GetComponentInChildren<RTObject>() && gameObjectRef.obj.GetComponentInChildren<RTObject>().selected == true && HighlightObjects.Value == true)
-                {
-					if (Input.GetKey(KeyCode.LeftShift))
+					if (EditorManager.inst != null && EditorManager.inst.isEditing == true && gameObjectRef.mat && gameObjectRef.obj.GetComponentInChildren<RTObject>() && gameObjectRef.obj.GetComponentInChildren<RTObject>().selected == true && HighlightObjects.Value == true)
 					{
-						Color colorHover = new Color(HighlightDoubleColor.Value.r, HighlightDoubleColor.Value.g, HighlightDoubleColor.Value.b);
-
-						if (gameObjectRef.mat.color.r > 0.9f && gameObjectRef.mat.color.g > 0.9f && gameObjectRef.mat.color.b > 0.9f)
+						if (Input.GetKey(KeyCode.LeftShift))
 						{
-							colorHover = new Color(-HighlightDoubleColor.Value.r, -HighlightDoubleColor.Value.g, -HighlightDoubleColor.Value.b);
+							Color colorHover = new Color(HighlightDoubleColor.Value.r, HighlightDoubleColor.Value.g, HighlightDoubleColor.Value.b);
+
+							if (gameObjectRef.mat.color.r > 0.9f && gameObjectRef.mat.color.g > 0.9f && gameObjectRef.mat.color.b > 0.9f)
+							{
+								colorHover = new Color(-HighlightDoubleColor.Value.r, -HighlightDoubleColor.Value.g, -HighlightDoubleColor.Value.b);
+							}
+
+							gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
 						}
-
-						gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
-					}
-					else
-					{
-						Color colorHover = new Color(HighlightColor.Value.r, HighlightColor.Value.g, HighlightColor.Value.b);
-
-						if (gameObjectRef.mat.color.r > 0.95f && gameObjectRef.mat.color.g > 0.95f && gameObjectRef.mat.color.b > 0.95f)
+						else
 						{
-							colorHover = new Color(-HighlightColor.Value.r, -HighlightColor.Value.g, -HighlightColor.Value.b);
-						}
+							Color colorHover = new Color(HighlightColor.Value.r, HighlightColor.Value.g, HighlightColor.Value.b);
 
-						gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+							if (gameObjectRef.mat.color.r > 0.95f && gameObjectRef.mat.color.g > 0.95f && gameObjectRef.mat.color.b > 0.95f)
+							{
+								colorHover = new Color(-HighlightColor.Value.r, -HighlightColor.Value.g, -HighlightColor.Value.b);
+							}
+
+							gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+						}
 					}
 				}
             }
@@ -1476,6 +1482,25 @@ namespace EditorManagement
 				.InstructionEnumeration();
 		}
 
+		[HarmonyPatch(typeof(PrefabEditor), "CollapseCurrentPrefab")]
+		[HarmonyTranspiler]
+		private static IEnumerable<CodeInstruction> CCPrefabTranspiler(IEnumerable<CodeInstruction> instructions)
+		{
+			var matcher = new CodeMatcher(instructions).Start().Advance(128);
+			Console.WriteLine("1");
+			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(ObjEditor), "inst")));
+			Console.WriteLine("2");
+			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(ObjEditor), "beatmapObjects")));
+			Console.WriteLine("3");
+			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 9));
+			Console.WriteLine("4");
+			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(DataManager.GameData.BeatmapObject), "id")));
+			Console.WriteLine("5");
+			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<string, GameObject>), "Remove", new[] { typeof(string) })));
+			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Pop));
+			return matcher.InstructionEnumeration();
+		}
+
 		public static string levelListPath = "beatmaps/editor";
 		public static string levelListSlash = "beatmaps/editor/";
 
@@ -2048,16 +2073,16 @@ namespace EditorManagement
                 {
 					if (int.Parse(_value) < 6)
 					{
-						Plugin.SetLayer(int.Parse(_value) - 1);
+						SetLayer(int.Parse(_value) - 1);
 					}
 					else
 					{
-						Plugin.SetLayer(int.Parse(_value));
+						SetLayer(int.Parse(_value));
 					}
 				}
 				else
                 {
-					Plugin.SetLayer(0);
+					SetLayer(0);
 					tbarLayersIF.text = "1";
 				}
 			});
@@ -2079,7 +2104,7 @@ namespace EditorManagement
 				PointerEventData pointerEventData = (PointerEventData)eventData;
 				if (pointerEventData.clickTime > 0f)
                 {
-					Plugin.SetLayer(5);
+					SetLayer(5);
 				}
 			});
 			eventTrigger.triggers.Clear();
@@ -2105,13 +2130,13 @@ namespace EditorManagement
 				PointerEventData pointerEventData = (PointerEventData)eventData;
 				if (pointerEventData.scrollDelta.y < 0f)
 				{
-					Plugin.SetNewTime(timeMinus.ToString());
+					SetNewTime(timeMinus.ToString());
 					iFtimeObj.text = time.ToString();
 					return;
 				}
 				if (pointerEventData.scrollDelta.y > 0f)
 				{
-					Plugin.SetNewTime(timePlus.ToString());
+					SetNewTime(timePlus.ToString());
 					iFtimeObj.text = time.ToString();
 				}
 			});
@@ -2187,7 +2212,7 @@ namespace EditorManagement
 				"<br><b>Date Edited</b> Sort by date edited / created.";
 
             Dropdown sortListDD = sortList.GetComponent<Dropdown>();
-			UnityEngine.Object.Destroy(sortList.GetComponent<HideDropdownOptions>());
+			Destroy(sortList.GetComponent<HideDropdownOptions>());
 			sortListDD.options.Clear();
 			sortListDD.onValueChanged.RemoveAllListeners();
 
@@ -2224,7 +2249,7 @@ namespace EditorManagement
 				EditorManager.inst.RenderOpenBeatmapPopup();
 			});
 
-			GameObject checkDes = UnityEngine.Object.Instantiate<GameObject>(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle"));
+			GameObject checkDes = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle"));
 			checkDes.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 			GameObject toggle = checkDes.transform.Find("toggle").gameObject;
 
@@ -2265,7 +2290,7 @@ namespace EditorManagement
 					RTFile.WriteToFile("beatmaps/editorpath.lss", jsonnode.ToString(3));
 				}
 
-				GameObject levelListObj = UnityEngine.Object.Instantiate<GameObject>(GameObject.Find("TimelineBar/GameObject/Time Input"));
+				GameObject levelListObj = Instantiate(GameObject.Find("TimelineBar/GameObject/Time Input"));
 				levelListObj.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 				levelListObj.GetComponent<RectTransform>().anchoredPosition = ORLPathPos.Value;
 				levelListObj.GetComponent<RectTransform>().sizeDelta = new Vector2(ORLPathLength.Value, 34f);
@@ -2303,7 +2328,7 @@ namespace EditorManagement
 					levelListSlash = "beatmaps/" + editorPath + "/";
 				});
 
-				GameObject levelListReloader = UnityEngine.Object.Instantiate<GameObject>(GameObject.Find("TimelineBar/GameObject/play"));
+				GameObject levelListReloader = Instantiate(GameObject.Find("TimelineBar/GameObject/play"));
 				levelListReloader.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 				levelListReloader.GetComponent<RectTransform>().anchoredPosition = ORLRefreshPos.Value;
 				levelListReloader.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
@@ -2354,38 +2379,77 @@ namespace EditorManagement
 					EditorManager.inst.SelectionBoxImage.gameObject.SetActive(false);
 					if (EditorManager.inst.layer != 5)
 					{
-						List<ObjEditor.ObjectSelection> list4 = new List<ObjEditor.ObjectSelection>();
-						foreach (ObjEditor.ObjectSelection objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							list4.Add(new ObjEditor.ObjectSelection(objectSelection.Type, objectSelection.ID));
-						}
-						ObjEditor.inst.selectedObjects.Clear();
-						foreach (KeyValuePair<string, GameObject> keyValuePair in ObjEditor.inst.beatmapObjects)
-						{
-							if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(keyValuePair.Value.GetComponent<Image>().rectTransform)) && keyValuePair.Value.activeSelf)
+						if (Input.GetKey(KeyCode.LeftShift))
+                        {
+							List<ObjEditor.ObjectSelection> list4 = new List<ObjEditor.ObjectSelection>();
+							foreach (ObjEditor.ObjectSelection objectSelection in ObjEditor.inst.selectedObjects)
 							{
-								ObjEditor.inst.AddSelectedObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, keyValuePair.Key));
+								list4.Add(new ObjEditor.ObjectSelection(objectSelection.Type, objectSelection.ID));
+							}
+							foreach (KeyValuePair<string, GameObject> keyValuePair in ObjEditor.inst.beatmapObjects)
+							{
+								if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(keyValuePair.Value.GetComponent<Image>().rectTransform)) && keyValuePair.Value.activeSelf)
+								{
+									ObjEditor.inst.AddSelectedObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, keyValuePair.Key));
+								}
+							}
+							foreach (KeyValuePair<string, GameObject> keyValuePair2 in ObjEditor.inst.prefabObjects)
+							{
+								if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(keyValuePair2.Value.GetComponent<Image>().rectTransform)) && keyValuePair2.Value.activeSelf)
+								{
+									ObjEditor.inst.AddSelectedObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, keyValuePair2.Key));
+								}
+							}
+							foreach (ObjEditor.ObjectSelection obj in list4)
+							{
+								ObjEditor.inst.RenderTimelineObject(obj);
+							}
+							foreach (ObjEditor.ObjectSelection obj2 in ObjEditor.inst.selectedObjects)
+							{
+								ObjEditor.inst.RenderTimelineObject(obj2);
+							}
+							if (ObjEditor.inst.selectedObjects.Count() <= 0)
+							{
+								CheckpointEditor.inst.SetCurrentCheckpoint(0);
+								return;
 							}
 						}
-						foreach (KeyValuePair<string, GameObject> keyValuePair2 in ObjEditor.inst.prefabObjects)
-						{
-							if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(keyValuePair2.Value.GetComponent<Image>().rectTransform)) && keyValuePair2.Value.activeSelf)
+						else
+                        {
+							List<ObjEditor.ObjectSelection> list4 = new List<ObjEditor.ObjectSelection>();
+							foreach (ObjEditor.ObjectSelection objectSelection in ObjEditor.inst.selectedObjects)
 							{
-								ObjEditor.inst.AddSelectedObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, keyValuePair2.Key));
+								list4.Add(new ObjEditor.ObjectSelection(objectSelection.Type, objectSelection.ID));
 							}
-						}
-						foreach (ObjEditor.ObjectSelection obj in list4)
-						{
-							ObjEditor.inst.RenderTimelineObject(obj);
-						}
-						foreach (ObjEditor.ObjectSelection obj2 in ObjEditor.inst.selectedObjects)
-						{
-							ObjEditor.inst.RenderTimelineObject(obj2);
-						}
-						if (ObjEditor.inst.selectedObjects.Count<ObjEditor.ObjectSelection>() <= 0)
-						{
-							CheckpointEditor.inst.SetCurrentCheckpoint(0);
-							return;
+							ObjEditor.inst.selectedObjects.Clear();
+							ObjEditor.inst.RenderTimelineObjects();
+							foreach (KeyValuePair<string, GameObject> keyValuePair in ObjEditor.inst.beatmapObjects)
+							{
+								if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(keyValuePair.Value.GetComponent<Image>().rectTransform)) && keyValuePair.Value.activeSelf)
+								{
+									ObjEditor.inst.AddSelectedObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, keyValuePair.Key));
+								}
+							}
+							foreach (KeyValuePair<string, GameObject> keyValuePair2 in ObjEditor.inst.prefabObjects)
+							{
+								if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(keyValuePair2.Value.GetComponent<Image>().rectTransform)) && keyValuePair2.Value.activeSelf)
+								{
+									ObjEditor.inst.AddSelectedObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, keyValuePair2.Key));
+								}
+							}
+							foreach (ObjEditor.ObjectSelection obj in list4)
+							{
+								ObjEditor.inst.RenderTimelineObject(obj);
+							}
+							foreach (ObjEditor.ObjectSelection obj2 in ObjEditor.inst.selectedObjects)
+							{
+								ObjEditor.inst.RenderTimelineObject(obj2);
+							}
+							if (ObjEditor.inst.selectedObjects.Count() <= 0)
+							{
+								CheckpointEditor.inst.SetCurrentCheckpoint(0);
+								return;
+							}
 						}
 					}
 					else
@@ -2427,7 +2491,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("persistent").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("persistent").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewNoAutokillObject();
+					CreateNewNoAutokillObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("empty").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2436,7 +2500,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("empty").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("empty").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewEmptyObject();
+					CreateNewEmptyObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("decoration").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2445,7 +2509,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("decoration").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("decoration").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewDecorationObject();
+					CreateNewDecorationObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("helper").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2454,7 +2518,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("helper").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("helper").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewHelperObject();
+					CreateNewHelperObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("normal").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2463,7 +2527,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("normal").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("normal").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewNormalObject();
+					CreateNewNormalObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/circle").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2472,7 +2536,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/circle").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/circle").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewCircleObject();
+					CreateNewCircleObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/triangle").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2481,7 +2545,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/triangle").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/triangle").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewTriangleObject();
+					CreateNewTriangleObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/text").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2490,7 +2554,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/text").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/text").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewTextObject();
+					CreateNewTextObject();
 				});
 
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/hexagon").gameObject.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -2499,7 +2563,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/hexagon").gameObject.GetComponent<Button>().onClick.RemoveAllListeners();
 				EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("shapes/hexagon").gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					Plugin.CreateNewHexagonObject();
+					CreateNewHexagonObject();
 				});
 			}
 
@@ -2812,7 +2876,7 @@ namespace EditorManagement
         {
 			if (ReminderActive.Value == true)
 			{
-				int radfs = UnityEngine.Random.Range(0, 4);
+				int radfs = UnityEngine.Random.Range(0, 5);
 				string randomtext = "";
 				if (radfs == 0)
 				{
@@ -2834,6 +2898,10 @@ namespace EditorManagement
 				{
 					randomtext = ". Best thing to do in this situation is to have a break.";
 				}
+				if (radfs == 5)
+				{
+					randomtext = ". Anyone there?";
+				}
 
 				EditorManager.inst.DisplayNotification("You've been working on the game for " + secondsToTime(Time.time) + randomtext, 2f, EditorManager.NotificationType.Warning, false);
 			}
@@ -2843,7 +2911,7 @@ namespace EditorManagement
 		[HarmonyPostfix]
 		private static void SetEditorStart()
 		{
-			Plugin.RepeatReminder();
+			RepeatReminder();
 
 			GameObject folderButton = EditorManager.inst.folderButtonPrefab;
 			Button fButtonBUTT = folderButton.GetComponent<Button>();
@@ -2864,6 +2932,11 @@ namespace EditorManagement
 			fButtonBUTT.colors = cb;
 
 			timeEdit = itsTheTime;
+
+			InputDataManager.inst.editorActions.Cut.ClearBindings();
+			InputDataManager.inst.editorActions.Copy.ClearBindings();
+			InputDataManager.inst.editorActions.Paste.ClearBindings();
+			InputDataManager.inst.editorActions.Duplicate.ClearBindings();
 		}
 
 		[HarmonyPatch(typeof(EditorManager), "Update")]
@@ -2902,6 +2975,31 @@ namespace EditorManagement
 					Image image = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").GetComponent<Image>();
 					image.sprite = EditorManager.inst.loadingImage.sprite;
 				}
+
+				if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.X))
+                {
+					RTEditor.Cut();
+                }
+				if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
+                {
+					RTEditor.Copy(false, false);
+                }
+				if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.V))
+                {
+					RTEditor.Paste(0f);
+                }
+				if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.D))
+                {
+					RTEditor.Duplicate();
+				}
+				if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.V))
+				{
+					RTEditor.Paste(0f, false);
+				}
+				if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.D))
+				{
+					RTEditor.Duplicate(false);
+				}
 			}
 			itsTheTime = timeEdit + Time.time;
 
@@ -2918,7 +3016,7 @@ namespace EditorManagement
             {
 				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
                 {
-					if (beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
+					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
                     {
 						if (beatmapObject.shape != 4)
 						{
@@ -3727,9 +3825,9 @@ namespace EditorManagement
 		[HarmonyPatch(typeof(DataManager), "Start")]
 		[HarmonyPostfix]
 		private static void DataLists()
-        {
+		{
 			if (DataManager.inst.difficulties.Count != 7)
-            {
+			{
 				DataManager.inst.difficulties = new List<DataManager.Difficulty>
 				{
 					new DataManager.Difficulty("Easy", LSColors.GetThemeColor("easy")),
@@ -3751,14 +3849,8 @@ namespace EditorManagement
 				new DataManager.LinkType("Newgrounds", "https://{0}.newgrounds.com/")
 			};
 
-			bool no = false;
-            {
-				if (no == true)
-                {
-					DataManager.inst.AnimationList[1].Animation.keys[1].m_Time = 0.9999f;
-					DataManager.inst.AnimationList[1].Animation.keys[1].m_Value = 0f;
-				}
-            }
+			DataManager.inst.AnimationList[1].Animation.keys[1].m_Time = 0.9999f;
+			DataManager.inst.AnimationList[1].Animation.keys[1].m_Value = 0f;
 		}
 
 		[HarmonyPatch(typeof(ObjEditor), "Start")]
