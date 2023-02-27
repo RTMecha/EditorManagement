@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace EditorManagement
+namespace EditorManagement.Functions
 {
 	public static class RTMath
 	{

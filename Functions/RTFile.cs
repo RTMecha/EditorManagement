@@ -6,7 +6,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace EditorManagement
+namespace EditorManagement.Functions
 {
 	public static class RTFile
 	{
@@ -98,18 +98,16 @@ namespace EditorManagement
 
 			public static void Open(string path)
 			{
-				if (RTFile.OpenInFileBrowser.IsInWinOS)
+				if (IsInWinOS)
 				{
-					RTFile.OpenInFileBrowser.OpenInWin(path);
+					OpenInWin(path);
 					return;
 				}
-				if (RTFile.OpenInFileBrowser.IsInMacOS)
+				if (IsInMacOS)
 				{
-					RTFile.OpenInFileBrowser.OpenInMac(path);
+					OpenInMac(path);
 					return;
 				}
-				RTFile.OpenInFileBrowser.OpenInWin(path);
-				RTFile.OpenInFileBrowser.OpenInMac(path);
 			}
 		}
 	}

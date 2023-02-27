@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using System.Reflection;
 
-namespace EditorManagement
+namespace EditorManagement.Functions
 {
     public class RTObject : MonoBehaviour
     {
