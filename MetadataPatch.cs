@@ -12,6 +12,8 @@ using SimpleJSON;
 using HarmonyLib;
 
 using EditorManagement.Functions;
+using EditorManagement.Functions.Tools;
+
 using LSFunctions;
 
 namespace EditorManagement
@@ -68,10 +70,13 @@ namespace EditorManagement
 
 			Transform transform = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content");
 
+			Triggers.AddTooltip(transform.Find("song/difficulty").gameObject, "Shows players how difficult a level is.", "");
+
 			for (int i = 0; i < 7; i++)
 			{
 				transform.Find("song/difficulty/toggles").GetChild(i).gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(69f, 32f);
 				transform.Find("song/difficulty/toggles").GetChild(i).Find("Background").gameObject.GetComponent<Image>().color = DataManager.inst.difficulties[i].color;
+				transform.Find("song/difficulty/toggles").GetChild(i).Find("Background/Text").GetComponent<Text>().fontSize = 19;
 
 				int tmpIndex = i;
 				transform.Find("song/difficulty/toggles").GetChild(i).GetComponent<Toggle>().onValueChanged.RemoveAllListeners();

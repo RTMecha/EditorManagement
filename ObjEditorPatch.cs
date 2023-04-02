@@ -1,21 +1,19 @@
-﻿using System;
-using System.Reflection;
+﻿using System.Reflection;
 using System.Reflection.Emit;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 using SimpleJSON;
 
 using HarmonyLib;
 
-using EditorManagement.Functions;
 using LSFunctions;
+
+using EditorManagement.Functions;
+using EditorManagement.Functions.Tools;
 
 namespace EditorManagement
 {
@@ -55,6 +53,35 @@ namespace EditorManagement
 
 			tbarLayersRT.sizeDelta = new Vector2(100f, 32f);
 			ObjEditor.inst.ObjectView.transform.Find("editor/bin").GetComponent<RectTransform>().sizeDelta = new Vector2(237f, 32f);
+
+			GameObject close = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x");
+
+			GameObject parent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent");
+
+			parent.GetComponent<HorizontalLayoutGroup>().childControlWidth = false;
+			parent.GetComponent<HorizontalLayoutGroup>().spacing = 4f;
+
+			parent.transform.Find("text").GetComponent<RectTransform>().sizeDelta = new Vector2(241f, 32f);
+
+			GameObject resetParent = Instantiate(close);
+			resetParent.transform.SetParent(parent.transform);
+			resetParent.transform.localScale = Vector3.one;
+			resetParent.name = "clear parent";
+			resetParent.transform.SetSiblingIndex(1);
+
+			resetParent.GetComponent<Button>().onClick.RemoveAllListeners();
+			resetParent.GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "";
+				var objEditor = ObjEditor.inst;
+				var refreshParentGUI = objEditor.GetType().GetMethod("RefreshParentGUI", BindingFlags.NonPublic | BindingFlags.Instance);
+
+				refreshParentGUI.Invoke(objEditor, new object[] { "" });
+				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+			});
+
+			parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+			parent.transform.Find("more").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
 		}
 
 		[HarmonyPatch(typeof(ObjEditor), "OpenDialog")]
@@ -140,6 +167,55 @@ namespace EditorManagement
 			  .InstructionEnumeration();
 		}
 
+		[HarmonyPatch("RefreshKeyframeGUI")]
+		[HarmonyPostfix]
+		private static void RefreshTriggers()
+		{
+			if (DataManager.inst.gameData.beatmapObjects.Count > 0 && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.keyframeSelections.Count <= 1)
+			{
+				//Position
+				{
+					InputField posX = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/x").GetComponent<InputField>();
+					InputField posY = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/y").GetComponent<InputField>();
+					EventTrigger posXEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/x").GetComponent<EventTrigger>();
+					EventTrigger posYEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/y").GetComponent<EventTrigger>();
+
+					posXEvent.triggers.Clear();
+					posXEvent.triggers.Add(Triggers.ScrollDelta(posX, 0.1f, 10f, true));
+					posXEvent.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
+
+					posYEvent.triggers.Clear();
+					posYEvent.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, true));
+					posYEvent.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
+				}
+
+				//Scale
+				{
+					InputField scaX = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/x").GetComponent<InputField>();
+					InputField scaY = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/y").GetComponent<InputField>();
+					EventTrigger scaXEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/x").GetComponent<EventTrigger>();
+					EventTrigger scaYEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/y").GetComponent<EventTrigger>();
+
+					scaXEvent.triggers.Clear();
+					scaXEvent.triggers.Add(Triggers.ScrollDelta(scaX, 0.1f, 10f, true));
+					scaXEvent.triggers.Add(Triggers.ScrollDeltaVector2(scaX, scaY, 0.1f, 10f));
+
+					scaYEvent.triggers.Clear();
+					scaYEvent.triggers.Add(Triggers.ScrollDelta(scaY, 0.1f, 10f, true));
+					scaYEvent.triggers.Add(Triggers.ScrollDeltaVector2(scaX, scaY, 0.1f, 10f));
+				}
+
+				//Rotation
+				{
+					InputField rotX = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation/rotation/x").GetComponent<InputField>();
+					EventTrigger rotXEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation/rotation").GetComponent<EventTrigger>();
+
+					rotXEvent.triggers.Clear();
+					rotXEvent.triggers.Add(Triggers.ScrollDelta(rotX, 15f, 3f, false));
+				}
+			}
+		}
+
 		[HarmonyPatch("AddPrefabExpandedToLevel")]
 		[HarmonyTranspiler]
 		private static IEnumerable<CodeInstruction> AddPrefabTranspiler(IEnumerable<CodeInstruction> instructions)
@@ -202,5 +278,128 @@ namespace EditorManagement
 		{
 			ObjEditor.inst.zoomBounds = EditorPlugin.ObjZoomBounds.Value;
 		}
+
+		//[HarmonyPatch("RenderTimelineObjects")]
+		//[HarmonyPostfix]
+		private static void CreateBeatmapTooltips()
+        {
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+            {
+				if (ObjEditor.inst.beatmapObjects.ContainsKey(beatmapObject.id) && ObjEditor.inst.beatmapObjects[beatmapObject.id] && ObjEditor.inst.beatmapObjects[beatmapObject.id].activeSelf == true)
+				{
+					var timelineObject = ObjEditor.inst.beatmapObjects[beatmapObject.id];
+					Triggers.AddTooltip(timelineObject, beatmapObject.name + " [ " + beatmapObject.StartTime.ToString() + " ]", "P: " + beatmapObject.parent + "\nD: " + beatmapObject.Depth.ToString());
+				}
+            }
+        }
+
+		[HarmonyPatch("SetCurrentObj")]
+		[HarmonyPostfix]
+		private static void SetCurrentObjPostfix(ObjEditor.ObjectSelection __0)
+        {
+			if (EditorPlugin.EditorDebug.Value == true)
+			{
+				if (__0.IsObject() && !string.IsNullOrEmpty(__0.ID) && __0.GetObjectData() != null && !__0.GetObjectData().fromPrefab)
+				{
+					if (ObjectManager.inst.beatmapGameObjects.ContainsKey(__0.GetObjectData().id) && ObjectManager.inst.beatmapGameObjects[__0.GetObjectData().id] != null)
+					{
+						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[__0.GetObjectData().id];
+
+						Transform transform = gameObjectRef.rend.transform.GetParent();
+
+						var beatmapObject = __0.GetObjectData();
+
+						string parent = "";
+						{
+							if (!string.IsNullOrEmpty(beatmapObject.parent))
+							{
+								parent = "<br>P: " + beatmapObject.parent + " (" + beatmapObject.GetParentType() + ")";
+							}
+							else
+							{
+								parent = "<br>P: No Parent" + " (" + beatmapObject.GetParentType() + ")";
+							}
+						}
+
+						string text = "";
+						{
+							if (beatmapObject.shape != 4 || beatmapObject.shape != 6)
+							{
+								text = "<br>S: " + RTEditor.GetShape(beatmapObject.shape, beatmapObject.shapeOption) +
+									"<br>T: " + beatmapObject.text;
+							}
+							if (beatmapObject.shape == 4)
+							{
+								text = "<br>S: Text" +
+									"<br>T: " + beatmapObject.text;
+							}
+							if (beatmapObject.shape == 6)
+							{
+								text = "<br>S: Image" +
+									"<br>T: " + beatmapObject.text;
+							}
+						}
+
+						string ptr = "";
+						{
+							if (beatmapObject.fromPrefab)
+							{
+								ptr = "<br>PID: " + beatmapObject.prefabID + " | " + beatmapObject.prefabInstanceID;
+							}
+							else
+							{
+								ptr = "<br>Not from prefab";
+							}
+						}
+
+						Color color = Color.white;
+						if (AudioManager.inst.CurrentAudioSource.time < beatmapObject.StartTime)
+                        {
+							color = GameManager.inst.LiveTheme.objectColors[(int)beatmapObject.events[3][0].eventValues[0]];
+                        }
+						else if (AudioManager.inst.CurrentAudioSource.time > beatmapObject.StartTime + beatmapObject.GetObjectLifeLength() && beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
+						{
+							color = GameManager.inst.LiveTheme.objectColors[(int)beatmapObject.events[3][beatmapObject.events[3].Count - 1].eventValues[0]];
+						}
+						else
+                        {
+							color = gameObjectRef.mat.color;
+						}
+
+						RTEditor.DisplayCustomNotification("RenderTimelineBeatmapObject", "<br>N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]" +
+							"<br>ID: {" + beatmapObject.id + "}" +
+							parent +
+							"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
+							text +
+							"<br>D: " + beatmapObject.Depth +
+							"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
+							"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
+							"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
+							"<br>ROT: " + transform.eulerAngles.z +
+							"<br>COL: " + RTEditor.ColorToHex(color) +
+							ptr, 1f, LSColors.HexToColor("202020"), color, LSColors.InvertBlackWhiteColor(color), "Beatmap Object");
+					}
+				}
+				if (__0.IsPrefab() && !string.IsNullOrEmpty(__0.ID) && __0.GetPrefabObjectData() != null)
+				{
+					var prefab = __0.GetPrefabData();
+                    var prefabInstance = __0.GetPrefabObjectData();
+
+                    Color prefabColor = DataManager.inst.PrefabTypes[prefab.Type].Color;
+					RTEditor.DisplayCustomNotification("RenderTimelinePrefabObject", "" +
+						"<br>N/ST: " + prefab.Name + " [ " + prefabInstance.StartTime.ToString() + " ]" +
+						"<br>PID: {" + prefab.ID + "}" +
+						"<br>PIID: {" + prefabInstance.ID + "}" +
+						"<br>Type: " + DataManager.inst.PrefabTypes[prefab.Type].Name +
+						"<br>O: " + prefab.Offset.ToString() +
+						"<br>Count: " + prefab.objects.Count +
+						"<br>ED: {L: " + prefabInstance.editorData.Layer + ", B: " + prefabInstance.editorData.Bin + "}" +
+						"<br>POS: {X: " + prefabInstance.events[0].eventValues[0] + ", Y: " + prefabInstance.events[0].eventValues[1] + "}" +
+						"<br>SCA: {X: " + prefabInstance.events[1].eventValues[0] + ", Y: " + prefabInstance.events[1].eventValues[1] + "}" +
+						"<br>ROT: " + prefabInstance.events[2].eventValues[0] +
+						"", 1f, LSColors.HexToColor("202020"), prefabColor, LSColors.InvertBlackWhiteColor(prefabColor), "Prefab Object");
+				}
+			}
+        }
 	}
 }

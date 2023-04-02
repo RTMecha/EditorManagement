@@ -15,19 +15,26 @@ using HarmonyLib;
 
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 using SimpleJSON;
-using DG.Tweening;
 
 using EditorManagement.Functions;
+using EditorManagement.Functions.Tools;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.6.0")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.1")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	public class EditorPlugin : BaseUnityPlugin
 	{
+		//TODO
+		//Implement CursorColor, EventsPlus (wait until I got a full property system setup), NewThemeSystems, NoAutokillSelectable, OriginOffset, PrefabAdditions, RenderDepthUnlimited
+		//Create a custom properties window that's nicely organized into different tabs depending on the Editor System.
+
+		//Update list
+		//-Fixed an issue with creating new levels not working
+		//-In the future I plan on combining other mods with this one(like RenderDepthUnlimited, OriginOffset and NoAutokillSelectable) just so it's easier for me to work on the mods, and it just makes sense overall to do that since all of those mods do stuff with the editor.
+
 		public static float scrollBar;
 		public static float timeEdit;
 		public static float itsTheTime;
@@ -36,6 +43,8 @@ namespace EditorManagement
 		public static bool levelAscend = true;
 		public static string editorPath = "editor";
 		public static WaveformType waveformType;
+		public static Direction direction;
+		public static Easings easing;
 
 		public enum WaveformType
 		{
@@ -43,27 +52,55 @@ namespace EditorManagement
 			Old
 		}
 
+		public enum Direction
+        {
+			Up,
+			Down
+        }
+
+		public enum Easings
+		{
+			Linear,
+			Instant,
+			InSine,
+			OutSine,
+			InOutSine,
+			InElastic,
+			OutElastic,
+			InOutElastic,
+			InBack,
+			OutBack,
+			InOutBack,
+			InBounce,
+			OutBounce,
+			InOutBounce,
+			InQuad,
+			OutQuad,
+			InOutQuad,
+			InCirc,
+			OutCirc,
+			InOutCirc,
+			InExpo,
+			OutExpo,
+			InOutExpo
+        }
+
 		public static List<int> allLayers = new List<int>();
 
-		private static void CheckAllLayers()
-        {
-			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-			{
-				allLayers.Add(beatmapObject.editorData.Layer);
-			}
-		}
+		public static RTEditor editor;
 
 		//AutoSaves
 		public static ConfigEntry<float> AutoSaveRepeat { get; set; }
 		public static ConfigEntry<int> AutoSaveLimit { get; set; }
+		public static ConfigEntry<bool> SavingUpdatesTime { get; set; }
 
 		//Zoom cap
 		public static ConfigEntry<Vector2> ObjZoomBounds { get; set; }
 		public static ConfigEntry<Vector2> ETLZoomBounds { get; set; }
+		public static ConfigEntry<float> ZoomAmount { get; set; }
 
 		//Open File Configs
 		public static ConfigEntry<Vector2> ORLAnchoredPos { get; set; }
-		public static ConfigEntry<Quaternion> ORLLocalRot { get; set; }
 		public static ConfigEntry<Vector2> ORLSizeDelta { get; set; }
 		public static ConfigEntry<Vector2> OGLVLCellSize { get; set; }
 		public static ConfigEntry<Vector2> ORLTogglePos { get; set; }
@@ -113,8 +150,17 @@ namespace EditorManagement
 		public static ConfigEntry<int> MarkerEndIndex { get; set; }
 		public static ConfigEntry<int> MarkerStartIndex { get; set; }
 
+		//General Editor
 		public static ConfigEntry<bool> IfEditorStartTime { get; set; }
 		public static ConfigEntry<bool> IfEditorPauses { get; set; }
+		public static ConfigEntry<bool> IfEditorSlowLoads { get; set; }
+		public static ConfigEntry<bool> EditorDebug { get; set; }
+		public static ConfigEntry<bool> DragUI { get; set; }
+
+		//Notifications
+		public static ConfigEntry<float> NotificationWidth { get; set; }
+		public static ConfigEntry<float> NotificationSize { get; set; }
+		public static ConfigEntry<Direction> NotificationDirection { get; set; }
 
 		public static ConfigEntry<float> TimeModify { get; set; }
 
@@ -145,21 +191,115 @@ namespace EditorManagement
 		public static ConfigEntry<Color> EditorGUIColor6 { get; set; }
 		public static ConfigEntry<Color> EditorGUIColor7 { get; set; }
 		public static ConfigEntry<Color> EditorGUIColor8 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor9 { get; set; }
+        public static ConfigEntry<Color> EditorGUIColor9 { get; set; }
 
-		private void Awake()
+		public static ConfigEntry<bool> OFPAnimateX { get; set; }
+		public static ConfigEntry<bool> OFPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> OFPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> OFPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> OFPAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> NFPAnimateX { get; set; }
+		public static ConfigEntry<bool> NFPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> NFPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> NFPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> NFPAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> PPAnimateX { get; set; }
+		public static ConfigEntry<bool> PPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> PPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> PPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> PPAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> OBJPAnimateX { get; set; }
+		public static ConfigEntry<bool> OBJPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> OBJPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> OBJPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> OBJPAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> BGPAnimateX { get; set; }
+		public static ConfigEntry<bool> BGPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> BGPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> BGPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> BGPAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> QAPAnimateX { get; set; }
+		public static ConfigEntry<bool> QAPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> QAPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> QAPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> QAPAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> GODAnimateX { get; set; }
+		public static ConfigEntry<bool> GODAnimateY { get; set; }
+		public static ConfigEntry<Vector2> GODAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> GODAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> GODAnimateEaseOut { get; set; }
+
+		public static ConfigEntry<bool> ShowSelector { get; set; }
+
+        private void Awake()
 		{
 			inst = this;
 
 			Logger.LogInfo("Plugin Editor Management is loaded!");
 
+			//Animate GUI (Open File Popup)
+			OFPAnimateX = Config.Bind("Animate GUI", "Open File Popup Animate X", true, "If the X scale should animate or not.");
+			OFPAnimateY = Config.Bind("Animate GUI", "Open File Popup Animate Y", true, "If the Y scale should animate or not.");
+			OFPAnimateInOutSpeeds = Config.Bind("Animate GUI", "Open File Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			OFPAnimateEaseIn = Config.Bind("Animate GUI", "Open File Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			OFPAnimateEaseOut = Config.Bind("Animate GUI", "Open File Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			NFPAnimateX = Config.Bind("Animate GUI", "New File Popup Animate X", true, "If the X scale should animate or not.");
+			NFPAnimateY = Config.Bind("Animate GUI", "New File Popup Animate Y", true, "If the Y scale should animate or not.");
+			NFPAnimateInOutSpeeds = Config.Bind("Animate GUI", "New File Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			NFPAnimateEaseIn = Config.Bind("Animate GUI", "New File Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			NFPAnimateEaseOut = Config.Bind("Animate GUI", "New File Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			PPAnimateX = Config.Bind("Animate GUI", "Prefab Popup Animate X", true, "If the X scale should animate or not.");
+			PPAnimateY = Config.Bind("Animate GUI", "Prefab Popup Animate Y", true, "If the Y scale should animate or not.");
+			PPAnimateInOutSpeeds = Config.Bind("Animate GUI", "Prefab Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			PPAnimateEaseIn = Config.Bind("Animate GUI", "Prefab Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			PPAnimateEaseOut = Config.Bind("Animate GUI", "Prefab Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			QAPAnimateX = Config.Bind("Animate GUI", "Object Tags Popup Animate X", true, "If the X scale should animate or not.");
+			QAPAnimateY = Config.Bind("Animate GUI", "Object Tags Popup Animate Y", true, "If the Y scale should animate or not.");
+			QAPAnimateInOutSpeeds = Config.Bind("Animate GUI", "Object Tags Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			QAPAnimateEaseIn = Config.Bind("Animate GUI", "Object Tags Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			QAPAnimateEaseOut = Config.Bind("Animate GUI", "Object Tags Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			OBJPAnimateX = Config.Bind("Animate GUI", "Create Object Popup Animate X", true, "If the X scale should animate or not.");
+			OBJPAnimateY = Config.Bind("Animate GUI", "Create Object Popup Animate Y", true, "If the Y scale should animate or not.");
+			OBJPAnimateInOutSpeeds = Config.Bind("Animate GUI", "Create Object Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			OBJPAnimateEaseIn = Config.Bind("Animate GUI", "Create Object Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			OBJPAnimateEaseOut = Config.Bind("Animate GUI", "Create Object Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			BGPAnimateX = Config.Bind("Animate GUI", "Create BG Popup Animate X", true, "If the X scale should animate or not.");
+			BGPAnimateY = Config.Bind("Animate GUI", "Create BG Popup Animate Y", true, "If the Y scale should animate or not.");
+			BGPAnimateInOutSpeeds = Config.Bind("Animate GUI", "Create BG Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			BGPAnimateEaseIn = Config.Bind("Animate GUI", "Create BG Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			BGPAnimateEaseOut = Config.Bind("Animate GUI", "Create BG Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			GODAnimateX = Config.Bind("Animate GUI", "Object Editor Animate X", true, "If the X scale should animate or not.");
+			GODAnimateY = Config.Bind("Animate GUI", "Object Editor Animate Y", true, "If the Y scale should animate or not.");
+			GODAnimateInOutSpeeds = Config.Bind("Animate GUI", "Object Editor Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			GODAnimateEaseIn = Config.Bind("Animate GUI", "Object Editor Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			GODAnimateEaseOut = Config.Bind("Animate GUI", "Object Editor Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
 			//AutoSave Config
 			AutoSaveRepeat = Config.Bind("AutoSave", "Repeat", 600f, "The repeat time of autosave.");
 			AutoSaveLimit = Config.Bind("AutoSave", "Limit", 3, "If autosave count reaches this number, delete the first autosave.");
+			SavingUpdatesTime = Config.Bind("Saving", "Update Date Edited to Recent", false, "Enabling this will save date_edited in metadata.lsb as the most recent.");
 
 			//General Editor stuff
 			IfEditorStartTime = Config.Bind("General Editor", "Load Saved Time", true, "If enabled, sets the audio time to the last saved timeline position on level load.");
 			IfEditorPauses = Config.Bind("General Editor", "Editor Pauses", false, "If enabled, the editor pauses on level load.");
+			IfEditorSlowLoads = Config.Bind("General Editor", "One by one load", false, "If enabled, the editor will load each object individually rather than all at once.");
+			EditorDebug = Config.Bind("General Editor", "Debug", false, "If enabled, specific debugging functions for the editor will be enabled.");
+			DragUI = Config.Bind("General Editor", "Drag UI", false, "if enabled, specific UI popups can be dragged around.");
+			NotificationWidth = Config.Bind("Editor Notifications", "Notification Width", 221f, "Width of the notification popups.");
+			NotificationSize = Config.Bind("Editor Notifications", "Notification Size", 1f, "Size of the notification popups.");
+			NotificationDirection = Config.Bind("Editor Notifications", "Notification Direction", Direction.Down, "Size of the notification popups.");
 
 			//New Markers Config
 			MarkerColN0 = Config.Bind("Markers", "Color 0", Color.white, "Color 0 of the second set of marker colors.");
@@ -177,14 +317,13 @@ namespace EditorManagement
 			MarkerEndIndex = Config.Bind("Markers", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.");
 
 			//Open File Popup Configs
-			ORLAnchoredPos = Config.Bind("Open File Popup Base", "00 Anchored Pos", Vector2.zero, "The position of the open file popup.");
-			ORLLocalRot = Config.Bind("Open File Popup Base", "01 Local Rot", new Quaternion(0f, 0f, 0f, 1f), "Local rotation of the open file popup.");
-			ORLSizeDelta = Config.Bind("Open File Popup Base", "02 Size Delta", new Vector2(600f, 400f), "The size of the open file popup.");
-			ORLPathPos = Config.Bind("Open File Popup Base", "03 Editor Path Pos", new Vector2(125f, 16f), "The position of the editor path input field.");
-			ORLPathLength = Config.Bind("Open File Popup Base", "04 Editor Path Length", 254f, "The length of the editor path input field.");
-			ORLRefreshPos = Config.Bind("Open File Popup Base", "05 List Refresh Pos", new Vector2(260f, 432f), "The position of the refresh button.");
-			ORLTogglePos = Config.Bind("Open File Popup Base", "06 Toggle Pos", new Vector2(600f, 16f), "The position of the descending toggle.");
-			ORLDropdownPos = Config.Bind("Open File Popup Base", "07 Dropdown Pos", new Vector2(501f, 416f), "The position of the sort dropdown.");
+			ORLAnchoredPos = Config.Bind("Open File Popup Base", "00 Position", Vector2.zero, "The position of the open file popup.");
+			ORLSizeDelta = Config.Bind("Open File Popup Base", "01 Scale", new Vector2(600f, 400f), "The size of the open file popup.");
+			ORLPathPos = Config.Bind("Open File Popup Base", "02 Editor Path Pos", new Vector2(125f, 16f), "The position of the editor path input field.");
+			ORLPathLength = Config.Bind("Open File Popup Base", "03 Editor Path Length", 254f, "The length of the editor path input field.");
+			ORLRefreshPos = Config.Bind("Open File Popup Base", "04 List Refresh Pos", new Vector2(260f, 432f), "The position of the refresh button.");
+			ORLTogglePos = Config.Bind("Open File Popup Base", "05 Toggle Pos", new Vector2(600f, 16f), "The position of the descending toggle.");
+			ORLDropdownPos = Config.Bind("Open File Popup Base", "06 Dropdown Pos", new Vector2(501f, 416f), "The position of the sort dropdown.");
 
 			OGLVLCellSize = Config.Bind("Open File Popup Cells", "00 Cell Size", new Vector2(584f, 32f), "Size of each cell.");
 			OGLVLConstraint = Config.Bind("Open File Popup Cells", "01 Constraint Type", GridLayoutGroup.Constraint.FixedColumnCount, "How the cells are layed out.");
@@ -203,7 +342,7 @@ namespace EditorManagement
 			FButtonArtiClamp = Config.Bind("Open File Popup Buttons", "07 Artist Name Clamp", 16, "Limited length of the artist name.");
 			FButtonCreaClamp = Config.Bind("Open File Popup Buttons", "08 Creator Name Clamp", 16, "Limited length of the creator name.");
 			FButtonDescClamp = Config.Bind("Open File Popup Buttons", "09 Description Clamp", 16, "Limited length of the description.");
-			FButtonFormat = Config.Bind("Open File Popup Buttons", "0A Formatting", ".  /{0} : {1} by {2}", "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty and {5} is description.");
+			FButtonFormat = Config.Bind("Open File Popup Buttons", "0A Formatting", ".  /{0} : {1} by {2}", "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty, {5} is description and {6} is last edited.");
 
 			FButtonDifColor = Config.Bind("Open File Popup Buttons", "10 Difficulty Color", false, "If each button matches its associated difficulty color.");
 			FButtonDifColorMult = Config.Bind("Open File Popup Buttons", "11 Difficulty Multiply", 1.5f, "How much each buttons' color multiplies by difficulty color.");
@@ -225,6 +364,8 @@ namespace EditorManagement
 			//Zoom Cap Config
 			ObjZoomBounds = Config.Bind("Zoom Bounds", "Object timeline", new Vector2(1f, 512f), "The cap of the object timeline zoom.");
 			ETLZoomBounds = Config.Bind("Zoom Bounds", "Editor timeline", new Vector2(16f, 512f), "The cap of the editor timeline zoom.");
+			ZoomAmount = Config.Bind("Zoom Bounds", "Zoom Amount", 0.05f, "How much the timeline should zoom.");
+			lastEdtBounds = ETLZoomBounds.Value;
 
 			RenderTimeline = Config.Bind("Timeline", "00 Re-render Timeline", false, "If the timeline waveform should update when value is changed.");
 			TimelineBGColor = Config.Bind("Timeline", "01 BG Color", Color.clear, "Color of the background of the timeline. (Only for Legacy waveform type)");
@@ -244,6 +385,7 @@ namespace EditorManagement
 			HighlightColor = Config.Bind("Preview", "05 Object Highlight Amount", new Color(0.1f, 0.1f, 0.1f), "If an object is hovered, it adds this amount of color to the hovered object.");
 			HighlightDoubleColor = Config.Bind("Preview", "06 Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to all color channels.");
 			PreviewSelectFix = Config.Bind("Preview", "07 Empties not selectable in preview?", false, "If enabled, empties will not be selectable in preview.");
+			ShowSelector = Config.Bind("Preview", "Show Drag Selector?", true, "If enabled, a circular point will appear that allows you to move objects when the circlular point is dragged around.");
 			emptyDisable = PreviewSelectFix.Value;
 			emptyVisible = ShowEmpties.Value;
 
@@ -259,35 +401,39 @@ namespace EditorManagement
 
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
-			//Code written by Enchart
-			Harmony harmony = new Harmony("anything here");
+			//Patch classes
+			{
+				//Code written by Enchart
+				Harmony harmony = new Harmony("anything here");
 
-			MethodInfo layerSetter = typeof(DataManager.GameData.BeatmapObject.EditorData).GetProperty("Layer").GetSetMethod(false);
-			MethodInfo binSetter = typeof(DataManager.GameData.BeatmapObject.EditorData).GetProperty("Bin").GetSetMethod(false);
+				MethodInfo layerSetter = typeof(DataManager.GameData.BeatmapObject.EditorData).GetProperty("Layer").GetSetMethod(false);
+				MethodInfo binSetter = typeof(DataManager.GameData.BeatmapObject.EditorData).GetProperty("Bin").GetSetMethod(false);
 
-			MethodInfo prefix1 = typeof(EditorPlugin).GetMethod("LayerSetterPrefix", BindingFlags.Public | BindingFlags.Static);
-			MethodInfo prefix2 = typeof(EditorPlugin).GetMethod("BinSetterPrefix", BindingFlags.Public | BindingFlags.Static);
+				MethodInfo prefix1 = typeof(EditorPlugin).GetMethod("LayerSetterPrefix", BindingFlags.Public | BindingFlags.Static);
+				MethodInfo prefix2 = typeof(EditorPlugin).GetMethod("BinSetterPrefix", BindingFlags.Public | BindingFlags.Static);
 
-			HarmonyMethod prefixMethod1 = new HarmonyMethod(prefix1);
-			HarmonyMethod prefixMethod2 = new HarmonyMethod(prefix2);
+				HarmonyMethod prefixMethod1 = new HarmonyMethod(prefix1);
+				HarmonyMethod prefixMethod2 = new HarmonyMethod(prefix2);
 
-			var loadLevelEnumeratorMethod = AccessTools.Method(typeof(EditorManager), "LoadLevel");
-			var loadLevelMoveNext = AccessTools.EnumeratorMoveNext(loadLevelEnumeratorMethod);
+				var loadLevelEnumeratorMethod = AccessTools.Method(typeof(EditorManager), "LoadLevel");
+				var loadLevelMoveNext = AccessTools.EnumeratorMoveNext(loadLevelEnumeratorMethod);
 
-			MethodInfo prefix3 = typeof(EditorPlugin).GetMethod("LoadLevelEnumerator", BindingFlags.Public | BindingFlags.Static);
-			HarmonyMethod loadLevelPrefix = new HarmonyMethod(prefix3);
+				MethodInfo prefix3 = typeof(EditorPlugin).GetMethod("LoadLevelEnumerator", BindingFlags.Public | BindingFlags.Static);
+				HarmonyMethod loadLevelPrefix = new HarmonyMethod(prefix3);
 
-			harmony.PatchAll(typeof(EditorPlugin));
-			harmony.PatchAll(typeof(MetadataPatch));
-			harmony.PatchAll(typeof(ObjEditorPatch));
-			harmony.PatchAll(typeof(EditorPatch));
-			harmony.PatchAll(typeof(SettingEditorPatch));
-			harmony.PatchAll(typeof(MarkerEditorPatch));
-			harmony.PatchAll(typeof(PrefabEditorPatch));
+				harmony.PatchAll(typeof(EditorPlugin));
+				harmony.PatchAll(typeof(MetadataPatch));
+				harmony.PatchAll(typeof(ObjEditorPatch));
+				harmony.PatchAll(typeof(EditorPatch));
+				harmony.PatchAll(typeof(SettingEditorPatch));
+				harmony.PatchAll(typeof(MarkerEditorPatch));
+				harmony.PatchAll(typeof(PrefabEditorPatch));
+				harmony.PatchAll(typeof(DataManagerGameDataPatch));
 
-			harmony.Patch(layerSetter, prefix: prefixMethod1);
-			harmony.Patch(binSetter, prefix: prefixMethod2);
-			harmony.Patch(loadLevelMoveNext, postfix: loadLevelPrefix);
+				harmony.Patch(layerSetter, prefix: prefixMethod1);
+				harmony.Patch(binSetter, prefix: prefixMethod2);
+				harmony.Patch(loadLevelMoveNext, postfix: loadLevelPrefix);
+			}
 		}
 
 		public static EditorPlugin inst;
@@ -308,109 +454,264 @@ namespace EditorManagement
 
 		private static void UpdateEditorManagementConfigs(object sender, EventArgs e)
 		{
-			EditorGUI.UpdateEditorGUI();
-
-			RepeatReminder();
-
-			if (RenderTimeline.Value == true && GenerateWaveform.Value == true)
-            {
-				AssignTimelineTexture();
-				if (WaveformMode.Value == WaveformType.Legacy)
-				{
-					LegacyWaveform();
-				}
-				if (WaveformMode.Value == WaveformType.Old)
-				{
-					OldWaveform();
-				}
-			}
-			
-			SetNewMarkerColors();
-			SetAutosave();
-
-			if (IfReloadLList.Value == true)
+			if (EditorManager.inst != null)
 			{
-				EditorManager.inst.GetLevelList();
-				RenderBeatmapSet();
-			}
+				EditorGUI.UpdateEditorGUI();
 
-			//Create Local Variables
-			GameObject openLevel = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject;
-			Transform openTLevel = openLevel.transform;
-			RectTransform openRTLevel = openLevel.GetComponent<RectTransform>();
-			GameObject folderButton = EditorManager.inst.folderButtonPrefab;
-			Button fButtonBUTT = folderButton.GetComponent<Button>();
-			GridLayoutGroup openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
-			Text fButtonText = folderButton.transform.Find("folder-name").GetComponent<Text>();
+				RepeatReminder();
 
-			//Set Editor Zoom cap
-			EditorManager.inst.zoomBounds = ETLZoomBounds.Value;
+				if (RenderTimeline.Value == true && GenerateWaveform.Value == true)
+				{
+					AssignTimelineTexture();
+					if (WaveformMode.Value == WaveformType.Legacy)
+					{
+						LegacyWaveform();
+					}
+					if (WaveformMode.Value == WaveformType.Old)
+					{
+						OldWaveform();
+					}
+				}
 
-			//Set Open File Popup RectTransform
-			openRTLevel.anchoredPosition = ORLAnchoredPos.Value;
-			openRTLevel.localRotation = ORLLocalRot.Value;
-			openRTLevel.sizeDelta = ORLSizeDelta.Value;
+				SetNewMarkerColors();
+				SetAutosave();
 
-			//Set Open FIle Popup content GridLayoutGroup
-			openGridLVL.cellSize = OGLVLCellSize.Value;
-			openGridLVL.constraint = OGLVLConstraint.Value;
-			openGridLVL.constraintCount = OGLVLConstraintCount.Value;
-			openGridLVL.spacing = OGLVLSpacing.Value;
+				if (IfReloadLList.Value == true)
+				{
+					EditorManager.inst.GetLevelList();
+					RenderBeatmapSet();
+				}
 
-			//Folder Button
-			fButtonText.horizontalOverflow = FButtonHWrap.Value;
-			fButtonText.verticalOverflow = FButtonVWrap.Value;
-			fButtonText.color = FButtonTextColor.Value;
-			fButtonText.fontSize = FButtonFontSize.Value;
+				tracker.GetComponent<DraggableObject>().enabled = ShowSelector.Value;
+				tracker.GetComponent<PolygonCollider2D>().enabled = ShowSelector.Value;
+				tracker.GetComponent<MeshRenderer>().enabled = ShowSelector.Value;
 
-			//Folder Button Colors
-			ColorBlock cb = fButtonBUTT.colors;
-			cb.normalColor = FButtonNColor.Value;
-			cb.pressedColor = FButtonPColor.Value;
-			cb.highlightedColor = FButtonHColor.Value;
-			cb.selectedColor = FButtonSColor.Value;
-			cb.fadeDuration = FButtonFadeDColor.Value;
-			fButtonBUTT.colors = cb;
+				//Animate GUI
+				{
+					var openFilePopupAIGUI = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
 
-			ObjEditor.inst.zoomBounds = ObjZoomBounds.Value;
-			EditorManager.inst.zoomBounds = ETLZoomBounds.Value;
-			EditorManager.inst.RenderTimeline();
+					openFilePopupAIGUI.SetEasing((int)OFPAnimateEaseIn.Value, (int)OFPAnimateEaseOut.Value);
+					openFilePopupAIGUI.animateX = OFPAnimateX.Value;
+					openFilePopupAIGUI.animateY = OFPAnimateY.Value;
+					openFilePopupAIGUI.animateInTime = OFPAnimateInOutSpeeds.Value.x;
+					openFilePopupAIGUI.animateOutTime = OFPAnimateInOutSpeeds.Value.y;
 
-			RectTransform dropdownRT = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("tod-dropdown(Clone)").gameObject.GetComponent<RectTransform>();
-			dropdownRT.anchoredPosition = ORLDropdownPos.Value;
+					var newFilePopupAIGUI = EditorManager.inst.GetDialog("New File Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
 
-			RectTransform toggleRT = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("toggle(Clone)").gameObject.GetComponent<RectTransform>();
-			toggleRT.anchoredPosition = ORLTogglePos.Value;
+					newFilePopupAIGUI.SetEasing((int)NFPAnimateEaseIn.Value, (int)NFPAnimateEaseOut.Value);
+					newFilePopupAIGUI.animateX = NFPAnimateX.Value;
+					newFilePopupAIGUI.animateY = NFPAnimateY.Value;
+					newFilePopupAIGUI.animateInTime = NFPAnimateInOutSpeeds.Value.x;
+					newFilePopupAIGUI.animateOutTime = NFPAnimateInOutSpeeds.Value.y;
 
-			EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().anchoredPosition = ORLPathPos.Value;
-			EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(ORLPathLength.Value, 34f);
-			EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("reload").gameObject.GetComponent<RectTransform>().anchoredPosition = ORLRefreshPos.Value;
+					var prefabPopupAIGUI = EditorManager.inst.GetDialog("Prefab Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
 
-			if (PreviewSelectFix.Value != emptyDisable)
-            {
-				emptyDisable = PreviewSelectFix.Value;
-				ObjectManager.inst.updateObjects();
-            }
-			if (ShowEmpties.Value != emptyVisible)
-            {
-				emptyVisible = ShowEmpties.Value;
-				ObjectManager.inst.updateObjects();
-			}
-			if (ShowDamagable.Value != showDamagable)
-            {
-				showDamagable = ShowDamagable.Value;
-				ObjectManager.inst.updateObjects();
+					prefabPopupAIGUI.SetEasing((int)PPAnimateEaseIn.Value, (int)PPAnimateEaseOut.Value);
+					prefabPopupAIGUI.animateX = PPAnimateX.Value;
+					prefabPopupAIGUI.animateY = PPAnimateY.Value;
+					prefabPopupAIGUI.animateInTime = PPAnimateInOutSpeeds.Value.x;
+					prefabPopupAIGUI.animateOutTime = PPAnimateInOutSpeeds.Value.y;
+
+					var quickActionsPopupAIGUI = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
+
+					quickActionsPopupAIGUI.SetEasing((int)QAPAnimateEaseIn.Value, (int)QAPAnimateEaseOut.Value);
+					quickActionsPopupAIGUI.animateX = QAPAnimateX.Value;
+					quickActionsPopupAIGUI.animateY = QAPAnimateY.Value;
+					quickActionsPopupAIGUI.animateInTime = QAPAnimateInOutSpeeds.Value.x;
+					quickActionsPopupAIGUI.animateOutTime = QAPAnimateInOutSpeeds.Value.y;
+
+					var objectOptionsPopupAIGUI = EditorManager.inst.GetDialog("Object Options Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
+
+					objectOptionsPopupAIGUI.SetEasing((int)OBJPAnimateEaseIn.Value, (int)OBJPAnimateEaseOut.Value);
+					objectOptionsPopupAIGUI.animateX = OBJPAnimateX.Value;
+					objectOptionsPopupAIGUI.animateY = OBJPAnimateY.Value;
+					objectOptionsPopupAIGUI.animateInTime = OBJPAnimateInOutSpeeds.Value.x;
+					objectOptionsPopupAIGUI.animateOutTime = OBJPAnimateInOutSpeeds.Value.y;
+
+					var bgOptionsPopupAIGUI = EditorManager.inst.GetDialog("BG Options Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
+
+					bgOptionsPopupAIGUI.SetEasing((int)BGPAnimateEaseIn.Value, (int)BGPAnimateEaseOut.Value);
+					bgOptionsPopupAIGUI.animateX = BGPAnimateX.Value;
+					bgOptionsPopupAIGUI.animateY = BGPAnimateY.Value;
+					bgOptionsPopupAIGUI.animateInTime = BGPAnimateInOutSpeeds.Value.x;
+					bgOptionsPopupAIGUI.animateOutTime = BGPAnimateInOutSpeeds.Value.y;
+
+					var gameObjectDialogAIGUI = EditorManager.inst.GetDialog("Object Editor").Dialog.gameObject.GetComponent<AnimateInGUI>();
+
+					gameObjectDialogAIGUI.SetEasing((int)GODAnimateEaseIn.Value, (int)GODAnimateEaseOut.Value);
+					gameObjectDialogAIGUI.animateX = GODAnimateX.Value;
+					gameObjectDialogAIGUI.animateY = GODAnimateY.Value;
+					gameObjectDialogAIGUI.animateInTime = GODAnimateInOutSpeeds.Value.x;
+					gameObjectDialogAIGUI.animateOutTime = GODAnimateInOutSpeeds.Value.y;
+
+					if (EditorManager.inst.GetDialog("Player Editor").Dialog && EditorManager.inst.GetDialog("Object Editor").Dialog.gameObject.GetComponent<AnimateInGUI>())
+					{
+						var playerEditorDialogAIGUI = EditorManager.inst.GetDialog("Object Editor").Dialog.gameObject.GetComponent<AnimateInGUI>();
+
+						playerEditorDialogAIGUI.SetEasing((int)GODAnimateEaseIn.Value, (int)GODAnimateEaseOut.Value);
+						playerEditorDialogAIGUI.animateX = GODAnimateX.Value;
+						playerEditorDialogAIGUI.animateY = GODAnimateY.Value;
+						playerEditorDialogAIGUI.animateInTime = GODAnimateInOutSpeeds.Value.x;
+						playerEditorDialogAIGUI.animateOutTime = GODAnimateInOutSpeeds.Value.y;
+					}
+				}
+
+				//Create Local Variables
+				GameObject openLevel = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject;
+				Transform openTLevel = openLevel.transform;
+				RectTransform openRTLevel = openLevel.GetComponent<RectTransform>();
+				GameObject folderButton = EditorManager.inst.folderButtonPrefab;
+				Button fButtonBUTT = folderButton.GetComponent<Button>();
+				GridLayoutGroup openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
+				Text fButtonText = folderButton.transform.Find("folder-name").GetComponent<Text>();
+				var notifyRT = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").GetComponent<RectTransform>();
+				var notifyGroup = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").GetComponent<VerticalLayoutGroup>();
+				notifyRT.sizeDelta = new Vector2(NotificationWidth.Value, 632f);
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").transform.localScale = new Vector3(NotificationSize.Value, NotificationSize.Value, 1f);
+
+				if (NotificationDirection.Value == Direction.Down)
+                {
+					notifyRT.anchoredPosition = new Vector2(8f, 408f);
+					notifyGroup.childAlignment = TextAnchor.LowerLeft;
+
+
+				}
+				if (NotificationDirection.Value == Direction.Up)
+                {
+					notifyRT.anchoredPosition = new Vector2(8f, 410f);
+					notifyGroup.childAlignment = TextAnchor.UpperLeft;
+				}
+
+				//Set Editor Zoom cap
+				EditorManager.inst.zoomBounds = ETLZoomBounds.Value;
+
+				//Set Open File Popup RectTransform
+				openRTLevel.anchoredPosition = ORLAnchoredPos.Value;
+				openRTLevel.sizeDelta = ORLSizeDelta.Value;
+
+				//Set Open FIle Popup content GridLayoutGroup
+				openGridLVL.cellSize = OGLVLCellSize.Value;
+				openGridLVL.constraint = OGLVLConstraint.Value;
+				openGridLVL.constraintCount = OGLVLConstraintCount.Value;
+				openGridLVL.spacing = OGLVLSpacing.Value;
+
+				//Folder Button
+				fButtonText.horizontalOverflow = FButtonHWrap.Value;
+				fButtonText.verticalOverflow = FButtonVWrap.Value;
+				fButtonText.color = FButtonTextColor.Value;
+				fButtonText.fontSize = FButtonFontSize.Value;
+
+				//Folder Button Colors
+				ColorBlock cb = fButtonBUTT.colors;
+				cb.normalColor = FButtonNColor.Value;
+				cb.pressedColor = FButtonPColor.Value;
+				cb.highlightedColor = FButtonHColor.Value;
+				cb.selectedColor = FButtonSColor.Value;
+				cb.fadeDuration = FButtonFadeDColor.Value;
+				fButtonBUTT.colors = cb;
+
+				ObjEditor.inst.zoomBounds = ObjZoomBounds.Value;
+				if (ETLZoomBounds.Value != lastEdtBounds)
+				{
+					lastEdtBounds = ETLZoomBounds.Value;
+					EditorManager.inst.zoomBounds = ETLZoomBounds.Value;
+					EditorManager.inst.RenderTimeline();
+				}
+
+				RectTransform dropdownRT = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("tod-dropdown(Clone)").gameObject.GetComponent<RectTransform>();
+				dropdownRT.anchoredPosition = ORLDropdownPos.Value;
+
+				RectTransform toggleRT = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("toggle(Clone)").gameObject.GetComponent<RectTransform>();
+				toggleRT.anchoredPosition = ORLTogglePos.Value;
+
+				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().anchoredPosition = ORLPathPos.Value;
+				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(ORLPathLength.Value, 34f);
+				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("reload").gameObject.GetComponent<RectTransform>().anchoredPosition = ORLRefreshPos.Value;
+
+				if (PreviewSelectFix.Value != emptyDisable)
+				{
+					emptyDisable = PreviewSelectFix.Value;
+					ObjectManager.inst.updateObjects();
+				}
+				if (ShowEmpties.Value != emptyVisible)
+				{
+					emptyVisible = ShowEmpties.Value;
+					ObjectManager.inst.updateObjects();
+				}
+				if (ShowDamagable.Value != showDamagable)
+				{
+					showDamagable = ShowDamagable.Value;
+					ObjectManager.inst.updateObjects();
+				}
 			}
 		}
+
+		public static Vector2 lastEdtBounds;
 
 		public static bool emptyDisable;
 		public static bool emptyVisible;
 		public static bool showDamagable;
+		public static GameObject tracker;
+
+		public static void ListObjectLayers()
+		{
+			allLayers.Clear();
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+			{
+				if (!allLayers.Contains(beatmapObject.editorData.Layer))
+				{
+					allLayers.Add(beatmapObject.editorData.Layer);
+				}
+			}
+
+			allLayers = (from x in allLayers
+						 orderby x ascending
+						 select x).ToList();
+
+			string lister = "";
+
+			foreach (var l in allLayers)
+			{
+				int num = l + 1;
+				if (num > 5)
+				{
+					num -= 1;
+				}
+				if (!lister.Contains(num.ToString()))
+				{
+					lister += num.ToString() + ", ";
+				}
+			}
+
+			RTEditor.DisplayNotification("List Object Layers", "Objects on Layers:<br>[ " + lister + " ]", 2f, EditorManager.NotificationType.Info);
+		}
 
 		[HarmonyPatch(typeof(ObjectManager), "Awake")]
 		[HarmonyPostfix]
 		private static void ObjectAwakePatch()
         {
+			GameObject gameObject = new GameObject("UI stuff");
+
+			var objectTracker = Instantiate(ObjectManager.inst.objectPrefabs[1].options[0].transform.GetChild(0).gameObject);
+			objectTracker.transform.SetParent(gameObject.transform);
+			if (objectTracker.GetComponent<SelectObjectInEditor>())
+			{
+				Destroy(objectTracker.GetComponent<SelectObjectInEditor>());
+			}
+			if (objectTracker.GetComponent<RTObject>())
+			{
+				Destroy(objectTracker.GetComponent<RTObject>());
+			}
+			objectTracker.GetComponent<PolygonCollider2D>().enabled = ShowSelector.Value;
+			objectTracker.GetComponent<MeshRenderer>().enabled = ShowSelector.Value;
+			objectTracker.GetComponent<MeshRenderer>().material.color = new Color(1f, 1f, 1f, 1f);
+			objectTracker.AddComponent<DraggableObject>();
+			objectTracker.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
+
+			objectTracker.GetComponent<DraggableObject>().enabled = ShowSelector.Value;
+
+			tracker = objectTracker;
+
 			for (int i = 0; i < ObjectManager.inst.objectPrefabs.Count; i++)
 			{
 				if (i != 4)
@@ -427,42 +728,137 @@ namespace EditorManagement
 		[HarmonyPostfix]
 		private static void ObjectUpdatePatch()
 		{
-			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+			if (EditorManager.inst != null)
 			{
-				if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
+				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 				{
-					ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-					if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && PreviewSelectFix.Value == true)
+					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[beatmapObject.id] != null)
 					{
-						if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
-						{
-							Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
+						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+						Transform transform = null;
+						if (gameObjectRef.rend != null)
+                        {
+							transform = gameObjectRef.rend.transform.GetParent();
 						}
-						if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
+
+						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && PreviewSelectFix.Value == true)
 						{
-							Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
+							if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
+							{
+								Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
+							}
+							if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
+							{
+								Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
+							}
 						}
-					}
 
-					if (ShowEmpties.Value == true)
-					{
-						if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
+						if (ShowEmpties.Value == true)
 						{
-							MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
-							gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
+							if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
+							{
+								MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
+								gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
 
-							mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
+								mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
 
-							gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
+								gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
+							}
 						}
-					}
 
-					if (ShowDamagable.Value == true)
-					{
-						if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
+						if (ShowDamagable.Value == true)
 						{
-							ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-							gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
+							if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
+							{
+								ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+								gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
+							}
+						}
+
+						if (EditorDebug.Value == true)
+						{
+							if (gameObjectRef.rend != null && gameObjectRef.rend.GetComponent<RTObject>())
+							{
+								var rtobj = gameObjectRef.rend.GetComponent<RTObject>();
+								rtobj.tipEnabled = true;
+								if (rtobj.tooltipLanguages.Count == 0)
+								{
+									rtobj.tooltipLanguages.Add(Triggers.NewTooltip(beatmapObject.name + " [ " + beatmapObject.StartTime + " ]", "", new List<string>()));
+								}
+
+								string parent = "";
+								if (!string.IsNullOrEmpty(beatmapObject.parent))
+								{
+									parent = "<br>P: " + beatmapObject.parent + " (" + beatmapObject.GetParentType() + ")";
+								}
+								else
+								{
+									parent = "<br>P: No Parent" + " (" + beatmapObject.GetParentType() + ")";
+								}
+
+								string text = "";
+								if (beatmapObject.shape != 4 || beatmapObject.shape != 6)
+								{
+									text = "<br>S: " + RTEditor.GetShape(beatmapObject.shape, beatmapObject.shapeOption) +
+										"<br>T: " + beatmapObject.text;
+								}
+								if (beatmapObject.shape == 4)
+								{
+									text = "<br>S: Text" +
+										"<br>T: " + beatmapObject.text;
+								}
+								if (beatmapObject.shape == 6)
+								{
+									text = "<br>S: Image" +
+										"<br>T: " + beatmapObject.text;
+								}
+
+								string ptr = "";
+								if (beatmapObject.fromPrefab && !string.IsNullOrEmpty(beatmapObject.prefabID) && !string.IsNullOrEmpty(beatmapObject.prefabInstanceID))
+								{
+									ptr = "<br>PID: " + beatmapObject.prefabID + " | " + beatmapObject.prefabInstanceID;
+								}
+								else
+								{
+									ptr = "<br>Not from prefab";
+								}
+
+								if (rtobj.tooltipLanguages[0].desc != "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]")
+								{
+									rtobj.tooltipLanguages[0].desc = "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]";
+								}
+								if (rtobj.tooltipLanguages[0].hint != "ID: {" + beatmapObject.id + "}" +
+									parent +
+									"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
+									text +
+									"<br>D: " + beatmapObject.Depth +
+									"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
+									"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
+									"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
+									"<br>ROT: " + transform.eulerAngles.z +
+									"<br>COL: " + RTEditor.ColorToHex(gameObjectRef.mat.color) +
+									ptr)
+								{
+									rtobj.tooltipLanguages[0].hint = "ID: {" + beatmapObject.id + "}" +
+										parent +
+										"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
+										text +
+										"<br>D: " + beatmapObject.Depth +
+										"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
+										"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
+										"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
+										"<br>ROT: " + transform.eulerAngles.z +
+										"<br>COL: " + RTEditor.ColorToHex(gameObjectRef.mat.color) +
+										ptr;
+								}
+							}
+						}
+						else
+						{
+							if (gameObjectRef.rend != null && gameObjectRef.rend.GetComponent<RTObject>())
+							{
+								gameObjectRef.rend.GetComponent<RTObject>().tipEnabled = false;
+							}
 						}
 					}
 				}
@@ -473,6 +869,11 @@ namespace EditorManagement
 		[HarmonyPostfix]
 		private static void GameUpdatePatch()
         {
+			if (EditorManager.inst == null)
+            {
+				Destroy(tracker);
+            }
+
 			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 			{
 				if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
@@ -522,7 +923,7 @@ namespace EditorManagement
 
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").gameObject.SetActive(true);
 
-				GameObject scrollView = UnityEngine.Object.Instantiate<GameObject>(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
+				GameObject scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
 				scrollView.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
 				LSHelpers.DeleteChildren(scrollView.transform.Find("Viewport/Content"), false);
 				scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(383f, 690f);
@@ -543,7 +944,7 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -125f);
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text").GetComponent<RectTransform>().sizeDelta = new Vector2(-68f, 0f);
 
-				GameObject multiLayerSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
+				GameObject multiLayerSet = Instantiate(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
 				multiLayerSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiLayerSet.name = "layer";
 				multiLayerSet.transform.SetSiblingIndex(1);
@@ -552,7 +953,7 @@ namespace EditorManagement
 
 				multiLayerSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
-				GameObject multiLB = UnityEngine.Object.Instantiate<GameObject>(multiLayerSet.transform.GetChild(0).Find("<").gameObject);
+				GameObject multiLB = Instantiate(multiLayerSet.transform.GetChild(0).Find("<").gameObject);
 				multiLB.transform.SetParent(multiLayerSet.transform.GetChild(0));
 				multiLB.transform.SetSiblingIndex(2);
 				multiLB.name = "|";
@@ -618,7 +1019,7 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiDepthSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
+				GameObject multiDepthSet = Instantiate(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
 				multiDepthSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiDepthSet.name = "depth";
 				multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text = "15";
@@ -626,7 +1027,7 @@ namespace EditorManagement
 
 				multiDepthSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
-				GameObject multiDB = UnityEngine.Object.Instantiate<GameObject>(multiDepthSet.transform.GetChild(0).Find("<").gameObject);
+				GameObject multiDB = Instantiate(multiDepthSet.transform.GetChild(0).Find("<").gameObject);
 				multiDB.transform.SetParent(multiDepthSet.transform.GetChild(0));
 				multiDB.transform.SetSiblingIndex(2);
 				multiDB.name = "|";
@@ -667,12 +1068,12 @@ namespace EditorManagement
 				scrollView.transform.Find("Viewport/Content/label layer").SetSiblingIndex(0);
 
 				//Song Time
-				GameObject multiTextSongT = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextSongT = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextSongT.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextSongT.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Song Time";
 				multiTextSongT.name = "label";
 
-				GameObject multiTimeSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
+				GameObject multiTimeSet = Instantiate(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
 				multiTimeSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTimeSet.name = "time";
 				multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text = "0";
@@ -680,7 +1081,7 @@ namespace EditorManagement
 
 				multiTimeSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
-				GameObject multiTB = UnityEngine.Object.Instantiate<GameObject>(multiTimeSet.transform.GetChild(0).Find("<").gameObject);
+				GameObject multiTB = Instantiate(multiTimeSet.transform.GetChild(0).Find("<").gameObject);
 				multiTB.transform.SetParent(multiTimeSet.transform.GetChild(0));
 				multiTB.transform.SetSiblingIndex(2);
 				multiTB.name = "|";
@@ -723,12 +1124,12 @@ namespace EditorManagement
 				});
 
 				//Name
-				GameObject multiTextName = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextName = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextName.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextName.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Name";
 				multiTextName.name = "label";
 
-				GameObject multiNameSet = UnityEngine.Object.Instantiate<GameObject>(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
+				GameObject multiNameSet = Instantiate(EventEditor.inst.dialogRight.transform.Find("zoom/zoom").gameObject);
 				multiNameSet.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiNameSet.name = "name";
 				multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
@@ -738,7 +1139,7 @@ namespace EditorManagement
 
 				multiNameSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
-				GameObject multiNB = UnityEngine.Object.Instantiate<GameObject>(multiNameSet.transform.GetChild(0).Find("<").gameObject);
+				GameObject multiNB = Instantiate(multiNameSet.transform.GetChild(0).Find("<").gameObject);
 				multiNB.transform.SetParent(multiNameSet.transform.GetChild(0));
 				multiNB.transform.SetSiblingIndex(2);
 				multiNB.name = "|";
@@ -793,12 +1194,12 @@ namespace EditorManagement
 				});
 
 				//Song Time Autokill
-				GameObject multiTextSongAK = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextSongAK = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextSongAK.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextSongAK.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Set Song Time Autokill to Current";
 				multiTextSongAK.name = "label";
 
-				GameObject setAutokill = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				GameObject setAutokill = Instantiate(eventButton);
 				setAutokill.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				setAutokill.name = "set autokill";
 
@@ -821,12 +1222,12 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiTextTypeCycle = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextTypeCycle = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextTypeCycle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextTypeCycle.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Cycle object type";
 				multiTextTypeCycle.name = "label";
 
-				GameObject cycleObjType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				GameObject cycleObjType = Instantiate(eventButton);
 				cycleObjType.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				cycleObjType.name = "cycle obj type";
 
@@ -852,12 +1253,12 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiTextLockSwap = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextLockSwap = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextLockSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextLockSwap.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Swap each object's lock state";
 				multiTextLockSwap.name = "label";
 
-				GameObject lockSwap = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				GameObject lockSwap = Instantiate(eventButton);
 				lockSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				lockSwap.name = "lock swap";
 
@@ -879,12 +1280,12 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiTextLockToggle = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextLockToggle = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextLockToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextLockToggle.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Toggle all object's lock state";
 				multiTextLockToggle.name = "label";
 
-				GameObject lockToggle = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				GameObject lockToggle = Instantiate(eventButton);
 				lockToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				lockToggle.name = "lock toggle";
 
@@ -916,12 +1317,12 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiTextCollapseSwap = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextCollapseSwap = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextCollapseSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextCollapseSwap.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Swap each object's collapse state";
 				multiTextCollapseSwap.name = "label";
 
-				GameObject collapseSwap = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				GameObject collapseSwap = Instantiate(eventButton);
 				collapseSwap.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				collapseSwap.name = "collapse swap";
 
@@ -943,12 +1344,12 @@ namespace EditorManagement
 					}
 				});
 
-				GameObject multiTextCollapseToggle = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+				GameObject multiTextCollapseToggle = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 				multiTextCollapseToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				multiTextCollapseToggle.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Toggle all object's collapse state";
 				multiTextCollapseToggle.name = "label";
 
-				GameObject collapseToggle = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+				GameObject collapseToggle = Instantiate(eventButton);
 				collapseToggle.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 				collapseToggle.name = "collapse toggle";
 
@@ -982,7 +1383,7 @@ namespace EditorManagement
 
                 //Sync object selection
                 {
-					GameObject multiTextSync = UnityEngine.Object.Instantiate<GameObject>(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
+					GameObject multiTextSync = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 					multiTextSync.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
 					multiTextSync.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Sync to first selected object";
 					multiTextSync.name = "label";
@@ -994,7 +1395,7 @@ namespace EditorManagement
 					multiSyncGLG.spacing = new Vector2(4f, 4f);
 					multiSyncGLG.cellSize = new Vector2(61.6f, 49f);
 
-					GameObject syncStartTime = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncStartTime = Instantiate(eventButton);
 					syncStartTime.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncStartTime.name = "start time";
 
@@ -1014,7 +1415,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncName = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncName = Instantiate(eventButton);
 					syncName.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncName.name = "name";
 
@@ -1034,7 +1435,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncObjectType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncObjectType = Instantiate(eventButton);
 					syncObjectType.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncObjectType.name = "object type";
 
@@ -1056,7 +1457,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncAutokillType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncAutokillType = Instantiate(eventButton);
 					syncAutokillType.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncAutokillType.name = "autokill type";
 
@@ -1078,7 +1479,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncAutokillOffset = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncAutokillOffset = Instantiate(eventButton);
 					syncAutokillOffset.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncAutokillOffset.name = "autokill offset";
 
@@ -1100,7 +1501,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncParent = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncParent = Instantiate(eventButton);
 					syncParent.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncParent.name = "parent";
 
@@ -1122,7 +1523,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncParentType = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncParentType = Instantiate(eventButton);
 					syncParentType.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncParentType.name = "parent type";
 
@@ -1147,11 +1548,11 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncParentOffset = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncParentOffset = Instantiate(eventButton);
 					syncParentOffset.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncParentOffset.name = "parent offset";
 
-					syncParentOffset.transform.GetChild(0).GetComponent<Text>().text = "PT";
+					syncParentOffset.transform.GetChild(0).GetComponent<Text>().text = "PO";
 					syncParentOffset.GetComponent<Image>().color = bcol;
 
 					syncParentOffset.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
@@ -1172,7 +1573,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncOrigin = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncOrigin = Instantiate(eventButton);
 					syncOrigin.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncOrigin.name = "origin";
 
@@ -1194,7 +1595,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncShape = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncShape = Instantiate(eventButton);
 					syncShape.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncShape.name = "shape";
 
@@ -1217,7 +1618,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncText = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncText = Instantiate(eventButton);
 					syncText.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncText.name = "text";
 
@@ -1239,7 +1640,7 @@ namespace EditorManagement
 						}
 					});
 
-					GameObject syncDepth = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject syncDepth = Instantiate(eventButton);
 					syncDepth.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 					syncDepth.name = "depth";
 
@@ -1262,7 +1663,7 @@ namespace EditorManagement
 					});
 
 					//ISSUE: Causes newly selected objects to retain the values of the previous object for some reason
-					//GameObject syncKeyframes = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					//GameObject syncKeyframes = Instantiate(eventButton);
 					//syncKeyframes.transform.SetParent(scrollView.transform.Find("Viewport/Content/sync layout"));
 
 					//syncKeyframes.transform.GetChild(0).GetComponent<Text>().text = "KF";
@@ -1276,10 +1677,26 @@ namespace EditorManagement
 					//{
 					//	for (int i = 1; i < ObjEditor.inst.selectedObjects.Count; i++)
 					//    {
-					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[0] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[0];
-					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[1] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[1];
-					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[2] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[2];
-					//		ObjEditor.inst.selectedObjects[i].GetObjectData().events[3] = ObjEditor.inst.selectedObjects[0].GetObjectData().events[3];
+					//		for (int j = 1; j < ObjEditor.inst.selectedObjects[i].GetObjectData().events[0].Count; j++)
+                    //        {
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[0].Clear();
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[0].Add(ObjEditor.inst.selectedObjects[0].GetObjectData().events[0][j]);
+					//		}
+					//		for (int j = 1; j < ObjEditor.inst.selectedObjects[i].GetObjectData().events[1].Count; j++)
+                    //        {
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[1].Clear();
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[1].Add(ObjEditor.inst.selectedObjects[0].GetObjectData().events[1][j]);
+					//		}
+					//		for (int j = 1; j < ObjEditor.inst.selectedObjects[i].GetObjectData().events[2].Count; j++)
+                    //        {
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[2].Clear();
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[2].Add(ObjEditor.inst.selectedObjects[0].GetObjectData().events[2][j]);
+					//		}
+					//		for (int j = 1; j < ObjEditor.inst.selectedObjects[i].GetObjectData().events[3].Count; j++)
+                    //        {
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[3].Clear();
+					//			ObjEditor.inst.selectedObjects[i].GetObjectData().events[3].Add(ObjEditor.inst.selectedObjects[0].GetObjectData().events[3][j]);
+					//		}
 					//
 					//		ObjectManager.inst.updateObjects(ObjEditor.inst.selectedObjects[i], false);
 					//		ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.selectedObjects[i]);
@@ -1308,6 +1725,40 @@ namespace EditorManagement
 
 		public static string levelListPath = "beatmaps/editor";
 		public static string levelListSlash = "beatmaps/editor/";
+
+		[HarmonyPatch(typeof(SystemManager), "Update")]
+		[HarmonyPrefix]
+		private static bool SystemManagerUpdatePrefix()
+		{
+			if ((Input.GetKeyDown(KeyCode.P) && !LSHelpers.IsUsingInputField()) || (Input.GetKeyDown(KeyCode.F9) && !LSHelpers.IsUsingInputField()))
+			{
+				TakeScreenshot();
+			}
+			if (Input.GetKeyDown(KeyCode.F11) && !LSHelpers.IsUsingInputField())
+			{
+				DataManager.inst.UpdateSettingBool("FullScreen", !DataManager.inst.GetSettingBool("FullScreen"));
+				SaveManager.inst.ApplyVideoSettings();
+			}
+			return false;
+        }
+
+		public static void TakeScreenshot()
+		{
+			string text = Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/screenshots";
+			if (!Directory.Exists(text))
+			{
+				Directory.CreateDirectory(text);
+			}
+			ScreenCapture.CaptureScreenshot(text + "/" + DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss") + ".png", 1);
+			Debug.Log(string.Concat(new string[]
+			{
+				"Took Screenshot! - ",
+				text,
+				"/",
+				DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"),
+				".png"
+			}));
+		}
 
 		public static void RepeatReminder()
         {
@@ -1514,7 +1965,7 @@ namespace EditorManagement
 				List<EditorManager.MetadataWrapper> result = new List<EditorManager.MetadataWrapper>();
 				result = (from x in EditorManager.inst.loadedLevels
 						  orderby x.metadata.beatmap.date_edited descending
-						  select x).ToList<EditorManager.MetadataWrapper>();
+						  select x).ToList();
 
 				EditorManager.inst.loadedLevels = result;
 			}
@@ -1531,7 +1982,7 @@ namespace EditorManagement
 			Transform transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask").Find("content");
 			foreach (object obj in transform)
 			{
-				UnityEngine.Object.Destroy(((Transform)obj).gameObject);
+				Destroy(((Transform)obj).gameObject);
 			}
 			foreach (EditorManager.MetadataWrapper metadataWrapper in EditorManager.inst.loadedLevels)
 			{
@@ -1570,10 +2021,15 @@ namespace EditorManagement
 
 				if (EditorManager.inst.openFileSearch == null || !(EditorManager.inst.openFileSearch != "") || name.ToLower().Contains(EditorManager.inst.openFileSearch.ToLower()) || metadata.song.title.ToLower().Contains(EditorManager.inst.openFileSearch.ToLower()) || metadata.artist.Name.ToLower().Contains(EditorManager.inst.openFileSearch.ToLower()) || metadata.creator.steam_name.ToLower().Contains(EditorManager.inst.openFileSearch.ToLower()) || metadata.song.description.ToLower().Contains(EditorManager.inst.openFileSearch.ToLower()) || difficultyName.Contains(EditorManager.inst.openFileSearch.ToLower()))
 				{
-					GameObject gameObject = UnityEngine.Object.Instantiate<GameObject>(EditorManager.inst.folderButtonPrefab);
+					GameObject gameObject = Instantiate(EditorManager.inst.folderButtonPrefab);
 					gameObject.name = "Folder [" + metadataWrapper.folder + "]";
 					gameObject.transform.SetParent(transform);
 					gameObject.transform.localScale = Vector3.one;
+					var hoverUI = gameObject.AddComponent<HoverUI>();
+					hoverUI.ogPos = gameObject.transform.localPosition;
+					hoverUI.animPos = Vector3.zero;
+					hoverUI.animatePos = false;
+					hoverUI.animateSca = true;
 					HoverTooltip htt = gameObject.AddComponent<HoverTooltip>();
 
 					HoverTooltip.Tooltip levelTip = new HoverTooltip.Tooltip();
@@ -1781,17 +2237,170 @@ namespace EditorManagement
 				};
 			}
 
-			DataManager.inst.linkTypes = new List<DataManager.LinkType>
+			if (DataManager.inst.linkTypes[3].name != "YouTube")
 			{
-				new DataManager.LinkType("Spotify", "https://open.spotify.com/artist/{0}"),
-				new DataManager.LinkType("SoundCloud", "https://soundcloud.com/{0}"),
-				new DataManager.LinkType("Bandcamp", "https://{0}.bandcamp.com"),
-				new DataManager.LinkType("Youtube Music", "https://www.youtube.com/user/{0}"),
-				new DataManager.LinkType("Newgrounds", "https://{0}.newgrounds.com/")
-			};
+				DataManager.inst.linkTypes = new List<DataManager.LinkType>
+				{
+					new DataManager.LinkType("Spotify", "https://open.spotify.com/artist/{0}"),
+					new DataManager.LinkType("SoundCloud", "https://soundcloud.com/{0}"),
+					new DataManager.LinkType("Bandcamp", "https://{0}.bandcamp.com"),
+					new DataManager.LinkType("Youtube", "https://www.youtube.com/user/{0}"),
+					new DataManager.LinkType("Newgrounds", "https://{0}.newgrounds.com/")
+				};
+			}
 
-			DataManager.inst.AnimationList[1].Animation.keys[1].m_Time = 0.9999f;
-			DataManager.inst.AnimationList[1].Animation.keys[1].m_Value = 0f;
+			if (DataManager.inst.AnimationList[1].Animation.keys[1].m_Time != 0.9999f)
+			{
+				DataManager.inst.AnimationList[1].Animation.keys[1].m_Time = 0.9999f;
+				DataManager.inst.AnimationList[1].Animation.keys[1].m_Value = 0f;
+			}
+		}
+
+		//[HarmonyPatch(typeof(DataManager), "SaveData", typeof(string), typeof(DataManager.GameData))]
+		//[HarmonyPrefix]
+		private static bool DataSaver(DataManager __instance, IEnumerator __result, string __0, DataManager.GameData __1)
+        {
+			RTEditor.inst.StartCoroutine(RTEditor.SaveData(__0, __1));
+			return false;
+        }
+
+		[HarmonyPatch(typeof(DataManager), "SaveMetadata", typeof(string), typeof(DataManager.MetaData))]
+		[HarmonyPrefix]
+		private static bool SaveMetadataPrefix(LSError __result, string __0, DataManager.MetaData __1)
+		{
+			string rawProfileJSON = "{}";
+			if (RTFile.FileExists(__0))
+			{
+				rawProfileJSON = FileManager.inst.LoadJSONFile(__0);
+			}
+			
+			JSONNode jn = JSON.Parse(rawProfileJSON);
+			Debug.Log("Saving Metadata to " + __0);
+			Debug.Log("A-N: " + __1.artist.Name);
+			Debug.Log("A-L: " + __1.artist.Link);
+			Debug.Log("A-LT: " + __1.artist.LinkType.ToString());
+			Debug.Log("C-SN: " + __1.creator.steam_name);
+			Debug.Log("C-SID: " + __1.creator.steam_id.ToString());
+			Debug.Log("S-T: " + __1.song.title);
+			Debug.Log("S-D: " + __1.song.difficulty.ToString());
+			Debug.Log("S-DE: " + __1.song.description);
+			Debug.Log("S-BPM: " + __1.song.BPM.ToString());
+			Debug.Log("S-T: " + __1.song.time.ToString());
+			Debug.Log("S-PS: " + __1.song.previewStart.ToString());
+			Debug.Log("S-PL: " + __1.song.previewLength.ToString());
+
+			jn["artist"]["name"] = __1.artist.Name;
+			jn["artist"]["link"] = __1.artist.Link;
+			jn["artist"]["linkType"] = __1.artist.LinkType.ToString();
+			jn["creator"]["steam_name"] = __1.creator.steam_name;
+			jn["creator"]["steam_id"] = __1.creator.steam_id.ToString();
+			jn["song"]["title"] = __1.song.title;
+			jn["song"]["difficulty"] = __1.song.difficulty.ToString();
+			jn["song"]["description"] = __1.song.description;
+			jn["song"]["bpm"] = __1.song.BPM.ToString();
+			jn["song"]["t"] = __1.song.time.ToString();
+			jn["song"]["preview_start"] = __1.song.previewStart.ToString();
+			jn["song"]["preview_length"] = __1.song.previewLength.ToString();
+
+			if (SavingUpdatesTime.Value == true)
+            {
+				if (string.IsNullOrEmpty(jn["beatmap"]["date_original"]))
+				{
+					Debug.Log(__1.beatmap.date_edited);
+					jn["beatmap"]["date_original"] = __1.beatmap.date_edited;
+				}
+
+				Debug.Log(DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"));
+				jn["beatmap"]["date_edited"] = DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss");
+			}
+			else
+			{
+				jn["beatmap"]["date_edited"] = __1.beatmap.date_edited;
+			}
+
+			jn["beatmap"]["version_number"] = __1.beatmap.version_number.ToString();
+			jn["beatmap"]["game_version"] = __1.beatmap.game_version;
+			jn["beatmap"]["workshop_id"] = __1.beatmap.workshop_id.ToString();
+			RTFile.WriteToFile(__0, jn.ToString());
+			return false;
+        }
+
+		private static void EEEE()
+        {
+			JSONNode jn = JSON.Parse("{}");
+			AccessTools.Method(typeof(JSONNode), "ToString", new Type[] { typeof(int) }).Invoke(jn, new object[] { 3 });
+		}
+
+		[HarmonyPatch(typeof(BackgroundEditor), "Awake")]
+		[HarmonyPostfix]
+		private static void BackgroundEditorAwakePostfix()
+        {
+			GameObject bgRight = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/BackgroundDialog/data/right");
+			GameObject bgLeft = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/BackgroundDialog/data/left");
+
+			var createTip = bgRight.transform.Find("create").GetComponent<HoverTooltip>();
+			HoverTooltip.Tooltip createTooltip = new HoverTooltip.Tooltip();
+			createTooltip.desc = "Create New Background Object";
+			createTooltip.hint = "Press this to create a new background object.";
+			createTip.tooltipLangauges.Add(createTooltip);
+
+			GameObject destroyAll = Instantiate(bgRight.transform.Find("create").gameObject);
+			destroyAll.transform.SetParent(bgRight.transform);
+			destroyAll.transform.localScale = Vector3.one;
+			destroyAll.transform.SetSiblingIndex(2);
+			destroyAll.name = "destroy";
+
+			destroyAll.GetComponent<Image>().color = new Color(1f, 0.131f, 0.231f, 1f);
+			destroyAll.transform.GetChild(0).GetComponent<Text>().text = "Delete All Backgrounds";
+			destroyAll.transform.GetChild(0).localScale = Vector3.one;
+
+			destroyAll.GetComponent<Button>().onClick.RemoveAllListeners();
+			destroyAll.GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				RTEditor.DeleteAllBackgrounds();
+			});
+
+			var destroyAllTip = destroyAll.GetComponent<HoverTooltip>();
+			HoverTooltip.Tooltip destroyAllTooltip = new HoverTooltip.Tooltip();
+			destroyAllTooltip.desc = "Destroy All Objects";
+			destroyAllTooltip.hint = "Press this to destroy all background objects, EXCEPT the first one.";
+			destroyAllTip.tooltipLangauges.Clear();
+			destroyAllTip.tooltipLangauges.Add(destroyAllTooltip);
+
+			GameObject createBGs = Instantiate(bgLeft.transform.Find("name").gameObject);
+			createBGs.transform.SetParent(bgRight.transform);
+			createBGs.transform.localScale = Vector3.one;
+			createBGs.transform.SetSiblingIndex(2);
+			createBGs.name = "create bgs";
+
+			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.m_Calls.m_ExecutingCalls.Clear();
+			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.m_Calls.m_PersistentCalls.Clear();
+			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.m_PersistentCalls.m_Calls.Clear();
+			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.RemoveAllListeners();
+
+			Destroy(createBGs.transform.Find("active").gameObject);
+			createBGs.transform.Find("name").localScale = Vector3.one;
+			createBGs.transform.Find("name").GetComponent<InputField>().text = "12";
+			createBGs.transform.Find("name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.Integer;
+			createBGs.transform.Find("name").GetComponent<RectTransform>().sizeDelta = new Vector2(80f, 34f);
+
+			GameObject createAll = Instantiate(bgRight.transform.Find("create").gameObject);
+			createAll.transform.SetParent(createBGs.transform);
+			createAll.transform.localScale = Vector3.one;
+			createAll.name = "create";
+
+			createAll.GetComponent<Image>().color = new Color(0.6252f, 0.2789f, 0.6649f, 1f);
+			createAll.GetComponent<RectTransform>().sizeDelta = new Vector2(278f, 34f);
+			createAll.transform.GetChild(0).GetComponent<Text>().text = "Create Backgrounds";
+			createAll.transform.GetChild(0).localScale = Vector3.one;
+
+			createAll.GetComponent<Button>().onClick.RemoveAllListeners();
+			createAll.GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				RTEditor.CreateBackgrounds(int.Parse(createBGs.transform.GetChild(0).GetComponent<InputField>().text));
+			});
+
+			bgRight.transform.Find("backgrounds").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 524f);
 		}
 
 		public static void SetNewMarkerColors()

@@ -1,30 +1,26 @@
 ﻿using System;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
 
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-using SimpleJSON;
-
 using HarmonyLib;
 
-using EditorManagement.Functions;
 using LSFunctions;
+
+using EditorManagement.Functions;
+using EditorManagement.Functions.Tools;
 
 namespace EditorManagement
 {
 	[HarmonyPatch(typeof(MarkerEditor))]
 	public class MarkerEditorPatch : MonoBehaviour
     {
-		[HarmonyPatch(typeof(MarkerEditor), "Awake")]
+		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
 		private static void MarkerStart()
 		{
@@ -158,7 +154,7 @@ namespace EditorManagement
 			}
 		}
 
-		[HarmonyPatch(typeof(MarkerEditor), "OpenDialog")]
+		[HarmonyPatch("OpenDialog")]
 		[HarmonyPostfix]
 		private static void MarkerOpenDialog(MarkerEditor __instance, int __0)
 		{
@@ -193,6 +189,32 @@ namespace EditorManagement
 					}
 				}
 			}
+		}
+
+		[HarmonyPatch("RenderMarker")]
+		[HarmonyPrefix]
+		private static bool RenderMarkersPostfix(int __0)
+        {
+			if (__0 >= 0 && MarkerEditor.inst.markers.Count > __0)
+			{
+				DataManager.GameData.BeatmapData.Marker marker = DataManager.inst.gameData.beatmapData.markers[__0];
+				float time = marker.time;
+				GameObject markerObject = MarkerEditor.inst.markers[__0];
+				Color markerColor = MarkerEditor.inst.markerColors[Mathf.Clamp(marker.color, 0, MarkerEditor.inst.markerColors.Count() - 1)];
+
+				if (markerObject.GetComponent<HoverTooltip>())
+				{
+					markerObject.GetComponent<HoverTooltip>().tooltipLangauges.Clear();
+					markerObject.GetComponent<HoverTooltip>().tooltipLangauges.Add(Triggers.NewTooltip("<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>()));
+				}
+
+				markerObject.GetComponent<RectTransform>().sizeDelta = new Vector2(12f, 12f);
+				markerObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(time * EditorManager.inst.Zoom - 6f, -12f);
+				markerObject.GetComponent<Image>().color = markerColor;
+				markerObject.GetComponentInChildren<Text>().text = marker.name;
+				markerObject.SetActive(true);
+			}
+			return false;
 		}
 	}
 }

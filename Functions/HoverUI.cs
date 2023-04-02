@@ -1,0 +1,52 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+using UnityEngine;
+using UnityEngine.EventSystems;
+
+using DG.Tweening;
+
+namespace EditorManagement.Functions
+{
+    public class HoverUI : MonoBehaviour, IPointerEnterHandler, IEventSystemHandler, IPointerExitHandler
+    {
+        public float size = 1.1f;
+        public Vector3 ogPos;
+        public Vector3 animPos;
+        public bool animatePos = false;
+        public bool animateSca = false;
+        public bool setPos = false;
+
+        public void OnPointerEnter(PointerEventData pointerEventData)
+        {
+            if (animatePos)
+            {
+                if (!setPos)
+                {
+                    setPos = true;
+                    ogPos = transform.localPosition;
+                }
+                transform.DOLocalMove(new Vector3(ogPos.x + animPos.x, ogPos.y + animPos.y, 0f), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
+            }
+            if (animateSca)
+            {
+                transform.DOScale(new Vector3(size, size, size), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
+            }
+        }
+
+        public void OnPointerExit(PointerEventData pointerEventData)
+        {
+            if (animatePos)
+            {
+                transform.DOLocalMove(ogPos, 0.2f).SetEase(DataManager.inst.AnimationList[2].Animation).Play();
+            }
+            if (animateSca)
+            {
+                transform.DOScale(new Vector3(1f, 1f, 1f), 0.2f).SetEase(DataManager.inst.AnimationList[2].Animation).Play();
+            }
+        }
+    }
+}
