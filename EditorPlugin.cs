@@ -85,6 +85,13 @@ namespace EditorManagement
 			InOutExpo
         }
 
+		public enum Constraint
+        {
+			Flexible,
+			FixedColumnCount,
+			FixedRowCount
+        }
+
 		public static List<int> allLayers = new List<int>();
 
 		public static RTEditor editor;
@@ -108,7 +115,7 @@ namespace EditorManagement
 		public static ConfigEntry<Vector2> ORLPathPos { get; set; }
 		public static ConfigEntry<float> ORLPathLength { get; set; }
 		public static ConfigEntry<Vector2> ORLRefreshPos { get; set; }
-		public static ConfigEntry<GridLayoutGroup.Constraint> OGLVLConstraint { get; set; }
+		public static ConfigEntry<Constraint> OGLVLConstraint { get; set; }
 		public static ConfigEntry<int> OGLVLConstraintCount { get; set; }
 		public static ConfigEntry<Vector2> OGLVLSpacing { get; set; }
 		public static ConfigEntry<HorizontalWrapMode> FButtonHWrap { get; set; }
@@ -129,6 +136,7 @@ namespace EditorManagement
 		public static ConfigEntry<int> FButtonArtiClamp { get; set; }
 		public static ConfigEntry<int> FButtonCreaClamp { get; set; }
 		public static ConfigEntry<int> FButtonDescClamp { get; set; }
+		public static ConfigEntry<int> FButtonDateClamp { get; set; }
 		public static ConfigEntry<string> FButtonFormat { get; set; }
 		public static ConfigEntry<Vector2> FBIconPos { get; set; }
 		public static ConfigEntry<Vector2> FBIconSca { get; set; }
@@ -193,6 +201,12 @@ namespace EditorManagement
 		public static ConfigEntry<Color> EditorGUIColor8 { get; set; }
         public static ConfigEntry<Color> EditorGUIColor9 { get; set; }
 
+		public static ConfigEntry<bool> EPPAnimateX { get; set; }
+		public static ConfigEntry<bool> EPPAnimateY { get; set; }
+		public static ConfigEntry<Vector2> EPPAnimateInOutSpeeds { get; set; }
+		public static ConfigEntry<Easings> EPPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> EPPAnimateEaseOut { get; set; }
+
 		public static ConfigEntry<bool> OFPAnimateX { get; set; }
 		public static ConfigEntry<bool> OFPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> OFPAnimateInOutSpeeds { get; set; }
@@ -242,6 +256,13 @@ namespace EditorManagement
 			inst = this;
 
 			Logger.LogInfo("Plugin Editor Management is loaded!");
+
+			//Animate GUI (Editor Properties Popup)
+			EPPAnimateX = Config.Bind("Animate GUI", "Editor Properties Popup Animate X", true, "If the X scale should animate or not.");
+			EPPAnimateY = Config.Bind("Animate GUI", "Editor Properties Popup Animate Y", true, "If the Y scale should animate or not.");
+			EPPAnimateInOutSpeeds = Config.Bind("Animate GUI", "Editor Properties Popup Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
+			EPPAnimateEaseIn = Config.Bind("Animate GUI", "Editor Properties Popup Easing Open", Easings.Linear, "What type of easing the animation should use.");
+			EPPAnimateEaseOut = Config.Bind("Animate GUI", "Editor Properties Popup Easing Close", Easings.Linear, "What type of easing the animation should use.");
 
 			//Animate GUI (Open File Popup)
 			OFPAnimateX = Config.Bind("Animate GUI", "Open File Popup Animate X", true, "If the X scale should animate or not.");
@@ -326,7 +347,7 @@ namespace EditorManagement
 			ORLDropdownPos = Config.Bind("Open File Popup Base", "06 Dropdown Pos", new Vector2(501f, 416f), "The position of the sort dropdown.");
 
 			OGLVLCellSize = Config.Bind("Open File Popup Cells", "00 Cell Size", new Vector2(584f, 32f), "Size of each cell.");
-			OGLVLConstraint = Config.Bind("Open File Popup Cells", "01 Constraint Type", GridLayoutGroup.Constraint.FixedColumnCount, "How the cells are layed out.");
+			OGLVLConstraint = Config.Bind("Open File Popup Cells", "01 Constraint Type", Constraint.FixedColumnCount, "How the cells are layed out.");
 			OGLVLConstraintCount = Config.Bind("Open File Popup Cells", "02 Constraint Count", 1, "How many rows / columns there are, depending on Constraint Type.");
 			OGLVLSpacing = Config.Bind("Open File Popup Cells", "03 Spacing", new Vector2(0f, 8f), "The space between each cell.");
 
@@ -342,7 +363,8 @@ namespace EditorManagement
 			FButtonArtiClamp = Config.Bind("Open File Popup Buttons", "07 Artist Name Clamp", 16, "Limited length of the artist name.");
 			FButtonCreaClamp = Config.Bind("Open File Popup Buttons", "08 Creator Name Clamp", 16, "Limited length of the creator name.");
 			FButtonDescClamp = Config.Bind("Open File Popup Buttons", "09 Description Clamp", 16, "Limited length of the description.");
-			FButtonFormat = Config.Bind("Open File Popup Buttons", "0A Formatting", ".  /{0} : {1} by {2}", "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty, {5} is description and {6} is last edited.");
+			FButtonDateClamp = Config.Bind("Open File Popup Buttons", "0A Date Clamp", 16, "Limited length of the date.");
+			FButtonFormat = Config.Bind("Open File Popup Buttons", "0B Formatting", ".  /{0} : {1} by {2}", "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty, {5} is description and {6} is last edited.");
 
 			FButtonDifColor = Config.Bind("Open File Popup Buttons", "10 Difficulty Color", false, "If each button matches its associated difficulty color.");
 			FButtonDifColorMult = Config.Bind("Open File Popup Buttons", "11 Difficulty Multiply", 1.5f, "How much each buttons' color multiplies by difficulty color.");
@@ -488,6 +510,14 @@ namespace EditorManagement
 
 				//Animate GUI
 				{
+					var editorPropertiesPopupAIGUI = EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
+
+					editorPropertiesPopupAIGUI.SetEasing((int)EPPAnimateEaseIn.Value, (int)EPPAnimateEaseOut.Value);
+					editorPropertiesPopupAIGUI.animateX = EPPAnimateX.Value;
+					editorPropertiesPopupAIGUI.animateY = EPPAnimateY.Value;
+					editorPropertiesPopupAIGUI.animateInTime = EPPAnimateInOutSpeeds.Value.x;
+					editorPropertiesPopupAIGUI.animateOutTime = EPPAnimateInOutSpeeds.Value.y;
+
 					var openFilePopupAIGUI = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject.GetComponent<AnimateInGUI>();
 
 					openFilePopupAIGUI.SetEasing((int)OFPAnimateEaseIn.Value, (int)OFPAnimateEaseOut.Value);
@@ -591,7 +621,7 @@ namespace EditorManagement
 
 				//Set Open FIle Popup content GridLayoutGroup
 				openGridLVL.cellSize = OGLVLCellSize.Value;
-				openGridLVL.constraint = OGLVLConstraint.Value;
+				openGridLVL.constraint = (GridLayoutGroup.Constraint)OGLVLConstraint.Value;
 				openGridLVL.constraintCount = OGLVLConstraintCount.Value;
 				openGridLVL.spacing = OGLVLSpacing.Value;
 
@@ -1812,6 +1842,7 @@ namespace EditorManagement
 			int artiClamp = FButtonArtiClamp.Value;
 			int creaClamp = FButtonCreaClamp.Value;
 			int descClamp = FButtonDescClamp.Value;
+			int dateClamp = FButtonDateClamp.Value;
 
 
 			if (FButtonFoldClamp.Value < 3)
@@ -1837,6 +1868,11 @@ namespace EditorManagement
 			if (FButtonDescClamp.Value < 3)
 			{
 				descClamp = 16;
+			}
+
+			if (FButtonDateClamp.Value < 3)
+			{
+				dateClamp = 16;
 			}
 
 			//Cover
@@ -2036,7 +2072,7 @@ namespace EditorManagement
 
 					if (metadata != null)
 					{
-						gameObject.transform.GetChild(0).GetComponent<Text>().text = string.Format(FButtonFormat.Value, LSText.ClampString(metadataWrapper.folder, foldClamp), LSText.ClampString(metadata.song.title, songClamp), LSText.ClampString(metadata.artist.Name, artiClamp), LSText.ClampString(metadata.creator.steam_name, creaClamp), metadata.song.difficulty, LSText.ClampString(metadata.song.description, descClamp));
+						gameObject.transform.GetChild(0).GetComponent<Text>().text = string.Format(FButtonFormat.Value, LSText.ClampString(metadataWrapper.folder, foldClamp), LSText.ClampString(metadata.song.title, songClamp), LSText.ClampString(metadata.artist.Name, artiClamp), LSText.ClampString(metadata.creator.steam_name, creaClamp), metadata.song.difficulty, LSText.ClampString(metadata.song.description, descClamp), LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
 
 						if (metadata.song.difficulty == 4 && FButtonTextInvert.Value == true && FButtonDifColor.Value == true || metadata.song.difficulty == 5 && FButtonTextInvert.Value == true && FButtonDifColor.Value == true)
 						{

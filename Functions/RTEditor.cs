@@ -2618,6 +2618,13 @@ namespace EditorManagement.Functions
 			editorProperties.transform.localScale = Vector3.one * EditorManager.inst.ScreenScale;
 			editorProperties.transform.localPosition = Vector3.zero;
 
+			var animUI = editorProperties.AddComponent<AnimateInGUI>();
+			animUI.SetEasing((int)EditorPlugin.EPPAnimateEaseIn.Value, (int)EditorPlugin.EPPAnimateEaseOut.Value);
+			animUI.animateX = EditorPlugin.EPPAnimateX.Value;
+			animUI.animateY = EditorPlugin.EPPAnimateY.Value;
+			animUI.animateInTime = EditorPlugin.EPPAnimateInOutSpeeds.Value.x;
+			animUI.animateOutTime = EditorPlugin.EPPAnimateInOutSpeeds.Value.y;
+
 			var eSelect = editorProperties.AddComponent<SelectUI>();
 			eSelect.target = editorProperties.transform;
 			eSelect.ogPos = editorProperties.transform.position;
@@ -3256,6 +3263,10 @@ namespace EditorManagement.Functions
 								x.transform.SetParent(editorDialog.Find("mask/content"));
 								x.name = "input [INT]";
 
+								Destroy(x.GetComponent<EventInfo>());
+								x.transform.localScale = Vector3.one;
+								x.transform.GetChild(0).localScale = Vector3.one;
+
 								var l = Instantiate(label);
 								l.transform.SetParent(x.transform);
 								l.transform.SetAsFirstSibling();
@@ -3288,6 +3299,8 @@ namespace EditorManagement.Functions
 								x.transform.SetParent(editorDialog.Find("mask/content"));
 								x.name = "input [FLOAT]";
 
+								Destroy(x.GetComponent<EventInfo>());
+
 								var l = Instantiate(label);
 								l.transform.SetParent(x.transform);
 								l.transform.SetAsFirstSibling();
@@ -3298,6 +3311,9 @@ namespace EditorManagement.Functions
 								{
 									ltextrt.anchoredPosition = new Vector2(10f, -5f);
 								}
+
+								x.transform.localScale = Vector3.one;
+								x.transform.GetChild(0).localScale = Vector3.one;
 
 								x.GetComponent<Image>().enabled = true;
 								x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
@@ -3498,6 +3514,9 @@ namespace EditorManagement.Functions
 
 								Vector2 vtmp = (Vector2)prop.configEntry.BoxedValue;
 
+								Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
+								vector2.transform.Find("x").localScale = Vector3.one;
+								vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
 								var vxif = vector2.transform.Find("x").GetComponent<InputField>();
                                 {
                                     vxif.onValueChanged.RemoveAllListeners();
@@ -3511,6 +3530,9 @@ namespace EditorManagement.Functions
 									});
 								}
 
+								Destroy(vector2.transform.Find("y").GetComponent<EventInfo>());
+								vector2.transform.Find("y").localScale = Vector3.one;
+								vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
 								var vyif = vector2.transform.Find("y").GetComponent<InputField>();
 								{
 									vyif.onValueChanged.RemoveAllListeners();
@@ -3661,8 +3683,19 @@ namespace EditorManagement.Functions
 		{
 			//General
 			new EditorProperty("Debug", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, EditorPlugin.EditorDebug, ""),
+			new EditorProperty("Reminder Active", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, EditorPlugin.ReminderActive, ""),
+			new EditorProperty("Reminder Loop Time", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.General, EditorPlugin.ReminderRepeat, ""),
 
 			//Timeline
+			new EditorProperty("Timeline Zoom Bounds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ETLZoomBounds, ""),
+			new EditorProperty("Object Zoom Bounds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ObjZoomBounds, ""),
+			new EditorProperty("Zoom Amount", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ZoomAmount, ""),
+			new EditorProperty("Waveform Generate", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.GenerateWaveform, ""),
+			new EditorProperty("Waveform Re-render", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.RenderTimeline, ""),
+			new EditorProperty("Waveform Mode", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.WaveformMode, ""),
+			new EditorProperty("Waveform BG Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.TimelineBGColor, ""),
+			new EditorProperty("Waveform Top Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.TimelineTopColor, ""),
+			new EditorProperty("Waveform Bottom Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.TimelineBottomColor, ""),
 
 			//Saving
 			new EditorProperty("Autosave Limit", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.Saving, EditorPlugin.AutoSaveLimit, ""),
@@ -3678,8 +3711,100 @@ namespace EditorManagement.Functions
 			new EditorProperty("Notification Size", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NotificationSize, ""),
 			new EditorProperty("Notification Direction", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NotificationDirection, ""),
 
-			new EditorProperty("Open File Popup Scale", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLSizeDelta, ""),
-			new EditorProperty("Open File Popup Format", EditorProperty.ValueType.String, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonFormat, ""),
+			new EditorProperty("Editor Color 1", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor1, ""),
+			new EditorProperty("Editor Color 2", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor2, ""),
+			new EditorProperty("Editor Color 3", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor3, ""),
+			new EditorProperty("Editor Color 4", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor4, ""),
+			new EditorProperty("Editor Color 5", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor5, ""),
+			new EditorProperty("Editor Color 6", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor6, ""),
+			new EditorProperty("Editor Color 7", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor7, ""),
+			new EditorProperty("Editor Color 8", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor8, ""),
+			new EditorProperty("Editor Color 9", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EditorGUIColor9, ""),
+
+			new EditorProperty("Open File Origin", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLAnchoredPos, ""),
+			new EditorProperty("Open File Scale", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLSizeDelta, ""),
+			new EditorProperty("Open File Path Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLPathPos, ""),
+			new EditorProperty("Open File Path Length", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLPathLength, ""),
+			new EditorProperty("Open File Refresh Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLRefreshPos, ""),
+			new EditorProperty("Open File Toggle Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLTogglePos, ""),
+			new EditorProperty("Open File Dropdown Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.ORLDropdownPos, ""),
+
+			new EditorProperty("Open File Cell Size", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OGLVLCellSize, ""),
+			new EditorProperty("Open File Constraint", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OGLVLConstraint, ""),
+			new EditorProperty("Open File Const. Count", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OGLVLConstraintCount, ""),
+			new EditorProperty("Open File Spacing", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OGLVLSpacing, ""),
+
+			new EditorProperty("Open File HWrap", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonHWrap, ""),
+			new EditorProperty("Open File VWrap", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonVWrap, ""),
+			new EditorProperty("Open File Text Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonTextColor, ""),
+			new EditorProperty("Open File Text Invert", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonTextInvert, ""),
+			new EditorProperty("Open File Font Size", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonFontSize, ""),
+			new EditorProperty("Open File Folder Clamp", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonFoldClamp, ""),
+			new EditorProperty("Open File Song Clamp", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonSongClamp, ""),
+			new EditorProperty("Open File Artist Clamp", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonArtiClamp, ""),
+			new EditorProperty("Open File Creator Clamp", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonCreaClamp, ""),
+			new EditorProperty("Open File Desc Clamp", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonDescClamp, ""),
+			new EditorProperty("Open File Date Clamp", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonDateClamp, ""),
+			new EditorProperty("Open File Format", EditorProperty.ValueType.String, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonFormat, ""),
+
+			new EditorProperty("Open File Difficulty Color", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonDifColor, ""),
+			new EditorProperty("Open File Difficulty Color X", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonDifColorMult, ""),
+			new EditorProperty("Open File Normal Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonNColor, ""),
+			new EditorProperty("Open File Highlighted Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonHColor, ""),
+			new EditorProperty("Open File Pressed Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonPColor, ""),
+			new EditorProperty("Open File Selected Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonSColor, ""),
+			new EditorProperty("Open File Color Fade Time", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FButtonFadeDColor, ""),
+
+			new EditorProperty("Open File Cover Art Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FBIconPos, ""),
+			new EditorProperty("Open File Cover Art Sca", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FBIconSca, ""),
+
+			new EditorProperty("Anim Edit Prop Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateEaseIn, ""),
+			new EditorProperty("Anim Edit Prop Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateEaseOut, ""),
+			new EditorProperty("Anim Edit Prop Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateX, ""),
+			new EditorProperty("Anim Edit Prop Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateY, ""),
+			new EditorProperty("Anim Edit Prop Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim Open File Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OFPAnimateEaseIn, ""),
+			new EditorProperty("Anim Open File Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OFPAnimateEaseOut, ""),
+			new EditorProperty("Anim Open File Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OFPAnimateX, ""),
+			new EditorProperty("Anim Open File Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OFPAnimateY, ""),
+			new EditorProperty("Anim Open File Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OFPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim New Level Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NFPAnimateEaseIn, ""),
+			new EditorProperty("Anim New Level Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NFPAnimateEaseOut, ""),
+			new EditorProperty("Anim New Level Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NFPAnimateX, ""),
+			new EditorProperty("Anim New Level Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NFPAnimateY, ""),
+			new EditorProperty("Anim New Level Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.NFPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim Prefabs Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.PPAnimateEaseIn, ""),
+			new EditorProperty("Anim Prefabs Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.PPAnimateEaseOut, ""),
+			new EditorProperty("Anim Prefabs Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.PPAnimateX, ""),
+			new EditorProperty("Anim Prefabs Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.PPAnimateY, ""),
+			new EditorProperty("Anim Prefabs Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.PPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim Object Tags Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.QAPAnimateEaseIn, ""),
+			new EditorProperty("Anim Object Tags Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.QAPAnimateEaseOut, ""),
+			new EditorProperty("Anim Object Tags Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.QAPAnimateX, ""),
+			new EditorProperty("Anim Object Tags Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.QAPAnimateY, ""),
+			new EditorProperty("Anim Object Tags Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.QAPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim Create Object Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OBJPAnimateEaseIn, ""),
+			new EditorProperty("Anim Create Object Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OBJPAnimateEaseOut, ""),
+			new EditorProperty("Anim Create Object Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OBJPAnimateX, ""),
+			new EditorProperty("Anim Create Object Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OBJPAnimateY, ""),
+			new EditorProperty("Anim Create Object Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.OBJPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim Create BG Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.BGPAnimateEaseIn, ""),
+			new EditorProperty("Anim Create BG Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.BGPAnimateEaseOut, ""),
+			new EditorProperty("Anim Create BG Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.BGPAnimateX, ""),
+			new EditorProperty("Anim Create BG Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.BGPAnimateY, ""),
+			new EditorProperty("Anim Create BG Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.BGPAnimateInOutSpeeds, ""),
+
+			new EditorProperty("Anim Object Edit Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.GODAnimateEaseIn, ""),
+			new EditorProperty("Anim Object Edit Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.GODAnimateEaseOut, ""),
+			new EditorProperty("Anim Object Edit Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.GODAnimateX, ""),
+			new EditorProperty("Anim Object Edit Animate Y", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.GODAnimateY, ""),
+			new EditorProperty("Anim Object Edit Speeds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.GODAnimateInOutSpeeds, ""),
 
 			//Markers
 			new EditorProperty("Marker Looping Active", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Markers, EditorPlugin.MarkerLoop, ""),
@@ -3699,10 +3824,18 @@ namespace EditorManagement.Functions
 			new EditorProperty("Time Modify", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Fields, EditorPlugin.TimeModify, ""),
 
 			//Preview
-
+			new EditorProperty("Show Object Dragger", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.ShowSelector, ""),
+			new EditorProperty("Show Only On Layer", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.ShowObjectsOnLayer, ""),
+			new EditorProperty("Not On Layer Opacity", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Preview, EditorPlugin.ShowObjectsAlpha, ""),
+			new EditorProperty("Show Empties", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.ShowEmpties, ""),
+			new EditorProperty("Show Only Damagable", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.ShowDamagable, ""),
+			new EditorProperty("Empties Preview Fix", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.PreviewSelectFix, ""),
+			new EditorProperty("Highlight Objects", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.HighlightObjects, ""),
+			new EditorProperty("Highlight Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Preview, EditorPlugin.HighlightColor, ""),
+			new EditorProperty("Highlight Color Shift", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Preview, EditorPlugin.HighlightDoubleColor, ""),
 		};
 
-		public static EditorProperty.EditorPropCategory currentCategory = EditorProperty.EditorPropCategory.Saving;
+		public static EditorProperty.EditorPropCategory currentCategory = EditorProperty.EditorPropCategory.General;
 
 		public class EditorProperty
         {

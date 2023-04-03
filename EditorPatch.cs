@@ -1233,7 +1233,7 @@ namespace EditorManagement
 
 			//Set Open FIle Popup content GridLayoutGroup
 			openGridLVL.cellSize = EditorPlugin.OGLVLCellSize.Value;
-			openGridLVL.constraint = EditorPlugin.OGLVLConstraint.Value;
+			openGridLVL.constraint = (GridLayoutGroup.Constraint) EditorPlugin.OGLVLConstraint.Value;
 			openGridLVL.constraintCount = EditorPlugin.OGLVLConstraintCount.Value;
 			openGridLVL.spacing = EditorPlugin.OGLVLSpacing.Value;
 		}
