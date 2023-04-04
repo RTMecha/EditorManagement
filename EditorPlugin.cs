@@ -20,20 +20,24 @@ using SimpleJSON;
 
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
+using EditorManagement.Patchers;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.1")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.3")]
 	[BepInProcess("Project Arrhythmia.exe")]
+	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
+	[BepInIncompatibility("com.mecha.originoffset")]
+	[BepInIncompatibility("com.mecha.cursorcolor")]
+	[BepInIncompatibility("com.mecha.noautokillselectable")]
 	public class EditorPlugin : BaseUnityPlugin
 	{
 		//TODO
-		//Implement CursorColor, EventsPlus (wait until I got a full property system setup), NewThemeSystems, NoAutokillSelectable, OriginOffset, PrefabAdditions, RenderDepthUnlimited
-		//Create a custom properties window that's nicely organized into different tabs depending on the Editor System.
+		//Implement EventsPlus (wait until I got a full property system setup), NewThemeSystems, PrefabAdditions
 
 		//Update list
-		//-Fixed an issue with creating new levels not working
-		//-In the future I plan on combining other mods with this one(like RenderDepthUnlimited, OriginOffset and NoAutokillSelectable) just so it's easier for me to work on the mods, and it just makes sense overall to do that since all of those mods do stuff with the editor.
+
+		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>]";
 
 		public static float scrollBar;
 		public static float timeEdit;
@@ -105,6 +109,14 @@ namespace EditorManagement
 		public static ConfigEntry<Vector2> ObjZoomBounds { get; set; }
 		public static ConfigEntry<Vector2> ETLZoomBounds { get; set; }
 		public static ConfigEntry<float> ZoomAmount { get; set; }
+
+		//Cursor Color
+		public static ConfigEntry<Color> MTSliderCol { get; set; }
+		public static ConfigEntry<Color> KTSliderCol { get; set; }
+		public static ConfigEntry<Color> ObjSelCol { get; set; }
+
+		public static ConfigEntry<float> OriginXAmount { get; set; }
+		public static ConfigEntry<float> OriginYAmount { get; set; }
 
 		//Open File Configs
 		public static ConfigEntry<Vector2> ORLAnchoredPos { get; set; }
@@ -249,13 +261,39 @@ namespace EditorManagement
 		public static ConfigEntry<Easings> GODAnimateEaseIn { get; set; }
 		public static ConfigEntry<Easings> GODAnimateEaseOut { get; set; }
 
+
+		public static ConfigEntry<Color> DepthNormalColor { get; set; }
+		public static ConfigEntry<Color> DepthPressedColor { get; set; }
+		public static ConfigEntry<Color> DepthHighlightedColor { get; set; }
+		public static ConfigEntry<Color> DepthDisabledColor { get; set; }
+		public static ConfigEntry<float> DepthFadeDuration { get; set; }
+		public static ConfigEntry<bool> DepthInteractable { get; set; }
+		public static ConfigEntry<bool> DepthUpdate { get; set; }
+		public static ConfigEntry<int> SliderRMax { get; set; }
+		public static ConfigEntry<int> SliderRMin { get; set; }
+		public static ConfigEntry<Slider.Direction> SliderDDirection { get; set; }
+		public static ConfigEntry<int> DepthAmount { get; set; }
+
 		public static ConfigEntry<bool> ShowSelector { get; set; }
+
+		public static ConfigEntry<bool> KeyframeSnap { get; set; }
+		public static ConfigEntry<float> SnapAmount { get; set; }
+
+		public static ConfigEntry<float> HoverUIOFPSize { get; set; }
+		public static ConfigEntry<float> HoverUIETLSize { get; set; }
+		public static ConfigEntry<float> HoverUIKFSize { get; set; }
+
+		public static ConfigEntry<KeyCode> EditorPropertiesKey { get; set; }
+
+		public static List<Type> types = new List<Type>();
 
         private void Awake()
 		{
 			inst = this;
 
 			Logger.LogInfo("Plugin Editor Management is loaded!");
+
+			EditorPropertiesKey = Config.Bind("Editor Properties", "KeyCode", KeyCode.F10, "The key to press to open the Editor Properties / Preferences window.");
 
 			//Animate GUI (Editor Properties Popup)
 			EPPAnimateX = Config.Bind("Animate GUI", "Editor Properties Popup Animate X", true, "If the X scale should animate or not.");
@@ -306,6 +344,10 @@ namespace EditorManagement
 			GODAnimateInOutSpeeds = Config.Bind("Animate GUI", "Object Editor Speeds (Open | Close)", new Vector2(0.2f, 0.2f), "How fast the animation should play. First is open speed, second is close speed.");
 			GODAnimateEaseIn = Config.Bind("Animate GUI", "Object Editor Easing Open", Easings.Linear, "What type of easing the animation should use.");
 			GODAnimateEaseOut = Config.Bind("Animate GUI", "Object Editor Easing Close", Easings.Linear, "What type of easing the animation should use.");
+
+			HoverUIOFPSize = Config.Bind("Hover UI", "Open File Popup Size", 1.1f, "How big the button gets when hovered.");
+			HoverUIETLSize = Config.Bind("Hover UI", "Timeline Object Size", 1.1f, "How big the button gets when hovered.");
+			HoverUIKFSize = Config.Bind("Hover UI", "Object Keyframe Size", 1.1f, "How big the button gets when hovered.");
 
 			//AutoSave Config
 			AutoSaveRepeat = Config.Bind("AutoSave", "Repeat", 600f, "The repeat time of autosave.");
@@ -421,21 +463,54 @@ namespace EditorManagement
 			EditorGUIColor8 = Config.Bind("Editor GUI", "Color 8", new Color(0.1960784f, 0.1960784f, 0.1960784f, 1f), "Color theme slot 8.");
 			EditorGUIColor9 = Config.Bind("Editor GUI", "Color 9", new Color(0.1215686f, 0.1215686f, 0.1215686f, 1f), "Color theme slot 9.");
 
+			OriginXAmount = Config.Bind("Origin Offset", "X Amount", 0.1f, "The amount the origin X increases when the mouse scroll wheel is wheeled over the inputfield.");
+			OriginYAmount = Config.Bind("Origin Offset", "Y Amount", 0.1f, "The amount the origin Y increases when the mouse scroll wheel is wheeled over the inputfield.");
+
+
+			string dSl = "Render Depth";
+			string co = " Color";
+			string rdslh = " color of the Render Depth Slider handle.";
+
+			DepthNormalColor = Config.Bind(dSl, "00 Normal" + co, new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Normal" + rdslh);
+			DepthPressedColor = Config.Bind(dSl, "01 Pressed" + co, new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Pressed" + rdslh);
+			DepthHighlightedColor = Config.Bind(dSl, "02 Highlighted" + co, new Color(0.2588f, 0.2588f, 0.2588f, 1f), "Highlighted" + rdslh);
+			DepthDisabledColor = Config.Bind(dSl, "03 Disabled" + co, new Color(0.5882f, 0.5882f, 0.5882f, 0.502f), "Disabled" + rdslh);
+			DepthFadeDuration = Config.Bind(dSl, "04 Fade Duration", 0.01f, "How quick the highlighted / pressed color sets.");
+			DepthInteractable = Config.Bind(dSl, "05 Interactable", true, "If the Depth Slider is interactable or not.");
+			DepthUpdate = Config.Bind(dSl, "06 Update", false, "If the Depth Slider updates. If true, setting the depth via the text box will result in a slight glitch with setting the value.");
+			SliderRMax = Config.Bind(dSl, "07 Slider Max", 220, "Max value the slider can show.");
+			SliderRMin = Config.Bind(dSl, "08 Slider Min", -100, "Min value the slider can show.");
+			SliderDDirection = Config.Bind(dSl, "09 Direction", Slider.Direction.RightToLeft, "Direction the slider goes in. BottomToTop / TopToBottom not recommended.");
+			DepthAmount = Config.Bind(dSl, "0A Depth Amount", 1, "The amount the depth increases when the mouse scroll wheel is wheeled over the inputfield.");
+
+			string tlSl = " Timeline Slider";
+			string tcot = "The color of ";
+			string tcs = "timeline cursor / scrubber.";
+
+			MTSliderCol = Config.Bind("Cursor Color", "00 Timeline", new Color(0.251f, 0.4627f, 0.8745f, 1f), tcot + "the main " + tcs);
+			KTSliderCol = Config.Bind("Cursor Color", "01 Object", new Color(0.251f, 0.4627f, 0.8745f, 1f), tcot + "the keyframe " + tcs);
+            ObjSelCol = Config.Bind("Cursor Color", "02 Object Selection", new Color(0.251f, 0.4627f, 0.8745f, 1f), tcot + "a selected object.");
+
+			KeyframeSnap = Config.Bind("BPM Snap", "Snap Affects Keyframes", false, "If the BPM snap should snap the object keyframes when dragged.");
+			SnapAmount = Config.Bind("BPM Snap", "Snap Divisions", 4f, "H");
+
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
 			//Patch classes
 			{
-				//Code written by Enchart
 				Harmony harmony = new Harmony("anything here");
 
 				MethodInfo layerSetter = typeof(DataManager.GameData.BeatmapObject.EditorData).GetProperty("Layer").GetSetMethod(false);
 				MethodInfo binSetter = typeof(DataManager.GameData.BeatmapObject.EditorData).GetProperty("Bin").GetSetMethod(false);
+				MethodInfo depthSetter = typeof(DataManager.GameData.BeatmapObject).GetProperty("Depth").GetSetMethod(false);
 
-				MethodInfo prefix1 = typeof(EditorPlugin).GetMethod("LayerSetterPrefix", BindingFlags.Public | BindingFlags.Static);
-				MethodInfo prefix2 = typeof(EditorPlugin).GetMethod("BinSetterPrefix", BindingFlags.Public | BindingFlags.Static);
+				MethodInfo layerPrefix = typeof(EditorPlugin).GetMethod("LayerSetterPrefix", BindingFlags.Public | BindingFlags.Static);
+				MethodInfo binPrefix = typeof(EditorPlugin).GetMethod("BinSetterPrefix", BindingFlags.Public | BindingFlags.Static);
+				MethodInfo depthPrefix = typeof(EditorPlugin).GetMethod("DepthSetterPrefix", BindingFlags.Public | BindingFlags.Static);
 
-				HarmonyMethod prefixMethod1 = new HarmonyMethod(prefix1);
-				HarmonyMethod prefixMethod2 = new HarmonyMethod(prefix2);
+				HarmonyMethod layerPatch = new HarmonyMethod(layerPrefix);
+				HarmonyMethod binPatch = new HarmonyMethod(binPrefix);
+				HarmonyMethod depthPatch = new HarmonyMethod(depthPrefix);
 
 				var loadLevelEnumeratorMethod = AccessTools.Method(typeof(EditorManager), "LoadLevel");
 				var loadLevelMoveNext = AccessTools.EnumeratorMoveNext(loadLevelEnumeratorMethod);
@@ -451,9 +526,11 @@ namespace EditorManagement
 				harmony.PatchAll(typeof(MarkerEditorPatch));
 				harmony.PatchAll(typeof(PrefabEditorPatch));
 				harmony.PatchAll(typeof(DataManagerGameDataPatch));
+				harmony.PatchAll(typeof(GameManagerPatch));
 
-				harmony.Patch(layerSetter, prefix: prefixMethod1);
-				harmony.Patch(binSetter, prefix: prefixMethod2);
+				harmony.Patch(layerSetter, prefix: layerPatch);
+				harmony.Patch(binSetter, prefix: binPatch);
+				harmony.Patch(depthSetter, prefix: depthPatch);
 				harmony.Patch(loadLevelMoveNext, postfix: loadLevelPrefix);
 			}
 		}
@@ -470,6 +547,12 @@ namespace EditorManagement
 		public static bool BinSetterPrefix(int value, DataManager.GameData.BeatmapObject.EditorData __instance)
 		{
 			var field = __instance.GetType().GetField("bin", BindingFlags.NonPublic | BindingFlags.Instance);
+			field.SetValue(__instance, value);
+			return false;
+		}
+		public static bool DepthSetterPrefix(int value, DataManager.GameData.BeatmapObject __instance)
+		{
+			var field = __instance.GetType().GetField("depth", BindingFlags.NonPublic | BindingFlags.Instance);
 			field.SetValue(__instance, value);
 			return false;
 		}
@@ -672,6 +755,64 @@ namespace EditorManagement
 				{
 					showDamagable = ShowDamagable.Value;
 					ObjectManager.inst.updateObjects();
+				}
+
+                //Cursor Color
+                {
+					if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle"))
+					{
+						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle").GetComponent<Image>().color = MTSliderCol.Value;
+					}
+					else
+                    {
+						RTEditor.DisplayCustomNotification("CD", "Whoooops you gotta put this CD up your-", 1f, LSColors.HexToColor("202020"), MTSliderCol.Value, Color.white, "Whoops!");
+                    }
+
+					if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image"))
+					{
+						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image").GetComponent<Image>().color = MTSliderCol.Value;
+					}
+					else
+					{
+						RTEditor.DisplayCustomNotification("CD", "Whoooops you gotta put this CD up your-", 1f, LSColors.HexToColor("202020"), MTSliderCol.Value, Color.white, "Whoops!");
+					}
+
+					if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image"))
+					{
+						GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image").GetComponent<Image>().color = KTSliderCol.Value;
+					}
+					else
+					{
+						RTEditor.DisplayCustomNotification("CD", "Whoooops you gotta put this CD up your-", 1f, LSColors.HexToColor("202020"), KTSliderCol.Value, Color.white, "Whoops!");
+					}
+
+					if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle"))
+					{
+						GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle").GetComponent<Image>().color = KTSliderCol.Value;
+					}
+					else
+					{
+						RTEditor.DisplayCustomNotification("CD", "Whoooops you gotta put this CD up your-", 1f, LSColors.HexToColor("202020"), KTSliderCol.Value, Color.white, "Whoops!");
+					}
+
+					ObjEditor.inst.SelectedColor = ObjSelCol.Value;
+				}
+
+                //Render Depth
+                {
+					Transform sliderObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth");
+					Slider sliderComponent = sliderObject.GetComponent<Slider>();
+					ColorBlock cbd = sliderComponent.colors;
+					cbd.normalColor = DepthNormalColor.Value;
+					cbd.pressedColor = DepthPressedColor.Value;
+					cbd.highlightedColor = DepthHighlightedColor.Value;
+					cbd.disabledColor = DepthDisabledColor.Value;
+					cbd.fadeDuration = DepthFadeDuration.Value;
+					sliderComponent.colors = cbd;
+					sliderComponent.interactable = DepthInteractable.Value;
+					sliderComponent.maxValue = SliderRMax.Value;
+					sliderComponent.minValue = SliderRMin.Value;
+					sliderComponent.direction = SliderDDirection.Value;
 				}
 			}
 		}
@@ -1068,8 +1209,15 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().Depth = objectSelection.GetObjectData().Depth + int.Parse(multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
-						ObjectManager.inst.updateObjects(objectSelection);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().Depth = objectSelection.GetObjectData().Depth + int.Parse(multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+							ObjectManager.inst.updateObjects(objectSelection);
+						}
+						if (objectSelection.IsPrefab())
+                        {
+							RTEditor.DisplayNotification("MSDP", "Cannot modify the depth of a prefab!", 1f, EditorManager.NotificationType.Error);
+                        }
 					}
 				});
 
@@ -1079,8 +1227,15 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().Depth -= int.Parse(multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
-						ObjectManager.inst.updateObjects(objectSelection);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().Depth -= int.Parse(multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+							ObjectManager.inst.updateObjects(objectSelection);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							RTEditor.DisplayNotification("MSDP", "Cannot modify the depth of a prefab!", 1f, EditorManager.NotificationType.Error);
+						}
 					}
 				});
 
@@ -1090,8 +1245,15 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().Depth += int.Parse(multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
-						ObjectManager.inst.updateObjects(objectSelection);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().Depth += int.Parse(multiDepthSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+							ObjectManager.inst.updateObjects(objectSelection);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							RTEditor.DisplayNotification("MSDP", "Cannot modify the depth of a prefab!", 1f, EditorManager.NotificationType.Error);
+						}
 					}
 				});
 
@@ -1122,7 +1284,14 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().StartTime = AudioManager.inst.CurrentAudioSource.time;
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().StartTime = AudioManager.inst.CurrentAudioSource.time;
+						}
+						if (objectSelection.IsPrefab())
+						{
+							objectSelection.GetPrefabObjectData().StartTime = AudioManager.inst.CurrentAudioSource.time;
+						}
 
 						ObjectManager.inst.updateObjects(objectSelection);
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
@@ -1135,7 +1304,15 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().StartTime -= float.Parse(multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().StartTime -= float.Parse(multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							objectSelection.GetPrefabObjectData().StartTime -= float.Parse(multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+						}
+
 						ObjectManager.inst.updateObjects(objectSelection);
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
 					}
@@ -1147,7 +1324,15 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().StartTime += float.Parse(multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().StartTime += float.Parse(multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							objectSelection.GetPrefabObjectData().StartTime += float.Parse(multiTimeSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text);
+						}
+
 						ObjectManager.inst.updateObjects(objectSelection);
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
 					}
@@ -1180,13 +1365,19 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().name = multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text;
-
-						ObjEditor.inst.RenderTimelineObject(objectSelection);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().name = multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text;
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							RTEditor.DisplayNotification("MSNP", "Cannot modify the name of a prefab!", 1f, EditorManager.NotificationType.Error);
+						}
 					}
 				});
 
-				UnityEngine.Object.Destroy(multiNameSet.transform.GetChild(0).Find("<").gameObject);
+				Destroy(multiNameSet.transform.GetChild(0).Find("<").gameObject);
 				Button mtnLeft = multiNameSet.transform.GetChild(0).Find("<").GetComponent<Button>();
 
 				Button mtnRight = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Button>();
@@ -1218,8 +1409,15 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().name += multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text;
-						ObjEditor.inst.RenderTimelineObject(objectSelection);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().name += multiNameSet.transform.GetChild(0).gameObject.GetComponent<InputField>().text;
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							RTEditor.DisplayNotification("MSNP", "Cannot modify the name of a prefab!", 1f, EditorManager.NotificationType.Error);
+						}
 					}
 				});
 
@@ -1244,11 +1442,17 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().autoKillType = DataManager.GameData.BeatmapObject.AutoKillType.SongTime;
-						objectSelection.GetObjectData().autoKillOffset = AudioManager.inst.CurrentAudioSource.time;
-
-						ObjectManager.inst.updateObjects(objectSelection, false);
-						ObjEditor.inst.RenderTimelineObject(objectSelection);
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().autoKillType = DataManager.GameData.BeatmapObject.AutoKillType.SongTime;
+							objectSelection.GetObjectData().autoKillOffset = AudioManager.inst.CurrentAudioSource.time;
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
+						}
+						if (objectSelection.IsPrefab())
+						{
+							RTEditor.DisplayNotification("MSAKP", "Cannot set autokill of a prefab!", 1f, EditorManager.NotificationType.Error);
+						}
 					}
 				});
 
@@ -1272,14 +1476,20 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().objectType += 1;
-						if ((int)objectSelection.GetObjectData().objectType > 3)
+						if (objectSelection.IsObject())
 						{
-							objectSelection.GetObjectData().objectType = 0;
+							objectSelection.GetObjectData().objectType += 1;
+							if ((int)objectSelection.GetObjectData().objectType > 3)
+							{
+								objectSelection.GetObjectData().objectType = 0;
+							}
+							ObjectManager.inst.updateObjects(objectSelection, false);
+							ObjEditor.inst.RenderTimelineObject(objectSelection);
 						}
-
-						ObjectManager.inst.updateObjects(objectSelection, false);
-						ObjEditor.inst.RenderTimelineObject(objectSelection);
+						if (objectSelection.IsPrefab())
+						{
+							RTEditor.DisplayNotification("MSOTP", "Cannot set object type of a prefab!", 1f, EditorManager.NotificationType.Error);
+						}
 					}
 				});
 
@@ -1303,7 +1513,14 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().editorData.locked = !objectSelection.GetObjectData().editorData.locked;
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().editorData.locked = !objectSelection.GetObjectData().editorData.locked;
+						}
+						if (objectSelection.IsPrefab())
+						{
+							objectSelection.GetPrefabObjectData().editorData.locked = !objectSelection.GetPrefabObjectData().editorData.locked;
+						}
 
 						ObjectManager.inst.updateObjects(objectSelection, false);
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
@@ -1333,13 +1550,27 @@ namespace EditorManagement
 					loggle = !loggle;
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						if (loggle == false)
+						if (objectSelection.IsObject())
 						{
-							objectSelection.GetObjectData().editorData.locked = false;
+							if (loggle == false)
+							{
+								objectSelection.GetObjectData().editorData.locked = false;
+							}
+							if (loggle == true)
+							{
+								objectSelection.GetObjectData().editorData.locked = true;
+							}
 						}
-						if (loggle == true)
+						if (objectSelection.IsPrefab())
 						{
-							objectSelection.GetObjectData().editorData.locked = true;
+							if (loggle == false)
+							{
+								objectSelection.GetPrefabObjectData().editorData.locked = false;
+							}
+							if (loggle == true)
+							{
+								objectSelection.GetPrefabObjectData().editorData.locked = true;
+							}
 						}
 
 						ObjectManager.inst.updateObjects(objectSelection, false);
@@ -1367,7 +1598,14 @@ namespace EditorManagement
 				{
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						objectSelection.GetObjectData().editorData.collapse = !objectSelection.GetObjectData().editorData.collapse;
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().editorData.collapse = !objectSelection.GetObjectData().editorData.collapse;
+						}
+						if (objectSelection.IsPrefab())
+						{
+							objectSelection.GetPrefabObjectData().editorData.collapse = !objectSelection.GetPrefabObjectData().editorData.collapse;
+						}
 
 						ObjectManager.inst.updateObjects(objectSelection, false);
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
@@ -1397,13 +1635,27 @@ namespace EditorManagement
 					coggle = !coggle;
 					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 					{
-						if (coggle == false)
+						if (objectSelection.IsObject())
 						{
-							objectSelection.GetObjectData().editorData.collapse = false;
+							if (coggle == false)
+							{
+								objectSelection.GetObjectData().editorData.collapse = false;
+							}
+							if (coggle == true)
+							{
+								objectSelection.GetObjectData().editorData.collapse = true;
+							}
 						}
-						if (coggle == true)
+						if (objectSelection.IsPrefab())
 						{
-							objectSelection.GetObjectData().editorData.collapse = true;
+							if (coggle == false)
+							{
+								objectSelection.GetPrefabObjectData().editorData.collapse = false;
+							}
+							if (coggle == true)
+							{
+								objectSelection.GetPrefabObjectData().editorData.collapse = true;
+							}
 						}
 
 						ObjectManager.inst.updateObjects(objectSelection, false);
@@ -1440,8 +1692,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().StartTime = ObjEditor.inst.selectedObjects[0].GetObjectData().StartTime;
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().StartTime = ObjEditor.inst.selectedObjects[0].GetObjectData().StartTime;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSSTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1460,8 +1720,15 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().name = ObjEditor.inst.selectedObjects[0].GetObjectData().name;
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().name = ObjEditor.inst.selectedObjects[0].GetObjectData().name;
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSNP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1480,10 +1747,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().objectType = ObjEditor.inst.selectedObjects[0].GetObjectData().objectType;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().objectType = ObjEditor.inst.selectedObjects[0].GetObjectData().objectType;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSOTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1502,10 +1775,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().autoKillType = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillType;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().autoKillType = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillType;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSAKTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1524,10 +1803,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().autoKillOffset = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillOffset;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().autoKillOffset = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillOffset;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSAKOP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1546,10 +1831,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().parent = ObjEditor.inst.selectedObjects[0].GetObjectData().parent;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().parent = ObjEditor.inst.selectedObjects[0].GetObjectData().parent;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSPP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1568,13 +1859,19 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							for (int i = 0; i < 3; i++)
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
 							{
-								objectSelection.GetObjectData().SetParentType(i, ObjEditor.inst.selectedObjects[0].GetObjectData().GetParentType(i));
+								for (int i = 0; i < 3; i++)
+								{
+									objectSelection.GetObjectData().SetParentType(i, ObjEditor.inst.selectedObjects[0].GetObjectData().GetParentType(i));
+								}
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
 							}
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSPTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1593,13 +1890,19 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							for (int i = 0; i < 3; i++)
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
 							{
-								objectSelection.GetObjectData().SetParentOffset(i, ObjEditor.inst.selectedObjects[0].GetObjectData().getParentOffset(i));
+								for (int i = 0; i < 3; i++)
+								{
+									objectSelection.GetObjectData().SetParentOffset(i, ObjEditor.inst.selectedObjects[0].GetObjectData().getParentOffset(i));
+								}
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
 							}
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSPOP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1618,10 +1921,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().origin = ObjEditor.inst.selectedObjects[0].GetObjectData().origin;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().origin = ObjEditor.inst.selectedObjects[0].GetObjectData().origin;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSOP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1640,11 +1949,17 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().shape = ObjEditor.inst.selectedObjects[0].GetObjectData().shape;
-							objectSelection.GetObjectData().shapeOption = ObjEditor.inst.selectedObjects[0].GetObjectData().shapeOption;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().shape = ObjEditor.inst.selectedObjects[0].GetObjectData().shape;
+								objectSelection.GetObjectData().shapeOption = ObjEditor.inst.selectedObjects[0].GetObjectData().shapeOption;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSSSP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1663,10 +1978,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().text = ObjEditor.inst.selectedObjects[0].GetObjectData().text;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().text = ObjEditor.inst.selectedObjects[0].GetObjectData().text;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -1685,10 +2006,16 @@ namespace EditorManagement
 					{
 						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
 						{
-							objectSelection.GetObjectData().Depth = ObjEditor.inst.selectedObjects[0].GetObjectData().Depth;
-
-							ObjectManager.inst.updateObjects(objectSelection, false);
-							ObjEditor.inst.RenderTimelineObject(objectSelection);
+							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
+							{
+								objectSelection.GetObjectData().Depth = ObjEditor.inst.selectedObjects[0].GetObjectData().Depth;
+								ObjectManager.inst.updateObjects(objectSelection, false);
+								ObjEditor.inst.RenderTimelineObject(objectSelection);
+							}
+							if (objectSelection.IsPrefab())
+							{
+								RTEditor.DisplayNotification("MSDP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+							}
 						}
 					});
 
@@ -2063,8 +2390,9 @@ namespace EditorManagement
 					gameObject.transform.localScale = Vector3.one;
 					var hoverUI = gameObject.AddComponent<HoverUI>();
 					hoverUI.ogPos = gameObject.transform.localPosition;
-					hoverUI.animPos = Vector3.zero;
-					hoverUI.animatePos = false;
+					hoverUI.animPos = new Vector3(-0.5f, 0f);
+					hoverUI.size = HoverUIOFPSize.Value;
+					hoverUI.animatePos = true;
 					hoverUI.animateSca = true;
 					HoverTooltip htt = gameObject.AddComponent<HoverTooltip>();
 
@@ -2463,5 +2791,41 @@ namespace EditorManagement
 				MarkerColN8.Value,
 			};
 		}
+
+		[HarmonyPatch(typeof(Debug), "Log", new Type[] { typeof(object) })]
+		[HarmonyPostfix]
+		private static void LogNotifications(object __0)
+        {
+			if (EditorManager.inst != null && EditorDebug.Value == true)
+            {
+				string str = __0.ToString();
+				str = str.Replace(@"\n", "<br>");
+				RTEditor.DisplayNotification(__0.ToString(), str, 2f, EditorManager.NotificationType.Success);
+            }
+        }
+
+		[HarmonyPatch(typeof(Debug), "LogError", new Type[] { typeof(object) })]
+		[HarmonyPostfix]
+		private static void LogErrorNotifications(object __0)
+        {
+			if (EditorManager.inst != null && EditorDebug.Value == true)
+            {
+				string str = __0.ToString();
+				str = str.Replace(@"\n", "<br>");
+				RTEditor.DisplayNotification(__0.ToString(), str, 2f, EditorManager.NotificationType.Error);
+            }
+        }
+
+		[HarmonyPatch(typeof(Debug), "LogWarning", new Type[] { typeof(object) })]
+		[HarmonyPostfix]
+		private static void LogWarningNotifications(object __0)
+        {
+			if (EditorManager.inst != null && EditorDebug.Value == true)
+            {
+				string str = __0.ToString();
+				str = str.Replace(@"\n", "<br>");
+				RTEditor.DisplayNotification(__0.ToString(), str, 2f, EditorManager.NotificationType.Warning);
+            }
+        }
 	}
 }

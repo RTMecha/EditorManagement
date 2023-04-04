@@ -4,9 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Text.RegularExpressions;
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 using HarmonyLib;
 using BepInEx;
@@ -48,11 +50,33 @@ namespace EditorManagement.Functions
 
 		private void Update()
 		{
-			if (Input.GetKeyDown(KeyCode.F10))
+			if (Input.GetKeyDown(EditorPlugin.EditorPropertiesKey.Value))
 			{
 				OpenPropertiesWindow(true);
 			}
 		}
+
+		public static void Log(object _log)
+        {
+			Console.WriteLine(_log);
+        }
+
+		public static void LogFormat(object _log, params object[] _formats)
+        {
+			string logger = _log.ToString();
+
+			foreach (var obj in _formats)
+			{
+				var regex = new Regex(@"{([0-9]+)}");
+				var match = regex.Match(_log.ToString());
+				if (match.Success)
+                {
+					logger = _log.ToString().Replace("{" + match.Groups[1].ToString() + "}", obj.ToString());
+                }
+			}
+
+			Console.WriteLine(logger);
+        }
 
 		public static IEnumerator FixHelp(string _text, float _time)
 		{
@@ -72,61 +96,68 @@ namespace EditorManagement.Functions
 		}
 
 		public static IEnumerator DisplayDefaultNotification(string _text, float _time, EditorManager.NotificationType _type)
-        {
-			switch (_type)
+		{
+			if (!EditorPlugin.EditorDebug.Value)
 			{
-				case EditorManager.NotificationType.Info:
-					{
-						GameObject gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
-						Destroy(gameObject, _time);
-						gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = _text;
-						gameObject.transform.SetParent(EditorManager.inst.notification.transform);
-						if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+				Debug.LogFormat("{0}\nNotification:\nText: " + _text + "\nTime: " + _time + "\nType: " + _type, EditorPlugin.className);
+			}
+			if (notifications.Count < 20)
+			{
+				switch (_type)
+				{
+					case EditorManager.NotificationType.Info:
 						{
-							gameObject.transform.SetAsFirstSibling();
+							GameObject gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
+							Destroy(gameObject, _time);
+							gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = _text;
+							gameObject.transform.SetParent(EditorManager.inst.notification.transform);
+							if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+							{
+								gameObject.transform.SetAsFirstSibling();
+							}
+							gameObject.transform.localScale = Vector3.one;
+							break;
 						}
-						gameObject.transform.localScale = Vector3.one;
-						break;
-					}
-				case EditorManager.NotificationType.Success:
-					{
-						GameObject gameObject1 = Instantiate(EditorManager.inst.notificationPrefabs[1], Vector3.zero, Quaternion.identity);
-						Destroy(gameObject1, _time);
-						gameObject1.transform.Find("text").GetComponent<Text>().text = _text;
-						gameObject1.transform.SetParent(EditorManager.inst.notification.transform);
-						if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+					case EditorManager.NotificationType.Success:
 						{
-							gameObject1.transform.SetAsFirstSibling();
+							GameObject gameObject1 = Instantiate(EditorManager.inst.notificationPrefabs[1], Vector3.zero, Quaternion.identity);
+							Destroy(gameObject1, _time);
+							gameObject1.transform.Find("text").GetComponent<Text>().text = _text;
+							gameObject1.transform.SetParent(EditorManager.inst.notification.transform);
+							if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+							{
+								gameObject1.transform.SetAsFirstSibling();
+							}
+							gameObject1.transform.localScale = Vector3.one;
+							break;
 						}
-						gameObject1.transform.localScale = Vector3.one;
-						break;
-					}
-				case EditorManager.NotificationType.Error:
-					{
-						GameObject gameObject2 = Instantiate(EditorManager.inst.notificationPrefabs[2], Vector3.zero, Quaternion.identity);
-						Destroy(gameObject2, _time);
-						gameObject2.transform.Find("text").GetComponent<Text>().text = _text;
-						gameObject2.transform.SetParent(EditorManager.inst.notification.transform);
-						if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+					case EditorManager.NotificationType.Error:
 						{
-							gameObject2.transform.SetAsFirstSibling();
+							GameObject gameObject2 = Instantiate(EditorManager.inst.notificationPrefabs[2], Vector3.zero, Quaternion.identity);
+							Destroy(gameObject2, _time);
+							gameObject2.transform.Find("text").GetComponent<Text>().text = _text;
+							gameObject2.transform.SetParent(EditorManager.inst.notification.transform);
+							if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+							{
+								gameObject2.transform.SetAsFirstSibling();
+							}
+							gameObject2.transform.localScale = Vector3.one;
+							break;
 						}
-						gameObject2.transform.localScale = Vector3.one;
-						break;
-					}
-				case EditorManager.NotificationType.Warning:
-					{
-						GameObject gameObject3 = Instantiate(EditorManager.inst.notificationPrefabs[3], Vector3.zero, Quaternion.identity);
-						Destroy(gameObject3, _time);
-						gameObject3.transform.Find("text").GetComponent<Text>().text = _text;
-						gameObject3.transform.SetParent(EditorManager.inst.notification.transform);
-						if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+					case EditorManager.NotificationType.Warning:
 						{
-							gameObject3.transform.SetAsFirstSibling();
+							GameObject gameObject3 = Instantiate(EditorManager.inst.notificationPrefabs[3], Vector3.zero, Quaternion.identity);
+							Destroy(gameObject3, _time);
+							gameObject3.transform.Find("text").GetComponent<Text>().text = _text;
+							gameObject3.transform.SetParent(EditorManager.inst.notification.transform);
+							if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+							{
+								gameObject3.transform.SetAsFirstSibling();
+							}
+							gameObject3.transform.localScale = Vector3.one;
+							break;
 						}
-						gameObject3.transform.localScale = Vector3.one;
-						break;
-					}
+				}
 			}
 
 			yield break;
@@ -144,9 +175,13 @@ namespace EditorManagement.Functions
 
 		public static IEnumerator DisplayNotificationLoop(string _name, string _text, float _time, EditorManager.NotificationType _type)
         {
-			if (!notifications.Contains(_name))
+			if (!notifications.Contains(_name) && notifications.Count < 20)
 			{
 				notifications.Add(_name);
+				if (!EditorPlugin.EditorDebug.Value)
+				{
+					Debug.Log("<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>\nNotification: " + _name + "\nText: " + _text + "\nTime: " + _time + "\nType: " + _type);
+				}
 				switch (_type)
 				{
 					case EditorManager.NotificationType.Info:
@@ -211,10 +246,13 @@ namespace EditorManagement.Functions
 
 		public static IEnumerator DisplayCustomNotificationLoop(string _name, string _text, float _time, Color _base, Color _top, Color _icCol, string _title, Sprite _icon = null)
         {
-			if (!notifications.Contains(_name))
+			if (!notifications.Contains(_name) && notifications.Count < 20)
             {
 				notifications.Add(_name);
-
+				if (!EditorPlugin.EditorDebug.Value)
+				{
+					Debug.Log("<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>\nNotification: " + _name + "\nText: " + _text + "\nTime: " + _time + "\nBase Color: " + ColorToHex(_base) + "\nTop Color: " + ColorToHex(_top) + "\nIcon Color: " + ColorToHex(_icCol) + "\nTitle: " + _title);
+				}
 				GameObject gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
 				Destroy(gameObject, _time);
 				gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = _text;
@@ -466,6 +504,209 @@ namespace EditorManagement.Functions
 				ObjEditor.inst.SetCurrentObj(objectSelection);
 			}
 			return objectSelection;
+		}
+
+		public static GameObject RenderTimelineObject(ObjEditor.ObjectSelection _obj)
+		{
+			if (_obj.IsObject() && !string.IsNullOrEmpty(_obj.ID) && _obj.GetObjectData() != null && !_obj.GetObjectData().fromPrefab)
+			{
+				if (_obj == ObjEditor.inst.currentObjectSelection)
+				{
+					AccessTools.Method(typeof(ObjEditor), "ResizeKeyframeTimeline").Invoke(ObjEditor.inst, new object[] { });
+				}
+				GameObject gameObject;
+				if (!_obj.HasTimelineObject())
+				{
+					gameObject = ObjEditor.inst.CreateTimelineObject(_obj);
+				}
+				else
+				{
+					gameObject = _obj.GetTimelineObject();
+				}
+				if (EditorManager.inst.layer != _obj.GetObjectData().editorData.Layer)
+				{
+					gameObject.SetActive(false);
+				}
+				else
+				{
+					DataManager.GameData.BeatmapObject objData = _obj.GetObjectData();
+					if (objData.editorData.locked && gameObject.transform.Find("icons/lock") == null)
+					{
+						GameObject gameObject2 = Instantiate(ObjEditor.inst.timelineObjectPrefabLock);
+						gameObject2.name = "lock";
+						gameObject2.transform.SetParent(gameObject.transform.Find("icons"));
+						gameObject2.GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject2.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (objData.editorData.locked && gameObject.transform.Find("icons/lock") != null)
+					{
+						gameObject.transform.Find("icons/lock").GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject.transform.Find("icons/lock").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (!objData.editorData.locked && gameObject.transform.Find("icons/lock") != null)
+					{
+						Destroy(gameObject.transform.Find("icons/lock").gameObject);
+					}
+					if (objData.editorData.collapse && gameObject.transform.Find("icons/dots") == null)
+					{
+						GameObject gameObject3 = Instantiate(ObjEditor.inst.timelineObjectPrefabDots);
+						gameObject3.name = "dots";
+						gameObject3.transform.SetParent(gameObject.transform.Find("icons"));
+						gameObject3.GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject3.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (objData.editorData.collapse && gameObject.transform.Find("icons/dots") != null)
+					{
+						gameObject.transform.Find("icons/dots").GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject.transform.Find("icons/dots").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (!objData.editorData.collapse && gameObject.transform.Find("icons/dots") != null)
+					{
+						Destroy(gameObject.transform.Find("icons/dots").gameObject);
+					}
+					float startTime = objData.StartTime;
+					float num = objData.GetObjectLifeLength(0f, false, true);
+					if (num <= 0.4f)
+					{
+						num = 0.4f * EditorManager.inst.Zoom;
+					}
+					else
+					{
+						num *= EditorManager.inst.Zoom;
+					}
+					gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(num, 20f);
+					gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(startTime * EditorManager.inst.Zoom, (float)(-20 * Mathf.Clamp(objData.editorData.Bin, 0, 14)));
+					if (objData.objectType == DataManager.GameData.BeatmapObject.ObjectType.Helper)
+					{
+						gameObject.GetComponent<Image>().sprite = ObjEditor.inst.HelperSprite;
+						gameObject.GetComponent<Image>().type = Image.Type.Tiled;
+					}
+					else if (objData.objectType == DataManager.GameData.BeatmapObject.ObjectType.Decoration)
+					{
+						gameObject.GetComponent<Image>().sprite = ObjEditor.inst.DecorationSprite;
+						gameObject.GetComponent<Image>().type = Image.Type.Tiled;
+					}
+					else if (objData.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty)
+					{
+						gameObject.GetComponent<Image>().sprite = ObjEditor.inst.EmptySprite;
+						gameObject.GetComponent<Image>().type = Image.Type.Tiled;
+					}
+					else
+					{
+						gameObject.GetComponent<Image>().sprite = null;
+						gameObject.GetComponent<Image>().type = Image.Type.Simple;
+					}
+					gameObject.GetComponentInChildren<TextMeshProUGUI>().text = ((!string.IsNullOrEmpty(objData.name)) ? string.Format("<mark=#000000aa>{0}</mark>", objData.name) : "");
+					Color color = ObjEditor.inst.NormalColor;
+					if (objData.prefabID != "")
+					{
+						if (DataManager.inst.gameData.prefabs.FindIndex((DataManager.GameData.Prefab x) => x.ID == objData.prefabID) != -1)
+						{
+							color = DataManager.inst.PrefabTypes[DataManager.inst.gameData.prefabs.Find((DataManager.GameData.Prefab x) => x.ID == objData.prefabID).Type].Color;
+						}
+						else
+						{
+							DataManager.inst.gameData.beatmapObjects[_obj.Index].prefabID = null;
+							DataManager.inst.gameData.beatmapObjects[_obj.Index].prefabInstanceID = null;
+						}
+					}
+					if (ObjEditor.inst.ContainedInSelectedObjects(_obj))
+					{
+						gameObject.GetComponent<Image>().color = ObjEditor.inst.SelectedColor;
+					}
+					else
+					{
+						gameObject.GetComponent<Image>().color = color;
+					}
+					gameObject.GetComponentInChildren<TextMeshProUGUI>().color = LSColors.white;
+					gameObject.SetActive(true);
+				}
+				return gameObject;
+			}
+			if (_obj.IsPrefab() && !string.IsNullOrEmpty(_obj.ID) && _obj.GetPrefabObjectData() != null)
+			{
+				GameObject gameObject4;
+				if (!_obj.HasTimelineObject())
+				{
+					gameObject4 = ObjEditor.inst.CreateTimelineObject(_obj);
+				}
+				else
+				{
+					gameObject4 = _obj.GetTimelineObject();
+				}
+				if (EditorManager.inst.layer != _obj.GetPrefabObjectData().editorData.Layer)
+				{
+					gameObject4.SetActive(false);
+				}
+				else
+				{
+					DataManager.GameData.PrefabObject prefabObjectData = _obj.GetPrefabObjectData();
+					DataManager.GameData.Prefab prefabData = _obj.GetPrefabData();
+					_obj.DebugLog();
+					if (prefabObjectData.editorData.locked && gameObject4.transform.Find("icons/lock") == null)
+					{
+						GameObject gameObject5 = Instantiate(ObjEditor.inst.timelineObjectPrefabLock);
+						gameObject5.name = "lock";
+						gameObject5.transform.SetParent(gameObject4.transform.Find("icons"));
+						gameObject5.GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject5.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (prefabObjectData.editorData.locked && gameObject4.transform.Find("icons/lock") != null)
+					{
+						gameObject4.transform.Find("icons/lock").GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject4.transform.Find("icons/lock").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (!prefabObjectData.editorData.locked && gameObject4.transform.Find("icons/lock") != null)
+					{
+						Destroy(gameObject4.transform.Find("icons/lock").gameObject);
+					}
+					if (prefabObjectData.editorData.collapse && gameObject4.transform.Find("icons/dots") == null)
+					{
+						GameObject gameObject6 = Instantiate(ObjEditor.inst.timelineObjectPrefabDots);
+						gameObject6.name = "dots";
+						gameObject6.transform.SetParent(gameObject4.transform.Find("icons"));
+						gameObject6.GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject6.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (prefabObjectData.editorData.collapse && gameObject4.transform.Find("icons/dots") != null)
+					{
+						gameObject4.transform.Find("icons/dots").GetComponent<RectTransform>().localScale = Vector2.one;
+						gameObject4.transform.Find("icons/dots").GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+					}
+					else if (!prefabObjectData.editorData.collapse && gameObject4.transform.Find("icons/dots") != null)
+					{
+						Destroy(gameObject4.transform.Find("icons/dots").gameObject);
+					}
+					float num2 = prefabObjectData.StartTime + prefabData.Offset;
+					float num3 = prefabData.GetPrefabLifeLength(prefabObjectData, true);
+					if (num3 <= 0.2f)
+					{
+						num3 = 0.2f * EditorManager.inst.Zoom;
+					}
+					else
+					{
+						num3 *= EditorManager.inst.Zoom;
+					}
+					gameObject4.GetComponent<RectTransform>().sizeDelta = new Vector2(num3, 20f);
+					gameObject4.GetComponent<RectTransform>().anchoredPosition = new Vector2(num2 * EditorManager.inst.Zoom, (float)(-20 * Mathf.Clamp(prefabObjectData.editorData.Bin, 0, 14)));
+					Color color2 = DataManager.inst.PrefabTypes[prefabData.Type].Color;
+					gameObject4.GetComponent<Image>().sprite = null;
+					gameObject4.GetComponent<Image>().type = Image.Type.Simple;
+					gameObject4.GetComponentInChildren<TextMeshProUGUI>().text = ((!string.IsNullOrEmpty(prefabData.Name)) ? string.Format("<mark=#000000aa>{0}</mark>", prefabData.Name) : DataManager.inst.PrefabTypes[prefabData.Type].Name);
+					if (ObjEditor.inst.ContainedInSelectedObjects(_obj))
+					{
+						gameObject4.GetComponent<Image>().color = ObjEditor.inst.SelectedColor;
+					}
+					else
+					{
+						gameObject4.GetComponent<Image>().color = color2;
+					}
+					gameObject4.GetComponentInChildren<TextMeshProUGUI>().color = LSColors.white;
+					gameObject4.SetActive(true);
+				}
+				return gameObject4;
+			}
+			return null;
 		}
 
 		public static void SetLayer(int _layer)
@@ -3103,6 +3344,46 @@ namespace EditorManagement.Functions
 				}
             }
 
+			var propWin = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut"));
+			propWin.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform);
+			propWin.transform.localScale = Vector3.one;
+			propWin.name = "Preferences";
+			propWin.transform.Find("Text").GetComponent<Text>().text = "Preferences";
+			propWin.transform.Find("Text 1").GetComponent<Text>().text = "F10";
+
+			propWin.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
+			propWin.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
+			propWin.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
+			propWin.GetComponent<Button>().onClick.RemoveAllListeners();
+			propWin.GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				OpenPropertiesWindow();
+			});
+
+			propWin.SetActive(true);
+
+
+			string jpgFileLocation = "BepInEx/plugins/Assets/editor_gui_preferences-white.png";
+
+			if (RTFile.FileExists(jpgFileLocation))
+			{
+				Image spriteReloader = propWin.transform.Find("Image").GetComponent<Image>();
+
+				EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(RTFile.GetApplicationDirectory() + jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+				{
+					spriteReloader.sprite = cover;
+				}, delegate (string errorFile)
+				{
+					spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+				}));
+			}
+
+			editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.RemoveAllListeners();
+			editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				ClosePropertiesWindow();
+			});
+
 			//Add Editor Properties Popup to EditorDialogsDictionary
 			{
 				EditorManager.EditorDialog editorPropertiesDialog = new EditorManager.EditorDialog();
@@ -3138,6 +3419,14 @@ namespace EditorManagement.Functions
 			}
 		}
 
+		public static void ClosePropertiesWindow()
+		{
+			if (EditorManager.inst != null)
+			{
+				EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.GetComponent<AnimateInGUI>().OnDisableManual();
+			}
+		}
+
 		public static void ScaleTabs(int _tab)
 		{
 			var editorDialog = EditorManager.inst.GetDialog("Editor Properties Popup").Dialog;
@@ -3156,6 +3445,11 @@ namespace EditorManagement.Functions
 		}
 
 		public static List<Color> categoryColors = new List<Color>();
+
+		public static float SnapToBPM(float _time)
+		{
+			return (float)Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / EditorPlugin.SnapAmount.Value)) * (SettingEditor.inst.BPMMulti / EditorPlugin.SnapAmount.Value);
+		}
 
 		public static void RenderPropertiesWindow()
         {
@@ -3685,8 +3979,14 @@ namespace EditorManagement.Functions
 			new EditorProperty("Debug", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, EditorPlugin.EditorDebug, ""),
 			new EditorProperty("Reminder Active", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, EditorPlugin.ReminderActive, ""),
 			new EditorProperty("Reminder Loop Time", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.General, EditorPlugin.ReminderRepeat, ""),
+			new EditorProperty("BPM Snaps Keyframes", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, EditorPlugin.KeyframeSnap, ""),
+			new EditorProperty("BPM Snap Count", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.General, EditorPlugin.SnapAmount, ""),
+			new EditorProperty("Preferences Open Key", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.General, EditorPlugin.EditorPropertiesKey, ""),
 
 			//Timeline
+			new EditorProperty("Timeline Cursor Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.MTSliderCol, ""),
+			new EditorProperty("Object Cursor Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.KTSliderCol, ""),
+			new EditorProperty("Object Selection Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ObjSelCol, ""),
 			new EditorProperty("Timeline Zoom Bounds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ETLZoomBounds, ""),
 			new EditorProperty("Object Zoom Bounds", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ObjZoomBounds, ""),
 			new EditorProperty("Zoom Amount", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Timeline, EditorPlugin.ZoomAmount, ""),
@@ -3758,6 +4058,10 @@ namespace EditorManagement.Functions
 			new EditorProperty("Open File Cover Art Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FBIconPos, ""),
 			new EditorProperty("Open File Cover Art Sca", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.FBIconSca, ""),
 
+			new EditorProperty("Open File Hover Size", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.HoverUIOFPSize, ""),
+			new EditorProperty("Timeline Object Hover Size", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.HoverUIETLSize, ""),
+			new EditorProperty("Object Keyframe Hover Size", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.HoverUIKFSize, ""),
+
 			new EditorProperty("Anim Edit Prop Easing Open", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateEaseIn, ""),
 			new EditorProperty("Anim Edit Prop Easing Close", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateEaseOut, ""),
 			new EditorProperty("Anim Edit Prop Animate X", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, EditorPlugin.EPPAnimateX, ""),
@@ -3822,6 +4126,19 @@ namespace EditorManagement.Functions
 
 			//Fields
 			new EditorProperty("Time Modify", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Fields, EditorPlugin.TimeModify, ""),
+			new EditorProperty("Origin Offset X Modify", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Fields, EditorPlugin.OriginXAmount, ""),
+			new EditorProperty("Origin Offset Y Modify", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Fields, EditorPlugin.OriginYAmount, ""),
+			new EditorProperty("Depth Slider Normal Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthNormalColor, ""),
+			new EditorProperty("Depth Slider Pressed Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthPressedColor, ""),
+			new EditorProperty("Depth Slider Highlighted Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthHighlightedColor, ""),
+			new EditorProperty("Depth Slider Disabled Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthDisabledColor, ""),
+			new EditorProperty("Depth Slider Fade Duration", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthFadeDuration, ""),
+			new EditorProperty("Depth Slider Interactable", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthInteractable, ""),
+			new EditorProperty("Depth Slider Updates", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthUpdate, ""),
+			new EditorProperty("Depth Slider Max", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.Fields, EditorPlugin.SliderRMax, ""),
+			new EditorProperty("Depth Slider Min", EditorProperty.ValueType.Int, EditorProperty.EditorPropCategory.Fields, EditorPlugin.SliderRMin, ""),
+			new EditorProperty("Depth Slider Direction", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.Fields, EditorPlugin.SliderDDirection, ""),
+			new EditorProperty("Depth Modify", EditorProperty.ValueType.IntSlider, EditorProperty.EditorPropCategory.Fields, EditorPlugin.DepthAmount, ""),
 
 			//Preview
 			new EditorProperty("Show Object Dragger", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, EditorPlugin.ShowSelector, ""),

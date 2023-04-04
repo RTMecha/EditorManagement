@@ -5,7 +5,7 @@ using HarmonyLib;
 
 using EditorManagement.Functions;
 
-namespace EditorManagement
+namespace EditorManagement.Patchers
 {
     [HarmonyPatch(typeof(SettingEditor))]
     public class SettingEditorPatch : MonoBehaviour

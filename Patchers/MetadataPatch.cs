@@ -16,7 +16,7 @@ using EditorManagement.Functions.Tools;
 
 using LSFunctions;
 
-namespace EditorManagement
+namespace EditorManagement.Patchers
 {
 	[HarmonyPatch(typeof(MetadataEditor))]
 	public class MetadataPatch : MonoBehaviour

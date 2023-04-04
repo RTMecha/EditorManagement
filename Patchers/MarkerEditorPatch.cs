@@ -15,7 +15,7 @@ using LSFunctions;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 
-namespace EditorManagement
+namespace EditorManagement.Patchers
 {
 	[HarmonyPatch(typeof(MarkerEditor))]
 	public class MarkerEditorPatch : MonoBehaviour

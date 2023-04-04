@@ -17,7 +17,7 @@ using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using LSFunctions;
 
-namespace EditorManagement
+namespace EditorManagement.Patchers
 {
 	[HarmonyPatch(typeof(EditorManager))]
     public class EditorPatch : MonoBehaviour
@@ -239,7 +239,6 @@ namespace EditorManagement
 
             //Pathing
             {
-
 				GameObject sortList = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown"));
 				sortList.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
@@ -602,6 +601,16 @@ namespace EditorManagement
 				quickActionsPopupSelect.target = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog;
 				quickActionsPopupSelect.ogPos = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.position;
 			}
+
+			//Cursor Color
+			{
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle").GetComponent<Image>().color = EditorPlugin.MTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image").GetComponent<Image>().color = EditorPlugin.MTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image").GetComponent<Image>().color = EditorPlugin.KTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle").GetComponent<Image>().color = EditorPlugin.KTSliderCol.Value;
+			}
+
+			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").GetComponent<HideDropdownOptions>());
 
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Join Discord/Text").GetComponent<Text>().text = "Modder's Discord";
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Watch Tutorials/Text").GetComponent<Text>().text = "Watch PA History";
@@ -1021,7 +1030,7 @@ namespace EditorManagement
 			if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
 				&& !EditorManager.inst.IsOverDropDown
 				&& EditorManager.inst.IsOverObjTimeline
-				&& (EventSystem.current.currentSelectedGameObject == null || (EventSystem.current.currentSelectedGameObject != null && EventSystem.current.currentSelectedGameObject.GetComponentInChildren<InputField>() == null))
+				&& !LSHelpers.IsUsingInputField()
 				&& !IsOverMainTimeline)
 			{
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
@@ -1053,7 +1062,7 @@ namespace EditorManagement
 					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - EditorPlugin.ZoomAmount.Value * 0.5f;
 				}
 			}
-			if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && !EditorManager.inst.IsOverDropDown && !EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline)
+			if (!EditorManager.inst.IsOverDropDown && !EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline)
 			{
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
@@ -1426,16 +1435,24 @@ namespace EditorManagement
 				}
 
 				EditorManager.inst.DisplayNotification("You've been working on the game for " + RTEditor.secondsToTime(Time.time) + randomtext, 2f, EditorManager.NotificationType.Warning, false);
-			}
-		}
-
-		[HarmonyPatch("DisplayNotification")]
-		[HarmonyPrefix]
-		private static bool DisplayNotificationPrefix(string __0, float __1, EditorManager.NotificationType __2)
-        {
-			RTEditor.inst.StartCoroutine(RTEditor.DisplayDefaultNotification(__0, __1, __2));
-			return false;
+            }
         }
+
+        [HarmonyPatch("DisplayNotification")]
+        [HarmonyPrefix]
+        private static bool DisplayNotificationPrefix(string __0, float __1, EditorManager.NotificationType __2)
+        {
+            RTEditor.inst.StartCoroutine(RTEditor.DisplayDefaultNotification(__0, __1, __2));
+            return false;
+        }
+
+		[HarmonyPatch("SnapToBPM")]
+		[HarmonyPrefix]
+		private static bool SnapToBPMPostfix(ref float __result, float __0)
+		{
+			__result = RTEditor.SnapToBPM(__0);
+			return false;
+		}
 
 		[HarmonyPatch("ClearDialogs")]
 		[HarmonyPrefix]

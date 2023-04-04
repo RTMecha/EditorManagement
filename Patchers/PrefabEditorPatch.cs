@@ -19,7 +19,7 @@ using HarmonyLib;
 using EditorManagement.Functions;
 using LSFunctions;
 
-namespace EditorManagement
+namespace EditorManagement.Patchers
 {
     [HarmonyPatch(typeof(PrefabEditor))]
     public class PrefabEditorPatch : MonoBehaviour
