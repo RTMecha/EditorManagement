@@ -72,8 +72,15 @@ namespace EditorManagement.Patchers
 
 			Triggers.AddTooltip(transform.Find("song/difficulty").gameObject, "Shows players how difficult a level is.", "");
 
-			for (int i = 0; i < 7; i++)
+			for (int i = 0; i < DataManager.inst.difficulties.Count; i++)
 			{
+				if (!transform.Find("song/difficulty/toggles").GetChild(i).GetComponent<HoverUI>())
+                {
+					var hoverUI = transform.Find("song/difficulty/toggles").GetChild(i).gameObject.AddComponent<HoverUI>();
+					hoverUI.animatePos = false;
+					hoverUI.animateSca = true;
+					hoverUI.size = 1.1f;
+				}
 				transform.Find("song/difficulty/toggles").GetChild(i).gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(69f, 32f);
 				transform.Find("song/difficulty/toggles").GetChild(i).Find("Background").gameObject.GetComponent<Image>().color = DataManager.inst.difficulties[i].color;
 				transform.Find("song/difficulty/toggles").GetChild(i).Find("Background/Text").GetComponent<Text>().fontSize = 19;
@@ -101,8 +108,10 @@ namespace EditorManagement.Patchers
 
 				JSONNode jsonnode = JSON.Parse(rawProfileJSON);
 
-				RTFile.WriteToFile(EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/encryptedlevel.lsb", LSEncryption.EncryptText(rawProfileJSON, "5erewtdvtedsfdSFCDS"));
-				EditorManager.inst.DisplayNotification("Encrypted file to " + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/encryptedlevel.lsb", 2f, EditorManager.NotificationType.Success, false);
+				RTEditor.inst.StartCoroutine(RTEditor.EncryptLevel());
+
+				//RTFile.WriteToFile(EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/encryptedlevel.lsb", LSEncryption.EncryptText(rawProfileJSON, "5erewtdvtedsfdSFCDS"));
+				EditorManager.inst.DisplayNotification("Encrypted song file to " + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", 2f, EditorManager.NotificationType.Success, false);
 			});
 		}
 	}

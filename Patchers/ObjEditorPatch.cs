@@ -23,6 +23,28 @@ namespace EditorManagement.Patchers
     {
 		public static MethodInfo timeCalcObj;
 		public static MethodInfo posCalcObj;
+		public static MethodInfo resizeKeyframeTimeline;
+		public static MethodInfo setKeyframeTime;
+		public static MethodInfo addKeyframeTime;
+
+		public static MethodInfo setKeyframePositionR;
+		public static MethodInfo addKeyframePositionR;
+		public static MethodInfo setKeyframePosition;
+		public static MethodInfo addKeyframePosition;
+
+		public static MethodInfo setKeyframeScaleR;
+		public static MethodInfo addKeyframeScaleR;
+		public static MethodInfo setKeyframeScale;
+		public static MethodInfo addKeyframeScale;
+
+		public static MethodInfo setKeyframeRotationR;
+		public static MethodInfo addKeyframeRotationR;
+		public static MethodInfo setKeyframeRotation;
+		public static MethodInfo addKeyframeRotation;
+
+		public static MethodInfo setKeyframeColor;
+
+		public static MethodInfo createKeyframes;
 
 		public static float timeCalc()
         {
@@ -34,10 +56,63 @@ namespace EditorManagement.Patchers
 			return (float)posCalcObj.Invoke(ObjEditor.inst, new object[] { _time });
 		}
 
+		public static void ResizeKeyframeTimeline()
+        {
+			resizeKeyframeTimeline.Invoke(ObjEditor.inst, new object[] { });
+		}
+
+		public static void SetKeyframeTime(float _new, bool _updateText)
+        {
+			setKeyframeTime.Invoke(ObjEditor.inst, new object[] { _new, _updateText });
+        }
+
+		public static void AddKeyframeTime(float _add, bool _updateText)
+        {
+			addKeyframeTime.Invoke(ObjEditor.inst, new object[] { _add, _updateText });
+        }
+
+		public static void CreateKeyframes(int _type)
+        {
+			createKeyframes.Invoke(ObjEditor.inst, new object[] { _type });
+        }
+
+		public static void SetKeyframeColor(int _index, int _value)
+        {
+			setKeyframeColor.Invoke(ObjEditor.inst, new object[] { _index, _value });
+        }
+
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
 		private static void CreateLayers()
 		{
+			//Methods
+			{
+				resizeKeyframeTimeline = AccessTools.Method(typeof(ObjEditor), "ResizeKeyframeTimeline");
+				timeCalcObj = AccessTools.Method(typeof(ObjEditor), "timeCalc");
+				posCalcObj = AccessTools.Method(typeof(ObjEditor), "posCalc");
+				setKeyframeTime = AccessTools.Method(typeof(ObjEditor), "SetKeyframeTime");
+				addKeyframeTime = AccessTools.Method(typeof(ObjEditor), "AddKeyframeTime");
+
+				setKeyframePositionR = AccessTools.Method(typeof(ObjEditor), "SetKeyframePositionR");
+				addKeyframePositionR = AccessTools.Method(typeof(ObjEditor), "AddKeyframePositionR");
+				setKeyframePosition = AccessTools.Method(typeof(ObjEditor), "SetKeyframePosition");
+				addKeyframePosition = AccessTools.Method(typeof(ObjEditor), "AddKeyframePosition");
+
+				setKeyframeScaleR = AccessTools.Method(typeof(ObjEditor), "SetKeyframeScaleR");
+				addKeyframeScaleR = AccessTools.Method(typeof(ObjEditor), "AddKeyframeScaleR");
+				setKeyframeScale = AccessTools.Method(typeof(ObjEditor), "SetKeyframeScale");
+				addKeyframeScale = AccessTools.Method(typeof(ObjEditor), "AddKeyframeScale");
+
+				setKeyframeRotationR = AccessTools.Method(typeof(ObjEditor), "SetKeyframeRotationR");
+				addKeyframeRotationR = AccessTools.Method(typeof(ObjEditor), "AddKeyframeRotationR");
+				setKeyframeRotation = AccessTools.Method(typeof(ObjEditor), "SetKeyframeRotation");
+				addKeyframeRotation = AccessTools.Method(typeof(ObjEditor), "AddKeyframeRotation");
+
+				setKeyframeColor = AccessTools.Method(typeof(ObjEditor), "SetKeyframeColor");
+
+				createKeyframes = AccessTools.Method(typeof(ObjEditor), "CreateKeyframes");
+			}
+
 			if (ObjEditor.inst.ObjectView.transform.Find("spacer"))
 			{
 				ObjEditor.inst.ObjectView.transform.GetChild(17).GetChild(1).gameObject.SetActive(true);
@@ -97,13 +172,10 @@ namespace EditorManagement.Patchers
 			parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
 			parent.transform.Find("more").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
 
-			ObjEditor.inst.SelectedColor = EditorPlugin.ObjSelCol.Value;
+			ObjEditor.inst.SelectedColor = ConfigEntries.ObjSelCol.Value;
 
-            //Methods
-            {
-				timeCalcObj = AccessTools.Method(typeof(ObjEditor), "timeCalc");
-				posCalcObj = AccessTools.Method(typeof(ObjEditor), "posCalc");
-			}
+			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation").transform.GetChild(1).gameObject);
+			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color").transform.GetChild(1).gameObject);
 		}
 
 		[HarmonyPatch("Awake")]
@@ -117,289 +189,37 @@ namespace EditorManagement.Patchers
 			contentOriginTF.Find("origin-x").gameObject.SetActive(false);
 			contentOriginTF.Find("origin-y").gameObject.SetActive(false);
 
-			//Text input
-			GameObject oxTxt = new GameObject("originxtext")
-			{
-				transform =
-				{
-					parent = contentOriginTF.transform
-				}
-			};
-			oxTxt.transform.SetSiblingIndex(0);
-			RectTransform rToxTxt = oxTxt.AddComponent<RectTransform>();
-			CanvasRenderer cRoxTxt = oxTxt.AddComponent<CanvasRenderer>();
-			Image ioxTxt = oxTxt.AddComponent<Image>();
-			InputField iFoxTxt = oxTxt.AddComponent<InputField>();
-			LayoutElement lEoxTxt = oxTxt.AddComponent<LayoutElement>();
+			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+			var xo = Instantiate(singleInput);
+			xo.transform.SetParent(contentOriginTF.transform);
+			xo.transform.localScale = Vector3.one;
+			xo.name = "x";
+			xo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
 
-			oxTxt.GetComponent<Graphic>().color = new Color(0.9333f, 0.9176f, 0.9333f, 1f);
-			rToxTxt.anchoredPosition = new Vector2(-100f, 0f);
-			rToxTxt.sizeDelta = new Vector2(150f, 32f);
-			lEoxTxt.ignoreLayout = true;
-			oxTxt.layer = 5;
+			Destroy(xo.GetComponent<EventInfo>());
 
-			//Text caret
-			GameObject oxTxtIC = new GameObject("originx Input Caret");
-			oxTxtIC.transform.parent = oxTxt.transform;
-			RectTransform rToxTxtIC = oxTxtIC.AddComponent<RectTransform>();
-			CanvasRenderer cRoxTxtIC = oxTxtIC.AddComponent<CanvasRenderer>();
-			LayoutElement lEoxTxtIC = oxTxtIC.AddComponent<LayoutElement>();
+			var xoif = xo.GetComponent<InputField>();
+			xoif.onValueChanged.RemoveAllListeners();
 
-			rToxTxtIC.anchoredPosition = new Vector2(2f, 0f);
-			rToxTxtIC.anchorMax = new Vector2(1f, 1f);
-			rToxTxtIC.anchorMin = new Vector2(0f, 0f);
-			rToxTxtIC.offsetMax = new Vector2(-4f, -4f);
-			rToxTxtIC.offsetMin = new Vector2(8f, 4f);
-			rToxTxtIC.sizeDelta = new Vector2(-12f, -8f);
-			lEoxTxtIC.ignoreLayout = true;
-			oxTxtIC.hideFlags = HideFlags.DontSave;
-			oxTxtIC.layer = 5;
+			var yo = Instantiate(singleInput);
+			yo.transform.SetParent(contentOriginTF.transform);
+			yo.transform.localScale = Vector3.one;
+			yo.name = "y";
+			yo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
 
-			//Text placeholder
-			GameObject oxTxtPH = new GameObject("Placeholder");
-			oxTxtPH.transform.parent = oxTxt.transform;
-			RectTransform rToxTxtPH = oxTxtPH.AddComponent<RectTransform>();
-			CanvasRenderer cRoxTxtPH = oxTxtPH.AddComponent<CanvasRenderer>();
-			Text toxTxtPH = oxTxtPH.AddComponent<Text>();
+			Destroy(xo.GetComponent<EventInfo>());
 
-			rToxTxtPH.anchoredPosition = new Vector2(-6f, 0f);
-			toxTxtPH.alignment = TextAnchor.MiddleLeft;
-			toxTxtPH.font = textFont.font;
-			toxTxtPH.fontSize = 20;
-			toxTxtPH.fontStyle = FontStyle.Italic;
-			toxTxtPH.horizontalOverflow = HorizontalWrapMode.Wrap;
-			toxTxtPH.resizeTextMaxSize = 42;
-			toxTxtPH.resizeTextMinSize = 2;
-			toxTxtPH.text = "Set origin...";
-			toxTxtPH.verticalOverflow = VerticalWrapMode.Overflow;
-			oxTxtPH.GetComponent<Graphic>().color = new Color(0.1961f, 0.1961f, 0.1961f, 0.5f);
-
-			oxTxtPH.layer = 5;
-
-			//Text
-			GameObject oxTxtTE = new GameObject("Text");
-			oxTxtTE.transform.parent = oxTxt.transform;
-			RectTransform rToxTxtTE = oxTxtTE.AddComponent<RectTransform>();
-			CanvasRenderer cRoxTxtTE = oxTxtTE.AddComponent<CanvasRenderer>();
-			Text toxTxtTE = oxTxtTE.AddComponent<Text>();
-
-			rToxTxtTE.anchoredPosition = new Vector2(-6f, 0f);
-			toxTxtTE.alignment = TextAnchor.MiddleCenter;
-			toxTxtTE.font = textFont.font;
-			toxTxtTE.fontSize = 20;
-			toxTxtTE.horizontalOverflow = HorizontalWrapMode.Overflow;
-			toxTxtTE.resizeTextMaxSize = 42;
-			toxTxtTE.resizeTextMinSize = 2;
-			toxTxtTE.verticalOverflow = VerticalWrapMode.Overflow;
-			oxTxtTE.GetComponent<Graphic>().color = new Color(0.1294f, 0.1294f, 0.1294f, 1);
-			oxTxtTE.layer = 5;
-
-			//InputField stuff
-			iFoxTxt.characterValidation = InputField.CharacterValidation.Decimal;
-			iFoxTxt.caretBlinkRate = 0f;
-			iFoxTxt.caretColor = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-			iFoxTxt.caretPosition = 0;
-			iFoxTxt.caretWidth = 3;
-			iFoxTxt.characterLimit = 64;
-			iFoxTxt.contentType = InputField.ContentType.DecimalNumber;
-			iFoxTxt.keyboardType = TouchScreenKeyboardType.Default;
-			iFoxTxt.textComponent = toxTxtTE;
-			iFoxTxt.placeholder = toxTxtPH;
-			iFoxTxt.selectionColor = new Color(0f, 0.711f, 0.8679f, 0.7529f);
-			oxTxt.GetComponent<Selectable>().transition = Selectable.Transition.Animation;
-
-			//Text input
-			GameObject oyTxt = new GameObject("originytext")
-			{
-				transform =
-				{
-					parent = contentOriginTF.transform
-				}
-			};
-			oyTxt.transform.SetSiblingIndex(1);
-			RectTransform rToyTxt = oyTxt.AddComponent<RectTransform>();
-			CanvasRenderer cRoyTxt = oyTxt.AddComponent<CanvasRenderer>();
-			Image ioyTxt = oyTxt.AddComponent<Image>();
-			InputField iFoyTxt = oyTxt.AddComponent<InputField>();
-			LayoutElement lEoyTxt = oyTxt.AddComponent<LayoutElement>();
-
-			oyTxt.GetComponent<Graphic>().color = new Color(0.9333f, 0.9176f, 0.9333f, 1f);
-			rToyTxt.anchoredPosition = new Vector2(80f, 0f);
-			rToyTxt.sizeDelta = new Vector2(150f, 32f);
-			lEoyTxt.ignoreLayout = true;
-			oyTxt.layer = 5;
-
-			//Text caret
-			GameObject oyTxtIC = new GameObject("originy Input Caret");
-			oyTxtIC.transform.parent = oyTxt.transform;
-			RectTransform rToyTxtIC = oyTxtIC.AddComponent<RectTransform>();
-			CanvasRenderer cRoyTxtIC = oyTxtIC.AddComponent<CanvasRenderer>();
-			LayoutElement lEoyTxtIC = oyTxtIC.AddComponent<LayoutElement>();
-
-			rToyTxtIC.anchoredPosition = new Vector2(2f, 0f);
-			rToyTxtIC.anchorMax = new Vector2(1f, 1f);
-			rToyTxtIC.anchorMin = new Vector2(0f, 0f);
-			rToyTxtIC.offsetMax = new Vector2(-4f, -4f);
-			rToyTxtIC.offsetMin = new Vector2(8f, 4f);
-			rToyTxtIC.sizeDelta = new Vector2(-12f, -8f);
-			lEoyTxtIC.ignoreLayout = true;
-			oyTxtIC.hideFlags = HideFlags.DontSave;
-			oyTxtIC.layer = 5;
-
-			//Text placeholder
-			GameObject oyTxtPH = new GameObject("Placeholder");
-			oyTxtPH.transform.parent = oyTxt.transform;
-			RectTransform rToyTxtPH = oyTxtPH.AddComponent<RectTransform>();
-			CanvasRenderer cRoyTxtPH = oyTxtPH.AddComponent<CanvasRenderer>();
-			Text toyTxtPH = oyTxtPH.AddComponent<Text>();
-
-			rToyTxtPH.anchoredPosition = new Vector2(-6f, 0f);
-			toyTxtPH.alignment = TextAnchor.MiddleLeft;
-			toyTxtPH.font = textFont.font;
-			toyTxtPH.fontSize = 20;
-			toyTxtPH.fontStyle = FontStyle.Italic;
-			toyTxtPH.horizontalOverflow = HorizontalWrapMode.Wrap;
-			toyTxtPH.resizeTextMaxSize = 42;
-			toyTxtPH.resizeTextMinSize = 2;
-			toyTxtPH.text = "Set origin...";
-			toyTxtPH.verticalOverflow = VerticalWrapMode.Overflow;
-			oyTxtPH.GetComponent<Graphic>().color = new Color(0.1961f, 0.1961f, 0.1961f, 0.5f);
-
-			oyTxtPH.layer = 5;
-
-			//Text
-			GameObject oyTxtTE = new GameObject("Text");
-			oyTxtTE.transform.parent = oyTxt.transform;
-			RectTransform rToyTxtTE = oyTxtTE.AddComponent<RectTransform>();
-			CanvasRenderer cRoyTxtTE = oyTxtTE.AddComponent<CanvasRenderer>();
-			Text toyTxtTE = oyTxtTE.AddComponent<Text>();
-
-			rToyTxtTE.anchoredPosition = new Vector2(-6f, 0f);
-			toyTxtTE.alignment = TextAnchor.MiddleCenter;
-			toyTxtTE.font = textFont.font;
-			toyTxtTE.fontSize = 20;
-			toyTxtTE.horizontalOverflow = HorizontalWrapMode.Overflow;
-			toyTxtTE.resizeTextMaxSize = 42;
-			toyTxtTE.resizeTextMinSize = 2;
-			toyTxtTE.verticalOverflow = VerticalWrapMode.Overflow;
-			oyTxtTE.GetComponent<Graphic>().color = new Color(0.1294f, 0.1294f, 0.1294f, 1);
-			oyTxtTE.layer = 5;
-
-			//InputField stuff
-			iFoyTxt.characterValidation = InputField.CharacterValidation.Decimal;
-			iFoyTxt.caretBlinkRate = 0f;
-			iFoyTxt.caretColor = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-			iFoyTxt.caretPosition = 0;
-			iFoyTxt.caretWidth = 3;
-			iFoyTxt.characterLimit = 64;
-			iFoyTxt.contentType = InputField.ContentType.DecimalNumber;
-			iFoyTxt.keyboardType = TouchScreenKeyboardType.Default;
-			iFoyTxt.textComponent = toyTxtTE;
-			iFoyTxt.placeholder = toyTxtPH;
-			iFoyTxt.selectionColor = new Color(0f, 0.711f, 0.8679f, 0.7529f);
-			oyTxt.GetComponent<Selectable>().transition = Selectable.Transition.Animation;
-
-			EventTrigger eToxTxt = oxTxt.AddComponent<EventTrigger>();
-
-			EventTrigger.Entry entryOriginX = new EventTrigger.Entry();
-			entryOriginX.eventID = EventTriggerType.Scroll;
-			entryOriginX.callback.AddListener(delegate (BaseEventData eventDataX)
-			{
-				PointerEventData pointerEventData = (PointerEventData)eventDataX;
-				if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-				{
-					if (pointerEventData.scrollDelta.y < 0f)
-					{
-						float originXLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x - EditorPlugin.OriginXAmount.Value;
-						float originYLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y - EditorPlugin.OriginYAmount.Value;
-						SetNewOriginX(originXLower.ToString());
-						SetNewOriginY(originYLower.ToString());
-						iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-						iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-						return;
-					}
-					if (pointerEventData.scrollDelta.y > 0f)
-					{
-						float originXHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x + EditorPlugin.OriginXAmount.Value;
-						float originYHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y + EditorPlugin.OriginYAmount.Value;
-						SetNewOriginX(originXHigher.ToString());
-						SetNewOriginY(originYHigher.ToString());
-						iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-						iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-						return;
-					}
-				}
-				else
-				{
-					if (pointerEventData.scrollDelta.y < 0f)
-					{
-						float originXLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x - EditorPlugin.OriginXAmount.Value;
-						SetNewOriginX(originXLower.ToString());
-						iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-						return;
-					}
-					if (pointerEventData.scrollDelta.y > 0f)
-					{
-						float originXLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x + EditorPlugin.OriginXAmount.Value;
-						SetNewOriginX(originXLower.ToString());
-						iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-					}
-				}
-			});
-			eToxTxt.triggers.Clear();
-			eToxTxt.triggers.Add(entryOriginX);
-
-
-			EventTrigger eToyTxt = oyTxt.AddComponent<EventTrigger>();
-
-			EventTrigger.Entry entryOriginY = new EventTrigger.Entry();
-			entryOriginY.eventID = EventTriggerType.Scroll;
-			entryOriginY.callback.AddListener(delegate (BaseEventData eventDataY)
-			{
-				PointerEventData pointerEventData = (PointerEventData)eventDataY;
-				if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-				{
-					if (pointerEventData.scrollDelta.y < 0f)
-					{
-						float originXLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x - EditorPlugin.OriginXAmount.Value;
-						float originYLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y - EditorPlugin.OriginYAmount.Value;
-						SetNewOriginX(originXLower.ToString());
-						SetNewOriginY(originYLower.ToString());
-						iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-						iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-						return;
-					}
-					if (pointerEventData.scrollDelta.y > 0f)
-					{
-						float originXHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x + EditorPlugin.OriginXAmount.Value;
-						float originYHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y + EditorPlugin.OriginYAmount.Value;
-						SetNewOriginX(originXHigher.ToString());
-						SetNewOriginY(originYHigher.ToString());
-						iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-						iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-						return;
-					}
-				}
-				else
-				{
-					if (pointerEventData.scrollDelta.y < 0f)
-					{
-						float originYLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y - EditorPlugin.OriginYAmount.Value;
-						SetNewOriginY(originYLower.ToString());
-						iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-						return;
-					}
-					if (pointerEventData.scrollDelta.y > 0f)
-					{
-						float originYLower = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y + EditorPlugin.OriginYAmount.Value;
-						SetNewOriginY(originYLower.ToString());
-						iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-					}
-				}
-			});
-			eToyTxt.triggers.Clear();
-			eToyTxt.triggers.Add(entryOriginY);
+			var yoif = yo.GetComponent<InputField>();
+			yoif.onValueChanged.RemoveAllListeners();
 		}
+
+		[HarmonyPatch("RefreshKeyframeGUI")]
+		[HarmonyPrefix]
+		private static bool RefreshKeyframeGUIPrefix()
+        {
+			RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+			return false;
+        }
 
 		[HarmonyPatch("OpenDialog")]
 		[HarmonyPostfix]
@@ -466,77 +286,6 @@ namespace EditorManagement.Patchers
 			}
 		}
 
-		[HarmonyPatch("OpenDialog")]
-		[HarmonyPostfix]
-		private static void SetOriginVal()
-		{
-			//Origin X
-			InputField iFoxTxt = GameObject.Find("origin/originxtext").GetComponent<InputField>();
-			iFoxTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-
-			iFoxTxt.onValueChanged.AddListener(delegate (string _value)
-			{
-				SetNewOriginX(_value);
-			});
-
-			//Origin Y
-			InputField iFoyTxt = GameObject.Find("origin/originytext").GetComponent<InputField>();
-			iFoyTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-
-			iFoyTxt.onValueChanged.AddListener(delegate (string _value)
-			{
-				SetNewOriginY(_value);
-			});
-		}
-
-		[HarmonyPatch("RefreshKeyframeGUI")]
-		[HarmonyPostfix]
-		private static void RefreshOriginValue()
-		{
-			if (DataManager.inst.gameData.beatmapObjects.Count > 0 && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.keyframeSelections.Count <= 1 && ObjEditor.inst.selectedObjects.Count < 2 && EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object))
-			{
-				//Origin X
-				InputField iFoxTxt = GameObject.Find("origin/originxtext").GetComponent<InputField>();
-
-				string originxstr = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.x.ToString();
-
-				iFoxTxt.onValueChanged.RemoveAllListeners();
-				iFoxTxt.text = originxstr;
-
-				iFoxTxt.onValueChanged.AddListener(delegate (string _value)
-				{
-					SetNewOriginX(_value);
-				});
-
-				//Origin Y
-				InputField iFoyTxt = GameObject.Find("origin/originytext").GetComponent<InputField>();
-
-				string originystr = ObjEditor.inst.currentObjectSelection.GetObjectData().origin.y.ToString();
-
-				iFoyTxt.onValueChanged.RemoveAllListeners();
-				iFoyTxt.text = originystr;
-
-				iFoyTxt.onValueChanged.AddListener(delegate (string _value)
-				{
-					SetNewOriginY(_value);
-				});
-			}
-		}
-
-		public static void SetNewOriginX(string _originX)
-		{
-			DataManager.inst.gameData.beatmapObjects[ObjEditor.inst.currentObjectSelection.Index].origin.x = float.Parse(_originX);
-			ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
-			ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-		}
-
-		public static void SetNewOriginY(string _originY)
-		{
-			DataManager.inst.gameData.beatmapObjects[ObjEditor.inst.currentObjectSelection.Index].origin.y = float.Parse(_originY);
-			ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
-			ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-		}
-
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
 		private static void CreateNewDepthText()
@@ -557,190 +306,17 @@ namespace EditorManagement.Patchers
 			spRT.sizeDelta = new Vector2(30f, 30f);
 			spHLG.spacing = 8;
 
-			//Text input
-			GameObject dTxt = new GameObject("depthtext")
-			{
-				transform =
-				{
-					parent = spacer.transform
-				}
-			};
-			dTxt.transform.SetSiblingIndex(0);
-			RectTransform rTdTxt = dTxt.AddComponent<RectTransform>();
-			CanvasRenderer cRdTxt = dTxt.AddComponent<CanvasRenderer>();
-			Image idTxt = dTxt.AddComponent<Image>();
-			InputField iFdTxt = dTxt.AddComponent<InputField>();
-			LayoutElement lEdTxt = dTxt.AddComponent<LayoutElement>();
-			EventTrigger depthTrigger = dTxt.AddComponent<EventTrigger>();
+			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+			var xo = Instantiate(singleInput);
+			xo.transform.SetParent(spacer.transform);
+			xo.transform.localScale = Vector3.one;
+			xo.name = "depth";
+			xo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
 
-			dTxt.GetComponent<Graphic>().color = new Color(0.9333f, 0.9176f, 0.9333f, 1f);
-			rTdTxt.anchoredPosition = new Vector2(-100f, 0f);
-			rTdTxt.sizeDelta = new Vector2(150f, 32f);
-			lEdTxt.ignoreLayout = true;
-			dTxt.layer = 5;
+			Destroy(xo.GetComponent<EventInfo>());
 
-			//Text caret
-			GameObject dTxtIC = new GameObject("depth Input Caret");
-			dTxtIC.transform.parent = dTxt.transform;
-			RectTransform rTdTxtIC = dTxtIC.AddComponent<RectTransform>();
-			CanvasRenderer cRdTxtIC = dTxtIC.AddComponent<CanvasRenderer>();
-			LayoutElement lEdTxtIC = dTxtIC.AddComponent<LayoutElement>();
-
-			rTdTxtIC.anchoredPosition = new Vector2(2f, 0f);
-			rTdTxtIC.anchorMax = new Vector2(1f, 1f);
-			rTdTxtIC.anchorMin = new Vector2(0f, 0f);
-			rTdTxtIC.offsetMax = new Vector2(-4f, -4f);
-			rTdTxtIC.offsetMin = new Vector2(8f, 4f);
-			rTdTxtIC.sizeDelta = new Vector2(-12f, -8f);
-			lEdTxtIC.ignoreLayout = true;
-			dTxtIC.GetComponent<UnityEngine.Object>().hideFlags = HideFlags.DontSave;
-			dTxtIC.layer = 5;
-
-			//Text placeholder
-			GameObject dTxtPH = new GameObject("Placeholder");
-			dTxtPH.transform.parent = dTxt.transform;
-			RectTransform rTdTxtPH = dTxtPH.AddComponent<RectTransform>();
-			CanvasRenderer cRdTxtPH = dTxtPH.AddComponent<CanvasRenderer>();
-			Text tdTxtPH = dTxtPH.AddComponent<Text>();
-
-			rTdTxtPH.anchoredPosition = new Vector2(-6f, 0f);
-			tdTxtPH.alignment = TextAnchor.MiddleLeft;
-			tdTxtPH.font = textFont.font;
-			tdTxtPH.fontSize = 20;
-			tdTxtPH.fontStyle = FontStyle.Italic;
-			tdTxtPH.horizontalOverflow = HorizontalWrapMode.Wrap;
-			tdTxtPH.resizeTextMaxSize = 42;
-			tdTxtPH.resizeTextMinSize = 2;
-			tdTxtPH.text = "Set depth...";
-			tdTxtPH.verticalOverflow = VerticalWrapMode.Overflow;
-			dTxtPH.GetComponent<Graphic>().color = new Color(0.1961f, 0.1961f, 0.1961f, 0.5f);
-
-			dTxtPH.layer = 5;
-
-			//Text
-			GameObject dTxtTE = new GameObject("Text");
-			dTxtTE.transform.parent = dTxt.transform;
-			RectTransform rTdTxtTE = dTxtTE.AddComponent<RectTransform>();
-			CanvasRenderer cRdTxtTE = dTxtTE.AddComponent<CanvasRenderer>();
-			Text tdTxtTE = dTxtTE.AddComponent<Text>();
-
-			rTdTxtTE.anchoredPosition = new Vector2(-6f, 0f);
-			tdTxtTE.alignment = TextAnchor.MiddleCenter;
-			tdTxtTE.font = textFont.font;
-			tdTxtTE.fontSize = 20;
-			tdTxtTE.horizontalOverflow = HorizontalWrapMode.Overflow;
-			tdTxtTE.resizeTextMaxSize = 42;
-			tdTxtTE.resizeTextMinSize = 2;
-			tdTxtTE.verticalOverflow = VerticalWrapMode.Overflow;
-			dTxtTE.GetComponent<Graphic>().color = new Color(0.1294f, 0.1294f, 0.1294f, 1);
-			dTxtTE.layer = 5;
-
-			//InputField stuff
-			iFdTxt.characterValidation = InputField.CharacterValidation.Integer;
-			iFdTxt.caretBlinkRate = 0f;
-			iFdTxt.caretColor = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-			iFdTxt.caretPosition = 0;
-			iFdTxt.caretWidth = 3;
-			iFdTxt.characterLimit = 64;
-			iFdTxt.contentType = InputField.ContentType.IntegerNumber;
-			iFdTxt.keyboardType = TouchScreenKeyboardType.Default;
-			iFdTxt.textComponent = tdTxtTE;
-			iFdTxt.placeholder = tdTxtPH;
-			iFdTxt.selectionColor = new Color(0f, 0.711f, 0.8679f, 0.7529f);
-			dTxt.GetComponent<Selectable>().transition = Selectable.Transition.Animation;
-
-			EventTrigger.Entry entryDepth = new EventTrigger.Entry();
-			entryDepth.eventID = EventTriggerType.Scroll;
-			entryDepth.callback.AddListener(delegate (BaseEventData eventData)
-			{
-				PointerEventData pointerEventData = (PointerEventData)eventData;
-				if (pointerEventData.scrollDelta.y < 0f)
-				{
-					int depthLower = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth - EditorPlugin.DepthAmount.Value;
-					SetNewDepth(depthLower.ToString());
-					iFdTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-					return;
-				}
-				if (pointerEventData.scrollDelta.y > 0f)
-				{
-					int depthHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth + EditorPlugin.DepthAmount.Value;
-					SetNewDepth(depthHigher.ToString());
-					iFdTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-				}
-			});
-			depthTrigger.triggers.Clear();
-			depthTrigger.triggers.Add(entryDepth);
-
-			//Add text
-			Transform transform1 = contentDepthTF.Find("depth/Handle Slide Area/Handle").transform;
-			GameObject gameObject = new GameObject("sliderdtext")
-			{
-				transform =
-				{
-					parent = transform1
-				}
-			};
-			RectTransform rectTransform = gameObject.AddComponent<RectTransform>();
-			gameObject.AddComponent<CanvasRenderer>();
-			Text textslider = gameObject.AddComponent<Text>();
-			rectTransform.anchorMin = Vector2.zero;
-			rectTransform.anchorMax = new Vector2(1f, 1f);
-			rectTransform.anchoredPosition = Vector2.zero;
-			rectTransform.offsetMax = new Vector2(-4f, -4f);
-			rectTransform.offsetMin = new Vector2(4f, 4f);
-			rectTransform.pivot = new Vector2(0.5f, 0.5f);
-			rectTransform.sizeDelta = new Vector2(-8f, -8f);
-			textslider.color = new Color(0.9f, 0.9f, 0.9f);
-			textslider.fontSize = 20;
-			textslider.alignment = TextAnchor.MiddleCenter;
-			textslider.horizontalOverflow = HorizontalWrapMode.Overflow;
-			textslider.verticalOverflow = VerticalWrapMode.Overflow;
-			textslider.font = textFont.font;
-			gameObject.layer = 5;
-
-			//Button Refresh
-			GameObject refreshObj = new GameObject("Refresh");
-			refreshObj.transform.parent = spacer.transform;
-			RectTransform rtrObj = refreshObj.AddComponent<RectTransform>();
-			Image irObj = refreshObj.AddComponent<Image>();
-			Button brObj = refreshObj.AddComponent<Button>();
-
-			LayoutElement lerObj = refreshObj.AddComponent<LayoutElement>();
-
-			refreshObj.AddComponent<CanvasRenderer>();
-
-			rtrObj.sizeDelta = new Vector2(25f, 50f);
-			rtrObj.anchoredPosition = Vector2.zero;
-
-			irObj.sprite = ObjEditor.inst.KeyframeSprites[0];
-
-			ColorBlock cb = brObj.colors;
-			cb.normalColor = new Color(0.9608f, 0.9608f, 0.9608f, 1f);
-			cb.pressedColor = new Color(0.7843f, 0.7843f, 0.7843f, 1f);
-			cb.highlightedColor = new Color(0.898f, 0.451f, 0.451f, 1f);
-			cb.disabledColor = new Color(0.7843f, 0.7843f, 0.7843f, 0.502f);
-			cb.fadeDuration = 0.1f;
-			brObj.colors = cb;
-
-			lerObj.ignoreLayout = true;
-
-			//Help
-			GameObject textHelp = new GameObject("TextHelpName");
-			textHelp.transform.parent = spacer.transform;
-			RectTransform rttHelp = textHelp.AddComponent<RectTransform>();
-			Text ttHelp = textHelp.AddComponent<Text>();
-			LayoutElement letHelp = textHelp.AddComponent<LayoutElement>();
-
-			rttHelp.anchoredPosition = new Vector2(95f, 2f);
-
-			ttHelp.text = "Refresh Dialog";
-			ttHelp.font = textFont.font;
-			ttHelp.color = new Color(0.9f, 0.9f, 0.9f);
-			ttHelp.alignment = TextAnchor.MiddleCenter;
-			ttHelp.fontSize = 20;
-			ttHelp.horizontalOverflow = HorizontalWrapMode.Overflow;
-
-			letHelp.ignoreLayout = true;
+			var xoif = xo.GetComponent<InputField>();
+			xoif.onValueChanged.RemoveAllListeners();
 
 			GameObject sliderObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth").gameObject;
 			Slider sliderComponent = sliderObject.GetComponent<Slider>();
@@ -753,63 +329,75 @@ namespace EditorManagement.Patchers
 				PointerEventData pointerEventData = (PointerEventData)eventData1;
 				if (pointerEventData.scrollDelta.y < 0f)
 				{
-					int depthLower = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth - EditorPlugin.DepthAmount.Value;
+					int depthLower = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth - ConfigEntries.DepthAmount.Value;
 					SetNewDepth(depthLower.ToString());
 					sliderComponent.value = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth;
 					return;
 				}
 				if (pointerEventData.scrollDelta.y > 0f)
 				{
-					int depthHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth + EditorPlugin.DepthAmount.Value;
+					int depthHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth + ConfigEntries.DepthAmount.Value;
 					SetNewDepth(depthHigher.ToString());
 					sliderComponent.value = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth;
 				}
 			});
 			sliderEvent.triggers.Clear();
 			sliderEvent.triggers.Add(entryDepth1);
-		}
 
-		[HarmonyPatch("OpenDialog")]
-		[HarmonyPostfix]
-		private static void SetDepthVal()
-		{
-			//Create Local Variables
-			InputField iFdTxt = GameObject.Find("spacer/depthtext").GetComponent<InputField>();
-			Text textDepth = GameObject.Find("Handle/sliderdtext").GetComponent<Text>();
-			iFdTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-			textDepth.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
+			Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/<"));
+			Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/>"));
 
-			Transform depth = ObjEditor.inst.ObjectView.transform.Find("depth");
-			Slider depthSlider = depth.Find("depth").GetComponent<Slider>();
+			sliderObject.GetComponent<RectTransform>().sizeDelta = new Vector2(352f, 32f);
+			ObjEditor.inst.ObjectView.transform.Find("depth").GetComponent<RectTransform>().sizeDelta = new Vector2(261f, 32f);
 
-			iFdTxt.onValueChanged.AddListener(delegate (string _value)
+			var timeParent = ObjEditor.inst.ObjectView.transform.Find("time");
+
+
+			var locker = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle"));
+			locker.transform.SetParent(timeParent.transform);
+			locker.transform.localScale = Vector3.one;
+			locker.transform.SetAsFirstSibling();
+			locker.name = "lock";
+
+			var timeLayout = timeParent.GetComponent<HorizontalLayoutGroup>();
+			timeLayout.childControlWidth = false;
+			timeLayout.childForceExpandWidth = false;
+
+			locker.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+
+			var time = timeParent.Find("time");
+			time.GetComponent<RectTransform>().sizeDelta = new Vector2(151, 32f);
+
+			locker.transform.Find("Background/Checkmark").GetComponent<Image>().sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
+
+			timeParent.Find("<<").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+			timeParent.Find("<").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
+			timeParent.Find("|").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
+			timeParent.Find(">").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
+			timeParent.Find(">>").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+
+			var colorParent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color").transform;
+			colorParent.GetComponent<GridLayoutGroup>().spacing = new Vector2(9.32f, 9.32f);
+			for (int i = 10; i < 19; i++)
 			{
-				SetNewDepth(_value);
-				if (EditorPlugin.DepthUpdate.Value == true)
-				{
-					depthSlider.value = (float)ObjEditor.inst.currentObjectSelection.GetObjectData().Depth;
-				}
-				textDepth.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-			});
-			depth.Find("<").GetComponent<Button>().onClick.AddListener(delegate ()
-			{
-				iFdTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-				textDepth.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-			});
-			depth.Find(">").GetComponent<Button>().onClick.AddListener(delegate ()
-			{
-				iFdTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-				textDepth.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-			});
-			depthSlider.onValueChanged.AddListener(delegate (float _value)
-			{
-				iFdTxt.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-				textDepth.text = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-			});
-			GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content/spacer/Refresh").GetComponent<Button>().onClick.AddListener(delegate ()
-			{
-				ObjEditor.inst.OpenDialog();
-			});
+				GameObject col = Instantiate(colorParent.Find("9").gameObject);
+				col.name = i.ToString();
+				col.transform.SetParent(colorParent);
+			}
+
+			Transform testObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth");
+			Slider testComponent = testObject.gameObject.GetComponent<Slider>();
+			ColorBlock cb = testComponent.colors;
+			cb.normalColor = ConfigEntries.DepthNormalColor.Value;
+			cb.pressedColor = ConfigEntries.DepthPressedColor.Value;
+			cb.highlightedColor = ConfigEntries.DepthHighlightedColor.Value;
+			cb.disabledColor = ConfigEntries.DepthDisabledColor.Value;
+			cb.fadeDuration = ConfigEntries.DepthFadeDuration.Value;
+			testComponent.colors = cb;
+			testComponent.interactable = ConfigEntries.DepthInteractable.Value;
+			testComponent.maxValue = ConfigEntries.SliderRMax.Value;
+			testComponent.minValue = ConfigEntries.SliderRMin.Value;
+			testComponent.direction = ConfigEntries.SliderDDirection.Value;
 		}
 
 		public static void SetNewDepth(string _depth)
@@ -820,130 +408,15 @@ namespace EditorManagement.Patchers
 		}
 
 		[HarmonyPatch("Start")]
-		[HarmonyPostfix]
-		private static void SetSliderStart()
+		[HarmonyPrefix]
+		private static bool StartPrefix()
 		{
-			Transform sliderObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth");
-			Slider sliderComponent = sliderObject.gameObject.GetComponent<Slider>();
-			ColorBlock cb = sliderComponent.colors;
-			cb.normalColor = EditorPlugin.DepthNormalColor.Value;
-			cb.pressedColor = EditorPlugin.DepthPressedColor.Value;
-			cb.highlightedColor = EditorPlugin.DepthHighlightedColor.Value;
-			cb.disabledColor = EditorPlugin.DepthDisabledColor.Value;
-			cb.fadeDuration = EditorPlugin.DepthFadeDuration.Value;
-			sliderComponent.colors = cb;
-			sliderComponent.interactable = EditorPlugin.DepthInteractable.Value;
-			sliderComponent.maxValue = EditorPlugin.SliderRMax.Value;
-			sliderComponent.minValue = EditorPlugin.SliderRMin.Value;
-			sliderComponent.direction = EditorPlugin.SliderDDirection.Value;
-		}
-
-		[HarmonyPatch("RefreshKeyframeGUI")]
-		[HarmonyPostfix]
-		private static void RefreshSliderValue()
-		{
-			if (DataManager.inst.gameData.beatmapObjects.Count > 0 && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.keyframeSelections.Count <= 1 && ObjEditor.inst.selectedObjects.Count < 2 && EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object))
+			ObjEditor.inst.colorButtons.Clear();
+			for (int i = 1; i <= 18; i++)
 			{
-				InputField iFdTxt = GameObject.Find("spacer/depthtext").GetComponent<InputField>();
-				Text textDepth = GameObject.Find("Handle/sliderdtext").GetComponent<Text>();
-
-				string depthstr = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth.ToString();
-
-				iFdTxt.onValueChanged.RemoveAllListeners();
-				iFdTxt.text = depthstr;
-				textDepth.text = depthstr;
-
-				Transform depth = ObjEditor.inst.ObjectView.transform.Find("depth");
-				Slider depthSlider = depth.Find("depth").GetComponent<Slider>();
-
-				iFdTxt.onValueChanged.AddListener(delegate (string _value)
-				{
-					SetNewDepth(_value);
-					if (EditorPlugin.DepthUpdate.Value == true)
-					{
-						depthSlider.value = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth;
-					}
-					textDepth.text = depthstr;
-				});
-
-				depth.Find("<").GetComponent<Button>().onClick.AddListener(delegate ()
-				{
-					iFdTxt.text = depthstr;
-					textDepth.text = depthstr;
-				});
-				depth.Find(">").GetComponent<Button>().onClick.AddListener(delegate ()
-				{
-					iFdTxt.text = depthstr;
-					textDepth.text = depthstr;
-				});
+				ObjEditor.inst.colorButtons.Add(ObjEditor.inst.KeyframeDialogs[3].transform.Find("color/" + i).GetComponent<Toggle>());
 			}
-		}
-
-		[HarmonyPatch("RefreshKeyframeGUI")]
-		[HarmonyTranspiler]
-		public static IEnumerable<CodeInstruction> TranspilerPatch(IEnumerable<CodeInstruction> instructions)
-		{
-			return new CodeMatcher(instructions)
-				.Start()
-			  .Advance(73)
-			  .ThrowIfNotMatch("Is not empty", new CodeMatch(OpCodes.Ldarg_0))
-			  .RemoveInstruction()
-			  .Advance(0)
-			  .ThrowIfNotMatch("Is not currentObjectSelection", new CodeMatch(OpCodes.Ldfld))
-			  .Set(OpCodes.Ldc_I4_0, new object[] { })
-			  .Advance(1)
-			  .ThrowIfNotMatch("Is not Get ObjectData", new CodeMatch(OpCodes.Callvirt))
-			  .RemoveInstructions(3)
-			  .InstructionEnumeration();
-		}
-
-		[HarmonyPatch("RefreshKeyframeGUI")]
-		[HarmonyPostfix]
-		private static void RefreshTriggers()
-		{
-			if (DataManager.inst.gameData.beatmapObjects.Count > 0 && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.keyframeSelections.Count <= 1)
-			{
-				//Position
-				{
-					InputField posX = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/x").GetComponent<InputField>();
-					InputField posY = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/y").GetComponent<InputField>();
-					EventTrigger posXEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/x").GetComponent<EventTrigger>();
-					EventTrigger posYEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position/y").GetComponent<EventTrigger>();
-
-					posXEvent.triggers.Clear();
-					posXEvent.triggers.Add(Triggers.ScrollDelta(posX, 0.1f, 10f, true));
-					posXEvent.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
-
-					posYEvent.triggers.Clear();
-					posYEvent.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, true));
-					posYEvent.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
-				}
-
-				//Scale
-				{
-					InputField scaX = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/x").GetComponent<InputField>();
-					InputField scaY = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/y").GetComponent<InputField>();
-					EventTrigger scaXEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/x").GetComponent<EventTrigger>();
-					EventTrigger scaYEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/scale/scale/y").GetComponent<EventTrigger>();
-
-					scaXEvent.triggers.Clear();
-					scaXEvent.triggers.Add(Triggers.ScrollDelta(scaX, 0.1f, 10f, true));
-					scaXEvent.triggers.Add(Triggers.ScrollDeltaVector2(scaX, scaY, 0.1f, 10f));
-
-					scaYEvent.triggers.Clear();
-					scaYEvent.triggers.Add(Triggers.ScrollDelta(scaY, 0.1f, 10f, true));
-					scaYEvent.triggers.Add(Triggers.ScrollDeltaVector2(scaX, scaY, 0.1f, 10f));
-				}
-
-				//Rotation
-				{
-					InputField rotX = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation/rotation/x").GetComponent<InputField>();
-					EventTrigger rotXEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation/rotation").GetComponent<EventTrigger>();
-
-					rotXEvent.triggers.Clear();
-					rotXEvent.triggers.Add(Triggers.ScrollDelta(rotX, 15f, 3f, false));
-				}
-			}
+			return false;
 		}
 
 		[HarmonyPatch("AddPrefabExpandedToLevel")]
@@ -967,11 +440,11 @@ namespace EditorManagement.Patchers
 		{
 			if (!string.IsNullOrEmpty(EditorManager.inst.currentLoadedLevel))
 			{
-				if (EditorPlugin.IfEditorStartTime.Value == true)
+				if (ConfigEntries.IfEditorStartTime.Value == true)
 				{
 					AudioManager.inst.CurrentAudioSource.time = DataManager.inst.gameData.beatmapData.editorData.timelinePos;
 				}
-				if (EditorPlugin.IfEditorPauses.Value == true)
+				if (ConfigEntries.IfEditorPauses.Value == true)
 				{
 					AudioManager.inst.CurrentAudioSource.Pause();
 				}
@@ -1009,7 +482,7 @@ namespace EditorManagement.Patchers
 			var hoverUI = __result.AddComponent<HoverUI>();
 			hoverUI.animatePos = false;
 			hoverUI.animateSca = true;
-			hoverUI.size = EditorPlugin.HoverUIETLSize.Value;
+			hoverUI.size = ConfigEntries.HoverUIETLSize.Value;
         }
 
 		[HarmonyPatch("CreateKeyframes")]
@@ -1025,7 +498,7 @@ namespace EditorManagement.Patchers
 						var hoverUI = obj.AddComponent<HoverUI>();
 						hoverUI.animatePos = false;
 						hoverUI.animateSca = true;
-						hoverUI.size = EditorPlugin.HoverUIKFSize.Value;
+						hoverUI.size = ConfigEntries.HoverUIKFSize.Value;
 					}
                 }
             }
@@ -1035,7 +508,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void SetObjStart()
 		{
-			ObjEditor.inst.zoomBounds = EditorPlugin.ObjZoomBounds.Value;
+			ObjEditor.inst.zoomBounds = ConfigEntries.ObjZoomBounds.Value;
 		}
 
 		//[HarmonyPatch("RenderTimelineObjects")]
@@ -1056,7 +529,11 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void SetCurrentObjPostfix(ObjEditor.ObjectSelection __0)
         {
-			if (EditorPlugin.EditorDebug.Value == true)
+			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>())
+			{
+				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
+			}
+			if (ConfigEntries.EditorDebug.Value == true)
 			{
 				if (__0.IsObject() && !string.IsNullOrEmpty(__0.ID) && __0.GetObjectData() != null && !__0.GetObjectData().fromPrefab)
 				{
@@ -1279,7 +756,7 @@ namespace EditorManagement.Patchers
 
 						float calc = Mathf.Clamp(num6, 0f, DataManager.inst.gameData.beatmapObjects[ObjEditor.inst.currentObjectSelection.Index].GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset, false, false));
 
-						if (SettingEditor.inst.SnapActive)
+						if (SettingEditor.inst.SnapActive && ConfigEntries.KeyframeSnap.Value)
 						{
 							float st = ObjEditor.inst.currentObjectSelection.GetObjectData().StartTime;
 							float kf = calc;
@@ -1318,7 +795,7 @@ namespace EditorManagement.Patchers
 						}
 					}
 				}
-				AccessTools.Method(typeof(ObjEditor), "ResizeKeyframeTimeline").Invoke(ObjEditor.inst, new object[] { });
+				ResizeKeyframeTimeline();
 				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
 				AccessTools.Method(typeof(ObjEditor), "UpdateHighlightedKeyframe").Invoke(ObjEditor.inst, new object[] { });
 				foreach (ObjEditor.ObjectSelection obj in ObjEditor.inst.selectedObjects)

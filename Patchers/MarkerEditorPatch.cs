@@ -57,24 +57,24 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void UpdateMakr()
 		{
-			if (EditorPlugin.MarkerLoop.Value == true && DataManager.inst.gameData.beatmapData.markers.Count != 0)
+			if (ConfigEntries.MarkerLoop.Value == true && DataManager.inst.gameData.beatmapData.markers.Count != 0)
 			{
-				int markerEnd = EditorPlugin.MarkerEndIndex.Value;
-				int markerStart = EditorPlugin.MarkerStartIndex.Value;
-				if (EditorPlugin.MarkerEndIndex.Value < 0)
+				int markerEnd = ConfigEntries.MarkerEndIndex.Value;
+				int markerStart = ConfigEntries.MarkerStartIndex.Value;
+				if (ConfigEntries.MarkerEndIndex.Value < 0)
 				{
 					markerEnd = 0;
 				}
-				if (EditorPlugin.MarkerEndIndex.Value > DataManager.inst.gameData.beatmapData.markers.Count - 1)
+				if (ConfigEntries.MarkerEndIndex.Value > DataManager.inst.gameData.beatmapData.markers.Count - 1)
 				{
 					markerEnd = DataManager.inst.gameData.beatmapData.markers.Count - 1;
 
 				}
-				if (EditorPlugin.MarkerStartIndex.Value < 0)
+				if (ConfigEntries.MarkerStartIndex.Value < 0)
 				{
 					markerStart = 0;
 				}
-				if (EditorPlugin.MarkerStartIndex.Value > DataManager.inst.gameData.beatmapData.markers.Count - 1)
+				if (ConfigEntries.MarkerStartIndex.Value > DataManager.inst.gameData.beatmapData.markers.Count - 1)
 				{
 					markerStart = DataManager.inst.gameData.beatmapData.markers.Count - 1;
 
@@ -94,7 +94,7 @@ namespace EditorManagement.Patchers
 
 				if (!markerList.transform.Find("sort markers"))
 				{
-					GameObject sortMarkers = UnityEngine.Object.Instantiate<GameObject>(eventButton);
+					GameObject sortMarkers = Instantiate(eventButton);
 					sortMarkers.transform.SetParent(markerList.transform);
 					sortMarkers.transform.SetAsFirstSibling();
 					sortMarkers.name = "sort markers";
@@ -137,7 +137,7 @@ namespace EditorManagement.Patchers
 					var match = regex.Match(marker.desc);
 					if (match.Success)
 					{
-						if (EditorPlugin.ShowObjectsOnLayer.Value == true)
+						if (ConfigEntries.ShowObjectsOnLayer.Value == true)
 						{
 							foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 							{
@@ -145,7 +145,7 @@ namespace EditorManagement.Patchers
 								{
 									ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
 									Color objColor = gameObjectRef.mat.color;
-									gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * EditorPlugin.ShowObjectsAlpha.Value);
+									gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
 								}
 							}
 						}

@@ -41,18 +41,18 @@ namespace EditorManagement.Patchers
 
 			var notifyRT = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").GetComponent<RectTransform>();
 			var notifyGroup = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").GetComponent<VerticalLayoutGroup>();
-			notifyRT.sizeDelta = new Vector2(EditorPlugin.NotificationWidth.Value, 632f);
-			GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").transform.localScale = new Vector3(EditorPlugin.NotificationSize.Value, EditorPlugin.NotificationSize.Value, 1f);
+			notifyRT.sizeDelta = new Vector2(ConfigEntries.NotificationWidth.Value, 632f);
+			GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").transform.localScale = new Vector3(ConfigEntries.NotificationSize.Value, ConfigEntries.NotificationSize.Value, 1f);
 
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Redo/Text 1").GetComponent<Text>().text = "Ctrl + Shift + Z";
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Redo/Text 1").GetComponent<RectTransform>().sizeDelta = new Vector2(166f, 0f);
 
-			if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Down)
+			if (ConfigEntries.NotificationDirection.Value == EditorPlugin.Direction.Down)
 			{
 				notifyRT.anchoredPosition = new Vector2(8f, 408f);
 				notifyGroup.childAlignment = TextAnchor.LowerLeft;
 			}
-			if (EditorPlugin.NotificationDirection.Value == EditorPlugin.Direction.Up)
+			if (ConfigEntries.NotificationDirection.Value == EditorPlugin.Direction.Up)
 			{
 				notifyRT.anchoredPosition = new Vector2(8f, 410f);
 				notifyGroup.childAlignment = TextAnchor.UpperLeft;
@@ -154,11 +154,10 @@ namespace EditorManagement.Patchers
 				tbarLayersET.triggers.Add(entryLayers);
 			}
 
-			GameObject.Find("TimelineBar/GameObject/1").SetActive(false);
-			GameObject.Find("TimelineBar/GameObject/2").SetActive(false);
-			GameObject.Find("TimelineBar/GameObject/3").SetActive(false);
-			GameObject.Find("TimelineBar/GameObject/4").SetActive(false);
-			GameObject.Find("TimelineBar/GameObject/5").SetActive(false);
+			for (int i = 1; i <= 5; i++)
+			{
+				GameObject.Find("TimelineBar/GameObject/" + i).SetActive(false);
+			}
 
 			EventTrigger eventTrigger = GameObject.Find("TimelineBar/GameObject/6").GetComponent<EventTrigger>();
 
@@ -183,30 +182,10 @@ namespace EditorManagement.Patchers
 			GameObject.Find("Editor GUI/sizer/main/Popups/New File Popup/Browser Popup").SetActive(true);
 			GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name").GetComponent<InputField>().characterLimit = 0;
 
-			EventTrigger.Entry entryMoveX = new EventTrigger.Entry();
-			entryMoveX.eventID = EventTriggerType.Scroll;
-			entryMoveX.callback.AddListener(delegate (BaseEventData eventData)
-			{
-				float time = AudioManager.inst.CurrentAudioSource.time;
-				float timeModify = EditorPlugin.TimeModify.Value;
-				float timeMinus = time - timeModify;
-				float timePlus = time + timeModify;
+			var timeObjET = timeObj.gameObject.GetComponent<EventTrigger>();
 
-				PointerEventData pointerEventData = (PointerEventData)eventData;
-				if (pointerEventData.scrollDelta.y < 0f)
-				{
-					RTEditor.SetNewTime(timeMinus.ToString());
-					iFtimeObj.text = time.ToString();
-					return;
-				}
-				if (pointerEventData.scrollDelta.y > 0f)
-				{
-					RTEditor.SetNewTime(timePlus.ToString());
-					iFtimeObj.text = time.ToString();
-				}
-			});
-			timeObj.gameObject.GetComponent<EventTrigger>().triggers.Clear();
-			timeObj.gameObject.GetComponent<EventTrigger>().triggers.Add(entryMoveX);
+			timeObjET.triggers.Clear();
+			timeObjET.triggers.Add(Triggers.ScrollDelta(iFtimeObj, 0.1f, 10f));
 
 			//Loading doggo
 			{
@@ -243,7 +222,7 @@ namespace EditorManagement.Patchers
 				sortList.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
 				RectTransform sortListRT = sortList.GetComponent<RectTransform>();
-				sortListRT.anchoredPosition = EditorPlugin.ORLDropdownPos.Value;
+				sortListRT.anchoredPosition = ConfigEntries.ORLDropdownPos.Value;
 				HoverTooltip sortListTip = sortList.GetComponent<HoverTooltip>();
 				{
 					sortListTip.tooltipLangauges[0].desc = "Sort the order of your levels.";
@@ -300,7 +279,7 @@ namespace EditorManagement.Patchers
 				checkDes.transform.localScale = Vector3.one;
 
 				RectTransform checkDesRT = checkDes.GetComponent<RectTransform>();
-				checkDesRT.anchoredPosition = EditorPlugin.ORLTogglePos.Value;
+				checkDesRT.anchoredPosition = ConfigEntries.ORLTogglePos.Value;
 
 				checkDes.transform.Find("title").GetComponent<Text>().text = "Descending?";
 				RectTransform titleRT = checkDes.transform.Find("title").GetComponent<RectTransform>();
@@ -313,34 +292,94 @@ namespace EditorManagement.Patchers
 				});
 				HoverTooltip toggleTip = toggle.AddComponent<HoverTooltip>();
 				toggleTip.tooltipLangauges.Add(sortListTip.tooltipLangauges[0]);
-			}
+            }
 
-			//Level List
-			{
-				if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "beatmaps/editorpath.lss"))
+            //Level List
+            {
+                if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "beatmaps/editorpath.lss"))
+                {
+                    string rawProfileJSON = null;
+                    rawProfileJSON = FileManager.inst.LoadJSONFile("beatmaps/editorpath.lss");
+
+                    JSONNode jn = JSON.Parse(rawProfileJSON);
+
+					if (!string.IsNullOrEmpty(jn["path"]))
+					{
+						EditorPlugin.editorPath = jn["path"];
+						EditorPlugin.levelListPath = "beatmaps/" + EditorPlugin.editorPath;
+						EditorPlugin.levelListSlash = "beatmaps/" + EditorPlugin.editorPath + "/";
+					}
+
+					if (!string.IsNullOrEmpty(jn["theme_path"]))
+					{
+						EditorPlugin.themePath = jn["theme_path"];
+						EditorPlugin.themeListPath = "beatmaps/" + EditorPlugin.themePath;
+						EditorPlugin.themeListSlash = "beatmaps/" + EditorPlugin.themePath + "/";
+					}
+
+					if (!string.IsNullOrEmpty(jn["prefab_path"]))
+					{
+						EditorPlugin.prefabPath = jn["prefab_path"];
+						EditorPlugin.prefabListPath = "beatmaps/" + EditorPlugin.prefabPath;
+						EditorPlugin.prefabListSlash = "beatmaps/" + EditorPlugin.prefabPath + "/";
+					}
+
+					JSONNode jn2 = JSON.Parse("{}");
+
+					jn2["level_path"] = EditorPlugin.editorPath;
+
+					jn2["theme_path"] = EditorPlugin.themePath;
+
+					jn2["prefab_path"] = EditorPlugin.prefabPath;
+
+					RTFile.WriteToFile("settings/editor.lss", jn2.ToString(3));
+					File.Delete(RTFile.GetApplicationDirectory() + "beatmaps/editorpath.lss");
+				}
+                else if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "settings/editor.lss"))
 				{
 					string rawProfileJSON = null;
-					rawProfileJSON = FileManager.inst.LoadJSONFile("beatmaps/editorpath.lss");
+					rawProfileJSON = FileManager.inst.LoadJSONFile("settings/editor.lss");
 
-					JSONNode jsonnode = JSON.Parse(rawProfileJSON);
+					JSONNode jn = JSON.Parse(rawProfileJSON);
 
-					EditorPlugin.editorPath = jsonnode["path"];
-					EditorPlugin.levelListPath = "beatmaps/" + EditorPlugin.editorPath;
-					EditorPlugin.levelListSlash = "beatmaps/" + EditorPlugin.editorPath + "/";
+					if (!string.IsNullOrEmpty(jn["level_path"]))
+                    {
+						EditorPlugin.editorPath = jn["level_path"];
+						EditorPlugin.levelListPath = "beatmaps/" + EditorPlugin.editorPath;
+						EditorPlugin.levelListSlash = "beatmaps/" + EditorPlugin.editorPath + "/";
+					}
+
+					if (!string.IsNullOrEmpty(jn["theme_path"]))
+                    {
+						EditorPlugin.themePath = jn["theme_path"];
+						EditorPlugin.themeListPath = "beatmaps/" + EditorPlugin.themePath;
+						EditorPlugin.themeListSlash = "beatmaps/" + EditorPlugin.themePath + "/";
+					}
+					
+					if (!string.IsNullOrEmpty(jn["prefab_path"]))
+					{
+						EditorPlugin.prefabPath = jn["prefab_path"];
+						EditorPlugin.prefabListPath = "beatmaps/" + EditorPlugin.prefabPath;
+						EditorPlugin.prefabListSlash = "beatmaps/" + EditorPlugin.prefabPath + "/";
+					}
 				}
 				else
 				{
-					JSONNode jsonnode = JSON.Parse("{}");
+					JSONNode jn = JSON.Parse("{}");
 
-					jsonnode["path"] = EditorPlugin.editorPath;
+					jn["level_path"] = EditorPlugin.editorPath;
 
-					RTFile.WriteToFile("beatmaps/editorpath.lss", jsonnode.ToString(3));
+					jn["theme_path"] = EditorPlugin.themePath;
+
+					jn["prefab_path"] = EditorPlugin.prefabPath;
+
+					RTFile.WriteToFile("settings/editor.lss", jn.ToString(3));
 				}
 
 				GameObject levelListObj = Instantiate(GameObject.Find("TimelineBar/GameObject/Time Input"));
 				levelListObj.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
-				levelListObj.GetComponent<RectTransform>().anchoredPosition = EditorPlugin.ORLPathPos.Value;
-				levelListObj.GetComponent<RectTransform>().sizeDelta = new Vector2(EditorPlugin.ORLPathLength.Value, 34f);
+				levelListObj.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.ORLPathPos.Value;
+				levelListObj.GetComponent<RectTransform>().sizeDelta = new Vector2(ConfigEntries.ORLPathLength.Value, 34f);
 				levelListObj.name = "editor path";
 
 				HoverTooltip levelListTip = levelListObj.AddComponent<HoverTooltip>();
@@ -358,16 +397,16 @@ namespace EditorManagement.Patchers
 				levelListIF.onValueChanged.RemoveAllListeners();
 				levelListIF.onValueChanged.AddListener(delegate (string _val)
 				{
-					if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "beatmaps/editorpath.lss"))
+					if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "settings/editor.lss"))
 					{
 						string rawProfileJSON = null;
-						rawProfileJSON = FileManager.inst.LoadJSONFile("beatmaps/editorpath.lss");
+						rawProfileJSON = FileManager.inst.LoadJSONFile("settings/editor.lss");
 
 						JSONNode jsonnode = JSON.Parse(rawProfileJSON);
 
-						jsonnode["path"] = _val;
+						jsonnode["level_path"] = _val;
 
-						RTFile.WriteToFile("beatmaps/editorpath.lss", jsonnode.ToString(3));
+						RTFile.WriteToFile("settings/editor.lss", jsonnode.ToString(3));
 					}
 
 					EditorPlugin.editorPath = _val;
@@ -377,7 +416,7 @@ namespace EditorManagement.Patchers
 
 				GameObject levelListReloader = Instantiate(GameObject.Find("TimelineBar/GameObject/play"));
 				levelListReloader.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
-				levelListReloader.GetComponent<RectTransform>().anchoredPosition = EditorPlugin.ORLRefreshPos.Value;
+				levelListReloader.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.ORLRefreshPos.Value;
 				levelListReloader.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
 				levelListReloader.name = "reload";
 
@@ -485,13 +524,10 @@ namespace EditorManagement.Patchers
 
 				if (DataManager.inst != null)
 				{
-					int num = 0;
-					foreach (List<DataManager.GameData.EventKeyframe> list3 in DataManager.inst.gameData.eventObjects.allEvents)
+					for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
 					{
-						int index = num;
-						EventEditor.inst.EventHolders.transform.GetChild(index).GetComponent<EventTrigger>().triggers.Add(entry);
-						EventEditor.inst.EventHolders.transform.GetChild(index).GetComponent<EventTrigger>().triggers.Add(entry2);
-						num++;
+						EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>().triggers.Add(entry);
+						EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>().triggers.Add(entry2);
 					}
 				}
 
@@ -604,10 +640,188 @@ namespace EditorManagement.Patchers
 
 			//Cursor Color
 			{
-				GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle").GetComponent<Image>().color = EditorPlugin.MTSliderCol.Value;
-				GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image").GetComponent<Image>().color = EditorPlugin.MTSliderCol.Value;
-				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image").GetComponent<Image>().color = EditorPlugin.KTSliderCol.Value;
-				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle").GetComponent<Image>().color = EditorPlugin.KTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle").GetComponent<Image>().color = ConfigEntries.MTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image").GetComponent<Image>().color = ConfigEntries.MTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image").GetComponent<Image>().color = ConfigEntries.KTSliderCol.Value;
+				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle").GetComponent<Image>().color = ConfigEntries.KTSliderCol.Value;
+			}
+
+			//Theme Thing
+			{
+				GameObject themePather = Instantiate(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme").GetChild(2).gameObject);
+				themePather.transform.SetParent(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme"));
+				themePather.transform.SetSiblingIndex(8);
+				themePather.name = "themepathers";
+
+				GameObject levelListObj = Instantiate(timeObj);
+				levelListObj.transform.SetParent(themePather.transform);
+				levelListObj.GetComponent<RectTransform>().anchoredPosition = new Vector2(150f, 0f);
+				levelListObj.GetComponent<RectTransform>().sizeDelta = new Vector2(300f, 34f);
+				levelListObj.transform.localScale = Vector3.one;
+				levelListObj.name = "themes path";
+
+				HoverTooltip levelListTip = levelListObj.AddComponent<HoverTooltip>();
+				HoverTooltip.Tooltip llTip = new HoverTooltip.Tooltip();
+
+				llTip.desc = "Theme list path";
+				llTip.hint = "Input the path you want to load themes from within the beatmaps folder. For example: inputting \"themes\" into the input field will load themes from beatmaps/themes. You can also set it to sub-directories, like: \"themes/pa colors\" will take levels from \"beatmaps/themes/pa colors\".";
+
+				levelListTip.tooltipLangauges.Add(llTip);
+
+				InputField levelListIF = levelListObj.GetComponent<InputField>();
+				levelListIF.characterValidation = InputField.CharacterValidation.None;
+				levelListIF.text = EditorPlugin.themePath;
+
+				levelListIF.onValueChanged.RemoveAllListeners();
+				levelListIF.onValueChanged.AddListener(delegate (string _val)
+				{
+					if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "settings/editor.lss"))
+					{
+						string rawProfileJSON = null;
+						rawProfileJSON = FileManager.inst.LoadJSONFile("settings/editor.lss");
+
+						JSONNode jn = JSON.Parse(rawProfileJSON);
+
+						jn["theme_path"] = _val;
+
+						RTFile.WriteToFile("settings/editor.lss", jn.ToString(3));
+					}
+
+					EditorPlugin.themePath = _val;
+					EditorPlugin.themeListPath = "beatmaps/" + EditorPlugin.themePath;
+					EditorPlugin.themeListSlash = "beatmaps/" + EditorPlugin.themePath + "/";
+				});
+
+				GameObject levelListReloader = Instantiate(GameObject.Find("TimelineBar/GameObject/play"));
+				levelListReloader.transform.SetParent(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme/themepathers"));
+				levelListReloader.GetComponent<RectTransform>().anchoredPosition = new Vector2(310f, 35f);
+				levelListReloader.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				levelListReloader.name = "reload themes";
+
+				HoverTooltip levelListRTip = levelListReloader.AddComponent<HoverTooltip>();
+				HoverTooltip.Tooltip llRTip = new HoverTooltip.Tooltip();
+
+				llRTip.desc = "Refresh theme list";
+				llRTip.hint = "Clicking this will reload the theme list.";
+
+				levelListRTip.tooltipLangauges.Add(llRTip);
+
+				Button levelListRButton = levelListReloader.GetComponent<Button>();
+				levelListRButton.onClick.m_Calls.m_ExecutingCalls.Clear();
+				levelListRButton.onClick.m_Calls.m_PersistentCalls.Clear();
+				levelListRButton.onClick.m_PersistentCalls.m_Calls.Clear();
+				levelListRButton.onClick.RemoveAllListeners();
+				levelListRButton.onClick.AddListener(delegate ()
+				{
+					RTEditor.inst.StartCoroutine(RTEditor.LoadThemes());
+					EventEditor.inst.RenderEventsDialog();
+				});
+
+				string jpgFileLocation = RTFile.GetApplicationDirectory() + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+				if (RTFile.FileExists("BepInEx/plugins/Assets/editor_gui_refresh-white.png"))
+				{
+					Image spriteReloader = levelListReloader.GetComponent<Image>();
+
+					EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+					{
+						spriteReloader.sprite = cover;
+					}, delegate (string errorFile)
+					{
+						spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+					}));
+				}
+			}
+
+            //Prefabs
+            {
+				GameObject levelListObj = Instantiate(timeObj);
+				levelListObj.transform.SetParent(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"));
+				levelListObj.transform.localScale = Vector3.one;
+
+				foreach (object obj in levelListObj.transform)
+				{
+					Transform children = (Transform)obj;
+					children.localScale = Vector3.one;
+				}
+
+				levelListObj.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.PrefabEXPathPos.Value;
+				levelListObj.GetComponent<RectTransform>().sizeDelta = new Vector2(ConfigEntries.PrefabEXPathSca.Value, 34f);
+				levelListObj.name = "prefabs path";
+
+				HoverTooltip levelListTip = levelListObj.AddComponent<HoverTooltip>();
+				HoverTooltip.Tooltip llTip = new HoverTooltip.Tooltip();
+				{
+					llTip.desc = "Prefab list path";
+					llTip.hint = "Input the path you want to load prefabs from within the beatmaps folder. For example: inputting \"prefabs\" into the input field will load levels from beatmaps/prefabs. You can also set it to sub-directories, like: \"prefabs/pa characters\" will take levels from \"beatmaps/prefabs/pa characters\".";
+				}
+
+				levelListTip.tooltipLangauges.Add(llTip);
+
+				InputField levelListIF = levelListObj.GetComponent<InputField>();
+				levelListIF.characterValidation = InputField.CharacterValidation.None;
+				levelListIF.text = EditorPlugin.prefabPath;
+
+				levelListIF.onValueChanged.RemoveAllListeners();
+				levelListIF.onValueChanged.AddListener(delegate (string _val)
+				{
+					if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "settings/editor.lss"))
+					{
+						string rawProfileJSON = null;
+						rawProfileJSON = FileManager.inst.LoadJSONFile("settings/editor.lss");
+
+						JSONNode jsonnode = JSON.Parse(rawProfileJSON);
+
+						jsonnode["prefab_path"] = _val;
+
+						RTFile.WriteToFile("settings/editor.lss", jsonnode.ToString(3));
+					}
+
+					EditorPlugin.prefabPath = _val;
+					EditorPlugin.prefabListPath = "beatmaps/" + EditorPlugin.prefabPath;
+					EditorPlugin.prefabListSlash = "beatmaps/" + EditorPlugin.prefabPath + "/";
+				});
+
+				GameObject levelListReloader = Instantiate(GameObject.Find("TimelineBar/GameObject/play"));
+				levelListReloader.transform.SetParent(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"));
+				levelListReloader.transform.localScale = Vector3.one;
+				levelListReloader.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.PrefabEXRefreshPos.Value;
+				levelListReloader.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				levelListReloader.name = "reload prefabs";
+
+				HoverTooltip levelListRTip = levelListReloader.AddComponent<HoverTooltip>();
+				HoverTooltip.Tooltip llRTip = new HoverTooltip.Tooltip();
+				{
+					llRTip.desc = "Refresh prefab list";
+					llRTip.hint = "Clicking this will reload the prefab list.";
+				}
+
+				levelListRTip.tooltipLangauges.Add(llRTip);
+
+				Button levelListRButton = levelListReloader.GetComponent<Button>();
+				levelListRButton.onClick.m_Calls.m_ExecutingCalls.Clear();
+				levelListRButton.onClick.m_Calls.m_PersistentCalls.Clear();
+				levelListRButton.onClick.m_PersistentCalls.m_Calls.Clear();
+				levelListRButton.onClick.RemoveAllListeners();
+				levelListRButton.onClick.AddListener(delegate ()
+				{
+					EditorPlugin.inst.StartReload();
+				});
+
+				string jpgFileLocation = RTFile.GetApplicationDirectory() + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+				if (RTFile.FileExists("BepInEx/plugins/Assets/editor_gui_refresh-white.png"))
+				{
+					Image spriteReloader = levelListReloader.GetComponent<Image>();
+
+					EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+					{
+						spriteReloader.sprite = cover;
+					}, delegate (string errorFile)
+					{
+						spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+					}));
+				}
 			}
 
 			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").GetComponent<HideDropdownOptions>());
@@ -643,79 +857,79 @@ namespace EditorManagement.Patchers
 				animationCurve.preWrapMode = WrapMode.Clamp;
 
 				Debug.Log("Open File Popup Easing");
-				openFilePopupAIGUI.SetEasing((int)EditorPlugin.OFPAnimateEaseIn.Value, (int)EditorPlugin.OFPAnimateEaseOut.Value);
+				openFilePopupAIGUI.SetEasing((int)ConfigEntries.OFPAnimateEaseIn.Value, (int)ConfigEntries.OFPAnimateEaseOut.Value);
 				Debug.Log("Open File Popup X / Y");
-				openFilePopupAIGUI.animateX = EditorPlugin.OFPAnimateX.Value;
-				openFilePopupAIGUI.animateY = EditorPlugin.OFPAnimateY.Value;
+				openFilePopupAIGUI.animateX = ConfigEntries.OFPAnimateX.Value;
+				openFilePopupAIGUI.animateY = ConfigEntries.OFPAnimateY.Value;
 				Debug.Log("Open File Popup Speeds");
-				openFilePopupAIGUI.animateInTime = EditorPlugin.OFPAnimateInOutSpeeds.Value.x;
-				openFilePopupAIGUI.animateOutTime = EditorPlugin.OFPAnimateInOutSpeeds.Value.y;
+				openFilePopupAIGUI.animateInTime = ConfigEntries.OFPAnimateInOutSpeeds.Value.x;
+				openFilePopupAIGUI.animateOutTime = ConfigEntries.OFPAnimateInOutSpeeds.Value.y;
 
 				var newFilePopupAIGUI = EditorManager.inst.GetDialog("New File Popup").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("New File Popup Easing");
-				newFilePopupAIGUI.SetEasing((int)EditorPlugin.NFPAnimateEaseIn.Value, (int)EditorPlugin.NFPAnimateEaseOut.Value);
+				newFilePopupAIGUI.SetEasing((int)ConfigEntries.NFPAnimateEaseIn.Value, (int)ConfigEntries.NFPAnimateEaseOut.Value);
 				Debug.Log("New File Popup X / Y");
-				newFilePopupAIGUI.animateX = EditorPlugin.NFPAnimateX.Value;
-				newFilePopupAIGUI.animateY = EditorPlugin.NFPAnimateY.Value;
+				newFilePopupAIGUI.animateX = ConfigEntries.NFPAnimateX.Value;
+				newFilePopupAIGUI.animateY = ConfigEntries.NFPAnimateY.Value;
 				Debug.Log("New File Popup Speeds");
-				newFilePopupAIGUI.animateInTime = EditorPlugin.NFPAnimateInOutSpeeds.Value.x;
-				newFilePopupAIGUI.animateOutTime = EditorPlugin.NFPAnimateInOutSpeeds.Value.y;
+				newFilePopupAIGUI.animateInTime = ConfigEntries.NFPAnimateInOutSpeeds.Value.x;
+				newFilePopupAIGUI.animateOutTime = ConfigEntries.NFPAnimateInOutSpeeds.Value.y;
 
 				var prefabPopupAIGUI = EditorManager.inst.GetDialog("Prefab Popup").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("Prefab Popup Easing");
-				prefabPopupAIGUI.SetEasing((int)EditorPlugin.PPAnimateEaseIn.Value, (int)EditorPlugin.PPAnimateEaseOut.Value);
+				prefabPopupAIGUI.SetEasing((int)ConfigEntries.PPAnimateEaseIn.Value, (int)ConfigEntries.PPAnimateEaseOut.Value);
 				Debug.Log("Prefab Popup X / Y");
-				prefabPopupAIGUI.animateX = EditorPlugin.PPAnimateX.Value;
-				prefabPopupAIGUI.animateY = EditorPlugin.PPAnimateY.Value;
+				prefabPopupAIGUI.animateX = ConfigEntries.PPAnimateX.Value;
+				prefabPopupAIGUI.animateY = ConfigEntries.PPAnimateY.Value;
 				Debug.Log("Prefab Popup Speeds");
-				prefabPopupAIGUI.animateInTime = EditorPlugin.PPAnimateInOutSpeeds.Value.x;
-				prefabPopupAIGUI.animateOutTime = EditorPlugin.PPAnimateInOutSpeeds.Value.y;
+				prefabPopupAIGUI.animateInTime = ConfigEntries.PPAnimateInOutSpeeds.Value.x;
+				prefabPopupAIGUI.animateOutTime = ConfigEntries.PPAnimateInOutSpeeds.Value.y;
 
 				var quickActionsPopupAIGUI = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("Quick Actions Popup Easing");
-				quickActionsPopupAIGUI.SetEasing((int)EditorPlugin.QAPAnimateEaseIn.Value, (int)EditorPlugin.QAPAnimateEaseOut.Value);
+				quickActionsPopupAIGUI.SetEasing((int)ConfigEntries.QAPAnimateEaseIn.Value, (int)ConfigEntries.QAPAnimateEaseOut.Value);
 				Debug.Log("Quick Actions Popup X / Y");
-				quickActionsPopupAIGUI.animateX = EditorPlugin.QAPAnimateX.Value;
-				quickActionsPopupAIGUI.animateY = EditorPlugin.QAPAnimateY.Value;
+				quickActionsPopupAIGUI.animateX = ConfigEntries.QAPAnimateX.Value;
+				quickActionsPopupAIGUI.animateY = ConfigEntries.QAPAnimateY.Value;
 				Debug.Log("Quick Actions Popup Speeds");
-				quickActionsPopupAIGUI.animateInTime = EditorPlugin.QAPAnimateInOutSpeeds.Value.x;
-				quickActionsPopupAIGUI.animateOutTime = EditorPlugin.QAPAnimateInOutSpeeds.Value.y;
+				quickActionsPopupAIGUI.animateInTime = ConfigEntries.QAPAnimateInOutSpeeds.Value.x;
+				quickActionsPopupAIGUI.animateOutTime = ConfigEntries.QAPAnimateInOutSpeeds.Value.y;
 
 				var objectOptionsPopupAIGUI = EditorManager.inst.GetDialog("Object Options Popup").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("Object Options Popup Easing");
-				objectOptionsPopupAIGUI.SetEasing((int)EditorPlugin.OBJPAnimateEaseIn.Value, (int)EditorPlugin.OBJPAnimateEaseOut.Value);
+				objectOptionsPopupAIGUI.SetEasing((int)ConfigEntries.OBJPAnimateEaseIn.Value, (int)ConfigEntries.OBJPAnimateEaseOut.Value);
 				Debug.Log("Object Options Popup X / Y");
-				objectOptionsPopupAIGUI.animateX = EditorPlugin.OBJPAnimateX.Value;
-				objectOptionsPopupAIGUI.animateY = EditorPlugin.OBJPAnimateY.Value;
+				objectOptionsPopupAIGUI.animateX = ConfigEntries.OBJPAnimateX.Value;
+				objectOptionsPopupAIGUI.animateY = ConfigEntries.OBJPAnimateY.Value;
 				Debug.Log("Object Options Popup Speeds");
-				objectOptionsPopupAIGUI.animateInTime = EditorPlugin.OBJPAnimateInOutSpeeds.Value.x;
-				objectOptionsPopupAIGUI.animateOutTime = EditorPlugin.OBJPAnimateInOutSpeeds.Value.y;
+				objectOptionsPopupAIGUI.animateInTime = ConfigEntries.OBJPAnimateInOutSpeeds.Value.x;
+				objectOptionsPopupAIGUI.animateOutTime = ConfigEntries.OBJPAnimateInOutSpeeds.Value.y;
 
 				var bgOptionsPopupAIGUI = EditorManager.inst.GetDialog("BG Options Popup").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("BG Options Popup Easing");
-				bgOptionsPopupAIGUI.SetEasing((int)EditorPlugin.BGPAnimateEaseIn.Value, (int)EditorPlugin.BGPAnimateEaseOut.Value);
+				bgOptionsPopupAIGUI.SetEasing((int)ConfigEntries.BGPAnimateEaseIn.Value, (int)ConfigEntries.BGPAnimateEaseOut.Value);
 				Debug.Log("BG Options Popup X / Y");
-				bgOptionsPopupAIGUI.animateX = EditorPlugin.BGPAnimateX.Value;
-				bgOptionsPopupAIGUI.animateY = EditorPlugin.BGPAnimateY.Value;
+				bgOptionsPopupAIGUI.animateX = ConfigEntries.BGPAnimateX.Value;
+				bgOptionsPopupAIGUI.animateY = ConfigEntries.BGPAnimateY.Value;
 				Debug.Log("BG Options Popup Speeds");
-				bgOptionsPopupAIGUI.animateInTime = EditorPlugin.BGPAnimateInOutSpeeds.Value.x;
-				bgOptionsPopupAIGUI.animateOutTime = EditorPlugin.BGPAnimateInOutSpeeds.Value.y;
+				bgOptionsPopupAIGUI.animateInTime = ConfigEntries.BGPAnimateInOutSpeeds.Value.x;
+				bgOptionsPopupAIGUI.animateOutTime = ConfigEntries.BGPAnimateInOutSpeeds.Value.y;
 
 				var gameObjectDialogAIGUI = EditorManager.inst.GetDialog("Object Editor").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("Object Editor Easing");
-				gameObjectDialogAIGUI.SetEasing((int)EditorPlugin.GODAnimateEaseIn.Value, (int)EditorPlugin.GODAnimateEaseOut.Value);
+				gameObjectDialogAIGUI.SetEasing((int)ConfigEntries.GODAnimateEaseIn.Value, (int)ConfigEntries.GODAnimateEaseOut.Value);
 				Debug.Log("Object Editor X / Y");
-				gameObjectDialogAIGUI.animateX = EditorPlugin.GODAnimateX.Value;
-				gameObjectDialogAIGUI.animateY = EditorPlugin.GODAnimateY.Value;
+				gameObjectDialogAIGUI.animateX = ConfigEntries.GODAnimateX.Value;
+				gameObjectDialogAIGUI.animateY = ConfigEntries.GODAnimateY.Value;
 				Debug.Log("Object Editor Speeds");
-				gameObjectDialogAIGUI.animateInTime = EditorPlugin.GODAnimateInOutSpeeds.Value.x;
-				gameObjectDialogAIGUI.animateOutTime = EditorPlugin.GODAnimateInOutSpeeds.Value.y;
+				gameObjectDialogAIGUI.animateInTime = ConfigEntries.GODAnimateInOutSpeeds.Value.x;
+				gameObjectDialogAIGUI.animateOutTime = ConfigEntries.GODAnimateInOutSpeeds.Value.y;
 			}
 		}
 
@@ -826,18 +1040,18 @@ namespace EditorManagement.Patchers
 			Button fButtonBUTT = folderButton.GetComponent<Button>();
 			Text fButtonText = folderButton.transform.Find("folder-name").GetComponent<Text>();
 			//Folder button
-			fButtonText.horizontalOverflow = EditorPlugin.FButtonHWrap.Value;
-			fButtonText.verticalOverflow = EditorPlugin.FButtonVWrap.Value;
-			fButtonText.color = EditorPlugin.FButtonTextColor.Value;
-			fButtonText.fontSize = EditorPlugin.FButtonFontSize.Value;
+			fButtonText.horizontalOverflow = ConfigEntries.FButtonHWrap.Value;
+			fButtonText.verticalOverflow = ConfigEntries.FButtonVWrap.Value;
+			fButtonText.color = ConfigEntries.FButtonTextColor.Value;
+			fButtonText.fontSize = ConfigEntries.FButtonFontSize.Value;
 
 			//Folder Button Colors
 			ColorBlock cb = fButtonBUTT.colors;
-			cb.normalColor = EditorPlugin.FButtonNColor.Value;
-			cb.pressedColor = EditorPlugin.FButtonPColor.Value;
-			cb.highlightedColor = EditorPlugin.FButtonHColor.Value;
-			cb.selectedColor = EditorPlugin.FButtonSColor.Value;
-			cb.fadeDuration = EditorPlugin.FButtonFadeDColor.Value;
+			cb.normalColor = ConfigEntries.FButtonNColor.Value;
+			cb.pressedColor = ConfigEntries.FButtonPColor.Value;
+			cb.highlightedColor = ConfigEntries.FButtonHColor.Value;
+			cb.selectedColor = ConfigEntries.FButtonSColor.Value;
+			cb.fadeDuration = ConfigEntries.FButtonFadeDColor.Value;
 			fButtonBUTT.colors = cb;
 
 			EditorPlugin.timeEdit = EditorPlugin.itsTheTime;
@@ -866,22 +1080,22 @@ namespace EditorManagement.Patchers
 					iFtimeObj.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 				}
 
-				bool playingEd = AudioManager.inst.CurrentAudioSource.isPlaying;
+				//bool playingEd = AudioManager.inst.CurrentAudioSource.isPlaying;
 
-				if (playingEd == true)
-				{
-					Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-					float value = EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>().value;
-					Rect rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
-					if (Input.GetMouseButton(0) && rect.Contains(point))
-					{
-						if (Mathf.Abs(EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom - EditorManager.inst.prevAudioTime) < 100f)
-						{
-							AudioManager.inst.CurrentAudioSource.Play();
-							EditorManager.inst.UpdatePlayButton();
-						}
-					}
-				}
+				//if (playingEd == true)
+				//{
+				//	Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+				//	float value = EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>().value;
+				//	Rect rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
+				//	if (Input.GetMouseButton(0) && rect.Contains(point))
+				//	{
+				//		if (Mathf.Abs(EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom - EditorManager.inst.prevAudioTime) < 100f)
+				//		{
+				//			AudioManager.inst.CurrentAudioSource.Play();
+				//			EditorManager.inst.UpdatePlayButton();
+				//		}
+				//	}
+				//}
 				if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading") && GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").activeSelf == true)
 				{
 					Image image = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").GetComponent<Image>();
@@ -897,28 +1111,6 @@ namespace EditorManagement.Patchers
 			if (EditorManager.inst.GetDialog("Multi Object Editor").Dialog.gameObject.activeSelf == true && EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta != new Vector2(355f, 730f))
 			{
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
-			}
-
-			if (EditorPlugin.ShowObjectsOnLayer.Value == true)
-			{
-				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-				{
-					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
-					{
-						if (beatmapObject.shape != 4)
-						{
-							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-							Color objColor = gameObjectRef.mat.color;
-							gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * EditorPlugin.ShowObjectsAlpha.Value);
-						}
-						else
-						{
-							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-							Color objColor = gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color;
-							gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * EditorPlugin.ShowObjectsAlpha.Value);
-						}
-					}
-				}
 			}
 
 			if (!LSHelpers.IsUsingInputField())
@@ -1021,6 +1213,28 @@ namespace EditorManagement.Patchers
 					EditorPlugin.ListObjectLayers();
 				}
 			}
+
+			if (ConfigEntries.ShowObjectsOnLayer.Value == true)
+			{
+				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+				{
+					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
+					{
+						if (beatmapObject.shape != 4)
+						{
+							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+							Color objColor = gameObjectRef.mat.color;
+							gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
+						}
+						else
+						{
+							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+							Color objColor = gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color;
+							gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
+						}
+					}
+				}
+			}
 		}
 
 		[HarmonyPatch("handleViewShortcuts")]
@@ -1035,68 +1249,114 @@ namespace EditorManagement.Patchers
 			{
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + EditorPlugin.ZoomAmount.Value;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.ZoomAmount.Value;
 				}
 				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - EditorPlugin.ZoomAmount.Value;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.ZoomAmount.Value;
 				}
 
 				//Zooms more
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + EditorPlugin.ZoomAmount.Value * 2f;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.ZoomAmount.Value * 2f;
 				}
 				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - EditorPlugin.ZoomAmount.Value * 2f;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.ZoomAmount.Value * 2f;
 				}
 
 				//Zooms less
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + EditorPlugin.ZoomAmount.Value * 0.5f;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.ZoomAmount.Value * 0.5f;
 				}
 				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - EditorPlugin.ZoomAmount.Value * 0.5f;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.ZoomAmount.Value * 0.5f;
 				}
 			}
 			if (!EditorManager.inst.IsOverDropDown && !EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline)
 			{
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + EditorPlugin.ZoomAmount.Value;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.ZoomAmount.Value;
 				}
 				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - EditorPlugin.ZoomAmount.Value;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.ZoomAmount.Value;
 				}
 
 				//Zooms more
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + EditorPlugin.ZoomAmount.Value * 2f;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.ZoomAmount.Value * 2f;
 				}
 				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - EditorPlugin.ZoomAmount.Value * 2f;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.ZoomAmount.Value * 2f;
 				}
 
 				//Zooms more
 				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt))
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + EditorPlugin.ZoomAmount.Value * 0.5f;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.ZoomAmount.Value * 0.5f;
 				}
 				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && !Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt))
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - EditorPlugin.ZoomAmount.Value * 0.5f;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.ZoomAmount.Value * 0.5f;
 				}
 			}
 			if (InputDataManager.inst.editorActions.ShowHelp.WasPressed)
 			{
 				EditorManager.inst.SetShowHelp(!EditorManager.inst.showHelp);
 			}
+			return false;
+		}
+
+		[HarmonyPatch("updatePointer")]
+		[HarmonyPrefix]
+		private static bool updatePointerPrefix()
+        {
+			Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+			float value = EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>().value;
+			Rect rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
+			if (EditorManager.inst.updateAudioTime && Input.GetMouseButtonUp(0) && rect.Contains(point))
+			{
+				AudioManager.inst.CurrentAudioSource.time = EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom;
+				EditorManager.inst.updateAudioTime = false;
+			}
+			if (Input.GetMouseButton(0) && rect.Contains(point))
+			{
+				EditorManager.inst.timelineSlider.GetComponent<Slider>().minValue = 0f;
+				EditorManager.inst.timelineSlider.GetComponent<Slider>().maxValue = AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom;
+				EditorManager.inst.audioTimeForSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>().value;
+				EditorManager.inst.updateAudioTime = true;
+				EditorManager.inst.wasDraggingPointer = true;
+				if (Mathf.Abs(EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom - EditorManager.inst.prevAudioTime) < 2f)
+				{
+					if (ConfigEntries.DraggingTimelineSliderPauses.Value)
+					{
+						AudioManager.inst.CurrentAudioSource.Pause();
+						EditorManager.inst.UpdatePlayButton();
+					}
+					AudioManager.inst.CurrentAudioSource.time = EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom;
+				}
+			}
+			else if (EditorManager.inst.updateAudioTime && EditorManager.inst.wasDraggingPointer && !rect.Contains(point))
+			{
+				AudioManager.inst.CurrentAudioSource.time = EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom;
+				EditorManager.inst.updateAudioTime = false;
+				EditorManager.inst.wasDraggingPointer = false;
+			}
+			else
+			{
+				EditorManager.inst.timelineSlider.GetComponent<Slider>().minValue = 0f;
+				EditorManager.inst.timelineSlider.GetComponent<Slider>().maxValue = AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom;
+				EditorManager.inst.timelineSlider.GetComponent<Slider>().value = AudioManager.inst.CurrentAudioSource.time * EditorManager.inst.Zoom;
+				EditorManager.inst.audioTimeForSlider = AudioManager.inst.CurrentAudioSource.time * EditorManager.inst.Zoom;
+			}
+			EditorManager.inst.timelineSlider.GetComponent<RectTransform>().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom, 25f);
 			return false;
 		}
 
@@ -1126,6 +1386,19 @@ namespace EditorManagement.Patchers
         }
 
 		[HarmonyPatch("SaveBeatmap")]
+		[HarmonyPrefix]
+		private static void SaveBeatmapPrefix()
+		{
+			string str = "beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel;
+			if (RTFile.FileExists(RTFile.GetApplicationDirectory() + str + "/level-previous.lsb"))
+			{
+				File.Delete(RTFile.GetApplicationDirectory() + str + "/level-previous.lsb");
+			}
+
+			File.Copy(RTFile.GetApplicationDirectory() + str + "/level.lsb", RTFile.GetApplicationDirectory() + str + "/level-previous.lsb");
+		}
+
+		[HarmonyPatch("SaveBeatmap")]
 		[HarmonyPostfix]
 		private static void EditorSaveBeatmapPatch()
 		{
@@ -1135,11 +1408,11 @@ namespace EditorManagement.Patchers
 			EditorPlugin.scrollBar = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value;
 
 			Sprite waveform = EditorManager.inst.timeline.GetComponent<Image>().sprite;
-			if (EditorPlugin.WaveformMode.Value == EditorPlugin.WaveformType.Legacy && EditorPlugin.GenerateWaveform.Value == true)
+			if (ConfigEntries.WaveformMode.Value == EditorPlugin.WaveformType.Legacy && ConfigEntries.GenerateWaveform.Value == true)
 			{
 				File.WriteAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "waveform.png", EditorManager.inst.timeline.GetComponent<Image>().sprite.texture.EncodeToPNG());
 			}
-			if (EditorPlugin.WaveformMode.Value == EditorPlugin.WaveformType.Old && EditorPlugin.GenerateWaveform.Value == true)
+			if (ConfigEntries.WaveformMode.Value == EditorPlugin.WaveformType.Old && ConfigEntries.GenerateWaveform.Value == true)
 			{
 				File.WriteAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "waveform_old.png", EditorManager.inst.timeline.GetComponent<Image>().sprite.texture.EncodeToPNG());
 			}
@@ -1234,17 +1507,17 @@ namespace EditorManagement.Patchers
 			GridLayoutGroup openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
 
 			//Set Editor Zoom cap
-			EditorManager.inst.zoomBounds = EditorPlugin.ETLZoomBounds.Value;
+			EditorManager.inst.zoomBounds = ConfigEntries.ETLZoomBounds.Value;
 
 			//Set Open File Popup RectTransform
-			openRTLevel.anchoredPosition = EditorPlugin.ORLAnchoredPos.Value;
-			openRTLevel.sizeDelta = EditorPlugin.ORLSizeDelta.Value;
+			openRTLevel.anchoredPosition = ConfigEntries.ORLAnchoredPos.Value;
+			openRTLevel.sizeDelta = ConfigEntries.ORLSizeDelta.Value;
 
 			//Set Open FIle Popup content GridLayoutGroup
-			openGridLVL.cellSize = EditorPlugin.OGLVLCellSize.Value;
-			openGridLVL.constraint = (GridLayoutGroup.Constraint) EditorPlugin.OGLVLConstraint.Value;
-			openGridLVL.constraintCount = EditorPlugin.OGLVLConstraintCount.Value;
-			openGridLVL.spacing = EditorPlugin.OGLVLSpacing.Value;
+			openGridLVL.cellSize = ConfigEntries.OGLVLCellSize.Value;
+			openGridLVL.constraint = (GridLayoutGroup.Constraint)ConfigEntries.OGLVLConstraint.Value;
+			openGridLVL.constraintCount = ConfigEntries.OGLVLConstraintCount.Value;
+			openGridLVL.spacing = ConfigEntries.OGLVLSpacing.Value;
 		}
 
 		[HarmonyPatch("AssignWaveformTextures")]
@@ -1287,20 +1560,20 @@ namespace EditorManagement.Patchers
 				.InstructionEnumeration();
 		}
 
-		[HarmonyPatch("LoadLevel", MethodType.Enumerator)]
-		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> LoadLevelTranspiler(IEnumerable<CodeInstruction> instructions)
-		{
-			return new CodeMatcher(instructions)
-				.Start()
-				.Advance(60)
-				.ThrowIfNotMatch("Is not beatmaps/editor", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-				.ThrowIfNotMatch("Is not ldsfld", new CodeMatch(OpCodes.Ldsfld))
-				.InstructionEnumeration();
-		}
+        [HarmonyPatch("LoadLevel", MethodType.Enumerator)]
+        [HarmonyTranspiler]
+        private static IEnumerable<CodeInstruction> LoadLevelTranspiler(IEnumerable<CodeInstruction> instructions)
+        {
+            return new CodeMatcher(instructions)
+                .Start()
+                .Advance(60)
+                .ThrowIfNotMatch("Is not beatmaps/editor", new CodeMatch(OpCodes.Ldstr))
+                .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+                .ThrowIfNotMatch("Is not ldsfld", new CodeMatch(OpCodes.Ldsfld))
+                .InstructionEnumeration();
+        }
 
-		[HarmonyPatch("LoadLevel", MethodType.Enumerator)]
+        [HarmonyPatch("LoadLevel", MethodType.Enumerator)]
 		[HarmonyPrefix]
 		private static void LoadLevelPrefix()
 		{
@@ -1309,47 +1582,57 @@ namespace EditorManagement.Patchers
 				var playerEditorDialogAIGUI = EditorManager.inst.GetDialog("Player Editor").Dialog.gameObject.AddComponent<AnimateInGUI>();
 
 				Debug.Log("Player Editor Easing");
-				playerEditorDialogAIGUI.SetEasing((int)EditorPlugin.GODAnimateEaseIn.Value, (int)EditorPlugin.GODAnimateEaseOut.Value);
+				playerEditorDialogAIGUI.SetEasing((int)ConfigEntries.GODAnimateEaseIn.Value, (int)ConfigEntries.GODAnimateEaseOut.Value);
 				Debug.Log("Player Editor X / Y");
-				playerEditorDialogAIGUI.animateX = EditorPlugin.GODAnimateX.Value;
-				playerEditorDialogAIGUI.animateY = EditorPlugin.GODAnimateY.Value;
+				playerEditorDialogAIGUI.animateX = ConfigEntries.GODAnimateX.Value;
+				playerEditorDialogAIGUI.animateY = ConfigEntries.GODAnimateY.Value;
 				Debug.Log("Player Editor Speeds");
-				playerEditorDialogAIGUI.animateInTime = EditorPlugin.GODAnimateInOutSpeeds.Value.x;
-				playerEditorDialogAIGUI.animateOutTime = EditorPlugin.GODAnimateInOutSpeeds.Value.y;
+				playerEditorDialogAIGUI.animateInTime = ConfigEntries.GODAnimateInOutSpeeds.Value.x;
+				playerEditorDialogAIGUI.animateOutTime = ConfigEntries.GODAnimateInOutSpeeds.Value.y;
 			}
+
+			//RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(__0));
 		}
 
 		[HarmonyPatch("CreateNewLevel")]
-		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> CreateLevelTranspiler(IEnumerable<CodeInstruction> instructions)
-		{
-			return new CodeMatcher(instructions)
-				.Start()
-				.Advance(25)
-				.ThrowIfNotMatch("Is not 25 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-				.ThrowIfNotMatch("Is not ldsfld 1", new CodeMatch(OpCodes.Ldsfld))
-				.Advance(14)
-				.ThrowIfNotMatch("Is not 39 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-				.ThrowIfNotMatch("Is not ldsfld 2", new CodeMatch(OpCodes.Ldsfld))
-				.Advance(13)
-				.ThrowIfNotMatch("Is not 52 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-				.ThrowIfNotMatch("Is not ldsfld 3", new CodeMatch(OpCodes.Ldsfld))
-				.Advance(14)
-				.ThrowIfNotMatch("Is not 66 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-				.ThrowIfNotMatch("Is not ldsfld 4", new CodeMatch(OpCodes.Ldsfld))
-				.Advance(16)
-				.ThrowIfNotMatch("Is not 82 20.4.4", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldstr, "4.1.16"))
-				.Advance(24)
-				.ThrowIfNotMatch("Is not 106 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
-				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-				.ThrowIfNotMatch("Is not ldsfld 5", new CodeMatch(OpCodes.Ldsfld))
-				.InstructionEnumeration();
-		}
+		[HarmonyPrefix]
+		private static bool CreateNewLevelPatch()
+        {
+			RTEditor.CreateNewLevel();
+			return false;
+        }
+
+		//[HarmonyPatch("CreateNewLevel")]
+		//[HarmonyTranspiler]
+		//private static IEnumerable<CodeInstruction> CreateLevelTranspiler(IEnumerable<CodeInstruction> instructions)
+		//{
+		//	return new CodeMatcher(instructions)
+		//		.Start()
+		//		.Advance(25)
+		//		.ThrowIfNotMatch("Is not 25 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
+		//		.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+		//		.ThrowIfNotMatch("Is not ldsfld 1", new CodeMatch(OpCodes.Ldsfld))
+		//		.Advance(14)
+		//		.ThrowIfNotMatch("Is not 39 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
+		//		.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+		//		.ThrowIfNotMatch("Is not ldsfld 2", new CodeMatch(OpCodes.Ldsfld))
+		//		.Advance(13)
+		//		.ThrowIfNotMatch("Is not 52 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
+		//		.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+		//		.ThrowIfNotMatch("Is not ldsfld 3", new CodeMatch(OpCodes.Ldsfld))
+		//		.Advance(14)
+		//		.ThrowIfNotMatch("Is not 66 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
+		//		.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+		//		.ThrowIfNotMatch("Is not ldsfld 4", new CodeMatch(OpCodes.Ldsfld))
+		//		.Advance(16)
+		//		.ThrowIfNotMatch("Is not 82 20.4.4", new CodeMatch(OpCodes.Ldstr))
+		//		.SetInstruction(new CodeInstruction(OpCodes.Ldstr, "4.1.16"))
+		//		.Advance(24)
+		//		.ThrowIfNotMatch("Is not 106 beatmaps/editor/", new CodeMatch(OpCodes.Ldstr))
+		//		.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+		//		.ThrowIfNotMatch("Is not ldsfld 5", new CodeMatch(OpCodes.Ldsfld))
+		//		.InstructionEnumeration();
+		//}
 
 		[HarmonyPatch("GetAlbumSprite", MethodType.Enumerator)]
 		[HarmonyTranspiler]
@@ -1405,7 +1688,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		public static void Reminder()
 		{
-			if (EditorPlugin.ReminderActive.Value == true)
+			if (ConfigEntries.ReminderActive.Value == true)
 			{
 				int radfs = UnityEngine.Random.Range(0, 5);
 				string randomtext = "";
@@ -1437,6 +1720,8 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("You've been working on the game for " + RTEditor.secondsToTime(Time.time) + randomtext, 2f, EditorManager.NotificationType.Warning, false);
             }
         }
+
+		
 
         [HarmonyPatch("DisplayNotification")]
         [HarmonyPrefix]

@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 using DG.Tweening;
@@ -22,18 +23,21 @@ namespace EditorManagement.Functions
 
         public void OnPointerEnter(PointerEventData pointerEventData)
         {
-            if (animatePos)
+            if (!GetComponent<Button>() && !GetComponent<Toggle>() || GetComponent<Button>() && GetComponent<Button>().interactable || GetComponent<Toggle>() && GetComponent<Toggle>().interactable)
             {
-                if (!setPos)
+                if (animatePos)
                 {
-                    setPos = true;
-                    ogPos = transform.localPosition;
+                    if (!setPos)
+                    {
+                        setPos = true;
+                        ogPos = transform.localPosition;
+                    }
+                    transform.DOLocalMove(new Vector3(ogPos.x + animPos.x, ogPos.y + animPos.y, 0f), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
                 }
-                transform.DOLocalMove(new Vector3(ogPos.x + animPos.x, ogPos.y + animPos.y, 0f), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
-            }
-            if (animateSca)
-            {
-                transform.DOScale(new Vector3(size, size, size), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
+                if (animateSca)
+                {
+                    transform.DOScale(new Vector3(size, size, size), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
+                }
             }
         }
 

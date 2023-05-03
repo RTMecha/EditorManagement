@@ -17,7 +17,7 @@ namespace EditorManagement.Functions
 			if (tipEnabled)
 			{
 				DataManager.Language enumTmp = DataManager.inst.GetCurrentLanguageEnum();
-				int num = this.tooltipLanguages.FindIndex((HoverTooltip.Tooltip x) => x.language == enumTmp);
+				int num = tooltipLanguages.FindIndex((HoverTooltip.Tooltip x) => x.language == enumTmp);
 				if (num != -1)
 				{
 					HoverTooltip.Tooltip tooltip = tooltipLanguages[num];

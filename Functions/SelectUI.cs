@@ -23,7 +23,7 @@ namespace EditorManagement.Functions
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            if (EditorPlugin.DragUI.Value == true)
+            if (ConfigEntries.DragUI.Value == true)
             {
                 AudioManager.inst.PlaySound("blip");
                 target.localScale = new Vector3(1f, 1f, 1f);
@@ -33,7 +33,7 @@ namespace EditorManagement.Functions
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            if (EditorPlugin.DragUI.Value == true)
+            if (ConfigEntries.DragUI.Value == true)
             {
                 if (!Input.GetMouseButtonDown(2))
                 {
@@ -55,7 +55,7 @@ namespace EditorManagement.Functions
 
         private void Update()
         {
-            if (dragging && EditorPlugin.DragUI.Value == true)
+            if (dragging && ConfigEntries.DragUI.Value == true)
             {
                 Vector3 vector = new Vector3(Input.mousePosition.x, Input.mousePosition.y, target.localPosition.z);
                 if (Input.GetKey(KeyCode.LeftShift))

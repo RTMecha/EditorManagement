@@ -1,16 +1,82 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using HarmonyLib;
+
 using UnityEngine;
+using UnityEngine.UI;
+
+using SimpleJSON;
 
 namespace EditorManagement.Functions.Tools
 {
     public static class EditorExtensions
     {
-        public static void AddComponent(this Transform _transform, Component _component)
+		public static List<GameObject> Range(Color _min, Color _max)
+        {
+			List<GameObject> a = (from x in Resources.FindObjectsOfTypeAll<GameObject>()
+							  where x.GetComponent<Image>() && x.GetComponent<Image>().color.r < _max.r && x.GetComponent<Image>().color.g < _max.g && x.GetComponent<Image>().color.b < _max.b && x.GetComponent<Image>().color.a < _max.a && x.GetComponent<Image>().color.r > _min.r && x.GetComponent<Image>().color.g > _min.g && x.GetComponent<Image>().color.b > _min.b && x.GetComponent<Image>().color.a > _min.a
+							select x).ToList();
+			return a;
+		}
+
+		public static List<DataManager.GameData.BeatmapObject> GetParentChain(this DataManager.GameData.BeatmapObject _beatmapObject)
+        {
+			List<DataManager.GameData.BeatmapObject> beatmapObjects = new List<DataManager.GameData.BeatmapObject>();
+			var orig = _beatmapObject;
+			beatmapObjects.Add(orig);
+
+			while (!string.IsNullOrEmpty(orig.parent))
+            {
+				var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
+				beatmapObjects.Add(select);
+				orig = select;
+            }
+
+			return beatmapObjects;
+		}
+
+		public static int ClosestKeyframe(this DataManager.GameData.BeatmapObject beatmapObject, int _type)
+		{
+			if (beatmapObject.events[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime) != null)
+			{
+				var nextKFE = beatmapObject.events[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime);
+				var nextKF = beatmapObject.events[_type].IndexOf(nextKFE);
+				var prevKF = nextKF - 1;
+
+				if (nextKF == 0)
+				{
+					prevKF = 0;
+				}
+				else
+				{
+					var v1 = new Vector2(beatmapObject.events[_type][prevKF].eventTime, 0f);
+					var v2 = new Vector2(beatmapObject.events[_type][nextKF].eventTime, 0f);
+
+					float dis = Vector2.Distance(v1, v2);
+					float time = AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime;
+
+					bool prevClose = time > dis + beatmapObject.events[_type][prevKF].eventTime / 2f;
+					bool nextClose = time < beatmapObject.events[_type][nextKF].eventTime - dis / 2f;
+
+					if (!prevClose)
+					{
+						return prevKF;
+					}
+					if (!nextClose)
+					{
+						return nextKF;
+					}
+				}
+			}
+			return 0;
+		}
+
+		public static void AddComponent(this Transform _transform, Component _component)
         {
             _transform.gameObject.AddComponentInternal(_component.name);
         }
