@@ -27,7 +27,7 @@ using EditorManagement.Patchers;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.9")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.10")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
@@ -40,11 +40,9 @@ namespace EditorManagement
 	{
 		//TODO
 		//Clean up some code, optimize and bug fix.
-		//Implement a object search popup, something similar to the parent picker.
 		//Fix the prefab search bug. (Kinda fixed?)
 
-		//Update list
-		//
+		//Fixed pos Z axis breaking prefabs. They now properly render.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -136,6 +134,8 @@ namespace EditorManagement
 
 
 			ConfigEntries.EXPrefab = Config.Bind("Prefabs", "Example Prefab Template", true, "If enabled, an Example Template prefab will always be imported into the internal prefabs.");
+
+			ConfigEntries.PosZAxisEnabled = Config.Bind("General", "Pos Z Axis Enabled", false, "If enabled, allows use of the z axis with position keyframes. Currently does not work in prefabs.");
 
 			//Event Modifiers
 			{
@@ -567,6 +567,7 @@ namespace EditorManagement
 				harmony.PatchAll(typeof(GameManagerPatch));
 				harmony.PatchAll(typeof(EventEditorPatch));
 				harmony.PatchAll(typeof(ThemeEditorPatch));
+				harmony.PatchAll(typeof(ObjectManagerPatch));
 
 				harmony.Patch(layerSetter, prefix: layerPatch);
 				harmony.Patch(binSetter, prefix: binPatch);
@@ -1075,296 +1076,6 @@ namespace EditorManagement
 		public static string ColorToHex(Color32 color)
 		{
 			return color.r.ToString("X2") + color.g.ToString("X2") + color.b.ToString("X2") + color.a.ToString("X2");
-		}
-
-		[HarmonyPatch(typeof(ObjectManager), "Awake")]
-		[HarmonyPostfix]
-		private static void ObjectAwakePatch()
-        {
-			GameObject gameObject = new GameObject("UI stuff");
-
-			var objectTracker = Instantiate(ObjectManager.inst.objectPrefabs[1].options[0].transform.GetChild(0).gameObject);
-			objectTracker.transform.SetParent(gameObject.transform);
-			objectTracker.name = "object tracker";
-			if (objectTracker.GetComponent<SelectObjectInEditor>())
-			{
-				Destroy(objectTracker.GetComponent<SelectObjectInEditor>());
-			}
-			if (objectTracker.GetComponent<RTObject>())
-			{
-				Destroy(objectTracker.GetComponent<RTObject>());
-			}
-			objectTracker.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
-			objectTracker.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
-			objectTracker.GetComponent<MeshRenderer>().material.color = new Color(1f, 1f, 1f, 1f);
-			objectTracker.AddComponent<DraggableObject>();
-			objectTracker.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
-
-			objectTracker.GetComponent<DraggableObject>().enabled = ConfigEntries.ShowSelector.Value;
-
-			tracker = objectTracker;
-
-			var scaleXLeft = Instantiate(ObjectManager.inst.objectPrefabs[2].options[0].transform.GetChild(0).gameObject);
-			{
-				scaleXLeft.transform.SetParent(objectTracker.transform);
-				scaleXLeft.name = "X>";
-				if (scaleXLeft.GetComponent<SelectObjectInEditor>())
-				{
-					Destroy(scaleXLeft.GetComponent<SelectObjectInEditor>());
-				}
-				if (scaleXLeft.GetComponent<RTObject>())
-				{
-					Destroy(scaleXLeft.GetComponent<RTObject>());
-				}
-				scaleXLeft.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleXLeft.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleXLeft.GetComponent<MeshRenderer>().material.color = Color.red;
-				scaleXLeft.AddComponent<DraggableChildren>();
-				scaleXLeft.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
-				scaleXLeft.transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, 270f));
-			}
-
-			var scaleXRight = Instantiate(ObjectManager.inst.objectPrefabs[2].options[0].transform.GetChild(0).gameObject);
-			{
-				scaleXRight.transform.SetParent(objectTracker.transform);
-				scaleXRight.name = "X<";
-				if (scaleXRight.GetComponent<SelectObjectInEditor>())
-				{
-					Destroy(scaleXRight.GetComponent<SelectObjectInEditor>());
-				}
-				if (scaleXRight.GetComponent<RTObject>())
-				{
-					Destroy(scaleXRight.GetComponent<RTObject>());
-				}
-				scaleXRight.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleXRight.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleXRight.GetComponent<MeshRenderer>().material.color = Color.red;
-				scaleXRight.AddComponent<DraggableChildren>();
-				scaleXRight.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
-				scaleXRight.transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, 90f));
-			}
-
-			var scaleYUp = Instantiate(ObjectManager.inst.objectPrefabs[2].options[0].transform.GetChild(0).gameObject);
-			{
-				scaleYUp.transform.SetParent(objectTracker.transform);
-				scaleYUp.name = "YU";
-				if (scaleYUp.GetComponent<SelectObjectInEditor>())
-				{
-					Destroy(scaleYUp.GetComponent<SelectObjectInEditor>());
-				}
-				if (scaleYUp.GetComponent<RTObject>())
-				{
-					Destroy(scaleYUp.GetComponent<RTObject>());
-				}
-				scaleYUp.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleYUp.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleYUp.GetComponent<MeshRenderer>().material.color = Color.green;
-				scaleYUp.AddComponent<DraggableChildren>();
-				scaleYUp.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
-				scaleYUp.transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, 0f));
-			}
-
-			var scaleYDown = Instantiate(ObjectManager.inst.objectPrefabs[2].options[0].transform.GetChild(0).gameObject);
-			{
-				scaleYDown.transform.SetParent(objectTracker.transform);
-				scaleYDown.name = "YD";
-				if (scaleYDown.GetComponent<SelectObjectInEditor>())
-				{
-					Destroy(scaleYDown.GetComponent<SelectObjectInEditor>());
-				}
-				if (scaleYDown.GetComponent<RTObject>())
-				{
-					Destroy(scaleYDown.GetComponent<RTObject>());
-				}
-				scaleYDown.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleYDown.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
-				scaleYDown.GetComponent<MeshRenderer>().material.color = Color.green;
-				scaleYDown.AddComponent<DraggableChildren>();
-				scaleYDown.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
-				scaleYDown.transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, 180f));
-			}
-
-			for (int i = 0; i < ObjectManager.inst.objectPrefabs.Count; i++)
-			{
-				if (i != 4)
-				{
-					for (int j = 0; j < ObjectManager.inst.objectPrefabs[i].options.Count; j++)
-					{
-						ObjectManager.inst.objectPrefabs[i].options[j].transform.GetChild(0).gameObject.AddComponent<RTObject>();
-					}
-				}
-			}
-        }
-
-		[HarmonyPatch(typeof(ObjectManager), "Update")]
-		[HarmonyPostfix]
-		private static void ObjectUpdatePatch()
-		{
-			if (EditorManager.inst != null)
-			{
-				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-				{
-					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[beatmapObject.id] != null)
-					{
-						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-						Transform transform = null;
-						if (gameObjectRef.rend != null)
-                        {
-							transform = gameObjectRef.rend.transform.GetParent();
-						}
-
-						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value == true)
-						{
-							if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
-							{
-								Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
-							}
-							if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
-							{
-								Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
-							}
-						}
-
-						if (ConfigEntries.ShowEmpties.Value == true)
-						{
-							if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
-							{
-								MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
-								gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
-
-								mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
-
-								gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
-							}
-						}
-
-						if (ConfigEntries.ShowDamagable.Value == true)
-						{
-							if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
-							{
-								ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-								gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
-							}
-						}
-
-						if (ConfigEntries.EditorDebug.Value == true)
-						{
-							if (gameObjectRef.rend != null && gameObjectRef.rend.GetComponent<RTObject>())
-							{
-								var rtobj = gameObjectRef.rend.GetComponent<RTObject>();
-								rtobj.tipEnabled = true;
-								if (rtobj.tooltipLanguages.Count == 0)
-								{
-									rtobj.tooltipLanguages.Add(Triggers.NewTooltip(beatmapObject.name + " [ " + beatmapObject.StartTime + " ]", "", new List<string>()));
-								}
-
-								string parent = "";
-								if (!string.IsNullOrEmpty(beatmapObject.parent))
-								{
-									parent = "<br>P: " + beatmapObject.parent + " (" + beatmapObject.GetParentType() + ")";
-								}
-								else
-								{
-									parent = "<br>P: No Parent" + " (" + beatmapObject.GetParentType() + ")";
-								}
-
-								string text = "";
-								if (beatmapObject.shape != 4 || beatmapObject.shape != 6)
-								{
-									text = "<br>S: " + RTEditor.GetShape(beatmapObject.shape, beatmapObject.shapeOption) +
-										"<br>T: " + beatmapObject.text;
-								}
-								if (beatmapObject.shape == 4)
-								{
-									text = "<br>S: Text" +
-										"<br>T: " + beatmapObject.text;
-								}
-								if (beatmapObject.shape == 6)
-								{
-									text = "<br>S: Image" +
-										"<br>T: " + beatmapObject.text;
-								}
-
-								string ptr = "";
-								if (beatmapObject.fromPrefab && !string.IsNullOrEmpty(beatmapObject.prefabID) && !string.IsNullOrEmpty(beatmapObject.prefabInstanceID))
-								{
-									ptr = "<br>PID: " + beatmapObject.prefabID + " | " + beatmapObject.prefabInstanceID;
-								}
-								else
-								{
-									ptr = "<br>Not from prefab";
-								}
-
-								if (rtobj.tooltipLanguages[0].desc != "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]")
-								{
-									rtobj.tooltipLanguages[0].desc = "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]";
-								}
-								if (rtobj.tooltipLanguages[0].hint != "ID: {" + beatmapObject.id + "}" +
-									parent +
-									"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
-									text +
-									"<br>D: " + beatmapObject.Depth +
-									"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
-									"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
-									"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
-									"<br>ROT: " + transform.eulerAngles.z +
-									"<br>COL: " + RTEditor.ColorToHex(gameObjectRef.mat.color) +
-									ptr)
-								{
-									rtobj.tooltipLanguages[0].hint = "ID: {" + beatmapObject.id + "}" +
-										parent +
-										"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
-										text +
-										"<br>D: " + beatmapObject.Depth +
-										"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
-										"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
-										"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
-										"<br>ROT: " + transform.eulerAngles.z +
-										"<br>COL: " + RTEditor.ColorToHex(gameObjectRef.mat.color) +
-										ptr;
-								}
-							}
-						}
-						else
-						{
-							if (gameObjectRef.rend != null && gameObjectRef.rend.GetComponent<RTObject>())
-							{
-								gameObjectRef.rend.GetComponent<RTObject>().tipEnabled = false;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		[HarmonyPatch(typeof(ObjectManager), "updateObjects", new Type[] { })]
-		[HarmonyPostfix]
-		private static void OMUO1()
-        {
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>())
-			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
-			}
-		}
-
-		[HarmonyPatch(typeof(ObjectManager), "updateObjects", new Type[] { typeof(string) })]
-		[HarmonyPostfix]
-		private static void OMUO2()
-        {
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>())
-			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
-			}
-		}
-
-		[HarmonyPatch(typeof(ObjectManager), "updateObjects", new Type[] { typeof(ObjEditor.ObjectSelection), typeof(bool) })]
-		[HarmonyPostfix]
-		private static void OMUO3()
-        {
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>())
-			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
-			}
 		}
 
 		[HarmonyPatch(typeof(GameManager), "Update")]
@@ -2993,6 +2704,70 @@ namespace EditorManagement
 			{
 				PrefabEditor.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs[ConfigEntries.PQCIndex4.Value]);
 			}
+		}
+
+		[HarmonyPatch(typeof(ColorPicker), "UpdateValues")]
+		[HarmonyPrefix]
+		private static bool UpdateValues(ColorPicker __instance, ref Color __0)
+		{
+			double num;
+			double num2;
+			double num3;
+			LSColors.ColorToHSV(__0, out num, out num2, out num3);
+			string text = RTEditor.ColorToHex(__0);
+			InputField RInput = __instance.rgb.transform.Find("R/input").GetComponent<InputField>();
+			InputField GInput = __instance.rgb.transform.Find("G/input").GetComponent<InputField>();
+			InputField BInput = __instance.rgb.transform.Find("B/input").GetComponent<InputField>();
+			InputField HInput = __instance.hsv.transform.Find("H/input").GetComponent<InputField>();
+			InputField SInput = __instance.hsv.transform.Find("S/input").GetComponent<InputField>();
+			InputField VInput = __instance.hsv.transform.Find("V/input").GetComponent<InputField>();
+			RInput.onValueChanged.RemoveAllListeners();
+			RInput.text = (__0.r * 255f).ToString();
+			RInput.onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(new Color((float)int.Parse(_val) / 255f, (float)int.Parse(GInput.text) / 255f, (float)int.Parse(BInput.text) / 255f, 255f));
+			});
+			GInput.onValueChanged.RemoveAllListeners();
+			GInput.text = (__0.g * 255f).ToString();
+			GInput.onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(new Color((float)int.Parse(RInput.text) / 255f, (float)int.Parse(_val) / 255f, (float)int.Parse(BInput.text) / 255f, 255f));
+			});
+			BInput.onValueChanged.RemoveAllListeners();
+			BInput.text = (__0.b * 255f).ToString();
+			BInput.onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(new Color((float)int.Parse(RInput.text) / 255f, (float)int.Parse(GInput.text) / 255f, (float)int.Parse(_val) / 255f, 255f));
+			});
+			HInput.onValueChanged.RemoveAllListeners();
+			HInput.text = Mathf.RoundToInt((float)num).ToString();
+			HInput.onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(LSColors.ColorFromHSV(double.Parse(_val), double.Parse(SInput.text) / 100.0, double.Parse(VInput.text) / 100.0));
+			});
+			SInput.onValueChanged.RemoveAllListeners();
+			SInput.text = Mathf.RoundToInt((float)num2 * 100f).ToString();
+			SInput.onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(LSColors.ColorFromHSV(double.Parse(HInput.text), double.Parse(_val) / 100.0, double.Parse(VInput.text) / 100.0));
+			});
+			VInput.onValueChanged.RemoveAllListeners();
+			VInput.text = Mathf.RoundToInt((float)num3 * 100f).ToString();
+			VInput.onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(LSColors.ColorFromHSV(double.Parse(HInput.text), double.Parse(SInput.text) / 100.0, double.Parse(_val) / 100.0));
+			});
+			__instance.hex.GetComponent<InputField>().onValueChanged.RemoveAllListeners();
+			__instance.hex.GetComponent<InputField>().text = text;
+			__instance.hex.GetComponent<InputField>().onValueChanged.AddListener(delegate (string _val)
+			{
+				__instance.SwitchCurrentColor(LSColors.HexToColor(_val));
+			});
+			__instance.currentHex = text;
+			__instance.preview.GetComponent<Image>().color = __0;
+			__instance.currentColor = __0;
+
+			return false;
 		}
 
 		public void StartReload()

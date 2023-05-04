@@ -12,6 +12,7 @@ using UnityEngine.UI;
 
 using EditorManagement.Functions;
 
+using LSFunctions;
 using SimpleJSON;
 
 namespace EditorManagement.Patchers
@@ -49,6 +50,40 @@ namespace EditorManagement.Patchers
 				.SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "themeListPath")))
 				.InstructionEnumeration();
 		}
+		
+		[HarmonyPatch("SaveTheme")]
+		[HarmonyPrefix]
+		private static bool SaveThemePrefixPatch(DataManager.BeatmapTheme __0)
+		{
+			Debug.LogFormat("Saving {0} ({1}) to File System!", __0.id, __0.name);
+			JSONNode jsonnode = JSON.Parse("{}");
+			if (string.IsNullOrEmpty(__0.id))
+			{
+				__0.id = LSText.randomNumString(6);
+			}
+
+			jsonnode["id"] = __0.id.ToString();
+			jsonnode["name"] = __0.name;
+			jsonnode["gui"] = RTEditor.ColorToHex(__0.guiColor);
+			jsonnode["bg"] = LSColors.ColorToHex(__0.backgroundColor);
+
+			for (int i = 0; i < __0.playerColors.Count; i++)
+			{
+				jsonnode["players"][i] = RTEditor.ColorToHex(__0.playerColors[i]);
+			}
+			for (int j = 0; j < __0.objectColors.Count; j++)
+			{
+				jsonnode["objs"][j] = RTEditor.ColorToHex(__0.objectColors[j]);
+			}
+			for (int k = 0; k < __0.backgroundColors.Count; k++)
+			{
+				jsonnode["bgs"][k] = LSColors.ColorToHex(__0.backgroundColors[k]);
+			}
+
+			FileManager.inst.SaveJSONFile(EditorPlugin.themeListPath, __0.name.ToLower().Replace(" ", "_") + ".lst", jsonnode.ToString());
+			EditorManager.inst.DisplayNotification(string.Format("Saved theme [{0}]!", __0.name), 2f, EditorManager.NotificationType.Success, false);
+			return false;
+        }
 
 		[HarmonyPatch("LoadThemes")]
 		[HarmonyPostfix]

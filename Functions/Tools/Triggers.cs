@@ -10,6 +10,8 @@ using UnityEngine.UI;
 
 using EditorManagement.Patchers;
 
+using LSFunctions;
+
 namespace EditorManagement.Functions.Tools
 {
     public class Triggers : MonoBehaviour
@@ -222,6 +224,36 @@ namespace EditorManagement.Functions.Tools
 			return entry;
 		}
 
+		public static EventTrigger.Entry CreatePreviewClickTrigger(Transform _preview, Transform _hex, Color _col, string popupName = "")
+		{
+			EventTrigger.Entry previewClickTrigger = new EventTrigger.Entry();
+			previewClickTrigger.eventID = EventTriggerType.PointerClick;
+			previewClickTrigger.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				EditorManager.inst.ShowDialog("Color Picker");
+				if (!string.IsNullOrEmpty(popupName))
+				{
+					EditorManager.inst.HideDialog(popupName);
+				}
+				EditorManager.inst.GetDialog("Color Picker").Dialog.Find("content/Color Picker").GetComponent<ColorPicker>().SwitchCurrentColor(_col);
+				EditorManager.inst.GetDialog("Color Picker").Dialog.Find("content/Color Picker/info/hex/save").GetComponent<Button>().onClick.RemoveAllListeners();
+				EditorManager.inst.GetDialog("Color Picker").Dialog.Find("content/Color Picker/info/hex/save").GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.ClearPopups();
+					if (!string.IsNullOrEmpty(popupName))
+					{
+						EditorManager.inst.ShowDialog(popupName);
+					}
+					double saturation;
+					double num;
+					LSColors.ColorToHSV(EditorManager.inst.GetDialog("Color Picker").Dialog.Find("content/Color Picker").GetComponent<ColorPicker>().currentColor, out double _, out saturation, out num);
+					_hex.GetComponent<InputField>().text = EditorManager.inst.GetDialog("Color Picker").Dialog.Find("content/Color Picker").GetComponent<ColorPicker>().currentHex;
+					_preview.GetChild(0).GetComponent<Image>().color = saturation >= 0.5 || num <= 0.5 ? LSColors.white : LSColors.black;
+				});
+			});
+			return previewClickTrigger;
+		}
+
 		public static void AddTooltip(GameObject _gameObject, string _desc, string _hint, List<string> _keys = null, DataManager.Language _language = DataManager.Language.english)
         {
 			if (!_gameObject.GetComponent<HoverTooltip>())
@@ -354,6 +386,7 @@ namespace EditorManagement.Functions.Tools
 				ObjEditor.inst.currentObjectSelection.GetObjectData().GetType().GetField(_field).SetValue(ObjEditor.inst.currentObjectSelection.GetObjectData(), _value);
 				if (_updateTimeline)
 				{
+					RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
 					ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
 				}
 				if (_updateObject)
@@ -521,6 +554,11 @@ namespace EditorManagement.Functions.Tools
 						var posIF = pos.GetComponent<InputField>();
 						var posLeft = pos.Find("<").GetComponent<Button>();
 						var posRight = pos.Find(">").GetComponent<Button>();
+
+						if (!pos.GetComponent<InputFieldHelper>())
+                        {
+							pos.gameObject.AddComponent<InputFieldHelper>();
+						}
 
 						posET.triggers.Clear();
 						if (_t != 2)
@@ -776,5 +814,62 @@ namespace EditorManagement.Functions.Tools
 
 			return beatmapTheme;
         }
+
+		public static Color InvertColorHue(Color color)
+		{
+			double num;
+			double saturation;
+			double value;
+			LSColors.ColorToHSV(color, out num, out saturation, out value);
+			return LSColors.ColorFromHSV(num - 180.0, saturation, value);
+		}
+
+		public static Color InvertColorValue(Color color)
+		{
+			double num;
+			double saturation;
+			double value;
+			LSColors.ColorToHSV(color, out num, out saturation, out value);
+			value = -value + 255;
+			return LSColors.ColorFromHSV(num, saturation, value - 255);
+		}
+
+		public static float EventValuesZ1(DataManager.GameData.EventKeyframe _posEvent)
+		{
+			DataManager.GameData.BeatmapObject bo = null;
+			if (DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent)) != null)
+			{
+				bo = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent));
+			}
+			float z = 0.0005f * bo.Depth;
+			if (_posEvent.eventValues.Length > 2 && bo != null)
+			{
+				float calc = _posEvent.eventValues[2] / 10f;
+				z = z + calc;
+			}
+			return z;
+		}
+
+		public static float EventValuesZ2(DataManager.GameData.EventKeyframe _posEvent)
+		{
+			DataManager.GameData.BeatmapObject bo = null;
+			if (DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent)) != null)
+			{
+				bo = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent));
+			}
+			float z = 0.1f * bo.Depth;
+			if (_posEvent.eventValues.Length > 2 && bo != null)
+			{
+				float calc = _posEvent.eventValues[2] / 10f;
+				z = z + calc;
+			}
+			return z;
+		}
+
+		public static float DummyNumber(DataManager.GameData.EventKeyframe _posEvent)
+		{
+			float z = 0.0005f;
+			return z;
+		}
 	}
 }

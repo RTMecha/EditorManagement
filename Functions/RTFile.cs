@@ -185,6 +185,8 @@ namespace EditorManagement.Functions
 				DataManager.inst.gameData.prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(_prefabObjects[i]));
 			}
 		}
+
+
 		public static IEnumerator ParseObject(JSONNode _object, Action<DataManager.GameData.BeatmapObject> action)
 		{
 			float delay = 0f;
@@ -205,11 +207,24 @@ namespace EditorManagement.Functions
 					DataManager.GameData.EventKeyframe eventKeyframe = new DataManager.GameData.EventKeyframe();
 					JSONNode jsonnode = _object["events"]["pos"][i];
 					eventKeyframe.eventTime = jsonnode["t"].AsFloat;
-					eventKeyframe.SetEventValues(new float[]
+					if (!string.IsNullOrEmpty(jsonnode["z"]))
 					{
+						eventKeyframe.SetEventValues(new float[]
+						{
 							jsonnode["x"].AsFloat,
-							jsonnode["y"].AsFloat
-					});
+							jsonnode["y"].AsFloat,
+							jsonnode["z"].AsFloat
+						});
+					}
+					else
+                    {
+						eventKeyframe.SetEventValues(new float[]
+						{
+							jsonnode["x"].AsFloat,
+							jsonnode["y"].AsFloat,
+							0f
+						});
+					}
 					eventKeyframe.random = jsonnode["r"].AsInt;
 					DataManager.LSAnimation curveType = DataManager.inst.AnimationList[0];
 					if (jsonnode["ct"] != null)

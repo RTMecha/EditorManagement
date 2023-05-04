@@ -18,6 +18,8 @@ namespace EditorManagement.Functions
     {
 		public static ConfigEntry<bool> EXPrefab { get; set; }
 
+		public static ConfigEntry<bool> PosZAxisEnabled { get; set; }
+
 		//Static Name
 		public static ConfigEntry<string> PT0N { get; set; }
 		public static ConfigEntry<string> PT1N { get; set; }

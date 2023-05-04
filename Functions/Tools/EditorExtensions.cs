@@ -24,21 +24,116 @@ namespace EditorManagement.Functions.Tools
 			return a;
 		}
 
+		//EditorExtensions.ColorRange(new Color(0.1294f, 0.1294f, 0.1294f, 1f), 0.1f)
+		public static List<GameObject> ColorRange(Color _base, float _range)
+        {
+			List<GameObject> a = new List<GameObject>();
+
+			if (_range == 0f)
+			{
+				a = (from x in Resources.FindObjectsOfTypeAll<GameObject>()
+									  where x.GetComponent<Image>() && x.GetComponent<Image>().color.r == _base.r && x.GetComponent<Image>().color.g == _base.g && x.GetComponent<Image>().color.b == _base.b && x.GetComponent<Image>().color.a == _base.a || x.GetComponent<Text>() && x.GetComponent<Text>().color.r == _base.r && x.GetComponent<Text>().color.g == _base.g && x.GetComponent<Text>().color.b == _base.b && x.GetComponent<Text>().color.a == _base.a
+					 select x).ToList();
+			}
+			else
+            {
+				a = (from x in Resources.FindObjectsOfTypeAll<GameObject>()
+				 where x.GetComponent<Image>() && x.GetComponent<Image>().color.r < _base.r + _range && x.GetComponent<Image>().color.g < _base.g + _range && x.GetComponent<Image>().color.b < _base.b + _range && x.GetComponent<Image>().color.a < _base.a + _range && x.GetComponent<Image>().color.r > _base.r + -_range && x.GetComponent<Image>().color.g > _base.g + -_range && x.GetComponent<Image>().color.b > _base.b + -_range && x.GetComponent<Image>().color.a > _base.a + -_range || x.GetComponent<Text>() && x.GetComponent<Text>().color.r < _base.r + _range && x.GetComponent<Text>().color.g < _base.g + _range && x.GetComponent<Text>().color.b < _base.b + _range && x.GetComponent<Text>().color.a < _base.a + _range && x.GetComponent<Text>().color.r > _base.r + -_range && x.GetComponent<Text>().color.g > _base.g + -_range && x.GetComponent<Text>().color.b > _base.b + -_range && x.GetComponent<Text>().color.a > _base.a + -_range
+				 select x).ToList();
+			}
+			return a;
+		}
+
+		public static GameObject GetGameObject(this DataManager.GameData.BeatmapObject _beatmapObject)
+        {
+			return _beatmapObject.GetTransformChain()[_beatmapObject.GetTransformChain().Count - 1].gameObject;
+		}
+
 		public static List<DataManager.GameData.BeatmapObject> GetParentChain(this DataManager.GameData.BeatmapObject _beatmapObject)
         {
 			List<DataManager.GameData.BeatmapObject> beatmapObjects = new List<DataManager.GameData.BeatmapObject>();
-			var orig = _beatmapObject;
-			beatmapObjects.Add(orig);
+			if (_beatmapObject != null)
+			{
+				var orig = _beatmapObject;
+				beatmapObjects.Add(orig);
 
-			while (!string.IsNullOrEmpty(orig.parent))
-            {
-				var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
-				beatmapObjects.Add(select);
-				orig = select;
-            }
+				while (!string.IsNullOrEmpty(orig.parent))
+				{
+					var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
+					beatmapObjects.Add(select);
+					orig = select;
+				}
+			}
 
 			return beatmapObjects;
 		}
+
+		public static List<Transform> GetTransformChain(this DataManager.GameData.BeatmapObject _beatmapObject)
+        {
+			var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
+			var tf = gameObjectRef.obj.transform;
+
+			var list = new List<Transform>();
+			list.Add(tf);
+
+			while (tf.childCount != 0 && tf.GetChild(0) != null)
+			{
+				tf = tf.GetChild(0);
+				list.Add(tf);
+			}
+
+			return list;
+		}
+
+		public static bool TimeWithinLifespan(this DataManager.GameData.BeatmapObject _beatmapObject)
+		{
+			var time = AudioManager.inst.CurrentAudioSource.time;
+			if (time >= _beatmapObject.StartTime && (AudioManager.inst.CurrentAudioSource.time <= _beatmapObject.GetObjectLifeLength() + _beatmapObject.StartTime && _beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill && _beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.SongTime || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.GetObjectLifeLength(0f, true) && _beatmapObject.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.autoKillOffset && _beatmapObject.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.SongTime))
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public static Color GetObjectColor(this DataManager.GameData.BeatmapObject _beatmapObject, bool _ignoreTransparency)
+        {
+			if (_beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty)
+            {
+				return Color.white;
+            }
+
+			if (ObjectManager.inst.beatmapGameObjects.ContainsKey(_beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[_beatmapObject.id].obj != null && ObjectManager.inst.beatmapGameObjects[_beatmapObject.id].rend != null)
+            {
+				var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
+
+				Color color = Color.white;
+				if (AudioManager.inst.CurrentAudioSource.time < _beatmapObject.StartTime)
+				{
+					color = GameManager.inst.LiveTheme.objectColors[(int)_beatmapObject.events[3][0].eventValues[0]];
+				}
+				else if (AudioManager.inst.CurrentAudioSource.time > _beatmapObject.StartTime + _beatmapObject.GetObjectLifeLength() && _beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
+				{
+					color = GameManager.inst.LiveTheme.objectColors[(int)_beatmapObject.events[3][_beatmapObject.events[3].Count - 1].eventValues[0]];
+				}
+				else
+				{
+					color = gameObjectRef.mat.color;
+				}
+				if (_ignoreTransparency)
+				{
+					color.a = 1f;
+				}
+				return color;
+			}
+
+			return Color.white;
+		}
+
+		public static Color GetPrefabTypeColor(this DataManager.GameData.BeatmapObject _beatmapObject)
+        {
+			var prefab = DataManager.inst.gameData.prefabs.Find((DataManager.GameData.Prefab x) => x.ID == _beatmapObject.prefabID);
+			return DataManager.inst.PrefabTypes[prefab.Type].Color;
+        }
 
 		public static int ClosestKeyframe(this DataManager.GameData.BeatmapObject beatmapObject, int _type)
 		{

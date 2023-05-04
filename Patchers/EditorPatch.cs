@@ -32,6 +32,7 @@ namespace EditorManagement.Patchers
 		public static void EditorAwakePatch()
 		{
 			GameObject.Find("Editor Systems/EditorManager").AddComponent<RTEditor>();
+			GameObject.Find("Editor Systems/EditorManager").AddComponent<EditorGUI>();
 
 			if (GameObject.Find("BepInEx_Manager").GetComponentByName("KeybindsPlugin"))
             {
@@ -931,6 +932,42 @@ namespace EditorManagement.Patchers
 				gameObjectDialogAIGUI.animateInTime = ConfigEntries.GODAnimateInOutSpeeds.Value.x;
 				gameObjectDialogAIGUI.animateOutTime = ConfigEntries.GODAnimateInOutSpeeds.Value.y;
 			}
+
+			var hoverUIPrefab = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/prefab").AddComponent<HoverUI>();
+            {
+				hoverUIPrefab.animatePos = true;
+				hoverUIPrefab.animateSca = true;
+				hoverUIPrefab.animPos = new Vector3(3f, 0f, 0f);
+            }
+
+			var hoverUIObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/object").AddComponent<HoverUI>();
+            {
+				hoverUIObject.animatePos = true;
+				hoverUIObject.animateSca = true;
+				hoverUIObject.animPos = new Vector3(3f, 0f, 0f);
+            }
+
+			var hoverUIEvent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event").AddComponent<HoverUI>();
+            {
+				hoverUIEvent.animatePos = true;
+				hoverUIEvent.animateSca = true;
+				hoverUIEvent.animPos = new Vector3(3f, 0f, 0f);
+            }
+
+			var hoverUIBG = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/background").AddComponent<HoverUI>();
+            {
+				hoverUIBG.animatePos = true;
+				hoverUIBG.animateSca = true;
+				hoverUIBG.animPos = new Vector3(3f, 0f, 0f);
+            }
+
+			var hoverUIPlayTest = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/playtest").AddComponent<HoverUI>();
+            {
+				hoverUIPlayTest.animatePos = false;
+				hoverUIPlayTest.animateSca = true;
+            }
+
+			RTEditor.SearchObjectsCreator();
 		}
 
 		[HarmonyPatch("Awake")]
@@ -1031,9 +1068,6 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void EditorStartPatch()
 		{
-			EditorGUI.CreateEditorGUI();
-			EditorGUI.UpdateEditorGUI();
-
 			EditorPlugin.RepeatReminder();
 
 			GameObject folderButton = EditorManager.inst.folderButtonPrefab;
@@ -1063,6 +1097,8 @@ namespace EditorManagement.Patchers
 			InputDataManager.inst.editorActions.Delete.ClearBindings();
 			InputDataManager.inst.editorActions.Undo.ClearBindings();
 			InputDataManager.inst.editorActions.Redo.ClearBindings();
+
+			RTEditor.inst.StartCoroutine(RTEditor.StartEditorGUI());
 		}
 
 		[HarmonyPatch("Update")]

@@ -217,6 +217,15 @@ namespace EditorManagement.Patchers
             __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor7.Value);
             __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor8.Value);
             __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor9.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor1.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor2.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor3.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor4.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor5.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor6.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor7.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor8.Value);
+            __instance.objectColors.Add(ConfigEntries.TemplateThemeOBJColor9.Value);
             __instance.backgroundColors.Add(ConfigEntries.TemplateThemeBGColor1.Value);
             __instance.backgroundColors.Add(ConfigEntries.TemplateThemeBGColor2.Value);
             __instance.backgroundColors.Add(ConfigEntries.TemplateThemeBGColor3.Value);
@@ -395,6 +404,46 @@ namespace EditorManagement.Patchers
                 }
             }
             __result = beatmapTheme;
+            return false;
+        }
+
+        [HarmonyPatch("DeepCopy")]
+        [HarmonyPrefix]
+        private static bool DeepCopyPatch(ref DataManager.BeatmapTheme __result, DataManager.BeatmapTheme __0, bool __1 = false)
+        {
+            DataManager.BeatmapTheme beatmapTheme = new DataManager.BeatmapTheme();
+            beatmapTheme.name = __0.name;
+            beatmapTheme.playerColors = new List<Color>((from cols in __0.playerColors
+                                                         select new Color(cols.r, cols.g, cols.b, cols.a)).ToList());
+            beatmapTheme.objectColors = new List<Color>((from cols in __0.objectColors
+                                                         select new Color(cols.r, cols.g, cols.b, cols.a)).ToList());
+            beatmapTheme.guiColor = __0.guiColor;
+            beatmapTheme.backgroundColor = __0.backgroundColor;
+            beatmapTheme.backgroundColors = new List<Color>((from cols in __0.backgroundColors
+                                                             select new Color(cols.r, cols.g, cols.b, cols.a)).ToList());
+            AccessTools.Field(typeof(DataManager.BeatmapTheme), "expanded").SetValue(beatmapTheme, AccessTools.Field(typeof(DataManager.BeatmapTheme), "expanded").GetValue(__0));
+            DataManager.BeatmapTheme beatmapTheme2 = beatmapTheme;
+            if (__1)
+            {
+                beatmapTheme2.id = __0.id;
+            }
+            if (beatmapTheme2.objectColors.Count < __0.objectColors.Count)
+            {
+                Color item = beatmapTheme2.objectColors.Last();
+                while (beatmapTheme2.objectColors.Count < __0.objectColors.Count)
+                {
+                    beatmapTheme2.objectColors.Add(item);
+                }
+            }
+            if (beatmapTheme2.backgroundColors.Count < 9)
+            {
+                Color item2 = beatmapTheme2.backgroundColors.Last();
+                while (beatmapTheme2.backgroundColors.Count < 9)
+                {
+                    beatmapTheme2.backgroundColors.Add(item2);
+                }
+            }
+            __result = beatmapTheme2;
             return false;
         }
     }

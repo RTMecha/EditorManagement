@@ -38,6 +38,10 @@ namespace EditorManagement.Functions
                 {
                     transform.DOScale(new Vector3(size, size, size), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
                 }
+                if (animatePos || animateSca)
+                {
+                    AudioManager.inst.PlaySound("Click");
+                }
             }
         }
 
@@ -45,7 +49,12 @@ namespace EditorManagement.Functions
         {
             if (animatePos)
             {
-                transform.DOLocalMove(ogPos, 0.2f).SetEase(DataManager.inst.AnimationList[2].Animation).Play();
+                var e = transform.DOLocalMove(ogPos, 0.2f).SetEase(DataManager.inst.AnimationList[2].Animation);
+                e.Play();
+                e.OnComplete(delegate ()
+                {
+                    setPos = false;
+                });
             }
             if (animateSca)
             {

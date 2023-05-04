@@ -398,6 +398,18 @@ namespace EditorManagement.Patchers
 			testComponent.maxValue = ConfigEntries.SliderRMax.Value;
 			testComponent.minValue = ConfigEntries.SliderRMin.Value;
 			testComponent.direction = ConfigEntries.SliderDDirection.Value;
+
+			var positionBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position");
+
+			var posZ = Instantiate(positionBase.transform.Find("x"));
+			posZ.transform.SetParent(positionBase.transform);
+			posZ.transform.localScale = Vector3.one;
+			posZ.name = "z";
+
+			positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 64f);
+			DestroyImmediate(positionBase.GetComponent<HorizontalLayoutGroup>());
+			var grp = positionBase.AddComponent<GridLayoutGroup>();
+			grp.cellSize = new Vector2(183f, 40f);
 		}
 
 		public static void SetNewDepth(string _depth)
@@ -529,7 +541,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void SetCurrentObjPostfix(ObjEditor.ObjectSelection __0)
         {
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>())
+			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>() && !RTEditor.ienumRunning)
 			{
 				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
 			}
@@ -588,20 +600,6 @@ namespace EditorManagement.Patchers
 							}
 						}
 
-						Color color = Color.white;
-						if (AudioManager.inst.CurrentAudioSource.time < beatmapObject.StartTime)
-                        {
-							color = GameManager.inst.LiveTheme.objectColors[(int)beatmapObject.events[3][0].eventValues[0]];
-                        }
-						else if (AudioManager.inst.CurrentAudioSource.time > beatmapObject.StartTime + beatmapObject.GetObjectLifeLength() && beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
-						{
-							color = GameManager.inst.LiveTheme.objectColors[(int)beatmapObject.events[3][beatmapObject.events[3].Count - 1].eventValues[0]];
-						}
-						else
-                        {
-							color = gameObjectRef.mat.color;
-						}
-
 						RTEditor.DisplayCustomNotification("RenderTimelineBeatmapObject", "<br>N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]" +
 							"<br>ID: {" + beatmapObject.id + "}" +
 							parent +
@@ -612,8 +610,8 @@ namespace EditorManagement.Patchers
 							"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
 							"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
 							"<br>ROT: " + transform.eulerAngles.z +
-							"<br>COL: " + RTEditor.ColorToHex(color) +
-							ptr, 1f, LSColors.HexToColor("202020"), color, LSColors.InvertBlackWhiteColor(color), "Beatmap Object");
+							"<br>COL: " + "<#" + RTEditor.ColorToHex(beatmapObject.GetObjectColor(false)) + ">" + "█ <b>#" + RTEditor.ColorToHex(beatmapObject.GetObjectColor(true)) + "</b></color>" +
+							ptr, 1f, LSColors.HexToColor("202020"), beatmapObject.GetObjectColor(true), LSColors.InvertBlackWhiteColor(beatmapObject.GetObjectColor(true)), "Beatmap Object");
 					}
 				}
 				if (__0.IsPrefab() && !string.IsNullOrEmpty(__0.ID) && __0.GetPrefabObjectData() != null)

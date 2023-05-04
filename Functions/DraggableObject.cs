@@ -119,7 +119,7 @@ namespace EditorManagement.Functions
 
         public void GetPosition()
         {
-            if (ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.currentObjectSelection.GetObjectData() != null && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && EditorManager.inst.hasLoadedLevel)
+            if (ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.currentObjectSelection.GetObjectData() != null && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && EditorManager.inst.hasLoadedLevel && !RTEditor.ienumRunning)
             {
                 dragObjectPosition = new Vector3(0f, 0f, -90f);
                 foreach (var obj in ObjEditor.inst.currentObjectSelection.GetObjectData().GetParentChain())

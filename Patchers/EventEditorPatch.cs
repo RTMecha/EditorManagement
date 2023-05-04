@@ -213,6 +213,19 @@ namespace EditorManagement.Patchers
 			}
 		}
 
+		[HarmonyPatch("Update")]
+		[HarmonyPostfix]
+		private static void UpdatePatch()
+        {
+			if (EventEditor.inst.previewTheme.objectColors.Count == 9)
+			{
+				for (int i = 0; i < 9; i++)
+				{
+					EventEditor.inst.previewTheme.objectColors.Add(LSColors.pink900);
+				}
+			}
+		}
+
         [HarmonyPatch("RenderEventsDialog")]
         [HarmonyPrefix]
         private static bool RenderEventsDialogPatch()
@@ -1514,8 +1527,8 @@ namespace EditorManagement.Patchers
 			}
 		}
 
-		[HarmonyPatch("RenderThemeEditor")]
-		[HarmonyPostfix]
+		//[HarmonyPatch("RenderThemeEditor")]
+		//[HarmonyPostfix]
 		private static void RenderThemeList()
 		{
 			Transform transform = EventEditor.inst.dialogLeft.Find("theme");
@@ -1547,30 +1560,106 @@ namespace EditorManagement.Patchers
 		}
 
 		[HarmonyPatch("RenderThemeContent")]
-		[HarmonyPostfix]
-		public static void AddThemeListLayout()
+		[HarmonyPrefix]
+		public static bool AddThemeListLayout(Transform __0, string __1)
 		{
+			Transform parent = __0.Find("themes/viewport/content");
+
+			Debug.LogFormat("{0}A", EditorPlugin.className);
+
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes").GetComponent<ScrollRect>().horizontal = ConfigEntries.ListHorizontal.Value;
+
+			Debug.LogFormat("{0}B", EditorPlugin.className);
 
 			if (!GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<GridLayoutGroup>())
 			{
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").AddComponent<GridLayoutGroup>();
 			}
 
-			GridLayoutGroup prefabLay = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<GridLayoutGroup>();
+			Debug.LogFormat("{0}c", EditorPlugin.className);
+
+			GridLayoutGroup prefabLay = parent.GetComponent<GridLayoutGroup>();
 			prefabLay.cellSize = ConfigEntries.ListCellSize.Value;
 			prefabLay.constraint = ConfigEntries.ListConstraint.Value;
 			prefabLay.constraintCount = ConfigEntries.ListConstraintCount.Value;
 			prefabLay.spacing = ConfigEntries.ListSpacing.Value;
 			prefabLay.startAxis = ConfigEntries.ListAxis.Value;
 
+			Debug.LogFormat("{0}D", EditorPlugin.className);
+
 			ContentSizeFitter csf = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<ContentSizeFitter>();
 			csf.horizontalFit = ContentSizeFitter.FitMode.MinSize;
 
-			GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content/theme-add(Clone)").transform.SetAsFirstSibling();
+			Debug.LogFormat("{0}E", EditorPlugin.className);
 
 			//LayoutElement layoutElement = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes").AddComponent<LayoutElement>();
 			//layoutElement.ignoreLayout = true;
+
+			LSHelpers.DeleteChildren(parent, false);
+			int num = 0;
+			GameObject gameObject2 = Instantiate(EventEditor.inst.ThemeAdd);
+			gameObject2.transform.SetParent(parent);
+			gameObject2.SetActive(true);
+			gameObject2.transform.localScale = Vector2.one;
+			gameObject2.GetComponent<Button>().onClick.AddListener(delegate ()
+			{
+				RenderThemeEditor(-1);
+			});
+
+			foreach (var themeTmp in DataManager.inst.AllThemes)
+			{
+				if (themeTmp.name.ToLower().Contains(__1.ToLower()))
+				{
+					Texture2D texture2D = new Texture2D(16, 16, TextureFormat.ARGB32, false);
+					int num2 = 0;
+					for (int i = 0; i < 16; i++)
+					{
+						if (i % 4 == 0)
+						{
+							num2++;
+						}
+						for (int j = 0; j < 16; j++)
+						{
+							texture2D.SetPixel(i, j, themeTmp.GetObjColor(num2 - 1));
+						}
+					}
+					texture2D.filterMode = FilterMode.Point;
+					texture2D.Apply();
+					Sprite sprite = Sprite.Create(texture2D, new Rect(0f, 0f, (float)texture2D.width, (float)texture2D.height), new Vector2(0.5f, 0.5f), 100f);
+					GameObject gameObject = Instantiate(EventEditor.inst.ThemePanel);
+					gameObject.transform.SetParent(parent);
+					gameObject.transform.localScale = Vector2.one;
+					gameObject.transform.Find("image").GetComponent<Image>().sprite = sprite;
+					int tmpVal = num;
+					string tmpThemeID = themeTmp.id;
+					gameObject.transform.Find("image").GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = (float)DataManager.inst.GetThemeIndexToID(tmpVal);
+						EventManager.inst.updateEvents();
+						EventEditor.inst.RenderThemePreview(__0);
+					});
+					gameObject.transform.Find("edit").GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						RenderThemeEditor(int.Parse(tmpThemeID));
+					});
+					gameObject.transform.Find("delete").GetComponent<Button>().interactable = (tmpVal >= DataManager.inst.BeatmapThemes.Count());
+					gameObject.transform.Find("delete").GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						ThemeEditor.inst.DeleteTheme(themeTmp);
+						EventEditor.inst.previewTheme.id = null;
+						EventEditor.inst.StartCoroutine(ThemeEditor.inst.LoadThemes());
+						Transform child = EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType);
+						EventEditor.inst.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+						EventEditor.inst.RenderThemePreview(child);
+						EventEditor.inst.showTheme = false;
+						EventEditor.inst.dialogLeft.Find("theme").gameObject.SetActive(false);
+					});
+					gameObject.transform.Find("text").GetComponent<Text>().text = themeTmp.name;
+				}
+				num++;
+			}
+
+			return false;
 		}
 
 		[HarmonyPatch("RenderThemeEditor")]
@@ -1593,6 +1682,13 @@ namespace EditorManagement.Patchers
 			EventEditor.inst.showTheme = true;
 			Transform themeContent = theme.Find("theme/viewport/content");
 			Transform actions = theme.Find("actions");
+			theme.Find("theme").localRotation = Quaternion.Euler(Vector3.zero);
+
+			foreach (var child in themeContent)
+            {
+				var obj = (Transform)child;
+				obj.localRotation = Quaternion.Euler(Vector3.zero);
+            }
 
 			var name = theme.Find("name").GetComponent<InputField>();
 			var cancel = actions.Find("cancel").GetComponent<Button>();
@@ -1761,6 +1857,14 @@ namespace EditorManagement.Patchers
         {
 			return (EventTrigger.Entry)AccessTools.Method(typeof(EventEditor), "CreatePreviewClickTrigger").Invoke(EventEditor.inst, new object[] { _preview, _hex, _col });
 		}
+
+		[HarmonyPatch("CreatePreviewClickTrigger")]
+		[HarmonyPrefix]
+		private static bool CreatePreviewClickTriggerPatch(ref EventTrigger.Entry __result, Transform __0, Transform __1, Color __2)
+        {
+			__result = Triggers.CreatePreviewClickTrigger(__0, __1, __2);
+			return false;
+        }
 
 		[HarmonyPatch("CreateNewEventObject", typeof(float), typeof(int))]
 		[HarmonyPrefix]
