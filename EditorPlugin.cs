@@ -27,7 +27,7 @@ using EditorManagement.Patchers;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.10")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.11")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
@@ -41,8 +41,12 @@ namespace EditorManagement
 		//TODO
 		//Clean up some code, optimize and bug fix.
 		//Fix the prefab search bug. (Kinda fixed?)
+		//Create editor stuff for Object Modifiers.
+		//Change Sync to First Selected Object in the Multi Object Editor to use the Search Objects function.
 
 		//Fixed pos Z axis breaking prefabs. They now properly render.
+		//I tried fixing the event drag selection issue where you can't drag select from the new event rows, but it hasn't been working at all for some reason.
+		//Added a config option for the sound that plays when you hover over a UI element. Find it in Editor Preferences > Editor GUI > Hover UI Sound.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -135,7 +139,7 @@ namespace EditorManagement
 
 			ConfigEntries.EXPrefab = Config.Bind("Prefabs", "Example Prefab Template", true, "If enabled, an Example Template prefab will always be imported into the internal prefabs.");
 
-			ConfigEntries.PosZAxisEnabled = Config.Bind("General", "Pos Z Axis Enabled", false, "If enabled, allows use of the z axis with position keyframes. Currently does not work in prefabs.");
+			ConfigEntries.HoverSoundsEnabled = Config.Bind("Hover UI", "Play Sound", false, "If enabled, plays a sound when the hover UI element is hovered over.");
 
 			//Event Modifiers
 			{
@@ -1129,7 +1133,7 @@ namespace EditorManagement
 			{
 				GameObject blocker = new GameObject("RT Multi Object Editor");
 
-				GameObject barButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/time").transform.GetChild(3).gameObject;
+				GameObject barButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/time").transform.GetChild(4).gameObject;
 				GameObject eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
 
 				Color bcol = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
@@ -1709,7 +1713,7 @@ namespace EditorManagement
                 {
 					GameObject multiTextSync = Instantiate(scrollView.transform.Find("Viewport/Content/label layer").gameObject);
 					multiTextSync.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
-					multiTextSync.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Sync to first selected object";
+					multiTextSync.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Sync to specific object";
 					multiTextSync.name = "label";
 
 					GameObject multiSync = new GameObject("sync layout");
@@ -1732,19 +1736,8 @@ namespace EditorManagement
 					syncStartTime.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncStartTime.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().StartTime = ObjEditor.inst.selectedObjects[0].GetObjectData().StartTime;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSSTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "startTime", true, true);
 					});
 
 					GameObject syncName = Instantiate(eventButton);
@@ -1760,18 +1753,9 @@ namespace EditorManagement
 					syncName.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncName.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().name = ObjEditor.inst.selectedObjects[0].GetObjectData().name;
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSNP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.N;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "name", true, false);
 					});
 
 					GameObject syncObjectType = Instantiate(eventButton);
@@ -1787,19 +1771,9 @@ namespace EditorManagement
 					syncObjectType.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncObjectType.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().objectType = ObjEditor.inst.selectedObjects[0].GetObjectData().objectType;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSOTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.OT;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "objectType", true, true);
 					});
 
 					GameObject syncAutokillType = Instantiate(eventButton);
@@ -1815,19 +1789,9 @@ namespace EditorManagement
 					syncAutokillType.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncAutokillType.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().autoKillType = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillType;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSAKTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.AKT;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "autoKillType", true, true);
 					});
 
 					GameObject syncAutokillOffset = Instantiate(eventButton);
@@ -1843,19 +1807,9 @@ namespace EditorManagement
 					syncAutokillOffset.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncAutokillOffset.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().autoKillOffset = ObjEditor.inst.selectedObjects[0].GetObjectData().autoKillOffset;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSAKOP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.AKO;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "autoKillOffset", true, true);
 					});
 
 					GameObject syncParent = Instantiate(eventButton);
@@ -1871,19 +1825,9 @@ namespace EditorManagement
 					syncParent.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncParent.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().parent = ObjEditor.inst.selectedObjects[0].GetObjectData().parent;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSPP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.P;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "parent", false, true);
 					});
 
 					GameObject syncParentType = Instantiate(eventButton);
@@ -1899,22 +1843,9 @@ namespace EditorManagement
 					syncParentType.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncParentType.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								for (int i = 0; i < 3; i++)
-								{
-									objectSelection.GetObjectData().SetParentType(i, ObjEditor.inst.selectedObjects[0].GetObjectData().GetParentType(i));
-								}
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSPTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.PT;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "parentType", false, true);
 					});
 
 					GameObject syncParentOffset = Instantiate(eventButton);
@@ -1930,22 +1861,9 @@ namespace EditorManagement
 					syncParentOffset.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncParentOffset.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								for (int i = 0; i < 3; i++)
-								{
-									objectSelection.GetObjectData().SetParentOffset(i, ObjEditor.inst.selectedObjects[0].GetObjectData().getParentOffset(i));
-								}
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSPOP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.PO;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "parentOffset", false, true);
 					});
 
 					GameObject syncOrigin = Instantiate(eventButton);
@@ -1961,19 +1879,9 @@ namespace EditorManagement
 					syncOrigin.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncOrigin.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().origin = ObjEditor.inst.selectedObjects[0].GetObjectData().origin;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSOP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.O;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "origin", false, true);
 					});
 
 					GameObject syncShape = Instantiate(eventButton);
@@ -1989,20 +1897,9 @@ namespace EditorManagement
 					syncShape.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncShape.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().shape = ObjEditor.inst.selectedObjects[0].GetObjectData().shape;
-								objectSelection.GetObjectData().shapeOption = ObjEditor.inst.selectedObjects[0].GetObjectData().shapeOption;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSSSP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.S;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "shape", false, true);
 					});
 
 					GameObject syncText = Instantiate(eventButton);
@@ -2018,19 +1915,9 @@ namespace EditorManagement
 					syncText.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncText.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().text = ObjEditor.inst.selectedObjects[0].GetObjectData().text;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSTP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.T;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "text", false, true);
 					});
 
 					GameObject syncDepth = Instantiate(eventButton);
@@ -2046,19 +1933,9 @@ namespace EditorManagement
 					syncDepth.GetComponent<Button>().onClick.RemoveAllListeners();
 					syncDepth.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						foreach (var objectSelection in ObjEditor.inst.selectedObjects)
-						{
-							if (objectSelection.IsObject() && ObjEditor.inst.selectedObjects[0].IsObject())
-							{
-								objectSelection.GetObjectData().Depth = ObjEditor.inst.selectedObjects[0].GetObjectData().Depth;
-								ObjectManager.inst.updateObjects(objectSelection, false);
-								ObjEditor.inst.RenderTimelineObject(objectSelection);
-							}
-							if (objectSelection.IsPrefab())
-							{
-								RTEditor.DisplayNotification("MSDP", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
-							}
-						}
+						RTEditor.objectData = RTEditor.ObjectData.D;
+						EditorManager.inst.ShowDialog("Object Search Popup");
+						RTEditor.RefreshObjectSearch(true, "depth", false, true);
 					});
 
 					//ISSUE: Causes newly selected objects to retain the values of the previous object for some reason

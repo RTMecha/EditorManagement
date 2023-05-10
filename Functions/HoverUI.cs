@@ -38,7 +38,7 @@ namespace EditorManagement.Functions
                 {
                     transform.DOScale(new Vector3(size, size, size), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
                 }
-                if (animatePos || animateSca)
+                if (ConfigEntries.HoverSoundsEnabled.Value && (animatePos || animateSca))
                 {
                     AudioManager.inst.PlaySound("Click");
                 }

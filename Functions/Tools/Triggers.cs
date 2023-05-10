@@ -12,6 +12,8 @@ using EditorManagement.Patchers;
 
 using LSFunctions;
 
+using DG.Tweening;
+
 namespace EditorManagement.Functions.Tools
 {
     public class Triggers : MonoBehaviour
@@ -252,6 +254,102 @@ namespace EditorManagement.Functions.Tools
 				});
 			});
 			return previewClickTrigger;
+		}
+
+		public static void SyncObjects(string _id, string _field, bool _objEditor, bool _objectManager)
+		{
+			Debug.LogFormat("{0}2Attempting to sync {1} to selection!", EditorPlugin.className, _id);
+			foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+			{
+				if (objectSelection.IsObject())
+				{
+					var _beatmapObject = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == _id);
+
+					switch (_field)
+                    {
+						case "startTime":
+                            {
+								objectSelection.GetObjectData().StartTime = _beatmapObject.StartTime;
+								break;
+                            }
+						case "name":
+                            {
+								objectSelection.GetObjectData().name = _beatmapObject.name;
+								break;
+                            }
+						case "objectType":
+                            {
+								objectSelection.GetObjectData().objectType = _beatmapObject.objectType;
+								break;
+                            }
+						case "autoKillType":
+                            {
+								objectSelection.GetObjectData().autoKillType = _beatmapObject.autoKillType;
+								break;
+                            }
+						case "autoKillOffset":
+                            {
+								objectSelection.GetObjectData().autoKillOffset = _beatmapObject.autoKillOffset;
+								break;
+                            }
+						case "parent":
+                            {
+								objectSelection.GetObjectData().parent = _beatmapObject.parent;
+								break;
+                            }
+						case "parentType":
+							{
+								for (int i = 0; i < 3; i++)
+								{
+									objectSelection.GetObjectData().SetParentType(i, _beatmapObject.GetParentType(i));
+								}
+								break;
+                            }
+						case "parentOffset":
+							{
+								for (int i = 0; i < 3; i++)
+								{
+									objectSelection.GetObjectData().SetParentOffset(i, _beatmapObject.getParentOffset(i));
+								}
+								break;
+                            }
+						case "origin":
+							{
+								objectSelection.GetObjectData().origin = _beatmapObject.origin;
+								break;
+							}
+						case "shape":
+							{
+								objectSelection.GetObjectData().shape = _beatmapObject.shape;
+								objectSelection.GetObjectData().shapeOption = _beatmapObject.shapeOption;
+								break;
+							}
+						case "text":
+							{
+								objectSelection.GetObjectData().text = _beatmapObject.text;
+								break;
+							}
+						case "depth":
+							{
+								objectSelection.GetObjectData().Depth = _beatmapObject.Depth;
+								break;
+							}
+                    }
+					if (_objEditor)
+                    {
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+                    }
+					if (_objectManager)
+                    {
+						ObjectManager.inst.updateObjects(objectSelection);
+                    }
+				}
+				if (objectSelection.IsPrefab())
+				{
+					RTEditor.DisplayNotification("MSS" + RTEditor.objectData.ToString() + "P", "Cannot sync prefab to object!", 1f, EditorManager.NotificationType.Error);
+				}
+			}
+			Debug.LogFormat("{0}Synced!", EditorPlugin.className);
 		}
 
 		public static void AddTooltip(GameObject _gameObject, string _desc, string _hint, List<string> _keys = null, DataManager.Language _language = DataManager.Language.english)
@@ -871,5 +969,26 @@ namespace EditorManagement.Functions.Tools
 			float z = 0.0005f;
 			return z;
 		}
+
+		public static RotateMode EventValuesRMode(DataManager.GameData.EventKeyframe _rotEvent)
+        {
+			if (_rotEvent.eventValues[1] == 0f)
+            {
+				return RotateMode.LocalAxisAdd;
+            }
+			if (_rotEvent.eventValues[1] == 1f)
+            {
+				return RotateMode.WorldAxisAdd;
+            }
+			if (_rotEvent.eventValues[1] == 2f)
+            {
+				return RotateMode.FastBeyond360;
+            }
+			if (_rotEvent.eventValues[1] == 3f)
+            {
+				return RotateMode.Fast;
+            }
+			return RotateMode.LocalAxisAdd;
+        }
 	}
 }

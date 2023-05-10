@@ -37,7 +37,7 @@ namespace EditorManagement.Patchers
 			cgDialog.name = "colorgrading";
 
 			var intensityLabel = cgDialog.transform.GetChild(8);
-			intensityLabel.GetChild(0).GetComponent<Text>().text = "intensity";
+			intensityLabel.GetChild(0).GetComponent<Text>().text = "Hueshift";
 
 			var intensity = cgDialog.transform.Find("intensity");
 			intensity.name = "intensity";

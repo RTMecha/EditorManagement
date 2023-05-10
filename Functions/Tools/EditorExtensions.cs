@@ -85,6 +85,25 @@ namespace EditorManagement.Functions.Tools
 			return list;
 		}
 
+		public static Dictionary<string, DataManager.GameData.BeatmapObject> GetParentDictionary(this DataManager.GameData.BeatmapObject _beatmapObject)
+		{
+			Dictionary<string, DataManager.GameData.BeatmapObject> beatmapObjects = new Dictionary<string, DataManager.GameData.BeatmapObject>();
+			if (_beatmapObject != null)
+			{
+				var orig = _beatmapObject;
+				beatmapObjects.Add(orig.id, orig);
+
+				while (!string.IsNullOrEmpty(orig.parent))
+				{
+					var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
+					beatmapObjects.Add(select.id, select);
+					orig = select;
+				}
+			}
+
+			return beatmapObjects;
+		}
+
 		public static bool TimeWithinLifespan(this DataManager.GameData.BeatmapObject _beatmapObject)
 		{
 			var time = AudioManager.inst.CurrentAudioSource.time;

@@ -471,9 +471,9 @@ namespace EditorManagement.Patchers
 					IsOverMainTimeline = false;
 				});
 
-				EventTrigger.Entry entry3 = new EventTrigger.Entry();
-				entry3.eventID = EventTriggerType.EndDrag;
-				entry3.callback.AddListener(delegate (BaseEventData eventData)
+				EventTrigger.Entry endDragTrigger = new EventTrigger.Entry();
+				endDragTrigger.eventID = EventTriggerType.EndDrag;
+				endDragTrigger.callback.AddListener(delegate (BaseEventData eventData)
 				{
 					PointerEventData pointerEventData = (PointerEventData)eventData;
 					EditorManager.inst.DragEndPos = pointerEventData.position;
@@ -516,19 +516,32 @@ namespace EditorManagement.Patchers
 						}
 					}
 				});
+
 				EventTrigger tltrig = EditorManager.inst.timeline.GetComponent<EventTrigger>();
 
 				tltrig.triggers.RemoveAt(3);
 				tltrig.triggers.Add(entry);
 				tltrig.triggers.Add(entry2);
-				tltrig.triggers.Add(entry3);
+				tltrig.triggers.Add(endDragTrigger);
 
 				if (DataManager.inst != null)
 				{
 					for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
 					{
-						EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>().triggers.Add(entry);
-						EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>().triggers.Add(entry2);
+						var temp = EventEditor.inst.EventHolders.transform.GetChild(0).GetComponent<EventTrigger>();
+						var et = EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>();
+						et.triggers.Add(entry);
+						et.triggers.Add(entry2);
+
+						//if (i > 10)
+						//{
+						//	et.triggers.Add(temp.triggers[0]);
+						//	Debug.LogFormat("{0}Added trigger {1} > {2}", EditorPlugin.className, temp.triggers[0].eventID, et.triggers[et.triggers.Count - 1].eventID);
+						//	et.triggers.Add(temp.triggers[1]);
+						//	Debug.LogFormat("{0}Added trigger {1} > {2}", EditorPlugin.className, temp.triggers[1].eventID, et.triggers[et.triggers.Count - 1].eventID);
+						//	et.triggers.Add(temp.triggers[2]);
+						//	Debug.LogFormat("{0}Added trigger {1} > {2}", EditorPlugin.className, temp.triggers[2].eventID, et.triggers[et.triggers.Count - 1].eventID);
+						//}
 					}
 				}
 
@@ -832,7 +845,6 @@ namespace EditorManagement.Patchers
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Community Guides").SetActive(false);
 			GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Which songs can I use?").SetActive(false);
 			GameObject.Find("TitleBar/File/File Dropdown/Save As").SetActive(true);
-
 
 			if (keybindsType != null && GetKeyCodeName != null)
 			{
@@ -1756,8 +1768,6 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("You've been working on the game for " + RTEditor.secondsToTime(Time.time) + randomtext, 2f, EditorManager.NotificationType.Warning, false);
             }
         }
-
-		
 
         [HarmonyPatch("DisplayNotification")]
         [HarmonyPrefix]

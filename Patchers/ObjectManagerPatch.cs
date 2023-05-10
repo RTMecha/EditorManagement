@@ -342,68 +342,63 @@ namespace EditorManagement.Patchers
 		[HarmonyPatch("Update")]
 		[HarmonyTranspiler]
 		private static IEnumerable<CodeInstruction> UpdateTranspilerFixed(IEnumerable<CodeInstruction> instructions)
-        {
+		{
 			var match = new CodeMatcher(instructions);
-			
-			if (ConfigEntries.PosZAxisEnabled.Value)
-			{
-				Debug.LogFormat("{0}Started ILManipulation!", EditorPlugin.className);
 
-				match = match.Start();
-				match = match.Advance(522);
-				match = match.ThrowIfNotMatch("Is not 0.0005f 1", new CodeMatch(OpCodes.Ldc_R4));
-				match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 21));
-				match = match.Insert(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "DummyNumber")));
+			match = match.Start();
+			match = match.Advance(522);
+			match = match.ThrowIfNotMatch("Is not 0.0005f 1", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 21));
+			match = match.Insert(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "DummyNumber")));
 
-				match = match.Start();
-				match = match.Advance(1138); //1137
-				match = match.ThrowIfNotMatch("Is not 0.0005f 2", new CodeMatch(OpCodes.Ldc_R4));
-				match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
-				match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+			match = match.Start();
+			match = match.Advance(1138); //1137
+			match = match.ThrowIfNotMatch("Is not 0.0005f 2", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
 
-				match = match.Start();
-				match = match.Advance(1186); //1184
-				match = match.ThrowIfNotMatch("Is not 0.0005f 3", new CodeMatch(OpCodes.Ldc_R4));
-				match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
-				match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+			match = match.Start();
+			match = match.Advance(1186); //1184
+			match = match.ThrowIfNotMatch("Is not 0.0005f 3", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
 
-				match = match.Start();
-				match = match.Advance(1800); //1797
-				match = match.ThrowIfNotMatch("Is not 0.1f 1", new CodeMatch(OpCodes.Ldc_R4));
-				match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
-				match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+			match = match.Start();
+			match = match.Advance(1800); //1797
+			match = match.ThrowIfNotMatch("Is not 0.1f 1", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
 
-				match = match.Start();
-				match = match.Advance(1832); //1828
-				match = match.ThrowIfNotMatch("Is not 0.1f 2", new CodeMatch(OpCodes.Ldc_R4));
-				match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
-				match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+			match = match.Start();
+			match = match.Advance(1832); //1828
+			match = match.ThrowIfNotMatch("Is not 0.1f 2", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
 
-				match = match.Start();
-				match = match.Advance(1834);
-				match = match.ThrowIfNotMatch("Is not DataManager.inst at 1834", new CodeMatch(OpCodes.Ldsfld));
-				match = match.RemoveInstructions(10);
+			match = match.Start();
+			match = match.Advance(1834);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1834", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
 
-				match = match.Start();
-				match = match.Advance(1802);
-				match = match.ThrowIfNotMatch("Is not DataManager.inst at 1802", new CodeMatch(OpCodes.Ldsfld));
-				match = match.RemoveInstructions(10);
+			match = match.Start();
+			match = match.Advance(1802);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1802", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
 
-				match = match.Start();
-				match = match.Advance(1188);
-				match = match.ThrowIfNotMatch("Is not DataManager.inst at 1188", new CodeMatch(OpCodes.Ldsfld));
-				match = match.RemoveInstructions(10);
+			match = match.Start();
+			match = match.Advance(1188);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1188", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
 
-				match = match.Start();
-				match = match.Advance(1140);
-				match = match.ThrowIfNotMatch("Is not DataManager.inst at 1140", new CodeMatch(OpCodes.Ldsfld));
-				match = match.RemoveInstructions(10);
+			match = match.Start();
+			match = match.Advance(1140);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1140", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
 
-				match = match.Start();
-				match = match.Advance(524);
-				match = match.ThrowIfNotMatch("Is not DataManager.inst at 524", new CodeMatch(OpCodes.Ldsfld));
-				match = match.RemoveInstructions(10);
-			}
+			match = match.Start();
+			match = match.Advance(524);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 524", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
 
 			return match.InstructionEnumeration();
 		}

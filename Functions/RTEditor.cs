@@ -41,6 +41,24 @@ namespace EditorManagement.Functions
 
 		public static bool hoveringOIF;
 
+		public static bool multiObjectSearch = false;
+		public static ObjectData objectData = ObjectData.ST;
+		public enum ObjectData
+        {
+			ST,
+			N,
+			OT,
+			AKT,
+			AKO,
+			P,
+			PT,
+			PO,
+			O,
+			S,
+			T,
+			D
+        }
+
 		private void Awake()
         {
             if (inst == null)
@@ -3315,7 +3333,7 @@ namespace EditorManagement.Functions
 			EditorManager.inst.StartCoroutine(EditorManager.inst.UpdateTimelineScrollRect(0f, AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length));
 		}
 
-		public static void RefreshObjectSearch()
+		public static void RefreshObjectSearch(bool multi = false, string multiValue = "", bool _objEditor = false, bool _objectManager = false)
         {
 			var content = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("mask/content");
 			LSHelpers.DeleteChildren(content);
@@ -3336,8 +3354,21 @@ namespace EditorManagement.Functions
 					buttonPrefab.GetComponent<Button>().onClick.RemoveAllListeners();
 					buttonPrefab.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject)));
-						BringToObject();
+						if (!multi)
+						{
+							ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject)));
+							BringToObject();
+						}
+						else
+                        {
+							string id = beatmapObject.id;
+
+							Debug.LogFormat("{0}1Attempting to sync {1} to selection!", EditorPlugin.className, id);
+
+							Triggers.SyncObjects(id, multiValue, _objEditor, _objectManager);
+
+							EditorManager.inst.HideDialog("Object Search Popup");
+                        }
 					});
 					var image = buttonPrefab.transform.Find("Image").GetComponent<Image>();
 					image.color = beatmapObject.GetObjectColor(false);
@@ -4842,7 +4873,7 @@ namespace EditorManagement.Functions
 			new EditorProperty("BPM Snap Count", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.General, ConfigEntries.SnapAmount, "How many times the snap is divided into. Can be good for songs that don't do 4 time signatures."),
 			new EditorProperty("Preferences Open Key", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.General, ConfigEntries.EditorPropertiesKey, "What key should be pressed to open the Editor Preferences window."),
 			new EditorProperty("Prefab Example Template", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, ConfigEntries.EXPrefab, "If an Example prefab template should generate and be added to your internal prefabs."),
-			new EditorProperty("Pos Z Axis Enabled", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, ConfigEntries.PosZAxisEnabled, "Allows the use of the Z axis for position keyframes. Does not currently work with prefabs. WILL REQUIRE RESTART IN ORDER TO USE."),
+			new EditorProperty("Pos Z Axis Enabled", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.General, ConfigEntries.HoverSoundsEnabled, "Allows the use of the Z axis for position keyframes. Does not currently work with prefabs. WILL REQUIRE RESTART IN ORDER TO USE."),
 
 			//Timeline
 			new EditorProperty("Dragging Timeline Cursor Pauses Level", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Timeline, ConfigEntries.DraggingTimelineSliderPauses, "Allows the timeline cursor to scrub across the timeline without pausing."),
@@ -4869,6 +4900,7 @@ namespace EditorManagement.Functions
 
 			//Editor GUI
 			new EditorProperty("Drag UI", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.DragUI, "Specific UI elements can now be dragged around."),
+			new EditorProperty("Hover UI Sound", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.HoverSoundsEnabled, "If the sound when hovering over a UI element should play."),
 			new EditorProperty("Notification Width", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.NotificationWidth, "Controls the width of the notifications"),
 			new EditorProperty("Notification Size", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.NotificationSize, "How big the notifications are."),
 			new EditorProperty("Notification Direction", EditorProperty.ValueType.Enum, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.NotificationDirection, "Which direction the notifications should appear from."),
