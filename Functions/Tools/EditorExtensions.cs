@@ -50,8 +50,9 @@ namespace EditorManagement.Functions.Tools
 		}
 
 		public static List<DataManager.GameData.BeatmapObject> GetParentChain(this DataManager.GameData.BeatmapObject _beatmapObject)
-        {
+		{
 			List<DataManager.GameData.BeatmapObject> beatmapObjects = new List<DataManager.GameData.BeatmapObject>();
+
 			if (_beatmapObject != null)
 			{
 				var orig = _beatmapObject;
@@ -59,6 +60,8 @@ namespace EditorManagement.Functions.Tools
 
 				while (!string.IsNullOrEmpty(orig.parent))
 				{
+					if (orig == null || DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent) == null)
+						break;
 					var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
 					beatmapObjects.Add(select);
 					orig = select;
@@ -153,6 +156,43 @@ namespace EditorManagement.Functions.Tools
 			var prefab = DataManager.inst.gameData.prefabs.Find((DataManager.GameData.Prefab x) => x.ID == _beatmapObject.prefabID);
 			return DataManager.inst.PrefabTypes[prefab.Type].Color;
         }
+
+		public static int ClosestEventKeyframe(int _type)
+		{
+			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
+			float time = AudioManager.inst.CurrentAudioSource.time;
+			if (allEvents[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= time) != null)
+			{
+				var nextKFE = allEvents[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= time);
+				var nextKF = allEvents[_type].IndexOf(nextKFE);
+				var prevKF = nextKF - 1;
+
+				if (nextKF == 0)
+				{
+					prevKF = 0;
+				}
+				else
+				{
+					var v1 = new Vector2(allEvents[_type][prevKF].eventTime, 0f);
+					var v2 = new Vector2(allEvents[_type][nextKF].eventTime, 0f);
+
+					float dis = Vector2.Distance(v1, v2) / 2f;
+
+					bool prevClose = time > dis + allEvents[_type][prevKF].eventTime;
+					bool nextClose = time < allEvents[_type][nextKF].eventTime - dis;
+
+					if (!prevClose)
+					{
+						return prevKF;
+					}
+					if (!nextClose)
+					{
+						return nextKF;
+					}
+				}
+			}
+			return 0;
+		}
 
 		public static int ClosestKeyframe(this DataManager.GameData.BeatmapObject beatmapObject, int _type)
 		{
@@ -255,5 +295,19 @@ namespace EditorManagement.Functions.Tools
 			}
 			return num2;
 		}
+
+		public static float StartTime(this ObjEditor.ObjectSelection _objectSelection)
+        {
+			if (_objectSelection.IsObject())
+            {
+				return _objectSelection.GetObjectData().StartTime;
+            }
+            if (_objectSelection.IsPrefab())
+            {
+                return _objectSelection.GetPrefabObjectData().StartTime;
+            }
+
+			return 0f;
+        }
     }
 }

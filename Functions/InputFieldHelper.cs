@@ -17,6 +17,14 @@ namespace EditorManagement.Functions
     {
         private InputField inputField;
         private bool hovered;
+        public Type type = Type.Num;
+        public enum Type
+        {
+            Num,
+            String
+        }
+
+
         private void Start()
         {
             inputField = GetComponent<InputField>();
@@ -40,16 +48,38 @@ namespace EditorManagement.Functions
             {
                 if (Input.GetMouseButtonDown(2))
                 {
-                    if (float.TryParse(inputField.text, out float num))
+                    if (type == Type.Num)
                     {
-                        num = -num;
-                        inputField.text = num.ToString();
-                    }
-                    else
-                    {
-                        if (EditorManager.inst != null)
+                        if (float.TryParse(inputField.text, out float num))
                         {
-                            EditorManager.inst.DisplayNotification("Could not invert number!", 1f, EditorManager.NotificationType.Error);
+                            num = -num;
+                            inputField.text = num.ToString();
+                        }
+                        else
+                        {
+                            if (EditorManager.inst != null)
+                            {
+                                EditorManager.inst.DisplayNotification("Could not invert number!", 1f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    }
+                    if (type == Type.String)
+                    {
+                        if (inputField.text.Contains("Left"))
+                        {
+                            inputField.text = inputField.text.Replace("Left", "Right");
+                        }
+                        if (inputField.text.Contains("Right"))
+                        {
+                            inputField.text = inputField.text.Replace("Right", "Left");
+                        }
+                        if (inputField.text.Contains("left"))
+                        {
+                            inputField.text = inputField.text.Replace("left", "right");
+                        }
+                        if (inputField.text.Contains("right"))
+                        {
+                            inputField.text = inputField.text.Replace("right", "left");
                         }
                     }
                 }

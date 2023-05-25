@@ -283,7 +283,7 @@ namespace EditorManagement.Functions
 					eventKeyframe3.eventTime = jsonnode3["t"].AsFloat;
 					eventKeyframe3.SetEventValues(new float[]
 					{
-							jsonnode3["x"].AsFloat
+						jsonnode3["x"].AsFloat
 					});
 					eventKeyframe3.random = jsonnode3["r"].AsInt;
 					DataManager.LSAnimation curveType3 = DataManager.inst.AnimationList[0];

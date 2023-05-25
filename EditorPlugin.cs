@@ -15,19 +15,15 @@ using HarmonyLib;
 
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 using SimpleJSON;
-using DG.Tweening;
-using DG.Tweening.Core;
 
 using EditorManagement.Functions;
-using EditorManagement.Functions.Tools;
 using EditorManagement.Patchers;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.7.11")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.0")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
@@ -42,11 +38,23 @@ namespace EditorManagement
 		//Clean up some code, optimize and bug fix.
 		//Fix the prefab search bug. (Kinda fixed?)
 		//Create editor stuff for Object Modifiers.
-		//Change Sync to First Selected Object in the Multi Object Editor to use the Search Objects function.
+		//Add rotate mode to ObjectManager.Update().
+		//Mirror Object mode (Any object you create can be duplicated to be an exact mirror).
+		//Delete level function (Warn people first with the next feature)
+		//Warning Popup (This popup will show up when you try exiting the game / quitting to main menu and will warn you if you have not saved any changes but you can turn this off via the config settings. It also can be used for warning users about deleting a level, but cannot be disabled).
 
-		//Fixed pos Z axis breaking prefabs. They now properly render.
-		//I tried fixing the event drag selection issue where you can't drag select from the new event rows, but it hasn't been working at all for some reason.
-		//Added a config option for the sound that plays when you hover over a UI element. Find it in Editor Preferences > Editor GUI > Hover UI Sound.
+		//Update list
+		//Done a ton of bug fixing and code optimization.
+		//Added a few more tooltips.
+		//Began implementing some ObjectModifiers stuff. Much like EventsCore, you will need EditorManagement in order to use the editor stuff for ObjectModifiers. Otherwise that mod is fine to use on it's own.
+		//Fixed Legacy waveform color combining (the colors of top and bottom parts of the waveform should now mix if they overlap)
+		//Added Fast waveform type for each already existing waveform type. It's called "Fast" because it *might* be more optimized, but I am unsure.
+		//Tried fixing an issue where loading prefabs saving prefabs wouldn't create the z axis.
+		//Clicking on a theme keyframe and rendering the theme list should be a little quicker now.
+		//Made copied objects save to AppData/LocalLow/Vitamin Games/Project Arrhythmia/copied_objects.lsp so if you have any separate instances of PA you can copy from one instance to another.
+		//Pasting objects now properly offset from the current audio time.
+		//Fixed an issue where letting the audio play whilst pasting a bunch of objects would offset the start time of each object constantly to the current audio time, rather than a set audio time from when you first pasted.
+		//Drag selecting a group of objects, pasting objects and deleting objects are now faster.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -73,60 +81,13 @@ namespace EditorManagement
 		public static Direction direction;
 		public static Easings easing;
 		public static PrefabDialog prefabDialog;
-
-		public enum WaveformType
-		{
-			Legacy,
-			Old
-		}
-		public enum Direction
-        {
-			Up,
-			Down
-        }
-		public enum Easings
-		{
-			Linear,
-			Instant,
-			InSine,
-			OutSine,
-			InOutSine,
-			InElastic,
-			OutElastic,
-			InOutElastic,
-			InBack,
-			OutBack,
-			InOutBack,
-			InBounce,
-			OutBounce,
-			InOutBounce,
-			InQuad,
-			OutQuad,
-			InOutQuad,
-			InCirc,
-			OutCirc,
-			InOutCirc,
-			InExpo,
-			OutExpo,
-			InOutExpo
-        }
-		public enum Constraint
-        {
-			Flexible,
-			FixedColumnCount,
-			FixedRowCount
-		}
-		public enum PrefabDialog
-		{
-			Internal,
-			External
-		}
-
 		public static List<int> allLayers = new List<int>();
 
 		public static RTEditor editor;
 
 		public static bool createInternal = true;
+
+		public static bool tester = true;
 
 		private void Awake()
 		{
@@ -136,8 +97,10 @@ namespace EditorManagement
 
 			ConfigEntries.EditorPropertiesKey = Config.Bind("Editor Properties", "KeyCode", KeyCode.F10, "The key to press to open the Editor Properties / Preferences window.");
 
+			ConfigEntries.DisplayNotifications = Config.Bind("Notifications", "Display", true, "If the notifications should display. Does not include the help box.");
 
 			ConfigEntries.EXPrefab = Config.Bind("Prefabs", "Example Prefab Template", true, "If enabled, an Example Template prefab will always be imported into the internal prefabs.");
+			ConfigEntries.PrefabOffset = Config.Bind("Prefabs", "Paste Offset", false, "If enabled, when objects are pasted they will be pasted at an offset. Otherwise, the objects will be pasted at the earliest objects start time.");
 
 			ConfigEntries.HoverSoundsEnabled = Config.Bind("Hover UI", "Play Sound", false, "If enabled, plays a sound when the hover UI element is hovered over.");
 
@@ -192,6 +155,8 @@ namespace EditorManagement
 				ConfigEntries.TemplateThemeBGColor7 = Config.Bind("Beatmap Theme Template", "BG 7", LSColors.pink700, "BG 7 Color of the template theme.");
 				ConfigEntries.TemplateThemeBGColor8 = Config.Bind("Beatmap Theme Template", "BG 8", LSColors.pink800, "BG 8 Color of the template theme.");
 				ConfigEntries.TemplateThemeBGColor9 = Config.Bind("Beatmap Theme Template", "BG 9", LSColors.pink900, "BG 9 Color of the template theme.");
+
+				ConfigEntries.ReloadThemesAfterDrag = Config.Bind("Theme", "Theme Reloads After Drag", false, "If dragging should reload the theme list.");
 
 				ConfigEntries.ThemeHWM = Config.Bind("Theme Buttons", "00 Text Horizontal Wrap Mode", HorizontalWrapMode.Wrap, "Horizontal wrap mode of the theme name.");
 				ConfigEntries.ThemeVWM = Config.Bind("Theme Buttons", "01 Text Vertical Wrap Mode", VerticalWrapMode.Truncate, "Vertical wrap mode of the theme name.");
@@ -552,12 +517,6 @@ namespace EditorManagement
 				HarmonyMethod binPatch = new HarmonyMethod(binPrefix);
 				HarmonyMethod depthPatch = new HarmonyMethod(depthPrefix);
 
-				var loadLevelEnumeratorMethod = AccessTools.Method(typeof(EditorManager), "LoadLevel");
-				var loadLevelMoveNext = AccessTools.EnumeratorMoveNext(loadLevelEnumeratorMethod);
-
-				MethodInfo prefix3 = typeof(EditorPlugin).GetMethod("LoadLevelEnumerator", BindingFlags.Public | BindingFlags.Static);
-				HarmonyMethod loadLevelPrefix = new HarmonyMethod(prefix3);
-
 				harmony.PatchAll(typeof(EditorPlugin));
 				harmony.PatchAll(typeof(MetadataPatch));
 				harmony.PatchAll(typeof(ObjEditorPatch));
@@ -576,7 +535,6 @@ namespace EditorManagement
 				harmony.Patch(layerSetter, prefix: layerPatch);
 				harmony.Patch(binSetter, prefix: binPatch);
 				harmony.Patch(depthSetter, prefix: depthPatch);
-				harmony.Patch(loadLevelMoveNext, postfix: loadLevelPrefix);
 			}
 		}
 
@@ -612,19 +570,11 @@ namespace EditorManagement
 
 				if (ConfigEntries.RenderTimeline.Value == true && ConfigEntries.GenerateWaveform.Value == true)
 				{
-					AssignTimelineTexture();
-					if (ConfigEntries.WaveformMode.Value == WaveformType.Legacy)
-					{
-						LegacyWaveform();
-					}
-					if (ConfigEntries.WaveformMode.Value == WaveformType.Old)
-					{
-						OldWaveform();
-					}
+					RTEditor.inst.StartCoroutine(RTEditor.AssignTimelineTexture());
 				}
 
 				SetNewMarkerColors();
-				SetAutosave();
+				RTEditor.SetAutosave();
 
 				if (ConfigEntries.IfReloadLList.Value == true)
 				{
@@ -715,24 +665,25 @@ namespace EditorManagement
 				}
 
 				//Create Local Variables
-				GameObject openLevel = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject;
-				Transform openTLevel = openLevel.transform;
-				RectTransform openRTLevel = openLevel.GetComponent<RectTransform>();
-				GameObject folderButton = EditorManager.inst.folderButtonPrefab;
-				Button fButtonBUTT = folderButton.GetComponent<Button>();
-				GridLayoutGroup openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
-				Text fButtonText = folderButton.transform.Find("folder-name").GetComponent<Text>();
-				var notifyRT = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").GetComponent<RectTransform>();
-				var notifyGroup = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").GetComponent<VerticalLayoutGroup>();
+				var openLevel = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject;
+				var openTLevel = openLevel.transform;
+				var openRTLevel = openLevel.GetComponent<RectTransform>();
+				var folderButton = EditorManager.inst.folderButtonPrefab;
+				var fButtonBUTT = folderButton.GetComponent<Button>();
+				var openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
+				var fButtonText = folderButton.transform.Find("folder-name").GetComponent<Text>();
+
+				var notifications = EditorManager.inst.notification;
+
+				var notifyRT = notifications.GetComponent<RectTransform>();
+				var notifyGroup = notifications.GetComponent<VerticalLayoutGroup>();
 				notifyRT.sizeDelta = new Vector2(ConfigEntries.NotificationWidth.Value, 632f);
-				GameObject.Find("Editor Systems/Editor GUI/sizer/main/Notifications").transform.localScale = new Vector3(ConfigEntries.NotificationSize.Value, ConfigEntries.NotificationSize.Value, 1f);
+				notifications.transform.localScale = new Vector3(ConfigEntries.NotificationSize.Value, ConfigEntries.NotificationSize.Value, 1f);
 
 				if (ConfigEntries.NotificationDirection.Value == Direction.Down)
                 {
 					notifyRT.anchoredPosition = new Vector2(8f, 408f);
 					notifyGroup.childAlignment = TextAnchor.LowerLeft;
-
-
 				}
 				if (ConfigEntries.NotificationDirection.Value == Direction.Up)
                 {
@@ -782,8 +733,9 @@ namespace EditorManagement
 				RectTransform toggleRT = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("toggle(Clone)").gameObject.GetComponent<RectTransform>();
 				toggleRT.anchoredPosition = ConfigEntries.ORLTogglePos.Value;
 
-				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.ORLPathPos.Value;
-				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(ConfigEntries.ORLPathLength.Value, 34f);
+				var eprt = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("editor path").gameObject.GetComponent<RectTransform>();
+				eprt.anchoredPosition = ConfigEntries.ORLPathPos.Value;
+				eprt.sizeDelta = new Vector2(ConfigEntries.ORLPathLength.Value, 34f);
 				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("reload").gameObject.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.ORLRefreshPos.Value;
 
 				if (ConfigEntries.PreviewSelectFix.Value != emptyDisable)
@@ -862,10 +814,11 @@ namespace EditorManagement
 
                 //Theme
                 {
-					EventEditor.inst.ThemePanel.transform.GetChild(1).GetComponent<Text>().horizontalOverflow = ConfigEntries.ThemeHWM.Value;
-					EventEditor.inst.ThemePanel.transform.GetChild(1).GetComponent<Text>().verticalOverflow = ConfigEntries.ThemeVWM.Value;
-					EventEditor.inst.ThemePanel.transform.GetChild(1).GetComponent<Text>().fontSize = ConfigEntries.ThemeFSize.Value;
-					EventEditor.inst.ThemePanel.transform.GetChild(1).GetComponent<Text>().color = ConfigEntries.ThemeTColor.Value;
+					var tfe = EventEditor.inst.ThemePanel.transform.GetChild(1).GetComponent<Text>();
+					tfe.horizontalOverflow = ConfigEntries.ThemeHWM.Value;
+					tfe.verticalOverflow = ConfigEntries.ThemeVWM.Value;
+					tfe.fontSize = ConfigEntries.ThemeFSize.Value;
+					tfe.color = ConfigEntries.ThemeTColor.Value;
 					EventEditor.inst.ThemePanel.GetComponent<Image>().color = ConfigEntries.ThemeBColor.Value;
 				}
 
@@ -877,60 +830,11 @@ namespace EditorManagement
 					GridLayoutGroup inPMCGridLay = internalPrefab.transform.Find("mask/content").GetComponent<GridLayoutGroup>();
 					GridLayoutGroup exPMCGridLay = externalPrefab.transform.Find("mask/content").GetComponent<GridLayoutGroup>();
 
-					//Update Name
+					var dataManager = DataManager.inst;
+					for (int i = 0; i < dataManager.PrefabTypes.Count; i++)
 					{
-						DataManager.inst.PrefabTypes[0].Name = ConfigEntries.PT0N.Value;
-						DataManager.inst.PrefabTypes[1].Name = ConfigEntries.PT1N.Value;
-						DataManager.inst.PrefabTypes[2].Name = ConfigEntries.PT2N.Value;
-						DataManager.inst.PrefabTypes[3].Name = ConfigEntries.PT3N.Value;
-						DataManager.inst.PrefabTypes[4].Name = ConfigEntries.PT4N.Value;
-						DataManager.inst.PrefabTypes[5].Name = ConfigEntries.PT5N.Value;
-						DataManager.inst.PrefabTypes[6].Name = ConfigEntries.PT6N.Value;
-						DataManager.inst.PrefabTypes[7].Name = ConfigEntries.PT7N.Value;
-						DataManager.inst.PrefabTypes[8].Name = ConfigEntries.PT8N.Value;
-						DataManager.inst.PrefabTypes[9].Name = ConfigEntries.PT9N.Value;
-					}
-
-					//Update New Name
-					{
-						DataManager.inst.PrefabTypes[10].Name = ConfigEntries.PT10N.Value;
-						DataManager.inst.PrefabTypes[11].Name = ConfigEntries.PT11N.Value;
-						DataManager.inst.PrefabTypes[12].Name = ConfigEntries.PT12N.Value;
-						DataManager.inst.PrefabTypes[13].Name = ConfigEntries.PT13N.Value;
-						DataManager.inst.PrefabTypes[14].Name = ConfigEntries.PT14N.Value;
-						DataManager.inst.PrefabTypes[15].Name = ConfigEntries.PT15N.Value;
-						DataManager.inst.PrefabTypes[16].Name = ConfigEntries.PT16N.Value;
-						DataManager.inst.PrefabTypes[17].Name = ConfigEntries.PT17N.Value;
-						DataManager.inst.PrefabTypes[18].Name = ConfigEntries.PT18N.Value;
-						DataManager.inst.PrefabTypes[19].Name = ConfigEntries.PT19N.Value;
-					}
-
-					//Update Color
-					{
-						DataManager.inst.PrefabTypes[0].Color = ConfigEntries.PT0C.Value;
-						DataManager.inst.PrefabTypes[1].Color = ConfigEntries.PT1C.Value;
-						DataManager.inst.PrefabTypes[2].Color = ConfigEntries.PT2C.Value;
-						DataManager.inst.PrefabTypes[3].Color = ConfigEntries.PT3C.Value;
-						DataManager.inst.PrefabTypes[4].Color = ConfigEntries.PT4C.Value;
-						DataManager.inst.PrefabTypes[5].Color = ConfigEntries.PT5C.Value;
-						DataManager.inst.PrefabTypes[6].Color = ConfigEntries.PT6C.Value;
-						DataManager.inst.PrefabTypes[7].Color = ConfigEntries.PT7C.Value;
-						DataManager.inst.PrefabTypes[8].Color = ConfigEntries.PT8C.Value;
-						DataManager.inst.PrefabTypes[9].Color = ConfigEntries.PT9C.Value;
-					}
-
-					//Update New Color
-					{
-						DataManager.inst.PrefabTypes[10].Color = ConfigEntries.PT10C.Value;
-						DataManager.inst.PrefabTypes[11].Color = ConfigEntries.PT11C.Value;
-						DataManager.inst.PrefabTypes[12].Color = ConfigEntries.PT12C.Value;
-						DataManager.inst.PrefabTypes[13].Color = ConfigEntries.PT13C.Value;
-						DataManager.inst.PrefabTypes[14].Color = ConfigEntries.PT14C.Value;
-						DataManager.inst.PrefabTypes[15].Color = ConfigEntries.PT15C.Value;
-						DataManager.inst.PrefabTypes[16].Color = ConfigEntries.PT16C.Value;
-						DataManager.inst.PrefabTypes[17].Color = ConfigEntries.PT17C.Value;
-						DataManager.inst.PrefabTypes[18].Color = ConfigEntries.PT18C.Value;
-						DataManager.inst.PrefabTypes[19].Color = ConfigEntries.PT19C.Value;
+						dataManager.PrefabTypes[i].Name = (string)DataManagerPatch.prefabNames[i].BoxedValue;
+						dataManager.PrefabTypes[i].Color = (Color)DataManagerPatch.prefabColors[i].BoxedValue;
 					}
 
 					//Internal Config
@@ -1035,6 +939,30 @@ namespace EditorManagement
 					}
 				}
 			}
+		}
+
+		public static IEnumerator SetupPlayerEditor()
+        {
+			yield return new WaitForSeconds(2f);
+			if (EditorManager.inst.GetDialog("Player Editor").Dialog && !EditorManager.inst.GetDialog("Player Editor").Dialog.gameObject.GetComponent<AnimateInGUI>())
+			{
+				var playerEditorDialogAIGUI = EditorManager.inst.GetDialog("Player Editor").Dialog.gameObject.AddComponent<AnimateInGUI>();
+
+				Debug.Log("Player Editor Easing");
+				playerEditorDialogAIGUI.SetEasing((int)ConfigEntries.GODAnimateEaseIn.Value, (int)ConfigEntries.GODAnimateEaseOut.Value);
+				Debug.Log("Player Editor X / Y");
+				playerEditorDialogAIGUI.animateX = ConfigEntries.GODAnimateX.Value;
+				playerEditorDialogAIGUI.animateY = ConfigEntries.GODAnimateY.Value;
+				Debug.Log("Player Editor Speeds");
+				playerEditorDialogAIGUI.animateInTime = ConfigEntries.GODAnimateInOutSpeeds.Value.x;
+				playerEditorDialogAIGUI.animateOutTime = ConfigEntries.GODAnimateInOutSpeeds.Value.y;
+			}
+            else if (GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
+            {
+				Debug.LogErrorFormat("There was an error in trying to get the Player Editor Dialog!");
+            }
+
+			yield break;
 		}
 
 		public static Vector2 lastEdtBounds;
@@ -2015,6 +1943,20 @@ namespace EditorManagement
 			return false;
         }
 
+		[HarmonyPatch(typeof(DataManager.GameData.BeatmapObject), "ParseGameObject")]
+		[HarmonyPrefix]
+		private static bool ParseGameObjectPrefix(ref DataManager.GameData.BeatmapObject __result, JSONNode __0)
+        {
+			DataManager.GameData.BeatmapObject beatmapObject = null;
+			RTEditor.inst.StartCoroutine(RTFile.ParseObject(__0, delegate (DataManager.GameData.BeatmapObject _beatmapObject)
+			{
+				beatmapObject = _beatmapObject;
+			}));
+
+			__result = beatmapObject;
+			return false;
+        }
+
 		public static void TakeScreenshot()
 		{
 			string text = Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/screenshots";
@@ -2040,43 +1982,6 @@ namespace EditorManagement
 		}
 
 		public static bool multiObjectState = true;
-
-		public static void LoadLevelEnumerator()
-        {
-			SetAutosave();
-			if (!RTFile.DirectoryExists(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "autosaves"))
-			{
-				Directory.CreateDirectory(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "autosaves");
-			}
-			string[] files = Directory.GetFiles(FileManager.GetAppPath() + "/" + GameManager.inst.basePath, "autosaves/autosave_*.lsb", SearchOption.TopDirectoryOnly);
-			files.ToList().Sort();
-			int num = 0;
-			foreach (string text2 in files)
-			{
-				if (num != files.Count() - 1)
-				{
-					File.Delete(text2);
-				}
-				num++;
-			}
-			CreateMultiObjectEditor();
-			if (ConfigEntries.GenerateWaveform.Value == true)
-            {
-				AssignTimelineTexture();
-			}
-			else
-            {
-				EditorManager.inst.timeline.GetComponent<Image>().sprite = null;
-				EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = null;
-			}
-		}
-
-		public static void SetAutosave()
-        {
-			EditorManager.inst.CancelInvoke("AutoSaveLevel");
-			RTEditor.inst.CancelInvoke("AutoSaveLevel");
-			RTEditor.inst.InvokeRepeating("AutoSaveLevel", ConfigEntries.AutoSaveRepeat.Value, ConfigEntries.AutoSaveRepeat.Value);
-		}
 
 		public static void RenderBeatmapSet()
 		{
@@ -2346,9 +2251,16 @@ namespace EditorManagement
 						}
 
 						gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
-						{
-							EditorManager.inst.StartCoroutine(EditorManager.inst.LoadLevel(name));
-							EditorManager.inst.HideDialog("Open File Popup");
+                        {
+                            if (tester)
+                            {
+                                RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
+                            }
+							else
+                            {
+								EditorManager.inst.StartCoroutine(EditorManager.inst.LoadLevel(name));
+							}
+                            EditorManager.inst.HideDialog("Open File Popup");
 						});
 
 						GameObject icon = new GameObject("icon");
@@ -2408,7 +2320,7 @@ namespace EditorManagement
 				{
 					LegacyWaveform();
 				}
-				if (ConfigEntries.WaveformMode.Value == WaveformType.Old)
+				if (ConfigEntries.WaveformMode.Value == WaveformType.Beta)
 				{
 					OldWaveform();
 				}
@@ -2656,31 +2568,36 @@ namespace EditorManagement
 		{
 			PrefabEditor.inst.LoadedPrefabs.Clear();
 			PrefabEditor.inst.LoadedPrefabsFiles.Clear();
-			yield return PrefabEditor.inst.StartCoroutine(PrefabEditor.inst.LoadExternalPrefabs());
-			PrefabEditor.inst.ReloadExternalPrefabsInPopup(false);
+			yield return inst.StartCoroutine(LoadExternalPrefabs(PrefabEditor.inst));
+			PrefabEditor.inst.ReloadExternalPrefabsInPopup();
 			EditorManager.inst.DisplayNotification("Updated external prefabs!", 2f, EditorManager.NotificationType.Success, false);
 			yield break;
 		}
 
-		public static IEnumerator LoadExternalPrefabs()
+		public static IEnumerator LoadExternalPrefabs(PrefabEditor __instance)
 		{
-			float delay = 0f;
-			List<FileManager.LSFile> folders = FileManager.inst.GetFileList("beatmaps/prefabs", "lsp");
+			List<FileManager.LSFile> folders = FileManager.inst.GetFileList(prefabListPath, "lsp");
 			while (folders.Count <= 0)
 				yield return null;
 			foreach (FileManager.LSFile lsFile in folders)
 			{
-				yield return new WaitForSeconds(delay);
 				JSONNode jsonNode = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsFile.FullPath));
 				List<DataManager.GameData.BeatmapObject> _objects = new List<DataManager.GameData.BeatmapObject>();
 				for (int aIndex = 0; aIndex < jsonNode["objects"].Count; ++aIndex)
-					_objects.Add(DataManager.GameData.BeatmapObject.ParseGameObject(jsonNode["objects"][aIndex]));
+				{
+					RTFile.ParseObject(jsonNode["objects"][aIndex], delegate (DataManager.GameData.BeatmapObject _beatmapObject)
+					{
+						_objects.Add(_beatmapObject);
+					});
+					//_objects.Add(DataManager.GameData.BeatmapObject.ParseGameObject(jsonNode["objects"][aIndex]));
+				}
 				List<DataManager.GameData.PrefabObject> _prefabObjects = new List<DataManager.GameData.PrefabObject>();
 				for (int aIndex = 0; aIndex < jsonNode["prefab_objects"].Count; ++aIndex)
+				{
 					_prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jsonNode["prefab_objects"][aIndex]));
-				PrefabEditor.inst.LoadedPrefabs.Add(new DataManager.GameData.Prefab(jsonNode["name"], jsonNode["type"].AsInt, jsonNode["offset"].AsFloat, _objects, _prefabObjects));
-				PrefabEditor.inst.LoadedPrefabsFiles.Add(lsFile.FullPath);
-				delay += 0.0001f;
+				}
+				__instance.LoadedPrefabs.Add(new DataManager.GameData.Prefab(jsonNode["name"], jsonNode["type"].AsInt, jsonNode["offset"].AsFloat, _objects, _prefabObjects));
+				__instance.LoadedPrefabsFiles.Add(lsFile.FullPath);
 			}
 		}
 
@@ -2705,19 +2622,22 @@ namespace EditorManagement
 			}
 			
 			JSONNode jn = JSON.Parse(rawProfileJSON);
-			Debug.Log("Saving Metadata to " + __0);
-			Debug.Log("A-N: " + __1.artist.Name);
-			Debug.Log("A-L: " + __1.artist.Link);
-			Debug.Log("A-LT: " + __1.artist.LinkType.ToString());
-			Debug.Log("C-SN: " + __1.creator.steam_name);
-			Debug.Log("C-SID: " + __1.creator.steam_id.ToString());
-			Debug.Log("S-T: " + __1.song.title);
-			Debug.Log("S-D: " + __1.song.difficulty.ToString());
-			Debug.Log("S-DE: " + __1.song.description);
-			Debug.Log("S-BPM: " + __1.song.BPM.ToString());
-			Debug.Log("S-T: " + __1.song.time.ToString());
-			Debug.Log("S-PS: " + __1.song.previewStart.ToString());
-			Debug.Log("S-PL: " + __1.song.previewLength.ToString());
+			if (ConfigEntries.EditorDebug.Value)
+			{
+				Debug.Log("Saving Metadata to " + __0);
+				Debug.Log("A-N: " + __1.artist.Name);
+				Debug.Log("A-L: " + __1.artist.Link);
+				Debug.Log("A-LT: " + __1.artist.LinkType.ToString());
+				Debug.Log("C-SN: " + __1.creator.steam_name);
+				Debug.Log("C-SID: " + __1.creator.steam_id.ToString());
+				Debug.Log("S-T: " + __1.song.title);
+				Debug.Log("S-D: " + __1.song.difficulty.ToString());
+				Debug.Log("S-DE: " + __1.song.description);
+				Debug.Log("S-BPM: " + __1.song.BPM.ToString());
+				Debug.Log("S-T: " + __1.song.time.ToString());
+				Debug.Log("S-PS: " + __1.song.previewStart.ToString());
+				Debug.Log("S-PL: " + __1.song.previewLength.ToString());
+			}
 
 			jn["artist"]["name"] = __1.artist.Name;
 			jn["artist"]["link"] = __1.artist.Link;
@@ -2736,11 +2656,12 @@ namespace EditorManagement
             {
 				if (string.IsNullOrEmpty(jn["beatmap"]["date_original"]))
 				{
-					Debug.Log(__1.beatmap.date_edited);
+					if (ConfigEntries.EditorDebug.Value)
+						Debug.Log(__1.beatmap.date_edited);
 					jn["beatmap"]["date_original"] = __1.beatmap.date_edited;
 				}
-
-				Debug.Log(DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"));
+				if (ConfigEntries.EditorDebug.Value)
+					Debug.Log(DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"));
 				jn["beatmap"]["date_edited"] = DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss");
 			}
 			else
@@ -2754,12 +2675,6 @@ namespace EditorManagement
 			RTFile.WriteToFile(__0, jn.ToString());
 			return false;
         }
-
-		private static void EEEE()
-        {
-			JSONNode jn = JSON.Parse("{}");
-			AccessTools.Method(typeof(JSONNode), "ToString", new Type[] { typeof(int) }).Invoke(jn, new object[] { 3 });
-		}
 
 		private float[] ConvertByteToFloat(byte[] array)
 		{
@@ -2801,7 +2716,7 @@ namespace EditorManagement
 			createTooltip.hint = "Press this to create a new background object.";
 			createTip.tooltipLangauges.Add(createTooltip);
 
-			GameObject destroyAll = Instantiate(bgRight.transform.Find("create").gameObject);
+			var destroyAll = Instantiate(bgRight.transform.Find("create").gameObject);
 			destroyAll.transform.SetParent(bgRight.transform);
 			destroyAll.transform.localScale = Vector3.one;
 			destroyAll.transform.SetSiblingIndex(2);
@@ -2811,8 +2726,9 @@ namespace EditorManagement
 			destroyAll.transform.GetChild(0).GetComponent<Text>().text = "Delete All Backgrounds";
 			destroyAll.transform.GetChild(0).localScale = Vector3.one;
 
-			destroyAll.GetComponent<Button>().onClick.RemoveAllListeners();
-			destroyAll.GetComponent<Button>().onClick.AddListener(delegate ()
+			var destroyAllButtons = destroyAll.GetComponent<Button>();
+			destroyAllButtons.onClick.RemoveAllListeners();
+			destroyAllButtons.onClick.AddListener(delegate ()
 			{
 				RTEditor.DeleteAllBackgrounds();
 			});
@@ -2824,24 +2740,27 @@ namespace EditorManagement
 			destroyAllTip.tooltipLangauges.Clear();
 			destroyAllTip.tooltipLangauges.Add(destroyAllTooltip);
 
-			GameObject createBGs = Instantiate(bgLeft.transform.Find("name").gameObject);
+			var createBGs = Instantiate(bgLeft.transform.Find("name").gameObject);
 			createBGs.transform.SetParent(bgRight.transform);
 			createBGs.transform.localScale = Vector3.one;
 			createBGs.transform.SetSiblingIndex(2);
 			createBGs.name = "create bgs";
 
-			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.m_Calls.m_ExecutingCalls.Clear();
-			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.m_Calls.m_PersistentCalls.Clear();
-			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.m_PersistentCalls.m_Calls.Clear();
-			createBGs.transform.Find("name").GetComponent<InputField>().onValueChanged.RemoveAllListeners();
+			var name = createBGs.transform.Find("name").GetComponent<InputField>();
+			var nameRT = name.GetComponent<RectTransform>();
+
+			name.onValueChanged.m_Calls.m_ExecutingCalls.Clear();
+			name.onValueChanged.m_Calls.m_PersistentCalls.Clear();
+			name.onValueChanged.m_PersistentCalls.m_Calls.Clear();
+			name.onValueChanged.RemoveAllListeners();
 
 			Destroy(createBGs.transform.Find("active").gameObject);
-			createBGs.transform.Find("name").localScale = Vector3.one;
-			createBGs.transform.Find("name").GetComponent<InputField>().text = "12";
-			createBGs.transform.Find("name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.Integer;
-			createBGs.transform.Find("name").GetComponent<RectTransform>().sizeDelta = new Vector2(80f, 34f);
+			nameRT.localScale = Vector3.one;
+			name.text = "12";
+			name.characterValidation = InputField.CharacterValidation.Integer;
+			nameRT.sizeDelta = new Vector2(80f, 34f);
 
-			GameObject createAll = Instantiate(bgRight.transform.Find("create").gameObject);
+			var createAll = Instantiate(bgRight.transform.Find("create").gameObject);
 			createAll.transform.SetParent(createBGs.transform);
 			createAll.transform.localScale = Vector3.one;
 			createAll.name = "create";
@@ -2851,8 +2770,9 @@ namespace EditorManagement
 			createAll.transform.GetChild(0).GetComponent<Text>().text = "Create Backgrounds";
 			createAll.transform.GetChild(0).localScale = Vector3.one;
 
-			createAll.GetComponent<Button>().onClick.RemoveAllListeners();
-			createAll.GetComponent<Button>().onClick.AddListener(delegate ()
+			var buttonCreate = createAll.GetComponent<Button>();
+			buttonCreate.onClick.RemoveAllListeners();
+			buttonCreate.onClick.AddListener(delegate ()
 			{
 				RTEditor.CreateBackgrounds(int.Parse(createBGs.transform.GetChild(0).GetComponent<InputField>().text));
 			});

@@ -16,6 +16,11 @@ namespace EditorManagement.Functions
 {
     public static class ConfigEntries
     {
+		public static ConfigEntry<bool> PrefabOffset { get; set; }
+		public static ConfigEntry<bool> DisplayNotifications { get; set; }
+
+		public static ConfigEntry<bool> ReloadThemesAfterDrag { get; set; }
+
 		public static ConfigEntry<bool> EXPrefab { get; set; }
 
 		public static ConfigEntry<bool> HoverSoundsEnabled { get; set; }
@@ -155,7 +160,7 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<Vector2> ORLPathPos { get; set; }
 		public static ConfigEntry<float> ORLPathLength { get; set; }
 		public static ConfigEntry<Vector2> ORLRefreshPos { get; set; }
-		public static ConfigEntry<EditorPlugin.Constraint> OGLVLConstraint { get; set; }
+		public static ConfigEntry<Constraint> OGLVLConstraint { get; set; }
 		public static ConfigEntry<int> OGLVLConstraintCount { get; set; }
 		public static ConfigEntry<Vector2> OGLVLSpacing { get; set; }
 		public static ConfigEntry<HorizontalWrapMode> FButtonHWrap { get; set; }
@@ -208,7 +213,7 @@ namespace EditorManagement.Functions
 		//Notifications
 		public static ConfigEntry<float> NotificationWidth { get; set; }
 		public static ConfigEntry<float> NotificationSize { get; set; }
-		public static ConfigEntry<EditorPlugin.Direction> NotificationDirection { get; set; }
+		public static ConfigEntry<Direction> NotificationDirection { get; set; }
 
 		public static ConfigEntry<float> TimeModify { get; set; }
 
@@ -220,7 +225,7 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<bool> ReminderActive { get; set; }
 		public static ConfigEntry<float> ReminderRepeat { get; set; }
 
-		public static ConfigEntry<EditorPlugin.WaveformType> WaveformMode { get; set; }
+		public static ConfigEntry<WaveformType> WaveformMode { get; set; }
 		public static ConfigEntry<bool> GenerateWaveform { get; set; }
 		public static ConfigEntry<bool> ShowObjectsOnLayer { get; set; }
 		public static ConfigEntry<float> ShowObjectsAlpha { get; set; }
@@ -244,50 +249,50 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<bool> EPPAnimateX { get; set; }
 		public static ConfigEntry<bool> EPPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> EPPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> EPPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> EPPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> EPPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> EPPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> OFPAnimateX { get; set; }
 		public static ConfigEntry<bool> OFPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> OFPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> OFPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> OFPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> OFPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> OFPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> NFPAnimateX { get; set; }
 		public static ConfigEntry<bool> NFPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> NFPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> NFPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> NFPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> NFPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> NFPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> PPAnimateX { get; set; }
 		public static ConfigEntry<bool> PPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> PPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> PPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> PPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> PPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> PPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> OBJPAnimateX { get; set; }
 		public static ConfigEntry<bool> OBJPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> OBJPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> OBJPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> OBJPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> OBJPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> OBJPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> BGPAnimateX { get; set; }
 		public static ConfigEntry<bool> BGPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> BGPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> BGPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> BGPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> BGPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> BGPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> QAPAnimateX { get; set; }
 		public static ConfigEntry<bool> QAPAnimateY { get; set; }
 		public static ConfigEntry<Vector2> QAPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> QAPAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> QAPAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> QAPAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> QAPAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> GODAnimateX { get; set; }
 		public static ConfigEntry<bool> GODAnimateY { get; set; }
 		public static ConfigEntry<Vector2> GODAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> GODAnimateEaseIn { get; set; }
-		public static ConfigEntry<EditorPlugin.Easings> GODAnimateEaseOut { get; set; }
+		public static ConfigEntry<Easings> GODAnimateEaseIn { get; set; }
+		public static ConfigEntry<Easings> GODAnimateEaseOut { get; set; }
 
 
 		public static ConfigEntry<Color> DepthNormalColor { get; set; }

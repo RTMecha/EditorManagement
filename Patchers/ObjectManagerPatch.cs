@@ -20,14 +20,18 @@ namespace EditorManagement.Patchers
 	[HarmonyPatch(typeof(ObjectManager))]
     public class ObjectManagerPatch : MonoBehaviour
     {
+		public static Transform uiStuff;
+		public static DraggableObject tracker;
+
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
 		private static void AwakePostfixPatch()
 		{
 			GameObject gameObject = new GameObject("UI stuff");
+			uiStuff = gameObject.transform;
 
 			var objectTracker = Instantiate(ObjectManager.inst.objectPrefabs[1].options[0].transform.GetChild(0).gameObject);
-			objectTracker.transform.SetParent(gameObject.transform);
+			objectTracker.transform.SetParent(uiStuff);
 			objectTracker.name = "object tracker";
 			if (objectTracker.GetComponent<SelectObjectInEditor>())
 			{
@@ -40,7 +44,7 @@ namespace EditorManagement.Patchers
 			objectTracker.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
 			objectTracker.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
 			objectTracker.GetComponent<MeshRenderer>().material.color = new Color(1f, 1f, 1f, 1f);
-			objectTracker.AddComponent<DraggableObject>();
+			tracker = objectTracker.AddComponent<DraggableObject>();
 			objectTracker.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
 
 			objectTracker.GetComponent<DraggableObject>().enabled = ConfigEntries.ShowSelector.Value;
@@ -147,14 +151,11 @@ namespace EditorManagement.Patchers
 			{
 				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 				{
-					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[beatmapObject.id] != null)
+					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[beatmapObject.id] != null && beatmapObject.GetGameObject() != null)
 					{
-						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-						Transform transform = null;
-						if (gameObjectRef.rend != null)
-						{
-							transform = gameObjectRef.rend.transform.GetParent();
-						}
+						var gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+						var gameObject = beatmapObject.GetGameObject();
+						var transform = beatmapObject.GetGameObject().transform.GetParent();
 
 						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value == true)
 						{
@@ -192,9 +193,9 @@ namespace EditorManagement.Patchers
 
 						if (ConfigEntries.EditorDebug.Value == true)
 						{
-							if (gameObjectRef.rend != null && gameObjectRef.rend.GetComponent<RTObject>())
+							if (gameObject.GetComponent<RTObject>())
 							{
-								var rtobj = gameObjectRef.rend.GetComponent<RTObject>();
+								var rtobj = gameObject.GetComponent<RTObject>();
 								rtobj.tipEnabled = true;
 								if (rtobj.tooltipLanguages.Count == 0)
 								{
@@ -270,73 +271,14 @@ namespace EditorManagement.Patchers
 						}
 						else
 						{
-							if (gameObjectRef.rend != null && gameObjectRef.rend.GetComponent<RTObject>())
+							if (gameObject.GetComponent<RTObject>())
 							{
-								gameObjectRef.rend.GetComponent<RTObject>().tipEnabled = false;
+								gameObject.GetComponent<RTObject>().tipEnabled = false;
 							}
 						}
 					}
 				}
 			}
-		}
-
-		//[HarmonyPatch("Update")]
-		//[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> UpdateTranspiler(IEnumerable<CodeInstruction> instructions)
-        {
-			var match = new CodeMatcher(instructions);
-
-			Debug.LogFormat("{0}Started ILManipulation!", EditorPlugin.className);
-			match = match.Start();
-			Debug.LogFormat("{0}IL Progress: 1", EditorPlugin.className);
-			match = match.Advance(450);
-			Debug.LogFormat("{0}IL Progress: 2", EditorPlugin.className);
-			match = match.ThrowIfNotMatch("Is not stloc.s", new CodeMatch(OpCodes.Stloc_S));
-			Debug.LogFormat("{0}IL Progress: 3", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldc_R4, 0));
-			Debug.LogFormat("{0}IL Progress: 4", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Stloc_S, 117));
-			Debug.LogFormat("{0}IL Progress: 5", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 21));
-			Debug.LogFormat("{0}IL Progress: 6", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(DataManager.GameData.EventKeyframe), "eventValues")));
-			Debug.LogFormat("{0}IL Progress: 7", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldlen));
-			Debug.LogFormat("{0}IL Progress: 8", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Conv_I4));
-			Debug.LogFormat("{0}IL Progress: 9", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldc_I4_2));
-			Debug.LogFormat("{0}IL Progress: 10", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Cgt));
-			Debug.LogFormat("{0}IL Progress: 11", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Stloc_S, 118));
-			Debug.LogFormat("{0}IL Progress: 12", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 118));
-			Debug.LogFormat("{0}IL Progress: 13", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Brfalse_S, 468));
-			Debug.LogFormat("{0}IL Progress: 14", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Nop));
-			Debug.LogFormat("{0}IL Progress: 15", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 21));
-			Debug.LogFormat("{0}IL Progress: 16", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldfld, AccessTools.Field(typeof(DataManager.GameData.EventKeyframe), "eventValues")));
-			Debug.LogFormat("{0}IL Progress: 17", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldc_I4_2));
-			Debug.LogFormat("{0}IL Progress: 18", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Ldelem_R4));
-			Debug.LogFormat("{0}IL Progress: 19", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Stloc_S, 117));
-			Debug.LogFormat("{0}IL Progress: 20", EditorPlugin.className);
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Nop));
-			Debug.LogFormat("{0}IL Progress: 21", EditorPlugin.className);
-			match = match.MatchForward(false, new CodeMatch(OpCodes.Ldc_R4, 0.0005f));
-			Debug.LogFormat("{0}IL Progress: 22", EditorPlugin.className);
-			match = match.ThrowIfNotMatch("Is not ldc.r4", new CodeMatch(OpCodes.Ldc_R4));
-			Debug.LogFormat("{0}IL Progress: 23", EditorPlugin.className);
-			match = match.SetInstruction(new CodeInstruction(OpCodes.Ldloc_S, 117));
-			Debug.LogFormat("{0}IL Progress: 24 (DONE)", EditorPlugin.className);
-
-			return match.InstructionEnumeration();
 		}
 
 		[HarmonyPatch("Update")]
@@ -400,36 +342,58 @@ namespace EditorManagement.Patchers
 			match = match.ThrowIfNotMatch("Is not DataManager.inst at 524", new CodeMatch(OpCodes.Ldsfld));
 			match = match.RemoveInstructions(10);
 
+			//??? + 5 - 50
+			//match = match.Start();
+			//match = match.Advance(2290);
+			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
+			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 100));
+			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			//1623 + 3 - 30 = 1596
+			//match = match.Start();
+			//match = match.Advance(1596);
+			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
+			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 72));
+			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			//843 + 1 - 10
+			//match = match.Start();
+			//match = match.Advance(834);
+			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
+			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 37));
+			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+
 			return match.InstructionEnumeration();
 		}
 
-		[HarmonyPatch(typeof(ObjectManager), "updateObjects", new Type[] { })]
+		[HarmonyPatch("updateObjects", new Type[] { })]
 		[HarmonyPostfix]
 		private static void OMUO1()
 		{
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>() && !RTEditor.ienumRunning)
+			if (tracker != null && !RTEditor.ienumRunning)
 			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
+				tracker.GetPosition();
 			}
 		}
 
-		[HarmonyPatch(typeof(ObjectManager), "updateObjects", new Type[] { typeof(string) })]
+		[HarmonyPatch("updateObjects", new Type[] { typeof(string) })]
 		[HarmonyPostfix]
 		private static void OMUO2()
 		{
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>() && !RTEditor.ienumRunning)
+			if (tracker != null && !RTEditor.ienumRunning)
 			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
+				tracker.GetPosition();
 			}
 		}
 
-		[HarmonyPatch(typeof(ObjectManager), "updateObjects", new Type[] { typeof(ObjEditor.ObjectSelection), typeof(bool) })]
+		[HarmonyPatch("updateObjects", new Type[] { typeof(ObjEditor.ObjectSelection), typeof(bool) })]
 		[HarmonyPostfix]
 		private static void OMUO3()
 		{
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>() && !RTEditor.ienumRunning)
+			if (tracker != null && !RTEditor.ienumRunning)
 			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
+				tracker.GetPosition();
 			}
 		}
 	}

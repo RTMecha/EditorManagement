@@ -2,6 +2,7 @@
 using System.Reflection.Emit;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -421,12 +422,28 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Start")]
 		[HarmonyPrefix]
-		private static bool StartPrefix()
+		private static bool StartPrefix(ObjEditor __instance)
 		{
-			ObjEditor.inst.colorButtons.Clear();
+			__instance.colorButtons.Clear();
 			for (int i = 1; i <= 18; i++)
 			{
-				ObjEditor.inst.colorButtons.Add(ObjEditor.inst.KeyframeDialogs[3].transform.Find("color/" + i).GetComponent<Toggle>());
+				__instance.colorButtons.Add(__instance.KeyframeDialogs[3].transform.Find("color/" + i).GetComponent<Toggle>());
+			}
+
+			if (RTFile.FileExists(Application.persistentDataPath + "/copied_objects.lsp"))
+            {
+				JSONNode jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp"));
+
+				List<DataManager.GameData.BeatmapObject> _objects = new List<DataManager.GameData.BeatmapObject>();
+				for (int aIndex = 0; aIndex < jn["objects"].Count; ++aIndex)
+					_objects.Add(DataManager.GameData.BeatmapObject.ParseGameObject(jn["objects"][aIndex]));
+
+				List<DataManager.GameData.PrefabObject> _prefabObjects = new List<DataManager.GameData.PrefabObject>();
+				for (int aIndex = 0; aIndex < jn["prefab_objects"].Count; ++aIndex)
+					_prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jn["prefab_objects"][aIndex]));
+
+				__instance.beatmapObjCopy = new DataManager.GameData.Prefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects);
+				__instance.hasCopiedObject = true;
 			}
 			return false;
 		}
@@ -468,16 +485,74 @@ namespace EditorManagement.Patchers
 
 					JSONNode jsonnode = JSON.Parse(rawProfileJSON);
 
-					EditorManager.inst.Zoom = jsonnode["timeline"]["z"];
-					GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/zoom-panel/Slider").GetComponent<Slider>().value = jsonnode["timeline"]["tsc"];
+					if (float.TryParse(jsonnode["timeline"]["z"], out float z))
+					{
+						Debug.Log("DSFSDFSFDSF - z " + z);
+						EditorManager.inst.zoomSlider.value = z;
+					}
+					else if (jsonnode["timeline"]["z"] != null)
+					{
+						Debug.Log("DSFSDFSFDSF - z " + jsonnode["timeline"]["z"]);
+						EditorManager.inst.zoomSlider.value = jsonnode["timeline"]["z"];
+					}
 
-					RTEditor.SetLayer(jsonnode["timeline"]["l"]);
+					if (float.TryParse(jsonnode["timeline"]["tsc"], out float tsc))
+					{
+						Debug.Log("DSFSDFSFDSF - tsc " + tsc);
+						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value = tsc;
+					}
+					else if (jsonnode["timeline"]["tsc"] != null)
+					{
+						Debug.Log("DSFSDFSFDSF - tsc " + jsonnode["timeline"]["tsc"]);
+						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value = jsonnode["timeline"]["tsc"];
+					}
 
-					EditorPlugin.timeEdit = jsonnode["editor"]["t"];
-					EditorPlugin.openAmount = jsonnode["editor"]["a"];
+					if (int.TryParse(jsonnode["timeline"]["l"], out int l))
+					{
+						Debug.Log("DSFSDFSFDSF - l " + l);
+						RTEditor.SetLayer(l);
+					}
+					else if (jsonnode["timeline"]["l"] != null)
+					{
+						Debug.Log("DSFSDFSFDSF - l " + jsonnode["timeline"]["l"]);
+						RTEditor.SetLayer(jsonnode["timeline"]["l"]);
+					}
+
+					if (float.TryParse(jsonnode["editor"]["t"], out float t))
+					{
+						Debug.Log("DSFSDFSFDSF - t " + t);
+						EditorPlugin.timeEdit = t;
+					}
+					else if (jsonnode["editor"]["t"] != null)
+					{
+						Debug.Log("DSFSDFSFDSF - t " + jsonnode["editor"]["t"]);
+						EditorPlugin.timeEdit = jsonnode["editor"]["t"];
+					}
+
+					if (int.TryParse(jsonnode["editor"]["a"], out int a))
+					{
+						Debug.Log("DSFSDFSFDSF - a " + a);
+						EditorPlugin.openAmount = a;
+					}
+					else if (jsonnode["editor"]["a"] != null)
+					{
+						Debug.Log("DSFSDFSFDSF - a " + jsonnode["editor"]["a"]);
+						EditorPlugin.openAmount = jsonnode["editor"]["a"];
+					}
+
 					EditorPlugin.openAmount += 1;
 
-					SettingEditor.inst.SnapActive = jsonnode["misc"]["sn"];
+					if (bool.TryParse(jsonnode["misc"]["sn"], out bool sn))
+					{
+						Debug.Log("DSFSDFSFDSF - sn " + sn);
+						SettingEditor.inst.SnapActive = sn;
+					}
+					else if (jsonnode["misc"]["sn"] != null)
+					{
+						Debug.Log("DSFSDFSFDSF - sn " + jsonnode["misc"]["sn"]);
+						SettingEditor.inst.SnapActive = jsonnode["misc"]["sn"];
+					}
+
 					SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
 				}
 				else
@@ -521,6 +596,35 @@ namespace EditorManagement.Patchers
 		private static void SetObjStart()
 		{
 			ObjEditor.inst.zoomBounds = ConfigEntries.ObjZoomBounds.Value;
+		}
+
+		[HarmonyPatch("CopyObject")]
+		[HarmonyPrefix]
+		private static bool CopyObject(ObjEditor __instance)
+		{
+			var e = new List<ObjEditor.ObjectSelection>();
+			foreach (var prefab in __instance.selectedObjects)
+            {
+				e.Add(prefab);
+            }
+
+			e = (from x in e
+				 orderby x.StartTime()
+				 select x).ToList();
+
+			float start = 0f;
+			if (ConfigEntries.PrefabOffset.Value)
+            {
+				start = -AudioManager.inst.CurrentAudioSource.time + e[0].StartTime();
+            }
+
+			__instance.beatmapObjCopy = new DataManager.GameData.Prefab("copied prefab", 0, start, __instance.selectedObjects);
+			__instance.hasCopiedObject = true;
+
+			JSONNode jsonnode = DataManager.inst.GeneratePrefabJSON(__instance.beatmapObjCopy);
+
+			RTFile.WriteToFile(Application.persistentDataPath + "/copied_objects.lsp", jsonnode.ToString());
+			return false;
 		}
 
 		//[HarmonyPatch("RenderTimelineObjects")]
@@ -634,7 +738,15 @@ namespace EditorManagement.Patchers
 						"", 1f, LSColors.HexToColor("202020"), prefabColor, LSColors.InvertBlackWhiteColor(prefabColor), "Prefab Object");
 				}
 			}
-        }
+		}
+
+		[HarmonyPatch("AddSelectedObject")]
+		[HarmonyPrefix]
+		public static bool AddSelectedObject(ObjEditor __instance, ObjEditor.ObjectSelection __0)
+		{
+			RTEditor.AddSelectedObject(__instance, __0, true);
+			return false;
+		}
 
 		[HarmonyPatch("RenderTimelineObject")]
 		[HarmonyPrefix]

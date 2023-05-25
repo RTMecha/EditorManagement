@@ -494,28 +494,31 @@ namespace EditorManagement.Functions.Tools
 			});
 		}
 
-		public static void ObjEditorParentOffset(Transform _p, int _t)
+		public static void ObjEditorParentOffset(ObjEditor.ObjectSelection _objectSelection, DataManager.GameData.BeatmapObject _beatmapObject, Transform _p, int _t)
 		{
 			Debug.LogFormat("{0}Refresh Object GUI: Parent Offset [" + _t + "]", EditorPlugin.className);
+
+			var parentOffset = _beatmapObject.getParentOffset(_t);
+
 			var tog = _p.GetChild(2).GetComponent<Toggle>();
 			tog.onValueChanged.RemoveAllListeners();
-			tog.isOn = ObjEditor.inst.currentObjectSelection.GetObjectData().GetParentType(_t);
+			tog.isOn = _beatmapObject.GetParentType(_t);
 			tog.onValueChanged.AddListener(delegate (bool _value)
 			{
-				ObjEditor.inst.currentObjectSelection.GetObjectData().SetParentType(_t, _value);
-				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+				_beatmapObject.SetParentType(_t, _value);
+				ObjectManager.inst.updateObjects(_objectSelection, false);
 			});
 
 			var pif = _p.GetChild(3).GetComponent<InputField>();
 			pif.onValueChanged.RemoveAllListeners();
-			pif.text = ObjEditor.inst.currentObjectSelection.GetObjectData().getParentOffset(_t).ToString();
+			pif.text = parentOffset.ToString();
 			pif.onValueChanged.AddListener(delegate (string _value)
 			{
 				float @new;
 				if (float.TryParse(_value, out @new))
 				{
-					ObjEditor.inst.currentObjectSelection.GetObjectData().SetParentOffset(_t, @new);
-					ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+					_beatmapObject.SetParentOffset(_t, @new);
+					ObjectManager.inst.updateObjects(_objectSelection, false);
 				}
 			});
 
@@ -523,16 +526,10 @@ namespace EditorManagement.Functions.Tools
             {
 				_p.gameObject.AddComponent<EventTrigger>();
             }
+
 			var pet = _p.GetComponent<EventTrigger>();
 			pet.triggers.Clear();
-			if (_t != 2)
-			{
-				pet.triggers.Add(ScrollDelta(pif, 0.1f, 10f));
-			}
-			else
-			{
-				pet.triggers.Add(ScrollDelta(pif, 15f, 3f));
-			}
+			pet.triggers.Add(ScrollDelta(pif, 0.1f, 10f));
 
 			var largeLeft = _p.Find("<<").GetComponent<Button>();
 			var smallLeft = _p.Find("<").GetComponent<Button>();
@@ -546,20 +543,20 @@ namespace EditorManagement.Functions.Tools
 
 			largeLeft.onClick.AddListener(delegate ()
 			{
-				pif.text = (ObjEditor.inst.currentObjectSelection.GetObjectData().getParentOffset(_t) - 1f).ToString();
+				pif.text = (parentOffset - 1f).ToString();
 			});
 
 			smallLeft.onClick.AddListener(delegate ()
 			{
-				pif.text = (ObjEditor.inst.currentObjectSelection.GetObjectData().getParentOffset(_t) - 0.1f).ToString();
+				pif.text = (parentOffset - 0.1f).ToString();
 			});
 			smallRight.onClick.AddListener(delegate ()
 			{
-				pif.text = (ObjEditor.inst.currentObjectSelection.GetObjectData().getParentOffset(_t) + 0.1f).ToString();
+				pif.text = (parentOffset + 0.1f).ToString();
 			});
 			largeRight.onClick.AddListener(delegate ()
 			{
-				pif.text = (ObjEditor.inst.currentObjectSelection.GetObjectData().getParentOffset(_t) + 1f).ToString();
+				pif.text = (parentOffset + 1f).ToString();
 			});
 		}
 
@@ -990,5 +987,68 @@ namespace EditorManagement.Functions.Tools
             }
 			return RotateMode.LocalAxisAdd;
         }
+
+		public static EventTrigger.Entry CreateEventObjectTrigger(EventEditor instance, int _type, int _event)
+		{
+			var entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.PointerClick;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				if (!instance.eventDrag)
+				{
+					if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
+					{
+						RTEditor.AddEvent(instance, _type, _event, true);
+						return;
+					}
+					instance.SetCurrentEvent(_type, _event);
+				}
+			});
+			return entry;
+		}
+
+		public static EventTrigger.Entry CreateEventEndDragTrigger()
+		{
+			var eventEndDragTrigger = new EventTrigger.Entry();
+			eventEndDragTrigger.eventID = EventTriggerType.EndDrag;
+			eventEndDragTrigger.callback.AddListener(eventData =>
+			{
+				EventEditor.inst.eventDrag = false;
+				EventEditor.inst.UpdateEventOrder();
+				EventManager.inst.updateEvents();
+			});
+			return eventEndDragTrigger;
+		}
+
+		public static EventTrigger.Entry CreateEventStartDragTrigger(EventEditor instance, int _type, int _event)
+		{
+			var startDragTrigger = new EventTrigger.Entry();
+			startDragTrigger.eventID = EventTriggerType.BeginDrag;
+			startDragTrigger.callback.AddListener(eventData =>
+			{
+				if (_event != 0)
+				{
+					if (instance.keyframeSelections.FindIndex(x => x.Type == _type && x.Index == _event) != -1)
+					{
+						instance.selectedKeyframeOffsets.Clear();
+						foreach (var keyframeSelection in instance.keyframeSelections)
+						{
+							if (keyframeSelection.Index == instance.currentEvent && keyframeSelection.Type == instance.currentEventType)
+								instance.selectedKeyframeOffsets.Add(0.0f);
+							else
+								instance.selectedKeyframeOffsets.Add(DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type][keyframeSelection.Index].eventTime - DataManager.inst.gameData.eventObjects.allEvents[instance.currentEventType][instance.currentEvent].eventTime);
+						}
+					}
+					else
+						instance.SetCurrentEvent(_type, _event);
+					float timelineTime = EditorManager.inst.GetTimelineTime();
+					instance.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[_type][_event].eventTime - timelineTime;
+					instance.eventDrag = true;
+				}
+				else
+					EditorManager.inst.DisplayNotification("Can't change time of first Event", 2f, EditorManager.NotificationType.Warning);
+			});
+			return startDragTrigger;
+		}
 	}
 }

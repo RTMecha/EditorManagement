@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using BepInEx.Configuration;
+
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,9 +17,26 @@ namespace EditorManagement
     public class EditorGUI : MonoBehaviour
     {
         public static List<List<GameObject>> editorGUI = new List<List<GameObject>>();
+        public static List<ConfigEntry<Color>> configColors = new List<ConfigEntry<Color>>
+        {
+            ConfigEntries.EditorGUIColor1,
+            ConfigEntries.EditorGUIColor2,
+            ConfigEntries.EditorGUIColor3,
+            ConfigEntries.EditorGUIColor4,
+            ConfigEntries.EditorGUIColor5,
+            ConfigEntries.EditorGUIColor6,
+            ConfigEntries.EditorGUIColor7,
+            ConfigEntries.EditorGUIColor8,
+            ConfigEntries.EditorGUIColor9,
+        };
 
         public static void CreateEditorGUI()
         {
+            if (editorGUI.Count > 0)
+            {
+                editorGUI.Clear();
+            }
+
             //Search for objects with color
             var list1 = EditorExtensions.ColorRange(new Color(0.1294118f, 0.1294118f, 0.1294118f, 1f), 0.01f);
             var list2 = EditorExtensions.ColorRange(new Color(0.1058824f, 0.1058824f, 0.1098039f, 1f), 0.01f);
@@ -79,113 +98,128 @@ namespace EditorManagement
 
         public static void UpdateEditorGUI()
         {
-            foreach (var guiPart in editorGUI[0])
+            for (int i = 0; i < configColors.Count; i++)
             {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor1.Value)
+                foreach (var guiPart in editorGUI[i])
                 {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor1.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor1.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor1.Value;
+                    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != configColors[i].Value)
+                    {
+                        guiPart.GetComponent<Image>().color = configColors[i].Value;
+                    }
+                    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != configColors[i].Value)
+                    {
+                        guiPart.GetComponent<Text>().color = configColors[i].Value;
+                    }
                 }
             }
 
-            foreach (var guiPart in editorGUI[1])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor2.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor2.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor2.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor2.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[0])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor1.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor1.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor1.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor1.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[2])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor3.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor3.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor3.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor3.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[1])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor2.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor2.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor2.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor2.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[3])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor4.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor4.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor4.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor4.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[2])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor3.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor3.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor3.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor3.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[4])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor5.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor5.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor5.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor5.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[3])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor4.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor4.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor4.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor4.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[5])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor6.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor6.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor6.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor6.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[4])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor5.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor5.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor5.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor5.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[6])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor7.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor7.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor7.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor7.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[5])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor6.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor6.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor6.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor6.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[7])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor8.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor8.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor8.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor8.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[6])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor7.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor7.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor7.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor7.Value;
+            //    }
+            //}
 
-            foreach (var guiPart in editorGUI[8])
-            {
-                if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor9.Value)
-                {
-                    guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor9.Value;
-                }
-                if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor9.Value)
-                {
-                    guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor9.Value;
-                }
-            }
+            //foreach (var guiPart in editorGUI[7])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor8.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor8.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor8.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor8.Value;
+            //    }
+            //}
+
+            //foreach (var guiPart in editorGUI[8])
+            //{
+            //    if (guiPart && guiPart.GetComponent<Image>() && guiPart.GetComponent<Image>().color != ConfigEntries.EditorGUIColor9.Value)
+            //    {
+            //        guiPart.GetComponent<Image>().color = ConfigEntries.EditorGUIColor9.Value;
+            //    }
+            //    if (guiPart && guiPart.GetComponent<Text>() && guiPart.GetComponent<Text>().color != ConfigEntries.EditorGUIColor9.Value)
+            //    {
+            //        guiPart.GetComponent<Text>().color = ConfigEntries.EditorGUIColor9.Value;
+            //    }
+            //}
         }
     }
 }

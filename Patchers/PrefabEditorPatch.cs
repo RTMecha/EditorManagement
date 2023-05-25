@@ -979,6 +979,14 @@ namespace EditorManagement.Patchers
             return false;
         }
 
+        [HarmonyPatch("LoadExternalPrefabs")]
+        [HarmonyPrefix]
+        private static bool LoadExternalPrefabsPrefix(PrefabEditor __instance)
+        {
+            EditorPlugin.inst.StartCoroutine(EditorPlugin.LoadExternalPrefabs(__instance));
+            return false;
+        }
+
         [HarmonyPatch("LoadExternalPrefabs", MethodType.Enumerator)]
         [HarmonyTranspiler]
         private static IEnumerable<CodeInstruction> GetPrefabListTranspiler(IEnumerable<CodeInstruction> instructions)

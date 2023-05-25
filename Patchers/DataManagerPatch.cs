@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using HarmonyLib;
+using BepInEx.Configuration;
 
 using UnityEngine;
 
@@ -20,13 +21,60 @@ namespace EditorManagement.Patchers
     [HarmonyPatch(typeof(DataManager))]
     public class DataManagerPatch : MonoBehaviour
     {
+        public static List<ConfigEntryBase> prefabNames = new List<ConfigEntryBase>
+        {
+            ConfigEntries.PT0N,
+            ConfigEntries.PT1N,
+            ConfigEntries.PT2N,
+            ConfigEntries.PT3N,
+            ConfigEntries.PT4N,
+            ConfigEntries.PT5N,
+            ConfigEntries.PT6N,
+            ConfigEntries.PT7N,
+            ConfigEntries.PT8N,
+            ConfigEntries.PT9N,
+            ConfigEntries.PT10N,
+            ConfigEntries.PT11N,
+            ConfigEntries.PT12N,
+            ConfigEntries.PT13N,
+            ConfigEntries.PT14N,
+            ConfigEntries.PT15N,
+            ConfigEntries.PT16N,
+            ConfigEntries.PT17N,
+            ConfigEntries.PT18N,
+            ConfigEntries.PT19N,
+        };
+        public static List<ConfigEntryBase> prefabColors = new List<ConfigEntryBase>
+        {
+            ConfigEntries.PT0C,
+            ConfigEntries.PT1C,
+            ConfigEntries.PT2C,
+            ConfigEntries.PT3C,
+            ConfigEntries.PT4C,
+            ConfigEntries.PT5C,
+            ConfigEntries.PT6C,
+            ConfigEntries.PT7C,
+            ConfigEntries.PT8C,
+            ConfigEntries.PT9C,
+            ConfigEntries.PT10C,
+            ConfigEntries.PT11C,
+            ConfigEntries.PT12C,
+            ConfigEntries.PT13C,
+            ConfigEntries.PT14C,
+            ConfigEntries.PT15C,
+            ConfigEntries.PT16C,
+            ConfigEntries.PT17C,
+            ConfigEntries.PT18C,
+            ConfigEntries.PT19C,
+        };
+
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        private static void DataLists()
+        private static void DataLists(DataManager __instance)
         {
-            if (DataManager.inst.difficulties.Count != 7)
+            if (__instance.difficulties.Count != 7)
             {
-                DataManager.inst.difficulties = new List<DataManager.Difficulty>
+                __instance.difficulties = new List<DataManager.Difficulty>
                 {
                     new DataManager.Difficulty("Easy", LSColors.GetThemeColor("easy")),
                     new DataManager.Difficulty("Normal", LSColors.GetThemeColor("normal")),
@@ -38,9 +86,9 @@ namespace EditorManagement.Patchers
                 };
             }
 
-            if (DataManager.inst.linkTypes[3].name != "YouTube")
+            if (__instance.linkTypes[3].name != "YouTube")
             {
-                DataManager.inst.linkTypes = new List<DataManager.LinkType>
+                __instance.linkTypes = new List<DataManager.LinkType>
                 {
                     new DataManager.LinkType("Spotify", "https://open.spotify.com/artist/{0}"),
                     new DataManager.LinkType("SoundCloud", "https://soundcloud.com/{0}"),
@@ -50,23 +98,26 @@ namespace EditorManagement.Patchers
                 };
             }
 
-            if (DataManager.inst.AnimationList[1].Animation.keys[1].m_Time != 0.9999f)
+            var anim = __instance.AnimationList[1].Animation;
+
+            if (anim.keys[1].m_Time != 0.9999f)
             {
-                DataManager.inst.AnimationList[1].Animation.keys[1].m_Time = 0.9999f;
-                DataManager.inst.AnimationList[1].Animation.keys[1].m_Value = 0f;
+                anim.keys[1].m_Time = 0.9999f;
+                anim.keys[1].m_Value = 0f;
             }
 
             //Themes
-			DataManager.inst.BeatmapThemes[0].name = "PA Machine";
-			DataManager.inst.BeatmapThemes[1].name = "PA Anarchy";
-			DataManager.inst.BeatmapThemes[2].name = "PA Day Night";
-			DataManager.inst.BeatmapThemes[3].name = "PA Donuts";
-			DataManager.inst.BeatmapThemes[4].name = "PA Classic";
-			DataManager.inst.BeatmapThemes[5].name = "PA New";
-			DataManager.inst.BeatmapThemes[6].name = "PA Dark";
-			DataManager.inst.BeatmapThemes[7].name = "PA White On Black";
-			DataManager.inst.BeatmapThemes[8].name = "PA Black On White";
-            DataManager.inst.BeatmapThemes.Add(Triggers.CreateTheme("PA Example Theme", "9",
+            __instance.BeatmapThemes[0].name = "PA Machine";
+            __instance.BeatmapThemes[1].name = "PA Anarchy";
+            __instance.BeatmapThemes[2].name = "PA Day Night";
+            __instance.BeatmapThemes[3].name = "PA Donuts";
+            __instance.BeatmapThemes[4].name = "PA Classic";
+            __instance.BeatmapThemes[5].name = "PA New";
+            __instance.BeatmapThemes[6].name = "PA Dark";
+            __instance.BeatmapThemes[7].name = "PA White On Black";
+            __instance.BeatmapThemes[8].name = "PA Black On White";
+
+            __instance.BeatmapThemes.Add(Triggers.CreateTheme("PA Example Theme", "9",
                 LSColors.HexToColor("212121"),
                 LSColors.HexToColor("FFFFFF"),
                 new List<Color>
@@ -100,77 +151,14 @@ namespace EditorManagement.Patchers
                 }));
 
             //Creates modded list
-            DataManager.inst.PrefabTypes = new List<DataManager.PrefabType>
+            __instance.PrefabTypes.Clear();
+            for (int i = 0; i < prefabNames.Count; i++)
             {
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType(),
-                new DataManager.PrefabType()
-            };
-
-            //Set Name
-            DataManager.inst.PrefabTypes[0].Name = ConfigEntries.PT0N.Value;
-            DataManager.inst.PrefabTypes[1].Name = ConfigEntries.PT1N.Value;
-            DataManager.inst.PrefabTypes[2].Name = ConfigEntries.PT2N.Value;
-            DataManager.inst.PrefabTypes[3].Name = ConfigEntries.PT3N.Value;
-            DataManager.inst.PrefabTypes[4].Name = ConfigEntries.PT4N.Value;
-            DataManager.inst.PrefabTypes[5].Name = ConfigEntries.PT5N.Value;
-            DataManager.inst.PrefabTypes[6].Name = ConfigEntries.PT6N.Value;
-            DataManager.inst.PrefabTypes[7].Name = ConfigEntries.PT7N.Value;
-            DataManager.inst.PrefabTypes[8].Name = ConfigEntries.PT8N.Value;
-            DataManager.inst.PrefabTypes[9].Name = ConfigEntries.PT9N.Value;
-
-            //Set New Name
-            DataManager.inst.PrefabTypes[10].Name = ConfigEntries.PT10N.Value;
-            DataManager.inst.PrefabTypes[11].Name = ConfigEntries.PT11N.Value;
-            DataManager.inst.PrefabTypes[12].Name = ConfigEntries.PT12N.Value;
-            DataManager.inst.PrefabTypes[13].Name = ConfigEntries.PT13N.Value;
-            DataManager.inst.PrefabTypes[14].Name = ConfigEntries.PT14N.Value;
-            DataManager.inst.PrefabTypes[15].Name = ConfigEntries.PT15N.Value;
-            DataManager.inst.PrefabTypes[16].Name = ConfigEntries.PT16N.Value;
-            DataManager.inst.PrefabTypes[17].Name = ConfigEntries.PT17N.Value;
-            DataManager.inst.PrefabTypes[18].Name = ConfigEntries.PT18N.Value;
-            DataManager.inst.PrefabTypes[19].Name = ConfigEntries.PT19N.Value;
-
-            //Set Color
-            DataManager.inst.PrefabTypes[0].Color = ConfigEntries.PT0C.Value;
-            DataManager.inst.PrefabTypes[1].Color = ConfigEntries.PT1C.Value;
-            DataManager.inst.PrefabTypes[2].Color = ConfigEntries.PT2C.Value;
-            DataManager.inst.PrefabTypes[3].Color = ConfigEntries.PT3C.Value;
-            DataManager.inst.PrefabTypes[4].Color = ConfigEntries.PT4C.Value;
-            DataManager.inst.PrefabTypes[5].Color = ConfigEntries.PT5C.Value;
-            DataManager.inst.PrefabTypes[6].Color = ConfigEntries.PT6C.Value;
-            DataManager.inst.PrefabTypes[7].Color = ConfigEntries.PT7C.Value;
-            DataManager.inst.PrefabTypes[8].Color = ConfigEntries.PT8C.Value;
-            DataManager.inst.PrefabTypes[9].Color = ConfigEntries.PT9C.Value;
-
-            //Set New Color
-            DataManager.inst.PrefabTypes[10].Color = ConfigEntries.PT10C.Value;
-            DataManager.inst.PrefabTypes[11].Color = ConfigEntries.PT11C.Value;
-            DataManager.inst.PrefabTypes[12].Color = ConfigEntries.PT12C.Value;
-            DataManager.inst.PrefabTypes[13].Color = ConfigEntries.PT13C.Value;
-            DataManager.inst.PrefabTypes[14].Color = ConfigEntries.PT14C.Value;
-            DataManager.inst.PrefabTypes[15].Color = ConfigEntries.PT15C.Value;
-            DataManager.inst.PrefabTypes[16].Color = ConfigEntries.PT16C.Value;
-            DataManager.inst.PrefabTypes[17].Color = ConfigEntries.PT17C.Value;
-            DataManager.inst.PrefabTypes[18].Color = ConfigEntries.PT18C.Value;
-            DataManager.inst.PrefabTypes[19].Color = ConfigEntries.PT19C.Value;
+                var nTT = new DataManager.PrefabType();
+                nTT.Name = (string)prefabNames[i].BoxedValue;
+                nTT.Color = (Color)prefabColors[i].BoxedValue;
+                __instance.PrefabTypes.Add(nTT);
+            }
         }
 
         [HarmonyPatch("SaveData", typeof(string), typeof(DataManager.GameData))]
@@ -186,6 +174,182 @@ namespace EditorManagement.Patchers
         private static bool CreateBaseBeatmapPatch(ref DataManager.GameData __result)
         {
             __result = RTEditor.CreateBaseBeatmap();
+            return false;
+        }
+
+        [HarmonyPatch("GeneratePrefabJSON")]
+        [HarmonyPrefix]
+        public static bool GeneratePrefabJSON(ref JSONNode __result, DataManager.GameData.Prefab __0)
+        {
+            JSONNode jsonnode = JSON.Parse("{}");
+            jsonnode["name"] = __0.Name;
+            jsonnode["type"] = __0.Type.ToString();
+            bool flag = __0.ID != null;
+            bool flag2 = flag;
+            if (flag2)
+            {
+                jsonnode["id"] = __0.ID.ToString();
+            }
+            bool flag3 = __0.MainObjectID != null;
+            bool flag4 = flag3;
+            if (flag4)
+            {
+                jsonnode["main_obj_id"] = __0.MainObjectID.ToString();
+            }
+            jsonnode["offset"] = __0.Offset.ToString();
+            for (int i = 0; i < __0.objects.Count; i++)
+            {
+                bool flag5 = __0.objects[i] != null;
+                bool flag6 = flag5;
+                if (flag6)
+                {
+                    jsonnode["objects"][i]["id"] = __0.objects[i].id;
+                    bool flag7 = __0.objects[i].GetParentType().ToString() != "101";
+                    bool flag8 = flag7;
+                    if (flag8)
+                    {
+                        jsonnode["objects"][i]["pt"] = __0.objects[i].GetParentType().ToString();
+                    }
+                    bool flag9 = __0.objects[i].getParentOffsets().FindIndex((float x) => x != 0f) != -1;
+                    bool flag10 = flag9;
+                    if (flag10)
+                    {
+                        int num = 0;
+                        foreach (float num2 in __0.objects[i].getParentOffsets())
+                        {
+                            jsonnode["objects"][i]["po"][num] = num2.ToString();
+                            num++;
+                        }
+                    }
+                    jsonnode["objects"][i]["p"] = __0.objects[i].parent.ToString();
+                    jsonnode["objects"][i]["d"] = __0.objects[i].Depth.ToString();
+                    jsonnode["objects"][i]["ot"] = (int)__0.objects[i].objectType;
+                    jsonnode["objects"][i]["st"] = __0.objects[i].StartTime.ToString();
+                    bool flag11 = !string.IsNullOrEmpty(__0.objects[i].text);
+                    bool flag12 = flag11;
+                    if (flag12)
+                    {
+                        jsonnode["objects"][i]["text"] = __0.objects[i].text;
+                    }
+                    jsonnode["objects"][i]["name"] = __0.objects[i].name;
+                    bool flag13 = __0.objects[i].shape != 0;
+                    bool flag14 = flag13;
+                    if (flag14)
+                    {
+                        jsonnode["objects"][i]["shape"] = __0.objects[i].shape.ToString();
+                    }
+                    jsonnode["objects"][i]["akt"] = (int)__0.objects[i].autoKillType;
+                    jsonnode["objects"][i]["ako"] = __0.objects[i].autoKillOffset;
+                    bool flag15 = __0.objects[i].shapeOption != 0;
+                    bool flag16 = flag15;
+                    if (flag16)
+                    {
+                        jsonnode["objects"][i]["so"] = __0.objects[i].shapeOption.ToString();
+                    }
+                    jsonnode["objects"][i]["o"]["x"] = __0.objects[i].origin.x.ToString();
+                    bool locked = __0.objects[i].editorData.locked;
+                    bool flag17 = locked;
+                    if (flag17)
+                    {
+                        jsonnode["objects"][i]["ed"]["locked"] = __0.objects[i].editorData.locked.ToString();
+                    }
+                    bool collapse = __0.objects[i].editorData.collapse;
+                    bool flag18 = collapse;
+                    if (flag18)
+                    {
+                        jsonnode["objects"][i]["ed"]["shrink"] = __0.objects[i].editorData.collapse.ToString();
+                    }
+                    jsonnode["objects"][i]["o"]["y"] = __0.objects[i].origin.y.ToString();
+                    jsonnode["objects"][i]["ed"]["bin"] = __0.objects[i].editorData.Bin.ToString();
+                    jsonnode["objects"][i]["ed"]["layer"] = __0.objects[i].editorData.Layer.ToString();
+                    for (int j = 0; j < __0.objects[i].events[0].Count; j++)
+                    {
+                        jsonnode["objects"][i]["events"]["pos"][j]["t"] = __0.objects[i].events[0][j].eventTime.ToString();
+                        jsonnode["objects"][i]["events"]["pos"][j]["x"] = __0.objects[i].events[0][j].eventValues[0].ToString();
+                        jsonnode["objects"][i]["events"]["pos"][j]["y"] = __0.objects[i].events[0][j].eventValues[1].ToString();
+
+                        if (__0.objects[i].events[0][j].eventValues.Length > 2)
+                        {
+                            jsonnode["objects"][i]["events"]["pos"][j]["z"] = __0.objects[i].events[0][j].eventValues[2].ToString();
+                        }
+
+                        bool flag19 = __0.objects[i].events[0][j].curveType.Name != DataManager.inst.AnimationList[0].Name;
+                        bool flag20 = flag19;
+                        if (flag20)
+                        {
+                            jsonnode["objects"][i]["events"]["pos"][j]["ct"] = __0.objects[i].events[0][j].curveType.Name.ToString();
+                        }
+                        bool flag21 = __0.objects[i].events[0][j].random != 0;
+                        bool flag22 = flag21;
+                        if (flag22)
+                        {
+                            jsonnode["objects"][i]["events"]["pos"][j]["r"] = __0.objects[i].events[0][j].random.ToString();
+                            jsonnode["objects"][i]["events"]["pos"][j]["rx"] = __0.objects[i].events[0][j].eventRandomValues[0].ToString();
+                            jsonnode["objects"][i]["events"]["pos"][j]["ry"] = __0.objects[i].events[0][j].eventRandomValues[1].ToString();
+                            jsonnode["objects"][i]["events"]["pos"][j]["rz"] = __0.objects[i].events[0][j].eventRandomValues[2].ToString();
+                        }
+                    }
+                    for (int k = 0; k < __0.objects[i].events[1].Count; k++)
+                    {
+                        jsonnode["objects"][i]["events"]["sca"][k]["t"] = __0.objects[i].events[1][k].eventTime.ToString();
+                        jsonnode["objects"][i]["events"]["sca"][k]["x"] = __0.objects[i].events[1][k].eventValues[0].ToString();
+                        jsonnode["objects"][i]["events"]["sca"][k]["y"] = __0.objects[i].events[1][k].eventValues[1].ToString();
+                        bool flag23 = __0.objects[i].events[1][k].curveType.Name != DataManager.inst.AnimationList[0].Name;
+                        bool flag24 = flag23;
+                        if (flag24)
+                        {
+                            jsonnode["objects"][i]["events"]["sca"][k]["ct"] = __0.objects[i].events[1][k].curveType.Name.ToString();
+                        }
+                        bool flag25 = __0.objects[i].events[1][k].random != 0;
+                        bool flag26 = flag25;
+                        if (flag26)
+                        {
+                            jsonnode["objects"][i]["events"]["sca"][k]["r"] = __0.objects[i].events[1][k].random.ToString();
+                            jsonnode["objects"][i]["events"]["sca"][k]["rx"] = __0.objects[i].events[1][k].eventRandomValues[0].ToString();
+                            jsonnode["objects"][i]["events"]["sca"][k]["ry"] = __0.objects[i].events[1][k].eventRandomValues[1].ToString();
+                            jsonnode["objects"][i]["events"]["sca"][k]["rz"] = __0.objects[i].events[1][k].eventRandomValues[2].ToString();
+                        }
+                    }
+                    for (int l = 0; l < __0.objects[i].events[2].Count; l++)
+                    {
+                        jsonnode["objects"][i]["events"]["rot"][l]["t"] = __0.objects[i].events[2][l].eventTime.ToString();
+                        jsonnode["objects"][i]["events"]["rot"][l]["x"] = __0.objects[i].events[2][l].eventValues[0].ToString();
+                        bool flag27 = __0.objects[i].events[2][l].curveType.Name != DataManager.inst.AnimationList[0].Name;
+                        bool flag28 = flag27;
+                        if (flag28)
+                        {
+                            jsonnode["objects"][i]["events"]["rot"][l]["ct"] = __0.objects[i].events[2][l].curveType.Name.ToString();
+                        }
+                        bool flag29 = __0.objects[i].events[2][l].random != 0;
+                        bool flag30 = flag29;
+                        if (flag30)
+                        {
+                            jsonnode["objects"][i]["events"]["rot"][l]["r"] = __0.objects[i].events[2][l].random.ToString();
+                            jsonnode["objects"][i]["events"]["rot"][l]["rx"] = __0.objects[i].events[2][l].eventRandomValues[0].ToString();
+                            jsonnode["objects"][i]["events"]["rot"][l]["rz"] = __0.objects[i].events[2][l].eventRandomValues[2].ToString();
+                        }
+                    }
+                    for (int m = 0; m < __0.objects[i].events[3].Count; m++)
+                    {
+                        jsonnode["objects"][i]["events"]["col"][m]["t"] = __0.objects[i].events[3][m].eventTime.ToString();
+                        jsonnode["objects"][i]["events"]["col"][m]["x"] = __0.objects[i].events[3][m].eventValues[0].ToString();
+                        bool flag31 = __0.objects[i].events[3][m].curveType.Name != DataManager.inst.AnimationList[0].Name;
+                        bool flag32 = flag31;
+                        if (flag32)
+                        {
+                            jsonnode["objects"][i]["events"]["col"][m]["ct"] = __0.objects[i].events[3][m].curveType.Name.ToString();
+                        }
+                        bool flag33 = __0.objects[i].events[3][m].random != 0;
+                        bool flag34 = flag33;
+                        if (flag34)
+                        {
+                            jsonnode["objects"][i]["events"]["col"][m]["r"] = __0.objects[i].events[3][m].random.ToString();
+                            jsonnode["objects"][i]["events"]["col"][m]["rx"] = __0.objects[i].events[3][m].eventRandomValues[0].ToString();
+                        }
+                    }
+                }
+            }
+            __result = jsonnode;
             return false;
         }
     }
