@@ -1,6 +1,8 @@
 # EditorManagement
 EditorManagement aims to make the Project Arrhythmia (Legacy) editor more powerful than ever.
 
+PLEASE NOTE: If you happen to have any of my older editor mods (CursorColor, NoAutokillSelectable, EventsPlus, RenderDepthUnlimited, OriginOffset, NewThemeSystems and PrefabAdditions), the mod will not run since there will be conflicts.
+
 Features this mod contains:
 
 -New layer system that allows you to go well beyond 5 editor layers.
