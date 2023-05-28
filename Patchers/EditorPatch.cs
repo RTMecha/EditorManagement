@@ -10,7 +10,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
 using SimpleJSON;
-
+using DG.Tweening;
 using HarmonyLib;
 
 using EditorManagement.Functions;
@@ -196,6 +196,33 @@ namespace EditorManagement.Patchers
 				GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name").GetComponent<InputField>().characterLimit = 0;
 
 				Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").GetComponent<HideDropdownOptions>());
+
+				var exitToArcade = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu"));
+				exitToArcade.name = "Quit to Arcade";
+				exitToArcade.transform.localScale = Vector3.one;
+				exitToArcade.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown").transform);
+				exitToArcade.transform.SetSiblingIndex(7);
+				exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Quit to Arcade";
+
+				var ex = exitToArcade.GetComponent<Button>();
+				ex.onClick.m_Calls.m_ExecutingCalls.Clear();
+				ex.onClick.m_Calls.m_PersistentCalls.Clear();
+				ex.onClick.m_PersistentCalls.m_Calls.Clear();
+				ex.onClick.RemoveAllListeners();
+				ex.onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RTEditor.RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+					{
+						DOTween.Clear();
+						DataManager.inst.gameData = null;
+						DataManager.inst.gameData = new DataManager.GameData();
+						SceneManager.inst.LoadScene("Input Select");
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
+				});
 
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Join Discord/Text").GetComponent<Text>().text = "Modder's Discord";
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Watch Tutorials/Text").GetComponent<Text>().text = "Watch PA History";
@@ -981,6 +1008,7 @@ namespace EditorManagement.Patchers
             }
 
 			RTEditor.SearchObjectsCreator();
+			RTEditor.WarningPopupCreator();
 			RTEditor.inst.StartCoroutine(RTEditor.SetupTooltips());
 		}
 
@@ -1900,5 +1928,47 @@ namespace EditorManagement.Patchers
         {
 			EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(true);
 		}
+
+		[HarmonyPatch("QuitToMenu")]
+		[HarmonyPrefix]
+		private static bool QuitToMenuPrefix(EditorManager __instance)
+        {
+			if (RTEditor.inst.allowQuit)
+            {
+				return true;
+            }
+			EditorManager.inst.ShowDialog("Warning Popup");
+			RTEditor.RefreshWarningPopup("Are you sure you want to quit to main menu?", delegate ()
+			{
+				RTEditor.inst.allowQuit = true;
+				__instance.QuitToMenu();
+			}, delegate ()
+			{
+				EditorManager.inst.HideDialog("Warning Popup");
+			});
+
+			return false;
+        }
+
+		[HarmonyPatch("QuitGame")]
+		[HarmonyPrefix]
+		private static bool QuitGamePrefix(EditorManager __instance)
+        {
+			if (RTEditor.inst.allowQuit)
+            {
+				return true;
+            }
+			EditorManager.inst.ShowDialog("Warning Popup");
+			RTEditor.RefreshWarningPopup("Are you sure you want to quit the game entirely?", delegate ()
+			{
+				RTEditor.inst.allowQuit = true;
+				__instance.QuitGame();
+			}, delegate ()
+			{
+				EditorManager.inst.HideDialog("Warning Popup");
+			});
+
+			return false;
+        }
 	}
 }

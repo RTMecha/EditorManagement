@@ -40,8 +40,7 @@ namespace EditorManagement
 		//Create editor stuff for Object Modifiers.
 		//Add rotate mode to ObjectManager.Update().
 		//Mirror Object mode (Any object you create can be duplicated to be an exact mirror).
-		//Delete level function (Warn people first with the next feature)
-		//Warning Popup (This popup will show up when you try exiting the game / quitting to main menu and will warn you if you have not saved any changes but you can turn this off via the config settings. It also can be used for warning users about deleting a level, but cannot be disabled).
+		//Add a config option for updating objects whilst modifying a value in the Object Editor window.
 
 		//Update list
 		//Done a ton of bug fixing and code optimization.
@@ -55,6 +54,11 @@ namespace EditorManagement
 		//Pasting objects now properly offset from the current audio time.
 		//Fixed an issue where letting the audio play whilst pasting a bunch of objects would offset the start time of each object constantly to the current audio time, rather than a set audio time from when you first pasted.
 		//Drag selecting a group of objects, pasting objects and deleting objects are now faster.
+		//Added a delete level function to the Open Level Popup. When the delete button is clicked, it will bring up a warning asking if you want to delete the level or not.
+		//Made a new Warning Popup window that shows whenever you're trying to quit to menu / quit game, delete a prefab, delete a theme or delete a level like the above feature.
+		//Fixed a bug where clicking on Create Backgrounds would create 1 extra background.
+		//Added a "Delete All Markers" button to the marker list. This does the same thing as the Delete All Backgrounds button (plus now both bring up the Warning Popup).
+		//Themes will no longer reload when a level is loaded due to them being loaded on editor start. If you need to reload the themes, you can click on the refresh button.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -88,6 +92,9 @@ namespace EditorManagement
 		public static bool createInternal = true;
 
 		public static bool tester = true;
+
+		public static List<SaveManager.ArcadeLevel> arcadeQueue = new List<SaveManager.ArcadeLevel>();
+		public static int current;
 
 		private void Awake()
 		{
@@ -538,6 +545,14 @@ namespace EditorManagement
 			}
 		}
 
+		private void Update()
+        {
+			if (GameManager.inst != null && Input.GetKeyDown(KeyCode.Keypad5))
+            {
+				GameManager.inst.UpdateTimeline();
+            }
+        }
+
 		public static EditorPlugin inst;
 
 		//Code written by Enchart
@@ -558,6 +573,27 @@ namespace EditorManagement
 			var field = __instance.GetType().GetField("depth", BindingFlags.NonPublic | BindingFlags.Instance);
 			field.SetValue(__instance, value);
 			return false;
+		}
+
+		[HarmonyPatch(typeof(AudioManager), "PlaySound", typeof(AudioClip))]
+		public static bool AudioPrefix(AudioManager __instance, AudioClip __0)
+		{
+			if (EditorManager.inst == null && GameManager.inst == null)
+			{
+				if (__0 != null)
+				{
+					AudioSource audioSource = GameObject.Find("Main Camera").AddComponent<AudioSource>();
+					audioSource.clip = __0;
+					audioSource.playOnAwake = true;
+					audioSource.loop = false;
+					audioSource.volume = __instance.sfxVol;
+					audioSource.Play();
+					__instance.StartCoroutine(__instance.DestroyWithDelay(audioSource, __0.length));
+					return false;
+				}
+				return false;
+			}
+			return true;
 		}
 
 		private static void UpdateEditorManagementConfigs(object sender, EventArgs e)
@@ -1014,44 +1050,47 @@ namespace EditorManagement
 		[HarmonyPostfix]
 		private static void GameUpdatePatch()
         {
-			if (EditorManager.inst == null)
+			if (EditorManager.inst == null && tracker != null)
             {
 				Destroy(tracker);
             }
 
-			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+			if (EditorManager.inst != null)
 			{
-				if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
+				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 				{
-					ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-
-					if (EditorManager.inst != null && EditorManager.inst.isEditing == true && gameObjectRef.mat && gameObjectRef.obj.GetComponentInChildren<RTObject>() && gameObjectRef.obj.GetComponentInChildren<RTObject>().selected == true && ConfigEntries.HighlightObjects.Value == true)
+					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
 					{
-						if (Input.GetKey(KeyCode.LeftShift))
+						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+
+						if (EditorManager.inst.isEditing == true && gameObjectRef.mat && gameObjectRef.obj.GetComponentInChildren<RTObject>() && gameObjectRef.obj.GetComponentInChildren<RTObject>().selected == true && ConfigEntries.HighlightObjects.Value == true)
 						{
-							Color colorHover = new Color(ConfigEntries.HighlightDoubleColor.Value.r, ConfigEntries.HighlightDoubleColor.Value.g, ConfigEntries.HighlightDoubleColor.Value.b);
-
-							if (gameObjectRef.mat.color.r > 0.9f && gameObjectRef.mat.color.g > 0.9f && gameObjectRef.mat.color.b > 0.9f)
+							if (Input.GetKey(KeyCode.LeftShift))
 							{
-								colorHover = new Color(-ConfigEntries.HighlightDoubleColor.Value.r, -ConfigEntries.HighlightDoubleColor.Value.g, -ConfigEntries.HighlightDoubleColor.Value.b);
+								Color colorHover = new Color(ConfigEntries.HighlightDoubleColor.Value.r, ConfigEntries.HighlightDoubleColor.Value.g, ConfigEntries.HighlightDoubleColor.Value.b);
+
+								if (gameObjectRef.mat.color.r > 0.9f && gameObjectRef.mat.color.g > 0.9f && gameObjectRef.mat.color.b > 0.9f)
+								{
+									colorHover = new Color(-ConfigEntries.HighlightDoubleColor.Value.r, -ConfigEntries.HighlightDoubleColor.Value.g, -ConfigEntries.HighlightDoubleColor.Value.b);
+								}
+
+								gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
 							}
-
-							gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
-						}
-						else
-						{
-							Color colorHover = new Color(ConfigEntries.HighlightColor.Value.r, ConfigEntries.HighlightColor.Value.g, ConfigEntries.HighlightColor.Value.b);
-
-							if (gameObjectRef.mat.color.r > 0.95f && gameObjectRef.mat.color.g > 0.95f && gameObjectRef.mat.color.b > 0.95f)
+							else
 							{
-								colorHover = new Color(-ConfigEntries.HighlightColor.Value.r, -ConfigEntries.HighlightColor.Value.g, -ConfigEntries.HighlightColor.Value.b);
-							}
+								Color colorHover = new Color(ConfigEntries.HighlightColor.Value.r, ConfigEntries.HighlightColor.Value.g, ConfigEntries.HighlightColor.Value.b);
 
-							gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+								if (gameObjectRef.mat.color.r > 0.95f && gameObjectRef.mat.color.g > 0.95f && gameObjectRef.mat.color.b > 0.95f)
+								{
+									colorHover = new Color(-ConfigEntries.HighlightColor.Value.r, -ConfigEntries.HighlightColor.Value.g, -ConfigEntries.HighlightColor.Value.b);
+								}
+
+								gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+							}
 						}
 					}
 				}
-            }
+			}
         }
 
 		public static void CreateMultiObjectEditor()
@@ -1948,7 +1987,7 @@ namespace EditorManagement
 		private static bool ParseGameObjectPrefix(ref DataManager.GameData.BeatmapObject __result, JSONNode __0)
         {
 			DataManager.GameData.BeatmapObject beatmapObject = null;
-			RTEditor.inst.StartCoroutine(RTFile.ParseObject(__0, delegate (DataManager.GameData.BeatmapObject _beatmapObject)
+			inst.StartCoroutine(RTFile.ParseObject(__0, delegate (DataManager.GameData.BeatmapObject _beatmapObject)
 			{
 				beatmapObject = _beatmapObject;
 			}));
@@ -2164,6 +2203,7 @@ namespace EditorManagement
 			}
 
 			Transform transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask").Find("content");
+			var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
 			foreach (object obj in transform)
 			{
 				Destroy(((Transform)obj).gameObject);
@@ -2275,6 +2315,35 @@ namespace EditorManagement
 						iconRT.sizeDelta = ConfigEntries.FBIconSca.Value;
 
 						iconImage.sprite = metadataWrapper.albumArt;
+
+                        //Close
+                        {
+							var delete = Instantiate(close.gameObject);
+							var deleteTF = delete.transform;
+							deleteTF.SetParent(gameObject.transform);
+							deleteTF.localScale = Vector3.one;
+
+							string levelName = metadataWrapper.folder;
+							var deleteButton = delete.GetComponent<Button>();
+							deleteButton.onClick.m_Calls.m_ExecutingCalls.Clear();
+							deleteButton.onClick.m_Calls.m_PersistentCalls.Clear();
+							deleteButton.onClick.m_PersistentCalls.m_Calls.Clear();
+							deleteButton.onClick.RemoveAllListeners();
+							deleteButton.onClick.AddListener(delegate ()
+							{
+								EditorManager.inst.ShowDialog("Warning Popup");
+								RTEditor.RefreshWarningPopup("Are you sure you want to delete this level? (It will be moved to a recycling folder)", delegate ()
+								{
+									RTEditor.DeleteLevelFunction(levelName);
+									EditorManager.inst.DisplayNotification("Deleted level!", 2f, EditorManager.NotificationType.Success);
+									EditorManager.inst.GetLevelList();
+									EditorManager.inst.HideDialog("Warning Popup");
+								}, delegate ()
+								{
+									EditorManager.inst.HideDialog("Warning Popup");
+								});
+							});
+                        }
 					}
 				}
 			}
@@ -2727,10 +2796,28 @@ namespace EditorManagement
 			destroyAll.transform.GetChild(0).localScale = Vector3.one;
 
 			var destroyAllButtons = destroyAll.GetComponent<Button>();
+			destroyAllButtons.onClick.m_Calls.m_ExecutingCalls.Clear();
+			destroyAllButtons.onClick.m_Calls.m_PersistentCalls.Clear();
+			destroyAllButtons.onClick.m_PersistentCalls.m_Calls.Clear();
 			destroyAllButtons.onClick.RemoveAllListeners();
 			destroyAllButtons.onClick.AddListener(delegate ()
 			{
-				RTEditor.DeleteAllBackgrounds();
+				if (DataManager.inst.gameData.backgroundObjects.Count > 1)
+				{
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RTEditor.RefreshWarningPopup("Are you sure you want to delete all backgrounds?", delegate ()
+					{
+						RTEditor.DeleteAllBackgrounds();
+						EditorManager.inst.HideDialog("Warning Popup");
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
+				}
+				else
+                {
+					EditorManager.inst.DisplayNotification("Cannot delete only background object.", 2f, EditorManager.NotificationType.Warning);
+                }
 			});
 
 			var destroyAllTip = destroyAll.GetComponent<HoverTooltip>();
@@ -2771,6 +2858,9 @@ namespace EditorManagement
 			createAll.transform.GetChild(0).localScale = Vector3.one;
 
 			var buttonCreate = createAll.GetComponent<Button>();
+			buttonCreate.onClick.m_Calls.m_ExecutingCalls.Clear();
+			buttonCreate.onClick.m_Calls.m_PersistentCalls.Clear();
+			buttonCreate.onClick.m_PersistentCalls.m_Calls.Clear();
 			buttonCreate.onClick.RemoveAllListeners();
 			buttonCreate.onClick.AddListener(delegate ()
 			{

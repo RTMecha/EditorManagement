@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection.Emit;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -86,10 +87,12 @@ namespace EditorManagement.Patchers
         }
 
 		[HarmonyPatch("LoadThemes")]
-		[HarmonyPostfix]
-		private static void LoadThemesPrefix()
+		[HarmonyPrefix]
+		private static bool LoadThemesPrefix()
         {
+			Debug.LogFormat("{0}Started Loading themes...", EditorPlugin.className);
 			RTEditor.inst.StartCoroutine(RTEditor.LoadThemes());
+			return false;
         }
 	}
 }

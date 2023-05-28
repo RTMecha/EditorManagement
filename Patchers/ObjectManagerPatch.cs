@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using LSFunctions;
+using DG.Tweening;
 
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
@@ -396,5 +397,39 @@ namespace EditorManagement.Patchers
 				tracker.GetPosition();
 			}
 		}
-	}
+
+		[HarmonyPatch("PurgeObjects")]
+		[HarmonyPrefix]
+		private static bool PurgeObjects(ObjectManager __instance)
+		{
+			foreach (var keyValuePair in __instance.beatmapGameObjects)
+			{
+				keyValuePair.Value.sequence.all.Kill(false);
+				keyValuePair.Value.sequence.col.Kill(false);
+			}
+			__instance.beatmapGameObjects = new Dictionary<string, ObjectManager.GameObjectRef>();
+			DataManager.inst.gameData.beatmapObjects.Clear();
+			if (EditorManager.inst == null)
+				DataManager.inst.CustomBeatmapThemes.Clear();
+
+			if (EditorManager.inst != null)
+			{
+				foreach (KeyValuePair<string, GameObject> keyValuePair2 in ObjEditor.inst.beatmapObjects)
+				{
+					Destroy(keyValuePair2.Value);
+				}
+				ObjEditor.inst.beatmapObjects = new Dictionary<string, GameObject>();
+				foreach (KeyValuePair<string, GameObject> keyValuePair3 in ObjEditor.inst.prefabObjects)
+				{
+					Destroy(keyValuePair3.Value);
+				}
+				ObjEditor.inst.prefabObjects = new Dictionary<string, GameObject>();
+            }
+            foreach (object obj in __instance.objectParent.transform)
+            {
+                Destroy(((Transform)obj).gameObject);
+            }
+			return false;
+        }
+    }
 }

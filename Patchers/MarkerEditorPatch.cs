@@ -88,49 +88,6 @@ namespace EditorManagement.Patchers
 
 			if (EditorManager.inst.GetDialog("Marker Editor").Dialog.gameObject.activeSelf == true)
 			{
-				GameObject markerList = EditorManager.inst.GetDialog("Marker Editor").Dialog.Find("data/right/markers/list").gameObject;
-				GameObject eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
-				Color bcol = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				if (!markerList.transform.Find("sort markers"))
-				{
-					GameObject sortMarkers = Instantiate(eventButton);
-					sortMarkers.transform.SetParent(markerList.transform);
-					sortMarkers.transform.SetAsFirstSibling();
-					sortMarkers.name = "sort markers";
-
-					sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Sort Markers";
-					sortMarkers.GetComponent<Image>().color = bcol;
-
-					sortMarkers.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
-					sortMarkers.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
-					sortMarkers.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
-					sortMarkers.GetComponent<Button>().onClick.RemoveAllListeners();
-					sortMarkers.GetComponent<Button>().onClick.AddListener(delegate ()
-					{
-						List<DataManager.GameData.BeatmapData.Marker> result = new List<DataManager.GameData.BeatmapData.Marker>();
-						result = (from x in DataManager.inst.gameData.beatmapData.markers
-								  orderby x.time ascending
-								  select x).ToList<DataManager.GameData.BeatmapData.Marker>();
-
-						DataManager.inst.gameData.beatmapData.markers = result;
-						MarkerEditor.inst.UpdateMarkerList();
-					});
-
-					HoverTooltip markerHoverTooltip = sortMarkers.AddComponent<HoverTooltip>();
-					HoverTooltip.Tooltip markerTip = new HoverTooltip.Tooltip();
-
-					markerTip.desc = "Sort markers by time.";
-					markerTip.hint = "Clicking this will sort and update all markers in the list by song time.<br><#FF0000><b>WARNING!</color></b><br>This is not reversible. Only click this if you really want to sort your markers. (This will only affect the internal marker list, you don't have to worry about the markers in the timeline changing.)";
-
-					markerHoverTooltip.tooltipLangauges.Add(markerTip);
-				}
-
-				if (markerList.transform.GetChild(0).name != "sort markers")
-				{
-					markerList.transform.Find("sort markers").SetAsFirstSibling();
-				}
-
 				foreach (var marker in DataManager.inst.gameData.beatmapData.markers)
 				{
 					var regex = new System.Text.RegularExpressions.Regex(@"hideObjects\((.*?)\)");
@@ -213,6 +170,133 @@ namespace EditorManagement.Patchers
 				markerObject.GetComponent<Image>().color = markerColor;
 				markerObject.GetComponentInChildren<Text>().text = marker.name;
 				markerObject.SetActive(true);
+			}
+			return false;
+		}
+
+		[HarmonyPatch("UpdateMarkerList")]
+		[HarmonyPrefix]
+		private static bool UpdateMarkerList(MarkerEditor __instance)
+		{
+			Transform parent = __instance.right.Find("markers/list");
+			LSHelpers.DeleteChildren(parent, false);
+
+			GameObject eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+
+			//Sort Markers
+            {
+				GameObject sortMarkers = Instantiate(eventButton);
+				sortMarkers.transform.SetParent(parent);
+				sortMarkers.name = "sort markers";
+
+				sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Sort Markers";
+				sortMarkers.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+				var sortButton = sortMarkers.GetComponent<Button>();
+				sortButton.onClick.m_Calls.m_ExecutingCalls.Clear();
+				sortButton.onClick.m_Calls.m_PersistentCalls.Clear();
+				sortButton.onClick.m_PersistentCalls.m_Calls.Clear();
+				sortButton.onClick.RemoveAllListeners();
+				sortButton.onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RTEditor.RefreshWarningPopup("Are you sure you want to sort the markers? (This is irreversible!)", delegate ()
+					{
+						var result = new List<DataManager.GameData.BeatmapData.Marker>();
+						result = (from x in DataManager.inst.gameData.beatmapData.markers
+								  orderby x.time ascending
+								  select x).ToList();
+
+						DataManager.inst.gameData.beatmapData.markers = result;
+						MarkerEditor.inst.UpdateMarkerList();
+						EditorManager.inst.HideDialog("Warning Popup");
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
+				});
+
+				if (sortMarkers.GetComponent<HoverUI>())
+                {
+					Destroy(sortMarkers.GetComponent<HoverUI>());
+                }
+				if (sortMarkers.GetComponent<HoverTooltip>())
+				{
+					var tt = sortMarkers.GetComponent<HoverTooltip>();
+					tt.tooltipLangauges.Clear();
+					tt.tooltipLangauges.Add(Triggers.NewTooltip("Sort markers by time.", "Clicking this will sort and update all markers in the list by song time.", new List<string>()));
+				}
+			}
+
+			//Delete Markers
+            {
+				GameObject sortMarkers = Instantiate(eventButton);
+				sortMarkers.transform.SetParent(parent);
+				sortMarkers.name = "delete markers";
+
+				sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Delete Markers";
+				sortMarkers.GetComponent<Image>().color = new Color(1f, 0.131f, 0.231f, 1f);
+
+				var sortButton = sortMarkers.GetComponent<Button>();
+				sortButton.onClick.m_Calls.m_ExecutingCalls.Clear();
+				sortButton.onClick.m_Calls.m_PersistentCalls.Clear();
+				sortButton.onClick.m_PersistentCalls.m_Calls.Clear();
+				sortButton.onClick.RemoveAllListeners();
+				sortButton.onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RTEditor.RefreshWarningPopup("Are you sure you want to delete ALL markers? (This is irreversible!)", delegate ()
+					{
+						EditorManager.inst.DisplayNotification("Deleted " + (DataManager.inst.gameData.beatmapData.markers.Count - 1).ToString() + " markers!", 2f, EditorManager.NotificationType.Success);
+						DataManager.inst.gameData.beatmapData.markers.Clear();
+						MarkerEditor.inst.UpdateMarkerList();
+						MarkerEditor.inst.CreateMarkers();
+						EditorManager.inst.HideDialog("Warning Popup");
+						EditorManager.inst.HideDialog("Marker Editor");
+						CheckpointEditor.inst.SetCurrentCheckpoint(0);
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
+				});
+
+				if (sortMarkers.GetComponent<HoverUI>())
+				{
+					Destroy(sortMarkers.GetComponent<HoverUI>());
+				}
+				if (sortMarkers.GetComponent<HoverTooltip>())
+				{
+					var tt = sortMarkers.GetComponent<HoverTooltip>();
+					tt.tooltipLangauges.Clear();
+					tt.tooltipLangauges.Add(Triggers.NewTooltip("Delete all markers.", "Clicking this will delete every marker in the level.", new List<string>()));
+				}
+			}
+
+			int num = 0;
+			foreach (DataManager.GameData.BeatmapData.Marker marker in DataManager.inst.gameData.beatmapData.markers)
+			{
+				if (marker.name.ToLower().Contains(__instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(__instance.sortedName.ToLower()) || string.IsNullOrEmpty(__instance.sortedName))
+				{
+					GameObject gameObject = Instantiate(__instance.markerButtonPrefab, Vector3.zero, Quaternion.identity);
+					gameObject.name = marker.name + "_bg";
+					gameObject.transform.SetParent(parent);
+					gameObject.transform.localScale = Vector3.one;
+					Text component = gameObject.transform.Find("name").GetComponent<Text>();
+					Text component2 = gameObject.transform.Find("pos").GetComponent<Text>();
+					Graphic component3 = gameObject.transform.Find("color").GetComponent<Image>();
+					component.text = marker.name;
+					component2.text = string.Format("{0:0}:{1:00}.{2:000}", Mathf.Floor(marker.time / 60f), Mathf.Floor(marker.time % 60f), Mathf.Floor(marker.time * 1000f % 1000f));
+					component3.color = __instance.markerColors[marker.color];
+					int markerIndexTmp = num;
+					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						__instance.SetCurrentMarker(markerIndexTmp, true);
+					});
+
+					Color markerColor = MarkerEditor.inst.markerColors[Mathf.Clamp(marker.color, 0, MarkerEditor.inst.markerColors.Count() - 1)];
+					Triggers.AddTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
+				}
+				num++;
 			}
 			return false;
 		}

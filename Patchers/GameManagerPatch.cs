@@ -1,15 +1,18 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 using UnityEngine;
+using UnityEngine.UI;
 
 using HarmonyLib;
 
 using EditorManagement.Functions;
 using LSFunctions;
+using DG.Tweening;
 
 namespace EditorManagement.Patchers
 {
@@ -17,10 +20,10 @@ namespace EditorManagement.Patchers
     public class GameManagerPatch : MonoBehaviour
     {
         [HarmonyPatch("Start")]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         private static void SetCameraClipPlanes()
         {
-            Camera camera = GameObject.Find("Main Camera").GetComponent<Camera>();
+			Camera camera = GameObject.Find("Main Camera").GetComponent<Camera>();
             camera.farClipPlane = 100000;
             camera.nearClipPlane = -100000;
         }

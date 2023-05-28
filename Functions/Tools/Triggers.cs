@@ -14,6 +14,8 @@ using LSFunctions;
 
 using DG.Tweening;
 
+using HarmonyLib;
+
 namespace EditorManagement.Functions.Tools
 {
     public class Triggers : MonoBehaviour
@@ -1049,6 +1051,24 @@ namespace EditorManagement.Functions.Tools
 					EditorManager.inst.DisplayNotification("Can't change time of first Event", 2f, EditorManager.NotificationType.Warning);
 			});
 			return startDragTrigger;
+		}
+
+		public static void AddEditorDialog(string _name, GameObject _go)
+        {
+            var editorPropertiesDialog = new EditorManager.EditorDialog
+            {
+                Dialog = _go.transform,
+                Name = _name,
+                Type = EditorManager.EditorDialog.DialogType.Popup
+            };
+
+            EditorManager.inst.EditorDialogs.Add(editorPropertiesDialog);
+
+			var editorDialogsDictionary = AccessTools.Field(typeof(EditorManager), "EditorDialogsDictionary");
+
+			var editorDialogsDictionaryInst = AccessTools.Field(typeof(EditorManager), "EditorDialogsDictionary").GetValue(EditorManager.inst);
+
+			editorDialogsDictionary.GetValue(EditorManager.inst).GetType().GetMethod("Add").Invoke(editorDialogsDictionaryInst, new object[] { _name, editorPropertiesDialog });
 		}
 	}
 }

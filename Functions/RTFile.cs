@@ -19,10 +19,13 @@ namespace EditorManagement.Functions
 {
 	public class RTFile : MonoBehaviour
 	{
-		public static IEnumerator ParseBeatmap(string _json)
+		public static IEnumerator ParseBeatmap(string _json, bool editor = false)
 		{
 			JSONNode jsonnode = JSON.Parse(_json);
-			DataManager.inst.gameData.ParseThemeData(jsonnode["themes"]);
+			if (!editor)
+			{
+				DataManager.inst.gameData.ParseThemeData(jsonnode["themes"]);
+			}
 			DataManager.inst.gameData.ParseEditorData(jsonnode["ed"]);
 			DataManager.inst.gameData.ParseLevelData(jsonnode["level_data"]);
 			DataManager.inst.gameData.ParseCheckpointData(jsonnode["checkpoints"]);
@@ -36,6 +39,7 @@ namespace EditorManagement.Functions
 
 		public static IEnumerator ParseThemeData(JSONNode _themeData)
 		{
+			UnityEngine.Debug.LogFormat("{0}Parse Theme Data", EditorPlugin.className);
 			float delay = 0f;
 			DataManager.inst.CustomBeatmapThemes.Clear();
 			DataManager.inst.BeatmapThemeIDToIndex.Clear();
@@ -1061,7 +1065,7 @@ namespace EditorManagement.Functions
 			yield break;
 		}
 
-		public static ObjectManager updateObjects(DataManager.GameData.BeatmapObject _beatmapObject)
+		public static ObjectManager updateObjects(DataManager.GameData.BeatmapObject _beatmapObject, bool setInactive = true)
 		{
 			if (ObjectManager.inst != null)
 			{
@@ -1071,18 +1075,20 @@ namespace EditorManagement.Functions
 					if (ObjectManager.inst.beatmapGameObjects.ContainsKey(id))
 					{
 						Destroy(ObjectManager.inst.beatmapGameObjects[id].obj);
-						ObjectManager.inst.beatmapGameObjects[id].sequence.all.Kill(false);
-						ObjectManager.inst.beatmapGameObjects[id].sequence.col.Kill(false);
+						ObjectManager.inst.beatmapGameObjects[id].sequence.all.Kill();
+						ObjectManager.inst.beatmapGameObjects[id].sequence.col.Kill();
 						ObjectManager.inst.beatmapGameObjects.Remove(id);
 					}
 					if (!_beatmapObject.fromPrefab)
 					{
-						_beatmapObject.active = false;
+						if (setInactive)
+							_beatmapObject.active = false;
 						for (int j = 0; j < _beatmapObject.events.Count; j++)
 						{
 							for (int k = 0; k < _beatmapObject.events[j].Count; k++)
 							{
-								_beatmapObject.events[j][k].active = false;
+								if (setInactive)
+									_beatmapObject.events[j][k].active = false;
 							}
 						}
 					}
@@ -1093,10 +1099,97 @@ namespace EditorManagement.Functions
 			return null;
 		}
 
+		public static IEnumerator IupdateObjects(DataManager.GameData.BeatmapObject _beatmapObject, bool _setInactive = true)
+		{
+			if (!_beatmapObject.fromPrefab)
+			{
+				var id = _beatmapObject.id;
+				if (ObjectManager.inst.beatmapGameObjects.ContainsKey(id))
+				{
+					var gameObjectRef = ObjectManager.inst.beatmapGameObjects[id];
+					Destroy(gameObjectRef.obj);
+					gameObjectRef.sequence.all.Kill();
+					gameObjectRef.sequence.col.Kill();
+					ObjectManager.inst.beatmapGameObjects.Remove(id);
+				}
+				if (_setInactive)
+					_beatmapObject.active = false;
+				for (int i = 0; i < _beatmapObject.events.Count; i++)
+				{
+					for (int j = 0; j < _beatmapObject.events[i].Count; j++)
+                    {
+						if (_setInactive)
+							_beatmapObject.events[i][j].active = false;
+                    }
+				}
+
+				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+				{
+					if (beatmapObject.prefabInstanceID == _beatmapObject.id && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
+					{
+						Destroy(ObjectManager.inst.beatmapGameObjects[beatmapObject.id].obj);
+						ObjectManager.inst.beatmapGameObjects[beatmapObject.id].sequence.all.Kill(false);
+						ObjectManager.inst.beatmapGameObjects[beatmapObject.id].sequence.col.Kill(false);
+						ObjectManager.inst.beatmapGameObjects.Remove(beatmapObject.id);
+					}
+				}
+				for (int i = 0; i < DataManager.inst.gameData.prefabObjects.Count; i++)
+				{
+					if (DataManager.inst.gameData.prefabObjects[i].ID == _beatmapObject.id)
+					{
+						ObjectManager.inst.AddPrefabToLevel(DataManager.inst.gameData.prefabObjects[i]);
+					}
+				}
+			}
+			yield break;
+		}
+
+		public static IEnumerator IupdateObjects()
+		{
+			var objectManager = ObjectManager.inst;
+			var dataManager = DataManager.inst;
+			foreach (var beatmapObject in dataManager.gameData.beatmapObjects)
+			{
+				if (objectManager.beatmapGameObjects.ContainsKey(beatmapObject.id))
+				{
+					objectManager.beatmapGameObjects[beatmapObject.id].sequence.all.Kill(false);
+					objectManager.beatmapGameObjects[beatmapObject.id].sequence.col.Kill(false);
+					Destroy(objectManager.beatmapGameObjects[beatmapObject.id].obj);
+				}
+			}
+			objectManager.beatmapGameObjects = new Dictionary<string, ObjectManager.GameObjectRef>();
+			dataManager.gameData.beatmapObjects.RemoveAll((DataManager.GameData.BeatmapObject x) => x.fromPrefab);
+			for (int i = 0; i < dataManager.gameData.prefabObjects.Count; i++)
+			{
+				objectManager.AddPrefabToLevel(dataManager.gameData.prefabObjects[i]);
+			}
+			for (int j = 0; j < dataManager.gameData.beatmapObjects.Count; j++)
+			{
+				if (!dataManager.gameData.beatmapObjects[j].fromPrefab)
+				{
+					dataManager.gameData.beatmapObjects[j].active = false;
+					for (int k = 0; k < dataManager.gameData.beatmapObjects[j].events.Count; k++)
+					{
+						for (int l = 0; l < dataManager.gameData.beatmapObjects[j].events[k].Count; l++)
+						{
+							dataManager.gameData.beatmapObjects[j].events[k][l].active = false;
+						}
+					}
+				}
+			}
+			objectManager.ReGenSeed();
+			yield break;
+		}
+
 		public static string GetApplicationDirectory()
 		{
 			return Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/";
 		}
+
+		public static string GetPersistentApplicationDirectory()
+        {
+			return Application.persistentDataPath;
+        }
 
 		public static IEnumerator GetFile(string _filepath)
         {

@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 using UnityEngine.Networking;
 
 using HarmonyLib;
@@ -40,6 +41,7 @@ namespace EditorManagement.Functions
 		public static string propertiesSearch;
 
 		public static bool hoveringOIF;
+		public bool allowQuit = false;
 
 		public static bool multiObjectSearch = false;
 		public static ObjectData objectData = ObjectData.ST;
@@ -3296,7 +3298,8 @@ namespace EditorManagement.Functions
 			fileInfo.text = "Loading Level Music for [" + _levelName + "]\n\nIf this is taking more than a minute or two check if the .ogg file is corrupt.";
 
 			Debug.LogFormat("{0}Loading audio for {1}...", EditorPlugin.className, _levelName);
-			if (RTFile.FileExists(text + "level.ogg") && !RTFile.FileExists(text + "level.wav"))
+			bool loadedAudio = false;
+			if (RTFile.FileExists(text + "level.ogg") && !RTFile.FileExists(text + "level.wav") && !loadedAudio)
 			{
 				yield return inst.StartCoroutine(FileManager.inst.LoadMusicFile(text + "level.ogg", delegate (AudioClip _song)
 				{
@@ -3306,9 +3309,10 @@ namespace EditorManagement.Functions
 						song = _song;
 					}
 				}));
+				loadedAudio = true;
 			}
 
-			if (!RTFile.FileExists(text + "level.ogg") && RTFile.FileExists(text + "level.wav"))
+			if (!RTFile.FileExists(text + "level.ogg") && RTFile.FileExists(text + "level.wav") && !loadedAudio)
 			{
 				yield return inst.StartCoroutine(FileManager.inst.LoadMusicFile(text + "level.wav", delegate (AudioClip _song)
 				{
@@ -3318,6 +3322,7 @@ namespace EditorManagement.Functions
 						song = _song;
 					}
 				}));
+				loadedAudio = true;
 			}
 
 			Debug.LogFormat("{0}Parsing level data for {1}...", EditorPlugin.className, _levelName);
@@ -3328,18 +3333,18 @@ namespace EditorManagement.Functions
 				dataManager.ParseMetadata(rawMetadataJSON, true);
 				rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
 				dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
-				dataManager.gameData.ParseBeatmap(rawJSON);
+				inst.StartCoroutine(RTFile.ParseBeatmap(rawJSON, true));
 			}
 
-			fileInfo.text = "Loading Themes for [" + _levelName + "]";
-			Debug.LogFormat("{0}Loading themes for {1}...", EditorPlugin.className, _levelName);
-			yield return inst.StartCoroutine(LoadThemes());
-			float delayTheme = 0f;
-			while (themesLoading)
-            {
-				yield return new WaitForSeconds(delayTheme);
-				delayTheme += 0.0001f;
-            }
+			//fileInfo.text = "Loading Themes for [" + _levelName + "]";
+			//Debug.LogFormat("{0}Loading themes for {1}...", EditorPlugin.className, _levelName);
+			//yield return inst.StartCoroutine(LoadThemes());
+			//float delayTheme = 0f;
+			//while (themesLoading)
+			//{
+			//	yield return new WaitForSeconds(delayTheme);
+			//	delayTheme += 0.0001f;
+			//}
 
 			Debug.LogFormat("{0}Music is null: ", EditorPlugin.className, song == null);
 
@@ -3702,7 +3707,6 @@ namespace EditorManagement.Functions
 					foreach (var keyframe in mirrorObject.events[i])
 					{
 						keyframe.eventValues[0] = -keyframe.eventValues[0];
-						keyframe.eventValues[1] = -keyframe.eventValues[1];
 					}
 				}
 
@@ -4050,6 +4054,126 @@ namespace EditorManagement.Functions
 			}
 		}
 
+		public static void WarningPopupCreator()
+        {
+			var warningPopup = Instantiate(EditorManager.inst.GetDialog("Save As Popup").Dialog.gameObject);
+			var warningPopupTF = warningPopup.transform;
+			warningPopupTF.SetParent(EditorManager.inst.GetDialog("Save As Popup").Dialog.GetParent());
+			warningPopupTF.localScale = Vector3.one;
+			warningPopupTF.localPosition = Vector3.zero;
+			warningPopup.name = "Warning Popup";
+
+			var main = warningPopupTF.GetChild(0);
+
+			var spacer1 = new GameObject
+			{
+				name = "spacerL",
+				transform =
+				{
+					parent = main,
+					localScale = Vector3.one
+                }
+			};
+			var spacer1RT = spacer1.AddComponent<RectTransform>();
+			spacer1.AddComponent<LayoutElement>();
+			var horiz = spacer1.AddComponent<HorizontalLayoutGroup>();
+			horiz.spacing = 22f;
+
+			spacer1RT.sizeDelta = new Vector2(292f, 40f);
+
+			var submit1 = main.Find("submit");
+			submit1.SetParent(spacer1.transform);
+
+			var submit2 = Instantiate(submit1);
+			var submit2TF = submit2.transform;
+
+			submit2TF.SetParent(spacer1.transform);
+			submit2TF.localScale = Vector3.one;
+
+			submit1.name = "submit1";
+			submit2.name = "submit2";
+
+			submit1.GetComponent<Image>().color = new Color(1f, 0.2137f, 0.2745f, 1f);
+			submit2.GetComponent<Image>().color = new Color(0.302f, 0.7137f, 0.6745f, 1f);
+
+			var submit1Button = submit1.GetComponent<Button>();
+			var submit2Button = submit2.GetComponent<Button>();
+
+			submit1Button.onClick.m_Calls.m_ExecutingCalls.Clear();
+			submit1Button.onClick.m_Calls.m_PersistentCalls.Clear();
+			submit1Button.onClick.m_PersistentCalls.m_Calls.Clear();
+			submit1Button.onClick.RemoveAllListeners();
+
+			submit2Button.onClick.m_Calls.m_ExecutingCalls.Clear();
+			submit2Button.onClick.m_Calls.m_PersistentCalls.Clear();
+			submit2Button.onClick.m_PersistentCalls.m_Calls.Clear();
+			submit2Button.onClick.RemoveAllListeners();
+
+			Destroy(main.Find("level-name").gameObject);
+
+			var sizeFitter = main.GetComponent<ContentSizeFitter>();
+			sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+			sizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+
+			var mainRT = main.GetComponent<RectTransform>();
+			mainRT.sizeDelta = new Vector2(400f, 160f);
+
+			main.Find("Level Name").GetComponent<RectTransform>().sizeDelta = new Vector2(292f, 64f);
+
+			var close = main.Find("Panel/x").GetComponent<Button>();
+			close.onClick.m_Calls.m_ExecutingCalls.Clear();
+			close.onClick.m_Calls.m_PersistentCalls.Clear();
+			close.onClick.m_PersistentCalls.m_Calls.Clear();
+			close.onClick.RemoveAllListeners();
+			close.onClick.AddListener(delegate ()
+			{
+				EditorManager.inst.HideDialog("Warning Popup");
+			});
+
+			main.Find("Panel/Text").GetComponent<Text>().text = "Warning!";
+
+			Triggers.AddEditorDialog("Warning Popup", warningPopup);
+		}
+
+		public static void RefreshWarningPopup(string warning, UnityAction c1, UnityAction c2, string confirm = "Yes", string cancel = "No")
+        {
+			var warningPopup = EditorManager.inst.GetDialog("Warning Popup").Dialog.GetChild(0);
+
+			warningPopup.Find("Level Name").GetComponent<Text>().text = warning;
+
+			var submit1 = warningPopup.Find("spacerL/submit1");
+			var submit2 = warningPopup.Find("spacerL/submit2");
+
+			var submit1Button = submit1.GetComponent<Button>();
+			var submit2Button = submit2.GetComponent<Button>();
+
+			submit1.Find("text").GetComponent<Text>().text = confirm;
+			submit2.Find("text").GetComponent<Text>().text = cancel;
+
+			submit1Button.onClick.RemoveAllListeners();
+			submit2Button.onClick.RemoveAllListeners();
+
+			submit1Button.onClick.AddListener(c1);
+			submit2Button.onClick.AddListener(c2);
+		}
+
+		public static void DeleteLevelFunction(string _levelName)
+        {
+			if (!RTFile.DirectoryExists(RTFile.GetApplicationDirectory() + "recycling"))
+            {
+				Directory.CreateDirectory(RTFile.GetApplicationDirectory() + "recycling");
+            }
+			Directory.Move(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + _levelName, RTFile.GetApplicationDirectory() + "recycling/" + _levelName);
+
+			string[] directories = Directory.GetDirectories(RTFile.GetApplicationDirectory() + "recycling", "*", SearchOption.AllDirectories);
+			directories.ToList().Sort();
+			foreach (var directory in directories)
+            {
+				string[] filesDir = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
+				filesDir.ToList().Sort();
+            }
+		}
+
 		public static string searchterm = "";
 
 		public static void BringToObject()
@@ -4219,6 +4343,7 @@ namespace EditorManagement.Functions
 			}
 
 			BackgroundManager.inst.UpdateBackgrounds();
+			BackgroundEditor.inst.UpdateBackgroundList();
 		}
 
 		public static void DeleteAllBackgrounds()
@@ -4231,8 +4356,11 @@ namespace EditorManagement.Functions
 				DataManager.inst.gameData.backgroundObjects.RemoveAt(nooo);
 			}
 
+			BackgroundEditor.inst.SetCurrentBackground(0);
 			BackgroundManager.inst.UpdateBackgrounds();
 			BackgroundEditor.inst.UpdateBackgroundList();
+
+			EditorManager.inst.DisplayNotification("Deleted " + (num - 1).ToString() + " backgrounds!", 2f, EditorManager.NotificationType.Success);
 		}
 
 		public static IEnumerator InternalPrefabs(bool _toggle = false)
@@ -4382,7 +4510,15 @@ namespace EditorManagement.Functions
 				gameObject.transform.SetParent(PrefabEditorPatch.internalContent);
 				delete.onClick.AddListener(delegate ()
 				{
-					PrefabEditor.inst.DeleteInternalPrefab(_num);
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RefreshWarningPopup("Are you sure you want to delete this prefab? (This is permanent!)", delegate ()
+					{
+						PrefabEditor.inst.DeleteInternalPrefab(_num);
+						EditorManager.inst.HideDialog("Warning Popup");
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
 				});
 				addPrefabObject.onClick.AddListener(delegate ()
 				{
@@ -4416,7 +4552,15 @@ namespace EditorManagement.Functions
 				gameObject.transform.SetParent(PrefabEditorPatch.externalContent);
 				delete.onClick.AddListener(delegate ()
 				{
-					PrefabEditor.inst.DeleteExternalPrefab(_num);
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RefreshWarningPopup("Are you sure you want to delete this prefab? (This is permanent!)", delegate ()
+					{
+						PrefabEditor.inst.DeleteExternalPrefab(_num);
+						EditorManager.inst.HideDialog("Warning Popup");
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
 				});
 				addPrefabObject.onClick.AddListener(delegate ()
 				{
@@ -4537,14 +4681,22 @@ namespace EditorManagement.Functions
 						delete.interactable = (tmpVal >= DataManager.inst.BeatmapThemes.Count());
 						delete.onClick.AddListener(delegate ()
 						{
-							themeEditor.DeleteTheme(themeTmp);
-							eventEditor.previewTheme.id = null;
-							eventEditor.StartCoroutine(ThemeEditor.inst.LoadThemes());
-							Transform child = eventEditor.dialogRight.GetChild(eventEditor.currentEventType);
-							eventEditor.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
-							eventEditor.RenderThemePreview(child);
-							eventEditor.showTheme = false;
-							eventEditor.dialogLeft.Find("theme").gameObject.SetActive(false);
+							EditorManager.inst.ShowDialog("Warning Popup");
+							RefreshWarningPopup("Are you sure you want to delete this theme?", delegate ()
+							{
+								themeEditor.DeleteTheme(themeTmp);
+								eventEditor.previewTheme.id = null;
+								eventEditor.StartCoroutine(ThemeEditor.inst.LoadThemes());
+								Transform child = eventEditor.dialogRight.GetChild(eventEditor.currentEventType);
+								eventEditor.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+								eventEditor.RenderThemePreview(child);
+								eventEditor.showTheme = false;
+								eventEditor.dialogLeft.Find("theme").gameObject.SetActive(false);
+								EditorManager.inst.HideDialog("Warning Popup");
+							}, delegate ()
+							{
+								EditorManager.inst.HideDialog("Warning Popup");
+							});
 						});
 						ttf.Find("text").GetComponent<Text>().text = themeTmp.name;
 					}
@@ -4622,10 +4774,10 @@ namespace EditorManagement.Functions
 
 			RTFile.WriteToFile(GameManager.inst.basePath + "level.lsen", jn.ToString());
 
-			string path = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/level.ogg";
-			var songBytes = File.ReadAllBytes(path);
-			var encryptedSong = LSEncryption.AES_Encrypt(songBytes, password);
-			File.WriteAllBytes(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", encryptedSong);
+			//string path = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/level.ogg";
+			//var songBytes = File.ReadAllBytes(path);
+			//var encryptedSong = LSEncryption.AES_Encrypt(songBytes, password);
+			//File.WriteAllBytes(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", encryptedSong);
 			yield break;
 		}
 
