@@ -4746,38 +4746,38 @@ namespace EditorManagement.Functions
 
 		public static IEnumerator EncryptLevel()
         {
-			var llsb = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "level.lsb");
-			var sogg = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "level.ogg");
-			var ljpg = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "level.jpg");
-			var mlsb = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "metadata.lsb");
-			JSONNode jn = JSON.Parse("{}");
+			//var llsb = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "level.lsb");
+			//var sogg = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "level.ogg");
+			//var ljpg = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "level.jpg");
+			//var mlsb = File.ReadAllBytes(RTFile.GetApplicationDirectory() + GameManager.inst.basePath + "metadata.lsb");
+			//JSONNode jn = JSON.Parse("{}");
+			//
+			//for (int i = 0; i < llsb.Length; i++)
+			//{
+			//	jn["level.lsb"][i] = llsb[i];
+			//}
+			//
+			//for (int i = 0; i < sogg.Length; i++)
+			//{
+			//	jn["level.ogg"][i] = sogg[i];
+			//}
+			//
+			//for (int i = 0; i < ljpg.Length; i++)
+			//{
+			//	jn["level.jpg"][i] = ljpg[i];
+			//}
+			//
+			//for (int i = 0; i < mlsb.Length; i++)
+			//{
+			//	jn["metadata.lsb"][i] = mlsb[i];
+			//}
 
-			for (int i = 0; i < llsb.Length; i++)
-			{
-				jn["level.lsb"][i] = llsb[i];
-			}
+			//RTFile.WriteToFile(GameManager.inst.basePath + "level.lsen", jn.ToString());
 
-			for (int i = 0; i < sogg.Length; i++)
-			{
-				jn["level.ogg"][i] = sogg[i];
-			}
-
-			for (int i = 0; i < ljpg.Length; i++)
-			{
-				jn["level.jpg"][i] = ljpg[i];
-			}
-
-			for (int i = 0; i < mlsb.Length; i++)
-			{
-				jn["metadata.lsb"][i] = mlsb[i];
-			}
-
-			RTFile.WriteToFile(GameManager.inst.basePath + "level.lsen", jn.ToString());
-
-			//string path = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/level.ogg";
-			//var songBytes = File.ReadAllBytes(path);
-			//var encryptedSong = LSEncryption.AES_Encrypt(songBytes, password);
-			//File.WriteAllBytes(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", encryptedSong);
+			string path = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/level.ogg";
+			var songBytes = File.ReadAllBytes(path);
+			var encryptedSong = LSEncryption.AES_Encrypt(songBytes, password);
+			File.WriteAllBytes(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", encryptedSong);
 			yield break;
 		}
 
