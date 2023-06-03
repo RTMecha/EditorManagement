@@ -559,7 +559,25 @@ namespace EditorManagement.Patchers
                 if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(beatmapTheme.id)))
                 {
                     if (EditorManager.inst != null)
-                        EditorManager.inst.DisplayNotification("Unable to Load theme [" + beatmapTheme.name + "]", 2f, EditorManager.NotificationType.Error);
+                    {
+                        EditorManager.inst.DisplayNotification("Unable to Load theme [" + beatmapTheme.id + "-" + beatmapTheme.name + "] Check logs for more info", 2f, EditorManager.NotificationType.Error);
+                    }
+
+                    string str = "";
+                    List<DataManager.BeatmapTheme> beatmapThemes = new List<DataManager.BeatmapTheme>();
+                    for (int i = 0; i < DataManager.inst.AllThemes.Count; i++)
+                    {
+                        if (DataManager.inst.AllThemes[i].id == beatmapTheme.id)
+                        {
+                            str += DataManager.inst.AllThemes[i].id;
+                            if (i != DataManager.inst.AllThemes.Count - 1)
+                            {
+                                str += ", ";
+                            }
+                        }
+                    }
+
+                    Debug.LogErrorFormat("{0}Unable to load theme {1} due to the id ({2}) conflicting with these other themes: {3}.", EditorPlugin.className, beatmapTheme.name, beatmapTheme.id, str);
                 }
                 else
                 {

@@ -1217,28 +1217,6 @@ namespace EditorManagement.Patchers
 					layersIF.text = x.ToString();
 				}
 			}
-
-			if (ConfigEntries.ShowObjectsOnLayer.Value == true)
-			{
-				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-				{
-					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && beatmapObject.editorData.Layer != EditorManager.inst.layer && EditorManager.inst.layer != 5)
-					{
-						if (beatmapObject.shape != 4)
-						{
-							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-							Color objColor = gameObjectRef.mat.color;
-							gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
-						}
-						else
-						{
-							ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-							Color objColor = gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color;
-							gameObjectRef.obj.GetComponentInChildren<TMPro.TMP_Text>().color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
-						}
-					}
-				}
-			}
 		}
 
 		[HarmonyPatch("handleViewShortcuts")]
@@ -1450,6 +1428,8 @@ namespace EditorManagement.Patchers
 
 				RTFile.WriteToFile("beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse", jsonnode.ToString(3));
 			}
+
+			RTEditor.lastSavedGameData = DataManager.inst.gameData;
 		}
 
 		[HarmonyPatch("SaveBeatmapAs", new Type[] { })]

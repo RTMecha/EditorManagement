@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,6 +12,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using SimpleJSON;
+
+using BeatmapObject = DataManager.GameData.BeatmapObject;
 
 namespace EditorManagement.Functions.Tools
 {
@@ -44,14 +47,23 @@ namespace EditorManagement.Functions.Tools
 			return a;
 		}
 
-		public static GameObject GetGameObject(this DataManager.GameData.BeatmapObject _beatmapObject)
-        {
-			return _beatmapObject.GetTransformChain()[_beatmapObject.GetTransformChain().Count - 1].gameObject;
+		public static GameObject GetGameObject(this BeatmapObject _beatmapObject)
+		{
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
+			{
+				var iLevelObject = _beatmapObject.GetILevelObject();
+				var visualObject = iLevelObject.GetType().GetField("visualObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iLevelObject);
+
+				return (GameObject)visualObject.GetType().GetField("gameObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(visualObject);
+			}
+
+			var chain = _beatmapObject.GetTransformChain();
+			return chain[chain.Count - 1].gameObject;
 		}
 
-		public static List<DataManager.GameData.BeatmapObject> GetParentChain(this DataManager.GameData.BeatmapObject _beatmapObject)
+		public static List<BeatmapObject> GetParentChain(this BeatmapObject _beatmapObject)
 		{
-			List<DataManager.GameData.BeatmapObject> beatmapObjects = new List<DataManager.GameData.BeatmapObject>();
+			List<BeatmapObject> beatmapObjects = new List<BeatmapObject>();
 
 			if (_beatmapObject != null)
 			{
@@ -60,9 +72,9 @@ namespace EditorManagement.Functions.Tools
 
 				while (!string.IsNullOrEmpty(orig.parent))
 				{
-					if (orig == null || DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent) == null)
+					if (orig == null || DataManager.inst.gameData.beatmapObjects.Find(x => x.id == orig.parent) == null)
 						break;
-					var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
+					var select = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == orig.parent);
 					beatmapObjects.Add(select);
 					orig = select;
 				}
@@ -71,12 +83,31 @@ namespace EditorManagement.Functions.Tools
 			return beatmapObjects;
 		}
 
-		public static List<Transform> GetTransformChain(this DataManager.GameData.BeatmapObject _beatmapObject)
-        {
+		public static List<Transform> GetTransformChain(this BeatmapObject _beatmapObject)
+		{
+			var list = new List<Transform>();
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
+			{
+				var tf1 = _beatmapObject.GetGameObject().transform;
+
+				while (tf1.parent != null && tf1.parent.gameObject.name != "GameObjects")
+				{
+					tf1 = tf1.parent;
+				}
+
+				list.Add(tf1);
+
+				while (tf1.childCount != 0 && tf1.GetChild(0) != null)
+				{
+					tf1 = tf1.GetChild(0);
+					list.Add(tf1);
+				}
+
+				return list;
+			}
+
 			var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
 			var tf = gameObjectRef.obj.transform;
-
-			var list = new List<Transform>();
 			list.Add(tf);
 
 			while (tf.childCount != 0 && tf.GetChild(0) != null)
@@ -88,38 +119,39 @@ namespace EditorManagement.Functions.Tools
 			return list;
 		}
 
-		public static Dictionary<string, DataManager.GameData.BeatmapObject> GetParentDictionary(this DataManager.GameData.BeatmapObject _beatmapObject)
+		public static List<List<BeatmapObject>> GetChildChain(this BeatmapObject _beatmapObject)
 		{
-			Dictionary<string, DataManager.GameData.BeatmapObject> beatmapObjects = new Dictionary<string, DataManager.GameData.BeatmapObject>();
-			if (_beatmapObject != null)
+			var lists = new List<List<BeatmapObject>>();
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 			{
-				var orig = _beatmapObject;
-				beatmapObjects.Add(orig.id, orig);
-
-				while (!string.IsNullOrEmpty(orig.parent))
+				if (beatmapObject.GetParentChain() != null && beatmapObject.GetParentChain().Count > 0)
 				{
-					var select = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == orig.parent);
-					beatmapObjects.Add(select.id, select);
-					orig = select;
+					var parentChain = beatmapObject.GetParentChain();
+					foreach (var parent in parentChain)
+					{
+						if (parent.id == _beatmapObject.id)
+						{
+							lists.Add(parentChain);
+						}
+					}
 				}
 			}
-
-			return beatmapObjects;
+			return lists;
 		}
 
-		public static bool TimeWithinLifespan(this DataManager.GameData.BeatmapObject _beatmapObject)
+		public static bool TimeWithinLifespan(this BeatmapObject _beatmapObject)
 		{
 			var time = AudioManager.inst.CurrentAudioSource.time;
-			if (time >= _beatmapObject.StartTime && (AudioManager.inst.CurrentAudioSource.time <= _beatmapObject.GetObjectLifeLength() + _beatmapObject.StartTime && _beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill && _beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.SongTime || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.GetObjectLifeLength(0f, true) && _beatmapObject.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.autoKillOffset && _beatmapObject.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.SongTime))
+			if (time >= _beatmapObject.StartTime && (AudioManager.inst.CurrentAudioSource.time <= _beatmapObject.GetObjectLifeLength() + _beatmapObject.StartTime && _beatmapObject.autoKillType != BeatmapObject.AutoKillType.OldStyleNoAutokill && _beatmapObject.autoKillType != BeatmapObject.AutoKillType.SongTime || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.GetObjectLifeLength(0f, true) && _beatmapObject.autoKillType == BeatmapObject.AutoKillType.OldStyleNoAutokill || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.autoKillOffset && _beatmapObject.autoKillType == BeatmapObject.AutoKillType.SongTime))
 			{
 				return true;
 			}
 			return false;
 		}
 
-		public static Color GetObjectColor(this DataManager.GameData.BeatmapObject _beatmapObject, bool _ignoreTransparency)
+		public static Color GetObjectColor(this BeatmapObject _beatmapObject, bool _ignoreTransparency)
         {
-			if (_beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty)
+			if (_beatmapObject.objectType == BeatmapObject.ObjectType.Empty)
             {
 				return Color.white;
             }
@@ -133,7 +165,7 @@ namespace EditorManagement.Functions.Tools
 				{
 					color = GameManager.inst.LiveTheme.objectColors[(int)_beatmapObject.events[3][0].eventValues[0]];
 				}
-				else if (AudioManager.inst.CurrentAudioSource.time > _beatmapObject.StartTime + _beatmapObject.GetObjectLifeLength() && _beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
+				else if (AudioManager.inst.CurrentAudioSource.time > _beatmapObject.StartTime + _beatmapObject.GetObjectLifeLength() && _beatmapObject.autoKillType != BeatmapObject.AutoKillType.OldStyleNoAutokill)
 				{
 					color = GameManager.inst.LiveTheme.objectColors[(int)_beatmapObject.events[3][_beatmapObject.events[3].Count - 1].eventValues[0]];
 				}
@@ -151,7 +183,7 @@ namespace EditorManagement.Functions.Tools
 			return Color.white;
 		}
 
-		public static Color GetPrefabTypeColor(this DataManager.GameData.BeatmapObject _beatmapObject)
+		public static Color GetPrefabTypeColor(this BeatmapObject _beatmapObject)
         {
 			var prefab = DataManager.inst.gameData.prefabs.Find((DataManager.GameData.Prefab x) => x.ID == _beatmapObject.prefabID);
 			return DataManager.inst.PrefabTypes[prefab.Type].Color;
@@ -194,7 +226,7 @@ namespace EditorManagement.Functions.Tools
 			return 0;
 		}
 
-		public static int ClosestKeyframe(this DataManager.GameData.BeatmapObject beatmapObject, int _type)
+		public static int ClosestKeyframe(this BeatmapObject beatmapObject, int _type)
 		{
 			if (beatmapObject.events[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime) != null)
 			{
@@ -230,12 +262,17 @@ namespace EditorManagement.Functions.Tools
 			return 0;
 		}
 
-		public static void AddComponent(this Transform _transform, Component _component)
+		public static T AddComponent<T>(this Transform _transform) where T : Component
+		{
+			return _transform.gameObject.AddComponent(typeof(T)) as T;
+		}
+
+		public static void Test()
         {
-            _transform.gameObject.AddComponentInternal(_component.name);
+			GameObject.Find("Test").transform.AddComponent<SaveManager>();
         }
 
-        public static void Duplicate(this GameObject _gameObject, Transform _parent)
+		public static void Duplicate(this GameObject _gameObject, Transform _parent)
         {
             var copy = UnityEngine.Object.Instantiate(_gameObject, _parent);
             copy.transform.localScale = _gameObject.transform.localScale;
@@ -308,6 +345,19 @@ namespace EditorManagement.Functions.Tools
             }
 
 			return 0f;
-        }
-    }
+		}
+
+		public static object GetILevelObject(this BeatmapObject _beatmapObject)
+		{
+			var catalyst = GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase");
+
+			var instance = catalyst.GetType().GetField("Instance").GetValue(catalyst);
+
+			var getILevelObject = instance.GetType().GetMethod("GetLevelObject");
+
+			var obj = getILevelObject.Invoke(instance, new object[] { _beatmapObject });
+
+			return obj;
+		}
+	}
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -190,6 +191,28 @@ namespace EditorManagement.Functions
 			}
 		}
 
+		public static AssetBundle GetAssetBundle(string _filepath, string _bundle)
+		{
+			return AssetBundle.LoadFromFile(Path.Combine(_filepath, _bundle));
+		}
+
+		public static void GetAsset(string _filepath, string _bundle, string _filename, Action<GameObject> callback)
+        {
+			var assetBundle = GetAssetBundle(_filepath, _bundle);
+			var prefab = assetBundle.LoadAsset<GameObject>(_filename);
+			callback(Instantiate(prefab));
+
+			assetBundle.Unload(false);
+		}
+
+		public static void GetAsset(string _filepath, string _bundle, string _filename, Action<Font> callback)
+        {
+			var assetBundle = GetAssetBundle(_filepath, _bundle);
+			var prefab = assetBundle.LoadAsset<Font>(_filename);
+			callback(Instantiate(prefab));
+
+			assetBundle.Unload(false);
+		}
 
 		public static IEnumerator ParseObject(JSONNode _object, Action<DataManager.GameData.BeatmapObject> action)
 		{
@@ -479,7 +502,7 @@ namespace EditorManagement.Functions
 				if (beatmapObject != null)
 				{
 					DataManager.inst.gameData.beatmapObjects.Add(beatmapObject);
-					updateObjects(beatmapObject);
+					//updateObjects(beatmapObject);
 					if (EditorManager.inst != null)
 					{
 						ObjEditor.ObjectSelection objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, i);

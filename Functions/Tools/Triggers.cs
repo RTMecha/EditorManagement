@@ -16,6 +16,9 @@ using DG.Tweening;
 
 using HarmonyLib;
 
+using BeatmapObject = DataManager.GameData.BeatmapObject;
+using EventKeyframe = DataManager.GameData.EventKeyframe;
+
 namespace EditorManagement.Functions.Tools
 {
     public class Triggers : MonoBehaviour
@@ -265,7 +268,7 @@ namespace EditorManagement.Functions.Tools
 			{
 				if (objectSelection.IsObject())
 				{
-					var _beatmapObject = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.id == _id);
+					var _beatmapObject = DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.id == _id);
 
 					switch (_field)
                     {
@@ -496,7 +499,7 @@ namespace EditorManagement.Functions.Tools
 			});
 		}
 
-		public static void ObjEditorParentOffset(ObjEditor.ObjectSelection _objectSelection, DataManager.GameData.BeatmapObject _beatmapObject, Transform _p, int _t)
+		public static void ObjEditorParentOffset(ObjEditor.ObjectSelection _objectSelection, BeatmapObject _beatmapObject, Transform _p, int _t)
 		{
 			Debug.LogFormat("{0}Refresh Object GUI: Parent Offset [" + _t + "]", EditorPlugin.className);
 
@@ -562,7 +565,7 @@ namespace EditorManagement.Functions.Tools
 			});
 		}
 
-		public static void ObjEditorKeyframeDialog(Transform _p, int _t, DataManager.GameData.BeatmapObject _beatmapObject)
+		public static void ObjEditorKeyframeDialog(Transform _p, int _t, BeatmapObject _beatmapObject)
         {
 			if (ObjEditor.inst.currentObjectSelection.GetObjectData().events[_t].Count > 0)
 			{
@@ -931,12 +934,12 @@ namespace EditorManagement.Functions.Tools
 			return LSColors.ColorFromHSV(num, saturation, value - 255);
 		}
 
-		public static float EventValuesZ1(DataManager.GameData.EventKeyframe _posEvent)
+		public static float EventValuesZ1(EventKeyframe _posEvent)
 		{
-			DataManager.GameData.BeatmapObject bo = null;
-			if (DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent)) != null)
+            BeatmapObject bo = null;
+			if (DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.events[0].Contains(_posEvent)) != null)
 			{
-				bo = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent));
+				bo = DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.events[0].Contains(_posEvent));
 			}
 			float z = 0.0005f * bo.Depth;
 			if (_posEvent.eventValues.Length > 2 && bo != null)
@@ -947,12 +950,12 @@ namespace EditorManagement.Functions.Tools
 			return z;
 		}
 
-		public static float EventValuesZ2(DataManager.GameData.EventKeyframe _posEvent)
+		public static float EventValuesZ2(EventKeyframe _posEvent)
 		{
-			DataManager.GameData.BeatmapObject bo = null;
-			if (DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent)) != null)
+            BeatmapObject bo = null;
+			if (DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.events[0].Contains(_posEvent)) != null)
 			{
-				bo = DataManager.inst.gameData.beatmapObjects.Find((DataManager.GameData.BeatmapObject x) => x.events[0].Contains(_posEvent));
+				bo = DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.events[0].Contains(_posEvent));
 			}
 			float z = 0.1f * bo.Depth;
 			if (_posEvent.eventValues.Length > 2 && bo != null)
@@ -963,13 +966,13 @@ namespace EditorManagement.Functions.Tools
 			return z;
 		}
 
-		public static float DummyNumber(DataManager.GameData.EventKeyframe _posEvent)
+		public static float DummyNumber(EventKeyframe _posEvent)
 		{
 			float z = 0.0005f;
 			return z;
 		}
 
-		public static RotateMode EventValuesRMode(DataManager.GameData.EventKeyframe _rotEvent)
+		public static RotateMode EventValuesRMode(EventKeyframe _rotEvent)
         {
 			if (_rotEvent.eventValues[1] == 0f)
             {
@@ -989,6 +992,16 @@ namespace EditorManagement.Functions.Tools
             }
 			return RotateMode.LocalAxisAdd;
         }
+
+		public static void SetCollision(BeatmapObject _beatmapObject, GameObject gameObject1, Transform child)
+        {
+			if (_beatmapObject.objectType == (BeatmapObject.ObjectType)4)
+			{
+				gameObject1.tag = "Helper";
+				child.tag = "Helper";
+				child.GetComponent<Collider2D>().isTrigger = false;
+			}
+		}
 
 		public static EventTrigger.Entry CreateEventObjectTrigger(EventEditor instance, int _type, int _event)
 		{
@@ -1069,6 +1082,67 @@ namespace EditorManagement.Functions.Tools
 			var editorDialogsDictionaryInst = AccessTools.Field(typeof(EditorManager), "EditorDialogsDictionary").GetValue(EditorManager.inst);
 
 			editorDialogsDictionary.GetValue(EditorManager.inst).GetType().GetMethod("Add").Invoke(editorDialogsDictionaryInst, new object[] { _name, editorPropertiesDialog });
+		}
+
+		public static KeyCode KeyCodeDownWatcher()
+		{
+			for (int i = 0; i < typeof(KeyCode).GetEnumNames().Length; i++)
+			{
+				if (Input.GetKeyDown((KeyCode)i))
+				{
+					return (KeyCode)i;
+				}
+			}
+			return KeyCode.None;
+		}
+
+		public static KeyCode KeyCodeWatcher()
+		{
+			for (int i = 0; i < typeof(KeyCode).GetEnumNames().Length; i++)
+			{
+				if (Input.GetKey((KeyCode)i))
+				{
+					return (KeyCode)i;
+				}
+			}
+			return KeyCode.None;
+		}
+
+		public static void Test()
+		{
+			foreach (var qp in quickPrefabs)
+			{
+				if (qp.Value[0] == KeyCode.None && Input.GetKeyDown(qp.Value[1]))
+				{
+					PrefabEditor.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs[qp.Key]);
+				}
+				else if (Input.GetKey(qp.Value[0]) && Input.GetKeyDown(qp.Value[1]))
+				{
+					PrefabEditor.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs[qp.Key]);
+				}
+			}
+		}
+
+		public static void AssignKeyToPrefab(int index)
+		{
+			if (quickPrefabs.ContainsKey(index))
+			{
+				quickPrefabs[index] = new List<KeyCode>
+				{ KeyCode.None, KeyCode.None };
+
+				if (Input.GetKey(KeyCodeWatcher()))
+				{
+					quickPrefabs[index][0] = KeyCodeWatcher();
+					quickPrefabs[index][1] = KeyCodeDownWatcher();
+				}
+			}
+		}
+
+		public static Dictionary<int, List<KeyCode>> quickPrefabs = new Dictionary<int, List<KeyCode>>();
+
+		public static string GetFileNameWithoutPath(string _filePath)
+        {
+			return _filePath.Replace(_filePath.Substring(0, _filePath.LastIndexOf("/") + 1), "");
 		}
 	}
 }

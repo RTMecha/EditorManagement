@@ -26,6 +26,7 @@ using EditorManagement.Functions.Tools;
 using EditorManagement.Patchers;
 
 using MP3Sharp;
+using Crosstales.FB;
 
 namespace EditorManagement.Functions
 {
@@ -1385,7 +1386,10 @@ namespace EditorManagement.Functions
 			{
 				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
 				if (_showMulti)
+				{
+					//Debug.LogFormat("{0}Selected Objects Count: {1}", EditorPlugin.className, __instance.selectedObjects.Count);
 					EditorManager.inst.ShowDialog("Multi Object Editor", false);
+				}
 
 				if (__0.IsObject())
 				{
@@ -1396,6 +1400,33 @@ namespace EditorManagement.Functions
 			}
 			__instance.SetCurrentObj(__0);
 		}
+
+		public static void RenderTimelineObjects()
+        {
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+            {
+				var beatmap = ObjEditor.inst.beatmapObjects[beatmapObject.id];
+				if (EditorManager.inst.layer == beatmapObject.editorData.Layer && EditorManager.RectTransformToScreenSpace(beatmap.GetComponent<RectTransform>()).Overlaps(EditorManager.RectTransformToScreenSpace(EditorManager.inst.timeline.transform.parent.parent.GetComponent<RectTransform>())))
+				{
+					beatmap.SetActive(true);
+				}
+				else if (EditorManager.inst.layer == beatmapObject.editorData.Layer)
+                {
+					beatmap.SetActive(false);
+                }
+			}
+        }
+
+		public static DataManager.GameData lastSavedGameData;
+
+		public static void OnApplicationQuit()
+        {
+			if (DataManager.inst != null && lastSavedGameData != DataManager.inst.gameData && EditorManager.inst != null)
+            {
+				DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
+				EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(GameManager.inst.basePath + "level-backup.lsb"));
+			}
+        }
 
 		public static ObjectManager updateObjects(DataManager.GameData.BeatmapObject _beatmapObject)
 		{
@@ -2527,15 +2558,20 @@ namespace EditorManagement.Functions
 				delay += 0.0001f;
 			}
 
+			string stri = _obj.objects[0].name;
+			if (_obj.objects.Count > 1)
+			{
+				stri = _obj.Name;
+			}
 			if (_regen == false)
 			{
-				EditorManager.inst.DisplayNotification("Pasted Beatmap Object [ " + _obj.Name + " ] and kept Prefab Instance ID [ " + _obj.ID + " ]!", 1f, EditorManager.NotificationType.Success, false);
+				EditorManager.inst.DisplayNotification("Pasted Beatmap Object [ " + stri + " ] and kept Prefab Instance ID [ " + _obj.ID + " ]!", 1f, EditorManager.NotificationType.Success, false);
 			}
 			else
 			{
-				EditorManager.inst.DisplayNotification("Pasted Beatmap Object [ " + _obj.Name + " ]!", 1f, EditorManager.NotificationType.Success, false);
+				EditorManager.inst.DisplayNotification("Pasted Beatmap Object [ " + stri + " ]!", 1f, EditorManager.NotificationType.Success, false);
 			}
-			if (_select)
+			if (_select && _obj.objects.Count > 1)
 			{
 				EditorManager.inst.ShowDialog("Multi Object Editor", false);
 			}
@@ -3718,6 +3754,26 @@ namespace EditorManagement.Functions
 			}
         }
 
+		public static void OpenImageSelector()
+		{
+			if (ObjEditor.inst.currentObjectSelection.IsPrefab() && ObjEditor.inst.currentObjectSelection.GetObjectData().shape != 6)
+            {
+				return;
+            }
+			string jpgFile = FileBrowser.OpenSingleFile("Select an image!", RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel, new string[] { "jpg", "png" });
+			Debug.Log("Selected file: " + jpgFile);
+			if (!string.IsNullOrEmpty(jpgFile))
+			{
+				string jpgFileLocation = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/" + Triggers.GetFileNameWithoutPath(jpgFile);
+				if (!RTFile.FileExists(jpgFileLocation))
+                {
+					File.Copy(jpgFile, jpgFileLocation);
+                }
+				ObjEditor.inst.currentObjectSelection.GetObjectData().text = "img(" + jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf(EditorManager.inst.currentLoadedLevel) + EditorManager.inst.currentLoadedLevel.Length + 1), "") + ")";
+				inst.StartCoroutine(RefreshObjectGUI());
+			}
+		}
+
 		public static void CreateNewLevel(EditorManager __instance)
 		{
 			if (!__instance.newAudioFile.ToLower().Contains(".ogg"))
@@ -3730,6 +3786,16 @@ namespace EditorManagement.Functions
 				__instance.DisplayNotification("The file you are trying to load doesn't appear to exist.", 2f, EditorManager.NotificationType.Error, false);
 				return;
 			}
+
+			int num = 0;
+			string p = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName;
+			while (RTFile.DirectoryExists(p))
+            {
+				p = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName + " - " + num.ToString();
+				num += 1;
+            }
+			__instance.newLevelName += " - " + num.ToString();
+
 			if (RTFile.DirectoryExists(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName))
 			{
 				__instance.DisplayNotification("The level you are trying to create already exists.", 2f, EditorManager.NotificationType.Error, false);
@@ -3879,14 +3945,14 @@ namespace EditorManagement.Functions
 				backgroundObject.name = "bg - " + i;
 				if (UnityEngine.Random.value > 0.5f)
 				{
-					backgroundObject.scale = new Vector2((float)UnityEngine.Random.Range(2, 8), (float)UnityEngine.Random.Range(2, 8));
+					backgroundObject.scale = new Vector2(UnityEngine.Random.Range(2, 8), UnityEngine.Random.Range(2, 8));
 				}
 				else
 				{
-					float num = (float)UnityEngine.Random.Range(2, 6);
+					float num = UnityEngine.Random.Range(2, 6);
 					backgroundObject.scale = new Vector2(num, num);
 				}
-				backgroundObject.pos = new Vector2((float)UnityEngine.Random.Range(-48, 48), (float)UnityEngine.Random.Range(-32, 32));
+				backgroundObject.pos = new Vector2(UnityEngine.Random.Range(-48, 48), UnityEngine.Random.Range(-32, 32));
 				backgroundObject.color = UnityEngine.Random.Range(1, 6);
 				backgroundObject.layer = UnityEngine.Random.Range(0, 6);
 				backgroundObject.reactive = (UnityEngine.Random.value > 0.5f);
@@ -4190,6 +4256,35 @@ namespace EditorManagement.Functions
         {
 			Debug.LogFormat("{0}Mutli: {1}\nMultiValue: {2}", EditorPlugin.className, multi.ToString(), multiValue.ToString());
 			var content = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("mask/content");
+
+			if (multi && multiValue == "parent")
+            {
+				var buttonPrefab = Instantiate(EditorManager.inst.spriteFolderButtonPrefab);
+				buttonPrefab.transform.SetParent(content);
+				buttonPrefab.transform.localScale = Vector3.one;
+				buttonPrefab.name = "Clear Parents";
+				buttonPrefab.transform.GetChild(0).GetComponent<Text>().text = "Clear Parents";
+
+				var b = buttonPrefab.GetComponent<Button>();
+				b.onClick.RemoveAllListeners();
+				b.onClick.AddListener(delegate ()
+				{
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+                    {
+						if (objectSelection.IsObject())
+                        {
+							objectSelection.GetObjectData().parent = "";
+							ObjectManager.inst.updateObjects(objectSelection);
+                        }
+                    }
+				});
+
+				var x = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("Panel/x/Image").GetComponent<Image>().sprite;
+				var image = buttonPrefab.transform.Find("Image").GetComponent<Image>();
+				image.color = Color.red;
+				image.sprite = x;
+			}
+
 			LSHelpers.DeleteChildren(content);
 
 			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
@@ -4242,9 +4337,9 @@ namespace EditorManagement.Functions
 
 					string desc = "";
 					string hint = "";
-					var gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
+					var gameObjectRef = beatmapObject.GetGameObject();
 
-					Transform transform = beatmapObject.GetTransformChain()[beatmapObject.GetTransformChain().Count - 1];
+					Transform transform = gameObjectRef.transform;
 
 					string parent = "";
 					if (!string.IsNullOrEmpty(beatmapObject.parent))
@@ -5928,6 +6023,15 @@ namespace EditorManagement.Functions
                     }
 				}
             }
+        }
+
+		public static void Test()
+        {
+			//EnumPatcher.AddEnumValue<DataManager.GameData.BeatmapObject.ObjectType>("Solid");
+			//EnumPatcher.AddEnumValue<DataManager.Language>("japanese");
+			//EnumPatcher.AddEnumValue<DataManager.Language>("thai");
+			//EnumPatcher.AddEnumValue<DataManager.Language>("pirate");
+			//EnumPatcher.AddEnumValue<DataManager.GameData.BackgroundObject.ReactiveType>("CUSTOM");
         }
 
 		public static List<EditorProperty> editorProperties = new List<EditorProperty>

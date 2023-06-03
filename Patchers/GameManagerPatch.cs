@@ -23,9 +23,12 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         private static void SetCameraClipPlanes()
         {
-			Camera camera = GameObject.Find("Main Camera").GetComponent<Camera>();
-            camera.farClipPlane = 100000;
-            camera.nearClipPlane = -100000;
+            if (EditorManager.inst != null)
+            {
+                Camera camera = GameObject.Find("Main Camera").GetComponent<Camera>();
+                camera.farClipPlane = 100000;
+                camera.nearClipPlane = -100000;
+            }
         }
 
         [HarmonyPatch("Update")]

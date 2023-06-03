@@ -154,32 +154,36 @@ namespace EditorManagement.Patchers
 				{
 					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[beatmapObject.id] != null && beatmapObject.GetGameObject() != null)
 					{
-						var gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
 						var gameObject = beatmapObject.GetGameObject();
 						var transform = beatmapObject.GetGameObject().transform.GetParent();
+						Material mat = null;
+						if (gameObject.GetComponent<Renderer>())
+						{
+							mat = gameObject.GetComponent<Renderer>().material;
+						}
 
 						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value == true)
 						{
-							if (gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>())
+							if (gameObject.GetComponent<SelectObjectInEditor>())
 							{
-								Destroy(gameObjectRef.obj.GetComponentInChildren<SelectObjectInEditor>());
+								Destroy(gameObject.GetComponent<SelectObjectInEditor>());
 							}
-							if (gameObjectRef.obj.GetComponentInChildren<RTObject>())
+							if (gameObject.GetComponent<RTObject>())
 							{
-								Destroy(gameObjectRef.obj.GetComponentInChildren<RTObject>());
+								Destroy(gameObject.GetComponent<RTObject>());
 							}
 						}
 
 						if (ConfigEntries.ShowEmpties.Value == true)
 						{
-							if (gameObjectRef.obj.GetComponentInChildren<Collider2D>() && !gameObjectRef.obj.GetComponentInChildren<MeshFilter>() && !gameObjectRef.obj.GetComponentInChildren<MeshRenderer>())
+							if (!gameObject.GetComponent<MeshFilter>() && !gameObject.GetComponent<MeshRenderer>())
 							{
-								MeshFilter mesh = gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshFilter>();
-								gameObjectRef.obj.GetComponentInChildren<Collider2D>().gameObject.AddComponent<MeshRenderer>();
+								MeshFilter mesh = gameObject.AddComponent<MeshFilter>();
+								gameObject.AddComponent<MeshRenderer>();
 
 								mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
 
-								gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition = new Vector3(gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.x, gameObjectRef.obj.GetComponentInChildren<Collider2D>().transform.localPosition.y, -9.6f);
+								gameObject.transform.localPosition = new Vector3(gameObject.transform.localPosition.x, gameObject.transform.localPosition.y, -9.6f);
 							}
 						}
 
@@ -187,14 +191,13 @@ namespace EditorManagement.Patchers
 						{
 							if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
 							{
-								ObjectManager.GameObjectRef gameObjectRef1 = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-								gameObjectRef1.obj.GetComponentInChildren<Renderer>().enabled = false;
+								gameObject.GetComponent<Renderer>().enabled = false;
 							}
 						}
 
 						if (ConfigEntries.EditorDebug.Value == true)
 						{
-							if (gameObject.GetComponent<RTObject>())
+							if (gameObject.GetComponent<RTObject>() && mat != null)
 							{
 								var rtobj = gameObject.GetComponent<RTObject>();
 								rtobj.tipEnabled = true;
@@ -253,7 +256,7 @@ namespace EditorManagement.Patchers
 									"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
 									"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
 									"<br>ROT: " + transform.eulerAngles.z +
-									"<br>COL: " + RTEditor.ColorToHex(gameObjectRef.mat.color) +
+									"<br>COL: " + RTEditor.ColorToHex(mat.color) +
 									ptr)
 								{
 									rtobj.tooltipLanguages[0].hint = "ID: {" + beatmapObject.id + "}" +
@@ -265,7 +268,7 @@ namespace EditorManagement.Patchers
 										"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
 										"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
 										"<br>ROT: " + transform.eulerAngles.z +
-										"<br>COL: " + RTEditor.ColorToHex(gameObjectRef.mat.color) +
+										"<br>COL: " + RTEditor.ColorToHex(mat.color) +
 										ptr;
 								}
 							}
@@ -275,6 +278,19 @@ namespace EditorManagement.Patchers
 							if (gameObject.GetComponent<RTObject>())
 							{
 								gameObject.GetComponent<RTObject>().tipEnabled = false;
+							}
+						}
+						if (ConfigEntries.ShowObjectsOnLayer.Value == true)
+						{
+							if (beatmapObject.shape != 4)
+							{
+								Color objColor = mat.color;
+								mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
+							}
+							else
+							{
+								Color objColor = gameObject.GetComponent<TMPro.TMP_Text>().color;
+								gameObject.GetComponent<TMPro.TMP_Text>().color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
 							}
 						}
 					}

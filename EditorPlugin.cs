@@ -41,24 +41,12 @@ namespace EditorManagement
 		//Add rotate mode to ObjectManager.Update().
 		//Mirror Object mode (Any object you create can be duplicated to be an exact mirror).
 		//Add a config option for updating objects whilst modifying a value in the Object Editor window.
+		//Add a backup autosave for cases where the game crashes or quits and the player hasn't saved. (Probably make a comparison reference to compare the two files to check if they equal)
+		//Work on a prefab keybind thing.
 
 		//Update list
-		//Done a ton of bug fixing and code optimization.
-		//Added a few more tooltips.
-		//Began implementing some ObjectModifiers stuff. Much like EventsCore, you will need EditorManagement in order to use the editor stuff for ObjectModifiers. Otherwise that mod is fine to use on it's own.
-		//Fixed Legacy waveform color combining (the colors of top and bottom parts of the waveform should now mix if they overlap)
-		//Added Fast waveform type for each already existing waveform type. It's called "Fast" because it *might* be more optimized, but I am unsure.
-		//Tried fixing an issue where loading prefabs saving prefabs wouldn't create the z axis.
-		//Clicking on a theme keyframe and rendering the theme list should be a little quicker now.
-		//Made copied objects save to AppData/LocalLow/Vitamin Games/Project Arrhythmia/copied_objects.lsp so if you have any separate instances of PA you can copy from one instance to another.
-		//Pasting objects now properly offset from the current audio time.
-		//Fixed an issue where letting the audio play whilst pasting a bunch of objects would offset the start time of each object constantly to the current audio time, rather than a set audio time from when you first pasted.
-		//Drag selecting a group of objects, pasting objects and deleting objects are now faster.
-		//Added a delete level function to the Open Level Popup. When the delete button is clicked, it will bring up a warning asking if you want to delete the level or not.
-		//Made a new Warning Popup window that shows whenever you're trying to quit to menu / quit game, delete a prefab, delete a theme or delete a level like the above feature.
-		//Fixed a bug where clicking on Create Backgrounds would create 1 extra background.
-		//Added a "Delete All Markers" button to the marker list. This does the same thing as the Delete All Backgrounds button (plus now both bring up the Warning Popup).
-		//Themes will no longer reload when a level is loaded due to them being loaded on editor start. If you need to reload the themes, you can click on the refresh button.
+		//Fixed a compatibility issue where Catalyst fails to load objects properly due to an update method.
+		//Fixed a problem with pasting an object causing the multi object editor window to open.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -545,14 +533,6 @@ namespace EditorManagement
 			}
 		}
 
-		private void Update()
-        {
-			if (GameManager.inst != null && Input.GetKeyDown(KeyCode.Keypad5))
-            {
-				GameManager.inst.UpdateTimeline();
-            }
-        }
-
 		public static EditorPlugin inst;
 
 		//Code written by Enchart
@@ -688,9 +668,9 @@ namespace EditorManagement
 					gameObjectDialogAIGUI.animateInTime = ConfigEntries.GODAnimateInOutSpeeds.Value.x;
 					gameObjectDialogAIGUI.animateOutTime = ConfigEntries.GODAnimateInOutSpeeds.Value.y;
 
-					if (EditorManager.inst.GetDialog("Player Editor").Dialog && EditorManager.inst.GetDialog("Object Editor").Dialog.gameObject.GetComponent<AnimateInGUI>())
+					if (EditorManager.inst.GetDialog("Player Editor") != null && EditorManager.inst.GetDialog("Player Editor").Dialog && EditorManager.inst.GetDialog("Player Editor").Dialog.name == "Player Editor" && EditorManager.inst.GetDialog("Player Editor").Dialog.gameObject.GetComponent<AnimateInGUI>())
 					{
-						var playerEditorDialogAIGUI = EditorManager.inst.GetDialog("Object Editor").Dialog.gameObject.GetComponent<AnimateInGUI>();
+						var playerEditorDialogAIGUI = EditorManager.inst.GetDialog("Player Editor").Dialog.gameObject.GetComponent<AnimateInGUI>();
 
 						playerEditorDialogAIGUI.SetEasing((int)ConfigEntries.GODAnimateEaseIn.Value, (int)ConfigEntries.GODAnimateEaseOut.Value);
 						playerEditorDialogAIGUI.animateX = ConfigEntries.GODAnimateX.Value;
