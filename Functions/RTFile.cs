@@ -711,7 +711,7 @@ namespace EditorManagement.Functions
 				DataManager.GameData.EventKeyframe eventKeyframe4 = new DataManager.GameData.EventKeyframe();
 				JSONNode jsonnode4 = _events["shake"][l];
 				eventKeyframe4.eventTime = jsonnode4["t"].AsFloat;
-				if (!string.IsNullOrEmpty(jsonnode4["y"]))
+				if (!string.IsNullOrEmpty(jsonnode4["z"]))
 				{
 					eventKeyframe4.SetEventValues(new float[]
 					{
@@ -1379,7 +1379,7 @@ namespace EditorManagement.Functions
 						yield return new WaitForSeconds(delay);
 					}
 					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
-					JSONNode jsonnode11 = _events["overlay"][num4];
+					JSONNode jsonnode11 = _events["timeline"][num4];
 					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
 					eventKeyframe11.SetEventValues(new float[]
 					{
@@ -1404,7 +1404,7 @@ namespace EditorManagement.Functions
 						jsonnode11["ry"].AsFloat
 					});
 					eventKeyframe11.active = false;
-					DataManager.inst.gameData.eventObjects.allEvents[21].Add(eventKeyframe11);
+					DataManager.inst.gameData.eventObjects.allEvents[22].Add(eventKeyframe11);
 					delay += 0.0001f;
 				}
 			}

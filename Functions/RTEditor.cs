@@ -3488,9 +3488,9 @@ namespace EditorManagement.Functions
 					jsonnode["events"]["grd"][num21]["t"] = _data.eventObjects.allEvents[15][num21].eventTime.ToString();
 					jsonnode["events"]["grd"][num21]["x"] = _data.eventObjects.allEvents[15][num21].eventValues[0].ToString();
 					jsonnode["events"]["grd"][num21]["y"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
-					jsonnode["events"]["grd"][num21]["z"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
-					jsonnode["events"]["grd"][num21]["x2"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
-					jsonnode["events"]["grd"][num21]["y2"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
+					jsonnode["events"]["grd"][num21]["z"] = _data.eventObjects.allEvents[15][num21].eventValues[2].ToString();
+					jsonnode["events"]["grd"][num21]["x2"] = _data.eventObjects.allEvents[15][num21].eventValues[3].ToString();
+					jsonnode["events"]["grd"][num21]["y2"] = _data.eventObjects.allEvents[15][num21].eventValues[4].ToString();
 					if (_data.eventObjects.allEvents[15][num21].curveType.Name != "Linear")
 					{
 						jsonnode["events"]["grd"][num21]["ct"] = _data.eventObjects.allEvents[15][num21].curveType.Name.ToString();

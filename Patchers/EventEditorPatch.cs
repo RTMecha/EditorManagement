@@ -2920,7 +2920,7 @@ namespace EditorManagement.Patchers
 						intensity.onValueChanged.AddListener(delegate (string val)
 						{
 							float num = float.Parse(val);
-							num = Mathf.Clamp(num, 0f, 0.9f);
+							num = Mathf.Clamp(num, 0f, 0.99999f);
 							currentKeyframe.eventValues[0] = num;
 							eventManager.updateEvents();
 						});
@@ -2931,14 +2931,14 @@ namespace EditorManagement.Patchers
 						intensityLeft.onClick.RemoveAllListeners();
 						intensityLeft.onClick.AddListener(delegate ()
 						{
-							intensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value, 0f, .09f).ToString();
+							intensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value, 0f, 0.99999f).ToString();
 							eventManager.updateEvents();
 						});
 
 						intensityRight.onClick.RemoveAllListeners();
 						intensityRight.onClick.AddListener(delegate ()
 						{
-							intensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value, 0f, 0.9f).ToString();
+							intensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value, 0f, 0.99999f).ToString();
 							eventManager.updateEvents();
 						});
 
@@ -2949,7 +2949,7 @@ namespace EditorManagement.Patchers
 
 						var intensityET = dialogTmp.Find("offset").GetComponent<EventTrigger>();
 						intensityET.triggers.Clear();
-						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f, false, new List<float> { 0f, 0.9f }));
+						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f, false, new List<float> { 0f, 0.99999f }));
 						break;
                     }
 				case 20: //BG
