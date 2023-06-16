@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 
@@ -16,6 +17,7 @@ using HarmonyLib;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using LSFunctions;
+using Crosstales.FB;
 
 namespace EditorManagement.Patchers
 {
@@ -179,7 +181,7 @@ namespace EditorManagement.Patchers
 				PointerEventData pointerEventData = (PointerEventData)eventData;
 				if (pointerEventData.clickTime > 0f)
 				{
-					RTEditor.SetLayer(5);
+					EventEditorPatch.SetEventLayer(0);
 				}
 			});
 			eventTrigger.triggers.Clear();
@@ -505,95 +507,7 @@ namespace EditorManagement.Patchers
 
 			//New triggers
 			{
-				EventTrigger.Entry entry = new EventTrigger.Entry();
-				entry.eventID = EventTriggerType.PointerEnter;
-				entry.callback.AddListener(delegate (BaseEventData eventData)
-				{
-					IsOverMainTimeline = true;
-				});
-				
-				EventTrigger.Entry entry2 = new EventTrigger.Entry();
-				entry2.eventID = EventTriggerType.PointerExit;
-				entry2.callback.AddListener(delegate (BaseEventData eventData)
-				{
-					IsOverMainTimeline = false;
-				});
-
-				EventTrigger.Entry endDragTrigger = new EventTrigger.Entry();
-				endDragTrigger.eventID = EventTriggerType.EndDrag;
-				endDragTrigger.callback.AddListener(delegate (BaseEventData eventData)
-				{
-					PointerEventData pointerEventData = (PointerEventData)eventData;
-					EditorManager.inst.DragEndPos = pointerEventData.position;
-					EditorManager.inst.SelectionBoxImage.gameObject.SetActive(false);
-					if (EditorManager.inst.layer != 5)
-					{
-						if (Input.GetKey(KeyCode.LeftShift))
-						{
-							RTEditor.inst.StartCoroutine(RTEditor.GroupSelectObjects());
-						}
-						else
-						{
-							RTEditor.inst.StartCoroutine(RTEditor.GroupSelectObjects(false));
-						}
-					}
-					else
-					{
-						bool flag = false;
-						int num2 = 0;
-						foreach (List<GameObject> list5 in EventEditor.inst.eventObjects)
-						{
-							int num3 = 0;
-							foreach (GameObject gameObject2 in list5)
-							{
-								if (EditorManager.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(gameObject2.transform.GetChild(0).GetComponent<Image>().rectTransform)) && gameObject2.activeSelf)
-								{
-									if (!flag)
-									{
-										EventEditor.inst.SetCurrentEvent(num2, num3);
-										flag = true;
-									}
-									else
-									{
-										EventEditor.inst.AddedSelectedEvent(num2, num3);
-									}
-								}
-								num3++;
-							}
-							num2++;
-						}
-					}
-				});
-
-				EventTrigger tltrig = EditorManager.inst.timeline.GetComponent<EventTrigger>();
-
-				tltrig.triggers.RemoveAt(3);
-				tltrig.triggers.Add(entry);
-				tltrig.triggers.Add(entry2);
-				tltrig.triggers.Add(endDragTrigger);
-
-				if (DataManager.inst != null)
-				{
-					for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
-					{
-						var temp = EventEditor.inst.EventHolders.transform.GetChild(0).GetComponent<EventTrigger>();
-						var et = EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>();
-						et.triggers.Add(entry);
-						et.triggers.Add(entry2);
-
-						//if (i > 10)
-						//{
-						//	et.triggers.Add(temp.triggers[0]);
-						//	Debug.LogFormat("{0}Added trigger {1} > {2}", EditorPlugin.className, temp.triggers[0].eventID, et.triggers[et.triggers.Count - 1].eventID);
-						//	et.triggers.Add(temp.triggers[1]);
-						//	Debug.LogFormat("{0}Added trigger {1} > {2}", EditorPlugin.className, temp.triggers[1].eventID, et.triggers[et.triggers.Count - 1].eventID);
-						//	et.triggers.Add(temp.triggers[2]);
-						//	Debug.LogFormat("{0}Added trigger {1} > {2}", EditorPlugin.className, temp.triggers[2].eventID, et.triggers[et.triggers.Count - 1].eventID);
-						//}
-					}
-				}
-
-				
+				RTEditor.inst.StartCoroutine(RTEditor.SetupTimelineTriggers());
 			}
 
 			//Objects
@@ -1635,30 +1549,26 @@ namespace EditorManagement.Patchers
 				.InstructionEnumeration();
 		}
 
-        [HarmonyPatch("LoadLevel", MethodType.Enumerator)]
-        [HarmonyTranspiler]
-        private static IEnumerable<CodeInstruction> LoadLevelTranspiler(IEnumerable<CodeInstruction> instructions)
-        {
-            return new CodeMatcher(instructions)
-                .Start()
-                .Advance(60)
-                .ThrowIfNotMatch("Is not beatmaps/editor", new CodeMatch(OpCodes.Ldstr))
-                .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
-                .ThrowIfNotMatch("Is not ldsfld", new CodeMatch(OpCodes.Ldsfld))
-                .InstructionEnumeration();
-        }
+        //[HarmonyPatch("LoadLevel", MethodType.Enumerator)]
+        //[HarmonyTranspiler]
+        //private static IEnumerable<CodeInstruction> LoadLevelTranspiler(IEnumerable<CodeInstruction> instructions)
+        //{
+        //    return new CodeMatcher(instructions)
+        //        .Start()
+        //        .Advance(60)
+        //        .ThrowIfNotMatch("Is not beatmaps/editor", new CodeMatch(OpCodes.Ldstr))
+        //        .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "levelListSlash")))
+        //        .ThrowIfNotMatch("Is not ldsfld", new CodeMatch(OpCodes.Ldsfld))
+        //        .InstructionEnumeration();
+        //}
 
         [HarmonyPatch("LoadLevel")]
 		[HarmonyPrefix]
-		private static bool LoadLevelPrefix(EditorManager __instance, string __0)
+		private static bool LoadLevelPrefix(EditorManager __instance, ref IEnumerator __result, string __0)
 		{
 			EditorPlugin.inst.StartCoroutine(EditorPlugin.SetupPlayerEditor());
-			if (EditorPlugin.tester == true)
-			{
-				RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(__instance, __0));
-				return false;
-			}
-			return true;
+			__result = RTEditor.LoadLevel(__instance, __0);
+			return false;
 		}
 
 		[HarmonyPatch("CreateNewLevel")]
@@ -1700,6 +1610,27 @@ namespace EditorManagement.Patchers
 		//		.ThrowIfNotMatch("Is not ldsfld 5", new CodeMatch(OpCodes.Ldsfld))
 		//		.InstructionEnumeration();
 		//}
+
+		[HarmonyPatch("OpenAlbumArtSelector")]
+		[HarmonyPrefix]
+		private static void OpenAlbumArtSelector(EditorManager __instance)
+		{
+			string jpgFile = FileBrowser.OpenSingleFile("jpg");
+			Debug.Log("Selected file: " + jpgFile);
+			if (!string.IsNullOrEmpty(jpgFile))
+			{
+				string jpgFileLocation = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.currentLoadedLevel + "/level.jpg";
+				__instance.StartCoroutine(__instance.GetSprite(jpgFile, new EditorManager.SpriteLimits(new Vector2(512f, 512f)), delegate (Sprite cover)
+				{
+					File.Copy(jpgFile, jpgFileLocation, true);
+					EditorManager.inst.GetDialog("Metadata Editor").Dialog.transform.Find("Scroll View/Viewport/Content/creator/cover_art/image").GetComponent<Image>().sprite = cover;
+					MetadataEditor.inst.currentLevelCover = cover;
+				}, delegate (string errorFile)
+				{
+					__instance.DisplayNotification("Please resize your image to be less then or equal to 512 x 512 pixels. It must also be a jpg.", 2f, EditorManager.NotificationType.Error, false);
+				}));
+			}
+		}
 
 		[HarmonyPatch("GetAlbumSprite", MethodType.Enumerator)]
 		[HarmonyTranspiler]

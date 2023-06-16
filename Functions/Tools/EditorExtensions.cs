@@ -49,7 +49,7 @@ namespace EditorManagement.Functions.Tools
 
 		public static GameObject GetGameObject(this BeatmapObject _beatmapObject)
 		{
-			if (GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
+			if (EditorPlugin.catalyst != null && EditorPlugin.catInstalled == 3)
 			{
 				var iLevelObject = _beatmapObject.GetILevelObject();
 				var visualObject = iLevelObject.GetType().GetField("visualObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iLevelObject);
@@ -58,6 +58,12 @@ namespace EditorManagement.Functions.Tools
 			}
 
 			var chain = _beatmapObject.GetTransformChain();
+
+			if (chain.Count < 1)
+            {
+				return null;
+            }
+
 			return chain[chain.Count - 1].gameObject;
 		}
 
@@ -86,7 +92,7 @@ namespace EditorManagement.Functions.Tools
 		public static List<Transform> GetTransformChain(this BeatmapObject _beatmapObject)
 		{
 			var list = new List<Transform>();
-			if (GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
+			if (EditorPlugin.catalyst != null && EditorPlugin.catInstalled == 3)
 			{
 				var tf1 = _beatmapObject.GetGameObject().transform;
 
@@ -105,6 +111,11 @@ namespace EditorManagement.Functions.Tools
 
 				return list;
 			}
+
+			if (ObjectManager.inst == null || ObjectManager.inst.beatmapGameObjects.Count < 1 || !ObjectManager.inst.beatmapGameObjects.ContainsKey(_beatmapObject.id))
+            {
+				return list;
+            }
 
 			var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
 			var tf = gameObjectRef.obj.transform;
@@ -267,7 +278,7 @@ namespace EditorManagement.Functions.Tools
 			return _transform.gameObject.AddComponent(typeof(T)) as T;
 		}
 
-		public static void Test()
+		public static void TestTransformAddComponent()
         {
 			GameObject.Find("Test").transform.AddComponent<SaveManager>();
         }
@@ -359,5 +370,172 @@ namespace EditorManagement.Functions.Tools
 
 			return obj;
 		}
+
+		public static bool StartCoroutine(IEnumerator _coroutine)
+		{
+			while (_coroutine.MoveNext())
+			{
+				return true;
+			}
+			return false;
+		}
+
+		public static string BoolToYN(this bool _bool)
+		{
+			if (_bool)
+				return "Yes";
+			return "No";
+		}
+
+		public static string ToWord(this int _int)
+        {
+			string str = "";
+			if (_int.ToString().Length == 1)
+            {
+				switch (_int)
+                {
+					case 0:
+                        {
+							str = "Zero";
+							break;
+                        }
+					case 1:
+                        {
+							str = "One";
+							break;
+                        }
+					case 2:
+                        {
+							str = "Two";
+							break;
+                        }
+					case 3:
+                        {
+							str = "Three";
+							break;
+                        }
+					case 4:
+                        {
+							str = "Four";
+							break;
+                        }
+					case 5:
+                        {
+							str = "Five";
+							break;
+                        }
+					case 6:
+                        {
+							str = "Six";
+							break;
+                        }
+					case 7:
+                        {
+							str = "Seven";
+							break;
+                        }
+					case 8:
+                        {
+							str = "Eight";
+							break;
+                        }
+					case 9:
+                        {
+							str = "Nine";
+							break;
+                        }
+                }
+            }
+			if (_int.ToString().Length == 2)
+            {
+				string tw1 = _int.ToString().Substring(0, 1);
+				string tw2 = _int.ToString().Substring(1, 1);
+				int num1 = int.Parse(tw1);
+				int num2 = int.Parse(tw2);
+
+				string toWord2 = num2.ToWord();
+
+				if (_int > 20)
+                {
+					switch (num1)
+                    {
+						case 2:
+                            {
+								str = "Twenty";
+								if (toWord2.ToLower() != "zero")
+                                {
+									str += " " + toWord2;
+                                }
+								break;
+                            }
+						case 3:
+                            {
+								str = "Thirty";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+						case 4:
+                            {
+								str = "Fourty";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+						case 5:
+                            {
+								str = "Fifty";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+						case 6:
+                            {
+								str = "Sixty";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+						case 7:
+                            {
+								str = "Seventy";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+						case 8:
+                            {
+								str = "Eighty";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+						case 9:
+                            {
+								str = "Ninety";
+								if (toWord2.ToLower() != "zero")
+								{
+									str += " " + toWord2;
+								}
+								break;
+                            }
+                    }
+                }
+            }
+
+			return str;
+        }
 	}
 }

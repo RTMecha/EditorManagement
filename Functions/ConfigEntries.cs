@@ -16,6 +16,8 @@ namespace EditorManagement.Functions
 {
     public static class ConfigEntries
     {
+		public static ConfigEntry<bool> IncreasedClipPlanes { get; set; }
+
 		public static ConfigEntry<bool> PrefabOffset { get; set; }
 		public static ConfigEntry<bool> DisplayNotifications { get; set; }
 

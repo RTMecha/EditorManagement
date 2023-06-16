@@ -23,7 +23,7 @@ using EditorManagement.Patchers;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.0")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.1")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
@@ -43,10 +43,14 @@ namespace EditorManagement
 		//Add a config option for updating objects whilst modifying a value in the Object Editor window.
 		//Add a backup autosave for cases where the game crashes or quits and the player hasn't saved. (Probably make a comparison reference to compare the two files to check if they equal)
 		//Work on a prefab keybind thing.
+		//Fix EventsCore compatibility... again...
+		//Add an Editor Achievement system where doing specific actions or creating specific things triggers a specific achievement.
 
 		//Update list
-		//Fixed a compatibility issue where Catalyst fails to load objects properly due to an update method.
+		//Mod is integrated with my own modified version of Catalyst that works in the editor. Just need to talk to Reimnop about it before doing anything further with it.
 		//Fixed a problem with pasting an object causing the multi object editor window to open.
+		//Added a config option for render depth, so you can now have the Legacy render depth "cap" or the unlimited render depth.
+		//Fixed a bug where creating a new level wouldn't load the level properly.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -79,12 +83,13 @@ namespace EditorManagement
 
 		public static bool createInternal = true;
 
-		public static bool tester = true;
-
 		public static List<SaveManager.ArcadeLevel> arcadeQueue = new List<SaveManager.ArcadeLevel>();
 		public static int current;
 
-		private void Awake()
+		public static Type catalyst;
+		public static int catInstalled = 0;
+
+        private void Awake()
 		{
 			inst = this;
 
@@ -334,6 +339,8 @@ namespace EditorManagement
 				ConfigEntries.ShowSelector = Config.Bind("Preview", "Show Drag Selector?", true, "If enabled, a circular point will appear that allows you to move objects when the circlular point is dragged around.");
 				emptyDisable = ConfigEntries.PreviewSelectFix.Value;
 				emptyVisible = ConfigEntries.ShowEmpties.Value;
+
+				ConfigEntries.IncreasedClipPlanes = Config.Bind("Preview", "08 Increased Clip Planes", true, "If enabled, will increase the render distance of the camera to a higher number, allowing for more render depth layers. This option only works for the editor.");
 			}
 
 			//Editor GUI
@@ -526,6 +533,7 @@ namespace EditorManagement
 				harmony.PatchAll(typeof(EventEditorPatch));
 				harmony.PatchAll(typeof(ThemeEditorPatch));
 				harmony.PatchAll(typeof(ObjectManagerPatch));
+				harmony.PatchAll(typeof(EventsInstance));
 
 				harmony.Patch(layerSetter, prefix: layerPatch);
 				harmony.Patch(binSetter, prefix: binPatch);
@@ -555,6 +563,45 @@ namespace EditorManagement
 			return false;
 		}
 
+		
+		public static void SetCatalyst()
+        {
+			if (catalyst == null && catInstalled == 0)
+            {
+				if (!GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
+				{
+					catInstalled = 1;
+					return;
+				}
+
+				catInstalled = 2;
+				catalyst = GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase").GetType();
+				
+				if ((string)catalyst.GetField("Name").GetValue(catalyst) == "Editor Catalyst")
+                {
+					catInstalled = 3;
+                }
+			}
+        }
+
+		public static void SetCameraRenderDistance()
+		{
+			if (EditorManager.inst == null)
+				return;
+
+			Camera camera = GameObject.Find("Main Camera").GetComponent<Camera>();
+			if (ConfigEntries.IncreasedClipPlanes.Value)
+            {
+				camera.farClipPlane = 100000;
+				camera.nearClipPlane = -100000;
+			}
+			else
+			{
+				camera.farClipPlane = 32f;
+				camera.nearClipPlane = 0.1f;
+			}
+		}
+
 		[HarmonyPatch(typeof(AudioManager), "PlaySound", typeof(AudioClip))]
 		public static bool AudioPrefix(AudioManager __instance, AudioClip __0)
 		{
@@ -578,6 +625,8 @@ namespace EditorManagement
 
 		private static void UpdateEditorManagementConfigs(object sender, EventArgs e)
 		{
+			SetCameraRenderDistance();
+
 			if (EditorManager.inst != null)
 			{
 				EditorGUI.UpdateEditorGUI();
@@ -1089,6 +1138,7 @@ namespace EditorManagement
 
 				GameObject scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
 				scrollView.transform.SetParent(EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left"));
+				scrollView.transform.localScale = Vector3.one;
 				LSHelpers.DeleteChildren(scrollView.transform.Find("Viewport/Content"), false);
 				scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(383f, 690f);
 
@@ -1684,7 +1734,7 @@ namespace EditorManagement
 					syncStartTime.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "startTime", true, true);
+						ReSync(true, "startTime", true, true);
 					});
 
 					GameObject syncName = Instantiate(eventButton);
@@ -1702,7 +1752,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.N;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "name", true, false);
+						ReSync(true, "name", true, false);
 					});
 
 					GameObject syncObjectType = Instantiate(eventButton);
@@ -1720,7 +1770,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.OT;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "objectType", true, true);
+						ReSync(true, "objectType", true, true);
 					});
 
 					GameObject syncAutokillType = Instantiate(eventButton);
@@ -1738,7 +1788,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.AKT;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "autoKillType", true, true);
+						ReSync(true, "autoKillType", true, true);
 					});
 
 					GameObject syncAutokillOffset = Instantiate(eventButton);
@@ -1756,7 +1806,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.AKO;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "autoKillOffset", true, true);
+						ReSync(true, "autoKillOffset", true, true);
 					});
 
 					GameObject syncParent = Instantiate(eventButton);
@@ -1774,7 +1824,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.P;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "parent", false, true);
+						ReSync(true, "parent", false, true);
 					});
 
 					GameObject syncParentType = Instantiate(eventButton);
@@ -1792,7 +1842,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.PT;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "parentType", false, true);
+						ReSync(true, "parentType", false, true);
 					});
 
 					GameObject syncParentOffset = Instantiate(eventButton);
@@ -1810,7 +1860,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.PO;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "parentOffset", false, true);
+						ReSync(true, "parentOffset", false, true);
 					});
 
 					GameObject syncOrigin = Instantiate(eventButton);
@@ -1828,7 +1878,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.O;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "origin", false, true);
+						ReSync(true, "origin", false, true);
 					});
 
 					GameObject syncShape = Instantiate(eventButton);
@@ -1846,7 +1896,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.S;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "shape", false, true);
+						ReSync(true, "shape", false, true);
 					});
 
 					GameObject syncText = Instantiate(eventButton);
@@ -1864,7 +1914,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.T;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "text", false, true);
+						ReSync(true, "text", false, true);
 					});
 
 					GameObject syncDepth = Instantiate(eventButton);
@@ -1882,7 +1932,7 @@ namespace EditorManagement
 					{
 						RTEditor.objectData = RTEditor.ObjectData.D;
 						EditorManager.inst.ShowDialog("Object Search Popup");
-						RTEditor.RefreshObjectSearch(true, "depth", false, true);
+						ReSync(true, "depth", false, true);
 					});
 
 					//ISSUE: Causes newly selected objects to retain the values of the previous object for some reason
@@ -1930,6 +1980,20 @@ namespace EditorManagement
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
 			}
+		}
+
+		public static void ReSync(bool _multi = false, string _multiValue = "", bool objEditor = false, bool objectManager = false)
+        {
+			EditorManager.inst.ShowDialog("Object Search Popup");
+			var searchBar = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
+			searchBar.onValueChanged.RemoveAllListeners();
+			searchBar.text = RTEditor.searchterm;
+			searchBar.onValueChanged.AddListener(delegate (string _value)
+			{
+				RTEditor.searchterm = _value;
+				RTEditor.RefreshObjectSearch(_multi, _multiValue, objEditor, objectManager);
+			});
+			RTEditor.RefreshObjectSearch(_multi, _multiValue, objEditor, objectManager);
 		}
 
 		[HarmonyPatch(typeof(PrefabEditor), "CollapseCurrentPrefab")]
@@ -2271,16 +2335,28 @@ namespace EditorManagement
 						}
 
 						gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
-                        {
-                            if (tester)
-                            {
-                                RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
-                            }
-							else
-                            {
-								EditorManager.inst.StartCoroutine(EditorManager.inst.LoadLevel(name));
-							}
-                            EditorManager.inst.HideDialog("Open File Popup");
+						{
+							RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
+							EditorManager.inst.HideDialog("Open File Popup");
+
+							//if (RTEditor.CompareLastSaved())
+							//{
+							//	EditorManager.inst.ShowDialog("Warning Popup");
+							//	RTEditor.RefreshWarningPopup("You haven't saved! Are you sure you want to exit the level before saving?", delegate ()
+							//	{
+							//		RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
+							//		EditorManager.inst.HideDialog("Open File Popup");
+							//		EditorManager.inst.HideDialog("Warning Popup");
+							//	}, delegate ()
+							//	{
+							//		EditorManager.inst.HideDialog("Warning Popup");
+							//	});
+							//}
+							//else
+							//{
+							//	RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
+							//	EditorManager.inst.HideDialog("Open File Popup");
+							//}
 						});
 
 						GameObject icon = new GameObject("icon");
@@ -2327,139 +2403,6 @@ namespace EditorManagement
 					}
 				}
 			}
-		}
-
-		public static void LegacyWaveform()
-        {
-			int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
-			Sprite waveform = Sprite.Create(GetWaveformTextureAdvanced(AudioManager.inst.CurrentAudioSource.clip, num, 300, ConfigEntries.TimelineBGColor.Value, ConfigEntries.TimelineTopColor.Value, ConfigEntries.TimelineBottomColor.Value), new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
-			EditorManager.inst.timeline.GetComponent<Image>().sprite = waveform;
-			EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = EditorManager.inst.timeline.GetComponent<Image>().sprite;
-		}
-
-		public static void OldWaveform()
-		{
-			int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
-			Sprite waveform = Sprite.Create(LSImage.GetWaveformTexture(AudioManager.inst.CurrentAudioSource.clip, num, 300, ConfigEntries.TimelineBGColor.Value, ConfigEntries.TimelineTopColor.Value), new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
-			EditorManager.inst.timeline.GetComponent<Image>().sprite = waveform;
-			EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = EditorManager.inst.timeline.GetComponent<Image>().sprite;
-		}
-
-		public static void NewTexture(string _path)
-        {
-			int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
-
-			var texture = new Texture2D(2, 2, TextureFormat.ARGB32, false);
-			var bytes = File.ReadAllBytes(_path);
-			texture.LoadImage(bytes);
-
-			texture.wrapMode = TextureWrapMode.Clamp;
-			texture.filterMode = FilterMode.Point;
-			texture.Apply();
-
-			EditorManager.inst.timeline.GetComponent<Image>().sprite = Sprite.Create(texture, new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
-			EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = EditorManager.inst.timeline.GetComponent<Image>().sprite;
-		}
-
-		public static void AssignTimelineTexture()
-		{
-			if (EditorManager.inst.hasLoadedLevel)
-            {
-				if (ConfigEntries.WaveformMode.Value == WaveformType.Legacy)
-				{
-					LegacyWaveform();
-				}
-				if (ConfigEntries.WaveformMode.Value == WaveformType.Beta)
-				{
-					OldWaveform();
-				}
-			}
-		}
-
-		public static Texture2D GetWaveformTextureAdvanced(AudioClip clip, int textureWidth, int textureHeight, Color background, Color _top, Color _bottom)
-		{
-			int num = 160;
-			num = clip.frequency / num;
-			Texture2D texture2D = new Texture2D(textureWidth, textureHeight, TextureFormat.ARGB32, false);
-			Color[] array = new Color[texture2D.width * texture2D.height];
-			for (int i = 0; i < array.Length; i++)
-			{
-				array[i] = background;
-			}
-			texture2D.SetPixels(array);
-			float[] array3;
-			float[] array4;
-			if (clip.channels > 1)
-			{
-				float[] array2 = new float[clip.samples * clip.channels];
-				array3 = new float[clip.samples];
-				array4 = new float[clip.samples];
-				clip.GetData(array2, 0);
-				array3 = array2.Where((float value, int index) => index % 2 != 0).ToArray<float>();
-				array4 = array2.Where((float value, int index) => index % 2 == 0).ToArray<float>();
-			}
-			else
-			{
-				float[] array5 = new float[clip.samples * clip.channels];
-				array3 = new float[clip.samples];
-				array4 = new float[clip.samples];
-				clip.GetData(array5, 0);
-				array3 = array5;
-				array4 = array5;
-			}
-			float[] array6 = new float[array3.Length / num];
-			for (int j = 0; j < array6.Length; j++)
-			{
-				array6[j] = 0f;
-				for (int k = 0; k < num; k++)
-				{
-					array6[j] += Mathf.Abs(array3[j * num + k]);
-				}
-				array6[j] /= (float)num;
-				array6[j] *= 0.85f;
-			}
-			for (int l = 0; l < array6.Length - 1; l++)
-			{
-				int num2 = 0;
-				while ((float)num2 < (float)textureHeight * array6[l])
-				{
-					texture2D.SetPixel(textureWidth * l / array6.Length, (int)((float)textureHeight * array6[l]) - num2, _top);
-					num2++;
-				}
-			}
-			array6 = new float[array4.Length / num];
-			for (int m = 0; m < array6.Length; m++)
-			{
-				array6[m] = 0f;
-				for (int n = 0; n < num; n++)
-				{
-					array6[m] += Mathf.Abs(array4[m * num + n]);
-				}
-				array6[m] /= (float)num;
-				array6[m] *= 0.85f;
-			}
-			for (int num3 = 0; num3 < array6.Length - 1; num3++)
-			{
-				int num4 = 0;
-				while ((float)num4 < (float)textureHeight * array6[num3])
-				{
-					int x = textureWidth * num3 / array6.Length;
-					int y = (int)array4[num3 * num + num4] - num4;
-					if (texture2D.GetPixel(x, y) == _top)
-					{
-						texture2D.SetPixel(x, y, _top + _bottom);
-					}
-					else
-					{
-						texture2D.SetPixel(x, y, _bottom);
-					}
-					num4++;
-				}
-			}
-			texture2D.wrapMode = TextureWrapMode.Clamp;
-			texture2D.filterMode = FilterMode.Point;
-			texture2D.Apply();
-			return texture2D;
 		}
 
 		//public static void GeneratePassword()

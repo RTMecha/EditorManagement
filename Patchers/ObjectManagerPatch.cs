@@ -25,6 +25,14 @@ namespace EditorManagement.Patchers
 		public static DraggableObject tracker;
 
 		[HarmonyPatch("Awake")]
+		[HarmonyPrefix]
+		private static void AwakePrefixPatch()
+        {
+			EditorPlugin.SetCatalyst();
+			Debug.LogFormat("{0}Catalyst Installed Level: {1}", EditorPlugin.className, EditorPlugin.catInstalled);
+		}
+
+		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
 		private static void AwakePostfixPatch()
 		{
@@ -152,7 +160,7 @@ namespace EditorManagement.Patchers
 			{
 				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 				{
-					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[beatmapObject.id] != null && beatmapObject.GetGameObject() != null)
+					if (beatmapObject != null && beatmapObject.GetGameObject() != null)
 					{
 						var gameObject = beatmapObject.GetGameObject();
 						var transform = beatmapObject.GetGameObject().transform.GetParent();
@@ -162,7 +170,7 @@ namespace EditorManagement.Patchers
 							mat = gameObject.GetComponent<Renderer>().material;
 						}
 
-						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value == true)
+						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value)
 						{
 							if (gameObject.GetComponent<SelectObjectInEditor>())
 							{
@@ -174,7 +182,7 @@ namespace EditorManagement.Patchers
 							}
 						}
 
-						if (ConfigEntries.ShowEmpties.Value == true)
+						if (ConfigEntries.ShowEmpties.Value)
 						{
 							if (!gameObject.GetComponent<MeshFilter>() && !gameObject.GetComponent<MeshRenderer>())
 							{
@@ -187,15 +195,15 @@ namespace EditorManagement.Patchers
 							}
 						}
 
-						if (ConfigEntries.ShowDamagable.Value == true)
+						if (ConfigEntries.ShowDamagable.Value)
 						{
-							if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty)
+							if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty && gameObject.GetComponent<Renderer>())
 							{
 								gameObject.GetComponent<Renderer>().enabled = false;
 							}
 						}
 
-						if (ConfigEntries.EditorDebug.Value == true)
+						if (ConfigEntries.EditorDebug.Value)
 						{
 							if (gameObject.GetComponent<RTObject>() && mat != null)
 							{
@@ -280,18 +288,10 @@ namespace EditorManagement.Patchers
 								gameObject.GetComponent<RTObject>().tipEnabled = false;
 							}
 						}
-						if (ConfigEntries.ShowObjectsOnLayer.Value == true)
+						if (ConfigEntries.ShowObjectsOnLayer.Value && mat != null)
 						{
-							if (beatmapObject.shape != 4)
-							{
-								Color objColor = mat.color;
-								mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
-							}
-							else
-							{
-								Color objColor = gameObject.GetComponent<TMPro.TMP_Text>().color;
-								gameObject.GetComponent<TMPro.TMP_Text>().color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
-							}
+							Color objColor = mat.color;
+							mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
 						}
 					}
 				}

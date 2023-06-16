@@ -23,7 +23,7 @@ namespace EditorManagement.Functions.Tools
 {
     public class Triggers : MonoBehaviour
     {
-		public static EventTrigger.Entry ScrollDelta(InputField _if, float _amount, float _divide, bool _multi = false)
+		public static EventTrigger.Entry ScrollDelta(InputField _if, float _amount, float _divide, bool _multi = false, List<float> clamp = null)
 		{
 			EventTrigger.Entry entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.Scroll;
@@ -39,6 +39,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x -= _amount / _divide;
+
+							if (clamp != null)
+                            {
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+                            }
+
 							_if.text = x.ToString("f2");
 							return;
 						}
@@ -46,6 +52,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x += _amount / _divide;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 						}
 					}
@@ -57,6 +69,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x -= _amount * _divide;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 							return;
 						}
@@ -64,6 +82,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x += _amount * _divide;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 						}
 					}
@@ -75,6 +99,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x -= _amount;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 							return;
 						}
@@ -82,6 +112,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x += _amount;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 						}
 					}
@@ -95,6 +131,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x -= _amount / _divide;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 							return;
 						}
@@ -113,6 +155,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x -= _amount * _divide;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 							return;
 						}
@@ -120,6 +168,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x += _amount * _divide;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 						}
 					}
@@ -131,6 +185,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x -= _amount;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 							return;
 						}
@@ -138,6 +198,12 @@ namespace EditorManagement.Functions.Tools
 						{
 							float x = float.Parse(_if.text);
 							x += _amount;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
 							_if.text = x.ToString("f2");
 						}
 					}
@@ -261,7 +327,123 @@ namespace EditorManagement.Functions.Tools
 			return previewClickTrigger;
 		}
 
-		public static void SyncObjects(string _id, string _field, bool _objEditor, bool _objectManager)
+		public static EventTrigger.Entry StartDragTrigger()
+        {
+			var editorManager = EditorManager.inst;
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.BeginDrag;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				PointerEventData pointerEventData = (PointerEventData)eventData;
+				editorManager.SelectionBoxImage.gameObject.SetActive(true);
+				editorManager.DragStartPos = pointerEventData.position * editorManager.ScreenScaleInverse;
+				editorManager.SelectionRect = default(Rect);
+			});
+			return entry;
+        }
+
+        public static EventTrigger.Entry DragTrigger()
+        {
+            var editorManager = EditorManager.inst;
+            EventTrigger.Entry entry = new EventTrigger.Entry();
+            entry.eventID = EventTriggerType.Drag;
+            entry.callback.AddListener(delegate (BaseEventData eventData)
+            {
+                Vector3 vector = ((PointerEventData)eventData).position * editorManager.ScreenScaleInverse;
+                if (vector.x < editorManager.DragStartPos.x)
+                {
+                    editorManager.SelectionRect.xMin = vector.x;
+                    editorManager.SelectionRect.xMax = editorManager.DragStartPos.x;
+                }
+                else
+                {
+                    editorManager.SelectionRect.xMin = editorManager.DragStartPos.x;
+                    editorManager.SelectionRect.xMax = vector.x;
+                }
+                if (vector.y < editorManager.DragStartPos.y)
+                {
+                    editorManager.SelectionRect.yMin = vector.y;
+                    editorManager.SelectionRect.yMax = editorManager.DragStartPos.y;
+                }
+                else
+                {
+                    editorManager.SelectionRect.yMin = editorManager.DragStartPos.y;
+                    editorManager.SelectionRect.yMax = vector.y;
+                }
+                editorManager.SelectionBoxImage.rectTransform.offsetMin = editorManager.SelectionRect.min;
+                editorManager.SelectionBoxImage.rectTransform.offsetMax = editorManager.SelectionRect.max;
+            });
+            return entry;
+        }
+
+		public static EventTrigger.Entry EndDragTrigger()
+        {
+			var editorManager = EditorManager.inst;
+
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.EndDrag;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				PointerEventData pointerEventData = (PointerEventData)eventData;
+				EditorManager.inst.DragEndPos = pointerEventData.position;
+				EditorManager.inst.SelectionBoxImage.gameObject.SetActive(false);
+				if (EditorManager.inst.layer != 5)
+				{
+					if (Input.GetKey(KeyCode.LeftShift))
+					{
+						RTEditor.inst.StartCoroutine(RTEditor.GroupSelectObjects());
+					}
+					else
+					{
+						RTEditor.inst.StartCoroutine(RTEditor.GroupSelectObjects(false));
+					}
+				}
+				else
+				{
+					bool flag = false;
+					int type = 0;
+					foreach (List<GameObject> list5 in EventEditor.inst.eventObjects)
+					{
+						int index = 0;
+						foreach (GameObject gameObject2 in list5)
+						{
+							if (EditorManager.RectTransformToScreenSpace(editorManager.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(gameObject2.transform.GetChild(0).GetComponent<Image>().rectTransform)) && gameObject2.activeSelf)
+							{
+								if (EventEditorPatch.eventLayer == 0)
+								{
+									if (!flag)
+									{
+										EventEditor.inst.SetCurrentEvent(type, index);
+										flag = true;
+									}
+									else
+									{
+										EventEditor.inst.AddedSelectedEvent(type, index);
+									}
+								}
+								else if (EventEditorPatch.eventLayer == 1)
+								{
+									if (!flag)
+									{
+										EventEditor.inst.SetCurrentEvent(type + 14, index);
+										flag = true;
+									}
+									else
+									{
+										EventEditor.inst.AddedSelectedEvent(type + 14, index);
+									}
+								}
+							}
+							index++;
+						}
+						type++;
+					}
+				}
+			});
+			return entry;
+		}
+
+        public static void SyncObjects(string _id, string _field, bool _objEditor, bool _objectManager)
 		{
 			Debug.LogFormat("{0}2Attempting to sync {1} to selection!", EditorPlugin.className, _id);
 			foreach (var objectSelection in ObjEditor.inst.selectedObjects)

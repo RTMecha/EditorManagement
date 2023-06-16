@@ -199,20 +199,14 @@ namespace EditorManagement.Patchers
             jsonnode["offset"] = __0.Offset.ToString();
             for (int i = 0; i < __0.objects.Count; i++)
             {
-                bool flag5 = __0.objects[i] != null;
-                bool flag6 = flag5;
-                if (flag6)
+                if (__0.objects[i] != null)
                 {
                     jsonnode["objects"][i]["id"] = __0.objects[i].id;
-                    bool flag7 = __0.objects[i].GetParentType().ToString() != "101";
-                    bool flag8 = flag7;
-                    if (flag8)
+                    if (__0.objects[i].GetParentType().ToString() != "101")
                     {
                         jsonnode["objects"][i]["pt"] = __0.objects[i].GetParentType().ToString();
                     }
-                    bool flag9 = __0.objects[i].getParentOffsets().FindIndex((float x) => x != 0f) != -1;
-                    bool flag10 = flag9;
-                    if (flag10)
+                    if (__0.objects[i].getParentOffsets().FindIndex((float x) => x != 0f) != -1)
                     {
                         int num = 0;
                         foreach (float num2 in __0.objects[i].getParentOffsets())
@@ -225,40 +219,30 @@ namespace EditorManagement.Patchers
                     jsonnode["objects"][i]["d"] = __0.objects[i].Depth.ToString();
                     jsonnode["objects"][i]["ot"] = (int)__0.objects[i].objectType;
                     jsonnode["objects"][i]["st"] = __0.objects[i].StartTime.ToString();
-                    bool flag11 = !string.IsNullOrEmpty(__0.objects[i].text);
-                    bool flag12 = flag11;
-                    if (flag12)
+                    if (!string.IsNullOrEmpty(__0.objects[i].text))
                     {
                         jsonnode["objects"][i]["text"] = __0.objects[i].text;
                     }
                     jsonnode["objects"][i]["name"] = __0.objects[i].name;
-                    bool flag13 = __0.objects[i].shape != 0;
-                    bool flag14 = flag13;
-                    if (flag14)
+                    if (__0.objects[i].shape != 0)
                     {
                         jsonnode["objects"][i]["shape"] = __0.objects[i].shape.ToString();
                     }
                     jsonnode["objects"][i]["akt"] = (int)__0.objects[i].autoKillType;
                     jsonnode["objects"][i]["ako"] = __0.objects[i].autoKillOffset;
-                    bool flag15 = __0.objects[i].shapeOption != 0;
-                    bool flag16 = flag15;
-                    if (flag16)
+                    if (__0.objects[i].shapeOption != 0)
                     {
                         jsonnode["objects"][i]["so"] = __0.objects[i].shapeOption.ToString();
                     }
-                    jsonnode["objects"][i]["o"]["x"] = __0.objects[i].origin.x.ToString();
-                    bool locked = __0.objects[i].editorData.locked;
-                    bool flag17 = locked;
-                    if (flag17)
+                    if (__0.objects[i].editorData.locked)
                     {
                         jsonnode["objects"][i]["ed"]["locked"] = __0.objects[i].editorData.locked.ToString();
                     }
-                    bool collapse = __0.objects[i].editorData.collapse;
-                    bool flag18 = collapse;
-                    if (flag18)
+                    if (__0.objects[i].editorData.collapse)
                     {
                         jsonnode["objects"][i]["ed"]["shrink"] = __0.objects[i].editorData.collapse.ToString();
                     }
+                    jsonnode["objects"][i]["o"]["x"] = __0.objects[i].origin.x.ToString();
                     jsonnode["objects"][i]["o"]["y"] = __0.objects[i].origin.y.ToString();
                     jsonnode["objects"][i]["ed"]["bin"] = __0.objects[i].editorData.Bin.ToString();
                     jsonnode["objects"][i]["ed"]["layer"] = __0.objects[i].editorData.Layer.ToString();
@@ -345,6 +329,55 @@ namespace EditorManagement.Patchers
                         {
                             jsonnode["objects"][i]["events"]["col"][m]["r"] = __0.objects[i].events[3][m].random.ToString();
                             jsonnode["objects"][i]["events"]["col"][m]["rx"] = __0.objects[i].events[3][m].eventRandomValues[0].ToString();
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i <__0.prefabObjects.Count; i++)
+            {
+                if (__0.prefabObjects[i] != null)
+                {
+                    jsonnode["prefab_objects"][i]["id"] = __0.prefabObjects[i].ID;
+                    jsonnode["prefab_objects"][i]["pid"] = __0.prefabObjects[i].prefabID;
+                    jsonnode["prefab_objects"][i]["st"] = __0.prefabObjects[i].StartTime.ToString();
+
+                    if (__0.prefabObjects[i].editorData.locked)
+                    {
+                        jsonnode["prefab_objects"][i]["ed"]["locked"] = __0.prefabObjects[i].editorData.locked.ToString();
+                    }
+                    if (__0.prefabObjects[i].editorData.collapse)
+                    {
+                        jsonnode["prefab_objects"][i]["ed"]["shrink"] = __0.prefabObjects[i].editorData.collapse.ToString();
+                    }
+                    for (int j = 0; j < 3; j++)
+                    {
+                        string type = "";
+                        switch (j)
+                        {
+                            case 0:
+                                {
+                                    type = "pos";
+                                    break;
+                                }
+                            case 1:
+                                {
+                                    type = "sca";
+                                    break;
+                                }
+                            case 2:
+                                {
+                                    type = "rot";
+                                    break;
+                                }
+                        }
+
+                        if (type != "")
+                        {
+                            jsonnode["prefab_objects"][i]["e"][j][type]["x"] = __0.prefabObjects[i].events[j].eventValues[0].ToString();
+                            if (j != 2)
+                            {
+                                jsonnode["prefab_objects"][i]["e"][j][type]["y"] = __0.prefabObjects[i].events[j].eventValues[1].ToString();
+                            }
                         }
                     }
                 }
@@ -564,7 +597,6 @@ namespace EditorManagement.Patchers
                     }
 
                     string str = "";
-                    List<DataManager.BeatmapTheme> beatmapThemes = new List<DataManager.BeatmapTheme>();
                     for (int i = 0; i < DataManager.inst.AllThemes.Count; i++)
                     {
                         if (DataManager.inst.AllThemes[i].id == beatmapTheme.id)

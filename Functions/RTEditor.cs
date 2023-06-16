@@ -823,6 +823,10 @@ namespace EditorManagement.Functions
 				CheckpointEditor.inst.CreateCheckpoints();
 				ObjEditor.inst.RenderTimelineObjects("");
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/6").GetComponent<Toggle>().isOn = true;
+				if (EventEditorPatch.loggle != null)
+                {
+					EventEditorPatch.loggle.isOn = false;
+                }
 			}
 			else if (EditorManager.inst.layer != 5 && EditorManager.inst.lastLayer == 5)
 			{
@@ -853,11 +857,19 @@ namespace EditorManagement.Functions
 				}
 				CheckpointEditor.inst.CreateGhostCheckpoints();
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/6").GetComponent<Toggle>().isOn = false;
+				if (EventEditorPatch.loggle != null)
+				{
+					EventEditorPatch.loggle.isOn = false;
+				}
 			}
 			else
 			{
 				ObjEditor.inst.RenderTimelineObjects("");
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/6").GetComponent<Toggle>().isOn = false;
+				if (EventEditorPatch.loggle != null)
+				{
+					EventEditorPatch.loggle.isOn = false;
+				}
 			}
 
 			if (_layer < EditorManager.inst.layerSelectors.Count)
@@ -1419,14 +1431,121 @@ namespace EditorManagement.Functions
 
 		public static DataManager.GameData lastSavedGameData;
 
-		public static void OnApplicationQuit()
+		private void OnApplicationQuit()
         {
-			if (DataManager.inst != null && lastSavedGameData != DataManager.inst.gameData && EditorManager.inst != null)
-            {
-				DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
-				EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(GameManager.inst.basePath + "level-backup.lsb"));
-			}
+			//if (CompareLastSaved2())
+            //{
+			//	DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
+			//	EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(GameManager.inst.basePath + "level-backup.lsb"));
+			//	SetLastSaved();
+			//}
         }
+
+		public static bool CompareLastSaved2()
+		{
+			var currentData = DataManager.inst.gameData;
+
+			if (currentData.beatmapObjects.Count == lastSavedGameData.beatmapObjects.Count)
+				for (int i = 0; i < currentData.beatmapObjects.Count; i++)
+				{
+					if (currentData.beatmapObjects[i] != lastSavedGameData.beatmapObjects[i])
+						return true;
+				}
+			if (currentData.backgroundObjects.Count == lastSavedGameData.backgroundObjects.Count)
+				for (int i = 0; i < currentData.backgroundObjects.Count; i++)
+				{
+					if (currentData.backgroundObjects[i] != lastSavedGameData.backgroundObjects[i])
+						return true;
+				}
+			if (currentData.eventObjects.allEvents.Count == lastSavedGameData.eventObjects.allEvents.Count)
+				for (int i = 0; i < currentData.eventObjects.allEvents.Count; i++)
+				{
+					if (currentData.eventObjects.allEvents[i] != lastSavedGameData.eventObjects.allEvents[i])
+						return true;
+				}
+			if (currentData.prefabObjects.Count == lastSavedGameData.prefabObjects.Count)
+				for (int i = 0; i < currentData.prefabObjects.Count; i++)
+				{
+					if (currentData.prefabObjects[i] != lastSavedGameData.prefabObjects[i])
+						return true;
+				}
+			if (currentData.prefabs.Count == lastSavedGameData.prefabs.Count)
+				for (int i = 0; i < currentData.prefabs.Count; i++)
+				{
+					if (currentData.prefabs[i] != lastSavedGameData.prefabs[i])
+						return true;
+				}
+			if (currentData.beatmapData.checkpoints.Count == lastSavedGameData.beatmapData.checkpoints.Count)
+				for (int i = 0; i < currentData.beatmapData.checkpoints.Count; i++)
+				{
+					if (currentData.beatmapData.checkpoints[i] != lastSavedGameData.beatmapData.checkpoints[i])
+						return true;
+				}
+			if (currentData.beatmapData.markers.Count == lastSavedGameData.beatmapData.markers.Count)
+				for (int i = 0; i < currentData.beatmapData.markers.Count; i++)
+				{
+					if (currentData.beatmapData.markers[i] != lastSavedGameData.beatmapData.markers[i])
+						return true;
+				}
+			if (currentData.beatmapData.editorData.mainTimelineZoom != lastSavedGameData.beatmapData.editorData.mainTimelineZoom)
+				return true;
+			if (currentData.beatmapData.editorData.timelinePos != lastSavedGameData.beatmapData.editorData.timelinePos)
+				return true;
+			if (currentData.beatmapData.levelData.backgroundColor != lastSavedGameData.beatmapData.levelData.backgroundColor)
+				return true;
+			if (currentData.beatmapData.levelData.followPlayer != lastSavedGameData.beatmapData.levelData.followPlayer)
+				return true;
+			if (currentData.beatmapData.levelData.levelVersion != lastSavedGameData.beatmapData.levelData.levelVersion)
+				return true;
+			if (currentData.beatmapData.levelData.showIntro != lastSavedGameData.beatmapData.levelData.showIntro)
+				return true;
+
+			return false;
+		}
+
+		public static void SetLastSaved2()
+        {
+			if (DataManager.inst == null)
+            {
+				Debug.LogErrorFormat("{0}DataManager is null", EditorPlugin.className);
+				return;
+            }
+
+			if (CompareLastSaved2() && EditorManager.inst != null && EditorManager.inst.hasLoadedLevel)
+			{
+				var currentData = DataManager.inst.gameData;
+				lastSavedGameData = new DataManager.GameData();
+				lastSavedGameData.beatmapObjects = new List<DataManager.GameData.BeatmapObject>((from bms in currentData.beatmapObjects
+																								 select bms).ToList());
+				lastSavedGameData.backgroundObjects = new List<DataManager.GameData.BackgroundObject>((from bgs in currentData.backgroundObjects
+																									   select bgs).ToList());
+				lastSavedGameData.beatmapData = new DataManager.GameData.BeatmapData
+				{
+					checkpoints = new List<DataManager.GameData.BeatmapData.Checkpoint>((from check in currentData.beatmapData.checkpoints
+																						 select check).ToList()),
+					editorData = new DataManager.GameData.BeatmapData.EditorData
+                    {
+						mainTimelineZoom = currentData.beatmapData.editorData.mainTimelineZoom,
+						timelinePos = currentData.beatmapData.editorData.timelinePos
+                    },
+					levelData = new DataManager.GameData.BeatmapData.LevelData
+                    {
+						backgroundColor = currentData.beatmapData.levelData.backgroundColor,
+						followPlayer = currentData.beatmapData.levelData.followPlayer,
+						levelVersion = currentData.beatmapData.levelData.levelVersion,
+						showIntro = currentData.beatmapData.levelData.showIntro
+                    },
+					markers = new List<DataManager.GameData.BeatmapData.Marker>((from x in currentData.beatmapData.markers
+																				 select x).ToList())
+				};
+				lastSavedGameData.eventObjects.allEvents = new List<List<DataManager.GameData.EventKeyframe>>((from evs in currentData.eventObjects.allEvents
+																											   select evs).ToList());
+				lastSavedGameData.prefabObjects = new List<DataManager.GameData.PrefabObject>((from pos in currentData.prefabObjects
+																							   select pos).ToList());
+				lastSavedGameData.prefabs = new List<DataManager.GameData.Prefab>((from ps in currentData.prefabs
+																				   select ps).ToList());
+            }
+		}
 
 		public static ObjectManager updateObjects(DataManager.GameData.BeatmapObject _beatmapObject)
 		{
@@ -1588,6 +1707,24 @@ namespace EditorManagement.Functions
 			uiDictionary.Add("Object - Bin Slider", tfv.Find("editor/bin").GetComponent<Slider>());
 			uiDictionary.Add("Object - Name IF", tfv.Find("name/name").GetComponent<InputField>());
 			uiDictionary.Add("Object - Object Type DD", tfv.Find("name/object-type").GetComponent<Dropdown>());
+			uiDictionary.Add("Autokill - Time Of Death DD", tfv.Find("autokill/tod-dropdown").GetComponent<Dropdown>());
+			uiDictionary.Add("Autokill - Time Of Death IF", tfv.Find("autokill/tod-value").GetComponent<Dropdown>());
+			uiDictionary.Add("Autokill - Time Of Death Set", tfv.Find("autokill/|"));
+			uiDictionary.Add("Autokill - Time Of Death Set B", tfv.Find("autokill/|").GetComponent<Button>());
+			uiDictionary.Add("Autokill - Collapse T", tfv.Find("autokill/collapse").GetComponent<Toggle>());
+			uiDictionary.Add("Start Time - Time ET", tfv.Find("time").GetComponent<EventTrigger>());
+			uiDictionary.Add("Start Time - Time IF", tfv.Find("time/time").GetComponent<InputField>());
+			uiDictionary.Add("Start Time - Lock T", tfv.Find("time/lock").GetComponent<Toggle>());
+			uiDictionary.Add("Start Time - <<", tfv.Find("time/<<").GetComponent<Button>());
+			uiDictionary.Add("Start Time - <", tfv.Find("time/<").GetComponent<Button>());
+			uiDictionary.Add("Start Time - |", tfv.Find("time/|").GetComponent<Button>());
+			uiDictionary.Add("Start Time - >", tfv.Find("time/>").GetComponent<Button>());
+			uiDictionary.Add("Start Time - >>", tfv.Find("time/>>").GetComponent<Button>());
+			uiDictionary.Add("Depth - Slider", tfv.Find("depth/depth").GetComponent<Slider>());
+			uiDictionary.Add("Depth - IF", tfv.Find("spacer/depth").GetComponent<InputField>());
+			uiDictionary.Add("Depth - <", tfv.Find("spacer/depth/<").GetComponent<Button>());
+			uiDictionary.Add("Depth - >", tfv.Find("spacer/depth/>").GetComponent<Button>());
+			uiDictionary.Add("Shape - Settings", tfv.Find("shapesettings"));
 
 			yield break;
         }
@@ -2420,145 +2557,157 @@ namespace EditorManagement.Functions
 			float delay = 0f;
 			float audioTime = EditorManager.inst.CurrentAudioPos;
 			var objEditor = ObjEditor.inst;
+			Debug.LogFormat("{0}Placing prefab with {1} objects and {2} prefabs", EditorPlugin.className, _obj.objects.Count, _obj.prefabObjects.Count);
 
-			Dictionary<string, string> dictionary1 = new Dictionary<string, string>();
-			foreach (DataManager.GameData.BeatmapObject beatmapObject in _obj.objects)
+			//Objects
 			{
-				string str = LSText.randomString(16);
-				dictionary1.Add(beatmapObject.id, str);
-			}
-			Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
-			foreach (DataManager.GameData.BeatmapObject beatmapObject in _obj.objects)
-			{
-				if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !dictionary2.ContainsKey(beatmapObject.prefabInstanceID))
+				Dictionary<string, string> dictionary1 = new Dictionary<string, string>();
+				foreach (DataManager.GameData.BeatmapObject beatmapObject in _obj.objects)
 				{
 					string str = LSText.randomString(16);
-					dictionary2.Add(beatmapObject.prefabInstanceID, str);
+					dictionary1.Add(beatmapObject.id, str);
 				}
-			}
-			foreach (DataManager.GameData.BeatmapObject beatmapObject1 in _obj.objects)
-			{
-				yield return new WaitForSeconds(delay);
-				DataManager.GameData.BeatmapObject beatmapObj = beatmapObject1;
-				DataManager.GameData.BeatmapObject beatmapObject2 = DataManager.GameData.BeatmapObject.DeepCopy(beatmapObj, false);
-				if (dictionary1.ContainsKey(beatmapObj.id))
-					beatmapObject2.id = dictionary1[beatmapObj.id];
-				if (dictionary1.ContainsKey(beatmapObj.parent))
-					beatmapObject2.parent = dictionary1[beatmapObj.parent];
-				else if (DataManager.inst.gameData.beatmapObjects.FindIndex((Predicate<DataManager.GameData.BeatmapObject>)(x => x.id == beatmapObj.parent)) == -1)
-					beatmapObject2.parent = "";
-				beatmapObject2.prefabID = beatmapObj.prefabID;
-				if (_regen && !string.IsNullOrEmpty(beatmapObj.prefabInstanceID))
+				Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
+				foreach (DataManager.GameData.BeatmapObject beatmapObject in _obj.objects)
 				{
-					beatmapObject2.prefabInstanceID = dictionary2[beatmapObj.prefabInstanceID];
-				}
-				else
-					beatmapObject2.prefabInstanceID = beatmapObj.prefabInstanceID;
-				beatmapObject2.fromPrefab = beatmapObj.fromPrefab;
-				if (_undone == false)
-				{
-					if (_offsetTime == 0.0)
+					if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !dictionary2.ContainsKey(beatmapObject.prefabInstanceID))
 					{
-						beatmapObject2.StartTime += audioTime;
-						beatmapObject2.StartTime += _obj.Offset;
+						string str = LSText.randomString(16);
+						dictionary2.Add(beatmapObject.prefabInstanceID, str);
+					}
+				}
+				foreach (DataManager.GameData.BeatmapObject beatmapObject1 in _obj.objects)
+				{
+					yield return new WaitForSeconds(delay);
+					DataManager.GameData.BeatmapObject beatmapObj = beatmapObject1;
+					DataManager.GameData.BeatmapObject beatmapObject2 = DataManager.GameData.BeatmapObject.DeepCopy(beatmapObj, false);
+					if (dictionary1.ContainsKey(beatmapObj.id))
+						beatmapObject2.id = dictionary1[beatmapObj.id];
+					if (dictionary1.ContainsKey(beatmapObj.parent))
+						beatmapObject2.parent = dictionary1[beatmapObj.parent];
+					else if (DataManager.inst.gameData.beatmapObjects.FindIndex((Predicate<DataManager.GameData.BeatmapObject>)(x => x.id == beatmapObj.parent)) == -1)
+						beatmapObject2.parent = "";
+					beatmapObject2.prefabID = beatmapObj.prefabID;
+					if (_regen && !string.IsNullOrEmpty(beatmapObj.prefabInstanceID))
+					{
+						beatmapObject2.prefabInstanceID = dictionary2[beatmapObj.prefabInstanceID];
+					}
+					else
+						beatmapObject2.prefabInstanceID = beatmapObj.prefabInstanceID;
+					beatmapObject2.fromPrefab = beatmapObj.fromPrefab;
+					if (_undone == false)
+					{
+						if (_offsetTime == 0.0)
+						{
+							beatmapObject2.StartTime += audioTime;
+							beatmapObject2.StartTime += _obj.Offset;
+						}
+						else
+						{
+							beatmapObject2.StartTime += _offsetTime;
+							++beatmapObject2.editorData.Bin;
+						}
 					}
 					else
 					{
-						beatmapObject2.StartTime += _offsetTime;
-						++beatmapObject2.editorData.Bin;
+						if (_offsetTime == 0.0)
+						{
+							beatmapObject2.StartTime += _obj.Offset;
+						}
+						else
+						{
+							beatmapObject2.StartTime += _offsetTime;
+							++beatmapObject2.editorData.Bin;
+						}
 					}
-				}
-				else
-				{
-					if (_offsetTime == 0.0)
+					if (EditorManager.inst.layer == 5)
 					{
-						beatmapObject2.StartTime += _obj.Offset;
+						beatmapObject2.editorData.Layer = EditorManager.inst.layer;
 					}
 					else
 					{
-						beatmapObject2.StartTime += _offsetTime;
-						++beatmapObject2.editorData.Bin;
+						beatmapObject2.editorData.Layer = EditorManager.inst.layer;
 					}
-				}
-				if (EditorManager.inst.layer == 5)
-				{
-					beatmapObject2.editorData.Layer = EditorManager.inst.layer;
-				}
-				else
-				{
-					beatmapObject2.editorData.Layer = EditorManager.inst.layer;
-				}
-				beatmapObject2.fromPrefab = false;
-				DataManager.inst.gameData.beatmapObjects.Add(beatmapObject2);
-				ObjEditor.ObjectSelection _selection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, beatmapObject2.id);
-				ObjEditor.inst.CreateTimelineObject(_selection);
-				ObjEditor.inst.RenderTimelineObject(_selection);
-				ObjectManager.inst.updateObjects(_selection);
-				if (_select)
-				{
-					AddSelectedObject(objEditor, _selection);
-				}
-				delay += 0.0001f;
-			}
-			Dictionary<string, string> dictionary3 = new Dictionary<string, string>();
-			foreach (DataManager.GameData.PrefabObject prefabObject in _obj.prefabObjects)
-			{
-				string str = LSText.randomString(16);
-				dictionary3.Add(prefabObject.ID, str);
-			}
-			foreach (DataManager.GameData.PrefabObject prefabObject1 in _obj.prefabObjects)
-			{
-				yield return new WaitForSeconds(delay);
-				DataManager.GameData.PrefabObject prefabObject2 = DataManager.GameData.PrefabObject.DeepCopy(prefabObject1, false);
-				if (dictionary3.ContainsKey(prefabObject1.ID))
-					prefabObject2.ID = dictionary3[prefabObject1.ID];
-				prefabObject2.prefabID = prefabObject1.prefabID;
-				if (_undone == false)
-				{
-					if (_offsetTime == 0.0)
+					beatmapObject2.fromPrefab = false;
+					DataManager.inst.gameData.beatmapObjects.Add(beatmapObject2);
+					ObjEditor.ObjectSelection _selection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, beatmapObject2.id);
+					ObjEditor.inst.CreateTimelineObject(_selection);
+					ObjEditor.inst.RenderTimelineObject(_selection);
+					ObjectManager.inst.updateObjects(_selection);
+					if (_select)
 					{
-						prefabObject2.StartTime += audioTime;
-						prefabObject2.StartTime += _obj.Offset;
+						AddSelectedObject(objEditor, _selection);
 					}
-					else
-					{
-						prefabObject2.StartTime += _offsetTime;
-						++prefabObject2.editorData.Bin;
-					}
+					delay += 0.0001f;
 				}
-				else
-				{
-					if (_offsetTime == 0.0)
-					{
-						prefabObject2.StartTime += _obj.Offset;
-					}
-					else
-					{
-						prefabObject2.StartTime += _offsetTime;
-						++prefabObject2.editorData.Bin;
-					}
-				}
-				if (EditorManager.inst.layer == 5)
-				{
-					prefabObject2.editorData.Layer = EditorManager.inst.lastLayer;
-				}
-				else
-				{
-					prefabObject2.editorData.Layer = EditorManager.inst.layer;
-				}
-				DataManager.inst.gameData.prefabObjects.Add(prefabObject2);
-				ObjEditor.ObjectSelection _selection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject2.ID);
-				ObjEditor.inst.CreateTimelineObject(_selection);
-				ObjEditor.inst.RenderTimelineObject(_selection);
-				ObjectManager.inst.updateObjects(_selection);
-				if (_select)
-				{
-					AddSelectedObject(objEditor, _selection);
-				}
-				delay += 0.0001f;
 			}
 
-			string stri = _obj.objects[0].name;
+			//Prefabs
+			{
+				Dictionary<string, string> dictionary3 = new Dictionary<string, string>();
+				foreach (DataManager.GameData.PrefabObject prefabObject in _obj.prefabObjects)
+				{
+					string str = LSText.randomString(16);
+					dictionary3.Add(prefabObject.ID, str);
+				}
+				foreach (DataManager.GameData.PrefabObject prefabObject1 in _obj.prefabObjects)
+				{
+					yield return new WaitForSeconds(delay);
+					DataManager.GameData.PrefabObject prefabObject2 = DataManager.GameData.PrefabObject.DeepCopy(prefabObject1, false);
+					if (dictionary3.ContainsKey(prefabObject1.ID))
+						prefabObject2.ID = dictionary3[prefabObject1.ID];
+					prefabObject2.prefabID = prefabObject1.prefabID;
+					if (_undone == false)
+					{
+						if (_offsetTime == 0.0)
+						{
+							prefabObject2.StartTime += audioTime;
+							prefabObject2.StartTime += _obj.Offset;
+						}
+						else
+						{
+							prefabObject2.StartTime += _offsetTime;
+							++prefabObject2.editorData.Bin;
+						}
+					}
+					else
+					{
+						if (_offsetTime == 0.0)
+						{
+							prefabObject2.StartTime += _obj.Offset;
+						}
+						else
+						{
+							prefabObject2.StartTime += _offsetTime;
+							++prefabObject2.editorData.Bin;
+						}
+					}
+					if (EditorManager.inst.layer == 5)
+					{
+						prefabObject2.editorData.Layer = EditorManager.inst.lastLayer;
+					}
+					else
+					{
+						prefabObject2.editorData.Layer = EditorManager.inst.layer;
+					}
+					DataManager.inst.gameData.prefabObjects.Add(prefabObject2);
+					ObjEditor.ObjectSelection _selection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject2.ID);
+					ObjEditor.inst.CreateTimelineObject(_selection);
+					ObjEditor.inst.RenderTimelineObject(_selection);
+					ObjectManager.inst.updateObjects(_selection);
+					if (_select)
+					{
+						AddSelectedObject(objEditor, _selection);
+					}
+					delay += 0.0001f;
+				}
+			}
+
+			string stri = "object";
+			if (_obj.objects.Count == 1)
+            {
+				stri = _obj.objects[0].name;
+            }
 			if (_obj.objects.Count > 1)
 			{
 				stri = _obj.Name;
@@ -2571,7 +2720,7 @@ namespace EditorManagement.Functions
 			{
 				EditorManager.inst.DisplayNotification("Pasted Beatmap Object [ " + stri + " ]!", 1f, EditorManager.NotificationType.Success, false);
 			}
-			if (_select && _obj.objects.Count > 1)
+			if (_select && (_obj.objects.Count > 1 || _obj.prefabObjects.Count > 1))
 			{
 				EditorManager.inst.ShowDialog("Multi Object Editor", false);
 			}
@@ -2795,9 +2944,20 @@ namespace EditorManagement.Functions
 
 				for (int e = 0; e < DataManager.inst.CustomBeatmapThemes.Count; e++)
 				{
+					string id = DataManager.inst.CustomBeatmapThemes[e].id;
+
 					foreach (var keyframe in DataManager.inst.gameData.eventObjects.allEvents[4])
 					{
-						if (DataManager.inst.CustomBeatmapThemes[e].id == keyframe.eventValues[0].ToString())
+						var eventValue = keyframe.eventValues[0].ToString();
+						if (eventValue.Length == 4)
+                        {
+							eventValue = "00" + eventValue;
+                        }
+						if (eventValue.Length == 5)
+                        {
+							eventValue = "0" + eventValue;
+                        }
+						if (DataManager.inst.CustomBeatmapThemes[e].id == eventValue && levelThemes.Find(x => x.id == eventValue) == null)
 						{
 							levelThemes.Add(DataManager.inst.CustomBeatmapThemes[e]);
 						}
@@ -3050,7 +3210,11 @@ namespace EditorManagement.Functions
 			{
 				jsonnode["events"]["shake"][num14]["t"] = _data.eventObjects.allEvents[3][num14].eventTime.ToString();
 				jsonnode["events"]["shake"][num14]["x"] = _data.eventObjects.allEvents[3][num14].eventValues[0].ToString();
-				jsonnode["events"]["shake"][num14]["y"] = _data.eventObjects.allEvents[3][num14].eventValues[1].ToString();
+				if (_data.eventObjects.allEvents[3][num14].eventValues.Length > 1)
+					jsonnode["events"]["shake"][num14]["y"] = _data.eventObjects.allEvents[3][num14].eventValues[1].ToString();
+				if (_data.eventObjects.allEvents[3][num14].eventValues.Length > 2)
+					jsonnode["events"]["shake"][num14]["z"] = _data.eventObjects.allEvents[3][num14].eventValues[2].ToString();
+
 				if (_data.eventObjects.allEvents[3][num14].curveType.Name != "Linear")
 				{
 					jsonnode["events"]["shake"][num14]["ct"] = _data.eventObjects.allEvents[3][num14].curveType.Name.ToString();
@@ -3094,6 +3258,15 @@ namespace EditorManagement.Functions
 			{
 				jsonnode["events"]["bloom"][num17]["t"] = _data.eventObjects.allEvents[6][num17].eventTime.ToString();
 				jsonnode["events"]["bloom"][num17]["x"] = _data.eventObjects.allEvents[6][num17].eventValues[0].ToString();
+				if (_data.eventObjects.allEvents[6][num17].eventValues.Length > 1)
+					jsonnode["events"]["bloom"][num17]["y"] = _data.eventObjects.allEvents[6][num17].eventValues[1].ToString();
+				if (_data.eventObjects.allEvents[6][num17].eventValues.Length > 2)
+					jsonnode["events"]["bloom"][num17]["z"] = _data.eventObjects.allEvents[6][num17].eventValues[2].ToString();
+				if (_data.eventObjects.allEvents[6][num17].eventValues.Length > 3)
+					jsonnode["events"]["bloom"][num17]["x2"] = _data.eventObjects.allEvents[6][num17].eventValues[3].ToString();
+				if (_data.eventObjects.allEvents[6][num17].eventValues.Length > 4)
+					jsonnode["events"]["bloom"][num17]["y2"] = _data.eventObjects.allEvents[6][num17].eventValues[4].ToString();
+
 				if (_data.eventObjects.allEvents[6][num17].curveType.Name != "Linear")
 				{
 					jsonnode["events"]["bloom"][num17]["ct"] = _data.eventObjects.allEvents[6][num17].curveType.Name.ToString();
@@ -3113,6 +3286,9 @@ namespace EditorManagement.Functions
 				jsonnode["events"]["vignette"][num18]["x2"] = _data.eventObjects.allEvents[7][num18].eventValues[3].ToString();
 				jsonnode["events"]["vignette"][num18]["y2"] = _data.eventObjects.allEvents[7][num18].eventValues[4].ToString();
 				jsonnode["events"]["vignette"][num18]["z2"] = _data.eventObjects.allEvents[7][num18].eventValues[5].ToString();
+				if (_data.eventObjects.allEvents[7][num18].eventValues.Length > 6)
+					jsonnode["events"]["vignette"][num18]["x3"] = _data.eventObjects.allEvents[7][num18].eventValues[6].ToString();
+
 				if (_data.eventObjects.allEvents[7][num18].curveType.Name != "Linear")
 				{
 					jsonnode["events"]["vignette"][num18]["ct"] = _data.eventObjects.allEvents[7][num18].curveType.Name.ToString();
@@ -3131,7 +3307,18 @@ namespace EditorManagement.Functions
 			for (int num19 = 0; num19 < _data.eventObjects.allEvents[8].Count(); num19++)
 			{
 				jsonnode["events"]["lens"][num19]["t"] = _data.eventObjects.allEvents[8][num19].eventTime.ToString();
-				jsonnode["events"]["lens"][num19]["x"] = _data.eventObjects.allEvents[8][num19].eventValues[0].ToString();
+                jsonnode["events"]["lens"][num19]["x"] = _data.eventObjects.allEvents[8][num19].eventValues[0].ToString();
+				if (_data.eventObjects.allEvents[8][num19].eventValues.Length > 1)
+					jsonnode["events"]["lens"][num19]["y"] = _data.eventObjects.allEvents[8][num19].eventValues[1].ToString();
+				if (_data.eventObjects.allEvents[8][num19].eventValues.Length > 2)
+					jsonnode["events"]["lens"][num19]["z"] = _data.eventObjects.allEvents[8][num19].eventValues[2].ToString();
+				if (_data.eventObjects.allEvents[8][num19].eventValues.Length > 3)
+					jsonnode["events"]["lens"][num19]["x2"] = _data.eventObjects.allEvents[8][num19].eventValues[3].ToString();
+				if (_data.eventObjects.allEvents[8][num19].eventValues.Length > 4)
+					jsonnode["events"]["lens"][num19]["y2"] = _data.eventObjects.allEvents[8][num19].eventValues[4].ToString();
+				if (_data.eventObjects.allEvents[8][num19].eventValues.Length > 5)
+					jsonnode["events"]["lens"][num19]["z2"] = _data.eventObjects.allEvents[8][num19].eventValues[5].ToString();
+
 				if (_data.eventObjects.allEvents[8][num19].curveType.Name != "Linear")
 				{
 					jsonnode["events"]["lens"][num19]["ct"] = _data.eventObjects.allEvents[8][num19].curveType.Name.ToString();
@@ -3185,6 +3372,9 @@ namespace EditorManagement.Functions
 						jsonnode["events"]["cg"][num21]["ry"] = _data.eventObjects.allEvents[10][num21].eventRandomValues[1].ToString();
 					}
 				}
+			}
+			if (_data.eventObjects.allEvents.Count > 11)
+			{
 				for (int num21 = 0; num21 < _data.eventObjects.allEvents[11].Count(); num21++)
 				{
 					jsonnode["events"]["rip"][num21]["t"] = _data.eventObjects.allEvents[11][num21].eventTime.ToString();
@@ -3204,6 +3394,9 @@ namespace EditorManagement.Functions
 						jsonnode["events"]["rip"][num21]["ry"] = _data.eventObjects.allEvents[11][num21].eventRandomValues[1].ToString();
 					}
 				}
+			}
+			if (_data.eventObjects.allEvents.Count > 12)
+			{
 				for (int num21 = 0; num21 < _data.eventObjects.allEvents[12].Count(); num21++)
 				{
 					jsonnode["events"]["rb"][num21]["t"] = _data.eventObjects.allEvents[12][num21].eventTime.ToString();
@@ -3220,6 +3413,9 @@ namespace EditorManagement.Functions
 						jsonnode["events"]["rb"][num21]["ry"] = _data.eventObjects.allEvents[12][num21].eventRandomValues[1].ToString();
 					}
 				}
+			}
+			if (_data.eventObjects.allEvents.Count > 13)
+			{
 				for (int num21 = 0; num21 < _data.eventObjects.allEvents[13].Count(); num21++)
 				{
 					jsonnode["events"]["cs"][num21]["t"] = _data.eventObjects.allEvents[13][num21].eventTime.ToString();
@@ -3234,6 +3430,187 @@ namespace EditorManagement.Functions
 						jsonnode["events"]["cs"][num21]["r"] = _data.eventObjects.allEvents[13][num21].random.ToString();
 						jsonnode["events"]["cs"][num21]["rx"] = _data.eventObjects.allEvents[13][num21].eventRandomValues[0].ToString();
 						jsonnode["events"]["cs"][num21]["ry"] = _data.eventObjects.allEvents[13][num21].eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 14)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[14].Count(); num21++)
+				{
+					jsonnode["events"]["offset"][num21]["t"] = _data.eventObjects.allEvents[14][num21].eventTime.ToString();
+					jsonnode["events"]["offset"][num21]["x"] = _data.eventObjects.allEvents[14][num21].eventValues[0].ToString();
+					jsonnode["events"]["offset"][num21]["y"] = _data.eventObjects.allEvents[14][num21].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[14][num21].curveType.Name != "Linear")
+					{
+						jsonnode["events"]["offset"][num21]["ct"] = _data.eventObjects.allEvents[14][num21].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[14][num21].random != 0)
+					{
+						jsonnode["events"]["offset"][num21]["r"] = _data.eventObjects.allEvents[14][num21].random.ToString();
+						jsonnode["events"]["offset"][num21]["rx"] = _data.eventObjects.allEvents[14][num21].eventRandomValues[0].ToString();
+						jsonnode["events"]["offset"][num21]["ry"] = _data.eventObjects.allEvents[14][num21].eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 15)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[15].Count(); num21++)
+				{
+					jsonnode["events"]["grd"][num21]["t"] = _data.eventObjects.allEvents[15][num21].eventTime.ToString();
+					jsonnode["events"]["grd"][num21]["x"] = _data.eventObjects.allEvents[15][num21].eventValues[0].ToString();
+					jsonnode["events"]["grd"][num21]["y"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
+					jsonnode["events"]["grd"][num21]["z"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
+					jsonnode["events"]["grd"][num21]["x2"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
+					jsonnode["events"]["grd"][num21]["y2"] = _data.eventObjects.allEvents[15][num21].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[15][num21].curveType.Name != "Linear")
+					{
+						jsonnode["events"]["grd"][num21]["ct"] = _data.eventObjects.allEvents[15][num21].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[15][num21].random != 0)
+					{
+						jsonnode["events"]["grd"][num21]["r"] = _data.eventObjects.allEvents[15][num21].random.ToString();
+						jsonnode["events"]["grd"][num21]["rx"] = _data.eventObjects.allEvents[15][num21].eventRandomValues[0].ToString();
+						jsonnode["events"]["grd"][num21]["ry"] = _data.eventObjects.allEvents[15][num21].eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 16)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[16].Count(); num21++)
+				{
+					jsonnode["events"]["dbv"][num21]["t"] = _data.eventObjects.allEvents[16][num21].eventTime.ToString();
+					jsonnode["events"]["dbv"][num21]["x"] = _data.eventObjects.allEvents[16][num21].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[16][num21].curveType.Name != "Linear")
+					{
+						jsonnode["events"]["dbv"][num21]["ct"] = _data.eventObjects.allEvents[16][num21].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[16][num21].random != 0)
+					{
+						jsonnode["events"]["dbv"][num21]["r"] = _data.eventObjects.allEvents[16][num21].random.ToString();
+						jsonnode["events"]["dbv"][num21]["rx"] = _data.eventObjects.allEvents[16][num21].eventRandomValues[0].ToString();
+						jsonnode["events"]["dbv"][num21]["ry"] = _data.eventObjects.allEvents[16][num21].eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 17)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[17].Count(); num21++)
+				{
+					jsonnode["events"]["scan"][num21]["t"] = _data.eventObjects.allEvents[17][num21].eventTime.ToString();
+					jsonnode["events"]["scan"][num21]["x"] = _data.eventObjects.allEvents[17][num21].eventValues[0].ToString();
+					jsonnode["events"]["scan"][num21]["y"] = _data.eventObjects.allEvents[17][num21].eventValues[1].ToString();
+					jsonnode["events"]["scan"][num21]["z"] = _data.eventObjects.allEvents[17][num21].eventValues[2].ToString();
+					if (_data.eventObjects.allEvents[17][num21].curveType.Name != "Linear")
+					{
+						jsonnode["events"]["scan"][num21]["ct"] = _data.eventObjects.allEvents[17][num21].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[17][num21].random != 0)
+					{
+						jsonnode["events"]["scan"][num21]["r"] = _data.eventObjects.allEvents[17][num21].random.ToString();
+						jsonnode["events"]["scan"][num21]["rx"] = _data.eventObjects.allEvents[17][num21].eventRandomValues[0].ToString();
+						jsonnode["events"]["scan"][num21]["ry"] = _data.eventObjects.allEvents[17][num21].eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 18)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[18].Count(); num21++)
+				{
+					jsonnode["events"]["blur"][num21]["t"] = _data.eventObjects.allEvents[18][num21].eventTime.ToString();
+					jsonnode["events"]["blur"][num21]["x"] = _data.eventObjects.allEvents[18][num21].eventValues[0].ToString();
+					jsonnode["events"]["blur"][num21]["y"] = _data.eventObjects.allEvents[18][num21].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[18][num21].curveType.Name != "Linear")
+					{
+						jsonnode["events"]["blur"][num21]["ct"] = _data.eventObjects.allEvents[18][num21].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[18][num21].random != 0)
+					{
+						jsonnode["events"]["blur"][num21]["r"] = _data.eventObjects.allEvents[18][num21].random.ToString();
+						jsonnode["events"]["blur"][num21]["rx"] = _data.eventObjects.allEvents[18][num21].eventRandomValues[0].ToString();
+						jsonnode["events"]["blur"][num21]["ry"] = _data.eventObjects.allEvents[18][num21].eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 19)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[19].Count(); num21++)
+				{
+					var eventKeyframe = _data.eventObjects.allEvents[19][num21];
+					jsonnode["events"]["pixel"][num21]["t"] = eventKeyframe.eventTime.ToString();
+					jsonnode["events"]["pixel"][num21]["x"] = eventKeyframe.eventValues[0].ToString();
+					if (eventKeyframe.curveType.Name != "Linear")
+					{
+						jsonnode["events"]["pixel"][num21]["ct"] = eventKeyframe.curveType.Name.ToString();
+					}
+					if (eventKeyframe.random != 0)
+					{
+						jsonnode["events"]["pixel"][num21]["r"] = eventKeyframe.random.ToString();
+						jsonnode["events"]["pixel"][num21]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+						jsonnode["events"]["pixel"][num21]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 20)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[20].Count(); num21++)
+				{
+					var eventKeyframe = _data.eventObjects.allEvents[20][num21];
+					jsonnode["events"]["bg"][num21]["t"] = eventKeyframe.eventTime.ToString();
+					jsonnode["events"]["bg"][num21]["x"] = eventKeyframe.eventValues[0].ToString();
+					if (eventKeyframe.curveType.Name != "Linear")
+					{
+						jsonnode["events"]["bg"][num21]["ct"] = eventKeyframe.curveType.Name.ToString();
+					}
+					if (eventKeyframe.random != 0)
+					{
+						jsonnode["events"]["bg"][num21]["r"] = eventKeyframe.random.ToString();
+						jsonnode["events"]["bg"][num21]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+						jsonnode["events"]["bg"][num21]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 21)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[21].Count(); num21++)
+				{
+					var eventKeyframe = _data.eventObjects.allEvents[21][num21];
+					jsonnode["events"]["overlay"][num21]["t"] = eventKeyframe.eventTime.ToString();
+					jsonnode["events"]["overlay"][num21]["x"] = eventKeyframe.eventValues[0].ToString();
+					jsonnode["events"]["overlay"][num21]["y"] = eventKeyframe.eventValues[1].ToString();
+					if (eventKeyframe.curveType.Name != "Linear")
+					{
+						jsonnode["events"]["overlay"][num21]["ct"] = eventKeyframe.curveType.Name.ToString();
+					}
+					if (eventKeyframe.random != 0)
+					{
+						jsonnode["events"]["overlay"][num21]["r"] = eventKeyframe.random.ToString();
+						jsonnode["events"]["overlay"][num21]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+						jsonnode["events"]["overlay"][num21]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+					}
+				}
+			}
+			if (_data.eventObjects.allEvents.Count > 22)
+			{
+				for (int num21 = 0; num21 < _data.eventObjects.allEvents[22].Count(); num21++)
+				{
+					var eventKeyframe = _data.eventObjects.allEvents[22][num21];
+					jsonnode["events"]["timeline"][num21]["t"] = eventKeyframe.eventTime.ToString();
+					jsonnode["events"]["timeline"][num21]["x"] = eventKeyframe.eventValues[0].ToString();
+					jsonnode["events"]["timeline"][num21]["y"] = eventKeyframe.eventValues[1].ToString();
+					jsonnode["events"]["timeline"][num21]["z"] = eventKeyframe.eventValues[2].ToString();
+					jsonnode["events"]["timeline"][num21]["x2"] = eventKeyframe.eventValues[3].ToString();
+					jsonnode["events"]["timeline"][num21]["y2"] = eventKeyframe.eventValues[4].ToString();
+					jsonnode["events"]["timeline"][num21]["z2"] = eventKeyframe.eventValues[5].ToString();
+					jsonnode["events"]["timeline"][num21]["x3"] = eventKeyframe.eventValues[6].ToString();
+					if (eventKeyframe.curveType.Name != "Linear")
+					{
+						jsonnode["events"]["timeline"][num21]["ct"] = eventKeyframe.curveType.Name.ToString();
+					}
+					if (eventKeyframe.random != 0)
+					{
+						jsonnode["events"]["timeline"][num21]["r"] = eventKeyframe.random.ToString();
+						jsonnode["events"]["timeline"][num21]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+						jsonnode["events"]["timeline"][num21]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
 					}
 				}
 			}
@@ -3387,17 +3764,6 @@ namespace EditorManagement.Functions
 			fileInfo.text = "Playing Music for [" + _levelName + "]\n\nIf it doesn't, then something went wrong!";
 			AudioManager.inst.PlayMusic(null, song, true, 0f, true);
 			inst.StartCoroutine((IEnumerator)AccessTools.Method(typeof(EditorManager), "SpawnPlayersWithDelay").Invoke(EditorManager.inst, new object[] { 0.2f }));
-			fileInfo.text = "Updating states for [" + _levelName + "]";
-			DiscordController.inst.OnStateChange("Editing: " + DataManager.inst.metaData.song.title);
-			objEditor.CreateTimelineObjects();
-			objectManager.updateObjects();
-			EventEditor.inst.CreateEventObjects();
-			EventManager.inst.updateEvents();
-			BackgroundManager.inst.UpdateBackgrounds();
-			gameManager.UpdateTheme();
-			MarkerEditor.inst.CreateMarkers();
-
-			EditorPlugin.CreateMultiObjectEditor();
 			if (ConfigEntries.GenerateWaveform.Value == true)
 			{
 				fileInfo.text = "Assigning Waveform Textures for [" + _levelName + "]";
@@ -3438,6 +3804,25 @@ namespace EditorManagement.Functions
 			{
 				CheckpointEditor.inst.CreateGhostCheckpoints();
 			}
+			fileInfo.text = "Updating states for [" + _levelName + "]";
+			DiscordController.inst.OnStateChange("Editing: " + DataManager.inst.metaData.song.title);
+			objEditor.CreateTimelineObjects();
+			objectManager.updateObjects();
+			EventEditor.inst.CreateEventObjects();
+			BackgroundManager.inst.UpdateBackgrounds();
+			gameManager.UpdateTheme();
+			MarkerEditor.inst.CreateMarkers();
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin"))
+            {
+				inst.StartCoroutine(FixEvents());
+            }
+			else
+            {
+				EventManager.inst.updateEvents();
+			}
+			//SetLastSaved();
+
+			EditorPlugin.CreateMultiObjectEditor();
 			__instance.HideDialog("File Info Popup");
 			__instance.CancelInvoke("LoadingIconUpdate");
 
@@ -3464,6 +3849,13 @@ namespace EditorManagement.Functions
 			}
 			yield break;
 		}
+
+		public static IEnumerator FixEvents()
+		{
+			yield return new WaitForSeconds(0.4f);
+			EventManager.inst.updateEvents();
+			yield break;
+        }
 
 		public static IEnumerator AssignTimelineTexture()
 		{
@@ -3787,14 +4179,18 @@ namespace EditorManagement.Functions
 				return;
 			}
 
+			bool setNew = false;
 			int num = 0;
 			string p = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName;
 			while (RTFile.DirectoryExists(p))
             {
 				p = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName + " - " + num.ToString();
 				num += 1;
-            }
-			__instance.newLevelName += " - " + num.ToString();
+				setNew = true;
+
+			}
+			if (setNew)
+				__instance.newLevelName += " - " + num.ToString();
 
 			if (RTFile.DirectoryExists(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName))
 			{
@@ -3815,14 +4211,7 @@ namespace EditorManagement.Functions
 			dataManager.metaData.creator.steam_name = SteamWrapper.inst.user.displayName;
 			dataManager.metaData.creator.steam_id = SteamWrapper.inst.user.id;
 			dataManager.SaveMetadata(RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + __instance.newLevelName + "/metadata.lsb");
-			if (EditorPlugin.tester == true)
-			{
-				inst.StartCoroutine(EditorManager.inst.LoadLevel(__instance.newLevelName));
-			}
-			else
-			{
-				inst.StartCoroutine(LoadLevel(__instance, __instance.newLevelName));
-			}
+			inst.StartCoroutine(LoadLevel(__instance, __instance.newLevelName));
 			__instance.HideDialog("New File Popup");
 		}
 
@@ -3835,110 +4224,320 @@ namespace EditorManagement.Functions
 			gameData.beatmapData.checkpoints.Add(new DataManager.GameData.BeatmapData.Checkpoint(false, "Base Checkpoint", 0f, Vector2.zero));
 			DataManager.GameData.BeatmapData.EditorData editorData = new DataManager.GameData.BeatmapData.EditorData();
 			gameData.beatmapData.editorData = editorData;
-			List<DataManager.GameData.EventKeyframe> list = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe = new DataManager.GameData.EventKeyframe();
-			eventKeyframe.eventTime = 0f;
-			eventKeyframe.SetEventValues(new float[2]);
-			list.Add(eventKeyframe);
-			List<DataManager.GameData.EventKeyframe> list2 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe2 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe2.eventTime = 0f;
-			DataManager.GameData.EventKeyframe eventKeyframe3 = eventKeyframe2;
-			float[] array = new float[2];
-			array[0] = 20f;
-			eventKeyframe3.SetEventValues(array);
-			list2.Add(eventKeyframe2);
 
-			List<DataManager.GameData.EventKeyframe> list3 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe4 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe4.eventTime = 0f;
-			eventKeyframe4.SetEventValues(new float[2]);
-			list3.Add(eventKeyframe4);
+			//Move
+			{
+				List<DataManager.GameData.EventKeyframe> list = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe = new DataManager.GameData.EventKeyframe();
+				eventKeyframe.eventTime = 0f;
+				eventKeyframe.SetEventValues(new float[2]);
+				list.Add(eventKeyframe);
 
-			List<DataManager.GameData.EventKeyframe> list4 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe5 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe5.eventTime = 0f;
-			eventKeyframe5.SetEventValues(new float[2]);
-			list4.Add(eventKeyframe5);
+				gameData.eventObjects.allEvents[0] = list;
+			}
 
-			List<DataManager.GameData.EventKeyframe> list5 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe6 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe6.eventTime = 0f;
-			eventKeyframe6.SetEventValues(new float[2]);
-			list5.Add(eventKeyframe6);
+			//Zoom
+			{
+				List<DataManager.GameData.EventKeyframe> list2 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe2 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe2.eventTime = 0f;
+				DataManager.GameData.EventKeyframe eventKeyframe3 = eventKeyframe2;
+				float[] array = new float[2];
+				array[0] = 20f;
+				eventKeyframe3.SetEventValues(array);
+				list2.Add(eventKeyframe2);
 
-			List<DataManager.GameData.EventKeyframe> list6 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe7 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe7.eventTime = 0f;
-			eventKeyframe7.SetEventValues(new float[2]);
-			list6.Add(eventKeyframe7);
+				gameData.eventObjects.allEvents[1] = list2;
+			}
 
-			List<DataManager.GameData.EventKeyframe> list7 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe8 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe8.eventTime = 0f;
-			eventKeyframe8.SetEventValues(new float[2]);
-			list7.Add(eventKeyframe8);
+			//Rotate
+			{
+				List<DataManager.GameData.EventKeyframe> list3 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe4 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe4.eventTime = 0f;
+				eventKeyframe4.SetEventValues(new float[2]);
+				list3.Add(eventKeyframe4);
 
-			List<DataManager.GameData.EventKeyframe> list8 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe9 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe9.eventTime = 0f;
-			eventKeyframe9.SetEventValues(new float[6]);
-			list8.Add(eventKeyframe9);
+				gameData.eventObjects.allEvents[2] = list3;
+			}
 
-			List<DataManager.GameData.EventKeyframe> list9 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe10 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe10.eventTime = 0f;
-			eventKeyframe10.SetEventValues(new float[2]);
-			list9.Add(eventKeyframe10);
+			//Shake
+			{
+				List<DataManager.GameData.EventKeyframe> list4 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe5 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe5.eventTime = 0f;
+				eventKeyframe5.SetEventValues(new float[2]);
+				list4.Add(eventKeyframe5);
 
-			List<DataManager.GameData.EventKeyframe> list10 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe11.eventTime = 0f;
-			eventKeyframe11.SetEventValues(new float[3]);
-			list10.Add(eventKeyframe11);
+				gameData.eventObjects.allEvents[3] = list4;
+			}
 
-			List<DataManager.GameData.EventKeyframe> list11 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe12 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe12.eventTime = 0f;
-			eventKeyframe12.SetEventValues(new float[9]);
-			list11.Add(eventKeyframe12);
+			//Theme
+			{
+				List<DataManager.GameData.EventKeyframe> list5 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe6 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe6.eventTime = 0f;
+				eventKeyframe6.SetEventValues(new float[2]);
+				list5.Add(eventKeyframe6);
 
-			List<DataManager.GameData.EventKeyframe> list12 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe13 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe13.eventTime = 0f;
-			eventKeyframe13.SetEventValues(new float[5]);
-			list12.Add(eventKeyframe13);
+				gameData.eventObjects.allEvents[4] = list5;
+			}
 
-			List<DataManager.GameData.EventKeyframe> list13 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe14 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe14.eventTime = 0f;
-			eventKeyframe14.SetEventValues(new float[2]);
-			list13.Add(eventKeyframe14);
+			//Chromatic
+			{
+				List<DataManager.GameData.EventKeyframe> list6 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe7 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe7.eventTime = 0f;
+				eventKeyframe7.SetEventValues(new float[2]);
+				list6.Add(eventKeyframe7);
 
-			List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
-			DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
-			eventKeyframe15.eventTime = 0f;
-			eventKeyframe15.SetEventValues(new float[2]);
-			list14.Add(eventKeyframe15);
+				gameData.eventObjects.allEvents[5] = list6;
+			}
 
-			gameData.eventObjects.allEvents[0] = list;
-			gameData.eventObjects.allEvents[1] = list2;
-			gameData.eventObjects.allEvents[2] = list3;
-			gameData.eventObjects.allEvents[3] = list4;
-			gameData.eventObjects.allEvents[4] = list5;
-			gameData.eventObjects.allEvents[5] = list6;
-			gameData.eventObjects.allEvents[6] = list7;
-			gameData.eventObjects.allEvents[7] = list8;
-			gameData.eventObjects.allEvents[8] = list9;
-			gameData.eventObjects.allEvents[9] = list10;
-			gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
-			gameData.eventObjects.allEvents[10] = list11;
-			gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
-			gameData.eventObjects.allEvents[11] = list12;
-			gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
-			gameData.eventObjects.allEvents[12] = list13;
-			gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
-			gameData.eventObjects.allEvents[13] = list14;
+			//Bloom
+			{
+				List<DataManager.GameData.EventKeyframe> list7 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe8 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe8.eventTime = 0f;
+				eventKeyframe8.SetEventValues(new float[4]);
+				list7.Add(eventKeyframe8);
+
+				gameData.eventObjects.allEvents[6] = list7;
+			}
+
+            //Vignette
+            {
+				List<DataManager.GameData.EventKeyframe> list8 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe9 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe9.eventTime = 0f;
+				eventKeyframe9.SetEventValues(new float[7]);
+				list8.Add(eventKeyframe9);
+
+				gameData.eventObjects.allEvents[7] = list8;
+			}
+
+			//Lens
+			{
+				List<DataManager.GameData.EventKeyframe> list9 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe10 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe10.eventTime = 0f;
+				eventKeyframe10.SetEventValues(new float[5]);
+				list9.Add(eventKeyframe10);
+
+				gameData.eventObjects.allEvents[8] = list9;
+			}
+
+			//Grain
+			{
+				List<DataManager.GameData.EventKeyframe> list10 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe11.eventTime = 0f;
+				eventKeyframe11.SetEventValues(new float[3]);
+				list10.Add(eventKeyframe11);
+
+				gameData.eventObjects.allEvents[9] = list10;
+			}
+
+			//ColorGrading
+			if (gameData.eventObjects.allEvents.Count > 10)
+			{
+				List<DataManager.GameData.EventKeyframe> list11 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe12 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe12.eventTime = 0f;
+				eventKeyframe12.SetEventValues(new float[9]);
+				list11.Add(eventKeyframe12);
+
+				gameData.eventObjects.allEvents[10] = list11;
+			}
+
+			//Ripples
+			if (gameData.eventObjects.allEvents.Count > 11)
+			{
+				List<DataManager.GameData.EventKeyframe> list12 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe13 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe13.eventTime = 0f;
+				eventKeyframe13.SetEventValues(new float[5]
+					{
+						0f,
+						0f,
+						1f,
+						0f,
+						0f
+					});
+				list12.Add(eventKeyframe13);
+
+				gameData.eventObjects.allEvents[11] = list12;
+			}
+
+			//RadialBlur
+			if (gameData.eventObjects.allEvents.Count > 12)
+			{
+				List<DataManager.GameData.EventKeyframe> list13 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe14 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe14.eventTime = 0f;
+				eventKeyframe14.SetEventValues(new float[2]
+					{
+						0f,
+						6f
+					});
+				list13.Add(eventKeyframe14);
+
+				gameData.eventObjects.allEvents[12] = list13;
+			}
+
+			//ColorSplit
+			if (gameData.eventObjects.allEvents.Count > 13)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]);
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[13] = list14;
+			}
+
+			//Camera Offset
+			if (gameData.eventObjects.allEvents.Count > 14)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]);
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[14] = list14;
+			}
+
+			//Gradient
+			if (gameData.eventObjects.allEvents.Count > 15)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[5]
+					{
+						0f,
+						0f,
+						18f,
+						18f,
+						0f
+					});
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[15] = list14;
+			}
+
+			//DoubleVision
+			if (gameData.eventObjects.allEvents.Count > 16)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]);
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[16] = list14;
+			}
+
+			//ScanLines
+			if (gameData.eventObjects.allEvents.Count > 17)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[3]);
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[17] = list14;
+			}
+
+			//Blur
+			if (gameData.eventObjects.allEvents.Count > 18)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]
+					{
+						0f,
+						6f
+					});
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[18] = list14;
+			}
+
+			//Pixelize
+			if (gameData.eventObjects.allEvents.Count > 19)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]);
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[19] = list14;
+			}
+
+			//BG
+			if (gameData.eventObjects.allEvents.Count > 20)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]
+					{
+						18f,
+						0f
+					});
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[20] = list14;
+			}
+
+			//Overlay
+			if (gameData.eventObjects.allEvents.Count > 21)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[2]
+					{
+						18f,
+						0f
+					});
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[21] = list14;
+			}
+
+			//Timeline
+			if (gameData.eventObjects.allEvents.Count > 21)
+			{
+				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
+				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
+				eventKeyframe15.eventTime = 0f;
+				eventKeyframe15.SetEventValues(new float[7]
+					{
+						0f,
+						0f,
+						-342f,
+						1f,
+						1f,
+						0f,
+						18f
+					});
+				list14.Add(eventKeyframe15);
+
+				gameData.eventObjects.allEvents[21] = list14;
+			}
+
+			//gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
+			//gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
+			//gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
+			//gameData.eventObjects.allEvents.Add(new List<DataManager.GameData.EventKeyframe>());
+
 			for (int i = 0; i < 25; i++)
 			{
 				DataManager.GameData.BackgroundObject backgroundObject = new DataManager.GameData.BackgroundObject();
@@ -4095,7 +4694,7 @@ namespace EditorManagement.Functions
 			propWinButton.onClick.AddListener(delegate ()
 			{
 				EditorManager.inst.ShowDialog("Object Search Popup");
-				RefreshObjectSearch();
+				EditorPlugin.ReSync();
 			});
 
 			propWin.SetActive(true);
@@ -4292,7 +4891,7 @@ namespace EditorManagement.Functions
 				var regex = new Regex(@"\[([0-9])\]");
 				var match = regex.Match(searchterm);
 
-				if (beatmapObject.name.ToLower().Contains(searchterm.ToLower()) || match.Success && int.Parse(match.Groups[1].ToString()) < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == int.Parse(match.Groups[1].ToString()))
+				if (searchterm == null || !(searchterm != "") || beatmapObject.name.ToLower().Contains(searchterm.ToLower()) || match.Success && int.Parse(match.Groups[1].ToString()) < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == int.Parse(match.Groups[1].ToString()))
 				{
 					var buttonPrefab = Instantiate(EditorManager.inst.spriteFolderButtonPrefab);
 					buttonPrefab.transform.SetParent(content.transform);
@@ -4836,6 +5435,84 @@ namespace EditorManagement.Functions
 				__instance.OpenDialog();
 			}
 		}
+
+		public static IEnumerator SetupTimelineTriggers()
+        {
+			yield return new WaitForSeconds(1.5f);
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.PointerEnter;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				EditorPatch.IsOverMainTimeline = true;
+			});
+
+			EventTrigger.Entry entry2 = new EventTrigger.Entry();
+			entry2.eventID = EventTriggerType.PointerExit;
+			entry2.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				EditorPatch.IsOverMainTimeline = false;
+			});
+
+			EventTrigger tltrig = EditorManager.inst.timeline.GetComponent<EventTrigger>();
+
+			tltrig.triggers.RemoveAt(3);
+			tltrig.triggers.Add(entry);
+			tltrig.triggers.Add(entry2);
+			tltrig.triggers.Add(Triggers.EndDragTrigger());
+
+			if (DataManager.inst != null)
+			{
+				for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
+				{
+					var et = EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>();
+					et.triggers.Clear();
+					et.triggers.Add(entry);
+					et.triggers.Add(entry2);
+					et.triggers.Add(Triggers.StartDragTrigger());
+					et.triggers.Add(Triggers.DragTrigger());
+					et.triggers.Add(Triggers.EndDragTrigger());
+
+					//if (et.triggers.Count > 3)
+					//{
+					//	et.triggers.RemoveAt(3);
+					//}
+
+					int typeTmp = i;
+					EventTrigger.Entry entry3 = new EventTrigger.Entry();
+					entry3.eventID = EventTriggerType.PointerDown;
+					entry3.callback.AddListener(delegate (BaseEventData eventData)
+					{
+						Debug.LogFormat("{0}EventHolder: {1}\nActual Event: {2}", EditorPlugin.className, typeTmp, typeTmp + 14);
+						if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
+						{
+							if (EventEditorPatch.eventLayer == 0)
+							{
+								if (DataManager.inst.gameData.eventObjects.allEvents.Count > typeTmp)
+								{
+									EventEditor.inst.NewKeyframeFromTimeline(typeTmp);
+								}
+							}
+							if (EventEditorPatch.eventLayer == 1)
+							{
+								if (DataManager.inst.gameData.eventObjects.allEvents.Count > typeTmp + 14)
+								{
+									EventEditor.inst.NewKeyframeFromTimeline(typeTmp + 14);
+								}
+							}
+						}
+					});
+					et.triggers.Add(entry3);
+				}
+			}
+
+			yield break;
+		}
+
+		/*var eventKeyframe = new DataManager.GameData.EventKeyframe();
+		eventKeyframe.eventTime = 0f;
+		eventKeyframe.eventValues = new float[4];
+		DataManager.inst.gameData.eventObjects.allEvents[15].Add(eventKeyframe);
+		*/
 
 		public static byte[] password = LSEncryption.AES_Encrypt(new byte[] { 9,5,7,6,4,38,6,4,3,66,43,6,47,8,54,6 }, new byte[] { 99, 53, 43 ,36 ,43, 65, 43,45 });
 
@@ -6368,5 +7045,11 @@ namespace EditorManagement.Functions
 				//ZoomBounds
 			}
 		}
+
+		public static Dictionary<string, bool> achievements = new Dictionary<string, bool>();
+		public static void SetUpAchievements()
+        {
+			achievements.Add("That's Rare!\nGet the super rare notification message.", false);
+        }
 	}
 }

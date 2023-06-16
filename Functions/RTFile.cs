@@ -616,37 +616,6 @@ namespace EditorManagement.Functions
 
 			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
 
-			if (allEvents.Count < 13)
-			{
-				if (allEvents[10] != null)
-				{
-					allEvents[10].Add(new DataManager.GameData.EventKeyframe { eventTime = 0f, eventValues = new float[9] });
-				}
-				else
-				{
-					allEvents.Add(new List<DataManager.GameData.EventKeyframe> { new DataManager.GameData.EventKeyframe
-					{
-						eventTime = 0f,
-						eventValues = new float[9]
-					}});
-				}
-				allEvents.Add(new List<DataManager.GameData.EventKeyframe> { new DataManager.GameData.EventKeyframe
-				{
-					eventTime = 0f,
-					eventValues = new float[5]
-				}});
-				allEvents.Add(new List<DataManager.GameData.EventKeyframe> { new DataManager.GameData.EventKeyframe
-				{
-					eventTime = 0f,
-					eventValues = new float[2] { 0f, 6f }
-				}});
-				allEvents.Add(new List<DataManager.GameData.EventKeyframe> { new DataManager.GameData.EventKeyframe
-				{
-					eventTime = 0f,
-					eventValues = new float[2]
-				}});
-			}
-
 			for (int i = 0; i < _events["pos"].Count; i++)
 			{
 				if (ConfigEntries.IfEditorSlowLoads.Value)
@@ -742,10 +711,24 @@ namespace EditorManagement.Functions
 				DataManager.GameData.EventKeyframe eventKeyframe4 = new DataManager.GameData.EventKeyframe();
 				JSONNode jsonnode4 = _events["shake"][l];
 				eventKeyframe4.eventTime = jsonnode4["t"].AsFloat;
-				eventKeyframe4.SetEventValues(new float[]
+				if (!string.IsNullOrEmpty(jsonnode4["y"]))
 				{
-					jsonnode4["x"].AsFloat
-				});
+					eventKeyframe4.SetEventValues(new float[]
+					{
+						jsonnode4["x"].AsFloat,
+						jsonnode4["y"].AsFloat,
+						jsonnode4["z"].AsFloat
+					});
+				}
+				else
+				{
+					eventKeyframe4.SetEventValues(new float[]
+					{
+						jsonnode4["x"].AsFloat,
+						1f,
+						1f
+					});
+				}
 				eventKeyframe4.random = jsonnode4["r"].AsInt;
 				DataManager.LSAnimation curveType4 = DataManager.inst.AnimationList[0];
 				if (jsonnode4["ct"] != null)
@@ -826,10 +809,28 @@ namespace EditorManagement.Functions
 				DataManager.GameData.EventKeyframe eventKeyframe7 = new DataManager.GameData.EventKeyframe();
 				JSONNode jsonnode7 = _events["bloom"][num];
 				eventKeyframe7.eventTime = jsonnode7["t"].AsFloat;
-				eventKeyframe7.SetEventValues(new float[]
+				if (!string.IsNullOrEmpty(jsonnode7["y"]))
+                {
+					eventKeyframe7.SetEventValues(new float[]
+					{
+						jsonnode7["x"].AsFloat,
+						jsonnode7["y"].AsFloat,
+						jsonnode7["z"].AsFloat,
+						jsonnode7["x2"].AsFloat,
+						jsonnode7["y2"].AsFloat,
+					});
+				}
+				else
 				{
-					jsonnode7["x"].AsFloat
-				});
+					eventKeyframe7.SetEventValues(new float[]
+					{
+						jsonnode7["x"].AsFloat,
+						7f,
+						1f,
+						0f,
+						18f
+					});
+				}
 				eventKeyframe7.random = jsonnode7["r"].AsInt;
 				DataManager.LSAnimation curveType7 = DataManager.inst.AnimationList[0];
 				if (jsonnode7["ct"] != null)
@@ -854,15 +855,32 @@ namespace EditorManagement.Functions
 				DataManager.GameData.EventKeyframe eventKeyframe8 = new DataManager.GameData.EventKeyframe();
 				JSONNode jsonnode8 = _events["vignette"][num2];
 				eventKeyframe8.eventTime = jsonnode8["t"].AsFloat;
-				eventKeyframe8.SetEventValues(new float[]
+				if (!string.IsNullOrEmpty(jsonnode8["x3"]))
 				{
-					jsonnode8["x"].AsFloat,
-					jsonnode8["y"].AsFloat,
-					jsonnode8["z"].AsFloat,
-					jsonnode8["x2"].AsFloat,
-					jsonnode8["y2"].AsFloat,
-					jsonnode8["z2"].AsFloat
-				});
+					eventKeyframe8.SetEventValues(new float[]
+					{
+						jsonnode8["x"].AsFloat,
+						jsonnode8["y"].AsFloat,
+						jsonnode8["z"].AsFloat,
+						jsonnode8["x2"].AsFloat,
+						jsonnode8["y2"].AsFloat,
+						jsonnode8["z2"].AsFloat,
+						jsonnode8["x3"].AsFloat
+					});
+				}
+				else
+				{
+					eventKeyframe8.SetEventValues(new float[]
+					{
+						jsonnode8["x"].AsFloat,
+						jsonnode8["y"].AsFloat,
+						jsonnode8["z"].AsFloat,
+						jsonnode8["x2"].AsFloat,
+						jsonnode8["y2"].AsFloat,
+						jsonnode8["z2"].AsFloat,
+						18f
+					});
+				}
 				eventKeyframe8.random = jsonnode8["r"].AsInt;
 				DataManager.LSAnimation curveType8 = DataManager.inst.AnimationList[0];
 				if (jsonnode8["ct"] != null)
@@ -892,12 +910,30 @@ namespace EditorManagement.Functions
 				DataManager.GameData.EventKeyframe eventKeyframe9 = new DataManager.GameData.EventKeyframe();
 				JSONNode jsonnode9 = _events["lens"][num3];
 				eventKeyframe9.eventTime = jsonnode9["t"].AsFloat;
-				eventKeyframe9.SetEventValues(new float[]
+				if (!string.IsNullOrEmpty(jsonnode9["y"]))
 				{
-					jsonnode9["x"].AsFloat,
-					jsonnode9["y"].AsFloat,
-					jsonnode9["z"].AsFloat
-				});
+					eventKeyframe9.SetEventValues(new float[]
+					{
+						jsonnode9["x"].AsFloat,
+						jsonnode9["y"].AsFloat,
+						jsonnode9["z"].AsFloat,
+						jsonnode9["x2"].AsFloat,
+						jsonnode9["y2"].AsFloat,
+						jsonnode9["z2"].AsFloat,
+					});
+				}
+				else
+				{
+					eventKeyframe9.SetEventValues(new float[]
+					{
+						jsonnode9["x"].AsFloat,
+						0f,
+						0f,
+						1f,
+						1f,
+						1f,
+					});
+				}
 				eventKeyframe9.random = jsonnode9["r"].AsInt;
 				DataManager.LSAnimation curveType9 = DataManager.inst.AnimationList[0];
 				if (jsonnode9["ct"] != null)
@@ -947,7 +983,7 @@ namespace EditorManagement.Functions
 				DataManager.inst.gameData.eventObjects.allEvents[9].Add(eventKeyframe10);
 				delay += 0.0001f;
 			}
-			if (DataManager.inst.gameData.eventObjects.allEvents.Count > 10)
+			if (allEvents.Count > 10)
 			{
 				for (int num4 = 0; num4 < _events["cg"].Count; num4++)
 				{
@@ -960,15 +996,15 @@ namespace EditorManagement.Functions
 					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
 					eventKeyframe11.SetEventValues(new float[]
 					{
-					jsonnode11["x"].AsFloat,
-					jsonnode11["y"].AsFloat,
-					jsonnode11["z"].AsFloat,
-					jsonnode11["x2"].AsFloat,
-					jsonnode11["y2"].AsFloat,
-					jsonnode11["z2"].AsFloat,
-					jsonnode11["x3"].AsFloat,
-					jsonnode11["y3"].AsFloat,
-					jsonnode11["z3"].AsFloat
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+						jsonnode11["x2"].AsFloat,
+						jsonnode11["y2"].AsFloat,
+						jsonnode11["z2"].AsFloat,
+						jsonnode11["x3"].AsFloat,
+						jsonnode11["y3"].AsFloat,
+						jsonnode11["z3"].AsFloat
 					});
 					eventKeyframe11.random = jsonnode11["r"].AsInt;
 					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
@@ -979,9 +1015,9 @@ namespace EditorManagement.Functions
 					}
 					eventKeyframe11.SetEventRandomValues(new float[]
 					{
-					jsonnode11["rx"].AsFloat,
-					jsonnode11["ry"].AsFloat,
-					jsonnode11["value_random_z"].AsFloat
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat,
+						jsonnode11["value_random_z"].AsFloat
 					});
 					eventKeyframe11.active = false;
 					DataManager.inst.gameData.eventObjects.allEvents[10].Add(eventKeyframe11);
@@ -999,11 +1035,11 @@ namespace EditorManagement.Functions
 					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
 					eventKeyframe11.SetEventValues(new float[]
 					{
-					jsonnode11["x"].AsFloat,
-					jsonnode11["y"].AsFloat,
-					jsonnode11["z"].AsFloat,
-					jsonnode11["x2"].AsFloat,
-					jsonnode11["y2"].AsFloat
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+						jsonnode11["x2"].AsFloat,
+						jsonnode11["y2"].AsFloat
 					});
 					eventKeyframe11.random = jsonnode11["r"].AsInt;
 					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
@@ -1014,8 +1050,8 @@ namespace EditorManagement.Functions
 					}
 					eventKeyframe11.SetEventRandomValues(new float[]
 					{
-					jsonnode11["rx"].AsFloat,
-					jsonnode11["ry"].AsFloat
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
 					});
 					eventKeyframe11.active = false;
 					DataManager.inst.gameData.eventObjects.allEvents[11].Add(eventKeyframe11);
@@ -1033,8 +1069,8 @@ namespace EditorManagement.Functions
 					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
 					eventKeyframe11.SetEventValues(new float[]
 					{
-					jsonnode11["x"].AsFloat,
-					jsonnode11["y"].AsFloat
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
 					});
 					eventKeyframe11.random = jsonnode11["r"].AsInt;
 					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
@@ -1045,8 +1081,8 @@ namespace EditorManagement.Functions
 					}
 					eventKeyframe11.SetEventRandomValues(new float[]
 					{
-					jsonnode11["rx"].AsFloat,
-					jsonnode11["ry"].AsFloat
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
 					});
 					eventKeyframe11.active = false;
 					DataManager.inst.gameData.eventObjects.allEvents[12].Add(eventKeyframe11);
@@ -1064,8 +1100,8 @@ namespace EditorManagement.Functions
 					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
 					eventKeyframe11.SetEventValues(new float[]
 					{
-					jsonnode11["x"].AsFloat,
-					jsonnode11["y"].AsFloat
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
 					});
 					eventKeyframe11.random = jsonnode11["r"].AsInt;
 					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
@@ -1076,12 +1112,345 @@ namespace EditorManagement.Functions
 					}
 					eventKeyframe11.SetEventRandomValues(new float[]
 					{
-					jsonnode11["rx"].AsFloat,
-					jsonnode11["ry"].AsFloat
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
 					});
 					eventKeyframe11.active = false;
 					DataManager.inst.gameData.eventObjects.allEvents[13].Add(eventKeyframe11);
 					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["offset"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["offset"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[14].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["grd"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["grd"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+						jsonnode11["x2"].AsFloat,
+						jsonnode11["y2"].AsFloat,
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[15].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+				
+				for (int num4 = 0; num4 < _events["dbv"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["dbv"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[16].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["scan"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["scan"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[17].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["blur"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["blur"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[18].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["pixel"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["pixel"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[19].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["bg"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["bg"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[20].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["overlay"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["overlay"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[21].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["timeline"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["overlay"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+						jsonnode11["x2"].AsFloat,
+						jsonnode11["y2"].AsFloat,
+						jsonnode11["z2"].AsFloat,
+						jsonnode11["x3"].AsFloat,
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[21].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+			}
+
+			for (int type = 0; type < allEvents.Count; type++)
+			{
+				if (allEvents[type].Count < 1)
+				{
+					allEvents[type].Add(new DataManager.GameData.EventKeyframe
+					{
+						eventValues = new float[9],
+						eventTime = 0f
+					});
+					if (type == 11)
+					{
+						allEvents[type][0].eventValues[2] = 1f;
+					}
+					if (type == 12)
+					{
+						allEvents[type][0].eventValues[1] = 6f;
+					}
+					if (type == 15)
+					{
+						allEvents[type][0].eventValues[2] = 18f;
+						allEvents[type][0].eventValues[3] = 18f;
+					}
+					if (type == 18)
+					{
+						allEvents[type][0].eventValues[1] = 6f;
+					}
+					if (type == 20)
+					{
+						allEvents[type][0].eventValues[0] = 18f;
+					}
+					if (type == 21)
+					{
+						allEvents[type][0].eventValues[0] = 18f;
+					}
+					if (type == 22)
+					{
+						//-532?
+						allEvents[type][0].eventValues[2] = -342f;
+						allEvents[type][0].eventValues[3] = 1f;
+						allEvents[type][0].eventValues[4] = 1f;
+						allEvents[type][0].eventValues[6] = 18f;
+					}
 				}
 			}
 			EventManager.inst.updateEvents();
@@ -1214,13 +1583,18 @@ namespace EditorManagement.Functions
 			return Application.persistentDataPath;
         }
 
-		public static IEnumerator GetFile(string _filepath)
-        {
-			UnityWebRequest unityWebRequest = new UnityWebRequest("file://" + _filepath);
-			while (!unityWebRequest.isDone)
-            {
-				yield return null;
-            }
+		public static IEnumerator LoadImage(string _filepath, Action<Sprite> callback)
+		{
+			Texture2D tex = new Texture2D(256, 256, TextureFormat.RGBA32, true);
+			tex.requestedMipmapLevel = 3;
+			Sprite obj;
+			using (UnityWebRequest unityWebRequest = new UnityWebRequest("file://" + _filepath))
+			{
+				while (!unityWebRequest.isDone)
+				{
+					yield return null;
+				}
+			}
         }
 
 		public static bool FileExists(string _filePath)

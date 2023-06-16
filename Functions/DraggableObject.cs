@@ -69,7 +69,7 @@ namespace EditorManagement.Functions
         private void Test()
         {
             var beatmapObject = ObjEditor.inst.currentObjectSelection.GetObjectData();
-            for (int i = 0; i < beatmapObject.events.Count; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (beatmapObject.events[i].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime) != null)
                 {
