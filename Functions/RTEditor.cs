@@ -800,9 +800,26 @@ namespace EditorManagement.Functions
 			return null;
 		}
 
+		public static int GetLayer(int _layer)
+        {
+			if (_layer > 0)
+			{
+				if (_layer < 5)
+				{
+					int l = _layer;
+					return l;
+				}
+				else
+				{
+					int l = _layer + 1;
+					return l;
+				}
+			}
+			return 0;
+		}
+
 		public static Color GetLayerColor(int _layer)
 		{
-			EditorManager.inst.layer = _layer;
 			if (_layer < EditorManager.inst.layerColors.Count)
 			{
 				return EditorManager.inst.layerColors[_layer];

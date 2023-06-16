@@ -498,26 +498,29 @@ namespace EditorManagement.Patchers
                     {
                         if (int.TryParse(_val, out int n))
                         {
+                            currentLayer = currentPrefab.editorData.Layer;
                             int a = n - 1;
                             if (a < 0)
                             {
-                                a = 0;
+                                layer.text = "1";
                             }
-                            if (currentLayer + 1 == 5)
-                            {
-                                a = 6;
-                            }
-                            if (currentLayer - 1 == 5)
-                            {
-                                a = 4;
-                            }
+                            //if (n + 1 == 5)
+                            //{
+                            //    a = 6;
+                            //}
+                            //else if (n - 1 == 5)
+                            //{
+                            //    a = 4;
+                            //}
+                            //if (a > 5)
+                            //{
+                            //    a -= 1;
+                            //}
 
-                            currentPrefab.editorData.Layer = a;
-                            layer.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(currentLayer);
+                            currentPrefab.editorData.Layer = RTEditor.GetLayer(a);
+                            layer.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(RTEditor.GetLayer(a));
                             //ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
                             ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-
-                            currentLayer = currentPrefab.editorData.Layer;
                         }
                         else
                         {
@@ -531,13 +534,13 @@ namespace EditorManagement.Patchers
                     layerLeft.onClick.RemoveAllListeners();
                     layerLeft.onClick.AddListener(delegate ()
                     {
-                        time.text = (currentPrefab.editorData.Layer - ConfigEntries.EventMoveModify.Value).ToString();
+                        layer.text = (currentPrefab.editorData.Layer - (int)ConfigEntries.EventMoveModify.Value).ToString();
                     });
 
                     layerRight.onClick.RemoveAllListeners();
                     layerRight.onClick.AddListener(delegate ()
                     {
-                        layer.text = (currentPrefab.editorData.Layer + ConfigEntries.EventMoveModify.Value).ToString();
+                        layer.text = (currentPrefab.editorData.Layer + (int)ConfigEntries.EventMoveModify.Value).ToString();
                     });
 
                     if (!layer.gameObject.GetComponent<EventTrigger>())
