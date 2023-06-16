@@ -54,6 +54,7 @@ namespace EditorManagement
 		//Fixed a bug with Search Object window resetting the Multi Object Editor value not allowing objects to be synced.
 		//Fixed a bug with prefabs not being copy-able (this also now means that prefab objects can be included in prefabs potentially)
 		//Cleaned up the old Prefab Object dialog code.
+		//Changed the way the image shape type is used in editor. (Instead of manually inputing the local path of an image, you can now click on the magnifying glass icon and be taken to a open file search window where you will be able to find any image anywhere)
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
