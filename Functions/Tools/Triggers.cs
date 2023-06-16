@@ -211,6 +211,76 @@ namespace EditorManagement.Functions.Tools
 			});
 			return entry;
 		}
+		
+		public static EventTrigger.Entry ScrollDeltaInt(InputField _if, int _amount, bool _multi = false, List<int> clamp = null)
+		{
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.Scroll;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				PointerEventData pointerEventData = (PointerEventData)eventData;
+				if (!_multi)
+				{
+					if (pointerEventData.scrollDelta.y < 0f)
+					{
+						int x = int.Parse(_if.text);
+						x -= _amount;
+
+						if (clamp != null)
+						{
+							x = Mathf.Clamp(x, clamp[0], clamp[1]);
+						}
+
+						_if.text = x.ToString();
+						return;
+					}
+					if (pointerEventData.scrollDelta.y > 0f)
+					{
+						int x = int.Parse(_if.text);
+						x += _amount;
+
+						if (clamp != null)
+						{
+							x = Mathf.Clamp(x, clamp[0], clamp[1]);
+						}
+
+						_if.text = x.ToString();
+					}
+				}
+				else if (!Input.GetKey(KeyCode.LeftShift))
+				{
+					if (!Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
+					{
+						if (pointerEventData.scrollDelta.y < 0f)
+						{
+							int x = int.Parse(_if.text);
+							x -= _amount;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
+							_if.text = x.ToString();
+							return;
+						}
+						if (pointerEventData.scrollDelta.y > 0f)
+						{
+							int x = int.Parse(_if.text);
+							x += _amount;
+
+							if (clamp != null)
+							{
+								x = Mathf.Clamp(x, clamp[0], clamp[1]);
+							}
+
+							_if.text = x.ToString();
+						}
+					}
+				}
+			});
+			return entry;
+		}
 
 		public static EventTrigger.Entry ScrollDeltaVector2(InputField _ifX, InputField _ifY, float _amount, float _divide)
 		{

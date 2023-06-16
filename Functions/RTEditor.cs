@@ -800,6 +800,16 @@ namespace EditorManagement.Functions
 			return null;
 		}
 
+		public static Color GetLayerColor(int _layer)
+		{
+			EditorManager.inst.layer = _layer;
+			if (_layer < EditorManager.inst.layerColors.Count)
+			{
+				return EditorManager.inst.layerColors[_layer];
+			}
+			return Color.white;
+		}
+
 		public static void SetLayer(int _layer)
 		{
 			Image layerImage = GameObject.Find("TimelineBar/GameObject/layers").GetComponent<Image>();
