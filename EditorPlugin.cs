@@ -43,14 +43,17 @@ namespace EditorManagement
 		//Add a config option for updating objects whilst modifying a value in the Object Editor window.
 		//Add a backup autosave for cases where the game crashes or quits and the player hasn't saved. (Probably make a comparison reference to compare the two files to check if they equal)
 		//Work on a prefab keybind thing.
-		//Fix EventsCore compatibility... again...
 		//Add an Editor Achievement system where doing specific actions or creating specific things triggers a specific achievement.
+		//Add randomization accessibility to Prefab Object dialog since prefab objects can use randomization.
 
 		//Update list
 		//Mod is integrated with my own modified version of Catalyst that works in the editor. Just need to talk to Reimnop about it before doing anything further with it.
 		//Fixed a problem with pasting an object causing the multi object editor window to open.
 		//Added a config option for render depth, so you can now have the Legacy render depth "cap" or the unlimited render depth.
 		//Fixed a bug where creating a new level wouldn't load the level properly.
+		//Fixed a bug with Search Object window resetting the Multi Object Editor value not allowing objects to be synced.
+		//Fixed a bug with prefabs not being copy-able (this also now means that prefab objects can be included in prefabs potentially)
+		//Cleaned up the old Prefab Object dialog code.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 

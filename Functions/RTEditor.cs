@@ -2124,7 +2124,7 @@ namespace EditorManagement.Functions
 						foreach (object obj3 in shapeSettings)
 						{
 							var ch = (Transform)obj3;
-							if (ch.name != "5")
+							if (ch.name != "5" && ch.name != "7")
 							{
 								foreach (var c in ch)
 								{
@@ -2156,17 +2156,10 @@ namespace EditorManagement.Functions
 						}
 						else
 						{
-							shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
-							shapeSettings.GetChild(4).GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
+							//shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
+							//shapeSettings.GetChild(4).GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
 						}
-						if (beatmapObject.shape != 6)
-						{
-							shapeSettings.GetChild(beatmapObject.shape).gameObject.SetActive(true);
-						}
-						else
-						{
-							shapeSettings.GetChild(4).gameObject.SetActive(true);
-						}
+						shapeSettings.GetChild(beatmapObject.shape).gameObject.SetActive(true);
 						for (int j = 1; j <= ObjectManager.inst.objectPrefabs.Count; j++)
 						{
 							int buttonTmp = j;
@@ -2232,15 +2225,24 @@ namespace EditorManagement.Functions
 						}
 						else if (beatmapObject.shape == 6)
 						{
-							var textIF = shapeSettings.Find("5").GetComponent<InputField>();
-							textIF.onValueChanged.RemoveAllListeners();
-							textIF.text = beatmapObject.text;
-							textIF.onValueChanged.AddListener(delegate (string _value)
+							shapeSettings.Find("7/select").GetComponent<Button>().onClick.RemoveAllListeners();
+							shapeSettings.Find("7/select").GetComponent<Button>().onClick.AddListener(delegate ()
 							{
-								beatmapObject.text = _value;
-								ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+								OpenImageSelector();
 							});
+							shapeSettings.Find("7/text").GetComponent<Text>().text = (string.IsNullOrEmpty(beatmapObject.text) ? "No Object Selected" : beatmapObject.text);
 						}
+						//else if (beatmapObject.shape == 6)
+						//{
+						//	var textIF = shapeSettings.Find("5").GetComponent<InputField>();
+						//	textIF.onValueChanged.RemoveAllListeners();
+						//	textIF.text = beatmapObject.text;
+						//	textIF.onValueChanged.AddListener(delegate (string _value)
+						//	{
+						//		beatmapObject.text = _value;
+						//		ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+						//	});
+						//}
 					}
 
 					Debug.LogFormat("{0}Refresh Object GUI: Parent", EditorPlugin.className);
@@ -4180,15 +4182,15 @@ namespace EditorManagement.Functions
 				return;
             }
 			string jpgFile = FileBrowser.OpenSingleFile("Select an image!", RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel, new string[] { "jpg", "png" });
-			Debug.Log("Selected file: " + jpgFile);
+			Debug.LogFormat("{0}Selected file: {1}", EditorPlugin.className, jpgFile);
 			if (!string.IsNullOrEmpty(jpgFile))
 			{
-				string jpgFileLocation = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/" + Triggers.GetFileNameWithoutPath(jpgFile);
+				string jpgFileLocation = RTFile.GetApplicationDirectory() + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/" + Path.GetFileName(jpgFile);
 				if (!RTFile.FileExists(jpgFileLocation))
                 {
 					File.Copy(jpgFile, jpgFileLocation);
                 }
-				ObjEditor.inst.currentObjectSelection.GetObjectData().text = "img(" + jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf(EditorManager.inst.currentLoadedLevel) + EditorManager.inst.currentLoadedLevel.Length + 1), "") + ")";
+				ObjEditor.inst.currentObjectSelection.GetObjectData().text = jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf(EditorManager.inst.currentLoadedLevel) + EditorManager.inst.currentLoadedLevel.Length + 1), "");
 				inst.StartCoroutine(RefreshObjectGUI());
 			}
 		}
