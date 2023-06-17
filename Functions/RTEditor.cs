@@ -3707,6 +3707,8 @@ namespace EditorManagement.Functions
 			var gameManager = GameManager.inst;
 			var dataManager = DataManager.inst;
 
+			SetLayer(0);
+
 			objectManager.PurgeObjects();
 			SetAutosave();
 			__instance.InvokeRepeating("LoadingIconUpdate", 0f, 0.05f);
