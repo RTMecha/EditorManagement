@@ -3646,8 +3646,20 @@ namespace EditorManagement.Functions
 					}
 				}
 			}
-			Debug.Log("Saving Entire Beatmap");
-			Debug.Log("Path: " + _path);
+
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
+			{
+				var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
+				var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
+
+				if (c != null)
+				{
+					playerPlugin.GetType().GetMethod("SaveLocalModels").Invoke(playerPlugin, new object[] { });
+				}
+			}
+
+			Debug.LogFormat("{0}Saving Entire Beatmap", EditorPlugin.className);
+			Debug.LogFormat("{0}Path: {1}", EditorPlugin.className, _path);
 			RTFile.WriteToFile(_path, jsonnode.ToString());
 			yield break;
         }

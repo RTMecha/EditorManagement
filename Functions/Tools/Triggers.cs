@@ -367,6 +367,58 @@ namespace EditorManagement.Functions.Tools
 			return entry;
 		}
 
+		public static void IncreaseDecreaseButtons(InputField _if, float _amount, List<float> clamp = null)
+        {
+			var tf = _if.transform;
+
+			var btR = tf.Find("<").GetComponent<Button>();
+			var btL = tf.Find(">").GetComponent<Button>();
+
+			btR.onClick.RemoveAllListeners();
+			btR.onClick.AddListener(delegate ()
+			{
+				if (clamp == null)
+					_if.text = (float.Parse(_if.text) - _amount).ToString();
+				else
+					_if.text = Mathf.Clamp(float.Parse(_if.text) - _amount, clamp[0], clamp[1]).ToString();
+			});
+
+			btL.onClick.RemoveAllListeners();
+			btL.onClick.AddListener(delegate ()
+			{
+				if (clamp == null)
+					_if.text = (float.Parse(_if.text) + _amount).ToString();
+				else
+					_if.text = Mathf.Clamp(float.Parse(_if.text) + _amount, clamp[0], clamp[1]).ToString();
+			});
+        }
+
+		public static void IncreaseDecreaseButtons(InputField _if, int _amount, List<float> clamp = null)
+        {
+			var tf = _if.transform;
+
+			var btR = tf.Find("<").GetComponent<Button>();
+			var btL = tf.Find(">").GetComponent<Button>();
+
+			btR.onClick.RemoveAllListeners();
+			btR.onClick.AddListener(delegate ()
+			{
+				if (clamp == null)
+					_if.text = (int.Parse(_if.text) - _amount).ToString();
+				else
+					_if.text = Mathf.Clamp(int.Parse(_if.text) - _amount, clamp[0], clamp[1]).ToString();
+			});
+
+			btL.onClick.RemoveAllListeners();
+			btL.onClick.AddListener(delegate ()
+			{
+				if (clamp == null)
+					_if.text = (int.Parse(_if.text) + _amount).ToString();
+				else
+					_if.text = Mathf.Clamp(int.Parse(_if.text) + _amount, clamp[0], clamp[1]).ToString();
+			});
+        }
+
 		public static EventTrigger.Entry CreatePreviewClickTrigger(Transform _preview, Transform _hex, Color _col, string popupName = "")
 		{
 			EventTrigger.Entry previewClickTrigger = new EventTrigger.Entry();
