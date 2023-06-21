@@ -23,7 +23,7 @@ using EditorManagement.Patchers;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.2")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.3")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
