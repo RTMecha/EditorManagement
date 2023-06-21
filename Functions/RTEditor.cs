@@ -1639,7 +1639,6 @@ namespace EditorManagement.Functions
 
 			EditorManager.inst.DisplayNotification("Deleting Beatmap Objects [ " + count + " ]", 1f, EditorManager.NotificationType.Success);
 
-			ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, 0));
 			foreach (ObjEditor.ObjectSelection obj in _objs)
 			{
 				yield return new WaitForSeconds(delay);
@@ -1647,6 +1646,7 @@ namespace EditorManagement.Functions
 				delay += 0.0001f;
 			}
 
+			ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, 0));
 			EditorManager.inst.DisplayNotification("Deleted Beatmap Objects [ " + count + " ]", 1f, EditorManager.NotificationType.Success);
 
 			ienumRunning = false;
@@ -3778,6 +3778,17 @@ namespace EditorManagement.Functions
 				rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
 				dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
 				inst.StartCoroutine(RTFile.ParseBeatmap(rawJSON, true));
+			}
+
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
+            {
+				var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
+				var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
+
+				if (c != null)
+                {
+					playerPlugin.GetType().GetMethod("LoadIndexes").Invoke(playerPlugin, new object[] { });
+                }
 			}
 
 			//fileInfo.text = "Loading Themes for [" + _levelName + "]";
