@@ -931,6 +931,9 @@ namespace EditorManagement.Patchers
 		private static void PropertiesWindow()
         {
 			RTEditor.inst.StartCoroutine(RTEditor.CreatePropertiesWindow());
+			GameObject gameObject = new GameObject("PlayerEditorManager");
+			gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
+			gameObject.AddComponent<CreativePlayersEditor>();
 		}
 
 		[HarmonyPatch("Start")]
@@ -1736,6 +1739,15 @@ namespace EditorManagement.Patchers
 				}
             }
         }
+
+		public static List<string> randomQuotes = new List<string>
+		{
+			"You should touch some grass.",
+			"Have a well deserved break.",
+			"You doing alright there?",
+			"You might need some rest.",
+			"Anyone there?"
+		};
 
         [HarmonyPatch("DisplayNotification")]
         [HarmonyPrefix]

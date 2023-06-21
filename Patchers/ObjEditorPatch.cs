@@ -510,12 +510,26 @@ namespace EditorManagement.Patchers
 					if (int.TryParse(jsonnode["timeline"]["l"], out int l))
 					{
 						Debug.Log("DSFSDFSFDSF - l " + l);
-						RTEditor.SetLayer(l);
+						if (l != 5)
+						{
+							RTEditor.SetLayer(l);
+						}
+						else
+						{
+							RTEditor.SetLayer(0);
+						}
 					}
 					else if (jsonnode["timeline"]["l"] != null)
 					{
 						Debug.Log("DSFSDFSFDSF - l " + jsonnode["timeline"]["l"]);
-						RTEditor.SetLayer(jsonnode["timeline"]["l"]);
+						if ((int)jsonnode["timeline"]["l"] != 5)
+						{
+							RTEditor.SetLayer(jsonnode["timeline"]["l"]);
+						}
+						else
+						{
+							RTEditor.SetLayer(0);
+						}
 					}
 
 					if (float.TryParse(jsonnode["editor"]["t"], out float t))

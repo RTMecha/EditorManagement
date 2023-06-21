@@ -59,6 +59,7 @@ namespace EditorManagement.Patchers
 			eventEditorTitleColors.Add("- BG Editor -", new Color(0.3137255f, 0.4117647f, 0.3176471f, 1f)); //7
 			eventEditorTitleColors.Add("- Screen Overlay Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f)); //8
 			eventEditorTitleColors.Add("- Timeline Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f)); //9
+			eventEditorTitleColors.Add("- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f)); //10
 
 			RenderTitles();
 		}
@@ -652,6 +653,7 @@ namespace EditorManagement.Patchers
 					overlayColorButtons.Add(colorOverlay.transform.GetChild(i).gameObject.GetComponent<Toggle>());
 				}
 
+				//Timeline
 				var tl = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
 				tl.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
 				tl.transform.localScale = Vector3.one;
@@ -709,6 +711,10 @@ namespace EditorManagement.Patchers
 				tlActLabel.transform.SetSiblingIndex(8);
 				tlActLabel.transform.GetChild(0).GetComponent<Text>().text = "Active";
 				Destroy(tlActLabel.transform.GetChild(1).gameObject);
+
+				var pp = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
+				pp.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
+				pp.transform.localScale = Vector3.one;
 			}
 
 			yield break;
