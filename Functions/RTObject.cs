@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using LSFunctions;
 
 namespace EditorManagement.Functions
 {
@@ -11,10 +12,18 @@ namespace EditorManagement.Functions
 		public bool tipEnabled;
 		public string id;
 
+		public void OnMouseDown()
+        {
+			if (EditorManager.inst != null && DataManager.inst.gameData.beatmapObjects.Count > 0 && !LSHelpers.IsUsingInputField())
+            {
+				ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, id));
+            }
+        }
+
         public void OnMouseEnter()
         {
             selected = true;
-			if (tipEnabled)
+			if (tipEnabled && EditorManager.inst != null)
 			{
 				DataManager.Language enumTmp = DataManager.inst.GetCurrentLanguageEnum();
 				int num = tooltipLanguages.FindIndex((HoverTooltip.Tooltip x) => x.language == enumTmp);
@@ -31,7 +40,7 @@ namespace EditorManagement.Functions
         public void OnMouseExit()
         {
             selected = false;
-			if (tipEnabled)
+			if (tipEnabled && EditorManager.inst != null)
 			{
 				EditorManager.inst.SetTooltipDisappear(0.5f);
 			}
