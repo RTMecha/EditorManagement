@@ -2896,6 +2896,9 @@ namespace EditorManagement.Functions
 			yield break;
 		}
 
+		//-------------------------------------------------------------------------------------------------
+		//---------------------------------------- DATA ---------------------------------------------------
+		//-------------------------------------------------------------------------------------------------
 		public static IEnumerator SaveData(string _path, DataManager.GameData _data)
         {
 			Debug.Log("Saving Beatmap");
@@ -3899,6 +3902,9 @@ namespace EditorManagement.Functions
 			yield break;
         }
 
+		//-------------------------------------------------------------------------------------------------
+		//--------------------------------- Timeline Textures ---------------------------------------------
+		//-------------------------------------------------------------------------------------------------
 		public static IEnumerator AssignTimelineTexture()
 		{
 			//int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
