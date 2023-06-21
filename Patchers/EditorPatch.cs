@@ -1692,50 +1692,10 @@ namespace EditorManagement.Patchers
 			if (ConfigEntries.ReminderActive.Value == true)
 			{
 				int radfs = UnityEngine.Random.Range(0, 5);
-				string randomtext = "";
-
-				switch (radfs)
-                {
-					case 0:
-                        {
-							randomtext = ". You should touch some grass.";
-							break;
-                        }
-					case 1:
-						{
-							randomtext = ". Have a well deserved break.";
-							break;
-                        }
-					case 2:
-						{
-							randomtext = ". You doing alright there?";
-							break;
-                        }
-					case 3:
-						{
-							randomtext = ". You might need some rest.";
-							break;
-                        }
-					case 4:
-						{
-							randomtext = ". Best thing to do in this situation is to have a break.";
-							break;
-                        }
-					case 5:
-						{
-							randomtext = ". Anyone there?";
-							if (ConfigEntries.ReminderRepeat.Value >= 600f)
-							{
-								RTEditor.inst.StartCoroutine(RTEditor.InitiateSecret());
-							}
-							break;
-                        }
-                }
-
 				float time = Time.time;
 				if (time != 0f)
 				{
-					EditorManager.inst.DisplayNotification("You've been working on the game for " + RTEditor.secondsToTime(Time.time) + randomtext, 2f, EditorManager.NotificationType.Warning, false);
+					EditorManager.inst.DisplayNotification("You've been working on the game for " + RTEditor.secondsToTime(Time.time) + ". " + randomQuotes[radfs], 2f, EditorManager.NotificationType.Warning, false);
 				}
             }
         }
