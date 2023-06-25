@@ -60,6 +60,8 @@ namespace EditorManagement.Patchers
 			eventEditorTitleColors.Add("- Screen Overlay Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f)); //8
 			eventEditorTitleColors.Add("- Timeline Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f)); //9
 			eventEditorTitleColors.Add("- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f)); //10
+			eventEditorTitleColors.Add("- Follow Player Editor -", new Color(1f, 0.5960785f, 0f, 1f)); //11
+			eventEditorTitleColors.Add("- Audio Editor -", new Color(1f, 0.3490196f, 0f, 1f)); //12
 
 			RenderTitles();
 		}
@@ -130,9 +132,9 @@ namespace EditorManagement.Patchers
 						eventLabels.transform.GetChild(6).GetChild(0).GetComponent<Text>().text = "BG";
 						eventLabels.transform.GetChild(7).GetChild(0).GetComponent<Text>().text = "Screen Overlay";
 						eventLabels.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Timeline";
-						eventLabels.transform.GetChild(9).GetChild(0).GetComponent<Text>().text = "Player (Coming soon)";
-						eventLabels.transform.GetChild(10).GetChild(0).GetComponent<Text>().text = "Follow Player (Coming soon)";
-						eventLabels.transform.GetChild(11).GetChild(0).GetComponent<Text>().text = "??? (Coming soon)";
+						eventLabels.transform.GetChild(9).GetChild(0).GetComponent<Text>().text = "Player";
+						eventLabels.transform.GetChild(10).GetChild(0).GetComponent<Text>().text = "Follow Player";
+						eventLabels.transform.GetChild(11).GetChild(0).GetComponent<Text>().text = "Audio";
 						eventLabels.transform.GetChild(12).GetChild(0).GetComponent<Text>().text = "AnalogGlitch (Coming soon)";
 						eventLabels.transform.GetChild(13).GetChild(0).GetComponent<Text>().text = "DigitalGlitch (Coming soon)";
 						break;
@@ -712,9 +714,107 @@ namespace EditorManagement.Patchers
 				tlActLabel.transform.GetChild(0).GetComponent<Text>().text = "Active";
 				Destroy(tlActLabel.transform.GetChild(1).gameObject);
 
-				var pp = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
-				pp.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
-				pp.transform.localScale = Vector3.one;
+				//Player
+				{
+					var pp = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
+					pp.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
+					pp.transform.localScale = Vector3.one;
+					pp.name = "player";
+
+					pp.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Velocity";
+					pp.transform.GetChild(8).GetChild(1).GetComponent<Text>().text = "Rotation";
+
+					var act2 = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+					act2.transform.SetParent(pp.transform);
+					act2.transform.localScale = Vector3.one;
+					act2.name = "moveable";
+					act2.transform.SetSiblingIndex(8);
+					act2.transform.Find("Text").GetComponent<Text>().text = "Moveable";
+
+					var tlAct2Label = Instantiate(pp.transform.GetChild(9).gameObject);
+					tlAct2Label.transform.SetParent(pp.transform);
+					tlAct2Label.transform.localScale = Vector3.one;
+					tlAct2Label.transform.SetSiblingIndex(8);
+					tlAct2Label.transform.GetChild(0).GetComponent<Text>().text = "Can Move";
+					Destroy(tlAct2Label.transform.GetChild(1).gameObject);
+
+					var act3 = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+					act3.transform.SetParent(pp.transform);
+					act3.transform.localScale = Vector3.one;
+					act3.name = "active";
+					act3.transform.SetSiblingIndex(8);
+					act3.transform.Find("Text").GetComponent<Text>().text = "Active";
+
+					var tlAct3Label = Instantiate(pp.transform.GetChild(9).gameObject);
+					tlAct3Label.transform.SetParent(pp.transform);
+					tlAct3Label.transform.localScale = Vector3.one;
+					tlAct3Label.transform.SetSiblingIndex(8);
+					tlAct3Label.transform.GetChild(0).GetComponent<Text>().text = "Active";
+					Destroy(tlAct3Label.transform.GetChild(1).gameObject);
+				}
+
+				//Follow Player
+				{
+					var pp = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
+					pp.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
+					pp.transform.localScale = Vector3.one;
+					pp.name = "follow";
+
+					pp.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Sharpness";
+					pp.transform.GetChild(8).GetChild(1).GetComponent<Text>().text = "Offset";
+
+					var act1 = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+					act1.transform.SetParent(pp.transform);
+					act1.transform.localScale = Vector3.one;
+					act1.name = "rotate";
+					act1.transform.SetSiblingIndex(8);
+					act1.transform.Find("Text").GetComponent<Text>().text = "Rotate";
+
+					var tlAct1Label = Instantiate(pp.transform.GetChild(9).gameObject);
+					tlAct1Label.transform.SetParent(pp.transform);
+					tlAct1Label.transform.localScale = Vector3.one;
+					tlAct1Label.transform.SetSiblingIndex(8);
+					tlAct1Label.transform.GetChild(0).GetComponent<Text>().text = "Rotate Enabled";
+					Destroy(tlAct1Label.transform.GetChild(1).gameObject);
+
+					var act2 = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+					act2.transform.SetParent(pp.transform);
+					act2.transform.localScale = Vector3.one;
+					act2.name = "move";
+					act2.transform.SetSiblingIndex(8);
+					act2.transform.Find("Text").GetComponent<Text>().text = "Move";
+
+					var tlAct2Label = Instantiate(pp.transform.GetChild(9).gameObject);
+					tlAct2Label.transform.SetParent(pp.transform);
+					tlAct2Label.transform.localScale = Vector3.one;
+					tlAct2Label.transform.SetSiblingIndex(8);
+					tlAct2Label.transform.GetChild(0).GetComponent<Text>().text = "Move Enabled";
+					Destroy(tlAct2Label.transform.GetChild(1).gameObject);
+
+					var act3 = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+					act3.transform.SetParent(pp.transform);
+					act3.transform.localScale = Vector3.one;
+					act3.name = "active";
+					act3.transform.SetSiblingIndex(8);
+					act3.transform.Find("Text").GetComponent<Text>().text = "Active";
+
+					var tlAct3Label = Instantiate(pp.transform.GetChild(9).gameObject);
+					tlAct3Label.transform.SetParent(pp.transform);
+					tlAct3Label.transform.localScale = Vector3.one;
+					tlAct3Label.transform.SetSiblingIndex(8);
+					tlAct3Label.transform.GetChild(0).GetComponent<Text>().text = "Active";
+					Destroy(tlAct3Label.transform.GetChild(1).gameObject);
+				}
+                //Music
+                {
+					var pp = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
+					pp.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
+					pp.transform.localScale = Vector3.one;
+					pp.name = "music";
+
+					pp.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Pitch";
+					pp.transform.GetChild(8).GetChild(1).GetComponent<Text>().text = "Volume";
+				}
 			}
 
 			yield break;
@@ -759,7 +859,7 @@ namespace EditorManagement.Patchers
 					__instance.RenderEventsDialog();
 					__instance.UpdateEventOrder();
 					__instance.RenderEventObjects();
-					EventManager.inst.updateEvents();
+					//EventManager.inst.updateEvents();
 					preNumber = EditorManager.inst.GetTimelineTime();
 				}
 			}
@@ -3302,6 +3402,370 @@ namespace EditorManagement.Patchers
 								num++;
 							}
 						}
+						break;
+                    }
+				case 23: //Player
+					{
+						//Active
+						{
+							var active = dialogTmp.Find("active").GetComponent<Toggle>();
+							active.onValueChanged.RemoveAllListeners();
+							if ((int)currentKeyframe.eventValues[0] == 0)
+							{
+								active.isOn = true;
+							}
+							else
+							{
+								active.isOn = false;
+							}
+							active.onValueChanged.AddListener(delegate (bool _val)
+							{
+								if (_val)
+								{
+									currentKeyframe.eventValues[0] = 0f;
+								}
+								else
+								{
+									currentKeyframe.eventValues[0] = 1f;
+								}
+								eventManager.updateEvents();
+							});
+						}
+
+						//Moveable
+						{
+							var active = dialogTmp.Find("moveable").GetComponent<Toggle>();
+							active.onValueChanged.RemoveAllListeners();
+							if ((int)currentKeyframe.eventValues[1] == 0)
+							{
+								active.isOn = true;
+							}
+							else
+							{
+								active.isOn = false;
+							}
+							active.onValueChanged.AddListener(delegate (bool _val)
+							{
+								if (_val)
+								{
+									currentKeyframe.eventValues[1] = 0f;
+								}
+								else
+								{
+									currentKeyframe.eventValues[1] = 1f;
+								}
+								eventManager.updateEvents();
+							});
+						}
+
+						//Velocity
+						{
+							var intensity = dialogTmp.Find("position/x").GetComponent<InputField>();
+							intensity.onValueChanged.RemoveAllListeners();
+							intensity.text = currentKeyframe.eventValues[2].ToString("f2");
+							intensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[2] = num;
+								eventManager.updateEvents();
+							});
+
+							var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
+							var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
+
+							intensityLeft.onClick.RemoveAllListeners();
+							intensityLeft.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[2] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							intensityRight.onClick.RemoveAllListeners();
+							intensityRight.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[2] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							if (!dialogTmp.Find("position/x").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("position/x").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var intensityET = dialogTmp.Find("position/x").GetComponent<EventTrigger>();
+							intensityET.triggers.Clear();
+							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 1f, 10f));
+						}
+
+						//Rotation
+						{
+							var intensity = dialogTmp.Find("position/y").GetComponent<InputField>();
+							intensity.onValueChanged.RemoveAllListeners();
+							intensity.text = currentKeyframe.eventValues[3].ToString("f2");
+							intensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[3] = num;
+								eventManager.updateEvents();
+							});
+
+							var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
+							var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
+
+							intensityLeft.onClick.RemoveAllListeners();
+							intensityLeft.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[3] - ConfigEntries.EventRotateModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							intensityRight.onClick.RemoveAllListeners();
+							intensityRight.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[3] + ConfigEntries.EventRotateModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							if (!dialogTmp.Find("position/y").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("position/y").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var intensityET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
+							intensityET.triggers.Clear();
+							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 15f, 3f));
+						}
+						break;
+                    }
+				case 24: //Follow Player
+					{
+						//Active
+						{
+							var active = dialogTmp.Find("active").GetComponent<Toggle>();
+							active.onValueChanged.RemoveAllListeners();
+							if ((int)currentKeyframe.eventValues[0] == 0)
+							{
+								active.isOn = false;
+							}
+							else
+							{
+								active.isOn = true;
+							}
+							active.onValueChanged.AddListener(delegate (bool _val)
+							{
+								if (_val)
+								{
+									currentKeyframe.eventValues[0] = 1f;
+								}
+								else
+								{
+									currentKeyframe.eventValues[0] = 0f;
+								}
+								eventManager.updateEvents();
+							});
+						}
+
+						//Move
+						{
+							var active = dialogTmp.Find("move").GetComponent<Toggle>();
+							active.onValueChanged.RemoveAllListeners();
+							if ((int)currentKeyframe.eventValues[1] == 0)
+							{
+								active.isOn = false;
+							}
+							else
+							{
+								active.isOn = true;
+							}
+							active.onValueChanged.AddListener(delegate (bool _val)
+							{
+								if (_val)
+								{
+									currentKeyframe.eventValues[1] = 1f;
+								}
+								else
+								{
+									currentKeyframe.eventValues[1] = 0f;
+								}
+								eventManager.updateEvents();
+							});
+						}
+
+						//Rotate
+						{
+							var active = dialogTmp.Find("rotate").GetComponent<Toggle>();
+							active.onValueChanged.RemoveAllListeners();
+							if ((int)currentKeyframe.eventValues[2] == 0)
+							{
+								active.isOn = false;
+							}
+							else
+							{
+								active.isOn = true;
+							}
+							active.onValueChanged.AddListener(delegate (bool _val)
+							{
+								if (_val)
+								{
+									currentKeyframe.eventValues[2] = 1f;
+								}
+								else
+								{
+									currentKeyframe.eventValues[2] = 0f;
+								}
+								eventManager.updateEvents();
+							});
+						}
+
+						//Sharpness
+						{
+							var intensity = dialogTmp.Find("position/x").GetComponent<InputField>();
+							intensity.onValueChanged.RemoveAllListeners();
+							intensity.text = currentKeyframe.eventValues[3].ToString("f2");
+							intensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[3] = Mathf.Clamp(num, 0.001f, 1f);
+								eventManager.updateEvents();
+							});
+
+							var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
+							var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
+
+							intensityLeft.onClick.RemoveAllListeners();
+							intensityLeft.onClick.AddListener(delegate ()
+							{
+								intensity.text = Mathf.Clamp(currentKeyframe.eventValues[3] - ConfigEntries.EventMoveModify.Value, 0.001f, 1f).ToString();
+								eventManager.updateEvents();
+							});
+
+							intensityRight.onClick.RemoveAllListeners();
+							intensityRight.onClick.AddListener(delegate ()
+							{
+								intensity.text = Mathf.Clamp(currentKeyframe.eventValues[3] + ConfigEntries.EventMoveModify.Value, 0.001f, 1f).ToString();
+								eventManager.updateEvents();
+							});
+
+							if (!dialogTmp.Find("position/x").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("position/x").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var intensityET = dialogTmp.Find("position/x").GetComponent<EventTrigger>();
+							intensityET.triggers.Clear();
+							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f, false, new List<float> { 0.001f, 1f }));
+						}
+
+						//Rotation
+						{
+							var intensity = dialogTmp.Find("position/y").GetComponent<InputField>();
+							intensity.onValueChanged.RemoveAllListeners();
+							intensity.text = currentKeyframe.eventValues[4].ToString("f2");
+							intensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[4] = num;
+								eventManager.updateEvents();
+							});
+
+							var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
+							var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
+
+							intensityLeft.onClick.RemoveAllListeners();
+							intensityLeft.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[4] - ConfigEntries.EventRotateModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							intensityRight.onClick.RemoveAllListeners();
+							intensityRight.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[4] + ConfigEntries.EventRotateModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							if (!dialogTmp.Find("position/y").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("position/y").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var intensityET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
+							intensityET.triggers.Clear();
+							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+						}
+						break;
+                    }
+				case 25: //Audio
+                    {
+						var posX = dialogTmp.Find("position/x").GetComponent<InputField>();
+						var posY = dialogTmp.Find("position/y").GetComponent<InputField>();
+
+						posX.onValueChanged.RemoveAllListeners();
+						posX.text = currentKeyframe.eventValues[0].ToString("f2");
+						posX.onValueChanged.AddListener(delegate (string val)
+						{
+							float num = float.Parse(val);
+							currentKeyframe.eventValues[0] = Mathf.Clamp(num, 0.001f, 10f);
+							eventManager.updateEvents();
+						});
+
+						posY.onValueChanged.RemoveAllListeners();
+						posY.text = currentKeyframe.eventValues[1].ToString("f2");
+						posY.onValueChanged.AddListener(delegate (string val)
+						{
+							float num = float.Parse(val);
+							currentKeyframe.eventValues[1] = Mathf.Clamp(num, 0f, 1f);
+							eventManager.updateEvents();
+						});
+
+						var posXLeft = posX.transform.Find("<").GetComponent<Button>();
+						var posXRight = posX.transform.Find(">").GetComponent<Button>();
+						var posYLeft = posY.transform.Find("<").GetComponent<Button>();
+						var posYRight = posY.transform.Find(">").GetComponent<Button>();
+
+						posXLeft.onClick.RemoveAllListeners();
+						posXLeft.onClick.AddListener(delegate ()
+						{
+							posX.text = Mathf.Clamp(currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value, 0.001f, 10f).ToString();
+						});
+
+						posXRight.onClick.RemoveAllListeners();
+						posXRight.onClick.AddListener(delegate ()
+						{
+							posX.text = Mathf.Clamp(currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value, 0.001f, 10f).ToString();
+						});
+
+						posYLeft.onClick.RemoveAllListeners();
+						posYLeft.onClick.AddListener(delegate ()
+						{
+							posY.text = Mathf.Clamp(currentKeyframe.eventValues[1] - ConfigEntries.EventMoveModify.Value, 0f, 1f).ToString();
+						});
+
+						posYRight.onClick.RemoveAllListeners();
+						posYRight.onClick.AddListener(delegate ()
+						{
+							posY.text = Mathf.Clamp(currentKeyframe.eventValues[1] + ConfigEntries.EventMoveModify.Value, 0f, 1f).ToString();
+						});
+
+						if (!dialogTmp.Find("position/x").GetComponent<EventTrigger>())
+						{
+							dialogTmp.Find("position/x").gameObject.AddComponent<EventTrigger>();
+						}
+
+						if (!dialogTmp.Find("position/y").GetComponent<EventTrigger>())
+						{
+							dialogTmp.Find("position/y").gameObject.AddComponent<EventTrigger>();
+						}
+
+						var posXET = dialogTmp.Find("position/x").GetComponent<EventTrigger>();
+						var posYET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
+
+						posXET.triggers.Clear();
+						posXET.triggers.Add(Triggers.ScrollDelta(posX, 0.1f, 10f, false, new List<float> { 0.001f, 10f }));
+
+						posYET.triggers.Clear();
+						posYET.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, false, new List<float> { 0f, 1f }));
 						break;
                     }
 			}
