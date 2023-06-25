@@ -20,7 +20,9 @@ namespace EditorManagement.Functions
 {
 	public class RTFile : MonoBehaviour
 	{
-		public static IEnumerator ParseBeatmap(string _json, bool editor = false)
+        #region Parse
+
+        public static IEnumerator ParseBeatmap(string _json, bool editor = false)
 		{
 			JSONNode jsonnode = JSON.Parse(_json);
 			if (!editor)
@@ -189,29 +191,6 @@ namespace EditorManagement.Functions
 			{
 				DataManager.inst.gameData.prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(_prefabObjects[i]));
 			}
-		}
-
-		public static AssetBundle GetAssetBundle(string _filepath, string _bundle)
-		{
-			return AssetBundle.LoadFromFile(Path.Combine(_filepath, _bundle));
-		}
-
-		public static void GetAsset(string _filepath, string _bundle, string _filename, Action<GameObject> callback)
-        {
-			var assetBundle = GetAssetBundle(_filepath, _bundle);
-			var prefab = assetBundle.LoadAsset<GameObject>(_filename);
-			callback(Instantiate(prefab));
-
-			assetBundle.Unload(false);
-		}
-
-		public static void GetAsset(string _filepath, string _bundle, string _filename, Action<Font> callback)
-        {
-			var assetBundle = GetAssetBundle(_filepath, _bundle);
-			var prefab = assetBundle.LoadAsset<Font>(_filename);
-			callback(Instantiate(prefab));
-
-			assetBundle.Unload(false);
 		}
 
 		public static IEnumerator ParseObject(JSONNode _object, Action<DataManager.GameData.BeatmapObject> action)
@@ -1407,6 +1386,104 @@ namespace EditorManagement.Functions
 					DataManager.inst.gameData.eventObjects.allEvents[22].Add(eventKeyframe11);
 					delay += 0.0001f;
 				}
+
+				for (int num4 = 0; num4 < _events["player"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["player"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+						jsonnode11["x2"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[23].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["follow_player"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["follow_player"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat,
+						jsonnode11["z"].AsFloat,
+						jsonnode11["x2"].AsFloat,
+						jsonnode11["y2"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[24].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
+
+				for (int num4 = 0; num4 < _events["audio"].Count; num4++)
+				{
+					if (ConfigEntries.IfEditorSlowLoads.Value)
+					{
+						yield return new WaitForSeconds(delay);
+					}
+					DataManager.GameData.EventKeyframe eventKeyframe11 = new DataManager.GameData.EventKeyframe();
+					JSONNode jsonnode11 = _events["audio"][num4];
+					eventKeyframe11.eventTime = jsonnode11["t"].AsFloat;
+					eventKeyframe11.SetEventValues(new float[]
+					{
+						jsonnode11["x"].AsFloat,
+						jsonnode11["y"].AsFloat
+					});
+					eventKeyframe11.random = jsonnode11["r"].AsInt;
+					DataManager.LSAnimation curveType11 = DataManager.inst.AnimationList[0];
+					if (jsonnode11["ct"] != null)
+					{
+						curveType11 = DataManager.inst.AnimationListDictionaryStr[jsonnode11["ct"]];
+						eventKeyframe11.curveType = curveType11;
+					}
+					eventKeyframe11.SetEventRandomValues(new float[]
+					{
+						jsonnode11["rx"].AsFloat,
+						jsonnode11["ry"].AsFloat
+					});
+					eventKeyframe11.active = false;
+					DataManager.inst.gameData.eventObjects.allEvents[25].Add(eventKeyframe11);
+					delay += 0.0001f;
+				}
 			}
 
 			for (int type = 0; type < allEvents.Count; type++)
@@ -1451,13 +1528,26 @@ namespace EditorManagement.Functions
 						allEvents[type][0].eventValues[4] = 1f;
 						allEvents[type][0].eventValues[6] = 18f;
 					}
+					if (type == 24)
+                    {
+						allEvents[type][0].eventValues[3] = 0.5f;
+                    }
+					if (type == 25)
+                    {
+						allEvents[type][0].eventValues[0] = 1f;
+						allEvents[type][0].eventValues[1] = 1f;
+                    }
 				}
 			}
 			EventManager.inst.updateEvents();
 			yield break;
 		}
 
-		public static ObjectManager updateObjects(DataManager.GameData.BeatmapObject _beatmapObject, bool setInactive = true)
+        #endregion
+
+        #region UpdateObjects
+
+        public static ObjectManager updateObjects(DataManager.GameData.BeatmapObject _beatmapObject, bool setInactive = true)
 		{
 			if (ObjectManager.inst != null)
 			{
@@ -1573,7 +1663,38 @@ namespace EditorManagement.Functions
 			yield break;
 		}
 
-		public static string GetApplicationDirectory()
+        #endregion
+
+        #region AssetBundles
+
+        public static AssetBundle GetAssetBundle(string _filepath, string _bundle)
+		{
+			return AssetBundle.LoadFromFile(Path.Combine(_filepath, _bundle));
+		}
+
+		public static void GetAsset(string _filepath, string _bundle, string _filename, Action<GameObject> callback)
+		{
+			var assetBundle = GetAssetBundle(_filepath, _bundle);
+			var prefab = assetBundle.LoadAsset<GameObject>(_filename);
+			callback(Instantiate(prefab));
+
+			assetBundle.Unload(false);
+		}
+
+		public static void GetAsset(string _filepath, string _bundle, string _filename, Action<Font> callback)
+		{
+			var assetBundle = GetAssetBundle(_filepath, _bundle);
+			var prefab = assetBundle.LoadAsset<Font>(_filename);
+			callback(Instantiate(prefab));
+
+			assetBundle.Unload(false);
+		}
+
+        #endregion
+
+        #region Directories
+
+        public static string GetApplicationDirectory()
 		{
 			return Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/";
 		}
@@ -1581,20 +1702,6 @@ namespace EditorManagement.Functions
 		public static string GetPersistentApplicationDirectory()
         {
 			return Application.persistentDataPath;
-        }
-
-		public static IEnumerator LoadImage(string _filepath, Action<Sprite> callback)
-		{
-			Texture2D tex = new Texture2D(256, 256, TextureFormat.RGBA32, true);
-			tex.requestedMipmapLevel = 3;
-			Sprite obj;
-			using (UnityWebRequest unityWebRequest = new UnityWebRequest("file://" + _filepath))
-			{
-				while (!unityWebRequest.isDone)
-				{
-					yield return null;
-				}
-			}
         }
 
 		public static bool FileExists(string _filePath)
@@ -1607,7 +1714,9 @@ namespace EditorManagement.Functions
 			return !string.IsNullOrEmpty(_directoryPath) && Directory.Exists(_directoryPath);
 		}
 
-		public static void WriteToFile(string path, string json)
+        #endregion
+
+        public static void WriteToFile(string path, string json)
 		{
 			StreamWriter streamWriter = new StreamWriter(path);
 			streamWriter.Write(json);
