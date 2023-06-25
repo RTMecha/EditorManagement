@@ -1294,7 +1294,8 @@ namespace EditorManagement.Patchers
 				File.Delete(RTFile.GetApplicationDirectory() + str + "/level-previous.lsb");
 			}
 
-			File.Copy(RTFile.GetApplicationDirectory() + str + "/level.lsb", RTFile.GetApplicationDirectory() + str + "/level-previous.lsb");
+			if (RTFile.FileExists(RTFile.GetApplicationDirectory() + str + "/level.lsb"))
+				File.Copy(RTFile.GetApplicationDirectory() + str + "/level.lsb", RTFile.GetApplicationDirectory() + str + "/level-previous.lsb");
 		}
 
 		[HarmonyPatch("SaveBeatmap")]
@@ -1345,8 +1346,6 @@ namespace EditorManagement.Patchers
 
 				RTFile.WriteToFile("beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse", jsonnode.ToString(3));
 			}
-
-			RTEditor.lastSavedGameData = DataManager.inst.gameData;
 		}
 
 		[HarmonyPatch("SaveBeatmapAs", new Type[] { })]
