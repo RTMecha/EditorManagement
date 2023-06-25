@@ -17,6 +17,7 @@ namespace EditorManagement.Functions
 			if (EditorManager.inst != null && DataManager.inst.gameData.beatmapObjects.Count > 0 && !LSHelpers.IsUsingInputField())
             {
 				ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, id));
+				ObjEditor.inst.RenderTimelineObjects();
             }
         }
 
