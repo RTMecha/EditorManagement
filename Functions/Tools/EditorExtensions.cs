@@ -58,17 +58,24 @@ namespace EditorManagement.Functions.Tools
 			if (EditorPlugin.catalyst != null && EditorPlugin.catInstalled == 3)
 			{
 				var iLevelObject = _beatmapObject.GetILevelObject();
-				var visualObject = iLevelObject.GetType().GetField("visualObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iLevelObject);
+				if (iLevelObject != null)
+				{
+					var visualObject = iLevelObject.GetType().GetField("visualObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iLevelObject);
 
-				return (GameObject)visualObject.GetType().GetField("gameObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(visualObject);
+					if (visualObject != null)
+					{
+						return (GameObject)visualObject.GetType().GetField("gameObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(visualObject);
+					}
+				}
+				return null;
 			}
 
 			var chain = _beatmapObject.GetTransformChain();
 
 			if (chain.Count < 1)
-            {
+			{
 				return null;
-            }
+			}
 
 			return chain[chain.Count - 1].gameObject;
 		}
@@ -119,9 +126,9 @@ namespace EditorManagement.Functions.Tools
 			}
 
 			if (ObjectManager.inst == null || ObjectManager.inst.beatmapGameObjects.Count < 1 || !ObjectManager.inst.beatmapGameObjects.ContainsKey(_beatmapObject.id))
-            {
+			{
 				return list;
-            }
+			}
 
 			var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
 			var tf = gameObjectRef.obj.transform;
