@@ -163,9 +163,9 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("SaveData", typeof(string), typeof(DataManager.GameData))]
         [HarmonyPrefix]
-        private static bool DataSaver(DataManager __instance, IEnumerator __result, string __0, DataManager.GameData __1)
+        private static bool DataSaver(DataManager __instance, ref IEnumerator __result, string __0, DataManager.GameData __1)
         {
-            RTEditor.inst.StartCoroutine(RTEditor.SaveData(__0, __1));
+            __result = RTEditor.SaveData(__0, __1);
             return false;
         }
 
