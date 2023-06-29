@@ -316,10 +316,22 @@ namespace EditorManagement.Functions
 					DataManager.GameData.EventKeyframe eventKeyframe4 = new DataManager.GameData.EventKeyframe();
 					JSONNode jsonnode4 = _object["events"]["col"][l];
 					eventKeyframe4.eventTime = jsonnode4["t"].AsFloat;
-					eventKeyframe4.SetEventValues(new float[]
+					if (!string.IsNullOrEmpty(jsonnode4["y"]))
 					{
-							jsonnode4["x"].AsFloat
-					});
+						eventKeyframe4.SetEventValues(new float[]
+						{
+							jsonnode4["x"].AsFloat,
+							jsonnode4["y"].AsFloat
+						});
+					}
+					else
+                    {
+						eventKeyframe4.SetEventValues(new float[]
+						{
+							jsonnode4["x"].AsFloat,
+							0f
+						});
+                    }
 					eventKeyframe4.random = jsonnode4["r"].AsInt;
 					DataManager.LSAnimation curveType4 = DataManager.inst.AnimationList[0];
 					if (jsonnode4["ct"] != null)
