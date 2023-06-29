@@ -13,6 +13,7 @@ using EditorManagement.Patchers;
 using LSFunctions;
 
 using DG.Tweening;
+using SimpleJSON;
 
 using HarmonyLib;
 
@@ -1198,6 +1199,28 @@ namespace EditorManagement.Functions.Tools
 							hoverUI.size = 1.1f;
                         }
 						num6++;
+
+						if (_p.Find("opacity"))
+						{
+							_p.Find("color").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 78f);
+
+							var opacity = _p.Find("opacity/x").GetComponent<InputField>();
+
+							opacity.onValueChanged.RemoveAllListeners();
+							opacity.text = Mathf.Clamp(-_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[1] + 1, 0f, 1f).ToString();
+							opacity.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[1] = Mathf.Clamp(-n + 1, 0f, 1f);
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							var et = _p.Find("opacity").GetComponent<EventTrigger>();
+							et.triggers.Clear();
+							et.triggers.Add(ScrollDelta(opacity, 0.1f, 10f, false, new List<float> { 0f, 1f }));
+						}
 					}
 				}
 				Debug.LogFormat("{0}Refresh Object GUI: Keyframes done", EditorPlugin.className);
@@ -1444,9 +1467,233 @@ namespace EditorManagement.Functions.Tools
 
 		public static Dictionary<int, List<KeyCode>> quickPrefabs = new Dictionary<int, List<KeyCode>>();
 
-		public static string GetFileNameWithoutPath(string _filePath)
+		public static void UpgradeSave()
         {
-			return _filePath.Replace(_filePath.Substring(0, _filePath.LastIndexOf("/") + 1), "");
+			string rawProfileJSON = null;
+			rawProfileJSON = FileManager.inst.LoadJSONFile("beatmaps/editor/demo/level.bytes");
+
+			JSONNode jn = JSON.Parse("{}");
+			JSONNode jnOld = JSON.Parse(rawProfileJSON);
+
+			jn["ed"]["timeline_pos"] = 0f;
+			jn["level_data"]["level_version"] = jnOld["levelData"]["levelVersion"];
+			jn["level_data"]["background_color"] = jnOld["levelData"]["backgroundData"]["color"];
+			jn["level_data"]["follow_player"] = jnOld["levelData"]["followPlayer"];
+			jn["level_data"]["show_intro"] = jnOld["levelData"]["showIntro"];
+
+			for (int i = 0; i < jnOld["levelData"]["checkpoints"].Count; i++)
+            {
+				jn["checkpoints"][i]["active"] = jnOld["levelData"]["checkpoints"][i]["active"];
+				jn["checkpoints"][i]["name"] = jnOld["levelData"]["checkpoints"][i]["name"];
+				jn["checkpoints"][i]["t"] = jnOld["levelData"]["checkpoints"][i]["time"];
+				jn["checkpoints"][i]["pos"]["x"] = jnOld["levelData"]["checkpoints"][i]["pos"]["x"];
+				jn["checkpoints"][i]["pos"]["y"] = jnOld["levelData"]["checkpoints"][i]["pos"]["y"];
+            }
+
+			for (int i = 0; i < jnOld["beatmapObjects"].Count; i++)
+			{
+				jn["beatmap_objects"][i]["id"] = LSText.randomString(16);
+				jn["beatmap_objects"][i]["p"] = "";
+				jn["beatmap_objects"][i]["d"] = jnOld["beatmapObjects"][i]["layer"];
+				jn["beatmap_objects"][i]["st"] = jnOld["beatmapObjects"][i]["startTime"];
+				jn["beatmap_objects"][i]["name"] = jnOld["beatmapObjects"][i]["name"];
+				if (jnOld["beatmapObjects"][i]["helper"] == "False")
+				{
+					jn["beatmap_objects"][i]["ot"] = 0;
+				}
+				if (jnOld["beatmapObjects"][i]["helper"] == "True")
+				{
+					jn["beatmap_objects"][i]["ot"] = 1;
+				}
+				jn["beatmap_objects"][i]["akt"] = 0;
+				jn["beatmap_objects"][i]["ako"] = 0f;
+				jn["beatmap_objects"][i]["o"]["x"] = jnOld["beatmapObjects"][i]["origin"]["x"];
+				jn["beatmap_objects"][i]["ed"]["bin"] = jnOld["beatmapObjects"][i]["editorData"]["bin"];
+				jn["beatmap_objects"][i]["ed"]["layer"] = jnOld["beatmapObjects"][i]["editorData"]["layer"];
+
+				float eventTime = 0f;
+
+				for (int j = 0; j < jnOld["beatmapObjects"][i]["events"].Count; j++)
+				{
+					eventTime += float.Parse(jnOld["beatmapObjects"][i]["events"][j]["eventTime"]);
+
+					jn["beatmap_objects"][i]["events"]["pos"][j]["t"] = eventTime.ToString();
+					jn["beatmap_objects"][i]["events"]["sca"][j]["t"] = eventTime.ToString();
+					jn["beatmap_objects"][i]["events"]["rot"][j]["t"] = eventTime.ToString();
+					jn["beatmap_objects"][i]["events"]["col"][j]["t"] = eventTime.ToString();
+
+					if (j == 0)
+					{
+						jn["beatmap_objects"][i]["events"]["pos"][j]["x"] = "0";
+						jn["beatmap_objects"][i]["events"]["pos"][j]["y"] = "0";
+						jn["beatmap_objects"][i]["events"]["sca"][j]["x"] = "0";
+						jn["beatmap_objects"][i]["events"]["sca"][j]["y"] = "0";
+						jn["beatmap_objects"][i]["events"]["rot"][j]["x"] = "0";
+						jn["beatmap_objects"][i]["events"]["col"][j]["x"] = "0";
+					}
+					else
+					{
+						jn["beatmap_objects"][i]["events"]["pos"][j]["x"] = jn["beatmap_objects"][i]["events"]["pos"][j - 1]["x"];
+						jn["beatmap_objects"][i]["events"]["pos"][j]["y"] = jn["beatmap_objects"][i]["events"]["pos"][j - 1]["y"];
+						jn["beatmap_objects"][i]["events"]["sca"][j]["x"] = jn["beatmap_objects"][i]["events"]["sca"][j - 1]["x"];
+						jn["beatmap_objects"][i]["events"]["sca"][j]["y"] = jn["beatmap_objects"][i]["events"]["sca"][j - 1]["y"];
+						jn["beatmap_objects"][i]["events"]["rot"][j]["x"] = "0";
+						jn["beatmap_objects"][i]["events"]["col"][j]["x"] = jn["beatmap_objects"][i]["events"]["col"][j - 1]["x"];
+					}
+
+					for (int k = 0; k < jnOld["beatmapObjects"][i]["events"][j]["eventParts"].Count; k++)
+					{
+						if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["kind"] == "0")
+						{
+							if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"] != null)
+								jn["beatmap_objects"][i]["events"]["pos"][j]["x"] = jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"];
+							else
+								jn["beatmap_objects"][i]["events"]["pos"][j]["x"] = "0";
+							if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value1"] != null)
+								jn["beatmap_objects"][i]["events"]["pos"][j]["y"] = jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value1"];
+							else
+								jn["beatmap_objects"][i]["events"]["pos"][j]["y"] = "0";
+						}
+
+						if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["kind"] == "1")
+						{
+							if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"] != null)
+							{
+								jn["beatmap_objects"][i]["events"]["sca"][j]["x"] = jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"];
+							}
+							else
+							{
+								jn["beatmap_objects"][i]["events"]["sca"][j]["x"] = "0";
+							}
+
+							if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value1"] != null)
+							{
+								jn["beatmap_objects"][i]["events"]["sca"][j]["y"] = jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value1"];
+							}
+							else
+							{
+								jn["beatmap_objects"][i]["events"]["sca"][j]["y"] = "0";
+							}
+						}
+
+						if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["kind"] == "2")
+						{
+							if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"] != null)
+							{
+								jn["beatmap_objects"][i]["events"]["rot"][j]["x"] = jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"];
+							}
+							else
+							{
+								jn["beatmap_objects"][i]["events"]["rot"][j]["x"] = "0";
+							}
+						}
+
+						if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["kind"] == "3")
+						{
+							if (jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"] != null)
+							{
+								jn["beatmap_objects"][i]["events"]["col"][j]["x"] = jnOld["beatmapObjects"][i]["events"][j]["eventParts"][k]["value0"];
+							}
+							else
+							{
+								jn["beatmap_objects"][i]["events"]["col"][j]["x"] = "0";
+							}
+						}
+					}
+				}
+
+				jn["beatmap_objects"][i]["events"]["pos"][0]["t"] = "0";
+				jn["beatmap_objects"][i]["events"]["sca"][0]["t"] = "0";
+				jn["beatmap_objects"][i]["events"]["rot"][0]["t"] = "0";
+				jn["beatmap_objects"][i]["events"]["col"][0]["t"] = "0";
+			}
+
+			for (int i = 0; i < jnOld["backgroundObjects"].Count; i++)
+			{
+				jn["bg_objects"][i]["active"] = "True";
+				jn["bg_objects"][i]["name"] = jnOld["backgroundObjects"][i]["name"];
+				jn["bg_objects"][i]["kind"] = jnOld["backgroundObjects"][i]["kind"];
+				jn["bg_objects"][i]["pos"]["x"] = jnOld["backgroundObjects"][i]["pos"]["x"];
+				jn["bg_objects"][i]["pos"]["y"] = jnOld["backgroundObjects"][i]["pos"]["y"];
+				jn["bg_objects"][i]["size"]["x"] = jnOld["backgroundObjects"][i]["size"]["x"];
+				jn["bg_objects"][i]["size"]["y"] = jnOld["backgroundObjects"][i]["size"]["y"];
+				jn["bg_objects"][i]["rot"] = jnOld["backgroundObjects"][i]["rot"];
+				jn["bg_objects"][i]["color"] = jnOld["backgroundObjects"][i]["color"];
+				jn["bg_objects"][i]["layer"] = jnOld["backgroundObjects"][i]["layer"];
+				jn["bg_objects"][i]["fade"] = jnOld["backgroundObjects"][i]["fade"];
+				if (jnOld["backgroundObjects"][i]["reactiveSettings"]["active"] == "True")
+				{
+					jn["bg_objects"][i]["r_set"]["type"] = "1";
+					jn["bg_objects"][i]["r_set"]["scale"] = "1";
+				}
+			}
+
+			for (int i = 0; i < jnOld["eventObjects"].Count; i++)
+            {
+				for (int j = 0; j < jnOld["eventObjects"][i]["events"].Count; j++)
+                {
+					jn["events"]["pos"][i]["t"] = jnOld["eventObjects"][i]["startTime"];
+					jn["events"]["zoom"][i]["t"] = jnOld["eventObjects"][i]["startTime"];
+					jn["events"]["shake"][i]["t"] = jnOld["eventObjects"][i]["startTime"];
+
+					jn["events"]["pos"][i]["x"] = "0";
+					jn["events"]["pos"][i]["y"] = "0";
+
+					jn["events"]["zoom"][i]["x"] = "20";
+
+					jn["events"]["shake"][i]["x"] = "0";
+
+					if (jnOld["eventObjects"][i]["events"][j]["kind"] == "0")
+					{
+						jn["events"]["pos"][i]["x"] = jnOld["eventObjects"][i]["events"][j]["value0"];
+						jn["events"]["pos"][i]["y"] = jnOld["eventObjects"][i]["events"][j]["value1"];
+					}
+					if (jnOld["eventObjects"][i]["events"][j]["kind"] == "1")
+					{
+						jn["events"]["zoom"][i]["x"] = jnOld["eventObjects"][i]["events"][j]["value0"];
+					}
+					if (jnOld["eventObjects"][i]["events"][j]["kind"] == "2")
+					{
+						jn["events"]["rot"][i]["x"] = jnOld["eventObjects"][i]["events"][j]["value0"];
+					}
+					if (jnOld["eventObjects"][i]["events"][j]["kind"] == "3")
+					{
+						jn["events"]["shake"][i]["x"] = jnOld["eventObjects"][i]["events"][j]["value0"];
+					}
+				}
+            }
+
+			jn["events"]["pos"][0]["t"] = "0";
+			jn["events"]["pos"][0]["x"] = "0";
+			jn["events"]["pos"][0]["y"] = "0";
+			jn["events"]["zoom"][0]["t"] = "0";
+			jn["events"]["zoom"][0]["x"] = "20";
+			jn["events"]["rot"][0]["t"] = "0";
+			jn["events"]["rot"][0]["x"] = "0";
+			jn["events"]["shake"][0]["t"] = "0";
+			jn["events"]["shake"][0]["x"] = "0";
+			jn["events"]["shake"][0]["y"] = "0";
+			jn["events"]["theme"][0]["t"] = "0";
+			jn["events"]["theme"][0]["x"] = "1";
+			jn["events"]["chroma"][0]["t"] = "0";
+			jn["events"]["chroma"][0]["x"] = "0";
+			jn["events"]["bloom"][0]["t"] = "0";
+			jn["events"]["bloom"][0]["x"] = "0";
+			jn["events"]["vignette"][0]["t"] = "0";
+			jn["events"]["vignette"][0]["x"] = "0";
+			jn["events"]["vignette"][0]["y"] = "0";
+			jn["events"]["vignette"][0]["z"] = "0";
+			jn["events"]["vignette"][0]["x2"] = "0";
+			jn["events"]["vignette"][0]["y2"] = "0";
+			jn["events"]["vignette"][0]["z2"] = "0";
+			jn["events"]["lens"][0]["t"] = "0";
+			jn["events"]["lens"][0]["x"] = "0";
+			jn["events"]["grain"][0]["t"] = "0";
+			jn["events"]["grain"][0]["x"] = "0";
+			jn["events"]["grain"][0]["y"] = "0";
+			jn["events"]["grain"][0]["z"] = "0";
+
+			RTFile.WriteToFile(RTFile.GetApplicationDirectory() + "beatmaps/editor/demo/level.lsb", jn.ToString());
 		}
 	}
 }

@@ -12,8 +12,11 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+
 using UnityEngine;
 using UnityEngine.UI;
+
+using EditorManagement.Functions.Tools;
 
 namespace EditorManagement
 {
@@ -1086,36 +1089,41 @@ namespace EditorManagement
 			{
 				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 				{
-					if (beatmapObject != null && ObjectManager.inst.beatmapGameObjects.ContainsKey(beatmapObject.id))
+					if (beatmapObject != null && beatmapObject.GetGameObject() != null)
 					{
-						ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-
-						if (EditorManager.inst.isEditing == true && gameObjectRef.mat && gameObjectRef.obj.GetComponentInChildren<RTObject>() && gameObjectRef.obj.GetComponentInChildren<RTObject>().selected == true && ConfigEntries.HighlightObjects.Value == true)
+						var gameObject = beatmapObject.GetGameObject();
+						Material mat = null;
+						if (gameObject.GetComponent<Renderer>())
 						{
-							if (Input.GetKey(KeyCode.LeftShift))
-							{
-								Color colorHover = new Color(ConfigEntries.HighlightDoubleColor.Value.r, ConfigEntries.HighlightDoubleColor.Value.g, ConfigEntries.HighlightDoubleColor.Value.b);
-
-								if (gameObjectRef.mat.color.r > 0.9f && gameObjectRef.mat.color.g > 0.9f && gameObjectRef.mat.color.b > 0.9f)
-								{
-									colorHover = new Color(-ConfigEntries.HighlightDoubleColor.Value.r, -ConfigEntries.HighlightDoubleColor.Value.g, -ConfigEntries.HighlightDoubleColor.Value.b);
-								}
-
-								gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
-							}
-							else
-							{
-								Color colorHover = new Color(ConfigEntries.HighlightColor.Value.r, ConfigEntries.HighlightColor.Value.g, ConfigEntries.HighlightColor.Value.b);
-
-								if (gameObjectRef.mat.color.r > 0.95f && gameObjectRef.mat.color.g > 0.95f && gameObjectRef.mat.color.b > 0.95f)
-								{
-									colorHover = new Color(-ConfigEntries.HighlightColor.Value.r, -ConfigEntries.HighlightColor.Value.g, -ConfigEntries.HighlightColor.Value.b);
-								}
-
-								gameObjectRef.mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
-							}
+							mat = gameObject.GetComponent<Renderer>().material;
 						}
-					}
+
+                        if (EditorManager.inst.isEditing == true && mat != null && gameObject.GetComponent<RTObject>() && gameObject.GetComponent<RTObject>().selected == true && ConfigEntries.HighlightObjects.Value == true)
+                        {
+                            if (Input.GetKey(KeyCode.LeftShift))
+                            {
+                                Color colorHover = new Color(ConfigEntries.HighlightDoubleColor.Value.r, ConfigEntries.HighlightDoubleColor.Value.g, ConfigEntries.HighlightDoubleColor.Value.b);
+
+                                if (mat.color.r > 0.9f && mat.color.g > 0.9f && mat.color.b > 0.9f)
+                                {
+                                    colorHover = new Color(-ConfigEntries.HighlightDoubleColor.Value.r, -ConfigEntries.HighlightDoubleColor.Value.g, -ConfigEntries.HighlightDoubleColor.Value.b);
+                                }
+
+								mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+                            }
+                            else
+                            {
+                                Color colorHover = new Color(ConfigEntries.HighlightColor.Value.r, ConfigEntries.HighlightColor.Value.g, ConfigEntries.HighlightColor.Value.b);
+
+                                if (mat.color.r > 0.95f && mat.color.g > 0.95f && mat.color.b > 0.95f)
+                                {
+                                    colorHover = new Color(-ConfigEntries.HighlightColor.Value.r, -ConfigEntries.HighlightColor.Value.g, -ConfigEntries.HighlightColor.Value.b);
+                                }
+
+								mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
+                            }
+                        }
+                    }
 				}
 			}
         }

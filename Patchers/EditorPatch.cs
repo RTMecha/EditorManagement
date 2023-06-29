@@ -931,9 +931,19 @@ namespace EditorManagement.Patchers
 		private static void PropertiesWindow()
         {
 			RTEditor.inst.StartCoroutine(RTEditor.CreatePropertiesWindow());
-			GameObject gameObject = new GameObject("PlayerEditorManager");
-			gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
-			gameObject.AddComponent<CreativePlayersEditor>();
+			//Player Editor
+			{
+				GameObject gameObject = new GameObject("PlayerEditorManager");
+				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
+				gameObject.AddComponent<CreativePlayersEditor>();
+			}
+
+			//Object Modifiers Editor
+			{
+				GameObject gameObject = new GameObject("ObjectModifiersEditor");
+				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
+				gameObject.AddComponent<ObjectModifiersEditor>();
+			}
 		}
 
 		[HarmonyPatch("Start")]
@@ -1258,6 +1268,26 @@ namespace EditorManagement.Patchers
 			EditorManager.inst.timelineSlider.GetComponent<RectTransform>().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom, 25f);
 			return false;
 		}
+
+		[HarmonyPatch("AddToPitch")]
+		[HarmonyPrefix]
+		private static bool AddToPitchPrefix(EditorManager __instance, float __0)
+        {
+			if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt))
+			{
+				AudioManager.inst.SetPitch(AudioManager.inst.pitch + __0 * 10f);
+			}
+			if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
+			{
+				AudioManager.inst.SetPitch(AudioManager.inst.pitch + __0 / 10f);
+			}
+			if (!Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt))
+			{
+				AudioManager.inst.SetPitch(AudioManager.inst.pitch + __0);
+			}
+
+			return false;
+        }
 
 		[HarmonyPatch("ToggleEditor")]
 		[HarmonyPostfix]

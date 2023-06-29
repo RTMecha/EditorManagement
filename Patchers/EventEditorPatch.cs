@@ -135,8 +135,8 @@ namespace EditorManagement.Patchers
 						eventLabels.transform.GetChild(9).GetChild(0).GetComponent<Text>().text = "Player";
 						eventLabels.transform.GetChild(10).GetChild(0).GetComponent<Text>().text = "Follow Player";
 						eventLabels.transform.GetChild(11).GetChild(0).GetComponent<Text>().text = "Audio";
-						eventLabels.transform.GetChild(12).GetChild(0).GetComponent<Text>().text = "AnalogGlitch (Coming soon)";
-						eventLabels.transform.GetChild(13).GetChild(0).GetComponent<Text>().text = "DigitalGlitch (Coming soon)";
+						eventLabels.transform.GetChild(12).GetChild(0).GetComponent<Text>().text = "Glitch (Coming soon)";
+						eventLabels.transform.GetChild(13).GetChild(0).GetComponent<Text>().text = "??? (Coming soon)";
 						break;
                     }
             }
@@ -1056,6 +1056,15 @@ namespace EditorManagement.Patchers
 						posYET.triggers.Clear();
 						posYET.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, true));
 						posYET.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
+
+						if (!posX.gameObject.GetComponent<InputFieldHelper>())
+                        {
+							posX.gameObject.AddComponent<InputFieldHelper>();
+                        }
+						if (!posY.gameObject.GetComponent<InputFieldHelper>())
+                        {
+							posY.gameObject.AddComponent<InputFieldHelper>();
+                        }
                         break;
                     }
 				case 1: //Zoom
@@ -1097,6 +1106,11 @@ namespace EditorManagement.Patchers
 
 						zoomET.triggers.Clear();
 						zoomET.triggers.Add(Triggers.ScrollDelta(zoom, 0.1f, 10f));
+
+						if (!zoom.gameObject.GetComponent<InputFieldHelper>())
+						{
+							zoom.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
                     }
 				case 2: //Rotate
@@ -1136,6 +1150,11 @@ namespace EditorManagement.Patchers
 
 						rotateET.triggers.Clear();
 						rotateET.triggers.Add(Triggers.ScrollDelta(rotate, 15f, 3f));
+
+						if (!rotate.gameObject.GetComponent<InputFieldHelper>())
+						{
+							rotate.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
                     }
 				case 3: //Shake
@@ -1178,7 +1197,12 @@ namespace EditorManagement.Patchers
 							var shakeET = dialogTmp.Find("shake/x").GetComponent<EventTrigger>();
 
 							shakeET.triggers.Clear();
-							shakeET.triggers.Add(Triggers.ScrollDelta(shake, 0.1f, 10f));
+							shakeET.triggers.Add(Triggers.ScrollDelta(shake, 0.1f, 10f, false, new List<float> { 0f, 10f }));
+
+							if (!shake.gameObject.GetComponent<InputFieldHelper>())
+							{
+								shake.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 						if (eventsCore)
 						{
@@ -1220,6 +1244,11 @@ namespace EditorManagement.Patchers
 
 								shakeET.triggers.Clear();
 								shakeET.triggers.Add(Triggers.ScrollDelta(shake, 0.1f, 10f));
+
+								if (!shake.gameObject.GetComponent<InputFieldHelper>())
+								{
+									shake.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Shake Intensity Y
@@ -1260,6 +1289,11 @@ namespace EditorManagement.Patchers
 
 								shakeET.triggers.Clear();
 								shakeET.triggers.Add(Triggers.ScrollDelta(shake, 0.1f, 10f));
+
+								if (!shake.gameObject.GetComponent<InputFieldHelper>())
+								{
+									shake.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 						}
 						break;
@@ -1315,7 +1349,12 @@ namespace EditorManagement.Patchers
 						var chromaET = dialogTmp.Find("chroma/x").GetComponent<EventTrigger>();
 
 						chromaET.triggers.Clear();
-						chromaET.triggers.Add(Triggers.ScrollDelta(chroma, 0.1f, 10f));
+						chromaET.triggers.Add(Triggers.ScrollDelta(chroma, 0.1f, 10f, false, new List<float> { 0f, 9999f }));
+
+						if (!chroma.gameObject.GetComponent<InputFieldHelper>())
+						{
+							chroma.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
                     }
 				case 6: //Bloom
@@ -1358,7 +1397,12 @@ namespace EditorManagement.Patchers
 							var bloomET = dialogTmp.Find("bloom/x").GetComponent<EventTrigger>();
 
 							bloomET.triggers.Clear();
-							bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f));
+							bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f, false, new List<float> { 0f, 1280f }));
+
+							if (!bloom.gameObject.GetComponent<InputFieldHelper>())
+							{
+								bloom.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
 						if (eventsCore)
@@ -1371,7 +1415,7 @@ namespace EditorManagement.Patchers
 								bloom.onValueChanged.AddListener(delegate (string val)
 								{
 									float num = float.Parse(val);
-									currentKeyframe.eventValues[1] = num;
+									currentKeyframe.eventValues[1] = Mathf.Clamp(num, 1f, 9999f);
 									eventManager.updateEvents();
 								});
 
@@ -1381,14 +1425,14 @@ namespace EditorManagement.Patchers
 								bloomLeft.onClick.RemoveAllListeners();
 								bloomLeft.onClick.AddListener(delegate ()
 								{
-									bloom.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventBloomModify.Value).ToString();
+									bloom.text = Mathf.Clamp(currentKeyframe.eventValues[1] - ConfigEntries.EventBloomModify.Value, 1f, 9999f).ToString();
 									eventManager.updateEvents();
 								});
 
 								bloomRight.onClick.RemoveAllListeners();
 								bloomRight.onClick.AddListener(delegate ()
 								{
-									bloom.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventBloomModify.Value).ToString();
+									bloom.text = Mathf.Clamp(currentKeyframe.eventValues[1] + ConfigEntries.EventBloomModify.Value, 1f, 9999f).ToString();
 									eventManager.updateEvents();
 								});
 
@@ -1400,7 +1444,12 @@ namespace EditorManagement.Patchers
 								var bloomET = dialogTmp.Find("diffusion").GetComponent<EventTrigger>();
 
 								bloomET.triggers.Clear();
-								bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f));
+								bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f, false, new List<float> { 1f, 9999f }));
+
+								if (!bloom.gameObject.GetComponent<InputFieldHelper>())
+								{
+									bloom.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Bloom Threshold
@@ -1441,6 +1490,11 @@ namespace EditorManagement.Patchers
 
 								bloomET.triggers.Clear();
 								bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f));
+
+								if (!bloom.gameObject.GetComponent<InputFieldHelper>())
+								{
+									bloom.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Bloom Anamorphic Ratio
@@ -1481,6 +1535,11 @@ namespace EditorManagement.Patchers
 
 								bloomET.triggers.Clear();
 								bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f));
+
+								if (!bloom.gameObject.GetComponent<InputFieldHelper>())
+								{
+									bloom.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							int num = 0;
@@ -1515,198 +1574,237 @@ namespace EditorManagement.Patchers
                     }
 				case 7: //Vignette
                     {
-						var vignetteIntensity = dialogTmp.Find("intensity").GetComponent<InputField>();
-
-						vignetteIntensity.onValueChanged.RemoveAllListeners();
-						vignetteIntensity.text = currentKeyframe.eventValues[0].ToString("f2");
-						vignetteIntensity.onValueChanged.AddListener(delegate (string val)
+						//Intensity
 						{
-							currentKeyframe.eventValues[0] = float.Parse(val);
-							eventManager.updateEvents();
-						});
+							var vignetteIntensity = dialogTmp.Find("intensity").GetComponent<InputField>();
 
-						var vignetteIntensityLeft = vignetteIntensity.transform.Find("<").GetComponent<Button>();
-						var vignetteIntensityRight = vignetteIntensity.transform.Find(">").GetComponent<Button>();
+							vignetteIntensity.onValueChanged.RemoveAllListeners();
+							vignetteIntensity.text = currentKeyframe.eventValues[0].ToString("f2");
+							vignetteIntensity.onValueChanged.AddListener(delegate (string val)
+							{
+								currentKeyframe.eventValues[0] = float.Parse(val);
+								eventManager.updateEvents();
+							});
 
-						vignetteIntensityLeft.onClick.RemoveAllListeners();
-						vignetteIntensityLeft.onClick.AddListener(delegate ()
-						{
-							vignetteIntensity.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventVignetteIntensityModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							var vignetteIntensityLeft = vignetteIntensity.transform.Find("<").GetComponent<Button>();
+							var vignetteIntensityRight = vignetteIntensity.transform.Find(">").GetComponent<Button>();
 
-						vignetteIntensityRight.onClick.RemoveAllListeners();
-						vignetteIntensityRight.onClick.AddListener(delegate ()
-						{
-							vignetteIntensity.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventVignetteIntensityModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							vignetteIntensityLeft.onClick.RemoveAllListeners();
+							vignetteIntensityLeft.onClick.AddListener(delegate ()
+							{
+								vignetteIntensity.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventVignetteIntensityModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
-                        {
-							dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
-                        }
+							vignetteIntensityRight.onClick.RemoveAllListeners();
+							vignetteIntensityRight.onClick.AddListener(delegate ()
+							{
+								vignetteIntensity.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventVignetteIntensityModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						var vignetteIntensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
+							if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
+							}
 
-						vignetteIntensityET.triggers.Clear();
-						vignetteIntensityET.triggers.Add(Triggers.ScrollDelta(vignetteIntensity, 0.1f, 10f));
+							var vignetteIntensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
 
-						var vignetteSmoothness = dialogTmp.Find("smoothness").GetComponent<InputField>();
+							vignetteIntensityET.triggers.Clear();
+							vignetteIntensityET.triggers.Add(Triggers.ScrollDelta(vignetteIntensity, 0.1f, 10f));
 
-						vignetteSmoothness.onValueChanged.RemoveAllListeners();
-						vignetteSmoothness.text = currentKeyframe.eventValues[1].ToString("f2");
-						vignetteSmoothness.onValueChanged.AddListener(delegate (string val)
-						{
-							currentKeyframe.eventValues[1] = float.Parse(val);
-							eventManager.updateEvents();
-						});
-
-						var vignetteSmoothnessLeft = vignetteSmoothness.transform.Find("<").GetComponent<Button>();
-						var vignetteSmoothnessRight = vignetteSmoothness.transform.Find(">").GetComponent<Button>();
-
-						vignetteSmoothnessLeft.onClick.RemoveAllListeners();
-						vignetteSmoothnessLeft.onClick.AddListener(delegate ()
-						{
-							vignetteSmoothness.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventVignetteSmoothnessModify.Value).ToString();
-							eventManager.updateEvents();
-						});
-
-						vignetteSmoothnessRight.onClick.RemoveAllListeners();
-						vignetteSmoothnessRight.onClick.AddListener(delegate ()
-						{
-							vignetteSmoothness.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventVignetteSmoothnessModify.Value).ToString();
-							eventManager.updateEvents();
-						});
-
-						if (!dialogTmp.Find("smoothness").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("smoothness").gameObject.AddComponent<EventTrigger>();
+							if (!vignetteIntensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								vignetteIntensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
-						var vignetteSmoothnessET = dialogTmp.Find("smoothness").GetComponent<EventTrigger>();
-
-						vignetteSmoothnessET.triggers.Clear();
-						vignetteSmoothnessET.triggers.Add(Triggers.ScrollDelta(vignetteSmoothness, 0.1f, 10f));
-
-						var vignetteRounded = dialogTmp.Find("roundness/rounded").GetComponent<Toggle>();
-						vignetteRounded.onValueChanged.RemoveAllListeners();
-						vignetteRounded.isOn = (currentKeyframe.eventValues[2] == 1f);
-						vignetteRounded.onValueChanged.AddListener(delegate (bool val)
+						//Smoothness
 						{
-							currentKeyframe.eventValues[2] = (val ? 1 : 0);
-							eventManager.updateEvents();
-						});
+							var vignetteSmoothness = dialogTmp.Find("smoothness").GetComponent<InputField>();
 
-						var vignetteRoundness = dialogTmp.Find("roundness").GetComponent<InputField>();
+							vignetteSmoothness.onValueChanged.RemoveAllListeners();
+							vignetteSmoothness.text = currentKeyframe.eventValues[1].ToString("f2");
+							vignetteSmoothness.onValueChanged.AddListener(delegate (string val)
+							{
+								currentKeyframe.eventValues[1] = float.Parse(val);
+								eventManager.updateEvents();
+							});
 
-						vignetteRoundness.onValueChanged.RemoveAllListeners();
-						vignetteRoundness.text = currentKeyframe.eventValues[3].ToString("f2");
-						vignetteRoundness.onValueChanged.AddListener(delegate (string val)
-						{
-							currentKeyframe.eventValues[3] = float.Parse(val);
-							eventManager.updateEvents();
-						});
+							var vignetteSmoothnessLeft = vignetteSmoothness.transform.Find("<").GetComponent<Button>();
+							var vignetteSmoothnessRight = vignetteSmoothness.transform.Find(">").GetComponent<Button>();
 
-						var vignetteRoundnessLeft = vignetteRoundness.transform.Find("<").GetComponent<Button>();
-						var vignetteRoundnessRight = vignetteRoundness.transform.Find(">").GetComponent<Button>();
+							vignetteSmoothnessLeft.onClick.RemoveAllListeners();
+							vignetteSmoothnessLeft.onClick.AddListener(delegate ()
+							{
+								vignetteSmoothness.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventVignetteSmoothnessModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						vignetteRoundnessLeft.onClick.RemoveAllListeners();
-						vignetteRoundnessLeft.onClick.AddListener(delegate ()
-						{
-							vignetteRoundness.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventVignetteRoundnessModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							vignetteSmoothnessRight.onClick.RemoveAllListeners();
+							vignetteSmoothnessRight.onClick.AddListener(delegate ()
+							{
+								vignetteSmoothness.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventVignetteSmoothnessModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						vignetteRoundnessRight.onClick.RemoveAllListeners();
-						vignetteRoundnessRight.onClick.AddListener(delegate ()
-						{
-							vignetteRoundness.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventVignetteRoundnessModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							if (!dialogTmp.Find("smoothness").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("smoothness").gameObject.AddComponent<EventTrigger>();
+							}
 
-						if (!dialogTmp.Find("roundness").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("roundness").gameObject.AddComponent<EventTrigger>();
+							var vignetteSmoothnessET = dialogTmp.Find("smoothness").GetComponent<EventTrigger>();
+
+							vignetteSmoothnessET.triggers.Clear();
+							vignetteSmoothnessET.triggers.Add(Triggers.ScrollDelta(vignetteSmoothness, 0.1f, 10f));
+
+							if (!vignetteSmoothness.gameObject.GetComponent<InputFieldHelper>())
+							{
+								vignetteSmoothness.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
-						var vignetteRoundnessET = dialogTmp.Find("roundness").GetComponent<EventTrigger>();
-
-						vignetteRoundnessET.triggers.Clear();
-						vignetteRoundnessET.triggers.Add(Triggers.ScrollDelta(vignetteRoundness, 0.1f, 10f));
-
-						var vignetteCenterX = dialogTmp.Find("position/x").GetComponent<InputField>();
-						var vignetteCenterY = dialogTmp.Find("position/y").GetComponent<InputField>();
-
-						vignetteCenterX.onValueChanged.RemoveAllListeners();
-						vignetteCenterX.text = currentKeyframe.eventValues[4].ToString("f2");
-						vignetteCenterX.onValueChanged.AddListener(delegate (string val)
+						//Rounded
 						{
-							currentKeyframe.eventValues[4] = float.Parse(val);
-							eventManager.updateEvents();
-						});
+							var vignetteRounded = dialogTmp.Find("roundness/rounded").GetComponent<Toggle>();
+							vignetteRounded.onValueChanged.RemoveAllListeners();
+							vignetteRounded.isOn = (currentKeyframe.eventValues[2] == 1f);
+							vignetteRounded.onValueChanged.AddListener(delegate (bool val)
+							{
+								currentKeyframe.eventValues[2] = (val ? 1 : 0);
+								eventManager.updateEvents();
+							});
+						}
 
-						vignetteCenterY.onValueChanged.RemoveAllListeners();
-						vignetteCenterY.text = currentKeyframe.eventValues[5].ToString("f2");
-						vignetteCenterY.onValueChanged.AddListener(delegate (string val)
+						//Roundness
 						{
-							currentKeyframe.eventValues[5] = float.Parse(val);
-							eventManager.updateEvents();
-						});
+							var vignetteRoundness = dialogTmp.Find("roundness").GetComponent<InputField>();
 
-						var vignetteCenterXLeft = vignetteCenterX.transform.Find("<").GetComponent<Button>();
-						var vignetteCenterXRight = vignetteCenterX.transform.Find(">").GetComponent<Button>();
-						var vignetteCenterYLeft = vignetteCenterX.transform.Find("<").GetComponent<Button>();
-						var vignetteCenterYRight = vignetteCenterX.transform.Find(">").GetComponent<Button>();
+							vignetteRoundness.onValueChanged.RemoveAllListeners();
+							vignetteRoundness.text = currentKeyframe.eventValues[3].ToString("f2");
+							vignetteRoundness.onValueChanged.AddListener(delegate (string val)
+							{
+								currentKeyframe.eventValues[3] = float.Parse(val);
+								eventManager.updateEvents();
+							});
 
-						vignetteCenterXLeft.onClick.RemoveAllListeners();
-						vignetteCenterXLeft.onClick.AddListener(delegate ()
+							var vignetteRoundnessLeft = vignetteRoundness.transform.Find("<").GetComponent<Button>();
+							var vignetteRoundnessRight = vignetteRoundness.transform.Find(">").GetComponent<Button>();
+
+							vignetteRoundnessLeft.onClick.RemoveAllListeners();
+							vignetteRoundnessLeft.onClick.AddListener(delegate ()
+							{
+								vignetteRoundness.text = (currentKeyframe.eventValues[3] - ConfigEntries.EventVignetteRoundnessModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							vignetteRoundnessRight.onClick.RemoveAllListeners();
+							vignetteRoundnessRight.onClick.AddListener(delegate ()
+							{
+								vignetteRoundness.text = (currentKeyframe.eventValues[3] + ConfigEntries.EventVignetteRoundnessModify.Value).ToString();
+								eventManager.updateEvents();
+							});
+
+							if (!dialogTmp.Find("roundness").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("roundness").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var vignetteRoundnessET = dialogTmp.Find("roundness").GetComponent<EventTrigger>();
+
+							vignetteRoundnessET.triggers.Clear();
+							vignetteRoundnessET.triggers.Add(Triggers.ScrollDelta(vignetteRoundness, 0.1f, 10f));
+
+							if (!vignetteRoundness.gameObject.GetComponent<InputFieldHelper>())
+							{
+								vignetteRoundness.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Center
 						{
-							vignetteCenterX.text = (currentKeyframe.eventValues[4] - ConfigEntries.EventVignettePosModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							var vignetteCenterX = dialogTmp.Find("position/x").GetComponent<InputField>();
+							var vignetteCenterY = dialogTmp.Find("position/y").GetComponent<InputField>();
 
-						vignetteCenterXLeft.onClick.RemoveAllListeners();
-						vignetteCenterXLeft.onClick.AddListener(delegate ()
-						{
-							vignetteCenterX.text = (currentKeyframe.eventValues[4] + ConfigEntries.EventVignettePosModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							vignetteCenterX.onValueChanged.RemoveAllListeners();
+							vignetteCenterX.text = currentKeyframe.eventValues[4].ToString("f2");
+							vignetteCenterX.onValueChanged.AddListener(delegate (string val)
+							{
+								currentKeyframe.eventValues[4] = float.Parse(val);
+								eventManager.updateEvents();
+							});
 
-						vignetteCenterYLeft.onClick.RemoveAllListeners();
-						vignetteCenterYLeft.onClick.AddListener(delegate ()
-						{
-							vignetteCenterY.text = (currentKeyframe.eventValues[5] - ConfigEntries.EventVignettePosModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							vignetteCenterY.onValueChanged.RemoveAllListeners();
+							vignetteCenterY.text = currentKeyframe.eventValues[5].ToString("f2");
+							vignetteCenterY.onValueChanged.AddListener(delegate (string val)
+							{
+								currentKeyframe.eventValues[5] = float.Parse(val);
+								eventManager.updateEvents();
+							});
 
-						vignetteCenterYLeft.onClick.RemoveAllListeners();
-						vignetteCenterYLeft.onClick.AddListener(delegate ()
-						{
-							vignetteCenterY.text = (currentKeyframe.eventValues[5] + ConfigEntries.EventVignettePosModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							var vignetteCenterXLeft = vignetteCenterX.transform.Find("<").GetComponent<Button>();
+							var vignetteCenterXRight = vignetteCenterX.transform.Find(">").GetComponent<Button>();
+							var vignetteCenterYLeft = vignetteCenterX.transform.Find("<").GetComponent<Button>();
+							var vignetteCenterYRight = vignetteCenterX.transform.Find(">").GetComponent<Button>();
 
-						if (!dialogTmp.Find("position/x").GetComponent<EventTrigger>())
-                        {
-							dialogTmp.Find("position/x").gameObject.AddComponent<EventTrigger>();
-                        }
+							vignetteCenterXLeft.onClick.RemoveAllListeners();
+							vignetteCenterXLeft.onClick.AddListener(delegate ()
+							{
+								vignetteCenterX.text = (currentKeyframe.eventValues[4] - ConfigEntries.EventVignettePosModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("position/y").GetComponent<EventTrigger>())
-                        {
-							dialogTmp.Find("position/y").gameObject.AddComponent<EventTrigger>();
-                        }
+							vignetteCenterXLeft.onClick.RemoveAllListeners();
+							vignetteCenterXLeft.onClick.AddListener(delegate ()
+							{
+								vignetteCenterX.text = (currentKeyframe.eventValues[4] + ConfigEntries.EventVignettePosModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						var vignetteCenterXET = dialogTmp.Find("position/x").GetComponent<EventTrigger>();
-						var vignetteCenterYET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
+							vignetteCenterYLeft.onClick.RemoveAllListeners();
+							vignetteCenterYLeft.onClick.AddListener(delegate ()
+							{
+								vignetteCenterY.text = (currentKeyframe.eventValues[5] - ConfigEntries.EventVignettePosModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						vignetteCenterXET.triggers.Clear();
-						vignetteCenterXET.triggers.Add(Triggers.ScrollDelta(vignetteCenterX, 0.1f, 10f, true));
-						vignetteCenterXET.triggers.Add(Triggers.ScrollDeltaVector2(vignetteCenterX, vignetteCenterY, 0.1f, 10f));
+							vignetteCenterYLeft.onClick.RemoveAllListeners();
+							vignetteCenterYLeft.onClick.AddListener(delegate ()
+							{
+								vignetteCenterY.text = (currentKeyframe.eventValues[5] + ConfigEntries.EventVignettePosModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						vignetteCenterYET.triggers.Clear();
-						vignetteCenterYET.triggers.Add(Triggers.ScrollDelta(vignetteCenterY, 0.1f, 10f, true));
-						vignetteCenterYET.triggers.Add(Triggers.ScrollDeltaVector2(vignetteCenterX, vignetteCenterY, 0.1f, 10f));
+							if (!dialogTmp.Find("position/x").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("position/x").gameObject.AddComponent<EventTrigger>();
+							}
+
+							if (!dialogTmp.Find("position/y").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("position/y").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var vignetteCenterXET = dialogTmp.Find("position/x").GetComponent<EventTrigger>();
+							var vignetteCenterYET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
+
+							vignetteCenterXET.triggers.Clear();
+							vignetteCenterXET.triggers.Add(Triggers.ScrollDelta(vignetteCenterX, 0.1f, 10f, true));
+							vignetteCenterXET.triggers.Add(Triggers.ScrollDeltaVector2(vignetteCenterX, vignetteCenterY, 0.1f, 10f));
+
+							vignetteCenterYET.triggers.Clear();
+							vignetteCenterYET.triggers.Add(Triggers.ScrollDelta(vignetteCenterY, 0.1f, 10f, true));
+							vignetteCenterYET.triggers.Add(Triggers.ScrollDeltaVector2(vignetteCenterX, vignetteCenterY, 0.1f, 10f));
+
+							if (!vignetteCenterX.gameObject.GetComponent<InputFieldHelper>())
+							{
+								vignetteCenterX.gameObject.AddComponent<InputFieldHelper>();
+							}
+							if (!vignetteCenterY.gameObject.GetComponent<InputFieldHelper>())
+							{
+								vignetteCenterY.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
 
 						if (eventsCore)
 						{
@@ -1780,7 +1878,12 @@ namespace EditorManagement.Patchers
 							var lensET = dialogTmp.Find("lens/x").GetComponent<EventTrigger>();
 
 							lensET.triggers.Clear();
-							lensET.triggers.Add(Triggers.ScrollDelta(lens, 1f, 10f));
+							lensET.triggers.Add(Triggers.ScrollDelta(lens, 1f, 10f, false, new List<float> { -100f, 100f }));
+
+							if (!lens.gameObject.GetComponent<InputFieldHelper>())
+							{
+								lens.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
 						if (eventsCore)
@@ -1793,7 +1896,6 @@ namespace EditorManagement.Patchers
 								lens.onValueChanged.AddListener(delegate (string val)
 								{
 									float num = float.Parse(val);
-									num = Mathf.Clamp(num, -100f, 100f);
 									currentKeyframe.eventValues[1] = num;
 									eventManager.updateEvents();
 								});
@@ -1804,14 +1906,14 @@ namespace EditorManagement.Patchers
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[1] - ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[1] + ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
@@ -1824,6 +1926,11 @@ namespace EditorManagement.Patchers
 
 								lensET.triggers.Clear();
 								lensET.triggers.Add(Triggers.ScrollDelta(lens, 0.1f, 10f));
+
+								if (!lens.gameObject.GetComponent<InputFieldHelper>())
+								{
+									lens.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Center Y
@@ -1834,7 +1941,6 @@ namespace EditorManagement.Patchers
 								lens.onValueChanged.AddListener(delegate (string val)
 								{
 									float num = float.Parse(val);
-									num = Mathf.Clamp(num, -100f, 100f);
 									currentKeyframe.eventValues[2] = num;
 									eventManager.updateEvents();
 								});
@@ -1845,14 +1951,14 @@ namespace EditorManagement.Patchers
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[2] - ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[2] - ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[2] + ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[2] + ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
@@ -1865,6 +1971,11 @@ namespace EditorManagement.Patchers
 
 								lensET.triggers.Clear();
 								lensET.triggers.Add(Triggers.ScrollDelta(lens, 0.1f, 10f));
+
+								if (!lens.gameObject.GetComponent<InputFieldHelper>())
+								{
+									lens.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Intensity X
@@ -1875,7 +1986,6 @@ namespace EditorManagement.Patchers
 								lens.onValueChanged.AddListener(delegate (string val)
 								{
 									float num = float.Parse(val);
-									num = Mathf.Clamp(num, -100f, 100f);
 									currentKeyframe.eventValues[3] = num;
 									eventManager.updateEvents();
 								});
@@ -1886,14 +1996,14 @@ namespace EditorManagement.Patchers
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[3] - ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[3] - ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[3] + ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[3] + ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
@@ -1906,6 +2016,11 @@ namespace EditorManagement.Patchers
 
 								lensET.triggers.Clear();
 								lensET.triggers.Add(Triggers.ScrollDelta(lens, 0.1f, 10f));
+
+								if (!lens.gameObject.GetComponent<InputFieldHelper>())
+								{
+									lens.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Intensity Y
@@ -1916,7 +2031,6 @@ namespace EditorManagement.Patchers
 								lens.onValueChanged.AddListener(delegate (string val)
 								{
 									float num = float.Parse(val);
-									num = Mathf.Clamp(num, -100f, 100f);
 									currentKeyframe.eventValues[4] = num;
 									eventManager.updateEvents();
 								});
@@ -1927,14 +2041,14 @@ namespace EditorManagement.Patchers
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[4] - ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[4] - ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[4] + ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = (currentKeyframe.eventValues[4] + ConfigEntries.EventLensModify.Value).ToString();
 									eventManager.updateEvents();
 								});
 
@@ -1947,6 +2061,11 @@ namespace EditorManagement.Patchers
 
 								lensET.triggers.Clear();
 								lensET.triggers.Add(Triggers.ScrollDelta(lens, 0.1f, 10f));
+
+								if (!lens.gameObject.GetComponent<InputFieldHelper>())
+								{
+									lens.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 
 							//Scale
@@ -1957,7 +2076,7 @@ namespace EditorManagement.Patchers
 								lens.onValueChanged.AddListener(delegate (string val)
 								{
 									float num = float.Parse(val);
-									num = Mathf.Clamp(num, -100f, 100f);
+									num = Mathf.Clamp(num, 0.001f, 9999f);
 									currentKeyframe.eventValues[5] = num;
 									eventManager.updateEvents();
 								});
@@ -1968,14 +2087,14 @@ namespace EditorManagement.Patchers
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[5] - ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = Mathf.Clamp(currentKeyframe.eventValues[5] - ConfigEntries.EventLensModify.Value, 0.001f, 9999f).ToString();
 									eventManager.updateEvents();
 								});
 
 								lensLeft.onClick.RemoveAllListeners();
 								lensLeft.onClick.AddListener(delegate ()
 								{
-									lens.text = Mathf.Clamp(currentKeyframe.eventValues[5] + ConfigEntries.EventLensModify.Value, -100f, 100f).ToString();
+									lens.text = Mathf.Clamp(currentKeyframe.eventValues[5] + ConfigEntries.EventLensModify.Value, 0.001f, 9999f).ToString();
 									eventManager.updateEvents();
 								});
 
@@ -1987,507 +2106,613 @@ namespace EditorManagement.Patchers
 								var lensET = dialogTmp.Find("scale").GetComponent<EventTrigger>();
 
 								lensET.triggers.Clear();
-								lensET.triggers.Add(Triggers.ScrollDelta(lens, 0.1f, 10f));
+								lensET.triggers.Add(Triggers.ScrollDelta(lens, 0.1f, 10f, false, new List<float> { 0.001f, 9999f }));
+
+								if (!lens.gameObject.GetComponent<InputFieldHelper>())
+								{
+									lens.gameObject.AddComponent<InputFieldHelper>();
+								}
 							}
 						}
 						break;
                     }
 				case 9: //Grain
                     {
-						var grainIntensity = dialogTmp.Find("intensity").GetComponent<InputField>();
-						grainIntensity.onValueChanged.RemoveAllListeners();
-						grainIntensity.text = currentKeyframe.eventValues[0].ToString("f2");
-						grainIntensity.onValueChanged.AddListener(delegate (string val)
+						//Grain
 						{
-							float num = float.Parse(val);
-							num = Mathf.Clamp(num, 0f, 9999f);
-							currentKeyframe.eventValues[0] = num;
-							eventManager.updateEvents();
-						});
+							var grainIntensity = dialogTmp.Find("intensity").GetComponent<InputField>();
+							grainIntensity.onValueChanged.RemoveAllListeners();
+							grainIntensity.text = currentKeyframe.eventValues[0].ToString("f2");
+							grainIntensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								num = Mathf.Clamp(num, 0f, 9999f);
+								currentKeyframe.eventValues[0] = num;
+								eventManager.updateEvents();
+							});
 
-						var grainIntensityLeft = grainIntensity.transform.Find("<").GetComponent<Button>();
-						var grainIntensityRight = grainIntensity.transform.Find(">").GetComponent<Button>();
+							var grainIntensityLeft = grainIntensity.transform.Find("<").GetComponent<Button>();
+							var grainIntensityRight = grainIntensity.transform.Find(">").GetComponent<Button>();
 
-						grainIntensityLeft.onClick.RemoveAllListeners();
-						grainIntensityLeft.onClick.AddListener(delegate ()
+							grainIntensityLeft.onClick.RemoveAllListeners();
+							grainIntensityLeft.onClick.AddListener(delegate ()
+							{
+								grainIntensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] - ConfigEntries.EventGrainIntensityModify.Value, 0f, 9999f).ToString();
+								eventManager.updateEvents();
+							});
+
+							grainIntensityRight.onClick.RemoveAllListeners();
+							grainIntensityRight.onClick.AddListener(delegate ()
+							{
+								grainIntensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] + ConfigEntries.EventGrainIntensityModify.Value, 0f, 9999f).ToString();
+								eventManager.updateEvents();
+							});
+
+							if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var grainIntensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
+							grainIntensityET.triggers.Clear();
+							grainIntensityET.triggers.Add(Triggers.ScrollDelta(grainIntensity, 0.1f, 10f, false, new List<float> { 0f, 9999f }));
+
+							if (!grainIntensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								grainIntensity.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Colored
 						{
-							grainIntensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] - ConfigEntries.EventGrainIntensityModify.Value, 0f, 9999f).ToString();
-							eventManager.updateEvents();
-						});
+							var grainColored = dialogTmp.Find("colored").GetComponent<Toggle>();
+							grainColored.onValueChanged.RemoveAllListeners();
+							grainColored.isOn = (currentKeyframe.eventValues[1] == 1f);
+							grainColored.onValueChanged.AddListener(delegate (bool val)
+							{
+								currentKeyframe.eventValues[1] = (float)(val ? 1 : 0);
+								eventManager.updateEvents();
+							});
+						}
 
-						grainIntensityRight.onClick.RemoveAllListeners();
-						grainIntensityRight.onClick.AddListener(delegate ()
+						//Size
 						{
-							grainIntensity.text = Mathf.Clamp(currentKeyframe.eventValues[0] + ConfigEntries.EventGrainIntensityModify.Value, 0f, 9999f).ToString();
-							eventManager.updateEvents();
-						});
+							var grainSize = dialogTmp.Find("size").GetComponent<InputField>();
+							grainSize.onValueChanged.RemoveAllListeners();
+							grainSize.text = currentKeyframe.eventValues[2].ToString("f2");
+							grainSize.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								num = Mathf.Clamp(num, 0f, 9999f);
+								currentKeyframe.eventValues[2] = num;
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
-                        {
-							dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
-                        }
+							var grainSizeLeft = grainSize.transform.Find("<").GetComponent<Button>();
+							var grainSizeRight = grainSize.transform.Find(">").GetComponent<Button>();
 
-						var grainIntensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
-						grainIntensityET.triggers.Clear();
-						grainIntensityET.triggers.Add(Triggers.ScrollDelta(grainIntensity, 0.1f, 10f));
+							grainSizeLeft.onClick.RemoveAllListeners();
+							grainSizeLeft.onClick.AddListener(delegate ()
+							{
+								grainSize.text = Mathf.Clamp(currentKeyframe.eventValues[2] - ConfigEntries.EventGrainSizeModify.Value, 0f, 9999f).ToString();
+								eventManager.updateEvents();
+							});
 
-						var grainColored = dialogTmp.Find("colored").GetComponent<Toggle>();
-						grainColored.onValueChanged.RemoveAllListeners();
-						grainColored.isOn = (currentKeyframe.eventValues[1] == 1f);
-						grainColored.onValueChanged.AddListener(delegate (bool val)
-						{
-							currentKeyframe.eventValues[1] = (float)(val ? 1 : 0);
-							eventManager.updateEvents();
-						});
+							grainSizeRight.onClick.RemoveAllListeners();
+							grainSizeRight.onClick.AddListener(delegate ()
+							{
+								grainSize.text = Mathf.Clamp(currentKeyframe.eventValues[2] + ConfigEntries.EventGrainSizeModify.Value, 0f, 9999f).ToString();
+								eventManager.updateEvents();
+							});
 
-						var grainSize = dialogTmp.Find("size").GetComponent<InputField>();
-						grainSize.onValueChanged.RemoveAllListeners();
-						grainSize.text = currentKeyframe.eventValues[2].ToString("f2");
-						grainSize.onValueChanged.AddListener(delegate (string val)
-						{
-							float num = float.Parse(val);
-							num = Mathf.Clamp(num, 0f, 9999f);
-							currentKeyframe.eventValues[2] = num;
-							eventManager.updateEvents();
-						});
+							var grainSizeET = dialogTmp.Find("size").GetComponent<EventTrigger>();
+							grainSizeET.triggers.Clear();
+							grainSizeET.triggers.Add(Triggers.ScrollDelta(grainSize, 0.1f, 10f, false, new List<float> { 0f, 9999f }));
 
-						var grainSizeLeft = grainSize.transform.Find("<").GetComponent<Button>();
-						var grainSizeRight = grainSize.transform.Find(">").GetComponent<Button>();
-
-						grainSizeLeft.onClick.RemoveAllListeners();
-						grainSizeLeft.onClick.AddListener(delegate ()
-						{
-							grainSize.text = Mathf.Clamp(currentKeyframe.eventValues[2] - ConfigEntries.EventGrainSizeModify.Value, 0f, 9999f).ToString();
-							eventManager.updateEvents();
-						});
-
-						grainSizeRight.onClick.RemoveAllListeners();
-						grainSizeRight.onClick.AddListener(delegate ()
-						{
-							grainSize.text = Mathf.Clamp(currentKeyframe.eventValues[2] + ConfigEntries.EventGrainSizeModify.Value, 0f, 9999f).ToString();
-							eventManager.updateEvents();
-						});
+							if (!grainSize.gameObject.GetComponent<InputFieldHelper>())
+							{
+								grainSize.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
 						break;
 					}
 				case 10: //ColorGrading
 					{
-						//intensity
-						var intensity = dialogTmp.Find("intensity").GetComponent<InputField>();
-						intensity.onValueChanged.RemoveAllListeners();
-						intensity.text = currentKeyframe.eventValues[0].ToString("f2");
-						intensity.onValueChanged.AddListener(delegate (string val)
+						//Hueshift
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[0] = num;
-							eventManager.updateEvents();
-						});
+							var intensity = dialogTmp.Find("intensity").GetComponent<InputField>();
+							intensity.onValueChanged.RemoveAllListeners();
+							intensity.text = currentKeyframe.eventValues[0].ToString("f2");
+							intensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[0] = num;
+								eventManager.updateEvents();
+							});
 
-						var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
-						var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
+							var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
+							var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
 
-						intensityLeft.onClick.RemoveAllListeners();
-						intensityLeft.onClick.AddListener(delegate ()
-						{
-							intensity.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							intensityLeft.onClick.RemoveAllListeners();
+							intensityLeft.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						intensityRight.onClick.RemoveAllListeners();
-						intensityRight.onClick.AddListener(delegate ()
-						{
-							intensity.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							intensityRight.onClick.RemoveAllListeners();
+							intensityRight.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var intensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
+							intensityET.triggers.Clear();
+							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+
+							if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								intensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var intensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
-						intensityET.triggers.Clear();
-						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
 
 						//Contrast
-						var contrast = dialogTmp.Find("contrast").GetComponent<InputField>();
-						contrast.onValueChanged.RemoveAllListeners();
-						contrast.text = currentKeyframe.eventValues[1].ToString("f2");
-						contrast.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[1] = num;
-							eventManager.updateEvents();
-						});
+							var contrast = dialogTmp.Find("contrast").GetComponent<InputField>();
+							contrast.onValueChanged.RemoveAllListeners();
+							contrast.text = currentKeyframe.eventValues[1].ToString("f2");
+							contrast.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[1] = num;
+								eventManager.updateEvents();
+							});
 
-						var contrastLeft = contrast.transform.Find("<").GetComponent<Button>();
-						var contrastRight = contrast.transform.Find(">").GetComponent<Button>();
+							var contrastLeft = contrast.transform.Find("<").GetComponent<Button>();
+							var contrastRight = contrast.transform.Find(">").GetComponent<Button>();
 
-						contrastLeft.onClick.RemoveAllListeners();
-						contrastLeft.onClick.AddListener(delegate ()
-						{
-							contrast.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							contrastLeft.onClick.RemoveAllListeners();
+							contrastLeft.onClick.AddListener(delegate ()
+							{
+								contrast.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						contrastRight.onClick.RemoveAllListeners();
-						contrastRight.onClick.AddListener(delegate ()
-						{
-							contrast.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							contrastRight.onClick.RemoveAllListeners();
+							contrastRight.onClick.AddListener(delegate ()
+							{
+								contrast.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("contrast").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("contrast").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("contrast").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("contrast").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var contrastET = dialogTmp.Find("contrast").GetComponent<EventTrigger>();
+							contrastET.triggers.Clear();
+							contrastET.triggers.Add(Triggers.ScrollDelta(contrast, 0.1f, 10f));
+
+							if (!contrast.gameObject.GetComponent<InputFieldHelper>())
+							{
+								contrast.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var contrastET = dialogTmp.Find("contrast").GetComponent<EventTrigger>();
-						contrastET.triggers.Clear();
-						contrastET.triggers.Add(Triggers.ScrollDelta(contrast, 0.1f, 10f));
 
 						//Saturation
-						var saturation = dialogTmp.Find("saturation").GetComponent<InputField>();
-						saturation.onValueChanged.RemoveAllListeners();
-						saturation.text = currentKeyframe.eventValues[6].ToString("f2");
-						saturation.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[6] = num;
-							eventManager.updateEvents();
-						});
+							var saturation = dialogTmp.Find("saturation").GetComponent<InputField>();
+							saturation.onValueChanged.RemoveAllListeners();
+							saturation.text = currentKeyframe.eventValues[6].ToString("f2");
+							saturation.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[6] = num;
+								eventManager.updateEvents();
+							});
 
-						var saturationLeft = saturation.transform.Find("<").GetComponent<Button>();
-						var saturationRight = saturation.transform.Find(">").GetComponent<Button>();
+							var saturationLeft = saturation.transform.Find("<").GetComponent<Button>();
+							var saturationRight = saturation.transform.Find(">").GetComponent<Button>();
 
-						saturationLeft.onClick.RemoveAllListeners();
-						saturationLeft.onClick.AddListener(delegate ()
-						{
-							saturation.text = (currentKeyframe.eventValues[6] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							saturationLeft.onClick.RemoveAllListeners();
+							saturationLeft.onClick.AddListener(delegate ()
+							{
+								saturation.text = (currentKeyframe.eventValues[6] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						saturationRight.onClick.RemoveAllListeners();
-						saturationRight.onClick.AddListener(delegate ()
-						{
-							saturation.text = (currentKeyframe.eventValues[6] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							saturationRight.onClick.RemoveAllListeners();
+							saturationRight.onClick.AddListener(delegate ()
+							{
+								saturation.text = (currentKeyframe.eventValues[6] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("saturation").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("saturation").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("saturation").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("saturation").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var saturationET = dialogTmp.Find("saturation").GetComponent<EventTrigger>();
+							saturationET.triggers.Clear();
+							saturationET.triggers.Add(Triggers.ScrollDelta(saturation, 0.1f, 10f));
+
+							if (!saturation.gameObject.GetComponent<InputFieldHelper>())
+							{
+								saturation.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var saturationET = dialogTmp.Find("saturation").GetComponent<EventTrigger>();
-						saturationET.triggers.Clear();
-						saturationET.triggers.Add(Triggers.ScrollDelta(saturation, 0.1f, 10f));
 
 						//Temperature
-						var temperature = dialogTmp.Find("temperature").GetComponent<InputField>();
-						temperature.onValueChanged.RemoveAllListeners();
-						temperature.text = currentKeyframe.eventValues[7].ToString("f2");
-						temperature.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[7] = num;
-							eventManager.updateEvents();
-						});
+							var temperature = dialogTmp.Find("temperature").GetComponent<InputField>();
+							temperature.onValueChanged.RemoveAllListeners();
+							temperature.text = currentKeyframe.eventValues[7].ToString("f2");
+							temperature.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[7] = num;
+								eventManager.updateEvents();
+							});
 
-						var temperatureLeft = temperature.transform.Find("<").GetComponent<Button>();
-						var temperatureRight = temperature.transform.Find(">").GetComponent<Button>();
+							var temperatureLeft = temperature.transform.Find("<").GetComponent<Button>();
+							var temperatureRight = temperature.transform.Find(">").GetComponent<Button>();
 
-						temperatureLeft.onClick.RemoveAllListeners();
-						temperatureLeft.onClick.AddListener(delegate ()
-						{
-							temperature.text = (currentKeyframe.eventValues[7] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							temperatureLeft.onClick.RemoveAllListeners();
+							temperatureLeft.onClick.AddListener(delegate ()
+							{
+								temperature.text = (currentKeyframe.eventValues[7] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						temperatureRight.onClick.RemoveAllListeners();
-						temperatureRight.onClick.AddListener(delegate ()
-						{
-							temperature.text = (currentKeyframe.eventValues[7] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							temperatureRight.onClick.RemoveAllListeners();
+							temperatureRight.onClick.AddListener(delegate ()
+							{
+								temperature.text = (currentKeyframe.eventValues[7] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("temperature").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("temperature").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("temperature").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("temperature").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var temperatureET = dialogTmp.Find("temperature").GetComponent<EventTrigger>();
+							temperatureET.triggers.Clear();
+							temperatureET.triggers.Add(Triggers.ScrollDelta(temperature, 0.1f, 10f));
+
+							if (!temperature.gameObject.GetComponent<InputFieldHelper>())
+							{
+								temperature.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var temperatureET = dialogTmp.Find("temperature").GetComponent<EventTrigger>();
-						temperatureET.triggers.Clear();
-						temperatureET.triggers.Add(Triggers.ScrollDelta(temperature, 0.1f, 10f));
 
 						//Tint
-						var tint = dialogTmp.Find("tint").GetComponent<InputField>();
-						tint.onValueChanged.RemoveAllListeners();
-						tint.text = currentKeyframe.eventValues[8].ToString("f2");
-						tint.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[8] = num;
-							eventManager.updateEvents();
-						});
+							var tint = dialogTmp.Find("tint").GetComponent<InputField>();
+							tint.onValueChanged.RemoveAllListeners();
+							tint.text = currentKeyframe.eventValues[8].ToString("f2");
+							tint.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[8] = num;
+								eventManager.updateEvents();
+							});
 
-						var tintLeft = tint.transform.Find("<").GetComponent<Button>();
-						var tintRight = tint.transform.Find(">").GetComponent<Button>();
+							var tintLeft = tint.transform.Find("<").GetComponent<Button>();
+							var tintRight = tint.transform.Find(">").GetComponent<Button>();
 
-						tintLeft.onClick.RemoveAllListeners();
-						tintLeft.onClick.AddListener(delegate ()
-						{
-							tint.text = (currentKeyframe.eventValues[8] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							tintLeft.onClick.RemoveAllListeners();
+							tintLeft.onClick.AddListener(delegate ()
+							{
+								tint.text = (currentKeyframe.eventValues[8] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						tintRight.onClick.RemoveAllListeners();
-						tintRight.onClick.AddListener(delegate ()
-						{
-							tint.text = (currentKeyframe.eventValues[8] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							tintRight.onClick.RemoveAllListeners();
+							tintRight.onClick.AddListener(delegate ()
+							{
+								tint.text = (currentKeyframe.eventValues[8] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("tint").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("tint").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("tint").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("tint").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var tintET = dialogTmp.Find("tint").GetComponent<EventTrigger>();
+							tintET.triggers.Clear();
+							tintET.triggers.Add(Triggers.ScrollDelta(tint, 0.1f, 10f));
+
+							if (!tint.gameObject.GetComponent<InputFieldHelper>())
+							{
+								tint.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var tintET = dialogTmp.Find("tint").GetComponent<EventTrigger>();
-						tintET.triggers.Clear();
-						tintET.triggers.Add(Triggers.ScrollDelta(tint, 0.1f, 10f));
 						break;
 					}
 				case 11: //Ripples
 					{
 						//Strength
-						var strength = dialogTmp.Find("strength").GetComponent<InputField>();
-						strength.onValueChanged.RemoveAllListeners();
-						strength.text = currentKeyframe.eventValues[0].ToString("f2");
-						strength.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[0] = num;
-							eventManager.updateEvents();
-						});
+							var strength = dialogTmp.Find("strength").GetComponent<InputField>();
+							strength.onValueChanged.RemoveAllListeners();
+							strength.text = currentKeyframe.eventValues[0].ToString("f2");
+							strength.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[0] = num;
+								eventManager.updateEvents();
+							});
 
-						var strengthLeft = strength.transform.Find("<").GetComponent<Button>();
-						var strengthRight = strength.transform.Find(">").GetComponent<Button>();
+							var strengthLeft = strength.transform.Find("<").GetComponent<Button>();
+							var strengthRight = strength.transform.Find(">").GetComponent<Button>();
 
-						strengthLeft.onClick.RemoveAllListeners();
-						strengthLeft.onClick.AddListener(delegate ()
-						{
-							strength.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							strengthLeft.onClick.RemoveAllListeners();
+							strengthLeft.onClick.AddListener(delegate ()
+							{
+								strength.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						strengthRight.onClick.RemoveAllListeners();
-						strengthRight.onClick.AddListener(delegate ()
-						{
-							strength.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							strengthRight.onClick.RemoveAllListeners();
+							strengthRight.onClick.AddListener(delegate ()
+							{
+								strength.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("strength").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("strength").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("strength").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("strength").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var strengthET = dialogTmp.Find("strength").GetComponent<EventTrigger>();
+							strengthET.triggers.Clear();
+							strengthET.triggers.Add(Triggers.ScrollDelta(strength, 0.1f, 10f));
+
+							if (!strength.gameObject.GetComponent<InputFieldHelper>())
+							{
+								strength.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var strengthET = dialogTmp.Find("strength").GetComponent<EventTrigger>();
-						strengthET.triggers.Clear();
-						strengthET.triggers.Add(Triggers.ScrollDelta(strength, 0.1f, 10f));
 
 						//Speed
-						var speed = dialogTmp.Find("speed").GetComponent<InputField>();
-						speed.onValueChanged.RemoveAllListeners();
-						speed.text = currentKeyframe.eventValues[1].ToString("f2");
-						speed.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[1] = num;
-							eventManager.updateEvents();
-						});
+							var speed = dialogTmp.Find("speed").GetComponent<InputField>();
+							speed.onValueChanged.RemoveAllListeners();
+							speed.text = currentKeyframe.eventValues[1].ToString("f2");
+							speed.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[1] = num;
+								eventManager.updateEvents();
+							});
 
-						var speedLeft = speed.transform.Find("<").GetComponent<Button>();
-						var speedRight = speed.transform.Find(">").GetComponent<Button>();
+							var speedLeft = speed.transform.Find("<").GetComponent<Button>();
+							var speedRight = speed.transform.Find(">").GetComponent<Button>();
 
-						speedLeft.onClick.RemoveAllListeners();
-						speedLeft.onClick.AddListener(delegate ()
-						{
-							speed.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							speedLeft.onClick.RemoveAllListeners();
+							speedLeft.onClick.AddListener(delegate ()
+							{
+								speed.text = (currentKeyframe.eventValues[1] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						speedRight.onClick.RemoveAllListeners();
-						speedRight.onClick.AddListener(delegate ()
-						{
-							speed.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							speedRight.onClick.RemoveAllListeners();
+							speedRight.onClick.AddListener(delegate ()
+							{
+								speed.text = (currentKeyframe.eventValues[1] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("speed").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("speed").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("speed").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("speed").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var speedET = dialogTmp.Find("speed").GetComponent<EventTrigger>();
+							speedET.triggers.Clear();
+							speedET.triggers.Add(Triggers.ScrollDelta(speed, 0.1f, 10f));
+
+							if (!speed.gameObject.GetComponent<InputFieldHelper>())
+							{
+								speed.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var speedET = dialogTmp.Find("speed").GetComponent<EventTrigger>();
-						speedET.triggers.Clear();
-						speedET.triggers.Add(Triggers.ScrollDelta(speed, 0.1f, 10f));
 
 						//Distance
-						var distance = dialogTmp.Find("distance").GetComponent<InputField>();
-						distance.onValueChanged.RemoveAllListeners();
-						distance.text = currentKeyframe.eventValues[2].ToString("f2");
-						distance.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[2] = num;
-							eventManager.updateEvents();
-						});
+							var distance = dialogTmp.Find("distance").GetComponent<InputField>();
+							distance.onValueChanged.RemoveAllListeners();
+							distance.text = currentKeyframe.eventValues[2].ToString("f2");
+							distance.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								num = Mathf.Clamp(num, 0.001f, 99999999f);
+								currentKeyframe.eventValues[2] = num;
+								eventManager.updateEvents();
+							});
 
-						var distanceLeft = distance.transform.Find("<").GetComponent<Button>();
-						var distanceRight = distance.transform.Find(">").GetComponent<Button>();
+							var distanceLeft = distance.transform.Find("<").GetComponent<Button>();
+							var distanceRight = distance.transform.Find(">").GetComponent<Button>();
 
-						distanceLeft.onClick.RemoveAllListeners();
-						distanceLeft.onClick.AddListener(delegate ()
-						{
-							distance.text = (currentKeyframe.eventValues[2] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							distanceLeft.onClick.RemoveAllListeners();
+							distanceLeft.onClick.AddListener(delegate ()
+							{
+								distance.text = Mathf.Clamp(currentKeyframe.eventValues[2] - ConfigEntries.EventMoveModify.Value, 0.001f, 99999999f).ToString();
+								eventManager.updateEvents();
+							});
 
-						distanceRight.onClick.RemoveAllListeners();
-						distanceRight.onClick.AddListener(delegate ()
-						{
-							distance.text = (currentKeyframe.eventValues[2] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							distanceRight.onClick.RemoveAllListeners();
+							distanceRight.onClick.AddListener(delegate ()
+							{
+								distance.text = Mathf.Clamp(currentKeyframe.eventValues[2] + ConfigEntries.EventMoveModify.Value, 0.001f, 99999999f).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("distance").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("distance").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("distance").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("distance").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var distanceET = dialogTmp.Find("distance").GetComponent<EventTrigger>();
+							distanceET.triggers.Clear();
+							distanceET.triggers.Add(Triggers.ScrollDelta(distance, 0.1f, 10f, false, new List<float> { 0.001f, 99999999f }));
+
+							if (!distance.gameObject.GetComponent<InputFieldHelper>())
+							{
+								distance.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var distanceET = dialogTmp.Find("distance").GetComponent<EventTrigger>();
-						distanceET.triggers.Clear();
-						distanceET.triggers.Add(Triggers.ScrollDelta(distance, 0.1f, 10f));
 
 						//Height
-						var height = dialogTmp.Find("height").GetComponent<InputField>();
-						height.onValueChanged.RemoveAllListeners();
-						height.text = currentKeyframe.eventValues[3].ToString("f2");
-						height.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[3] = num;
-							eventManager.updateEvents();
-						});
+							var height = dialogTmp.Find("height").GetComponent<InputField>();
+							height.onValueChanged.RemoveAllListeners();
+							height.text = currentKeyframe.eventValues[3].ToString("f2");
+							height.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[3] = num;
+								eventManager.updateEvents();
+							});
 
-						var heightLeft = height.transform.Find("<").GetComponent<Button>();
-						var heightRight = height.transform.Find(">").GetComponent<Button>();
+							var heightLeft = height.transform.Find("<").GetComponent<Button>();
+							var heightRight = height.transform.Find(">").GetComponent<Button>();
 
-						heightLeft.onClick.RemoveAllListeners();
-						heightLeft.onClick.AddListener(delegate ()
-						{
-							height.text = (currentKeyframe.eventValues[3] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							heightLeft.onClick.RemoveAllListeners();
+							heightLeft.onClick.AddListener(delegate ()
+							{
+								height.text = (currentKeyframe.eventValues[3] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						heightRight.onClick.RemoveAllListeners();
-						heightRight.onClick.AddListener(delegate ()
-						{
-							height.text = (currentKeyframe.eventValues[3] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							heightRight.onClick.RemoveAllListeners();
+							heightRight.onClick.AddListener(delegate ()
+							{
+								height.text = (currentKeyframe.eventValues[3] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("height").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("height").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("height").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("height").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var heightET = dialogTmp.Find("height").GetComponent<EventTrigger>();
+							heightET.triggers.Clear();
+							heightET.triggers.Add(Triggers.ScrollDelta(height, 0.1f, 10f));
+
+							if (!height.gameObject.GetComponent<InputFieldHelper>())
+							{
+								height.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var heightET = dialogTmp.Find("height").GetComponent<EventTrigger>();
-						heightET.triggers.Clear();
-						heightET.triggers.Add(Triggers.ScrollDelta(height, 0.1f, 10f));
 
 						//Width
-						var width = dialogTmp.Find("width").GetComponent<InputField>();
-						width.onValueChanged.RemoveAllListeners();
-						width.text = currentKeyframe.eventValues[4].ToString("f2");
-						width.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[4] = num;
-							eventManager.updateEvents();
-						});
+							var width = dialogTmp.Find("width").GetComponent<InputField>();
+							width.onValueChanged.RemoveAllListeners();
+							width.text = currentKeyframe.eventValues[4].ToString("f2");
+							width.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[4] = num;
+								eventManager.updateEvents();
+							});
 
-						var widthLeft = width.transform.Find("<").GetComponent<Button>();
-						var widthRight = width.transform.Find(">").GetComponent<Button>();
+							var widthLeft = width.transform.Find("<").GetComponent<Button>();
+							var widthRight = width.transform.Find(">").GetComponent<Button>();
 
-						widthLeft.onClick.RemoveAllListeners();
-						widthLeft.onClick.AddListener(delegate ()
-						{
-							width.text = (currentKeyframe.eventValues[4] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							widthLeft.onClick.RemoveAllListeners();
+							widthLeft.onClick.AddListener(delegate ()
+							{
+								width.text = (currentKeyframe.eventValues[4] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						widthRight.onClick.RemoveAllListeners();
-						widthRight.onClick.AddListener(delegate ()
-						{
-							width.text = (currentKeyframe.eventValues[4] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							widthRight.onClick.RemoveAllListeners();
+							widthRight.onClick.AddListener(delegate ()
+							{
+								width.text = (currentKeyframe.eventValues[4] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("width").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("width").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("width").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("width").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var widthET = dialogTmp.Find("width").GetComponent<EventTrigger>();
+							widthET.triggers.Clear();
+							widthET.triggers.Add(Triggers.ScrollDelta(width, 0.1f, 10f));
+
+							if (!width.gameObject.GetComponent<InputFieldHelper>())
+							{
+								width.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
-
-						var widthET = dialogTmp.Find("width").GetComponent<EventTrigger>();
-						widthET.triggers.Clear();
-						widthET.triggers.Add(Triggers.ScrollDelta(width, 0.1f, 10f));
 						break;
 					}
 				case 12: //RadialBlur
 					{
 						//RadialBlur
-						var intensity = dialogTmp.Find("intensity").GetComponent<InputField>();
-						intensity.onValueChanged.RemoveAllListeners();
-						intensity.text = currentKeyframe.eventValues[0].ToString("f2");
-						intensity.onValueChanged.AddListener(delegate (string val)
 						{
-							float num = float.Parse(val);
-							currentKeyframe.eventValues[0] = num;
-							eventManager.updateEvents();
-						});
+							var intensity = dialogTmp.Find("intensity").GetComponent<InputField>();
+							intensity.onValueChanged.RemoveAllListeners();
+							intensity.text = currentKeyframe.eventValues[0].ToString("f2");
+							intensity.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[0] = num;
+								eventManager.updateEvents();
+							});
 
-						var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
-						var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
+							var intensityLeft = intensity.transform.Find("<").GetComponent<Button>();
+							var intensityRight = intensity.transform.Find(">").GetComponent<Button>();
 
-						intensityLeft.onClick.RemoveAllListeners();
-						intensityLeft.onClick.AddListener(delegate ()
-						{
-							intensity.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							intensityLeft.onClick.RemoveAllListeners();
+							intensityLeft.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[0] - ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						intensityRight.onClick.RemoveAllListeners();
-						intensityRight.onClick.AddListener(delegate ()
-						{
-							intensity.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value).ToString();
-							eventManager.updateEvents();
-						});
+							intensityRight.onClick.RemoveAllListeners();
+							intensityRight.onClick.AddListener(delegate ()
+							{
+								intensity.text = (currentKeyframe.eventValues[0] + ConfigEntries.EventMoveModify.Value).ToString();
+								eventManager.updateEvents();
+							});
 
-						if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
-						{
-							dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
+							if (!dialogTmp.Find("intensity").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("intensity").gameObject.AddComponent<EventTrigger>();
+							}
+
+							var intensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
+							intensityET.triggers.Clear();
+							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+
+							if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								intensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
-						var intensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
-						intensityET.triggers.Clear();
-						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
-
-						//RadialBlur
+						//Iterations
 						var iterations = dialogTmp.Find("iterations").GetComponent<InputField>();
 						iterations.onValueChanged.RemoveAllListeners();
-						iterations.text = currentKeyframe.eventValues[1].ToString("f2");
+						iterations.text = currentKeyframe.eventValues[1].ToString();
 						iterations.onValueChanged.AddListener(delegate (string val)
 						{
 							int num = int.Parse(val);
@@ -2520,7 +2745,7 @@ namespace EditorManagement.Patchers
 
 						var iterationsET = dialogTmp.Find("iterations").GetComponent<EventTrigger>();
 						iterationsET.triggers.Clear();
-						iterationsET.triggers.Add(Triggers.ScrollDelta(iterations, 1f, 10f));
+						iterationsET.triggers.Add(Triggers.ScrollDeltaInt(iterations, 1));
 						break;
 					}
 				case 13: //ColorSplit
@@ -2561,6 +2786,11 @@ namespace EditorManagement.Patchers
 						var intensityET = dialogTmp.Find("offset").GetComponent<EventTrigger>();
 						intensityET.triggers.Clear();
 						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+
+						if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+						{
+							intensity.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
 					}
 				case 14: //Cam Offset
@@ -2635,6 +2865,16 @@ namespace EditorManagement.Patchers
 						posYET.triggers.Clear();
 						posYET.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, true));
 						posYET.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
+
+						if (!posX.gameObject.GetComponent<InputFieldHelper>())
+						{
+							posX.gameObject.AddComponent<InputFieldHelper>();
+						}
+
+						if (!posY.gameObject.GetComponent<InputFieldHelper>())
+						{
+							posY.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
                     }
 				case 15: //Gradient
@@ -2677,9 +2917,14 @@ namespace EditorManagement.Patchers
 
 							bloomET.triggers.Clear();
 							bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f));
+
+							if (!bloom.gameObject.GetComponent<InputFieldHelper>())
+							{
+								bloom.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
-						//Bloom Diffusion
+						//Gradient Rotation
 						{
 							var bloom = dialogTmp.Find("diffusion").GetComponent<InputField>();
 							bloom.onValueChanged.RemoveAllListeners();
@@ -2717,6 +2962,11 @@ namespace EditorManagement.Patchers
 
 							bloomET.triggers.Clear();
 							bloomET.triggers.Add(Triggers.ScrollDelta(bloom, 0.1f, 10f));
+
+							if (!bloom.gameObject.GetComponent<InputFieldHelper>())
+							{
+								bloom.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
 						int num = 0;
@@ -2787,7 +3037,7 @@ namespace EditorManagement.Patchers
                     }
 				case 16: //DoubleVision
 					{
-						//ColorSplit
+						//Intensity
 						var intensity = dialogTmp.Find("offset").GetComponent<InputField>();
 						intensity.onValueChanged.RemoveAllListeners();
 						intensity.text = currentKeyframe.eventValues[0].ToString("f2");
@@ -2823,11 +3073,16 @@ namespace EditorManagement.Patchers
 						var intensityET = dialogTmp.Find("offset").GetComponent<EventTrigger>();
 						intensityET.triggers.Clear();
 						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+
+						if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+						{
+							intensity.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
 					}
 				case 17: //ScanLines
                     {
-						//intensity
+						//Intensity
 						var intensity = dialogTmp.Find("intensity").GetComponent<InputField>();
 						intensity.onValueChanged.RemoveAllListeners();
 						intensity.text = currentKeyframe.eventValues[0].ToString("f2");
@@ -2863,6 +3118,11 @@ namespace EditorManagement.Patchers
 						var intensityET = dialogTmp.Find("intensity").GetComponent<EventTrigger>();
 						intensityET.triggers.Clear();
 						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+
+						if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+						{
+							intensity.gameObject.AddComponent<InputFieldHelper>();
+						}
 
 						//Amount
 						var iterations = dialogTmp.Find("iterations").GetComponent<InputField>();
@@ -2901,6 +3161,11 @@ namespace EditorManagement.Patchers
 						iterationsET.triggers.Clear();
 						iterationsET.triggers.Add(Triggers.ScrollDelta(iterations, 1f, 10f));
 
+						if (!iterations.gameObject.GetComponent<InputFieldHelper>())
+						{
+							iterations.gameObject.AddComponent<InputFieldHelper>();
+						}
+
 						//Speed
 						var speed = dialogTmp.Find("speed").GetComponent<InputField>();
 						speed.onValueChanged.RemoveAllListeners();
@@ -2937,6 +3202,11 @@ namespace EditorManagement.Patchers
 						var speedET = dialogTmp.Find("speed").GetComponent<EventTrigger>();
 						speedET.triggers.Clear();
 						speedET.triggers.Add(Triggers.ScrollDelta(speed, 1f, 10f));
+
+						if (!speed.gameObject.GetComponent<InputFieldHelper>())
+						{
+							speed.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
 					}
 				case 18: //Blur
@@ -2978,6 +3248,11 @@ namespace EditorManagement.Patchers
 						intensityET.triggers.Clear();
 						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
 
+						if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+						{
+							intensity.gameObject.AddComponent<InputFieldHelper>();
+						}
+
 						//Blur Iterations
 						var iterations = dialogTmp.Find("iterations").GetComponent<InputField>();
 						iterations.onValueChanged.RemoveAllListeners();
@@ -3015,6 +3290,11 @@ namespace EditorManagement.Patchers
 						var iterationsET = dialogTmp.Find("iterations").GetComponent<EventTrigger>();
 						iterationsET.triggers.Clear();
 						iterationsET.triggers.Add(Triggers.ScrollDelta(iterations, 1f, 1f, false, new List<float> { 1f, 12f }));
+
+						if (!iterations.gameObject.GetComponent<InputFieldHelper>())
+						{
+							iterations.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
                     }
 				case 19: //Pixelize
@@ -3056,6 +3336,11 @@ namespace EditorManagement.Patchers
 						var intensityET = dialogTmp.Find("offset").GetComponent<EventTrigger>();
 						intensityET.triggers.Clear();
 						intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f, false, new List<float> { 0f, 0.99999f }));
+
+						if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+						{
+							intensity.gameObject.AddComponent<InputFieldHelper>();
+						}
 						break;
                     }
 				case 20: //BG
@@ -3257,6 +3542,16 @@ namespace EditorManagement.Patchers
 							posYET.triggers.Clear();
 							posYET.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, true));
 							posYET.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
+
+							if (!posX.gameObject.GetComponent<InputFieldHelper>())
+							{
+								posX.gameObject.AddComponent<InputFieldHelper>();
+							}
+
+							if (!posY.gameObject.GetComponent<InputFieldHelper>())
+							{
+								posY.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
 						//Scale
@@ -3331,6 +3626,16 @@ namespace EditorManagement.Patchers
 							posYET.triggers.Clear();
 							posYET.triggers.Add(Triggers.ScrollDelta(posY, 0.1f, 10f, true));
 							posYET.triggers.Add(Triggers.ScrollDeltaVector2(posX, posY, 0.1f, 10f));
+
+							if (!posX.gameObject.GetComponent<InputFieldHelper>())
+							{
+								posX.gameObject.AddComponent<InputFieldHelper>();
+							}
+
+							if (!posY.gameObject.GetComponent<InputFieldHelper>())
+							{
+								posY.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
                         //Rotation
@@ -3370,6 +3675,11 @@ namespace EditorManagement.Patchers
 							var intensityET = dialogTmp.Find("rotation").GetComponent<EventTrigger>();
 							intensityET.triggers.Clear();
 							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 15f, 3f));
+
+							if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								intensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
 						//Color
@@ -3495,6 +3805,11 @@ namespace EditorManagement.Patchers
 							var intensityET = dialogTmp.Find("position/x").GetComponent<EventTrigger>();
 							intensityET.triggers.Clear();
 							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 1f, 10f));
+
+							if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								intensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 
 						//Rotation
@@ -3534,6 +3849,11 @@ namespace EditorManagement.Patchers
 							var intensityET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
 							intensityET.triggers.Clear();
 							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 15f, 3f));
+
+							if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								intensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 						break;
                     }
@@ -3656,7 +3976,7 @@ namespace EditorManagement.Patchers
 							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f, false, new List<float> { 0.001f, 1f }));
 						}
 
-						//Rotation
+						//Offset
 						{
 							var intensity = dialogTmp.Find("position/y").GetComponent<InputField>();
 							intensity.onValueChanged.RemoveAllListeners();
@@ -3693,6 +4013,11 @@ namespace EditorManagement.Patchers
 							var intensityET = dialogTmp.Find("position/y").GetComponent<EventTrigger>();
 							intensityET.triggers.Clear();
 							intensityET.triggers.Add(Triggers.ScrollDelta(intensity, 0.1f, 10f));
+
+							if (!intensity.gameObject.GetComponent<InputFieldHelper>())
+							{
+								intensity.gameObject.AddComponent<InputFieldHelper>();
+							}
 						}
 						break;
                     }

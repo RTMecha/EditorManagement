@@ -203,11 +203,12 @@ namespace EditorManagement.Patchers
 							}
 						}
 
-						if (ConfigEntries.EditorDebug.Value)
+						if (gameObject.GetComponent<RTObject>())
 						{
-							if (gameObject.GetComponent<RTObject>() && mat != null)
+							var rtobj = gameObject.GetComponent<RTObject>();
+							rtobj.id = beatmapObject.id;
+							if (mat != null)
 							{
-								var rtobj = gameObject.GetComponent<RTObject>();
 								rtobj.tipEnabled = true;
 								if (rtobj.tooltipLanguages.Count == 0)
 								{
@@ -227,8 +228,12 @@ namespace EditorManagement.Patchers
 								string text = "";
 								if (beatmapObject.shape != 4 || beatmapObject.shape != 6)
 								{
-									text = "<br>S: " + RTEditor.GetShape(beatmapObject.shape, beatmapObject.shapeOption) +
-										"<br>T: " + beatmapObject.text;
+									text = "<br>S: " + RTEditor.GetShape(beatmapObject.shape, beatmapObject.shapeOption).Replace("eight_circle", "eighth_circle").Replace("eigth_circle_outline", "eighth_circle_outline");
+
+									if (!string.IsNullOrEmpty(beatmapObject.text))
+                                    {
+										text += "<br>T: " + beatmapObject.text;
+                                    }
 								}
 								if (beatmapObject.shape == 4)
 								{
@@ -261,7 +266,7 @@ namespace EditorManagement.Patchers
 									text +
 									"<br>D: " + beatmapObject.Depth +
 									"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
-									"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
+									"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + ", Z: " + transform.position.z + "}" +
 									"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
 									"<br>ROT: " + transform.eulerAngles.z +
 									"<br>COL: " + RTEditor.ColorToHex(mat.color) +
@@ -273,7 +278,7 @@ namespace EditorManagement.Patchers
 										text +
 										"<br>D: " + beatmapObject.Depth +
 										"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
-										"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
+										"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + ", Z: " + transform.position.z + "}" +
 										"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
 										"<br>ROT: " + transform.eulerAngles.z +
 										"<br>COL: " + RTEditor.ColorToHex(mat.color) +
@@ -281,13 +286,7 @@ namespace EditorManagement.Patchers
 								}
 							}
 						}
-						else
-						{
-							if (gameObject.GetComponent<RTObject>())
-							{
-								gameObject.GetComponent<RTObject>().tipEnabled = false;
-							}
-						}
+
 						if (ConfigEntries.ShowObjectsOnLayer.Value && mat != null)
 						{
 							Color objColor = mat.color;

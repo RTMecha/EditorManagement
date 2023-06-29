@@ -289,7 +289,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
-		private static void CreateNewDepthText()
+		private static void CreateNewDepthText(ObjEditor __instance)
 		{
 			//Main parent
 			Transform contentDepthTF = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content/depth").transform;
@@ -385,6 +385,23 @@ namespace EditorManagement.Patchers
 				col.name = i.ToString();
 				col.transform.SetParent(colorParent);
 			}
+
+			//Opacity
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+			{
+				var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
+				opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+				opacityLabel.transform.localScale = Vector3.one;
+				opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Opacity";
+				opacityLabel.name = "label";
+
+				var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
+				opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+				opacity.transform.localScale = Vector3.one;
+				opacity.name = "opacity";
+
+				Triggers.AddTooltip(opacity.gameObject, "Set the opacity percentage here.", "If the color is already slightly transparent or the object is a helper, it will multiply the current opacity value with the helper and/or color alpha values.");
+            }
 
 			Transform testObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth");
 			Slider testComponent = testObject.gameObject.GetComponent<Slider>();
