@@ -358,13 +358,15 @@ namespace EditorManagement.Functions
 
 		public static void CreateNewTextObject(bool _select = true)
 		{
-			ObjEditor.ObjectSelection tmpSelection = CreateNewDefaultObject(_select);
-			DataManager.inst.gameData.beatmapObjects[tmpSelection.Index].shape = 4;
-			DataManager.inst.gameData.beatmapObjects[tmpSelection.Index].shapeOption = 0;
-			DataManager.inst.gameData.beatmapObjects[tmpSelection.Index].text = "text";
-			DataManager.inst.gameData.beatmapObjects[tmpSelection.Index].name = "text";
+			var tmpSelection = CreateNewDefaultObject(_select);
+			var beatmapObject = DataManager.inst.gameData.beatmapObjects[tmpSelection.Index];
+			beatmapObject.shape = 4;
+			beatmapObject.shapeOption = 0;
+			beatmapObject.text = "text";
+			beatmapObject.name = "text";
+			beatmapObject.objectType = DataManager.GameData.BeatmapObject.ObjectType.Decoration;
 			ObjectManager.inst.updateObjects(tmpSelection, false);
-			ObjEditor.inst.RenderTimelineObject(tmpSelection);
+			ObjEditor.inst.RenderTimelineObjects();
 			EditorManager.inst.history.Add(new History.Command("Create New Normal Text Object", delegate ()
 			{
 				CreateNewTextObject(_select);
@@ -2155,6 +2157,19 @@ namespace EditorManagement.Functions
 					Triggers.ObjEditorInputFieldValues(nameName, "name", beatmapObject.name, EditorProperty.ValueType.String, false, true);
 
 					var objType = tfv.Find("name/object-type").GetComponent<Dropdown>();
+
+					if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+                    {
+						objType.options = new List<Dropdown.OptionData>
+						{
+							new Dropdown.OptionData("Normal"),
+							new Dropdown.OptionData("Helper"),
+							new Dropdown.OptionData("Decoration"),
+							new Dropdown.OptionData("Empty"),
+							new Dropdown.OptionData("Solid")
+						};
+                    }
+
 					Triggers.ObjEditorDropdownValues(objType, "objectType", beatmapObject.objectType, true, true);
 				}
 
@@ -4916,6 +4931,7 @@ namespace EditorManagement.Functions
 						{
 							jsonnode["beatmap_objects"][num3]["events"]["col"][num9]["t"] = list[num3].events[3][num9].eventTime.ToString();
 							jsonnode["beatmap_objects"][num3]["events"]["col"][num9]["x"] = list[num3].events[3][num9].eventValues[0].ToString();
+							jsonnode["beatmap_objects"][num3]["events"]["col"][num9]["y"] = list[num3].events[3][num9].eventValues[1].ToString();
 							if (list[num3].events[3][num9].curveType.Name != "Linear")
 							{
 								jsonnode["beatmap_objects"][num3]["events"]["col"][num9]["ct"] = list[num3].events[3][num9].curveType.Name.ToString();
@@ -5540,7 +5556,7 @@ namespace EditorManagement.Functions
 		public static IEnumerator LoadThemes()
 		{
 			themesLoading = true;
-			float delay = 0f;
+			//float delay = 0f;
 			var dataManager = DataManager.inst;
 			var fileManager = FileManager.inst;
 			dataManager.CustomBeatmapThemes.Clear();
@@ -5549,10 +5565,10 @@ namespace EditorManagement.Functions
 			int num = 0;
 			foreach (DataManager.BeatmapTheme beatmapTheme in DataManager.inst.BeatmapThemes)
 			{
-				yield return new WaitForSeconds(delay);
+				//yield return new WaitForSeconds(delay);
 				dataManager.BeatmapThemeIDToIndex.Add(num, num);
 				dataManager.BeatmapThemeIndexToID.Add(num, num);
-				delay += 0.0001f;
+				//delay += 0.0001f;
 				num++;
 			}
 			var folders = fileManager.GetFileList(EditorPlugin.themeListPath, "lst");
@@ -5567,7 +5583,7 @@ namespace EditorManagement.Functions
 
 			foreach (var folder in folders)
 			{
-				yield return new WaitForSeconds(delay);
+				//yield return new WaitForSeconds(delay);
 				var lsfile = folder;
 				var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath));
 				var orig = DataManager.BeatmapTheme.Parse(jn, true);
@@ -5580,7 +5596,7 @@ namespace EditorManagement.Functions
 					ThemeEditor.inst.SaveTheme(beatmapTheme2);
 					dataManager.BeatmapThemes.Add(beatmapTheme2);
 				}
-				delay += 0.0001f;
+				//delay += 0.0001f;
 			}
 			themesLoading = false;
 			yield break;
@@ -6531,6 +6547,84 @@ namespace EditorManagement.Functions
 			Debug.LogFormat("{0}Generated Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
 			sw.Stop();
 			yield break;
+		}
+
+		public static void TestSleepyzWaveform()
+		{
+			int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
+			EditorManager.inst.timeline.GetComponent<Image>().sprite = Sprite.Create(GetWaveform(AudioManager.inst.CurrentAudioSource.clip, new List<Color> { Color.clear, Color.blue, Color.yellow }, num, 300), new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
+			EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = EditorManager.inst.timeline.GetComponent<Image>().sprite;
+        }
+
+		public static Texture2D GetWaveform(AudioClip _clip, List<Color> colors, int width, int height)
+		{
+			if (colors.Count < 1 || _clip == null)
+            {
+				return null;
+            }
+
+			int samplesize;
+			float[] samples = null;
+			float[] waveform = null;
+
+			int halfheight = height / 2;
+			float heightscale = (float)height * 0.75f;
+
+			// get the sound data
+			Texture2D tex = new Texture2D(width, height, TextureFormat.RGBA32, false);
+			waveform = new float[width];
+
+			samplesize = _clip.samples * _clip.channels;
+			samples = new float[samplesize];
+			_clip.GetData(samples, 0);
+
+			int packsize = (samplesize / width);
+			for (int w = 0; w < width; w++)
+			{
+				waveform[w] = Mathf.Abs(samples[w * packsize]);
+			}
+
+			// map the sound data to texture
+			// 1 - clear
+			for (int x = 0; x < width; x++)
+			{
+				for (int y = 0; y < height; y++)
+				{
+					tex.SetPixel(x, y, colors[0]);
+				}
+			}
+
+			// 2 - plot
+			if (colors.Count == 2)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					for (int y = 0; y < waveform[x] * heightscale; y++)
+					{
+						tex.SetPixel(x, halfheight + y, colors[1]);
+						tex.SetPixel(x, halfheight - y, colors[1]);
+					}
+				}
+			}
+			else if (colors.Count > 2)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					for (int y = 0; y < waveform[x] * heightscale; y++)
+					{
+						tex.SetPixel(x, halfheight - y, colors[1]);
+						if (tex.GetPixel(x, y) == colors[1])
+                        {
+							tex.SetPixel(x, y, MixColors(new List<Color> { colors[1], colors[2] }));
+                        }
+						tex.SetPixel(x, y, colors[2]);
+					}
+				}
+			}
+
+			tex.Apply();
+
+			return tex;
 		}
 
 		public static Color MixColors(List<Color> colors)
