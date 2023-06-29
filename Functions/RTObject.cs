@@ -14,8 +14,9 @@ namespace EditorManagement.Functions
 
 		public void OnMouseDown()
         {
-			if (EditorManager.inst != null && DataManager.inst.gameData.beatmapObjects.Count > 0 && !LSHelpers.IsUsingInputField())
+			if (EditorManager.inst != null && DataManager.inst.gameData.beatmapObjects.Count > 0 && !LSHelpers.IsUsingInputField() && !EventSystem.current.IsPointerOverGameObject())
             {
+				Debug.LogFormat("{0}Selecting object: {1}", EditorPlugin.className, id);
 				ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, id));
 				ObjEditor.inst.RenderTimelineObjects();
             }
