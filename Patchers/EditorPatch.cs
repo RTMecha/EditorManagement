@@ -30,6 +30,8 @@ namespace EditorManagement.Patchers
 		public static MethodInfo GetKeyCodeName;
 		public static Transform timelineBar;
 		public static InputField layersIF;
+		public static InputField pitchIF;
+		public static InputField timeIF;
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
@@ -73,17 +75,17 @@ namespace EditorManagement.Patchers
 			timelineBar = GameObject.Find("TimelineBar/GameObject").transform;
 			GameObject timeObj = timelineBar.GetChild(13).gameObject;
 			timelineBar.GetChild(0).gameObject.SetActive(true);
-			InputField iFtimeObj = timeObj.GetComponent<InputField>();
+			timeIF = timeObj.GetComponent<InputField>();
 			timeObj.name = "Time Input";
 			HoverTooltip timeObjTip = timeObj.AddComponent<HoverTooltip>();
 			timeObjTip.tooltipLangauges.Add(Triggers.NewTooltip("Shows the exact current time of song.", "Type in the input field to go to a precise time in the level."));
 
 			timeObj.transform.SetSiblingIndex(0);
 			timeObj.SetActive(true);
-			iFtimeObj.text = AudioManager.inst.CurrentAudioSource.time.ToString();
-			iFtimeObj.characterValidation = InputField.CharacterValidation.Decimal;
+			timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
+			timeIF.characterValidation = InputField.CharacterValidation.Decimal;
 
-			iFtimeObj.onValueChanged.AddListener(delegate (string _value)
+			timeIF.onValueChanged.AddListener(delegate (string _value)
 			{
 				RTEditor.SetNewTime(_value);
 			});
@@ -233,10 +235,10 @@ namespace EditorManagement.Patchers
 				GameObject.Find("TitleBar/File/File Dropdown/Save As").SetActive(true);
 			}
 
-			var timeObjET = timeObj.gameObject.GetComponent<EventTrigger>();
+			var timeObjET = timeObj.GetComponent<EventTrigger>();
 
 			timeObjET.triggers.Clear();
-			timeObjET.triggers.Add(Triggers.ScrollDelta(iFtimeObj, 0.1f, 10f));
+			timeObjET.triggers.Add(Triggers.ScrollDelta(timeIF, 0.1f, 10f));
 
 			//Loading doggo
 			{
@@ -921,14 +923,65 @@ namespace EditorManagement.Patchers
 				hoverUIPlayTest.animateSca = true;
             }
 
-			RTEditor.SearchObjectsCreator();
+
+			//Speed Text Dummy
+			{
+				//var p = Instantiate(__instance.speedText);
+				//p.transform.SetParent(__instance.speedText.transform.parent);
+				//p.transform.localScale = Vector3.one;
+				//p.name = "C";
+				//p.GetComponent<Text>().text = "1";
+				//p.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+				__instance.speedText.transform.parent.SetParent(null);
+
+				//GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/<").SetActive(false);
+				//GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/>").SetActive(false);
+
+				var pitch = Instantiate(timeObj);
+				pitch.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject").transform);
+				pitch.transform.SetSiblingIndex(5);
+                pitch.name = "pitch";
+				pitch.transform.localScale = Vector3.one;
+
+				pitchIF = pitch.GetComponent<InputField>();
+				pitchIF.onValueChanged.RemoveAllListeners();
+				pitchIF.onValueChanged.AddListener(delegate (string _val)
+				{
+					if (float.TryParse(_val, out float num))
+					{
+						AudioManager.inst.SetPitch(num);
+					}
+					else
+                    {
+						EditorManager.inst.DisplayNotification("Input is not correct format!", 1f, EditorManager.NotificationType.Error);
+                    }
+				});
+
+				if (pitch.GetComponent<EventTrigger>())
+				{
+					var pitchET = pitch.GetComponent<EventTrigger>();
+					pitchET.triggers.Clear();
+					pitchET.triggers.Add(Triggers.ScrollDelta(pitchIF, 0.1f, 10f));
+				}
+
+				pitch.GetComponent<HoverTooltip>().tooltipLangauges.Clear();
+				Triggers.AddTooltip(pitch, "Change the pitch of the song", "", new List<string> { "Up / Down Arrow" });
+
+				pitch.GetComponent<LayoutElement>().minWidth = 64f;
+				pitch.transform.Find("Text").GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
+
+				pitch.AddComponent<InputFieldHelper>();
+            }
+
+            RTEditor.SearchObjectsCreator();
 			RTEditor.WarningPopupCreator();
 			RTEditor.inst.StartCoroutine(RTEditor.SetupTooltips());
 		}
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
-		private static void PropertiesWindow()
+		private static void PropertiesWindow(EditorManager __instance)
         {
 			RTEditor.inst.StartCoroutine(RTEditor.CreatePropertiesWindow());
 			//Player Editor
@@ -944,6 +997,8 @@ namespace EditorManagement.Patchers
 				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
 				gameObject.AddComponent<ObjectModifiersEditor>();
 			}
+
+			EditorPlugin.SetShowable();
 		}
 
 		[HarmonyPatch("Start")]
@@ -990,30 +1045,31 @@ namespace EditorManagement.Patchers
 			if (EditorManager.inst.GUI.activeSelf == true && EditorManager.inst.isEditing == true)
 			{
 				//Create Local Variables
-				GameObject timeObj = GameObject.Find("TimelineBar/GameObject/Time Input");
-				InputField iFtimeObj = timeObj.GetComponent<InputField>();
 
-				if (!iFtimeObj.isFocused)
+				if (timeIF != null && !timeIF.isFocused)
 				{
-					iFtimeObj.text = AudioManager.inst.CurrentAudioSource.time.ToString();
+					timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 				}
 
-				//bool playingEd = AudioManager.inst.CurrentAudioSource.isPlaying;
+				if (GameObject.Find("Game Systems/EventManager") && GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager"))
+				{
+					var rt = GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager");
 
-				//if (playingEd == true)
-				//{
-				//	Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-				//	float value = EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>().value;
-				//	Rect rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
-				//	if (Input.GetMouseButton(0) && rect.Contains(point))
-				//	{
-				//		if (Mathf.Abs(EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom - EditorManager.inst.prevAudioTime) < 100f)
-				//		{
-				//			AudioManager.inst.CurrentAudioSource.Play();
-				//			EditorManager.inst.UpdatePlayButton();
-				//		}
-				//	}
-				//}
+					var f = (float)rt.GetType().GetField("pitchOffset", BindingFlags.Public | BindingFlags.Instance).GetValue(rt);
+
+					if (pitchIF != null && !pitchIF.isFocused)
+					{
+						pitchIF.text = f.ToString();
+					}
+				}
+				else
+                {
+					if (pitchIF != null && !pitchIF.isFocused)
+					{
+						pitchIF.text = AudioManager.inst.pitch.ToString();
+					}
+				}
+
 				if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading") && GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").activeSelf == true)
 				{
 					Image image = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").GetComponent<Image>();
@@ -1500,7 +1556,7 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.HideDialog("Parent Selector");
 			});
 
-			if (RTEditor.objectModifiersPlugin != null)
+			if (ObjectModifiersEditor.inst != null && ObjectModifiersEditor.objectModifiersPlugin != null)
 			{
 				if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "camera".Contains(__instance.parentSearch.ToLower()))
                 {
@@ -1511,9 +1567,26 @@ namespace EditorManagement.Patchers
 					cam.transform.GetChild(0).GetComponent<Text>().text = "Camera";
 					cam.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						ObjEditor.inst.SetParent("CAMERA_PARENT");
+						ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "CAMERA_PARENT";
+						ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
 						EditorManager.inst.HideDialog("Parent Selector");
-						ObjEditor.inst.OpenDialog();
+						RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+					});
+				}
+
+				if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "player".Contains(__instance.parentSearch.ToLower()))
+                {
+					var cam = Instantiate(__instance.folderButtonPrefab);
+					cam.name = "Player";
+					cam.transform.SetParent(transform);
+					cam.transform.localScale = Vector3.one;
+					cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
+					cam.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "PLAYER_PARENT";
+						ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+						EditorManager.inst.HideDialog("Parent Selector");
+						RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
 					});
 				}
 			}
@@ -1549,7 +1622,7 @@ namespace EditorManagement.Patchers
 						}
 						if (flag)
 						{
-							GameObject gameObject2 = Instantiate<GameObject>(__instance.folderButtonPrefab);
+							GameObject gameObject2 = Instantiate(__instance.folderButtonPrefab);
 							gameObject2.name = obj.name + " " + num.ToString("0000");
 							gameObject2.transform.SetParent(transform);
 							gameObject2.transform.localScale = Vector3.one;
@@ -1557,8 +1630,10 @@ namespace EditorManagement.Patchers
 							gameObject2.GetComponent<Button>().onClick.AddListener(delegate ()
 							{
 								string id = obj.id;
-								ObjEditor.inst.SetParent(id);
+								ObjEditor.inst.currentObjectSelection.GetObjectData().parent = id;
+								ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
 								EditorManager.inst.HideDialog("Parent Selector");
+								RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
 								Debug.Log("ID: " + id);
 							});
 						}
