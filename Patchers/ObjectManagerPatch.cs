@@ -207,7 +207,7 @@ namespace EditorManagement.Patchers
 						{
 							var rtobj = gameObject.GetComponent<RTObject>();
 							rtobj.id = beatmapObject.id;
-							if (mat != null)
+							if (mat != null && mat.HasProperty("_Color"))
 							{
 								rtobj.tipEnabled = true;
 								if (rtobj.tooltipLanguages.Count == 0)
@@ -287,100 +287,14 @@ namespace EditorManagement.Patchers
 							}
 						}
 
-						if (ConfigEntries.ShowObjectsOnLayer.Value && mat != null)
+						if (ConfigEntries.ShowObjectsOnLayer.Value && mat != null && mat.HasProperty("_Color"))
 						{
 							Color objColor = mat.color;
-							mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
+							mat.color = LSColors.fadeColor(objColor, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
 						}
 					}
 				}
 			}
-		}
-
-		[HarmonyPatch("Update")]
-		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> UpdateTranspilerFixed(IEnumerable<CodeInstruction> instructions)
-		{
-			var match = new CodeMatcher(instructions);
-
-			match = match.Start();
-			match = match.Advance(522);
-			match = match.ThrowIfNotMatch("Is not 0.0005f 1", new CodeMatch(OpCodes.Ldc_R4));
-			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 21));
-			match = match.Insert(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "DummyNumber")));
-
-			match = match.Start();
-			match = match.Advance(1138); //1137
-			match = match.ThrowIfNotMatch("Is not 0.0005f 2", new CodeMatch(OpCodes.Ldc_R4));
-			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-			match = match.Start();
-			match = match.Advance(1186); //1184
-			match = match.ThrowIfNotMatch("Is not 0.0005f 3", new CodeMatch(OpCodes.Ldc_R4));
-			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-			match = match.Start();
-			match = match.Advance(1800); //1797
-			match = match.ThrowIfNotMatch("Is not 0.1f 1", new CodeMatch(OpCodes.Ldc_R4));
-			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-			match = match.Start();
-			match = match.Advance(1832); //1828
-			match = match.ThrowIfNotMatch("Is not 0.1f 2", new CodeMatch(OpCodes.Ldc_R4));
-			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
-			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-			match = match.Start();
-			match = match.Advance(1834);
-			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1834", new CodeMatch(OpCodes.Ldsfld));
-			match = match.RemoveInstructions(10);
-
-			match = match.Start();
-			match = match.Advance(1802);
-			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1802", new CodeMatch(OpCodes.Ldsfld));
-			match = match.RemoveInstructions(10);
-
-			match = match.Start();
-			match = match.Advance(1188);
-			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1188", new CodeMatch(OpCodes.Ldsfld));
-			match = match.RemoveInstructions(10);
-
-			match = match.Start();
-			match = match.Advance(1140);
-			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1140", new CodeMatch(OpCodes.Ldsfld));
-			match = match.RemoveInstructions(10);
-
-			match = match.Start();
-			match = match.Advance(524);
-			match = match.ThrowIfNotMatch("Is not DataManager.inst at 524", new CodeMatch(OpCodes.Ldsfld));
-			match = match.RemoveInstructions(10);
-
-			//??? + 5 - 50
-			//match = match.Start();
-			//match = match.Advance(2290);
-			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
-			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 100));
-			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-			//1623 + 3 - 30 = 1596
-			//match = match.Start();
-			//match = match.Advance(1596);
-			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
-			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 72));
-			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-			//843 + 1 - 10
-			//match = match.Start();
-			//match = match.Advance(834);
-			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
-			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 37));
-			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
-
-
-			return match.InstructionEnumeration();
 		}
 
 		[HarmonyPatch("updateObjects", new Type[] { })]
