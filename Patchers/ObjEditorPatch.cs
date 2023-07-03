@@ -386,22 +386,39 @@ namespace EditorManagement.Patchers
 				col.transform.SetParent(colorParent);
 			}
 
-			//Opacity
 			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
 			{
-				var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
-				opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
-				opacityLabel.transform.localScale = Vector3.one;
-				opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Opacity";
-				opacityLabel.name = "label";
+				//Opacity
+				{
+					var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
+					opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+					opacityLabel.transform.localScale = Vector3.one;
+					opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Opacity";
+					opacityLabel.name = "label";
 
-				var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
-				opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
-				opacity.transform.localScale = Vector3.one;
-				opacity.name = "opacity";
+					var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
+					opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+					opacity.transform.localScale = Vector3.one;
+					opacity.name = "opacity";
 
-				Triggers.AddTooltip(opacity.gameObject, "Set the opacity percentage here.", "If the color is already slightly transparent or the object is a helper, it will multiply the current opacity value with the helper and/or color alpha values.");
-            }
+					Triggers.AddTooltip(opacity.gameObject, "Set the opacity percentage here.", "If the color is already slightly transparent or the object is a helper, it will multiply the current opacity value with the helper and/or color alpha values.");
+				}
+
+				//Position Z
+				{
+					var positionBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position");
+
+					var posZ = Instantiate(positionBase.transform.Find("x"));
+					posZ.transform.SetParent(positionBase.transform);
+					posZ.transform.localScale = Vector3.one;
+					posZ.name = "z";
+
+					positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 64f);
+					DestroyImmediate(positionBase.GetComponent<HorizontalLayoutGroup>());
+					var grp = positionBase.AddComponent<GridLayoutGroup>();
+					grp.cellSize = new Vector2(183f, 40f);
+				}
+			}
 
 			Transform testObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth");
 			Slider testComponent = testObject.gameObject.GetComponent<Slider>();
@@ -417,17 +434,6 @@ namespace EditorManagement.Patchers
 			testComponent.minValue = ConfigEntries.SliderRMin.Value;
 			testComponent.direction = ConfigEntries.SliderDDirection.Value;
 
-			var positionBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position");
-
-			var posZ = Instantiate(positionBase.transform.Find("x"));
-			posZ.transform.SetParent(positionBase.transform);
-			posZ.transform.localScale = Vector3.one;
-			posZ.name = "z";
-
-			positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 64f);
-			DestroyImmediate(positionBase.GetComponent<HorizontalLayoutGroup>());
-			var grp = positionBase.AddComponent<GridLayoutGroup>();
-			grp.cellSize = new Vector2(183f, 40f);
 		}
 
 		public static void SetNewDepth(string _depth)
@@ -973,7 +979,7 @@ namespace EditorManagement.Patchers
 			return false;
         }
 
-		[HarmonyPatch(typeof(ObjEditor), "UpdateTimelineScrollRect")]
+		[HarmonyPatch("UpdateTimelineScrollRect")]
 		[HarmonyPostfix]
 		private static void DoTheThing(float __0, float __1)
         {
@@ -985,6 +991,16 @@ namespace EditorManagement.Patchers
             {
 				Debug.LogError("Scrollbar missing!");
             }
+        }
+
+		[HarmonyPatch("DeleteObject")]
+		[HarmonyPrefix]
+		private static bool DeleteObjectPrefix(ObjEditor __instance, ObjEditor.ObjectSelection __0, bool __1, ref string __result)
+        {
+			RTEditor.DeleteObject(__0, __1);
+
+			__result = __instance.name;
+			return false;
         }
     }
 }
