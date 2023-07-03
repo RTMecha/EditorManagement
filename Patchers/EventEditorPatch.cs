@@ -2205,6 +2205,11 @@ namespace EditorManagement.Patchers
 								eventManager.updateEvents();
 							});
 
+							if (!dialogTmp.Find("size").GetComponent<EventTrigger>())
+							{
+								dialogTmp.Find("size").gameObject.AddComponent<EventTrigger>();
+							}
+
 							var grainSizeET = dialogTmp.Find("size").GetComponent<EventTrigger>();
 							grainSizeET.triggers.Clear();
 							grainSizeET.triggers.Add(Triggers.ScrollDelta(grainSize, 0.1f, 10f, false, new List<float> { 0f, 9999f }));
