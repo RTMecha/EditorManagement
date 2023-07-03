@@ -88,10 +88,10 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("LoadThemes")]
 		[HarmonyPrefix]
-		private static bool LoadThemesPrefix()
+		private static bool LoadThemesPrefix(ThemeEditor __instance, ref IEnumerator __result)
         {
 			Debug.LogFormat("{0}Started Loading themes...", EditorPlugin.className);
-			RTEditor.inst.StartCoroutine(RTEditor.LoadThemes());
+			__result = RTEditor.LoadThemes();
 			return false;
         }
 	}
