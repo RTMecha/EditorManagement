@@ -15,7 +15,7 @@ namespace EditorManagement.Functions
 {
     public class InputFieldHelper : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
-        private InputField inputField;
+        public InputField inputField;
         private bool hovered;
         public Type type = Type.Num;
         public enum Type
@@ -27,7 +27,8 @@ namespace EditorManagement.Functions
 
         private void Start()
         {
-            inputField = GetComponent<InputField>();
+            if (GetComponent<InputField>())
+                inputField = GetComponent<InputField>();
         }
 
         public void OnPointerEnter(PointerEventData pointerEventData)
@@ -44,7 +45,7 @@ namespace EditorManagement.Functions
 
         private void Update()
         {
-            if (hovered)
+            if (hovered && inputField != null)
             {
                 if (Input.GetMouseButtonDown(2))
                 {
