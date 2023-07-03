@@ -20,7 +20,7 @@ using EditorManagement.Functions.Tools;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.5")]
+    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.8.8")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
@@ -34,8 +34,6 @@ namespace EditorManagement
 		//TODO
 		//Clean up some code, optimize and bug fix.
 		//Fix the prefab search bug. (Kinda fixed?)
-		//Create editor stuff for Object Modifiers.
-		//Add rotate mode to ObjectManager.Update().
 		//Mirror Object mode (Any object you create can be duplicated to be an exact mirror).
 		//Add a config option for updating objects whilst modifying a value in the Object Editor window.
 		//Add a backup autosave for cases where the game crashes or quits and the player hasn't saved. (Probably make a comparison reference to compare the two files to check if they equal)
@@ -44,14 +42,8 @@ namespace EditorManagement
 		//Add randomization accessibility to Prefab Object dialog since prefab objects can use randomization.
 
 		//Update list
-		//Mod is integrated with my own modified version of Catalyst that works in the editor. Just need to talk to Reimnop about it before doing anything further with it.
-		//Fixed a problem with pasting an object causing the multi object editor window to open.
-		//Added a config option for render depth, so you can now have the Legacy render depth "cap" or the unlimited render depth.
-		//Fixed a bug where creating a new level wouldn't load the level properly.
-		//Fixed a bug with Search Object window resetting the Multi Object Editor value not allowing objects to be synced.
-		//Fixed a bug with prefabs not being copy-able (this also now means that prefab objects can be included in prefabs potentially)
-		//Cleaned up the old Prefab Object dialog code.
-		//Changed the way the image shape type is used in editor. (Instead of manually inputing the local path of an image, you can now click on the magnifying glass icon and be taken to a open file search window where you will be able to find any image anywhere)
+		//Fully implemented ObjectModifiers UI stuff (does not include Homing Objects, that will come in a later update of that mod)
+		//Hopefully fixed an issue where object's colors got overriden so I wasn't able to make the object highlight when hovered over.
 
 		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
 
@@ -819,9 +811,15 @@ namespace EditorManagement
 					showDamagable = ConfigEntries.ShowDamagable.Value;
 					ObjectManager.inst.updateObjects();
 				}
+				//Other mods
+				{
+					SetShowable();
+				}
 
-                //Cursor Color
-                {
+				//There's a problem somewhere below but Idk where
+
+				//Cursor Color
+				{
 					if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle"))
 					{
 						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle").GetComponent<Image>().color = ConfigEntries.MTSliderCol.Value;
@@ -1007,6 +1005,28 @@ namespace EditorManagement
 			}
 		}
 
+		public static void SetShowable()
+		{
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+			{
+				var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
+
+				objectModifiersPlugin.GetMethod("SetShowable").Invoke(objectModifiersPlugin, new object[] { ConfigEntries.ShowObjectsOnLayer.Value, ConfigEntries.ShowObjectsAlpha.Value, ConfigEntries.HighlightObjects.Value, ConfigEntries.HighlightColor.Value, ConfigEntries.HighlightDoubleColor.Value });
+			}
+
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin"))
+			{
+				var eventsCorePlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin").GetType();
+
+				eventsCorePlugin.GetMethod("SetShowable").Invoke(eventsCorePlugin, new object[] { ConfigEntries.ShowObjectsOnLayer.Value, ConfigEntries.ShowObjectsAlpha.Value, ConfigEntries.HighlightObjects.Value, ConfigEntries.HighlightColor.Value, ConfigEntries.HighlightDoubleColor.Value });
+			}
+		}
+
+		public static void ParseBeatmap(string _json)
+        {
+			DataManager.inst.StartCoroutine(RTFile.ParseBeatmap(_json));
+        }
+
 		public static IEnumerator SetupPlayerEditor()
         {
 			yield return new WaitForSeconds(2f);
@@ -1098,7 +1118,7 @@ namespace EditorManagement
 							mat = gameObject.GetComponent<Renderer>().material;
 						}
 
-                        if (EditorManager.inst.isEditing == true && mat != null && gameObject.GetComponent<RTObject>() && gameObject.GetComponent<RTObject>().selected == true && ConfigEntries.HighlightObjects.Value == true)
+                        if (EditorManager.inst.isEditing == true && mat != null && mat.HasProperty("_Color") && gameObject.GetComponent<RTObject>() && gameObject.GetComponent<RTObject>().selected == true && ConfigEntries.HighlightObjects.Value == true)
                         {
                             if (Input.GetKey(KeyCode.LeftShift))
                             {
@@ -2904,6 +2924,25 @@ namespace EditorManagement
 				ConfigEntries.MarkerColN8.Value,
 			};
 		}
+
+		[HarmonyPatch(typeof(AudioManager), "SetPitch")]
+		[HarmonyPrefix]
+		private static bool SetPitchPrefix(AudioManager __instance, float __0)
+		{
+			Debug.LogFormat("{0}Set Pitch : {1}", className, __0);
+			if (GameObject.Find("Game Systems/EventManager") && GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager"))
+			{
+				var rt = GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager");
+
+				rt.GetType().GetField("pitchOffset", BindingFlags.Public | BindingFlags.Instance).SetValue(rt, __0);
+			}
+			else
+			{
+				AudioManager.inst.pitch = __0;
+			}
+
+			return false;
+        }
 
 		[HarmonyPatch(typeof(Debug), "Log", new Type[] { typeof(object) })]
 		[HarmonyPostfix]
