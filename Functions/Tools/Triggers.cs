@@ -946,77 +946,80 @@ namespace EditorManagement.Functions.Tools
                     }
 					for (int i = 0; i < limt; i++)
 					{
-						var pos = _p.GetChild(9).GetChild(i);
-						EventTrigger posET;
-						if (_t != 2)
+						if (_p.GetChild(9).childCount > i && _p.GetChild(9).GetChild(i) != null)
 						{
-							posET = pos.GetComponent<EventTrigger>();
-						}
-						else
-						{
-							posET = _p.GetChild(9).GetComponent<EventTrigger>();
-						}
-						var posIF = pos.GetComponent<InputField>();
-						var posLeft = pos.Find("<").GetComponent<Button>();
-						var posRight = pos.Find(">").GetComponent<Button>();
-
-						if (!pos.GetComponent<InputFieldHelper>())
-                        {
-							pos.gameObject.AddComponent<InputFieldHelper>();
-						}
-
-						posET.triggers.Clear();
-						if (_t != 2)
-						{
-							Debug.LogFormat("{0}Refresh Object GUI: Keyframe " + _t + " [" + (i + 1) + "/" + limt + "]", EditorPlugin.className);
-							posET.triggers.Add(ScrollDelta(posIF, 0.1f, 10f, true));
-							posET.triggers.Add(ScrollDeltaVector2(_p.GetChild(9).GetChild(0).GetComponent<InputField>(), _p.GetChild(9).GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
-						}
-						else
-						{
-							Debug.LogFormat("{0}Refresh Object GUI: Keyframe " + _t + " [" + (i + 1) + "/" + limt + "]", EditorPlugin.className);
-							posET.triggers.Add(ScrollDelta(posIF, 15f, 3f, false));
-						}
-
-						int current = i;
-
-						posIF.onValueChanged.RemoveAllListeners();
-						posIF.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[i].ToString();
-						posIF.onValueChanged.AddListener(delegate (string _value)
-						{
-							_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[current] = float.Parse(_value);
-							ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
-						});
-
-						posLeft.onClick.RemoveAllListeners();
-						posLeft.onClick.AddListener(delegate ()
-						{
-							float x = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[current];
+							var pos = _p.GetChild(9).GetChild(i);
+							EventTrigger posET;
 							if (_t != 2)
 							{
-								x -= 1f;
-							}
-							else
-                            {
-								x -= 15f;
-                            }
-							posIF.text = x.ToString();
-						});
-
-						posRight.onClick.RemoveAllListeners();
-						posRight.onClick.AddListener(delegate ()
-						{
-							float x = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[current];
-							if (_t != 2)
-							{
-								x += 1f;
+								posET = pos.GetComponent<EventTrigger>();
 							}
 							else
 							{
-								x += 15f;
+								posET = _p.GetChild(9).GetComponent<EventTrigger>();
 							}
-							posIF.text = x.ToString();
-						});
+							var posIF = pos.GetComponent<InputField>();
+							var posLeft = pos.Find("<").GetComponent<Button>();
+							var posRight = pos.Find(">").GetComponent<Button>();
+
+							if (!pos.GetComponent<InputFieldHelper>())
+							{
+								pos.gameObject.AddComponent<InputFieldHelper>();
+							}
+
+							posET.triggers.Clear();
+							if (_t != 2)
+							{
+								Debug.LogFormat("{0}Refresh Object GUI: Keyframe " + _t + " [" + (i + 1) + "/" + limt + "]", EditorPlugin.className);
+								posET.triggers.Add(ScrollDelta(posIF, 0.1f, 10f, true));
+								posET.triggers.Add(ScrollDeltaVector2(_p.GetChild(9).GetChild(0).GetComponent<InputField>(), _p.GetChild(9).GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
+							}
+							else
+							{
+								Debug.LogFormat("{0}Refresh Object GUI: Keyframe " + _t + " [" + (i + 1) + "/" + limt + "]", EditorPlugin.className);
+								posET.triggers.Add(ScrollDelta(posIF, 15f, 3f, false));
+							}
+
+							int current = i;
+
+							posIF.onValueChanged.RemoveAllListeners();
+							posIF.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[i].ToString();
+							posIF.onValueChanged.AddListener(delegate (string _value)
+							{
+								_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[current] = float.Parse(_value);
+								ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+							});
+
+							posLeft.onClick.RemoveAllListeners();
+							posLeft.onClick.AddListener(delegate ()
+							{
+								float x = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[current];
+								if (_t != 2)
+								{
+									x -= 1f;
+								}
+								else
+								{
+									x -= 15f;
+								}
+								posIF.text = x.ToString();
+							});
+
+							posRight.onClick.RemoveAllListeners();
+							posRight.onClick.AddListener(delegate ()
+							{
+								float x = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[current];
+								if (_t != 2)
+								{
+									x += 1f;
+								}
+								else
+								{
+									x += 15f;
+								}
+								posIF.text = x.ToString();
+							});
+						}
 					}
 
 					Debug.LogFormat("{0}Refresh Object GUI: Keyframe Random Base", EditorPlugin.className);
