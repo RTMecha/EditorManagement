@@ -20,9 +20,9 @@ namespace EditorManagement.Functions
 {
 	public class RTFile : MonoBehaviour
 	{
-        #region Parse
+		#region Parse
 
-        public static IEnumerator ParseBeatmap(string _json, bool editor = false)
+		public static IEnumerator ParseBeatmap(string _json, bool editor = false)
 		{
 			JSONNode jsonnode = JSON.Parse(_json);
 			if (!editor)
@@ -223,7 +223,7 @@ namespace EditorManagement.Functions
 						});
 					}
 					else
-                    {
+					{
 						eventKeyframe.SetEventValues(new float[]
 						{
 							jsonnode["x"].AsFloat,
@@ -325,13 +325,13 @@ namespace EditorManagement.Functions
 						});
 					}
 					else
-                    {
+					{
 						eventKeyframe4.SetEventValues(new float[]
 						{
 							jsonnode4["x"].AsFloat,
 							0f
 						});
-                    }
+					}
 					eventKeyframe4.random = jsonnode4["r"].AsInt;
 					DataManager.LSAnimation curveType4 = DataManager.inst.AnimationList[0];
 					if (jsonnode4["ct"] != null)
@@ -471,6 +471,12 @@ namespace EditorManagement.Functions
 				DataManager.inst.gameData.beatmapObjects = new List<DataManager.GameData.BeatmapObject>();
 			}
 			DataManager.inst.gameData.beatmapObjects.Clear();
+
+			if (ObjectModifiersEditor.inst != null)
+			{
+				ObjectModifiersEditor.ClearModifierObjects();
+			}
+
 			int num = 0;
 			for (int i = 0; i < _objects.Count; i++)
 			{
@@ -499,6 +505,11 @@ namespace EditorManagement.Functions
 						ObjEditor.ObjectSelection objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, i);
 						ObjEditor.inst.RenderTimelineObject(objectSelection);
 					}
+
+					if (ObjectModifiersEditor.inst != null)
+					{
+						ObjectModifiersEditor.AddModifierObject(beatmapObject);
+					}
 				}
 				else
 				{
@@ -507,6 +518,8 @@ namespace EditorManagement.Functions
 				delay += 0.0001f;
 			}
 			ObjectManager.inst.updateObjects();
+
+			DataManager.inst.StartCoroutine(ParseModifiers(_objects));
 			yield break;
 		}
 
@@ -801,7 +814,7 @@ namespace EditorManagement.Functions
 				JSONNode jsonnode7 = _events["bloom"][num];
 				eventKeyframe7.eventTime = jsonnode7["t"].AsFloat;
 				if (!string.IsNullOrEmpty(jsonnode7["y"]))
-                {
+				{
 					eventKeyframe7.SetEventValues(new float[]
 					{
 						jsonnode7["x"].AsFloat,
@@ -1175,7 +1188,7 @@ namespace EditorManagement.Functions
 					DataManager.inst.gameData.eventObjects.allEvents[15].Add(eventKeyframe11);
 					delay += 0.0001f;
 				}
-				
+
 				for (int num4 = 0; num4 < _events["dbv"].Count; num4++)
 				{
 					if (ConfigEntries.IfEditorSlowLoads.Value)
@@ -1541,18 +1554,185 @@ namespace EditorManagement.Functions
 						allEvents[type][0].eventValues[6] = 18f;
 					}
 					if (type == 24)
-                    {
+					{
 						allEvents[type][0].eventValues[3] = 0.5f;
-                    }
+					}
 					if (type == 25)
-                    {
+					{
 						allEvents[type][0].eventValues[0] = 1f;
 						allEvents[type][0].eventValues[1] = 1f;
-                    }
+					}
 				}
 			}
 			EventManager.inst.updateEvents();
 			yield break;
+		}
+
+		public static IEnumerator ParseModifiers(JSONNode _objects)
+		{
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+			{
+				var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
+				for (int i = 0; i < _objects.Count; i++)
+				{
+					string id = _objects[i]["id"];
+
+					if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == id) != null)
+					{
+						var dictionaryList = new List<Dictionary<string, object>>();
+
+						for (int j = 0; j < _objects[i]["modifiers"].Count; j++)
+						{
+							var dictionary = new Dictionary<string, object>();
+
+							dictionary.Add("type", int.Parse(_objects[i]["modifiers"][j]["type"]));
+
+							if (!string.IsNullOrEmpty(_objects[i]["modifiers"][j]["not"]))
+							{
+								dictionary.Add("not", bool.Parse(_objects[i]["modifiers"][j]["not"]));
+							}
+							else
+							{
+								dictionary.Add("not", false);
+							}
+
+							var list = new List<string>();
+
+							for (int k = 0; k < _objects[i]["modifiers"][j]["commands"].Count; k++)
+							{
+								list.Add(_objects[i]["modifiers"][j]["commands"][k]);
+							}
+
+							dictionary.Add("commands", list);
+
+							dictionary.Add("constant", bool.Parse(_objects[i]["modifiers"][j]["const"]));
+
+							if (!string.IsNullOrEmpty(_objects[i]["modifiers"][j]["value"]))
+								dictionary.Add("value", (string)_objects[i]["modifiers"][j]["value"]);
+							else
+								dictionary.Add("value", "0");
+
+							dictionaryList.Add(dictionary);
+						}
+
+						var e = new Dictionary<string, object>();
+						e.Add("modifiers", dictionaryList);
+
+						objectModifiersPlugin.GetMethod("AddModifierObjectWithValues").Invoke(objectModifiersPlugin, new object[] { DataManager.inst.gameData.beatmapObjects.Find(x => x.id == id), e });
+					}
+				}
+			}
+
+			yield break;
+		}
+
+		public static IEnumerator ParseModifiers(JSONNode _objects, List<DataManager.GameData.BeatmapObject> _bms)
+		{
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+			{
+				var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
+				for (int i = 0; i < _objects.Count; i++)
+				{
+					string id = _objects[i]["id"];
+
+					if (_bms.Find(x => x.id == id) != null)
+					{
+						var dictionaryList = new List<Dictionary<string, object>>();
+
+						for (int j = 0; j < _objects[i]["modifiers"].Count; j++)
+						{
+							var dictionary = new Dictionary<string, object>();
+
+							dictionary.Add("type", int.Parse(_objects[i]["modifiers"][j]["type"]));
+
+							if (!string.IsNullOrEmpty(_objects[i]["modifiers"][j]["not"]))
+							{
+								dictionary.Add("not", bool.Parse(_objects[i]["modifiers"][j]["not"]));
+							}
+							else
+							{
+								dictionary.Add("not", false);
+							}
+
+							var list = new List<string>();
+
+							for (int k = 0; k < _objects[i]["modifiers"][j]["commands"].Count; k++)
+							{
+								list.Add(_objects[i]["modifiers"][j]["commands"][k]);
+							}
+
+							dictionary.Add("commands", list);
+
+							dictionary.Add("constant", bool.Parse(_objects[i]["modifiers"][j]["const"]));
+
+							if (!string.IsNullOrEmpty(_objects[i]["modifiers"][j]["value"]))
+								dictionary.Add("value", (string)_objects[i]["modifiers"][j]["value"]);
+							else
+								dictionary.Add("value", "a");
+
+							dictionaryList.Add(dictionary);
+						}
+
+						var e = new Dictionary<string, object>();
+						e.Add("modifiers", dictionaryList);
+
+						objectModifiersPlugin.GetMethod("AddModifierObjectWithValues").Invoke(objectModifiersPlugin, new object[] { _bms.Find(x => x.id == id), e });
+					}
+				}
+			}
+
+			yield break;
+		}
+
+		public static Dictionary<string, object> ParseModifier(JSONNode _object)
+		{
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+			{
+				var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
+				string id = _object["id"];
+
+				var dictionaryList = new List<Dictionary<string, object>>();
+
+				for (int j = 0; j < _object["modifiers"].Count; j++)
+				{
+					var dictionary = new Dictionary<string, object>();
+
+					dictionary.Add("type", int.Parse(_object["modifiers"][j]["type"]));
+
+					if (!string.IsNullOrEmpty(_object["modifiers"][j]["not"]))
+					{
+						dictionary.Add("not", bool.Parse(_object["modifiers"][j]["not"]));
+					}
+					else
+					{
+						dictionary.Add("not", false);
+					}
+
+					var list = new List<string>();
+
+					for (int k = 0; k < _object["modifiers"][j]["commands"].Count; k++)
+					{
+						list.Add(_object["modifiers"][j]["commands"][k]);
+					}
+
+					dictionary.Add("commands", list);
+
+					dictionary.Add("constant", bool.Parse(_object["modifiers"][j]["const"]));
+
+					if (!string.IsNullOrEmpty(_object["modifiers"][j]["value"]))
+						dictionary.Add("value", (string)_object["modifiers"][j]["value"]);
+					else
+						dictionary.Add("value", "0");
+
+					dictionaryList.Add(dictionary);
+				}
+
+				var e = new Dictionary<string, object>();
+				e.Add("modifiers", dictionaryList);
+
+				return e;
+			}
+			return null;
 		}
 
         #endregion
