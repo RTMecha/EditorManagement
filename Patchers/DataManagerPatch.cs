@@ -12,6 +12,7 @@ using UnityEngine;
 
 using LSFunctions;
 using SimpleJSON;
+using CielaSpike;
 
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
@@ -181,154 +182,202 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         public static bool GeneratePrefabJSON(ref JSONNode __result, DataManager.GameData.Prefab __0)
         {
-            JSONNode jsonnode = JSON.Parse("{}");
-            jsonnode["name"] = __0.Name;
-            jsonnode["type"] = __0.Type.ToString();
+            JSONNode jn = JSON.Parse("{}");
+            jn["name"] = __0.Name;
+            jn["type"] = __0.Type.ToString();
             bool flag = __0.ID != null;
             bool flag2 = flag;
             if (flag2)
             {
-                jsonnode["id"] = __0.ID.ToString();
+                jn["id"] = __0.ID.ToString();
             }
             bool flag3 = __0.MainObjectID != null;
             bool flag4 = flag3;
             if (flag4)
             {
-                jsonnode["main_obj_id"] = __0.MainObjectID.ToString();
+                jn["main_obj_id"] = __0.MainObjectID.ToString();
             }
-            jsonnode["offset"] = __0.Offset.ToString();
+            jn["offset"] = __0.Offset.ToString();
             for (int i = 0; i < __0.objects.Count; i++)
             {
                 if (__0.objects[i] != null)
                 {
-                    jsonnode["objects"][i]["id"] = __0.objects[i].id;
+                    jn["objects"][i]["id"] = __0.objects[i].id;
                     if (__0.objects[i].GetParentType().ToString() != "101")
                     {
-                        jsonnode["objects"][i]["pt"] = __0.objects[i].GetParentType().ToString();
+                        jn["objects"][i]["pt"] = __0.objects[i].GetParentType().ToString();
                     }
                     if (__0.objects[i].getParentOffsets().FindIndex((float x) => x != 0f) != -1)
                     {
                         int num = 0;
                         foreach (float num2 in __0.objects[i].getParentOffsets())
                         {
-                            jsonnode["objects"][i]["po"][num] = num2.ToString();
+                            jn["objects"][i]["po"][num] = num2.ToString();
                             num++;
                         }
                     }
-                    jsonnode["objects"][i]["p"] = __0.objects[i].parent.ToString();
-                    jsonnode["objects"][i]["d"] = __0.objects[i].Depth.ToString();
-                    jsonnode["objects"][i]["ot"] = (int)__0.objects[i].objectType;
-                    jsonnode["objects"][i]["st"] = __0.objects[i].StartTime.ToString();
+                    jn["objects"][i]["p"] = __0.objects[i].parent.ToString();
+                    jn["objects"][i]["d"] = __0.objects[i].Depth.ToString();
+                    jn["objects"][i]["ot"] = (int)__0.objects[i].objectType;
+                    jn["objects"][i]["st"] = __0.objects[i].StartTime.ToString();
                     if (!string.IsNullOrEmpty(__0.objects[i].text))
                     {
-                        jsonnode["objects"][i]["text"] = __0.objects[i].text;
+                        jn["objects"][i]["text"] = __0.objects[i].text;
                     }
-                    jsonnode["objects"][i]["name"] = __0.objects[i].name;
+                    jn["objects"][i]["name"] = __0.objects[i].name;
                     if (__0.objects[i].shape != 0)
                     {
-                        jsonnode["objects"][i]["shape"] = __0.objects[i].shape.ToString();
+                        jn["objects"][i]["shape"] = __0.objects[i].shape.ToString();
                     }
-                    jsonnode["objects"][i]["akt"] = (int)__0.objects[i].autoKillType;
-                    jsonnode["objects"][i]["ako"] = __0.objects[i].autoKillOffset;
+                    jn["objects"][i]["akt"] = (int)__0.objects[i].autoKillType;
+                    jn["objects"][i]["ako"] = __0.objects[i].autoKillOffset;
                     if (__0.objects[i].shapeOption != 0)
                     {
-                        jsonnode["objects"][i]["so"] = __0.objects[i].shapeOption.ToString();
+                        jn["objects"][i]["so"] = __0.objects[i].shapeOption.ToString();
                     }
                     if (__0.objects[i].editorData.locked)
                     {
-                        jsonnode["objects"][i]["ed"]["locked"] = __0.objects[i].editorData.locked.ToString();
+                        jn["objects"][i]["ed"]["locked"] = __0.objects[i].editorData.locked.ToString();
                     }
                     if (__0.objects[i].editorData.collapse)
                     {
-                        jsonnode["objects"][i]["ed"]["shrink"] = __0.objects[i].editorData.collapse.ToString();
+                        jn["objects"][i]["ed"]["shrink"] = __0.objects[i].editorData.collapse.ToString();
                     }
-                    jsonnode["objects"][i]["o"]["x"] = __0.objects[i].origin.x.ToString();
-                    jsonnode["objects"][i]["o"]["y"] = __0.objects[i].origin.y.ToString();
-                    jsonnode["objects"][i]["ed"]["bin"] = __0.objects[i].editorData.Bin.ToString();
-                    jsonnode["objects"][i]["ed"]["layer"] = __0.objects[i].editorData.Layer.ToString();
+                    jn["objects"][i]["o"]["x"] = __0.objects[i].origin.x.ToString();
+                    jn["objects"][i]["o"]["y"] = __0.objects[i].origin.y.ToString();
+                    jn["objects"][i]["ed"]["bin"] = __0.objects[i].editorData.Bin.ToString();
+                    jn["objects"][i]["ed"]["layer"] = __0.objects[i].editorData.Layer.ToString();
                     for (int j = 0; j < __0.objects[i].events[0].Count; j++)
                     {
-                        jsonnode["objects"][i]["events"]["pos"][j]["t"] = __0.objects[i].events[0][j].eventTime.ToString();
-                        jsonnode["objects"][i]["events"]["pos"][j]["x"] = __0.objects[i].events[0][j].eventValues[0].ToString();
-                        jsonnode["objects"][i]["events"]["pos"][j]["y"] = __0.objects[i].events[0][j].eventValues[1].ToString();
+                        jn["objects"][i]["events"]["pos"][j]["t"] = __0.objects[i].events[0][j].eventTime.ToString();
+                        jn["objects"][i]["events"]["pos"][j]["x"] = __0.objects[i].events[0][j].eventValues[0].ToString();
+                        jn["objects"][i]["events"]["pos"][j]["y"] = __0.objects[i].events[0][j].eventValues[1].ToString();
 
                         if (__0.objects[i].events[0][j].eventValues.Length > 2)
                         {
-                            jsonnode["objects"][i]["events"]["pos"][j]["z"] = __0.objects[i].events[0][j].eventValues[2].ToString();
+                            jn["objects"][i]["events"]["pos"][j]["z"] = __0.objects[i].events[0][j].eventValues[2].ToString();
                         }
 
                         bool flag19 = __0.objects[i].events[0][j].curveType.Name != DataManager.inst.AnimationList[0].Name;
                         bool flag20 = flag19;
                         if (flag20)
                         {
-                            jsonnode["objects"][i]["events"]["pos"][j]["ct"] = __0.objects[i].events[0][j].curveType.Name.ToString();
+                            jn["objects"][i]["events"]["pos"][j]["ct"] = __0.objects[i].events[0][j].curveType.Name.ToString();
                         }
                         bool flag21 = __0.objects[i].events[0][j].random != 0;
                         bool flag22 = flag21;
                         if (flag22)
                         {
-                            jsonnode["objects"][i]["events"]["pos"][j]["r"] = __0.objects[i].events[0][j].random.ToString();
-                            jsonnode["objects"][i]["events"]["pos"][j]["rx"] = __0.objects[i].events[0][j].eventRandomValues[0].ToString();
-                            jsonnode["objects"][i]["events"]["pos"][j]["ry"] = __0.objects[i].events[0][j].eventRandomValues[1].ToString();
-                            jsonnode["objects"][i]["events"]["pos"][j]["rz"] = __0.objects[i].events[0][j].eventRandomValues[2].ToString();
+                            jn["objects"][i]["events"]["pos"][j]["r"] = __0.objects[i].events[0][j].random.ToString();
+                            jn["objects"][i]["events"]["pos"][j]["rx"] = __0.objects[i].events[0][j].eventRandomValues[0].ToString();
+                            jn["objects"][i]["events"]["pos"][j]["ry"] = __0.objects[i].events[0][j].eventRandomValues[1].ToString();
+                            jn["objects"][i]["events"]["pos"][j]["rz"] = __0.objects[i].events[0][j].eventRandomValues[2].ToString();
                         }
                     }
                     for (int k = 0; k < __0.objects[i].events[1].Count; k++)
                     {
-                        jsonnode["objects"][i]["events"]["sca"][k]["t"] = __0.objects[i].events[1][k].eventTime.ToString();
-                        jsonnode["objects"][i]["events"]["sca"][k]["x"] = __0.objects[i].events[1][k].eventValues[0].ToString();
-                        jsonnode["objects"][i]["events"]["sca"][k]["y"] = __0.objects[i].events[1][k].eventValues[1].ToString();
+                        jn["objects"][i]["events"]["sca"][k]["t"] = __0.objects[i].events[1][k].eventTime.ToString();
+                        jn["objects"][i]["events"]["sca"][k]["x"] = __0.objects[i].events[1][k].eventValues[0].ToString();
+                        jn["objects"][i]["events"]["sca"][k]["y"] = __0.objects[i].events[1][k].eventValues[1].ToString();
                         bool flag23 = __0.objects[i].events[1][k].curveType.Name != DataManager.inst.AnimationList[0].Name;
                         bool flag24 = flag23;
                         if (flag24)
                         {
-                            jsonnode["objects"][i]["events"]["sca"][k]["ct"] = __0.objects[i].events[1][k].curveType.Name.ToString();
+                            jn["objects"][i]["events"]["sca"][k]["ct"] = __0.objects[i].events[1][k].curveType.Name.ToString();
                         }
                         bool flag25 = __0.objects[i].events[1][k].random != 0;
                         bool flag26 = flag25;
                         if (flag26)
                         {
-                            jsonnode["objects"][i]["events"]["sca"][k]["r"] = __0.objects[i].events[1][k].random.ToString();
-                            jsonnode["objects"][i]["events"]["sca"][k]["rx"] = __0.objects[i].events[1][k].eventRandomValues[0].ToString();
-                            jsonnode["objects"][i]["events"]["sca"][k]["ry"] = __0.objects[i].events[1][k].eventRandomValues[1].ToString();
-                            jsonnode["objects"][i]["events"]["sca"][k]["rz"] = __0.objects[i].events[1][k].eventRandomValues[2].ToString();
+                            jn["objects"][i]["events"]["sca"][k]["r"] = __0.objects[i].events[1][k].random.ToString();
+                            jn["objects"][i]["events"]["sca"][k]["rx"] = __0.objects[i].events[1][k].eventRandomValues[0].ToString();
+                            jn["objects"][i]["events"]["sca"][k]["ry"] = __0.objects[i].events[1][k].eventRandomValues[1].ToString();
+                            jn["objects"][i]["events"]["sca"][k]["rz"] = __0.objects[i].events[1][k].eventRandomValues[2].ToString();
                         }
                     }
                     for (int l = 0; l < __0.objects[i].events[2].Count; l++)
                     {
-                        jsonnode["objects"][i]["events"]["rot"][l]["t"] = __0.objects[i].events[2][l].eventTime.ToString();
-                        jsonnode["objects"][i]["events"]["rot"][l]["x"] = __0.objects[i].events[2][l].eventValues[0].ToString();
+                        jn["objects"][i]["events"]["rot"][l]["t"] = __0.objects[i].events[2][l].eventTime.ToString();
+                        jn["objects"][i]["events"]["rot"][l]["x"] = __0.objects[i].events[2][l].eventValues[0].ToString();
                         bool flag27 = __0.objects[i].events[2][l].curveType.Name != DataManager.inst.AnimationList[0].Name;
                         bool flag28 = flag27;
                         if (flag28)
                         {
-                            jsonnode["objects"][i]["events"]["rot"][l]["ct"] = __0.objects[i].events[2][l].curveType.Name.ToString();
+                            jn["objects"][i]["events"]["rot"][l]["ct"] = __0.objects[i].events[2][l].curveType.Name.ToString();
                         }
                         bool flag29 = __0.objects[i].events[2][l].random != 0;
                         bool flag30 = flag29;
                         if (flag30)
                         {
-                            jsonnode["objects"][i]["events"]["rot"][l]["r"] = __0.objects[i].events[2][l].random.ToString();
-                            jsonnode["objects"][i]["events"]["rot"][l]["rx"] = __0.objects[i].events[2][l].eventRandomValues[0].ToString();
-                            jsonnode["objects"][i]["events"]["rot"][l]["rz"] = __0.objects[i].events[2][l].eventRandomValues[2].ToString();
+                            jn["objects"][i]["events"]["rot"][l]["r"] = __0.objects[i].events[2][l].random.ToString();
+                            jn["objects"][i]["events"]["rot"][l]["rx"] = __0.objects[i].events[2][l].eventRandomValues[0].ToString();
+                            jn["objects"][i]["events"]["rot"][l]["rz"] = __0.objects[i].events[2][l].eventRandomValues[2].ToString();
                         }
                     }
                     for (int m = 0; m < __0.objects[i].events[3].Count; m++)
                     {
-                        jsonnode["objects"][i]["events"]["col"][m]["t"] = __0.objects[i].events[3][m].eventTime.ToString();
-                        jsonnode["objects"][i]["events"]["col"][m]["x"] = __0.objects[i].events[3][m].eventValues[0].ToString();
+                        jn["objects"][i]["events"]["col"][m]["t"] = __0.objects[i].events[3][m].eventTime.ToString();
+                        jn["objects"][i]["events"]["col"][m]["x"] = __0.objects[i].events[3][m].eventValues[0].ToString();
+
+                        if (__0.objects[i].events[3][m].eventValues.Length > 1)
+                        {
+                            jn["objects"][i]["events"]["col"][m]["y"] = __0.objects[i].events[3][m].eventValues[1].ToString();
+                        }
+
                         bool flag31 = __0.objects[i].events[3][m].curveType.Name != DataManager.inst.AnimationList[0].Name;
                         bool flag32 = flag31;
                         if (flag32)
                         {
-                            jsonnode["objects"][i]["events"]["col"][m]["ct"] = __0.objects[i].events[3][m].curveType.Name.ToString();
+                            jn["objects"][i]["events"]["col"][m]["ct"] = __0.objects[i].events[3][m].curveType.Name.ToString();
                         }
                         bool flag33 = __0.objects[i].events[3][m].random != 0;
                         bool flag34 = flag33;
                         if (flag34)
                         {
-                            jsonnode["objects"][i]["events"]["col"][m]["r"] = __0.objects[i].events[3][m].random.ToString();
-                            jsonnode["objects"][i]["events"]["col"][m]["rx"] = __0.objects[i].events[3][m].eventRandomValues[0].ToString();
+                            jn["objects"][i]["events"]["col"][m]["r"] = __0.objects[i].events[3][m].random.ToString();
+                            jn["objects"][i]["events"]["col"][m]["rx"] = __0.objects[i].events[3][m].eventRandomValues[0].ToString();
+                        }
+                    }
+
+                    if (ObjectModifiersEditor.inst != null)
+                    {
+                        var modifierObject = ObjectModifiersEditor.GetModifierObject(__0.objects[i]);
+
+                        if (modifierObject != null)
+                        {
+                            for (int j = 0; j < ObjectModifiersEditor.GetModifierCount(__0.objects[i]); j++)
+                            {
+                                var modifier = ObjectModifiersEditor.GetModifierIndex(__0.objects[i], j);
+
+                                var type = (int)modifier.GetType().GetField("type", BindingFlags.Public | BindingFlags.Instance).GetValue(modifier);
+
+                                List<string> commands = (List<string>)modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).GetValue(modifier);
+
+                                var value = (string)modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).GetValue(modifier);
+
+                                var constant = ((bool)modifier.GetType().GetField("constant", BindingFlags.Public | BindingFlags.Instance).GetValue(modifier)).ToString();
+
+                                if (commands.Count > 0 && !string.IsNullOrEmpty(commands[0]))
+                                {
+                                    //jn["objects"][i]["modifiers"][j] = new JSONArray();
+
+                                    jn["objects"][i]["modifiers"][j]["type"] = type;
+                                    if (type == 0)
+                                    {
+                                        jn["objects"][i]["modifiers"][j]["not"] = ((bool)modifier.GetType().GetField("not", BindingFlags.Public | BindingFlags.Instance).GetValue(modifier)).ToString();
+                                    }
+
+                                    for (int k = 0; k < commands.Count; k++)
+                                    {
+                                        if (!string.IsNullOrEmpty(commands[k]))
+                                            jn["objects"][i]["modifiers"][j]["commands"][k] = commands[k];
+                                    }
+
+                                    jn["objects"][i]["modifiers"][j]["value"] = value;
+
+                                    jn["objects"][i]["modifiers"][j]["const"] = constant;
+                                }
+                            }
                         }
                     }
                 }
@@ -337,17 +386,17 @@ namespace EditorManagement.Patchers
             {
                 if (__0.prefabObjects[i] != null)
                 {
-                    jsonnode["prefab_objects"][i]["id"] = __0.prefabObjects[i].ID;
-                    jsonnode["prefab_objects"][i]["pid"] = __0.prefabObjects[i].prefabID;
-                    jsonnode["prefab_objects"][i]["st"] = __0.prefabObjects[i].StartTime.ToString();
+                    jn["prefab_objects"][i]["id"] = __0.prefabObjects[i].ID;
+                    jn["prefab_objects"][i]["pid"] = __0.prefabObjects[i].prefabID;
+                    jn["prefab_objects"][i]["st"] = __0.prefabObjects[i].StartTime.ToString();
 
                     if (__0.prefabObjects[i].editorData.locked)
                     {
-                        jsonnode["prefab_objects"][i]["ed"]["locked"] = __0.prefabObjects[i].editorData.locked.ToString();
+                        jn["prefab_objects"][i]["ed"]["locked"] = __0.prefabObjects[i].editorData.locked.ToString();
                     }
                     if (__0.prefabObjects[i].editorData.collapse)
                     {
-                        jsonnode["prefab_objects"][i]["ed"]["shrink"] = __0.prefabObjects[i].editorData.collapse.ToString();
+                        jn["prefab_objects"][i]["ed"]["shrink"] = __0.prefabObjects[i].editorData.collapse.ToString();
                     }
                     for (int j = 0; j < 3; j++)
                     {
@@ -373,16 +422,16 @@ namespace EditorManagement.Patchers
 
                         if (type != "")
                         {
-                            jsonnode["prefab_objects"][i]["e"][j][type]["x"] = __0.prefabObjects[i].events[j].eventValues[0].ToString();
+                            jn["prefab_objects"][i]["e"][j][type]["x"] = __0.prefabObjects[i].events[j].eventValues[0].ToString();
                             if (j != 2)
                             {
-                                jsonnode["prefab_objects"][i]["e"][j][type]["y"] = __0.prefabObjects[i].events[j].eventValues[1].ToString();
+                                jn["prefab_objects"][i]["e"][j][type]["y"] = __0.prefabObjects[i].events[j].eventValues[1].ToString();
                             }
                         }
                     }
                 }
             }
-            __result = jsonnode;
+            __result = jn;
             return false;
         }
     }
@@ -591,22 +640,22 @@ namespace EditorManagement.Patchers
                 DataManager.inst.CustomBeatmapThemes.Add(beatmapTheme);
                 if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(beatmapTheme.id)))
                 {
-                    if (EditorManager.inst != null)
-                    {
-                        EditorManager.inst.DisplayNotification("Unable to Load theme [" + beatmapTheme.id + "-" + beatmapTheme.name + "] Check logs for more info", 2f, EditorManager.NotificationType.Error);
-                    }
-
                     string str = "";
                     for (int i = 0; i < DataManager.inst.AllThemes.Count; i++)
                     {
                         if (DataManager.inst.AllThemes[i].id == beatmapTheme.id)
                         {
-                            str += DataManager.inst.AllThemes[i].id;
+                            str += DataManager.inst.AllThemes[i].name;
                             if (i != DataManager.inst.AllThemes.Count - 1)
                             {
                                 str += ", ";
                             }
                         }
+                    }
+
+                    if (EditorManager.inst != null)
+                    {
+                        EditorManager.inst.DisplayNotification("Unable to Load theme [" + beatmapTheme.id + "-" + beatmapTheme.name + "]\nDue to conflicting themes: " + str, 2f, EditorManager.NotificationType.Error);
                     }
 
                     Debug.LogErrorFormat("{0}Unable to load theme {1} due to the id ({2}) conflicting with these other themes: {3}.", EditorPlugin.className, beatmapTheme.name, beatmapTheme.id, str);
@@ -669,6 +718,22 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         private static bool ParseBeatmapPatch(string _json)
         {
+            if (EditorManager.inst == null)
+            {
+                if (GameObject.Find("BepInEx_Manager").GetComponentByName("ArcadePlugin"))
+                {
+                    var arcade = GameObject.Find("BepInEx_Manager").GetComponentByName("ArcadePlugin").GetType();
+
+                    arcade.GetMethod("ParseBeatmap").Invoke(arcade, new object[] { _json });
+                }
+                else
+                {
+                    Debug.LogErrorFormat("{0}Unable to Parse Beatmap because you're not in the editor.\nInstall ArcadiaCustoms if you want to Parse from the arcade.", EditorPlugin.className);
+                }
+
+                return false;
+            }
+
             Debug.LogFormat("{0} Parse Beatmap", EditorPlugin.className);
             DataManager.inst.StartCoroutine(RTFile.ParseBeatmap(_json));
             return false;
