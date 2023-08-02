@@ -14,6 +14,8 @@ using UnityEngine.UI;
 using SimpleJSON;
 using TMPro;
 
+using RTFunctions.Functions;
+
 using Obj = UnityEngine.Object;
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 
@@ -24,6 +26,16 @@ namespace EditorManagement.Functions.Tools
 		public static GameObject textMeshPro;
 		public static Material fontMaterial;
 		public static Font inconsolataFont = Font.GetDefault();
+
+		public static void DeleteChildren(this Transform _tf, bool instant = false)
+        {
+			LSFunctions.LSHelpers.DeleteChildren(_tf, instant);
+		}
+
+		public static bool CompareAny(this object variable, params object[] comparisons)
+		{
+			return comparisons.Any(x => x == variable);
+		}
 
 		public static List<GameObject> Range(Color _min, Color _max)
         {
@@ -53,238 +65,11 @@ namespace EditorManagement.Functions.Tools
 			return a;
 		}
 
-		public static GameObject GetGameObject(this BeatmapObject _beatmapObject)
-		{
-			if (EditorPlugin.catalyst != null && EditorPlugin.catInstalled == 3)
-			{
-				var iLevelObject = _beatmapObject.GetILevelObject();
-				if (iLevelObject != null)
-				{
-					var visualObject = iLevelObject.GetType().GetField("visualObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(iLevelObject);
-
-					if (visualObject != null)
-					{
-						return (GameObject)visualObject.GetType().GetField("gameObject", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(visualObject);
-					}
-				}
-				return null;
-			}
-
-			var chain = _beatmapObject.GetTransformChain();
-
-			if (chain.Count < 1)
-			{
-				return null;
-			}
-
-			return chain[chain.Count - 1].gameObject;
-		}
-
-		public static List<BeatmapObject> GetParentChain(this BeatmapObject _beatmapObject)
-		{
-			List<BeatmapObject> beatmapObjects = new List<BeatmapObject>();
-
-			if (_beatmapObject != null)
-			{
-				var orig = _beatmapObject;
-				beatmapObjects.Add(orig);
-
-				while (!string.IsNullOrEmpty(orig.parent))
-				{
-					if (orig == null || DataManager.inst.gameData.beatmapObjects.Find(x => x.id == orig.parent) == null)
-						break;
-					var select = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == orig.parent);
-					beatmapObjects.Add(select);
-					orig = select;
-				}
-			}
-
-			return beatmapObjects;
-		}
-
-		public static List<Transform> GetTransformChain(this BeatmapObject _beatmapObject)
-		{
-			var list = new List<Transform>();
-			if (EditorPlugin.catalyst != null && EditorPlugin.catInstalled == 3)
-			{
-				var tf1 = _beatmapObject.GetGameObject().transform;
-
-				while (tf1.parent != null && tf1.parent.gameObject.name != "GameObjects")
-				{
-					tf1 = tf1.parent;
-				}
-
-				list.Add(tf1);
-
-				while (tf1.childCount != 0 && tf1.GetChild(0) != null)
-				{
-					tf1 = tf1.GetChild(0);
-					list.Add(tf1);
-				}
-
-				return list;
-			}
-
-			if (ObjectManager.inst == null || ObjectManager.inst.beatmapGameObjects.Count < 1 || !ObjectManager.inst.beatmapGameObjects.ContainsKey(_beatmapObject.id))
-			{
-				return list;
-			}
-
-			var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
-			var tf = gameObjectRef.obj.transform;
-			list.Add(tf);
-
-			while (tf.childCount != 0 && tf.GetChild(0) != null)
-			{
-				tf = tf.GetChild(0);
-				list.Add(tf);
-			}
-
-			return list;
-		}
-
-		public static List<List<BeatmapObject>> GetChildChain(this BeatmapObject _beatmapObject)
-		{
-			var lists = new List<List<BeatmapObject>>();
-			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-			{
-				if (beatmapObject.GetParentChain() != null && beatmapObject.GetParentChain().Count > 0)
-				{
-					var parentChain = beatmapObject.GetParentChain();
-					foreach (var parent in parentChain)
-					{
-						if (parent.id == _beatmapObject.id)
-						{
-							lists.Add(parentChain);
-						}
-					}
-				}
-			}
-			return lists;
-		}
-
-		public static bool TimeWithinLifespan(this BeatmapObject _beatmapObject)
-		{
-			var time = AudioManager.inst.CurrentAudioSource.time;
-			if (time >= _beatmapObject.StartTime && (AudioManager.inst.CurrentAudioSource.time <= _beatmapObject.GetObjectLifeLength() + _beatmapObject.StartTime && _beatmapObject.autoKillType != BeatmapObject.AutoKillType.OldStyleNoAutokill && _beatmapObject.autoKillType != BeatmapObject.AutoKillType.SongTime || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.GetObjectLifeLength(0f, true) && _beatmapObject.autoKillType == BeatmapObject.AutoKillType.OldStyleNoAutokill || AudioManager.inst.CurrentAudioSource.time < _beatmapObject.autoKillOffset && _beatmapObject.autoKillType == BeatmapObject.AutoKillType.SongTime))
-			{
-				return true;
-			}
-			return false;
-		}
-
-		public static Color GetObjectColor(this BeatmapObject _beatmapObject, bool _ignoreTransparency)
-        {
-			if (_beatmapObject.objectType == BeatmapObject.ObjectType.Empty)
-            {
-				return Color.white;
-            }
-
-			if (ObjectManager.inst.beatmapGameObjects.ContainsKey(_beatmapObject.id) && ObjectManager.inst.beatmapGameObjects[_beatmapObject.id].obj != null && ObjectManager.inst.beatmapGameObjects[_beatmapObject.id].rend != null)
-            {
-				var gameObjectRef = ObjectManager.inst.beatmapGameObjects[_beatmapObject.id];
-
-				Color color = Color.white;
-				if (AudioManager.inst.CurrentAudioSource.time < _beatmapObject.StartTime)
-				{
-					color = GameManager.inst.LiveTheme.objectColors[(int)_beatmapObject.events[3][0].eventValues[0]];
-				}
-				else if (AudioManager.inst.CurrentAudioSource.time > _beatmapObject.StartTime + _beatmapObject.GetObjectLifeLength() && _beatmapObject.autoKillType != BeatmapObject.AutoKillType.OldStyleNoAutokill)
-				{
-					color = GameManager.inst.LiveTheme.objectColors[(int)_beatmapObject.events[3][_beatmapObject.events[3].Count - 1].eventValues[0]];
-				}
-				else
-				{
-					color = gameObjectRef.mat.color;
-				}
-				if (_ignoreTransparency)
-				{
-					color.a = 1f;
-				}
-				return color;
-			}
-
-			return Color.white;
-		}
-
 		public static Color GetPrefabTypeColor(this BeatmapObject _beatmapObject)
         {
 			var prefab = DataManager.inst.gameData.prefabs.Find((DataManager.GameData.Prefab x) => x.ID == _beatmapObject.prefabID);
 			return DataManager.inst.PrefabTypes[prefab.Type].Color;
         }
-
-		public static int ClosestEventKeyframe(int _type)
-		{
-			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
-			float time = AudioManager.inst.CurrentAudioSource.time;
-			if (allEvents[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= time) != null)
-			{
-				var nextKFE = allEvents[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= time);
-				var nextKF = allEvents[_type].IndexOf(nextKFE);
-				var prevKF = nextKF - 1;
-
-				if (nextKF == 0)
-				{
-					prevKF = 0;
-				}
-				else
-				{
-					var v1 = new Vector2(allEvents[_type][prevKF].eventTime, 0f);
-					var v2 = new Vector2(allEvents[_type][nextKF].eventTime, 0f);
-
-					float dis = Vector2.Distance(v1, v2) / 2f;
-
-					bool prevClose = time > dis + allEvents[_type][prevKF].eventTime;
-					bool nextClose = time < allEvents[_type][nextKF].eventTime - dis;
-
-					if (!prevClose)
-					{
-						return prevKF;
-					}
-					if (!nextClose)
-					{
-						return nextKF;
-					}
-				}
-			}
-			return 0;
-		}
-
-		public static int ClosestKeyframe(this BeatmapObject beatmapObject, int _type)
-		{
-			if (beatmapObject.events[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime) != null)
-			{
-				var nextKFE = beatmapObject.events[_type].Find((DataManager.GameData.EventKeyframe x) => x.eventTime >= AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime);
-				var nextKF = beatmapObject.events[_type].IndexOf(nextKFE);
-				var prevKF = nextKF - 1;
-
-				if (nextKF == 0)
-				{
-					prevKF = 0;
-				}
-				else
-				{
-					var v1 = new Vector2(beatmapObject.events[_type][prevKF].eventTime, 0f);
-					var v2 = new Vector2(beatmapObject.events[_type][nextKF].eventTime, 0f);
-
-					float dis = Vector2.Distance(v1, v2);
-					float time = AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime;
-
-					bool prevClose = time > dis + beatmapObject.events[_type][prevKF].eventTime / 2f;
-					bool nextClose = time < beatmapObject.events[_type][nextKF].eventTime - dis / 2f;
-
-					if (!prevClose)
-					{
-						return prevKF;
-					}
-					if (!nextClose)
-					{
-						return nextKF;
-					}
-				}
-			}
-			return 0;
-		}
 
 		public static T AddComponent<T>(this Transform _transform) where T : Component
 		{
@@ -365,26 +150,13 @@ namespace EditorManagement.Functions.Tools
 			}
 			float num = Mathf.Min(a, b);
 			float num2 = 0f;
-			foreach (DataManager.GameData.BeatmapObject beatmapObject in _prefab.objects)
+			foreach (BeatmapObject beatmapObject in _prefab.objects)
 			{
 				float num3 = beatmapObject.StartTime + beatmapObject.GetObjectLifeLength(0f, false, false);
 				num3 -= num;
 				if (num2 < num3)
 				{
 					num2 = num3;
-				}
-			}
-			using (List<DataManager.GameData.PrefabObject>.Enumerator enumerator2 = _prefab.prefabObjects.GetEnumerator())
-			{
-				while (enumerator2.MoveNext())
-				{
-					DataManager.GameData.PrefabObject obj = enumerator2.Current;
-					float num4 = obj.StartTime + DataManager.inst.gameData.prefabs.Find((DataManager.GameData.Prefab x) => x.ID == obj.prefabID).GetLength();
-					num4 -= num;
-					if (num2 < num4)
-					{
-						num2 = num4;
-					}
 				}
 			}
 			return num2;
@@ -403,29 +175,7 @@ namespace EditorManagement.Functions.Tools
 
 			return 0f;
 		}
-
-		public static object GetILevelObject(this BeatmapObject _beatmapObject)
-		{
-			var catalyst = GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase");
-
-			var instance = catalyst.GetType().GetField("Instance").GetValue(catalyst);
-
-			var getILevelObject = instance.GetType().GetMethod("GetLevelObject");
-
-			var obj = getILevelObject.Invoke(instance, new object[] { _beatmapObject });
-
-			return obj;
-		}
-
-		public static bool StartCoroutine(IEnumerator _coroutine)
-		{
-			while (_coroutine.MoveNext())
-			{
-				return true;
-			}
-			return false;
-		}
-
+		
 		public static string BoolToYN(this bool _bool)
 		{
 			if (_bool)
@@ -831,7 +581,7 @@ namespace EditorManagement.Functions.Tools
 		{
 			if (RTFile.FileExists(_filePath))
 			{
-				EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(RTFile.GetApplicationDirectory() + _filePath, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+				EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(RTFile.ApplicationDirectory + _filePath, new EditorManager.SpriteLimits(), delegate (Sprite cover)
 				{
 					_image.sprite = cover;
 				}, delegate (string errorFile)

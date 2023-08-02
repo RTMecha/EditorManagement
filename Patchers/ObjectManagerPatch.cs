@@ -13,8 +13,13 @@ using UnityEngine.UI;
 using LSFunctions;
 using DG.Tweening;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
+
+using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 
 namespace EditorManagement.Patchers
 {
@@ -22,7 +27,6 @@ namespace EditorManagement.Patchers
     public class ObjectManagerPatch : MonoBehaviour
     {
 		public static Transform uiStuff;
-		public static DraggableObject tracker;
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPrefix]
@@ -50,13 +54,12 @@ namespace EditorManagement.Patchers
 			{
 				Destroy(objectTracker.GetComponent<RTObject>());
 			}
-			objectTracker.GetComponent<PolygonCollider2D>().enabled = ConfigEntries.ShowSelector.Value;
-			objectTracker.GetComponent<MeshRenderer>().enabled = ConfigEntries.ShowSelector.Value;
+
 			objectTracker.GetComponent<MeshRenderer>().material.color = new Color(1f, 1f, 1f, 1f);
-			tracker = objectTracker.AddComponent<DraggableObject>();
+			EditorPlugin.draggableObject = objectTracker.AddComponent<DraggableObject>();
 			objectTracker.transform.localScale = new Vector3(1.2f, 1.2f, 1.2f);
 
-			objectTracker.GetComponent<DraggableObject>().enabled = ConfigEntries.ShowSelector.Value;
+			EditorPlugin.draggableObject.SetActive(ConfigEntries.ShowSelector.Value);
 
 			EditorPlugin.tracker = objectTracker;
 
@@ -156,136 +159,74 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void UpdatePostfixPatch()
 		{
-			if (EditorManager.inst != null)
+			if (EditorManager.inst != null && DataManager.inst.gameData != null && DataManager.inst.gameData.beatmapObjects.Count > 0)
 			{
 				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 				{
-					if (beatmapObject != null && beatmapObject.GetGameObject() != null)
+					if (beatmapObject != null && Objects.beatmapObjects.ContainsKey(beatmapObject.id) && Objects.beatmapObjects[beatmapObject.id].gameObject != null)
 					{
-						var gameObject = beatmapObject.GetGameObject();
-						var transform = beatmapObject.GetGameObject().transform.GetParent();
+						var functionObject = Objects.beatmapObjects[beatmapObject.id];
+
+						var gameObject = functionObject.gameObject;
+
 						Material mat = null;
-						if (gameObject.GetComponent<Renderer>())
+						if (functionObject.renderer != null)
 						{
-							mat = gameObject.GetComponent<Renderer>().material;
+							mat = functionObject.renderer.material;
 						}
 
 						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value)
 						{
-							if (gameObject.GetComponent<SelectObjectInEditor>())
-							{
-								Destroy(gameObject.GetComponent<SelectObjectInEditor>());
-							}
-							if (gameObject.GetComponent<RTObject>())
-							{
-								Destroy(gameObject.GetComponent<RTObject>());
-							}
+							Destroy(functionObject.selectObject);
+							if (gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
+								Destroy(rt2);
 						}
 
-						if (ConfigEntries.ShowEmpties.Value)
+						if (!functionObject.otherComponents.ContainsKey("RTObject") && gameObject.TryGetComponent(out RTObject rt) && rt != null)
+                        {
+							functionObject.otherComponents.Add("RTObject", rt);
+                        }
+						if (functionObject.otherComponents.ContainsKey("RTObject") && (functionObject.otherComponents["RTObject"].ToString() == "null" || functionObject.otherComponents["RTObject"] == null))
+                        {
+							if (gameObject != null && gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
+								functionObject.otherComponents["RTObject"] = rt2;
+							else
+								functionObject.otherComponents.Remove("RTObject");
+						}
+
+						if (functionObject.otherComponents.ContainsKey("RTObject") && functionObject.otherComponents["RTObject"] != null && functionObject.otherComponents["RTObject"].ToString() != "null")
 						{
-							if (!gameObject.GetComponent<MeshFilter>() && !gameObject.GetComponent<MeshRenderer>())
+							if (gameObject != null && gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
 							{
-								MeshFilter mesh = gameObject.AddComponent<MeshFilter>();
-								gameObject.AddComponent<MeshRenderer>();
-
-								mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
-
-								gameObject.transform.localPosition = new Vector3(gameObject.transform.localPosition.x, gameObject.transform.localPosition.y, -9.6f);
+								rt2.SetObject(beatmapObject.id);
+								rt2.highlightColor = ConfigEntries.HighlightColor.Value;
+								rt2.highlightDoubleColor = ConfigEntries.HighlightDoubleColor.Value;
+								rt2.highlightObjects = ConfigEntries.HighlightObjects.Value;
+								rt2.layerOpacity = ConfigEntries.ShowObjectsAlpha.Value;
+								rt2.showObjectsOnlyOnLayer = ConfigEntries.ShowObjectsOnLayer.Value;
 							}
 						}
 
-						if (ConfigEntries.ShowDamagable.Value)
-						{
-							if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty && gameObject.GetComponent<Renderer>())
-							{
-								gameObject.GetComponent<Renderer>().enabled = false;
-							}
-						}
+						//if (ConfigEntries.ShowEmpties.Value)
+						//{
+						//	if (!gameObject.GetComponent<MeshFilter>() && !gameObject.GetComponent<MeshRenderer>())
+						//	{
+						//		MeshFilter mesh = gameObject.AddComponent<MeshFilter>();
+						//		gameObject.AddComponent<MeshRenderer>();
 
-						if (gameObject.GetComponent<RTObject>())
-						{
-							var rtobj = gameObject.GetComponent<RTObject>();
-							rtobj.id = beatmapObject.id;
-							if (mat != null && mat.HasProperty("_Color"))
-							{
-								rtobj.tipEnabled = true;
-								if (rtobj.tooltipLanguages.Count == 0)
-								{
-									rtobj.tooltipLanguages.Add(Triggers.NewTooltip(beatmapObject.name + " [ " + beatmapObject.StartTime + " ]", "", new List<string>()));
-								}
+						//		mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
 
-								string parent = "";
-								if (!string.IsNullOrEmpty(beatmapObject.parent))
-								{
-									parent = "<br>P: " + beatmapObject.parent + " (" + beatmapObject.GetParentType() + ")";
-								}
-								else
-								{
-									parent = "<br>P: No Parent" + " (" + beatmapObject.GetParentType() + ")";
-								}
+						//		gameObject.transform.localPosition = new Vector3(gameObject.transform.localPosition.x, gameObject.transform.localPosition.y, -9.6f);
+						//	}
+						//}
 
-								string text = "";
-								if (beatmapObject.shape != 4 || beatmapObject.shape != 6)
-								{
-									text = "<br>S: " + RTEditor.GetShape(beatmapObject.shape, beatmapObject.shapeOption).Replace("eight_circle", "eighth_circle").Replace("eigth_circle_outline", "eighth_circle_outline");
-
-									if (!string.IsNullOrEmpty(beatmapObject.text))
-                                    {
-										text += "<br>T: " + beatmapObject.text;
-                                    }
-								}
-								if (beatmapObject.shape == 4)
-								{
-									text = "<br>S: Text" +
-										"<br>T: " + beatmapObject.text;
-								}
-								if (beatmapObject.shape == 6)
-								{
-									text = "<br>S: Image" +
-										"<br>T: " + beatmapObject.text;
-								}
-
-								string ptr = "";
-								if (beatmapObject.fromPrefab && !string.IsNullOrEmpty(beatmapObject.prefabID) && !string.IsNullOrEmpty(beatmapObject.prefabInstanceID))
-								{
-									ptr = "<br>PID: " + beatmapObject.prefabID + " | " + beatmapObject.prefabInstanceID;
-								}
-								else
-								{
-									ptr = "<br>Not from prefab";
-								}
-
-								if (rtobj.tooltipLanguages[0].desc != "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]")
-								{
-									rtobj.tooltipLanguages[0].desc = "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]";
-								}
-								if (rtobj.tooltipLanguages[0].hint != "ID: {" + beatmapObject.id + "}" +
-									parent +
-									"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
-									text +
-									"<br>D: " + beatmapObject.Depth +
-									"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
-									"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + ", Z: " + transform.position.z + "}" +
-									"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
-									"<br>ROT: " + transform.eulerAngles.z +
-									"<br>COL: " + RTEditor.ColorToHex(mat.color) +
-									ptr)
-								{
-									rtobj.tooltipLanguages[0].hint = "ID: {" + beatmapObject.id + "}" +
-										parent +
-										"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
-										text +
-										"<br>D: " + beatmapObject.Depth +
-										"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
-										"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + ", Z: " + transform.position.z + "}" +
-										"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
-										"<br>ROT: " + transform.eulerAngles.z +
-										"<br>COL: " + RTEditor.ColorToHex(mat.color) +
-										ptr;
-								}
-							}
-						}
+						//if (ConfigEntries.ShowDamagable.Value)
+						//{
+						//	if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty && gameObject.GetComponent<Renderer>())
+						//	{
+						//		gameObject.GetComponent<Renderer>().enabled = false;
+						//	}
+						//}
 
 						if (ConfigEntries.ShowObjectsOnLayer.Value && mat != null && mat.HasProperty("_Color"))
 						{
@@ -297,13 +238,99 @@ namespace EditorManagement.Patchers
 			}
 		}
 
+		//[HarmonyPatch("Update")]
+		//[HarmonyTranspiler]
+		private static IEnumerable<CodeInstruction> UpdateTranspilerFixed(IEnumerable<CodeInstruction> instructions)
+		{
+			var match = new CodeMatcher(instructions);
+
+			match = match.Start();
+			match = match.Advance(522);
+			match = match.ThrowIfNotMatch("Is not 0.0005f 1", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 21));
+			match = match.Insert(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "DummyNumber")));
+
+			match = match.Start();
+			match = match.Advance(1138); //1137
+			match = match.ThrowIfNotMatch("Is not 0.0005f 2", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			match = match.Start();
+			match = match.Advance(1186); //1184
+			match = match.ThrowIfNotMatch("Is not 0.0005f 3", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 50));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ1", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			match = match.Start();
+			match = match.Advance(1800); //1797
+			match = match.ThrowIfNotMatch("Is not 0.1f 1", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			match = match.Start();
+			match = match.Advance(1832); //1828
+			match = match.ThrowIfNotMatch("Is not 0.1f 2", new CodeMatch(OpCodes.Ldc_R4));
+			match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc_S, 80));
+			match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesZ2", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			match = match.Start();
+			match = match.Advance(1834);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1834", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
+
+			match = match.Start();
+			match = match.Advance(1802);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1802", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
+
+			match = match.Start();
+			match = match.Advance(1188);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1188", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
+
+			match = match.Start();
+			match = match.Advance(1140);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 1140", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
+
+			match = match.Start();
+			match = match.Advance(524);
+			match = match.ThrowIfNotMatch("Is not DataManager.inst at 524", new CodeMatch(OpCodes.Ldsfld));
+			match = match.RemoveInstructions(10);
+
+			//??? + 5 - 50
+			//match = match.Start();
+			//match = match.Advance(2290);
+			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
+			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 100));
+			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			//1623 + 3 - 30 = 1596
+			//match = match.Start();
+			//match = match.Advance(1596);
+			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
+			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 72));
+			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+			//843 + 1 - 10
+			//match = match.Start();
+			//match = match.Advance(834);
+			//match = match.ThrowIfNotMatch("is not ldc.i4.3", new CodeMatch(OpCodes.Ldc_I4_3));
+			//match = match.SetInstructionAndAdvance(new CodeInstruction(OpCodes.Ldloc, 37));
+			//match = match.InsertAndAdvance(new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(Triggers), "EventValuesRMode", new[] { typeof(DataManager.GameData.EventKeyframe) })));
+
+
+			return match.InstructionEnumeration();
+		}
+
 		[HarmonyPatch("updateObjects", new Type[] { })]
 		[HarmonyPostfix]
 		private static void OMUO1()
 		{
-			if (tracker != null && !RTEditor.ienumRunning)
+			if (EditorPlugin.draggableObject != null && !RTEditor.ienumRunning && EditorPlugin.draggableObject.enabled)
 			{
-				tracker.GetPosition();
+				EditorPlugin.draggableObject.GetPosition();
 			}
 		}
 
@@ -311,9 +338,9 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void OMUO2()
 		{
-			if (tracker != null && !RTEditor.ienumRunning)
+			if (EditorPlugin.draggableObject != null && !RTEditor.ienumRunning && EditorPlugin.draggableObject.enabled)
 			{
-				tracker.GetPosition();
+				EditorPlugin.draggableObject.GetPosition();
 			}
 		}
 
@@ -321,9 +348,9 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void OMUO3()
 		{
-			if (tracker != null && !RTEditor.ienumRunning)
+			if (EditorPlugin.draggableObject != null && !RTEditor.ienumRunning && EditorPlugin.draggableObject.enabled)
 			{
-				tracker.GetPosition();
+				EditorPlugin.draggableObject.GetPosition();
 			}
 		}
 

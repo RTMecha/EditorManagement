@@ -14,8 +14,12 @@ using HarmonyLib;
 
 using LSFunctions;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
+
+using RTFunctions.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -26,22 +30,6 @@ namespace EditorManagement.Patchers
 		public static MethodInfo posCalcObj;
 		public static MethodInfo resizeKeyframeTimeline;
 		public static MethodInfo setKeyframeTime;
-		public static MethodInfo addKeyframeTime;
-
-		public static MethodInfo setKeyframePositionR;
-		public static MethodInfo addKeyframePositionR;
-		public static MethodInfo setKeyframePosition;
-		public static MethodInfo addKeyframePosition;
-
-		public static MethodInfo setKeyframeScaleR;
-		public static MethodInfo addKeyframeScaleR;
-		public static MethodInfo setKeyframeScale;
-		public static MethodInfo addKeyframeScale;
-
-		public static MethodInfo setKeyframeRotationR;
-		public static MethodInfo addKeyframeRotationR;
-		public static MethodInfo setKeyframeRotation;
-		public static MethodInfo addKeyframeRotation;
 
 		public static MethodInfo setKeyframeColor;
 
@@ -67,11 +55,6 @@ namespace EditorManagement.Patchers
 			setKeyframeTime.Invoke(ObjEditor.inst, new object[] { _new, _updateText });
         }
 
-		public static void AddKeyframeTime(float _add, bool _updateText)
-        {
-			addKeyframeTime.Invoke(ObjEditor.inst, new object[] { _add, _updateText });
-        }
-
 		public static void CreateKeyframes(int _type)
         {
 			createKeyframes.Invoke(ObjEditor.inst, new object[] { _type });
@@ -82,138 +65,6 @@ namespace EditorManagement.Patchers
 			setKeyframeColor.Invoke(ObjEditor.inst, new object[] { _index, _value });
         }
 
-		[HarmonyPatch("Awake")]
-		[HarmonyPostfix]
-		private static void CreateLayers()
-		{
-			//Methods
-			{
-				resizeKeyframeTimeline = AccessTools.Method(typeof(ObjEditor), "ResizeKeyframeTimeline");
-				timeCalcObj = AccessTools.Method(typeof(ObjEditor), "timeCalc");
-				posCalcObj = AccessTools.Method(typeof(ObjEditor), "posCalc");
-				setKeyframeTime = AccessTools.Method(typeof(ObjEditor), "SetKeyframeTime");
-				addKeyframeTime = AccessTools.Method(typeof(ObjEditor), "AddKeyframeTime");
-
-				setKeyframePositionR = AccessTools.Method(typeof(ObjEditor), "SetKeyframePositionR");
-				addKeyframePositionR = AccessTools.Method(typeof(ObjEditor), "AddKeyframePositionR");
-				setKeyframePosition = AccessTools.Method(typeof(ObjEditor), "SetKeyframePosition");
-				addKeyframePosition = AccessTools.Method(typeof(ObjEditor), "AddKeyframePosition");
-
-				setKeyframeScaleR = AccessTools.Method(typeof(ObjEditor), "SetKeyframeScaleR");
-				addKeyframeScaleR = AccessTools.Method(typeof(ObjEditor), "AddKeyframeScaleR");
-				setKeyframeScale = AccessTools.Method(typeof(ObjEditor), "SetKeyframeScale");
-				addKeyframeScale = AccessTools.Method(typeof(ObjEditor), "AddKeyframeScale");
-
-				setKeyframeRotationR = AccessTools.Method(typeof(ObjEditor), "SetKeyframeRotationR");
-				addKeyframeRotationR = AccessTools.Method(typeof(ObjEditor), "AddKeyframeRotationR");
-				setKeyframeRotation = AccessTools.Method(typeof(ObjEditor), "SetKeyframeRotation");
-				addKeyframeRotation = AccessTools.Method(typeof(ObjEditor), "AddKeyframeRotation");
-
-				setKeyframeColor = AccessTools.Method(typeof(ObjEditor), "SetKeyframeColor");
-
-				createKeyframes = AccessTools.Method(typeof(ObjEditor), "CreateKeyframes");
-			}
-
-			if (ObjEditor.inst.ObjectView.transform.Find("spacer"))
-			{
-				ObjEditor.inst.ObjectView.transform.GetChild(17).GetChild(1).gameObject.SetActive(true);
-			}
-			else
-			{
-				ObjEditor.inst.ObjectView.transform.GetChild(16).GetChild(1).gameObject.SetActive(true);
-			}
-			ObjEditor.inst.ObjectView.transform.Find("editor/bin").gameObject.SetActive(true);
-
-			ObjEditor.inst.ObjectView.transform.Find("editor/layer").gameObject.SetActive(false);
-
-			GameObject tbarLayers = Instantiate(ObjEditor.inst.ObjectView.transform.Find("time/time").gameObject);
-
-			tbarLayers.transform.SetParent(ObjEditor.inst.ObjectView.transform.Find("editor"));
-			tbarLayers.name = "layers";
-			tbarLayers.transform.SetSiblingIndex(0);
-			RectTransform tbarLayersRT = tbarLayers.GetComponent<RectTransform>();
-			InputField tbarLayersIF = tbarLayers.GetComponent<InputField>();
-			Image layerImage = tbarLayers.GetComponent<Image>();
-
-			tbarLayersIF.characterValidation = InputField.CharacterValidation.Integer;
-
-			HorizontalLayoutGroup edhlg = ObjEditor.inst.ObjectView.transform.Find("editor").GetComponent<HorizontalLayoutGroup>();
-			edhlg.childControlWidth = false;
-			edhlg.childForceExpandWidth = false;
-
-			tbarLayersRT.sizeDelta = new Vector2(100f, 32f);
-			ObjEditor.inst.ObjectView.transform.Find("editor/bin").GetComponent<RectTransform>().sizeDelta = new Vector2(237f, 32f);
-
-			GameObject close = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x");
-
-			GameObject parent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent");
-
-			parent.GetComponent<HorizontalLayoutGroup>().childControlWidth = false;
-			parent.GetComponent<HorizontalLayoutGroup>().spacing = 4f;
-
-			parent.transform.Find("text").GetComponent<RectTransform>().sizeDelta = new Vector2(241f, 32f);
-
-			GameObject resetParent = Instantiate(close);
-			resetParent.transform.SetParent(parent.transform);
-			resetParent.transform.localScale = Vector3.one;
-			resetParent.name = "clear parent";
-			resetParent.transform.SetSiblingIndex(1);
-
-			resetParent.GetComponent<Button>().onClick.RemoveAllListeners();
-			resetParent.GetComponent<Button>().onClick.AddListener(delegate ()
-			{
-				ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "";
-				var objEditor = ObjEditor.inst;
-				var refreshParentGUI = objEditor.GetType().GetMethod("RefreshParentGUI", BindingFlags.NonPublic | BindingFlags.Instance);
-
-				refreshParentGUI.Invoke(objEditor, new object[] { "" });
-				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
-			});
-
-			parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-			parent.transform.Find("more").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-
-			ObjEditor.inst.SelectedColor = ConfigEntries.ObjSelCol.Value;
-
-			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation").transform.GetChild(1).gameObject);
-			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color").transform.GetChild(1).gameObject);
-		}
-
-		[HarmonyPatch("Awake")]
-		[HarmonyPostfix]
-		private static void CreateNewOriginText()
-		{
-			//Main parent
-			Transform contentOriginTF = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content/origin").transform;
-			Text textFont = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name/Text").GetComponent<Text>();
-
-			contentOriginTF.Find("origin-x").gameObject.SetActive(false);
-			contentOriginTF.Find("origin-y").gameObject.SetActive(false);
-
-			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-			var xo = Instantiate(singleInput);
-			xo.transform.SetParent(contentOriginTF.transform);
-			xo.transform.localScale = Vector3.one;
-			xo.name = "x";
-			xo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
-
-			Destroy(xo.GetComponent<EventInfo>());
-
-			var xoif = xo.GetComponent<InputField>();
-			xoif.onValueChanged.RemoveAllListeners();
-
-			var yo = Instantiate(singleInput);
-			yo.transform.SetParent(contentOriginTF.transform);
-			yo.transform.localScale = Vector3.one;
-			yo.name = "y";
-			yo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
-
-			Destroy(xo.GetComponent<EventInfo>());
-
-			var yoif = yo.GetComponent<InputField>();
-			yoif.onValueChanged.RemoveAllListeners();
-		}
-
 		[HarmonyPatch("RefreshKeyframeGUI")]
 		[HarmonyPrefix]
 		private static bool RefreshKeyframeGUIPrefix()
@@ -222,79 +73,10 @@ namespace EditorManagement.Patchers
 			return false;
         }
 
-		[HarmonyPatch("OpenDialog")]
-		[HarmonyPostfix]
-		private static void OpenD()
-		{
-			if (ObjEditor.inst.currentObjectSelection.IsObject())
-			{
-				GameObject tbarLayers = ObjEditor.inst.ObjectView.transform.Find("editor/layers").gameObject;
-				InputField tbarLayersIF = tbarLayers.GetComponent<InputField>();
-				Image layerImage = tbarLayers.GetComponent<Image>();
-
-				if (ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer < 5)
-				{
-					float l = ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer + 1;
-					tbarLayersIF.text = l.ToString();
-				}
-				else
-				{
-					int l = ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer;
-					tbarLayersIF.text = l.ToString();
-				}
-
-				if (ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer < EditorManager.inst.layerColors.Count)
-				{
-					layerImage.color = EditorManager.inst.layerColors[ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer];
-				}
-				if (ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer > 6)
-				{
-					layerImage.color = Color.white;
-				}
-
-				tbarLayersIF.onValueChanged.RemoveAllListeners();
-				tbarLayersIF.onValueChanged.AddListener(delegate (string _value)
-				{
-					if (int.Parse(_value) > 0)
-					{
-						if (int.Parse(_value) < 6)
-						{
-							ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer = int.Parse(_value) - 1;
-							ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-						}
-						else
-						{
-							ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer = int.Parse(_value);
-							ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-						}
-					}
-					else
-					{
-						ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer = 0;
-						ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-						tbarLayersIF.text = "1";
-					}
-
-					if (ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer < EditorManager.inst.layerColors.Count)
-					{
-						layerImage.color = EditorManager.inst.layerColors[ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer];
-					}
-					if (ObjEditor.inst.currentObjectSelection.GetObjectData().editorData.Layer > 6)
-					{
-						layerImage.color = Color.white;
-					}
-				});
-			}
-		}
-
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
 		private static void CreateNewDepthText(ObjEditor __instance)
 		{
-			//Main parent
-			Transform contentDepthTF = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content/depth").transform;
-			Text textFont = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name/Text").GetComponent<Text>();
-
 			//Add spacer
 			Transform contentParent = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content").transform;
 			GameObject spacer = new GameObject("spacer");
@@ -308,85 +90,100 @@ namespace EditorManagement.Patchers
 			spHLG.spacing = 8;
 
 			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-			var xo = Instantiate(singleInput);
-			xo.transform.SetParent(spacer.transform);
-			xo.transform.localScale = Vector3.one;
-			xo.name = "depth";
-			xo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
 
-			Destroy(xo.GetComponent<EventInfo>());
-
-			var xoif = xo.GetComponent<InputField>();
-			xoif.onValueChanged.RemoveAllListeners();
-
-			GameObject sliderObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth").gameObject;
-			Slider sliderComponent = sliderObject.GetComponent<Slider>();
-			EventTrigger sliderEvent = sliderObject.AddComponent<EventTrigger>();
-
-			EventTrigger.Entry entryDepth1 = new EventTrigger.Entry();
-			entryDepth1.eventID = EventTriggerType.Scroll;
-			entryDepth1.callback.AddListener(delegate (BaseEventData eventData1)
+			//Depth
 			{
-				PointerEventData pointerEventData = (PointerEventData)eventData1;
-				if (pointerEventData.scrollDelta.y < 0f)
-				{
-					int depthLower = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth - ConfigEntries.DepthAmount.Value;
-					SetNewDepth(depthLower.ToString());
-					sliderComponent.value = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth;
-					return;
-				}
-				if (pointerEventData.scrollDelta.y > 0f)
-				{
-					int depthHigher = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth + ConfigEntries.DepthAmount.Value;
-					SetNewDepth(depthHigher.ToString());
-					sliderComponent.value = ObjEditor.inst.currentObjectSelection.GetObjectData().Depth;
-				}
-			});
-			sliderEvent.triggers.Clear();
-			sliderEvent.triggers.Add(entryDepth1);
+				var depth = Instantiate(singleInput);
+				depth.transform.SetParent(spacer.transform);
+				depth.transform.localScale = Vector3.one;
+				depth.name = "depth";
+				depth.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
 
-			Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/<"));
-			Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/>"));
+				Destroy(depth.GetComponent<EventInfo>());
 
-			sliderObject.GetComponent<RectTransform>().sizeDelta = new Vector2(352f, 32f);
-			ObjEditor.inst.ObjectView.transform.Find("depth").GetComponent<RectTransform>().sizeDelta = new Vector2(261f, 32f);
+				var depthif = depth.GetComponent<InputField>();
+				depthif.onValueChanged.RemoveAllListeners();
 
-			var timeParent = ObjEditor.inst.ObjectView.transform.Find("time");
+				var sliderObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth").gameObject;
 
+				Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/<").gameObject);
+				Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/>").gameObject);
 
-			var locker = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle"));
-			locker.transform.SetParent(timeParent.transform);
-			locker.transform.localScale = Vector3.one;
-			locker.transform.SetAsFirstSibling();
-			locker.name = "lock";
-
-			var timeLayout = timeParent.GetComponent<HorizontalLayoutGroup>();
-			timeLayout.childControlWidth = false;
-			timeLayout.childForceExpandWidth = false;
-
-			locker.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-
-			var time = timeParent.Find("time");
-			time.GetComponent<RectTransform>().sizeDelta = new Vector2(151, 32f);
-
-			locker.transform.Find("Background/Checkmark").GetComponent<Image>().sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
-
-			timeParent.Find("<<").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-			timeParent.Find("<").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
-			timeParent.Find("|").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
-			timeParent.Find(">").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
-			timeParent.Find(">>").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-
-			var colorParent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color").transform;
-			colorParent.GetComponent<GridLayoutGroup>().spacing = new Vector2(9.32f, 9.32f);
-			for (int i = 10; i < 19; i++)
-			{
-				GameObject col = Instantiate(colorParent.Find("9").gameObject);
-				col.name = i.ToString();
-				col.transform.SetParent(colorParent);
+				sliderObject.GetComponent<RectTransform>().sizeDelta = new Vector2(352f, 32f);
+				ObjEditor.inst.ObjectView.transform.Find("depth").GetComponent<RectTransform>().sizeDelta = new Vector2(261f, 32f);
 			}
 
-			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+			//Lock
+			{
+				var timeParent = ObjEditor.inst.ObjectView.transform.Find("time");
+
+				var locker = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle"));
+				locker.transform.SetParent(timeParent.transform);
+				locker.transform.localScale = Vector3.one;
+				locker.transform.SetAsFirstSibling();
+				locker.name = "lock";
+
+				var timeLayout = timeParent.GetComponent<HorizontalLayoutGroup>();
+				timeLayout.childControlWidth = false;
+				timeLayout.childForceExpandWidth = false;
+
+				locker.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+
+				var time = timeParent.Find("time");
+				time.GetComponent<RectTransform>().sizeDelta = new Vector2(151, 32f);
+
+				locker.transform.Find("Background/Checkmark").GetComponent<Image>().sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
+
+				timeParent.Find("<<").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				timeParent.Find("<").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
+				timeParent.Find("|").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
+				timeParent.Find(">").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
+				timeParent.Find(">>").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+			}
+
+			//Colors
+			{
+				var colorParent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color").transform;
+				colorParent.GetComponent<GridLayoutGroup>().spacing = new Vector2(9.32f, 9.32f);
+				for (int i = 10; i < 19; i++)
+				{
+					GameObject col = Instantiate(colorParent.Find("9").gameObject);
+					col.name = i.ToString();
+					col.transform.SetParent(colorParent);
+				}
+			}
+
+			// Origin X / Y
+			{
+				var contentOriginTF = ObjEditor.inst.ObjectView.transform.Find("origin").transform;
+
+				contentOriginTF.Find("origin-x").gameObject.SetActive(false);
+				contentOriginTF.Find("origin-y").gameObject.SetActive(false);
+
+				var xo = Instantiate(singleInput);
+				xo.transform.SetParent(contentOriginTF.transform);
+				xo.transform.localScale = Vector3.one;
+				xo.name = "x";
+				xo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
+
+				Destroy(xo.GetComponent<EventInfo>());
+
+				var xoif = xo.GetComponent<InputField>();
+				xoif.onValueChanged.RemoveAllListeners();
+
+				var yo = Instantiate(singleInput);
+				yo.transform.SetParent(contentOriginTF.transform);
+				yo.transform.localScale = Vector3.one;
+				yo.name = "y";
+				yo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
+
+				Destroy(yo.GetComponent<EventInfo>());
+
+				var yoif = yo.GetComponent<InputField>();
+				yoif.onValueChanged.RemoveAllListeners();
+			}
+
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin") || GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
 			{
 				//Opacity
 				{
@@ -420,27 +217,86 @@ namespace EditorManagement.Patchers
 				}
 			}
 
-			Transform testObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth");
-			Slider testComponent = testObject.gameObject.GetComponent<Slider>();
-			ColorBlock cb = testComponent.colors;
-			cb.normalColor = ConfigEntries.DepthNormalColor.Value;
-			cb.pressedColor = ConfigEntries.DepthPressedColor.Value;
-			cb.highlightedColor = ConfigEntries.DepthHighlightedColor.Value;
-			cb.disabledColor = ConfigEntries.DepthDisabledColor.Value;
-			cb.fadeDuration = ConfigEntries.DepthFadeDuration.Value;
-			testComponent.colors = cb;
-			testComponent.interactable = ConfigEntries.DepthInteractable.Value;
-			testComponent.maxValue = ConfigEntries.SliderRMax.Value;
-			testComponent.minValue = ConfigEntries.SliderRMin.Value;
-			testComponent.direction = ConfigEntries.SliderDDirection.Value;
+			//Methods
+			{
+				resizeKeyframeTimeline = AccessTools.Method(typeof(ObjEditor), "ResizeKeyframeTimeline");
+				timeCalcObj = AccessTools.Method(typeof(ObjEditor), "timeCalc");
+				posCalcObj = AccessTools.Method(typeof(ObjEditor), "posCalc");
+				setKeyframeTime = AccessTools.Method(typeof(ObjEditor), "SetKeyframeTime");
 
-		}
+				setKeyframeColor = AccessTools.Method(typeof(ObjEditor), "SetKeyframeColor");
 
-		public static void SetNewDepth(string _depth)
-		{
-			DataManager.inst.gameData.beatmapObjects[ObjEditor.inst.currentObjectSelection.Index].Depth = int.Parse(_depth);
-			ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
-			ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
+				createKeyframes = AccessTools.Method(typeof(ObjEditor), "CreateKeyframes");
+			}
+			
+			//Layers
+			{
+				if (ObjEditor.inst.ObjectView.transform.Find("spacer"))
+				{
+					ObjEditor.inst.ObjectView.transform.GetChild(17).GetChild(1).gameObject.SetActive(true);
+				}
+				else
+				{
+					ObjEditor.inst.ObjectView.transform.GetChild(16).GetChild(1).gameObject.SetActive(true);
+				}
+				//ObjEditor.inst.ObjectView.transform.Find("editor/bin").gameObject.SetActive(true);
+
+				Destroy(ObjEditor.inst.ObjectView.transform.Find("editor/layer").gameObject);
+
+				GameObject layers = Instantiate(ObjEditor.inst.ObjectView.transform.Find("time/time").gameObject);
+
+				layers.transform.SetParent(ObjEditor.inst.ObjectView.transform.Find("editor"));
+				layers.name = "layers";
+				layers.transform.SetSiblingIndex(0);
+				RectTransform layersRT = layers.GetComponent<RectTransform>();
+				InputField layersIF = layers.GetComponent<InputField>();
+				Image layersImage = layers.GetComponent<Image>();
+
+				layersIF.characterValidation = InputField.CharacterValidation.Integer;
+
+				HorizontalLayoutGroup edhlg = ObjEditor.inst.ObjectView.transform.Find("editor").GetComponent<HorizontalLayoutGroup>();
+				edhlg.childControlWidth = false;
+				edhlg.childForceExpandWidth = false;
+
+				layersRT.sizeDelta = new Vector2(100f, 32f);
+				ObjEditor.inst.ObjectView.transform.Find("editor/bin").GetComponent<RectTransform>().sizeDelta = new Vector2(237f, 32f);
+			}
+
+			//Clear Parent
+			{
+				GameObject close = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x");
+
+				GameObject parent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent");
+
+				parent.GetComponent<HorizontalLayoutGroup>().childControlWidth = false;
+				parent.GetComponent<HorizontalLayoutGroup>().spacing = 4f;
+
+				parent.transform.Find("text").GetComponent<RectTransform>().sizeDelta = new Vector2(241f, 32f);
+
+				GameObject resetParent = Instantiate(close);
+				resetParent.transform.SetParent(parent.transform);
+				resetParent.transform.localScale = Vector3.one;
+				resetParent.name = "clear parent";
+				resetParent.transform.SetSiblingIndex(1);
+
+				resetParent.GetComponent<Button>().onClick.RemoveAllListeners();
+				resetParent.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "";
+
+					RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+
+					ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+				});
+
+				parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				parent.transform.Find("more").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+			}
+
+			ObjEditor.inst.SelectedColor = ConfigEntries.ObjectSelectionColor.Value;
+
+			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation").transform.GetChild(1).gameObject);
+			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color").transform.GetChild(1).gameObject);
 		}
 
 		[HarmonyPatch("Start")]
@@ -468,6 +324,8 @@ namespace EditorManagement.Patchers
 				__instance.beatmapObjCopy = new DataManager.GameData.Prefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects);
 				__instance.hasCopiedObject = true;
 			}
+
+			__instance.zoomBounds = ConfigEntries.KeyframeZoomBounds.Value;
 			return false;
 		}
 
@@ -486,119 +344,6 @@ namespace EditorManagement.Patchers
 				.InstructionEnumeration();
 		}
 
-		[HarmonyPatch("CreateTimelineObjects")]
-		[HarmonyPostfix]
-		private static void SetEditorTime()
-		{
-			if (!string.IsNullOrEmpty(EditorManager.inst.currentLoadedLevel))
-			{
-				if (ConfigEntries.IfEditorStartTime.Value == true)
-				{
-					AudioManager.inst.CurrentAudioSource.time = DataManager.inst.gameData.beatmapData.editorData.timelinePos;
-				}
-				if (ConfigEntries.IfEditorPauses.Value == true)
-				{
-					AudioManager.inst.CurrentAudioSource.Pause();
-				}
-
-				if (RTFile.FileExists(RTFile.GetApplicationDirectory() + "beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse"))
-				{
-					string rawProfileJSON = null;
-					rawProfileJSON = FileManager.inst.LoadJSONFile("beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse");
-
-					JSONNode jsonnode = JSON.Parse(rawProfileJSON);
-
-					if (float.TryParse(jsonnode["timeline"]["z"], out float z))
-					{
-						Debug.Log("DSFSDFSFDSF - z " + z);
-						EditorManager.inst.zoomSlider.value = z;
-					}
-					else if (jsonnode["timeline"]["z"] != null)
-					{
-						Debug.Log("DSFSDFSFDSF - z " + jsonnode["timeline"]["z"]);
-						EditorManager.inst.zoomSlider.value = jsonnode["timeline"]["z"];
-					}
-
-					if (float.TryParse(jsonnode["timeline"]["tsc"], out float tsc))
-					{
-						Debug.Log("DSFSDFSFDSF - tsc " + tsc);
-						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value = tsc;
-					}
-					else if (jsonnode["timeline"]["tsc"] != null)
-					{
-						Debug.Log("DSFSDFSFDSF - tsc " + jsonnode["timeline"]["tsc"]);
-						GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value = jsonnode["timeline"]["tsc"];
-					}
-
-					if (int.TryParse(jsonnode["timeline"]["l"], out int l))
-					{
-						Debug.Log("DSFSDFSFDSF - l " + l);
-						if (l != 5)
-						{
-							RTEditor.SetLayer(l);
-						}
-						else
-						{
-							RTEditor.SetLayer(0);
-						}
-					}
-					else if (jsonnode["timeline"]["l"] != null)
-					{
-						Debug.Log("DSFSDFSFDSF - l " + jsonnode["timeline"]["l"]);
-						if ((int)jsonnode["timeline"]["l"] != 5)
-						{
-							RTEditor.SetLayer(jsonnode["timeline"]["l"]);
-						}
-						else
-						{
-							RTEditor.SetLayer(0);
-						}
-					}
-
-					if (float.TryParse(jsonnode["editor"]["t"], out float t))
-					{
-						Debug.Log("DSFSDFSFDSF - t " + t);
-						EditorPlugin.timeEdit = t;
-					}
-					else if (jsonnode["editor"]["t"] != null)
-					{
-						Debug.Log("DSFSDFSFDSF - t " + jsonnode["editor"]["t"]);
-						EditorPlugin.timeEdit = jsonnode["editor"]["t"];
-					}
-
-					if (int.TryParse(jsonnode["editor"]["a"], out int a))
-					{
-						Debug.Log("DSFSDFSFDSF - a " + a);
-						EditorPlugin.openAmount = a;
-					}
-					else if (jsonnode["editor"]["a"] != null)
-					{
-						Debug.Log("DSFSDFSFDSF - a " + jsonnode["editor"]["a"]);
-						EditorPlugin.openAmount = jsonnode["editor"]["a"];
-					}
-
-					EditorPlugin.openAmount += 1;
-
-					if (bool.TryParse(jsonnode["misc"]["sn"], out bool sn))
-					{
-						Debug.Log("DSFSDFSFDSF - sn " + sn);
-						SettingEditor.inst.SnapActive = sn;
-					}
-					else if (jsonnode["misc"]["sn"] != null)
-					{
-						Debug.Log("DSFSDFSFDSF - sn " + jsonnode["misc"]["sn"]);
-						SettingEditor.inst.SnapActive = jsonnode["misc"]["sn"];
-					}
-
-					SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
-				}
-				else
-				{
-					EditorPlugin.timeEdit = 0;
-				}
-			}
-		}
-
 		[HarmonyPatch("CreateTimelineObject")]
 		[HarmonyPostfix]
 		private static void CreateTimelineObjectPostfix(ref GameObject __result)
@@ -606,7 +351,7 @@ namespace EditorManagement.Patchers
 			var hoverUI = __result.AddComponent<HoverUI>();
 			hoverUI.animatePos = false;
 			hoverUI.animateSca = true;
-			hoverUI.size = ConfigEntries.HoverUIETLSize.Value;
+			hoverUI.size = ConfigEntries.TimelineObjectHoverSize.Value;
         }
 
 		[HarmonyPatch("CreateKeyframes")]
@@ -622,18 +367,11 @@ namespace EditorManagement.Patchers
 						var hoverUI = obj.AddComponent<HoverUI>();
 						hoverUI.animatePos = false;
 						hoverUI.animateSca = true;
-						hoverUI.size = ConfigEntries.HoverUIKFSize.Value;
+						hoverUI.size = ConfigEntries.KeyframeHoverSize.Value;
 					}
                 }
             }
         }
-
-		[HarmonyPatch("Start")]
-		[HarmonyPostfix]
-		private static void SetObjStart()
-		{
-			ObjEditor.inst.zoomBounds = ConfigEntries.ObjZoomBounds.Value;
-		}
 
 		[HarmonyPatch("CopyObject")]
 		[HarmonyPrefix]
@@ -650,7 +388,7 @@ namespace EditorManagement.Patchers
 				 select x).ToList();
 
 			float start = 0f;
-			if (ConfigEntries.PrefabOffset.Value)
+			if (ConfigEntries.PasteOffset.Value)
             {
 				start = -AudioManager.inst.CurrentAudioSource.time + e[0].StartTime();
             }
@@ -664,27 +402,13 @@ namespace EditorManagement.Patchers
 			return false;
 		}
 
-		//[HarmonyPatch("RenderTimelineObjects")]
-		//[HarmonyPostfix]
-		private static void CreateBeatmapTooltips()
-        {
-			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-            {
-				if (ObjEditor.inst.beatmapObjects.ContainsKey(beatmapObject.id) && ObjEditor.inst.beatmapObjects[beatmapObject.id] && ObjEditor.inst.beatmapObjects[beatmapObject.id].activeSelf == true)
-				{
-					var timelineObject = ObjEditor.inst.beatmapObjects[beatmapObject.id];
-					Triggers.AddTooltip(timelineObject, beatmapObject.name + " [ " + beatmapObject.StartTime.ToString() + " ]", "P: " + beatmapObject.parent + "\nD: " + beatmapObject.Depth.ToString());
-				}
-            }
-        }
-
 		[HarmonyPatch("SetCurrentObj")]
 		[HarmonyPostfix]
 		private static void SetCurrentObjPostfix(ObjEditor.ObjectSelection __0)
         {
-			if (GameObject.Find("UI stuff/object tracker") && GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>() && !RTEditor.ienumRunning)
+			if (EditorPlugin.draggableObject != null && !RTEditor.ienumRunning)
 			{
-				GameObject.Find("UI stuff/object tracker").GetComponent<DraggableObject>().GetPosition();
+				EditorPlugin.draggableObject.GetPosition();
 			}
 			if (ConfigEntries.EditorDebug.Value == true)
 			{
@@ -903,7 +627,7 @@ namespace EditorManagement.Patchers
 
 						float calc = Mathf.Clamp(num6, 0f, DataManager.inst.gameData.beatmapObjects[ObjEditor.inst.currentObjectSelection.Index].GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset, false, false));
 
-						if (SettingEditor.inst.SnapActive && ConfigEntries.KeyframeSnap.Value)
+						if (SettingEditor.inst.SnapActive && ConfigEntries.BPMSnapsKeyframes.Value)
 						{
 							float st = ObjEditor.inst.currentObjectSelection.GetObjectData().StartTime;
 							float kf = calc;

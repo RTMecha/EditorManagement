@@ -8,7 +8,7 @@ using UnityEngine;
 
 using EditorManagement.Patchers;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
     public class TimelineHandler : MonoBehaviour
     {

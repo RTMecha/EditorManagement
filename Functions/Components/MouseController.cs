@@ -8,7 +8,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
     public class MouseController : MonoBehaviour
     {

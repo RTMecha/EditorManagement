@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
     public class DraggableChildren : MonoBehaviour
     {

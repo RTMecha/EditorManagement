@@ -7,9 +7,10 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
-using EditorManagement.Functions.Tools;
+using EditorManagement.Functions.Editors;
+using RTFunctions.Functions;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
     public class DraggableObject : MonoBehaviour
     {
@@ -121,7 +122,7 @@ namespace EditorManagement.Functions
         {
             if (ObjEditor.inst.currentObjectSelection.IsObject() && ObjEditor.inst.currentObjectSelection.GetObjectData() != null && !string.IsNullOrEmpty(ObjEditor.inst.currentObjectSelection.ID) && EditorManager.inst.hasLoadedLevel && !RTEditor.ienumRunning)
             {
-                dragObjectPosition = new Vector3(0f, 0f, -90f);
+                dragObjectPosition = new Vector3(0f, 0f, depth);
                 foreach (var obj in ObjEditor.inst.currentObjectSelection.GetObjectData().GetParentChain())
                 {
                     dragObjectPosition += new Vector3(obj.events[0][obj.ClosestKeyframe(0)].eventValues[0], obj.events[0][obj.ClosestKeyframe(0)].eventValues[1], 0f);
@@ -559,6 +560,15 @@ namespace EditorManagement.Functions
             }
         }
 
+        public void SetActive(bool active)
+        {
+            enabled = active;
+            gameObject.GetComponent<PolygonCollider2D>().enabled = active;
+            gameObject.GetComponent<MeshRenderer>().enabled = active;
+        }
+
         public float am = 2.35f;
+
+        public float depth = -9.8f;
     }
 }

@@ -3,7 +3,7 @@ using System.Collections;
 using DG.Tweening;
 using UnityEngine;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
 	public class AnimateInGUI : MonoBehaviour
 	{

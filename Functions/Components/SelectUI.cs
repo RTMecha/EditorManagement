@@ -9,7 +9,7 @@ using UnityEngine.EventSystems;
 
 using LSFunctions;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
     public class SelectUI : MonoBehaviour, IEventSystemHandler, IPointerDownHandler, IPointerUpHandler
     {

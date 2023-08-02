@@ -10,7 +10,7 @@ using UnityEngine.EventSystems;
 
 using DG.Tweening;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Components
 {
     public class HoverUI : MonoBehaviour, IPointerEnterHandler, IEventSystemHandler, IPointerExitHandler
     {
@@ -38,7 +38,7 @@ namespace EditorManagement.Functions
                 {
                     transform.DOScale(new Vector3(size, size, size), 0.2f).SetEase(DataManager.inst.AnimationList[3].Animation).Play();
                 }
-                if (ConfigEntries.HoverSoundsEnabled.Value && (animatePos || animateSca))
+                if (ConfigEntries.HoverSoundsEnabled.Value && (animatePos || animateSca) && size != 1f)
                 {
                     AudioManager.inst.PlaySound("Click");
                 }

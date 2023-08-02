@@ -11,7 +11,9 @@ using UnityEngine.EventSystems;
 
 using LSFunctions;
 
-namespace EditorManagement.Functions
+using EditorManagement.Functions.Editors;
+
+namespace EditorManagement.Functions.Components
 {
     public class InputFieldHelper : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
@@ -24,11 +26,33 @@ namespace EditorManagement.Functions
             String
         }
 
-
         private void Start()
         {
             if (GetComponent<InputField>())
+            {
                 inputField = GetComponent<InputField>();
+                inputField.onEndEdit.AddListener(delegate (string _val)
+                {
+                    var regexPlus = new System.Text.RegularExpressions.Regex(@"(.*?)\s\+\s(.*?)");
+                    var matchPlus = regexPlus.Match(_val);
+                    if (matchPlus.Success && float.TryParse(matchPlus.Groups[1].ToString(), out float startPlus) && float.TryParse(matchPlus.Groups[2].ToString(), out float endPlus))
+                    {
+                        if (_val.Contains(matchPlus.Groups[1].ToString() + "+" + matchPlus.Groups[2].ToString()))
+                            inputField.text = _val.Replace(matchPlus.Groups[1].ToString() + "+" + matchPlus.Groups[2].ToString(), (startPlus + endPlus).ToString());
+                        else if (_val.Contains(matchPlus.Groups[1].ToString() + " + " + matchPlus.Groups[2].ToString()))
+                            inputField.text = _val.Replace(matchPlus.Groups[1].ToString() + " + " + matchPlus.Groups[2].ToString(), (startPlus + endPlus).ToString());
+                    }
+                    var regexMinus = new System.Text.RegularExpressions.Regex(@"(.*?)\s-\s(.*?)");
+                    var matchMinus = regexMinus.Match(_val);
+                    if (matchMinus.Success && float.TryParse(matchMinus.Groups[1].ToString(), out float startMinus) && float.TryParse(matchMinus.Groups[2].ToString(), out float endMinus))
+                    {
+                        if (_val.Contains(matchMinus.Groups[1].ToString() + "+" + matchMinus.Groups[2].ToString()))
+                            inputField.text = _val.Replace(matchMinus.Groups[1].ToString() + "-" + matchMinus.Groups[2].ToString(), (startMinus + endMinus).ToString());
+                        else if (_val.Contains(matchMinus.Groups[1].ToString() + " + " + matchMinus.Groups[2].ToString()))
+                            inputField.text = _val.Replace(matchMinus.Groups[1].ToString() + " - " + matchMinus.Groups[2].ToString(), (startMinus + endMinus).ToString());
+                    }
+                });
+            }
         }
 
         public void OnPointerEnter(PointerEventData pointerEventData)
@@ -85,7 +109,7 @@ namespace EditorManagement.Functions
                     }
                 }
 
-                if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.V) && !LSHelpers.IsUsingInputField())
+                if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.V) && !LSHelpers.IsUsingInputField())
                 {
                     inputField.text = Clipboard.GetText();
                 }

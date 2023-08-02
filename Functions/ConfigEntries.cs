@@ -15,67 +15,21 @@ using BepInEx.Configuration;
 namespace EditorManagement.Functions
 {
     public static class ConfigEntries
-    {
-		public static ConfigEntry<bool> IncreasedClipPlanes { get; set; }
+	{
+		public static ConfigEntry<KeyCode> OpenPlayerEditor { get; set; }
 
-		public static ConfigEntry<bool> PrefabOffset { get; set; }
+		public static ConfigEntry<float> TimelineBarButtonsHoverSize { get; set; }
+
+		public static ConfigEntry<bool> ShowLevelDeleteButton { get; set; }
+
+		public static ConfigEntry<bool> PasteOffset { get; set; }
 		public static ConfigEntry<bool> DisplayNotifications { get; set; }
 
-		public static ConfigEntry<bool> ReloadThemesAfterDrag { get; set; }
-
-		public static ConfigEntry<bool> EXPrefab { get; set; }
+		public static ConfigEntry<bool> PrefabExampleTemplate { get; set; }
 
 		public static ConfigEntry<bool> HoverSoundsEnabled { get; set; }
 
-		//Static Name
-		public static ConfigEntry<string> PT0N { get; set; }
-		public static ConfigEntry<string> PT1N { get; set; }
-		public static ConfigEntry<string> PT2N { get; set; }
-		public static ConfigEntry<string> PT3N { get; set; }
-		public static ConfigEntry<string> PT4N { get; set; }
-		public static ConfigEntry<string> PT5N { get; set; }
-		public static ConfigEntry<string> PT6N { get; set; }
-		public static ConfigEntry<string> PT7N { get; set; }
-		public static ConfigEntry<string> PT8N { get; set; }
-		public static ConfigEntry<string> PT9N { get; set; }
-
-		//Static New Name
-		public static ConfigEntry<string> PT10N { get; set; }
-		public static ConfigEntry<string> PT11N { get; set; }
-		public static ConfigEntry<string> PT12N { get; set; }
-		public static ConfigEntry<string> PT13N { get; set; }
-		public static ConfigEntry<string> PT14N { get; set; }
-		public static ConfigEntry<string> PT15N { get; set; }
-		public static ConfigEntry<string> PT16N { get; set; }
-		public static ConfigEntry<string> PT17N { get; set; }
-		public static ConfigEntry<string> PT18N { get; set; }
-		public static ConfigEntry<string> PT19N { get; set; }
-
-		//Static Color
-		public static ConfigEntry<Color> PT0C { get; set; }
-		public static ConfigEntry<Color> PT1C { get; set; }
-		public static ConfigEntry<Color> PT2C { get; set; }
-		public static ConfigEntry<Color> PT3C { get; set; }
-		public static ConfigEntry<Color> PT4C { get; set; }
-		public static ConfigEntry<Color> PT5C { get; set; }
-		public static ConfigEntry<Color> PT6C { get; set; }
-		public static ConfigEntry<Color> PT7C { get; set; }
-		public static ConfigEntry<Color> PT8C { get; set; }
-		public static ConfigEntry<Color> PT9C { get; set; }
-
-		//Static New Color
-		public static ConfigEntry<Color> PT10C { get; set; }
-		public static ConfigEntry<Color> PT11C { get; set; }
-		public static ConfigEntry<Color> PT12C { get; set; }
-		public static ConfigEntry<Color> PT13C { get; set; }
-		public static ConfigEntry<Color> PT14C { get; set; }
-		public static ConfigEntry<Color> PT15C { get; set; }
-		public static ConfigEntry<Color> PT16C { get; set; }
-		public static ConfigEntry<Color> PT17C { get; set; }
-		public static ConfigEntry<Color> PT18C { get; set; }
-		public static ConfigEntry<Color> PT19C { get; set; }
-
-		public static ConfigEntry<float> SizeUpper { get; set; }
+		public static ConfigEntry<float> PrefabButtonHoverSize { get; set; }
 
 		//Cell Size
 		public static ConfigEntry<bool> PrefabINHScroll { get; set; }
@@ -117,78 +71,58 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<float> PrefabEXPathSca { get; set; }
 		public static ConfigEntry<Vector2> PrefabEXRefreshPos { get; set; }
 
-		public static ConfigEntry<KeyCode> PQCKey0 { get; set; }
-		public static ConfigEntry<KeyCode> PQCKey1 { get; set; }
-		public static ConfigEntry<KeyCode> PQCKey2 { get; set; }
-		public static ConfigEntry<KeyCode> PQCKey3 { get; set; }
-		public static ConfigEntry<KeyCode> PQCKey4 { get; set; }
-
-		public static ConfigEntry<bool> PQCActive0 { get; set; }
-		public static ConfigEntry<bool> PQCActive1 { get; set; }
-		public static ConfigEntry<bool> PQCActive2 { get; set; }
-		public static ConfigEntry<bool> PQCActive3 { get; set; }
-		public static ConfigEntry<bool> PQCActive4 { get; set; }
-
-		public static ConfigEntry<int> PQCIndex0 { get; set; }
-		public static ConfigEntry<int> PQCIndex1 { get; set; }
-		public static ConfigEntry<int> PQCIndex2 { get; set; }
-		public static ConfigEntry<int> PQCIndex3 { get; set; }
-		public static ConfigEntry<int> PQCIndex4 { get; set; }
-
 		//AutoSaves
-		public static ConfigEntry<float> AutoSaveRepeat { get; set; }
+		public static ConfigEntry<float> AutoSaveLoopTime { get; set; }
 		public static ConfigEntry<int> AutoSaveLimit { get; set; }
 		public static ConfigEntry<bool> SavingUpdatesTime { get; set; }
 
 		//Zoom cap
-		public static ConfigEntry<Vector2> ObjZoomBounds { get; set; }
-		public static ConfigEntry<Vector2> ETLZoomBounds { get; set; }
-		public static ConfigEntry<float> ZoomAmount { get; set; }
+		public static ConfigEntry<Vector2> KeyframeZoomBounds { get; set; }
+		public static ConfigEntry<Vector2> MainZoomBounds { get; set; }
+		public static ConfigEntry<float> MainZoomAmount { get; set; }
+		public static ConfigEntry<float> KeyframeZoomAmount { get; set; }
 
 		//Cursor Color
-		public static ConfigEntry<Color> MTSliderCol { get; set; }
-		public static ConfigEntry<Color> KTSliderCol { get; set; }
-		public static ConfigEntry<Color> ObjSelCol { get; set; }
-
-		public static ConfigEntry<float> OriginXAmount { get; set; }
-		public static ConfigEntry<float> OriginYAmount { get; set; }
+		public static ConfigEntry<Color> MainTimelineSliderColor { get; set; }
+		public static ConfigEntry<Color> KeyframeTimelineSliderColor { get; set; }
+		public static ConfigEntry<Color> ObjectSelectionColor { get; set; }
 
 		//Open File Configs
-		public static ConfigEntry<Vector2> ORLAnchoredPos { get; set; }
-		public static ConfigEntry<Vector2> ORLSizeDelta { get; set; }
-		public static ConfigEntry<Vector2> OGLVLCellSize { get; set; }
-		public static ConfigEntry<Vector2> ORLTogglePos { get; set; }
-		public static ConfigEntry<Vector2> ORLDropdownPos { get; set; }
-		public static ConfigEntry<Vector2> ORLPathPos { get; set; }
-		public static ConfigEntry<float> ORLPathLength { get; set; }
-		public static ConfigEntry<Vector2> ORLRefreshPos { get; set; }
-		public static ConfigEntry<Constraint> OGLVLConstraint { get; set; }
-		public static ConfigEntry<int> OGLVLConstraintCount { get; set; }
-		public static ConfigEntry<Vector2> OGLVLSpacing { get; set; }
-		public static ConfigEntry<HorizontalWrapMode> FButtonHWrap { get; set; }
-		public static ConfigEntry<VerticalWrapMode> FButtonVWrap { get; set; }
-		public static ConfigEntry<int> FButtonFontSize { get; set; }
-		public static ConfigEntry<Color> FButtonTextColor { get; set; }
-		public static ConfigEntry<bool> FButtonTextInvert { get; set; }
-		public static ConfigEntry<Color> FButtonNColor { get; set; }
-		public static ConfigEntry<Color> FButtonHColor { get; set; }
-		public static ConfigEntry<Color> FButtonPColor { get; set; }
-		public static ConfigEntry<Color> FButtonSColor { get; set; }
-		public static ConfigEntry<float> FButtonFadeDColor { get; set; }
+		public static ConfigEntry<Vector2> OpenFilePosition { get; set; }
+		public static ConfigEntry<Vector2> OpenFileScale { get; set; }
+		public static ConfigEntry<Vector2> OpenFileCellSize { get; set; }
+		public static ConfigEntry<Vector2> OpenFileTogglePosition { get; set; }
+		public static ConfigEntry<Vector2> OpenFileDropdownPosition { get; set; }
+		public static ConfigEntry<Vector2> OpenFilePathPos { get; set; }
+		public static ConfigEntry<float> OpenFilePathLength { get; set; }
+		public static ConfigEntry<Vector2> OpenFileRefreshPosition { get; set; }
+		public static ConfigEntry<Constraint> OpenFileCellConstraintType { get; set; }
+		public static ConfigEntry<int> OpenFileCellConstraintCount { get; set; }
+		public static ConfigEntry<Vector2> OpenFileCellSpacing { get; set; }
+		public static ConfigEntry<HorizontalWrapMode> OpenFileTextHorizontalWrap { get; set; }
+		public static ConfigEntry<VerticalWrapMode> OpenFileTextVerticalWrap { get; set; }
+		public static ConfigEntry<int> OpenFileTextFontSize { get; set; }
+		public static ConfigEntry<Color> OpenFileTextColor { get; set; }
+		public static ConfigEntry<bool> OpenFileTextInvert { get; set; }
+		public static ConfigEntry<Color> OpenFileButtonNormalColor { get; set; }
+		public static ConfigEntry<Color> OpenFileButtonHighlightedColor { get; set; }
+		public static ConfigEntry<Color> OpenFileButtonPressedColor { get; set; }
+		public static ConfigEntry<Color> OpenFileButtonSelectedColor { get; set; }
+		public static ConfigEntry<float> OpenFileButtonFadeDuration { get; set; }
 
-		public static ConfigEntry<bool> FButtonDifColor { get; set; }
-		public static ConfigEntry<float> FButtonDifColorMult { get; set; }
-		public static ConfigEntry<int> FButtonFoldClamp { get; set; }
-		public static ConfigEntry<int> FButtonSongClamp { get; set; }
-		public static ConfigEntry<int> FButtonArtiClamp { get; set; }
-		public static ConfigEntry<int> FButtonCreaClamp { get; set; }
-		public static ConfigEntry<int> FButtonDescClamp { get; set; }
-		public static ConfigEntry<int> FButtonDateClamp { get; set; }
-		public static ConfigEntry<string> FButtonFormat { get; set; }
-		public static ConfigEntry<Vector2> FBIconPos { get; set; }
-		public static ConfigEntry<Vector2> FBIconSca { get; set; }
+		public static ConfigEntry<bool> OpenFileButtonDifficultyColor { get; set; }
+		public static ConfigEntry<float> OpenFileButtonDifficultyMultiply { get; set; }
+		public static ConfigEntry<int> OpenFileFolderNameMax { get; set; }
+		public static ConfigEntry<int> OpenFileSongNameMax { get; set; }
+		public static ConfigEntry<int> OpenFileArtistNameMax { get; set; }
+		public static ConfigEntry<int> OpenFileCreatorNameMax { get; set; }
+		public static ConfigEntry<int> OpenFileDescriptionMax { get; set; }
+		public static ConfigEntry<int> OpenFileDateMax { get; set; }
+		public static ConfigEntry<string> OpenFileTextFormatting { get; set; }
+		public static ConfigEntry<Vector2> OpenFileCoverPosition { get; set; }
+		public static ConfigEntry<Vector2> OpenFileCoverScale { get; set; }
 
-		public static ConfigEntry<bool> IfReloadLList { get; set; }
+		public static ConfigEntry<bool> ChangesRefreshLevelList { get; set; }
 
 		//New Markers
 		public static ConfigEntry<Color> MarkerColN0 { get; set; }
@@ -206,9 +140,8 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<int> MarkerStartIndex { get; set; }
 
 		//General Editor
-		public static ConfigEntry<bool> IfEditorStartTime { get; set; }
-		public static ConfigEntry<bool> IfEditorPauses { get; set; }
-		public static ConfigEntry<bool> IfEditorSlowLoads { get; set; }
+		public static ConfigEntry<bool> LevelLoadsSavedTime { get; set; }
+		public static ConfigEntry<bool> LevelPausesOnStart { get; set; }
 		public static ConfigEntry<bool> EditorDebug { get; set; }
 		public static ConfigEntry<bool> DragUI { get; set; }
 
@@ -217,15 +150,13 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<float> NotificationSize { get; set; }
 		public static ConfigEntry<Direction> NotificationDirection { get; set; }
 
-		public static ConfigEntry<float> TimeModify { get; set; }
-
 		public static ConfigEntry<bool> RenderTimeline { get; set; }
-		public static ConfigEntry<Color> TimelineBGColor { get; set; }
-		public static ConfigEntry<Color> TimelineTopColor { get; set; }
-		public static ConfigEntry<Color> TimelineBottomColor { get; set; }
+		public static ConfigEntry<Color> WaveformBGColor { get; set; }
+		public static ConfigEntry<Color> WaveformTopColor { get; set; }
+		public static ConfigEntry<Color> WaveformBottomColor { get; set; }
 
 		public static ConfigEntry<bool> ReminderActive { get; set; }
-		public static ConfigEntry<float> ReminderRepeat { get; set; }
+		public static ConfigEntry<float> ReminderLoopTime { get; set; }
 
 		public static ConfigEntry<WaveformType> WaveformMode { get; set; }
 		public static ConfigEntry<bool> GenerateWaveform { get; set; }
@@ -238,85 +169,72 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<Color> HighlightDoubleColor { get; set; }
 		public static ConfigEntry<bool> PreviewSelectFix { get; set; }
 
-		public static ConfigEntry<Color> EditorGUIColor1 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor2 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor3 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor4 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor5 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor6 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor7 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor8 { get; set; }
-		public static ConfigEntry<Color> EditorGUIColor9 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor1 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor2 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor3 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor4 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor5 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor6 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor7 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor8 { get; set; }
+		//public static ConfigEntry<Color> EditorGUIColor9 { get; set; }
 
-		public static ConfigEntry<bool> EPPAnimateX { get; set; }
-		public static ConfigEntry<bool> EPPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> EPPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> EPPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> EPPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> EPPAnimateX { get; set; }
+		//public static ConfigEntry<bool> EPPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> EPPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> EPPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> EPPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> OFPAnimateX { get; set; }
-		public static ConfigEntry<bool> OFPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> OFPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> OFPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> OFPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> OFPAnimateX { get; set; }
+		//public static ConfigEntry<bool> OFPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> OFPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> OFPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> OFPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> NFPAnimateX { get; set; }
-		public static ConfigEntry<bool> NFPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> NFPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> NFPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> NFPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> NFPAnimateX { get; set; }
+		//public static ConfigEntry<bool> NFPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> NFPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> NFPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> NFPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> PPAnimateX { get; set; }
-		public static ConfigEntry<bool> PPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> PPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> PPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> PPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> PPAnimateX { get; set; }
+		//public static ConfigEntry<bool> PPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> PPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> PPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> PPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> OBJPAnimateX { get; set; }
-		public static ConfigEntry<bool> OBJPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> OBJPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> OBJPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> OBJPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> OBJPAnimateX { get; set; }
+		//public static ConfigEntry<bool> OBJPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> OBJPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> OBJPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> OBJPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> BGPAnimateX { get; set; }
-		public static ConfigEntry<bool> BGPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> BGPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> BGPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> BGPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> BGPAnimateX { get; set; }
+		//public static ConfigEntry<bool> BGPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> BGPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> BGPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> BGPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> QAPAnimateX { get; set; }
-		public static ConfigEntry<bool> QAPAnimateY { get; set; }
-		public static ConfigEntry<Vector2> QAPAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> QAPAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> QAPAnimateEaseOut { get; set; }
+		//public static ConfigEntry<bool> QAPAnimateX { get; set; }
+		//public static ConfigEntry<bool> QAPAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> QAPAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> QAPAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> QAPAnimateEaseOut { get; set; }
 
-		public static ConfigEntry<bool> GODAnimateX { get; set; }
-		public static ConfigEntry<bool> GODAnimateY { get; set; }
-		public static ConfigEntry<Vector2> GODAnimateInOutSpeeds { get; set; }
-		public static ConfigEntry<Easings> GODAnimateEaseIn { get; set; }
-		public static ConfigEntry<Easings> GODAnimateEaseOut { get; set; }
-
-
-		public static ConfigEntry<Color> DepthNormalColor { get; set; }
-		public static ConfigEntry<Color> DepthPressedColor { get; set; }
-		public static ConfigEntry<Color> DepthHighlightedColor { get; set; }
-		public static ConfigEntry<Color> DepthDisabledColor { get; set; }
-		public static ConfigEntry<float> DepthFadeDuration { get; set; }
-		public static ConfigEntry<bool> DepthInteractable { get; set; }
-		public static ConfigEntry<bool> DepthUpdate { get; set; }
-		public static ConfigEntry<int> SliderRMax { get; set; }
-		public static ConfigEntry<int> SliderRMin { get; set; }
-		public static ConfigEntry<Slider.Direction> SliderDDirection { get; set; }
-		public static ConfigEntry<int> DepthAmount { get; set; }
+		//public static ConfigEntry<bool> GODAnimateX { get; set; }
+		//public static ConfigEntry<bool> GODAnimateY { get; set; }
+		//public static ConfigEntry<Vector2> GODAnimateInOutSpeeds { get; set; }
+		//public static ConfigEntry<Easings> GODAnimateEaseIn { get; set; }
+		//public static ConfigEntry<Easings> GODAnimateEaseOut { get; set; }
 
 		public static ConfigEntry<bool> ShowSelector { get; set; }
 
-		public static ConfigEntry<bool> KeyframeSnap { get; set; }
-		public static ConfigEntry<float> SnapAmount { get; set; }
+		public static ConfigEntry<bool> BPMSnapsKeyframes { get; set; }
+		public static ConfigEntry<float> BPMSnapDivisions { get; set; }
 
-		public static ConfigEntry<float> HoverUIOFPSize { get; set; }
-		public static ConfigEntry<float> HoverUIETLSize { get; set; }
-		public static ConfigEntry<float> HoverUIKFSize { get; set; }
+		public static ConfigEntry<float> OpenFileButtonHoverSize { get; set; }
+		public static ConfigEntry<float> TimelineObjectHoverSize { get; set; }
+		public static ConfigEntry<float> KeyframeHoverSize { get; set; }
 
 		public static ConfigEntry<KeyCode> EditorPropertiesKey { get; set; }
 
@@ -348,7 +266,7 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<Color> TemplateThemeBGColor8 { get; set; }
 		public static ConfigEntry<Color> TemplateThemeBGColor9 { get; set; }
 
-		public static ConfigEntry<bool> DraggingTimelineSliderPauses { get; set; }
+		public static ConfigEntry<bool> DraggingMainCursorPausesLevel { get; set; }
 
 		//Events
 		public static ConfigEntry<float> EventMoveModify { get; set; }
@@ -364,18 +282,5 @@ namespace EditorManagement.Functions
 		public static ConfigEntry<float> EventLensModify { get; set; }
 		public static ConfigEntry<float> EventGrainIntensityModify { get; set; }
 		public static ConfigEntry<float> EventGrainSizeModify { get; set; }
-
-		public static ConfigEntry<bool> ListHorizontal { get; set; }
-		public static ConfigEntry<Vector2> ListCellSize { get; set; }
-		public static ConfigEntry<GridLayoutGroup.Constraint> ListConstraint { get; set; }
-		public static ConfigEntry<int> ListConstraintCount { get; set; }
-		public static ConfigEntry<Vector2> ListSpacing { get; set; }
-		public static ConfigEntry<GridLayoutGroup.Axis> ListAxis { get; set; }
-
-		public static ConfigEntry<HorizontalWrapMode> ThemeHWM { get; set; }
-		public static ConfigEntry<VerticalWrapMode> ThemeVWM { get; set; }
-		public static ConfigEntry<int> ThemeFSize { get; set; }
-		public static ConfigEntry<Color> ThemeTColor { get; set; }
-		public static ConfigEntry<Color> ThemeBColor { get; set; }
 	}
 }

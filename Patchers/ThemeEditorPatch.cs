@@ -11,6 +11,8 @@ using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 
 using LSFunctions;

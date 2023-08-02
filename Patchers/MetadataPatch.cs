@@ -11,10 +11,13 @@ using SimpleJSON;
 
 using HarmonyLib;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 
 using LSFunctions;
+using RTFunctions.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -30,7 +33,7 @@ namespace EditorManagement.Patchers
 				GameObject openLink = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel").Find("x").gameObject);
 
 				openLink.transform.SetParent(EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View").Find("Viewport").Find("Content").Find("artist"));
-
+				openLink.transform.localScale = Vector3.one;
 				openLink.transform.Find("Image").gameObject.GetComponent<Image>().sprite = EditorManager.inst.DropdownMenus[3].transform.Find("Open Workshop").Find("Image").gameObject.GetComponent<Image>().sprite;
 
 				RectTransform openLinkRT = openLink.GetComponent<RectTransform>();
@@ -59,6 +62,7 @@ namespace EditorManagement.Patchers
 				master.transform.SetParent(EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content/song/difficulty/toggles"));
 				master.name = "master";
 				master.transform.Find("Background/Text").GetComponent<Text>().text = "Master";
+				master.transform.localScale = Vector3.one;
 			}
 			if (!EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content/song/difficulty/toggles/none"))
 			{
@@ -66,6 +70,7 @@ namespace EditorManagement.Patchers
 				animation.transform.SetParent(EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content/song/difficulty/toggles"));
 				animation.name = "none";
 				animation.transform.Find("Background/Text").GetComponent<Text>().text = "None";
+				animation.transform.localScale = Vector3.one;
 			}
 
 			Transform transform = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content");
@@ -97,10 +102,7 @@ namespace EditorManagement.Patchers
 			transform.Find("song/difficulty/toggles").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(468f, -16f);
 
 			Button uploadButton = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content/submit/submit").gameObject.GetComponent<Button>();
-			uploadButton.onClick.m_Calls.m_ExecutingCalls.Clear();
-			uploadButton.onClick.m_Calls.m_PersistentCalls.Clear();
-			uploadButton.onClick.m_PersistentCalls.m_Calls.Clear();
-			uploadButton.onClick.RemoveAllListeners();
+			uploadButton.onClick.ClearAll();
 			uploadButton.onClick.AddListener(delegate ()
 			{
 				string rawProfileJSON = null;

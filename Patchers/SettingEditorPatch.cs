@@ -3,7 +3,11 @@ using UnityEngine.UI;
 
 using HarmonyLib;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
+
+using RTFunctions.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -332,11 +336,7 @@ namespace EditorManagement.Patchers
 								layernum += 1;
 							}
 
-							if (AudioManager.inst.CurrentAudioSource.time >= beatmapObject.StartTime && AudioManager.inst.CurrentAudioSource.time <= beatmapObject.StartTime + beatmapObject.autoKillOffset && beatmapObject.autoKillType != DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
-							{
-								onscreennum += 1;
-							}
-							if (AudioManager.inst.CurrentAudioSource.time >= beatmapObject.StartTime && beatmapObject.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
+							if (beatmapObject.TimeWithinLifespan())
 							{
 								onscreennum += 1;
 							}
@@ -392,7 +392,7 @@ namespace EditorManagement.Patchers
 			RectTransform loadingDoggoRect = transform.Find("loading doggo").GetComponent<RectTransform>();
 
 			loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
-			float sizeRandom = 64 * UnityEngine.Random.Range(0.5f, 1f);
+			float sizeRandom = 64 * Random.Range(0.5f, 1f);
 			loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
 
 			transform.Find("snap/bpm/slider").GetComponent<Slider>().onValueChanged.RemoveAllListeners();

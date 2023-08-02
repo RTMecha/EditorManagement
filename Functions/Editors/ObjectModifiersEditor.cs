@@ -10,11 +10,14 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Tools;
+
+using RTFunctions.Functions;
 
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 
-namespace EditorManagement.Functions
+namespace EditorManagement.Functions.Editors
 {
     public class ObjectModifiersEditor : MonoBehaviour
     {
@@ -39,12 +42,12 @@ namespace EditorManagement.Functions
             else
             {
                 objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
+
+                inst = this;
+
+                CreateModifiersOnAwake();
+                CreateDefaultModifiersList();
             }
-
-            inst = this;
-
-            CreateModifiersOnAwake();
-            CreateDefaultModifiersList();
         }
 
         #region Plugin stuff
@@ -3646,7 +3649,7 @@ namespace EditorManagement.Functions
                                 }
 
                                 //Integer
-                                if (cmd == "playerHit" || cmd == "playerHitAll" || cmd == "addVariable" || cmd == "subVariable" || cmd == "setVariable" || cmd == "mouseButtonDown" || cmd == "mouseButton" || cmd == "mouseButtonUp" || commands[0].Contains("playerHealth") || commands.Contains("playerDeaths") || commands.Contains("variable"))
+                                if (cmd == "playerHit" || cmd == "playerHitAll" || cmd == "playerHeal" || cmd == "playerHealAll" || cmd == "addVariable" || cmd == "subVariable" || cmd == "setVariable" || cmd == "mouseButtonDown" || cmd == "mouseButton" || cmd == "mouseButtonUp" || cmd.Contains("playerHealth") || cmd.Contains("playerDeaths") || cmd.Contains("variable"))
                                 {
                                     xRT.sizeDelta = new Vector2(350f, 160f);
                                     layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 40f);
@@ -4175,6 +4178,262 @@ namespace EditorManagement.Functions
                                     }
                                 }
 
+                                if (cmd.Contains("reactive"))
+                                {
+                                    xRT.sizeDelta = new Vector2(350f, 192f);
+                                    layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 60f);
+
+                                    if (commands[0] == "reactivePos" || commands[0] == "reactiveSca")
+                                    {
+                                        xRT.sizeDelta = new Vector2(350f, 256f);
+                                        layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 90f);
+                                    }
+
+                                    var input = valueG.transform.Find("input");
+                                    var xif = input.gameObject.AddComponent<InputField>();
+                                    {
+                                        xif.onValueChanged.RemoveAllListeners();
+                                        xif.characterValidation = InputField.CharacterValidation.None;
+                                        xif.characterLimit = 0;
+                                        xif.textComponent = input.Find("Text").GetComponent<Text>();
+                                        xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                                        xif.text = value;
+                                        xif.onValueChanged.AddListener(delegate (string _val)
+                                        {
+                                            modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, _val);
+                                        });
+                                    }
+
+                                    var xet = input.gameObject.AddComponent<EventTrigger>();
+                                    xet.triggers.Clear();
+                                    xet.triggers.Add(Triggers.ScrollDelta(xif, 0.1f, 10f));
+
+                                    var xifh = input.gameObject.AddComponent<InputFieldHelper>();
+                                    xifh.inputField = xif;
+
+                                    var increase = valueG.transform.Find(">").GetComponent<Button>();
+                                    {
+                                        increase.onClick.RemoveAllListeners();
+                                        increase.onClick.AddListener(delegate ()
+                                        {
+                                            xif.text = (float.Parse(xif.text) + 0.1f).ToString();
+                                        });
+                                    }
+
+                                    var decrease = valueG.transform.Find("<").GetComponent<Button>();
+                                    {
+                                        decrease.onClick.RemoveAllListeners();
+                                        decrease.onClick.AddListener(delegate ()
+                                        {
+                                            xif.text = (float.Parse(xif.text) - 0.1f).ToString();
+                                        });
+                                    }
+
+                                    valueG.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Total Multiply";
+
+                                    if (cmd == "reactivePos" || cmd == "reactiveSca")
+                                    {
+                                        //Samples
+                                        {
+                                            var sampleX = Instantiate(valueG);
+                                            sampleX.transform.SetParent(layout.transform);
+                                            sampleX.transform.localScale = Vector3.one;
+
+                                            sampleX.name = "sample x";
+
+                                            sampleX.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Sample X";
+
+                                            var sampleXInput = sampleX.transform.Find("input");
+                                            var sampleXIF = sampleXInput.gameObject.GetComponent<InputField>();
+                                            {
+                                                sampleXIF.onValueChanged.RemoveAllListeners();
+                                                sampleXIF.characterValidation = InputField.CharacterValidation.None;
+                                                sampleXIF.characterLimit = 0;
+                                                sampleXIF.textComponent = sampleXInput.Find("Text").GetComponent<Text>();
+                                                sampleXIF.placeholder = sampleXInput.Find("Placeholder").GetComponent<Text>();
+                                                sampleXIF.text = commands[1];
+                                                sampleXIF.onValueChanged.AddListener(delegate (string _val)
+                                                {
+                                                    if (int.TryParse(_val, out int num))
+                                                    {
+                                                        commands[1] = num.ToString();
+                                                        modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                    }
+                                                });
+                                            }
+
+                                            var sampleY = Instantiate(valueG);
+                                            sampleY.transform.SetParent(layout.transform);
+                                            sampleY.transform.localScale = Vector3.one;
+
+                                            sampleY.name = "sample y";
+
+                                            sampleY.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Sample Y";
+
+                                            var sampleYInput = sampleY.transform.Find("input");
+                                            var sampleYIF = sampleYInput.gameObject.GetComponent<InputField>();
+                                            {
+                                                sampleYIF.onValueChanged.RemoveAllListeners();
+                                                sampleYIF.characterValidation = InputField.CharacterValidation.None;
+                                                sampleYIF.characterLimit = 0;
+                                                sampleYIF.textComponent = sampleYInput.Find("Text").GetComponent<Text>();
+                                                sampleYIF.placeholder = sampleYInput.Find("Placeholder").GetComponent<Text>();
+                                                sampleYIF.text = commands[2];
+                                                sampleYIF.onValueChanged.AddListener(delegate (string _val)
+                                                {
+                                                    if (int.TryParse(_val, out int num))
+                                                    {
+                                                        commands[2] = num.ToString();
+                                                        modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                    }
+                                                });
+                                            }
+
+                                            Triggers.AddEventTrigger(sampleXInput.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(sampleXIF, 1, true, new List<int> { 0, 256 }), Triggers.ScrollDeltaVector2Int(sampleXIF, sampleYIF, 1, new List<int> { 0, 256 }) });
+                                            Triggers.AddEventTrigger(sampleYInput.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(sampleYIF, 1, true, new List<int> { 0, 256 }), Triggers.ScrollDeltaVector2Int(sampleXIF, sampleYIF, 1, new List<int> { 0, 256 }) });
+
+                                            Triggers.IncreaseDecreaseButtonsInt(sampleXIF, 1, sampleX.transform, new List<int> { 0, 256 });
+                                            Triggers.IncreaseDecreaseButtonsInt(sampleYIF, 1, sampleY.transform, new List<int> { 0, 256 });
+                                        }
+
+                                        //Multiplies
+                                        {
+                                            var multiplyX = Instantiate(valueG);
+                                            multiplyX.transform.SetParent(layout.transform);
+                                            multiplyX.transform.localScale = Vector3.one;
+
+                                            multiplyX.name = "multiply x";
+
+                                            multiplyX.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Multiply X";
+
+                                            var multiplyXInput = multiplyX.transform.Find("input");
+                                            var multiplyXIF = multiplyXInput.gameObject.GetComponent<InputField>();
+                                            {
+                                                multiplyXIF.onValueChanged.RemoveAllListeners();
+                                                multiplyXIF.characterValidation = InputField.CharacterValidation.None;
+                                                multiplyXIF.characterLimit = 0;
+                                                multiplyXIF.textComponent = multiplyXInput.Find("Text").GetComponent<Text>();
+                                                multiplyXIF.placeholder = multiplyXInput.Find("Placeholder").GetComponent<Text>();
+                                                multiplyXIF.text = commands[3];
+                                                multiplyXIF.onValueChanged.AddListener(delegate (string _val)
+                                                {
+                                                    if (float.TryParse(_val, out float num))
+                                                    {
+                                                        commands[3] = num.ToString();
+                                                        modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                    }
+                                                });
+                                            }
+
+                                            var multiplyY = Instantiate(valueG);
+                                            multiplyY.transform.SetParent(layout.transform);
+                                            multiplyY.transform.localScale = Vector3.one;
+
+                                            multiplyY.name = "multiply y";
+
+                                            multiplyY.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Multiply Y";
+
+                                            var multiplyYInput = multiplyY.transform.Find("input");
+                                            var multiplyYIF = multiplyYInput.gameObject.GetComponent<InputField>();
+                                            {
+                                                multiplyYIF.onValueChanged.RemoveAllListeners();
+                                                multiplyYIF.characterValidation = InputField.CharacterValidation.None;
+                                                multiplyYIF.characterLimit = 0;
+                                                multiplyYIF.textComponent = multiplyYInput.Find("Text").GetComponent<Text>();
+                                                multiplyYIF.placeholder = multiplyYInput.Find("Placeholder").GetComponent<Text>();
+                                                multiplyYIF.text = commands[4];
+                                                multiplyYIF.onValueChanged.AddListener(delegate (string _val)
+                                                {
+                                                    if (float.TryParse(_val, out float num))
+                                                    {
+                                                        commands[4] = num.ToString();
+                                                        modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                    }
+                                                });
+                                            }
+
+                                            Triggers.AddEventTrigger(multiplyXIF.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(multiplyXIF, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(multiplyXIF, multiplyYIF, 0.1f, 10f) });
+                                            Triggers.AddEventTrigger(multiplyYIF.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(multiplyYIF, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(multiplyXIF, multiplyYIF, 0.1f, 10f) });
+
+                                            Triggers.IncreaseDecreaseButtons(multiplyYIF, 0.1f, 10f, multiplyY.transform);
+                                            Triggers.IncreaseDecreaseButtons(multiplyXIF, 0.1f, 10f, multiplyX.transform);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        //Sample
+                                        {
+                                            var w = Instantiate(valueG);
+                                            w.transform.SetParent(layout.transform);
+                                            w.transform.localScale = Vector3.one;
+
+                                            w.name = "sample";
+
+                                            w.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Sample";
+
+                                            var ppinput = w.transform.Find("input");
+                                            var ppif = ppinput.gameObject.GetComponent<InputField>();
+                                            {
+                                                ppif.onValueChanged.RemoveAllListeners();
+                                                ppif.characterValidation = InputField.CharacterValidation.None;
+                                                ppif.characterLimit = 0;
+                                                ppif.textComponent = ppinput.Find("Text").GetComponent<Text>();
+                                                ppif.placeholder = ppinput.Find("Placeholder").GetComponent<Text>();
+                                                ppif.text = commands[1];
+                                                ppif.onValueChanged.AddListener(delegate (string _val)
+                                                {
+                                                    if (int.TryParse(_val, out int num))
+                                                    {
+                                                        commands[1] = num.ToString();
+                                                        modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                    }
+                                                });
+                                            }
+
+                                            var ppet = ppinput.gameObject.GetComponent<EventTrigger>();
+                                            ppet.triggers.Clear();
+                                            ppet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, false, new List<int> { 0, 256 }));
+
+                                            Triggers.IncreaseDecreaseButtonsInt(ppif, 1, w.transform, new List<int> { 0, 256 });
+                                        }
+
+                                        if (cmd == "reactiveCol")
+                                        {
+                                            //Color
+                                            {
+                                                var w = Instantiate(valueG);
+                                                w.transform.SetParent(layout.transform);
+                                                w.transform.localScale = Vector3.one;
+
+                                                w.name = "color";
+
+                                                w.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Color";
+
+                                                Destroy(w.transform.Find("input").gameObject);
+                                                Destroy(w.transform.Find(">").gameObject);
+                                                Destroy(w.transform.Find("<").gameObject);
+
+                                                var color = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color"));
+                                                color.transform.SetParent(w.transform);
+                                                color.transform.localScale = Vector3.one;
+                                                color.name = "color";
+
+                                                if (color.TryGetComponent(out GridLayoutGroup glg))
+                                                {
+                                                    glg.cellSize = new Vector2(16f, 16f);
+                                                    glg.spacing = new Vector2(4.66f, 4.66f);
+                                                }
+                                                if (color.TryGetComponent(out RectTransform rt))
+                                                {
+                                                    rt.sizeDelta = new Vector2(183f, 32f);
+                                                }
+
+                                                SetObjectColors(color.GetComponentsInChildren<Toggle>(), commands, int.Parse(commands[2]), modifier);
+                                            }
+                                        }
+                                    }
+                                }
+
                                 //Delete Modifier
                                 {
                                     int tmpIndex = j;
@@ -4239,6 +4498,39 @@ namespace EditorManagement.Functions
             }
 
             yield break;
+        }
+
+        public static void SetObjectColors(Toggle[] toggles, List<string> commands, int i, object modifier)
+        {
+            commands[2] = i.ToString();
+            modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+            int num6 = 0;
+            foreach (Toggle toggle in toggles)
+            {
+                toggle.onValueChanged.RemoveAllListeners();
+                int tmpIndex = num6;
+                if (num6 == i)
+                {
+                    toggle.isOn = true;
+                }
+                else
+                {
+                    toggle.isOn = false;
+                }
+                toggle.onValueChanged.AddListener(delegate (bool _value)
+                {
+                    SetObjectColors(toggles, commands, tmpIndex, modifier);
+                });
+                toggle.GetComponent<Image>().color = GameManager.inst.LiveTheme.GetObjColor(tmpIndex);
+                if (!toggle.GetComponent<HoverUI>())
+                {
+                    var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
+                    hoverUI.animatePos = false;
+                    hoverUI.animateSca = true;
+                    hoverUI.size = 1.1f;
+                }
+                num6++;
+            }
         }
 
         public static void CreateDefaultModifiersList()
@@ -4331,6 +4623,8 @@ namespace EditorManagement.Functions
             "particleSystem (Action)",
             "trailRenderer (Action)",
             "spawnPrefab (Action)",
+            "playerHeal (Action)",
+            "playerHealAll (Action)",
             "playerHit (Action)",
             "playerHitAll (Action)",
             "playerKill (Action)",
@@ -4357,6 +4651,10 @@ namespace EditorManagement.Functions
             "disableObjectTree (Action)",
             "save (Action)",
             "saveVariable (Action)",
+            "reactivePos (Action)",
+            "reactiveSca (Action)",
+            "reactiveRot (Action)",
+            "reactiveCol (Action)",
             "playerCollide (Trigger)",
             "playerHealthEquals (Trigger)",
             "playerHealthLesserEquals (Trigger)",

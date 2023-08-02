@@ -4,7 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>EditorManagement</AssemblyName>
     <Description>EditorManagement aims to make the Project Arrhythmia LEGACY editor more powerful than ever.</Description>
-    <Version>1.8.6</Version>
+    <Version>1.9.9</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -38,6 +38,9 @@
     </Reference>
     <Reference Include="InControl">
       <HintPath>..\lib\InControl.dll</HintPath>
+    </Reference>
+    <Reference Include="RTFunctions">
+      <HintPath>..\RTFunctions\bin\Debug\net46\RTFunctions.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="Unity.TextMeshPro">

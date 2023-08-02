@@ -12,8 +12,12 @@ using HarmonyLib;
 
 using LSFunctions;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
+
+using RTFunctions.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -22,7 +26,7 @@ namespace EditorManagement.Patchers
     {
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
-		private static void MarkerStart()
+		private static void AwakePostfix()
 		{
 			EditorPlugin.SetNewMarkerColors();
 
@@ -55,9 +59,9 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Update")]
 		[HarmonyPostfix]
-		private static void UpdateMakr()
+		private static void UpdatePostfix()
 		{
-			if (ConfigEntries.MarkerLoop.Value == true && DataManager.inst.gameData.beatmapData.markers.Count != 0)
+			if (ConfigEntries.MarkerLoop.Value == true && DataManager.inst.gameData.beatmapData.markers.Count > 0)
 			{
 				int markerEnd = ConfigEntries.MarkerEndIndex.Value;
 				int markerStart = ConfigEntries.MarkerStartIndex.Value;
@@ -85,35 +89,11 @@ namespace EditorManagement.Patchers
 					AudioManager.inst.CurrentAudioSource.time = DataManager.inst.gameData.beatmapData.markers[markerStart].time;
 				}
 			}
-
-			if (EditorManager.inst.GetDialog("Marker Editor").Dialog.gameObject.activeSelf == true)
-			{
-				foreach (var marker in DataManager.inst.gameData.beatmapData.markers)
-				{
-					var regex = new System.Text.RegularExpressions.Regex(@"hideObjects\((.*?)\)");
-					var match = regex.Match(marker.desc);
-					if (match.Success)
-					{
-						if (ConfigEntries.ShowObjectsOnLayer.Value == true)
-						{
-							foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-							{
-								if (beatmapObject.editorData.Layer != int.Parse(match.Groups[1].ToString()))
-								{
-									ObjectManager.GameObjectRef gameObjectRef = ObjectManager.inst.beatmapGameObjects[beatmapObject.id];
-									Color objColor = gameObjectRef.mat.color;
-									gameObjectRef.mat.color = new Color(objColor.r, objColor.g, objColor.b, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
-								}
-							}
-						}
-					}
-				}
-			}
 		}
 
 		[HarmonyPatch("OpenDialog")]
 		[HarmonyPostfix]
-		private static void MarkerOpenDialog(MarkerEditor __instance, int __0)
+		private static void OpenDialogPostfix(MarkerEditor __instance, int __0)
 		{
 			EditorPlugin.SetNewMarkerColors();
 			GameObject.Find("EditorDialogs/MarkerDialog/data/left/color").GetComponent<GridLayoutGroup>().spacing = new Vector2(8f, 8f);
@@ -179,54 +159,19 @@ namespace EditorManagement.Patchers
 		private static bool UpdateMarkerList(MarkerEditor __instance)
 		{
 			Transform parent = __instance.right.Find("markers/list");
-			LSHelpers.DeleteChildren(parent, false);
+			LSHelpers.DeleteChildren(parent);
 
 			GameObject eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
 
-			//Sort Markers
-            {
-				GameObject sortMarkers = Instantiate(eventButton);
-				sortMarkers.transform.SetParent(parent);
-				sortMarkers.name = "sort markers";
+			//if (DataManager.inst.gameData.beatmapData.markers.Count > 0)
+			//{
+			//	var result = new List<DataManager.GameData.BeatmapData.Marker>();
+			//	result = (from x in DataManager.inst.gameData.beatmapData.markers
+			//			  orderby x.time ascending
+			//			  select x).ToList();
 
-				sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Sort Markers";
-				sortMarkers.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				var sortButton = sortMarkers.GetComponent<Button>();
-				sortButton.onClick.m_Calls.m_ExecutingCalls.Clear();
-				sortButton.onClick.m_Calls.m_PersistentCalls.Clear();
-				sortButton.onClick.m_PersistentCalls.m_Calls.Clear();
-				sortButton.onClick.RemoveAllListeners();
-				sortButton.onClick.AddListener(delegate ()
-				{
-					EditorManager.inst.ShowDialog("Warning Popup");
-					RTEditor.RefreshWarningPopup("Are you sure you want to sort the markers? (This is irreversible!)", delegate ()
-					{
-						var result = new List<DataManager.GameData.BeatmapData.Marker>();
-						result = (from x in DataManager.inst.gameData.beatmapData.markers
-								  orderby x.time ascending
-								  select x).ToList();
-
-						DataManager.inst.gameData.beatmapData.markers = result;
-						MarkerEditor.inst.UpdateMarkerList();
-						EditorManager.inst.HideDialog("Warning Popup");
-					}, delegate ()
-					{
-						EditorManager.inst.HideDialog("Warning Popup");
-					});
-				});
-
-				if (sortMarkers.GetComponent<HoverUI>())
-                {
-					Destroy(sortMarkers.GetComponent<HoverUI>());
-                }
-				if (sortMarkers.GetComponent<HoverTooltip>())
-				{
-					var tt = sortMarkers.GetComponent<HoverTooltip>();
-					tt.tooltipLangauges.Clear();
-					tt.tooltipLangauges.Add(Triggers.NewTooltip("Sort markers by time.", "Clicking this will sort and update all markers in the list by song time.", new List<string>()));
-				}
-			}
+			//	DataManager.inst.gameData.beatmapData.markers = result;
+			//}
 
 			//Delete Markers
             {
@@ -238,10 +183,7 @@ namespace EditorManagement.Patchers
 				sortMarkers.GetComponent<Image>().color = new Color(1f, 0.131f, 0.231f, 1f);
 
 				var sortButton = sortMarkers.GetComponent<Button>();
-				sortButton.onClick.m_Calls.m_ExecutingCalls.Clear();
-				sortButton.onClick.m_Calls.m_PersistentCalls.Clear();
-				sortButton.onClick.m_PersistentCalls.m_Calls.Clear();
-				sortButton.onClick.RemoveAllListeners();
+				sortButton.onClick.ClearAll();
 				sortButton.onClick.AddListener(delegate ()
 				{
 					EditorManager.inst.ShowDialog("Warning Popup");
@@ -278,7 +220,7 @@ namespace EditorManagement.Patchers
 				if (marker.name.ToLower().Contains(__instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(__instance.sortedName.ToLower()) || string.IsNullOrEmpty(__instance.sortedName))
 				{
 					GameObject gameObject = Instantiate(__instance.markerButtonPrefab, Vector3.zero, Quaternion.identity);
-					gameObject.name = marker.name + "_bg";
+					gameObject.name = marker.name + "_marker";
 					gameObject.transform.SetParent(parent);
 					gameObject.transform.localScale = Vector3.one;
 					Text component = gameObject.transform.Find("name").GetComponent<Text>();

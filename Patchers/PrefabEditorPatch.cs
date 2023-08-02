@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.IO;
 
@@ -16,9 +16,13 @@ using SimpleJSON;
 
 using HarmonyLib;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using LSFunctions;
+
+using RTFunctions.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -37,6 +41,13 @@ namespace EditorManagement.Patchers
         public static Transform prefabSelectorRight;
         public static Transform prefabSelectorLeft;
 
+        public static int currentPrefabType = 0;
+        public static InputField typeIF;
+        public static Image typeImage;
+        public static InputField nameIF;
+        public static Text objectCount;
+        public static Text prefabObjectCount;
+
         [HarmonyPatch("Awake")]
         [HarmonyPostfix]
         private static void CreateNewInputFields(PrefabEditor __instance)
@@ -48,7 +59,13 @@ namespace EditorManagement.Patchers
         {
             yield return new WaitForSeconds(1f);
 
+            if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types", out GameObject gm) && gm.TryGetComponent(out VerticalLayoutGroup component))
+            {
+                Destroy(component);
+            }
+
             prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
+            prefabSelectorRight = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/right");
 
             var eventDialogTMP = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right");
 
@@ -67,64 +84,148 @@ namespace EditorManagement.Patchers
                 Destroy(obj);
             }
 
-            var timeLabel = Instantiate(labelTemp);
-            timeLabel.transform.SetParent(prefabSelectorLeft);
-            timeLabel.transform.localScale = Vector3.one;
-            timeLabel.name = "time label";
-            timeLabel.transform.GetChild(0).GetComponent<Text>().text = "Time";
-            Destroy(timeLabel.transform.GetChild(1).gameObject);
+            //Time
+            {
+                var timeLabel = Instantiate(labelTemp);
+                timeLabel.transform.SetParent(prefabSelectorLeft);
+                timeLabel.transform.localScale = Vector3.one;
+                timeLabel.name = "time label";
+                timeLabel.transform.GetChild(0).GetComponent<Text>().text = "Time";
+                Destroy(timeLabel.transform.GetChild(1).gameObject);
 
-            var time = Instantiate(singleInput);
-            time.transform.SetParent(prefabSelectorLeft);
-            time.transform.localScale = Vector3.one;
-            time.name = "time";
+                var time = Instantiate(singleInput);
+                time.transform.SetParent(prefabSelectorLeft);
+                time.transform.localScale = Vector3.one;
+                time.name = "time";
+            }
 
-            var posLabel = Instantiate(labelTemp);
-            posLabel.transform.SetParent(prefabSelectorLeft);
-            posLabel.transform.localScale = Vector3.one;
-            posLabel.name = "pos label";
-            posLabel.transform.GetChild(0).GetComponent<Text>().text = "Position X Offset";
-            posLabel.transform.GetChild(1).GetComponent<Text>().text = "Position Y Offset";
+            //Position
+            {
+                var posLabel = Instantiate(labelTemp);
+                posLabel.transform.SetParent(prefabSelectorLeft);
+                posLabel.transform.localScale = Vector3.one;
+                posLabel.name = "pos label";
+                posLabel.transform.GetChild(0).GetComponent<Text>().text = "Position X Offset";
+                posLabel.transform.GetChild(1).GetComponent<Text>().text = "Position Y Offset";
 
-            var pos = Instantiate(vector2Input);
-            pos.transform.SetParent(prefabSelectorLeft);
-            pos.transform.localScale = Vector3.one;
-            pos.name = "position";
+                var pos = Instantiate(vector2Input);
+                pos.transform.SetParent(prefabSelectorLeft);
+                pos.transform.localScale = Vector3.one;
+                pos.name = "position";
+            }
 
-            var scaLabel = Instantiate(labelTemp);
-            scaLabel.transform.SetParent(prefabSelectorLeft);
-            scaLabel.transform.localScale = Vector3.one;
-            scaLabel.name = "sca label";
-            scaLabel.transform.GetChild(0).GetComponent<Text>().text = "Scale X Offset";
-            scaLabel.transform.GetChild(1).GetComponent<Text>().text = "Scale Y Offset";
+            //Scale
+            {
+                var scaLabel = Instantiate(labelTemp);
+                scaLabel.transform.SetParent(prefabSelectorLeft);
+                scaLabel.transform.localScale = Vector3.one;
+                scaLabel.name = "sca label";
+                scaLabel.transform.GetChild(0).GetComponent<Text>().text = "Scale X Offset";
+                scaLabel.transform.GetChild(1).GetComponent<Text>().text = "Scale Y Offset";
 
-            var sca = Instantiate(vector2Input);
-            sca.transform.SetParent(prefabSelectorLeft);
-            sca.transform.localScale = Vector3.one;
-            sca.name = "scale";
+                var sca = Instantiate(vector2Input);
+                sca.transform.SetParent(prefabSelectorLeft);
+                sca.transform.localScale = Vector3.one;
+                sca.name = "scale";
+            }
 
-            var rotLabel = Instantiate(labelTemp);
-            rotLabel.transform.SetParent(prefabSelectorLeft);
-            rotLabel.transform.localScale = Vector3.one;
-            rotLabel.name = "rot label";
-            rotLabel.transform.GetChild(0).GetComponent<Text>().text = "Rotation Offset";
-            Destroy(rotLabel.transform.GetChild(1).gameObject);
+            //Rotation
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorLeft);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "rot label";
+                rotLabel.transform.GetChild(0).GetComponent<Text>().text = "Rotation Offset";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
 
-            var rot = Instantiate(singleInput);
-            rot.transform.SetParent(prefabSelectorLeft);
-            rot.transform.localScale = Vector3.one;
-            rot.name = "rotation";
+                var rot = Instantiate(singleInput);
+                rot.transform.SetParent(prefabSelectorLeft);
+                rot.transform.localScale = Vector3.one;
+                rot.name = "rotation";
+            }
 
-            var layers = Instantiate(singleInput);
-            layers.transform.SetParent(prefabSelectorLeft.Find("editor"));
-            layers.transform.localScale = Vector3.one;
-            layers.transform.SetSiblingIndex(0);
-            layers.name = "layers";
+            //Layers
+            {
+                var layers = Instantiate(singleInput);
+                layers.transform.SetParent(prefabSelectorLeft.Find("editor"));
+                layers.transform.localScale = Vector3.one;
+                layers.transform.SetSiblingIndex(0);
+                layers.name = "layers";
+            }
+
+            //Name
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorRight);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "name label";
+                rotLabel.transform.GetChild(0).GetComponent<Text>().text = "Name";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+
+                var prefabName = Instantiate(RTEditor.defaultIF);
+                prefabName.transform.SetParent(prefabSelectorRight);
+                prefabName.transform.localScale = Vector3.one;
+                prefabName.name = "name";
+
+                nameIF = prefabName.GetComponent<InputField>();
+
+                nameIF.characterValidation = InputField.CharacterValidation.None;
+                nameIF.contentType = InputField.ContentType.Standard;
+                nameIF.characterLimit = 0;
+            }
+
+            //Type
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorRight);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "type label";
+                rotLabel.transform.GetChild(0).GetComponent<Text>().text = "Type";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+
+                var type = Instantiate(singleInput);
+                type.transform.SetParent(prefabSelectorRight);
+                type.transform.localScale = Vector3.one;
+
+                type.name = "type";
+
+                typeIF = type.GetComponent<InputField>();
+                typeImage = type.transform.GetChild(0).GetComponent<Image>();
+
+                typeIF.characterValidation = InputField.CharacterValidation.None;
+                typeIF.contentType = InputField.ContentType.Standard;
+            }
+
+            //Object Count
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorRight);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "count label";
+
+                objectCount = rotLabel.transform.GetChild(0).GetComponent<Text>();
+
+                objectCount.text = "Object Count: 0";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+            }
+
+            //Prefab Object Count
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorRight);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "count label";
+
+                prefabObjectCount = rotLabel.transform.GetChild(0).GetComponent<Text>();
+
+                prefabObjectCount.text = "Prefab Object Count: 0";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+            }
         }
 
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        private static void SetPrefabPrefabs()
+        private static void StartPostfix()
         {
             Debug.Log("Creating prefab types...");
             Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
@@ -132,71 +233,71 @@ namespace EditorManagement.Patchers
 
             //Instantiate prefab type buttons
             GameObject gameObject = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject.GetComponent<RectTransform>().SetParent(transform);
+            gameObject.transform.SetParent(transform);
             gameObject.transform.SetSiblingIndex(10);
             gameObject.name = "col_10";
 
             GameObject gameObject0 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject0.transform.parent = transform;
+            gameObject0.transform.SetParent(transform);
             gameObject0.transform.SetSiblingIndex(11);
             gameObject0.name = "col_11";
 
             GameObject gameObject1 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject1.GetComponent<RectTransform>().SetParent(transform);
+            gameObject1.transform.SetParent(transform);
             gameObject1.transform.SetSiblingIndex(12);
             gameObject1.name = "col_12";
 
             GameObject gameObject2 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject2.GetComponent<RectTransform>().SetParent(transform);
+            gameObject2.transform.SetParent(transform);
             gameObject2.transform.SetSiblingIndex(13);
             gameObject2.name = "col_13";
 
             GameObject gameObject3 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject3.transform.parent = transform;
+            gameObject3.transform.SetParent(transform);
             gameObject3.transform.SetSiblingIndex(14);
             gameObject3.name = "col_14";
 
             GameObject gameObject4 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject4.transform.parent = transform;
+            gameObject4.transform.SetParent(transform);
             gameObject4.transform.SetSiblingIndex(15);
             gameObject4.name = "col_15";
 
             GameObject gameObject5 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject5.transform.parent = transform;
+            gameObject5.transform.SetParent(transform);
             gameObject5.transform.SetSiblingIndex(16);
             gameObject5.name = "col_16";
 
             GameObject gameObject6 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject6.transform.parent = transform;
+            gameObject6.transform.SetParent(transform);
             gameObject6.transform.SetSiblingIndex(17);
             gameObject6.name = "col_17";
 
             GameObject gameObject7 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject7.transform.parent = transform;
+            gameObject7.transform.SetParent(transform);
             gameObject7.transform.SetSiblingIndex(18);
             gameObject7.name = "col_18";
 
             GameObject gameObject8 = Instantiate(prefabCol9, Vector3.zero, Quaternion.identity);
-            gameObject8.transform.parent = transform;
+            gameObject8.transform.SetParent(transform);
             gameObject8.transform.SetSiblingIndex(19);
             gameObject8.name = "col_19";
 
             //Create Local Variables
-            GameObject addPrefabT = PrefabEditor.inst.AddPrefab;
+            //GameObject addPrefabT = PrefabEditor.inst.AddPrefab;
 
             //Delete RectTransform
-            addPrefabT.transform.Find("delete").GetComponent<RectTransform>().anchoredPosition = ConfigEntries.PrefabINLDeletePos.Value;
-            addPrefabT.transform.Find("delete").GetComponent<RectTransform>().sizeDelta = ConfigEntries.PrefabINLDeleteSca.Value;
+            //addPrefabT.transform.Find("delete").GetComponent<RectTransform>().anchoredPosition = ConfigEntries.PrefabINLDeletePos.Value;
+            //addPrefabT.transform.Find("delete").GetComponent<RectTransform>().sizeDelta = ConfigEntries.PrefabINLDeleteSca.Value;
 
             //Name Text
-            addPrefabT.transform.Find("name").GetComponent<Text>().horizontalOverflow = ConfigEntries.PrefabINNameHOverflow.Value;
-            addPrefabT.transform.Find("name").GetComponent<Text>().verticalOverflow = ConfigEntries.PrefabINNameVOverflow.Value;
-            addPrefabT.transform.Find("name").GetComponent<Text>().fontSize = ConfigEntries.PrefabINNameFontSize.Value;
+            //addPrefabT.transform.Find("name").GetComponent<Text>().horizontalOverflow = ConfigEntries.PrefabINNameHOverflow.Value;
+            //addPrefabT.transform.Find("name").GetComponent<Text>().verticalOverflow = ConfigEntries.PrefabINNameVOverflow.Value;
+            //addPrefabT.transform.Find("name").GetComponent<Text>().fontSize = ConfigEntries.PrefabINNameFontSize.Value;
 
             //Type Text
-            addPrefabT.transform.Find("type-name").GetComponent<Text>().horizontalOverflow = ConfigEntries.PrefabINTypeHOverflow.Value;
-            addPrefabT.transform.Find("type-name").GetComponent<Text>().verticalOverflow = ConfigEntries.PrefabINTypeVOverflow.Value;
-            addPrefabT.transform.Find("type-name").GetComponent<Text>().fontSize = ConfigEntries.PrefabINTypeFontSize.Value;
+            //addPrefabT.transform.Find("type-name").GetComponent<Text>().horizontalOverflow = ConfigEntries.PrefabINTypeHOverflow.Value;
+            //addPrefabT.transform.Find("type-name").GetComponent<Text>().verticalOverflow = ConfigEntries.PrefabINTypeVOverflow.Value;
+            //addPrefabT.transform.Find("type-name").GetComponent<Text>().fontSize = ConfigEntries.PrefabINTypeFontSize.Value;
         }
 
         [HarmonyPatch("CreateNewPrefab")]
@@ -321,23 +422,10 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("LoadExternalPrefabs")]
         [HarmonyPrefix]
-        private static bool LoadExternalPrefabsPrefix(PrefabEditor __instance)
+        private static bool LoadExternalPrefabsPrefix(PrefabEditor __instance, ref IEnumerator __result)
         {
-            EditorPlugin.inst.StartCoroutine(EditorPlugin.LoadExternalPrefabs(__instance));
+            __result = RTEditor.LoadExternalPrefabs(__instance);
             return false;
-        }
-
-        [HarmonyPatch("LoadExternalPrefabs", MethodType.Enumerator)]
-        [HarmonyTranspiler]
-        private static IEnumerable<CodeInstruction> GetPrefabListTranspiler(IEnumerable<CodeInstruction> instructions)
-        {
-            return new CodeMatcher(instructions)
-                .Start()
-                .Advance(27)
-                .ThrowIfNotMatch("Is not beatmaps/prefabs", new CodeMatch(OpCodes.Ldstr))
-                .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListPath")))
-                .ThrowIfNotMatch("Is not ldsfld", new CodeMatch(OpCodes.Ldsfld))
-                .InstructionEnumeration();
         }
 
         [HarmonyPatch("SavePrefab")]
@@ -443,6 +531,7 @@ namespace EditorManagement.Patchers
             if (isPrefab && ObjEditor.inst.currentObjectSelection.GetPrefabObjectData() != null)
             {
                 var currentPrefab = ObjEditor.inst.currentObjectSelection.GetPrefabObjectData();
+                var prefab = ObjEditor.inst.currentObjectSelection.GetPrefabData();
 
                 var time = prefabSelectorLeft.Find("time").GetComponent<InputField>();
                 time.onValueChanged.RemoveAllListeners();
@@ -665,6 +754,121 @@ namespace EditorManagement.Patchers
                         posXET.triggers.Add(Triggers.ScrollDelta(prefabPosX, 15f, 3f));
                     }
                 }
+
+                //Global Settings
+                {
+                    nameIF.onValueChanged.RemoveAllListeners();
+                    nameIF.text = prefab.Name;
+                    nameIF.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        prefab.Name = _val;
+                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        {
+                            if (prefabObject.prefabID == prefab.ID)
+                            {
+                                var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID);
+                                ObjEditor.inst.RenderTimelineObject(objectSelection);
+                            }
+                        }
+                    });
+
+                    SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                    typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                    typeImage.transform.Find("Text").GetComponent<Text>().color = Triggers.InvertColorHue(Triggers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+
+                    currentPrefabType = prefab.Type;
+
+                    var entry = new EventTrigger.Entry();
+                    entry.eventID = EventTriggerType.Scroll;
+                    entry.callback.AddListener(delegate (BaseEventData eventData)
+                    {
+                        PointerEventData pointerEventData = (PointerEventData)eventData;
+
+                        if (pointerEventData.scrollDelta.y < 0f)
+                        {
+                            int num = Mathf.Clamp(prefab.Type - 1, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+                            prefab.Type = num;
+                            SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                            typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                            currentPrefabType = num;
+                            foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                            {
+                                if (prefabObject.prefabID == prefab.ID)
+                                {
+                                    var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID);
+                                    ObjEditor.inst.RenderTimelineObject(objectSelection);
+                                }
+                            }
+                            return;
+                        }
+                        if (pointerEventData.scrollDelta.y > 0f)
+                        {
+                            int num = Mathf.Clamp(prefab.Type + 1, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+                            prefab.Type = num;
+                            SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                            typeImage.color = DataManager.inst.PrefabTypes[num].Color;
+                            currentPrefabType = num;
+                            foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                            {
+                                if (prefabObject.prefabID == prefab.ID)
+                                {
+                                    var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID);
+                                    ObjEditor.inst.RenderTimelineObject(objectSelection);
+                                }
+                            }
+                        }
+                    });
+
+                    Triggers.AddEventTrigger(typeIF.gameObject, new List<EventTrigger.Entry> { entry });
+
+                    var leftButton = typeIF.transform.Find("<").GetComponent<Button>();
+                    var rightButton = typeIF.transform.Find(">").GetComponent<Button>();
+
+                    leftButton.onClick.ClearAll();
+                    leftButton.onClick.AddListener(delegate ()
+                    {
+                        int num = Mathf.Clamp(prefab.Type - 1, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+                        prefab.Type = num;
+                        SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                        typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                        typeImage.transform.Find("Text").GetComponent<Text>().color = Triggers.InvertColorHue(Triggers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+                        currentPrefabType = num;
+                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        {
+                            if (prefabObject.prefabID == prefab.ID)
+                            {
+                                var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID);
+                                ObjEditor.inst.RenderTimelineObject(objectSelection);
+                            }
+                        }
+                    });
+
+                    rightButton.onClick.ClearAll();
+                    rightButton.onClick.AddListener(delegate ()
+                    {
+                        int num = Mathf.Clamp(prefab.Type + 1, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+                        prefab.Type = num;
+                        SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                        typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                        typeImage.transform.Find("Text").GetComponent<Text>().color = Triggers.InvertColorHue(Triggers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+                        currentPrefabType = num;
+                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        {
+                            if (prefabObject.prefabID == prefab.ID)
+                            {
+                                var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID);
+                                ObjEditor.inst.RenderTimelineObject(objectSelection);
+                            }
+                        }
+                    });
+
+                    objectCount.text = "Object Count: " + prefab.objects.Count.ToString();
+                    prefabObjectCount.text = "Prefab Object Count: " + prefab.prefabObjects.Count;
+                }
             }
             if (!isPrefab)
             {
@@ -672,6 +876,30 @@ namespace EditorManagement.Patchers
             }
             #endregion
             return false;
+        }
+
+        public static void SearchPrefabType(string t, DataManager.GameData.Prefab prefab)
+        {
+            typeIF.onValueChanged.RemoveAllListeners();
+            typeIF.text = t;
+            typeIF.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (DataManager.inst.PrefabTypes.Find(x => x.Name.ToLower() == _val.ToLower()) != null)
+                {
+                    prefab.Type = DataManager.inst.PrefabTypes.FindIndex(x => x.Name.ToLower() == _val.ToLower());
+                    typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                    typeImage.transform.Find("Text").GetComponent<Text>().color = Triggers.InvertColorHue(Triggers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+                    currentPrefabType = prefab.Type;
+                    foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                    {
+                        if (prefabObject.prefabID == prefab.ID)
+                        {
+                            var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID);
+                            ObjEditor.inst.RenderTimelineObject(objectSelection);
+                        }
+                    }
+                }
+            });
         }
 
         [HarmonyPatch("OpenDialog")]
@@ -695,6 +923,28 @@ namespace EditorManagement.Patchers
             }
         }
 
+        [HarmonyPatch("ImportPrefabIntoLevel")]
+        [HarmonyPrefix]
+        private static bool ImportPrefabIntoLevel(PrefabEditor __instance, DataManager.GameData.Prefab _prefab)
+        {
+            Debug.LogFormat("{0}Adding Prefab: [{1}]", EditorPlugin.className, _prefab.Name);
+            DataManager.GameData.Prefab tmpPrefab = DataManager.GameData.Prefab.DeepCopy(_prefab, true);
+            int num = DataManager.inst.gameData.prefabs.FindAll((DataManager.GameData.Prefab x) => Regex.Replace(x.Name, "( +\\[\\d+])", string.Empty) == tmpPrefab.Name).Count<DataManager.GameData.Prefab>();
+            if (num > 0)
+            {
+                DataManager.GameData.Prefab tmpPrefab2 = tmpPrefab;
+                tmpPrefab2.Name = string.Concat(new object[]
+                {
+                tmpPrefab2.Name,
+                " [",
+                num,
+                "]"
+                });
+            }
+            DataManager.inst.gameData.prefabs.Add(tmpPrefab);
+            __instance.ReloadInternalPrefabsInPopup();
+            return false;
+        }
 
     }
 }

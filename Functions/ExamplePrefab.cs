@@ -10,6 +10,8 @@ using SimpleJSON;
 using LSFunctions;
 using HarmonyLib;
 
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 
 namespace EditorManagement.Functions
