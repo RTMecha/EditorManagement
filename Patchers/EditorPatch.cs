@@ -950,6 +950,36 @@ namespace EditorManagement.Patchers
 			InputDataManager.inst.editorActions.Redo.ClearBindings();
 
 			//RTEditor.inst.StartCoroutine(RTEditor.StartEditorGUI());
+			InputPlayers();
+		}
+
+		[HarmonyPatch("Start")]
+		[HarmonyPrefix]
+		private static void StartPrefix()
+        {
+			Debug.LogFormat("{0}Player Count: {1}", EditorPlugin.className, InputDataManager.inst.players.Count);
+			playerStorage.Clear();
+			foreach (var player in InputDataManager.inst.players)
+            {
+				playerStorage.Add(player);
+            }
+        }
+
+		public static List<InputDataManager.CustomPlayer> playerStorage = new List<InputDataManager.CustomPlayer>();
+		public static bool reloadSelectedPlayers = true;
+
+		public static void InputPlayers()
+        {
+			InputDataManager.inst.players.Clear();
+			if (reloadSelectedPlayers && playerStorage.Count > 0)
+			{
+				foreach (var player in playerStorage)
+                {
+					InputDataManager.inst.players.Add(player);
+                }
+            }
+			else
+				InputDataManager.inst.players.Add(new InputDataManager.CustomPlayer(true, 0, null));
 		}
 
 		[HarmonyPatch("Update")]
