@@ -30,6 +30,8 @@ namespace EditorManagement.Functions.Editors
         public static Transform editorDialogText;
 
         public static Dropdown playerModelDropdown;
+        public static InputField playerModelIndexIF;
+        public static int playerModelIndex = 0;
 
         public static GameObject objectDialog;
         public static Transform objectDialogTF;
@@ -117,6 +119,24 @@ namespace EditorManagement.Functions.Editors
                     playerModelDropdown.options = new List<Dropdown.OptionData>();
                 }
 
+                //Player Index
+                {
+                    var b1 = Instantiate(singleInput.transform);
+                    b1.transform.SetParent(editorDialogSpacer);
+                    b1.transform.localScale = Vector3.one;
+                    b1.name = "index";
+
+                    Destroy(b1.GetComponent<InputFieldHelper>());
+                    Destroy(b1.GetComponent<EventInfo>());
+
+                    var b1RT = b1.GetComponent<RectTransform>();
+                    b1RT.anchoredPosition = new Vector2(256f, -8f);
+                    b1RT.sizeDelta = new Vector2(100f, 50f);
+
+                    playerModelIndexIF = b1.GetComponent<InputField>();
+                    playerModelIndexIF.onValueChanged.ClearAll();
+                }
+                
                 //Button 1
                 {
                     var b1 = Instantiate(EditorManager.inst.folderButtonPrefab);
@@ -125,7 +145,7 @@ namespace EditorManagement.Functions.Editors
                     b1.name = "save";
 
                     var b1RT = b1.GetComponent<RectTransform>();
-                    b1RT.anchoredPosition = new Vector2(256f, 55f);
+                    b1RT.anchoredPosition = new Vector2(436f, 55f);
                     b1RT.sizeDelta = new Vector2(100f, 50f);
 
                     b1.transform.GetChild(0).GetComponent<Text>().text = "Save All";
@@ -145,7 +165,7 @@ namespace EditorManagement.Functions.Editors
                     b1.name = "create";
 
                     var b1RT = b1.GetComponent<RectTransform>();
-                    b1RT.anchoredPosition = new Vector2(366f, 55f);
+                    b1RT.anchoredPosition = new Vector2(546f, 55f);
                     b1RT.sizeDelta = new Vector2(120f, 50f);
 
                     b1.transform.GetChild(0).GetComponent<Text>().text = "Create New";
@@ -172,7 +192,7 @@ namespace EditorManagement.Functions.Editors
                     b1.name = "reload";
 
                     var b1RT = b1.GetComponent<RectTransform>();
-                    b1RT.anchoredPosition = new Vector2(495f, 55f);
+                    b1RT.anchoredPosition = new Vector2(675f, 55f);
                     b1RT.sizeDelta = new Vector2(80f, 50f);
 
                     b1.transform.GetChild(0).GetComponent<Text>().text = "Reload";
@@ -1343,7 +1363,7 @@ namespace EditorManagement.Functions.Editors
             if (playerExtensions != null)
             {
                 var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { 0 });
+                var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
                 object currentModel = null;
 
                 playerModelDropdown.onValueChanged.RemoveAllListeners();
@@ -1364,11 +1384,26 @@ namespace EditorManagement.Functions.Editors
                 playerModelDropdown.onValueChanged.AddListener(delegate (int _val)
                 {
                     Debug.LogFormat("{0}Setting Player 1's model index to {1}", EditorPlugin.className, _val);
-                    playerExtensions.GetMethod("SetPlayerModelIndex").Invoke(playerExtensions, new object[] { 0, _val });
+                    playerExtensions.GetMethod("SetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex, _val });
                     inst.StartCoroutine(RenderDialog());
 
                     playerPlugin.GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
                 });
+
+                playerModelIndexIF.onValueChanged.ClearAll();
+                playerModelIndexIF.text = playerModelIndex.ToString();
+                playerModelIndexIF.onValueChanged.AddListener(delegate (string _val)
+                {
+                    if (int.TryParse(_val, out int num))
+                    {
+                        num = Mathf.Clamp(num, 0, 3);
+                        playerModelIndex = num;
+                        inst.StartCoroutine(RenderDialog());
+                    }
+                });
+
+                Triggers.AddEventTrigger(playerModelIndexIF.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(playerModelIndexIF, 1, false, new List<int> { 0, 3 }) });
+                Triggers.IncreaseDecreaseButtonsInt(playerModelIndexIF, 1, null, new List<int> { 0, 3 });
 
                 #region UI Elements
 
