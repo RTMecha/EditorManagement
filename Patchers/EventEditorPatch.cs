@@ -763,6 +763,9 @@ namespace EditorManagement.Patchers
 					pp.transform.localScale = Vector3.one;
 					pp.name = "follow";
 
+					var limitHLabel = Instantiate(pp.transform.GetChild(8).gameObject);
+					var limitH = Instantiate(pp.transform.GetChild(9).gameObject);
+
 					pp.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Sharpness";
 					pp.transform.GetChild(8).GetChild(1).GetComponent<Text>().text = "Offset";
 
@@ -807,6 +810,45 @@ namespace EditorManagement.Patchers
 					tlAct3Label.transform.SetSiblingIndex(8);
 					tlAct3Label.transform.GetChild(0).GetComponent<Text>().text = "Active";
 					Destroy(tlAct3Label.transform.GetChild(1).gameObject);
+
+					limitHLabel.transform.SetParent(pp.transform);
+					limitHLabel.transform.localScale = Vector3.one;
+					limitHLabel.name = "label";
+
+					limitHLabel.transform.GetChild(0).GetComponent<Text>().text = "Left";
+					limitHLabel.transform.GetChild(1).GetComponent<Text>().text = "Right";
+
+					limitH.transform.SetParent(pp.transform);
+					limitH.transform.localScale = Vector3.one;
+					limitH.name = "limit horizontal";
+
+					var limitVLabel = Instantiate(limitHLabel);
+					limitVLabel.transform.SetParent(pp.transform);
+					limitVLabel.transform.localScale = Vector3.one;
+					limitVLabel.name = "label";
+
+					limitVLabel.transform.GetChild(0).GetComponent<Text>().text = "Up";
+					limitVLabel.transform.GetChild(1).GetComponent<Text>().text = "Down";
+
+					var limitV = Instantiate(limitH);
+					limitV.transform.SetParent(pp.transform);
+					limitV.transform.localScale = Vector3.one;
+					limitV.name = "limit vertical";
+
+					var anchorLabel = Instantiate(limitHLabel);
+					anchorLabel.transform.SetParent(pp.transform);
+					anchorLabel.transform.localScale = Vector3.one;
+					anchorLabel.name = "label";
+
+					anchorLabel.transform.GetChild(0).GetComponent<Text>().text = "Anchor Multiply";
+					Destroy(anchorLabel.transform.GetChild(1).gameObject);
+
+					var anchor = Instantiate(limitH);
+					anchor.transform.SetParent(pp.transform);
+					anchor.transform.localScale = Vector3.one;
+					anchor.name = "anchor";
+
+					Destroy(anchor.transform.GetChild(1).gameObject);
 				}
 
                 //Music
@@ -2693,6 +2735,111 @@ namespace EditorManagement.Patchers
 							{
 								float num = float.Parse(val);
 								currentKeyframe.eventValues[4] = num;
+								eventManager.updateEvents();
+							});
+
+							Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f);
+							Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f) });
+
+							if (!inputField.gameObject.GetComponent<InputFieldHelper>())
+							{
+								inputField.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Limit Left
+						{
+							var inputField = dialogTmp.Find("limit horizontal/x").GetComponent<InputField>();
+							inputField.onValueChanged.RemoveAllListeners();
+							inputField.text = currentKeyframe.eventValues[5].ToString("f2");
+							inputField.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[5] = num;
+								eventManager.updateEvents();
+							});
+
+							Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f);
+							Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f) });
+
+							if (!inputField.gameObject.GetComponent<InputFieldHelper>())
+							{
+								inputField.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Limit Right
+						{
+							var inputField = dialogTmp.Find("limit horizontal/y").GetComponent<InputField>();
+							inputField.onValueChanged.RemoveAllListeners();
+							inputField.text = currentKeyframe.eventValues[6].ToString("f2");
+							inputField.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[6] = num;
+								eventManager.updateEvents();
+							});
+
+							Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f);
+							Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f) });
+
+							if (!inputField.gameObject.GetComponent<InputFieldHelper>())
+							{
+								inputField.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Limit Up
+						{
+							var inputField = dialogTmp.Find("limit vertical/x").GetComponent<InputField>();
+							inputField.onValueChanged.RemoveAllListeners();
+							inputField.text = currentKeyframe.eventValues[7].ToString("f2");
+							inputField.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[7] = num;
+								eventManager.updateEvents();
+							});
+
+							Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f);
+							Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f) });
+
+							if (!inputField.gameObject.GetComponent<InputFieldHelper>())
+							{
+								inputField.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Limit Down
+						{
+							var inputField = dialogTmp.Find("limit vertical/y").GetComponent<InputField>();
+							inputField.onValueChanged.RemoveAllListeners();
+							inputField.text = currentKeyframe.eventValues[8].ToString("f2");
+							inputField.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[8] = num;
+								eventManager.updateEvents();
+							});
+
+							Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f);
+							Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f) });
+
+							if (!inputField.gameObject.GetComponent<InputFieldHelper>())
+							{
+								inputField.gameObject.AddComponent<InputFieldHelper>();
+							}
+						}
+
+						//Anchor
+						{
+							var inputField = dialogTmp.Find("anchor/x").GetComponent<InputField>();
+							inputField.onValueChanged.RemoveAllListeners();
+							inputField.text = currentKeyframe.eventValues[9].ToString("f2");
+							inputField.onValueChanged.AddListener(delegate (string val)
+							{
+								float num = float.Parse(val);
+								currentKeyframe.eventValues[9] = num;
 								eventManager.updateEvents();
 							});
 
