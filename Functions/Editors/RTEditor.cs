@@ -3181,6 +3181,153 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
+		public static void RefreshObjectSearch2(Action action, bool multi = false, string multiValue = "")
+		{
+			Debug.LogFormat("{0}Mutli: {1}\nMultiValue: {2}", EditorPlugin.className, multi.ToString(), multiValue.ToString());
+			var content = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("mask/content");
+
+			if (multi && multiValue == "parent")
+			{
+				var buttonPrefab = Instantiate(EditorManager.inst.spriteFolderButtonPrefab);
+				buttonPrefab.transform.SetParent(content);
+				buttonPrefab.transform.localScale = Vector3.one;
+				buttonPrefab.name = "Clear Parents";
+				buttonPrefab.transform.GetChild(0).GetComponent<Text>().text = "Clear Parents";
+
+				var b = buttonPrefab.GetComponent<Button>();
+				b.onClick.RemoveAllListeners();
+				b.onClick.AddListener(delegate ()
+				{
+					foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+					{
+						if (objectSelection.IsObject())
+						{
+							objectSelection.GetObjectData().parent = "";
+							ObjectManager.inst.updateObjects(objectSelection);
+						}
+					}
+				});
+
+				var x = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("Panel/x/Image").GetComponent<Image>().sprite;
+				var image = buttonPrefab.transform.Find("Image").GetComponent<Image>();
+				image.color = Color.red;
+				image.sprite = x;
+			}
+
+			LSHelpers.DeleteChildren(content);
+
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+			{
+				var regex = new Regex(@"\[([0-9])\]");
+				var match = regex.Match(searchterm);
+
+				if (string.IsNullOrEmpty(searchterm) || beatmapObject.name.ToLower().Contains(searchterm.ToLower()) || match.Success && int.Parse(match.Groups[1].ToString()) < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == int.Parse(match.Groups[1].ToString()))
+				{
+					var buttonPrefab = Instantiate(EditorManager.inst.spriteFolderButtonPrefab);
+					buttonPrefab.transform.SetParent(content.transform);
+					buttonPrefab.transform.localScale = Vector3.one;
+					string nm = "[" + DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject).ToString("0000") + "/" + (DataManager.inst.gameData.beatmapObjects.Count - 1).ToString("0000") + " - " + beatmapObject.id + "] : " + beatmapObject.name;
+					buttonPrefab.name = nm;
+					buttonPrefab.transform.GetChild(0).GetComponent<Text>().text = nm;
+
+					var b = buttonPrefab.GetComponent<Button>();
+					b.onClick.RemoveAllListeners();
+					b.onClick.AddListener(delegate ()
+					{
+						if (!multi)
+						{
+							ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject)));
+							BringToObject();
+						}
+						else
+						{
+							string id = beatmapObject.id;
+
+							Debug.LogFormat("{0}Attempting to sync {1} to selection!", EditorPlugin.className, id);
+
+							action();
+
+							EditorManager.inst.HideDialog("Object Search Popup");
+						}
+					});
+					var image = buttonPrefab.transform.Find("Image").GetComponent<Image>();
+					image.color = GetObjectColor(beatmapObject, false);
+
+					int n = beatmapObject.shape + 1;
+
+					if (beatmapObject.shape == 4 || beatmapObject.shape == 6)
+					{
+						image.sprite = ObjEditor.inst.ObjectView.transform.Find("shape/" + n.ToString() + "/Image").GetComponent<Image>().sprite;
+					}
+					else
+					{
+						image.sprite = ObjEditor.inst.ObjectView.transform.Find("shapesettings").GetChild(beatmapObject.shape).GetChild(beatmapObject.shapeOption).Find("Image").GetComponent<Image>().sprite;
+					}
+
+					string desc = "";
+					string hint = "";
+
+					if (beatmapObject.TryGetGameObject(out GameObject gameObjectRef))
+					{
+						Transform transform = gameObjectRef.transform;
+
+						string parent = "";
+						if (!string.IsNullOrEmpty(beatmapObject.parent))
+						{
+							parent = "<br>P: " + beatmapObject.parent + " (" + beatmapObject.GetParentType() + ")";
+						}
+						else
+						{
+							parent = "<br>P: No Parent" + " (" + beatmapObject.GetParentType() + ")";
+						}
+
+						string text = "";
+						if (beatmapObject.shape != 4 || beatmapObject.shape != 6)
+						{
+							text = "<br>S: " + GetShape(beatmapObject.shape, beatmapObject.shapeOption) +
+								"<br>T: " + beatmapObject.text;
+						}
+						if (beatmapObject.shape == 4)
+						{
+							text = "<br>S: Text" +
+								"<br>T: " + beatmapObject.text;
+						}
+						if (beatmapObject.shape == 6)
+						{
+							text = "<br>S: Image" +
+								"<br>T: " + beatmapObject.text;
+						}
+
+						string ptr = "";
+						if (!string.IsNullOrEmpty(beatmapObject.prefabID) && !string.IsNullOrEmpty(beatmapObject.prefabInstanceID))
+						{
+							ptr = "<br><#" + ColorToHex(beatmapObject.GetPrefabTypeColor()) + ">PID: " + beatmapObject.prefabID + " | PIID: " + beatmapObject.prefabInstanceID + "</color>";
+						}
+						else
+						{
+							ptr = "<br>Not from prefab";
+						}
+
+						desc = "N/ST: " + beatmapObject.name + " [ " + beatmapObject.StartTime + " ]";
+						hint = "ID: {" + beatmapObject.id + "}" +
+							parent +
+							"<br>A: " + beatmapObject.TimeWithinLifespan().ToString() +
+							"<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
+							text +
+							"<br>D: " + beatmapObject.Depth +
+							"<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
+							"<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
+							"<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
+							"<br>ROT: " + transform.eulerAngles.z +
+							"<br>COL: " + "<#" + ColorToHex(GetObjectColor(beatmapObject, false)) + ">" + "█ <b>#" + ColorToHex(GetObjectColor(beatmapObject, true)) + "</b></color>" +
+							ptr;
+
+						Triggers.AddTooltip(buttonPrefab, desc, hint);
+					}
+				}
+			}
+		}
+
 		public static void RefreshObjectSearch(bool multi = false, string multiValue = "", bool _objEditor = false, bool _objectManager = false)
 		{
 			Debug.LogFormat("{0}Mutli: {1}\nMultiValue: {2}", EditorPlugin.className, multi.ToString(), multiValue.ToString());
@@ -7405,6 +7552,11 @@ namespace EditorManagement.Functions.Editors
 					jn["events"]["follow_player"][i]["z"] = eventKeyframe.eventValues[2].ToString();
 					jn["events"]["follow_player"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
 					jn["events"]["follow_player"][i]["y2"] = eventKeyframe.eventValues[4].ToString();
+					jn["events"]["follow_player"][i]["z2"] = eventKeyframe.eventValues[5].ToString();
+					jn["events"]["follow_player"][i]["x3"] = eventKeyframe.eventValues[6].ToString();
+					jn["events"]["follow_player"][i]["y3"] = eventKeyframe.eventValues[7].ToString();
+					jn["events"]["follow_player"][i]["z3"] = eventKeyframe.eventValues[8].ToString();
+					jn["events"]["follow_player"][i]["x4"] = eventKeyframe.eventValues[9].ToString();
 					if (eventKeyframe.curveType.Name != "Linear")
 					{
 						jn["events"]["follow_player"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
@@ -8310,13 +8462,18 @@ namespace EditorManagement.Functions.Editors
 				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
 				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
 				eventKeyframe15.eventTime = 0f;
-				eventKeyframe15.SetEventValues(new float[5]
+				eventKeyframe15.SetEventValues(new float[10]
 				{
 					0f,
 					0f,
 					0f,
 					0.5f,
-					0f
+					0f,
+					9999f,
+					-9999f,
+					9999f,
+					-9999f,
+					1f
 				});
 				list14.Add(eventKeyframe15);
 
@@ -8386,6 +8543,7 @@ namespace EditorManagement.Functions.Editors
 			beatmapObject.name = "\"Default object cameo\" -Viral Mecha";
 			beatmapObject.autoKillType = BeatmapObject.AutoKillType.LastKeyframeOffset;
 			beatmapObject.autoKillOffset = 4f;
+			beatmapObject.editorData.Layer = 0;
 			gameData.beatmapObjects.Add(beatmapObject);
 			return gameData;
 		}
