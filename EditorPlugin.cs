@@ -28,7 +28,7 @@ using RTFunctions.Functions.Components;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.9.9")]
+    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.9.15")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	[BepInIncompatibility("com.mecha.originoffset")]
