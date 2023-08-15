@@ -56,6 +56,8 @@ namespace EditorManagement.Functions.Editors
 
         public static string currentID;
 
+        public static bool debug = false;
+
         private void Awake()
         {
             if (!GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
@@ -133,6 +135,8 @@ namespace EditorManagement.Functions.Editors
                     b1RT.anchoredPosition = new Vector2(256f, -8f);
                     b1RT.sizeDelta = new Vector2(100f, 50f);
 
+                    b1.transform.GetChild(0).GetComponent<RectTransform>().sizeDelta = new Vector2(50f, 32f);
+
                     playerModelIndexIF = b1.GetComponent<InputField>();
                     playerModelIndexIF.onValueChanged.ClearAll();
                 }
@@ -146,6 +150,8 @@ namespace EditorManagement.Functions.Editors
 
                     var b1RT = b1.GetComponent<RectTransform>();
                     b1RT.anchoredPosition = new Vector2(436f, 55f);
+                    b1RT.anchoredPosition = new Vector2(436f, 55f);
+                    //b1RT.anchoredPosition = new Vector2(366f, 55f);
                     b1RT.sizeDelta = new Vector2(100f, 50f);
 
                     b1.transform.GetChild(0).GetComponent<Text>().text = "Save All";
@@ -166,6 +172,7 @@ namespace EditorManagement.Functions.Editors
 
                     var b1RT = b1.GetComponent<RectTransform>();
                     b1RT.anchoredPosition = new Vector2(546f, 55f);
+                    //b1RT.anchoredPosition = new Vector2(476f, 55f);
                     b1RT.sizeDelta = new Vector2(120f, 50f);
 
                     b1.transform.GetChild(0).GetComponent<Text>().text = "Create New";
@@ -193,6 +200,7 @@ namespace EditorManagement.Functions.Editors
 
                     var b1RT = b1.GetComponent<RectTransform>();
                     b1RT.anchoredPosition = new Vector2(675f, 55f);
+                    //b1RT.anchoredPosition = new Vector2(605f, 55f);
                     b1RT.sizeDelta = new Vector2(80f, 50f);
 
                     b1.transform.GetChild(0).GetComponent<Text>().text = "Reload";
@@ -201,6 +209,45 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.AddListener(delegate ()
                     {
                         ModCompatibility.ClearPlayerModels();
+
+                        var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
+                        var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
+
+                        if (c != null)
+                        {
+                            playerPlugin.GetType().GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
+                        }
+
+                        inst.StartCoroutine(RenderDialog());
+                    });
+                }
+
+                //Button 4
+                bool v = false;
+                if (v)
+                {
+                    var b1 = Instantiate(EditorManager.inst.folderButtonPrefab);
+                    b1.transform.SetParent(editorDialogSpacer);
+                    b1.transform.localScale = Vector3.one;
+                    b1.name = "clone";
+
+                    var b1RT = b1.GetComponent<RectTransform>();
+                    b1RT.anchoredPosition = new Vector2(685f, 55f);
+                    b1RT.sizeDelta = new Vector2(70f, 50f);
+
+                    b1.transform.GetChild(0).GetComponent<Text>().text = "Clone";
+                    var butt = b1.GetComponent<Button>();
+                    butt.onClick.RemoveAllListeners();
+                    butt.onClick.AddListener(delegate ()
+                    {
+                        var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
+                        var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
+
+                        if (c != null)
+                        {
+                            var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
+                            playerPlugin.GetType().GetMethod("DuplicatePlayerModel").Invoke(playerPlugin, new object[] { currentIndex });
+                        }
 
                         inst.StartCoroutine(RenderDialog());
                     });
@@ -268,7 +315,9 @@ namespace EditorManagement.Functions.Editors
                     customObjectButtonPrefab = objectDialogContent.GetChild(0).gameObject;
                     customObjectButtonPrefab.transform.SetParent(null);
 
-                    right.Find("backgrounds").gameObject.name = "objects";
+                    var bg = right.Find("backgrounds");
+                    bg.gameObject.name = "objects";
+                    bg.localRotation = Quaternion.identity;
 
                     right.Find("search/Placeholder").GetComponent<Text>().text = "Search for object...";
                     right.Find("create/Text").GetComponent<Text>().text = "Create New Custom Object";
@@ -810,9 +859,13 @@ namespace EditorManagement.Functions.Editors
                 OpenDialog();
             }
 
-            if (Input.GetKeyDown(KeyCode.F5))
+            if ((Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && Input.GetKeyDown(KeyCode.D))
             {
+                DuplicateCustomObject();
+            }
 
+            if (Input.GetKeyDown(KeyCode.F5) && debug)
+            {
                 var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
                 if (inspector != null)
                 {
@@ -821,7 +874,6 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        //Put this into RenderDialog() and change this method to be for CustomObjects instead. CustomObjects UI should be similar to BG / Checkpoint editors
         public static void RenderCustomDialog(Dictionary<string, object> _dictionary)
         {
             EditorManager.inst.ShowDialog("Player Object Editor");
@@ -971,7 +1023,7 @@ namespace EditorManagement.Functions.Editors
                         }
                         if (i == 23)
                         {
-                            x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[0];
+                            x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[playerModelIndex];
                         }
                         if (i == 24)
                         {
@@ -1234,10 +1286,10 @@ namespace EditorManagement.Functions.Editors
             {
                 Debug.LogFormat("{0}Trying to create new object", EditorPlugin.className);
 
-                playerExtensions.GetMethod("AddCustomObject").Invoke(playerExtensions, new object[] { });
+                playerExtensions.GetMethod("AddCustomObject").Invoke(playerExtensions, new object[] { playerModelIndex });
 
                 var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { 0 });
+                var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
                 object currentModel = null;
 
                 for (int i = 0; i < obj.GetCount(); i++)
@@ -1284,6 +1336,7 @@ namespace EditorManagement.Functions.Editors
                     var gameObject = Instantiate(customObjectButtonPrefab);
                     gameObject.transform.SetParent(objectDialogContent);
                     gameObject.transform.localScale = Vector3.one;
+                    gameObject.transform.localRotation = Quaternion.identity;
                     gameObject.name = custom.Key;
 
                     gameObject.transform.Find("name").GetComponent<Text>().text = name;
@@ -1305,11 +1358,63 @@ namespace EditorManagement.Functions.Editors
 
                     Destroy(gameObject.transform.Find("time").gameObject);
 
+                    var dup = Instantiate(close.gameObject);
+                    var dupTF = dup.transform;
+                    dupTF.SetParent(gameObject.transform);
+                    dupTF.localScale = Vector3.one;
+                    dup.name = "duplicate";
+                    dupTF.transform.localRotation = Quaternion.identity;
+
+                    dupTF.transform.GetChild(0).localRotation = Quaternion.Euler(new Vector3(0f, 0f, 45f));
+
+                    dup.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 0f);
+
+                    Triggers.AddTooltip(dup, "Duplicate Object", "Creates a complete copy of this object.");
+
+                    var dupButton = dup.GetComponent<Button>();
+                    var cb = dupButton.colors;
+                    cb.normalColor = new Color(0.3169f, 0.74f, 0.8918f, 1f);
+                    dupButton.colors = cb;
+
+                    dupButton.onClick.ClearAll();
+                    dupButton.onClick.AddListener(delegate ()
+                    {
+                        playerExtensions.GetMethod("DuplicateCustomObject").Invoke(playerExtensions, new object[] { tmpID, playerModelIndex });
+
+                        var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
+                        var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
+                        object currentModel = null;
+
+                        for (int i = 0; i < obj.GetCount(); i++)
+                        {
+                            var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
+
+                            if ((string)values["Base ID"] == currentIndex)
+                            {
+                                currentModel = obj.GetItem(i);
+                            }
+                        }
+
+                        var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
+
+                        var custom = (Dictionary<string, object>)dict["Custom Objects"];
+                        if (custom.Count > 0)
+                            currentID = custom.ElementAt(custom.Count - 1).Key;
+
+                        updatePlayers();
+                        RenderCustomObjects(dict);
+                        RenderCustomDialog(dict);
+                    });
+
+                    var dupLE = dup.AddComponent<LayoutElement>();
+                    dupLE.preferredWidth = 32f;
+
                     var delete = Instantiate(close.gameObject);
                     var deleteTF = delete.transform;
                     deleteTF.SetParent(gameObject.transform);
                     deleteTF.localScale = Vector3.one;
                     delete.name = "delete";
+                    deleteTF.transform.localRotation = Quaternion.Euler(Vector3.zero);
 
                     delete.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 0f);
 
@@ -1317,10 +1422,10 @@ namespace EditorManagement.Functions.Editors
                     deleteButton.onClick.ClearAll();
                     deleteButton.onClick.AddListener(delegate ()
                     {
-                        playerExtensions.GetMethod("RemoveCustomObject").Invoke(playerExtensions, new object[] { tmpID });
+                        playerExtensions.GetMethod("RemoveCustomObject").Invoke(playerExtensions, new object[] { tmpID, playerModelIndex });
 
                         var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                        var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { 0 });
+                        var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
                         object currentModel = null;
 
                         for (int i = 0; i < obj.GetCount(); i++)
@@ -1341,7 +1446,7 @@ namespace EditorManagement.Functions.Editors
                     });
 
                     var le = delete.AddComponent<LayoutElement>();
-                    le.preferredWidth = 28f;
+                    le.preferredWidth = 32f;
                 }
             }
         }
@@ -1703,7 +1808,7 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             //Vector2
-                            if (key.Contains("Position") && !key.Contains("Easing") || key.Contains("Scale") && !key.Contains("Particles") && !key.Contains("Easing") || key.Contains("Force"))
+                            if (key.Contains("Position") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Scale") && !key.Contains("Particles") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Force") || key.Contains("Origin"))
                             {
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
@@ -1788,7 +1893,7 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             //Single
-                            if (key.Contains("Scale") && (key.Contains("Start") || key.Contains("End")) && !key.Contains("Pulse") ||
+                            if (key.Contains("Scale") && (key.Contains("Start") || key.Contains("End")) && !key.Contains("Pulse") && !key.Contains("Bullet") ||
                                 key.Contains("Rotation") && !key.Contains("Easing") ||
                                 key == "Tail Base Distance" ||
                                 key.Contains("Opacity") && !key.Contains("Easing") ||
@@ -1799,7 +1904,7 @@ namespace EditorManagement.Functions.Editors
                                 key == "Boost Particles Duration" ||
                                 key.Contains("Amount") && !key.Contains("Boost") ||
                                 key.Contains("Speed") || key.Contains("Depth") || key == "Pulse Duration" ||
-                                key.Contains("Cooldown") || key.Contains("Boost Time"))
+                                key.Contains("Cooldown") || key.Contains("Boost Time") || key == "Bullet Lifetime" || key.Contains("Duration"))
                             {
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
@@ -2113,7 +2218,7 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             //Color
-                            if (key.Contains("Color") && !key.Contains("Easing") && !key.Contains("Custom"))
+                            if (key.Contains("Color") && !key.Contains("Easing") && !key.Contains("Custom") && !key.Contains("Duration"))
                             {
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
@@ -2177,7 +2282,7 @@ namespace EditorManagement.Functions.Editors
                                     }
                                     if (i == 23)
                                     {
-                                        x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[0];
+                                        x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[playerModelIndex];
                                         Triggers.AddTooltip(x.transform.Find(strr).gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
                                     }
                                     if (i == 24)
@@ -2198,7 +2303,7 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             //Bool
-                            if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate")
+                            if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate" || key == "Bullet Constant" || key == "Bullet Hurt Players")
                             {
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
@@ -2387,6 +2492,38 @@ namespace EditorManagement.Functions.Editors
                     UpdateCustomColorButtons(_tf, _type, _dictionary);
                 });
             }
+        }
+
+        public static void DuplicateCustomObject()
+        {
+            if (string.IsNullOrEmpty(currentID) || EditorManager.inst.ActiveDialogs.Find(x => x.Dialog.name == "PlayerObjectEditorDialog") == null)
+                return;
+
+            playerExtensions.GetMethod("DuplicateCustomObject").Invoke(playerExtensions, new object[] { currentID, playerModelIndex });
+
+            var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
+            var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
+            object currentModel = null;
+
+            for (int i = 0; i < obj.GetCount(); i++)
+            {
+                var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
+
+                if ((string)values["Base ID"] == currentIndex)
+                {
+                    currentModel = obj.GetItem(i);
+                }
+            }
+
+            var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
+
+            var custom = (Dictionary<string, object>)dict["Custom Objects"];
+            if (custom.Count > 0)
+                currentID = custom.ElementAt(custom.Count - 1).Key;
+
+            updatePlayers();
+            RenderCustomObjects(dict);
+            RenderCustomDialog(dict);
         }
 
         public static List<Dropdown.OptionData> GetShapes()
