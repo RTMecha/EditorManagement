@@ -58,7 +58,7 @@ namespace EditorManagement.Functions.Components
         public void OnPointerEnter(PointerEventData pointerEventData)
         {
             hovered = true;
-            RTEditor.hoveringOIF = true;
+            //RTEditor.hoveringOIF = true;
         }
 
         public void OnPointerExit(PointerEventData pointerEventData)
@@ -107,11 +107,6 @@ namespace EditorManagement.Functions.Components
                             inputField.text = inputField.text.Replace("right", "left");
                         }
                     }
-                }
-
-                if ((Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)) && Input.GetKeyDown(KeyCode.V) && !LSHelpers.IsUsingInputField())
-                {
-                    inputField.text = Clipboard.GetText();
                 }
             }
         }
