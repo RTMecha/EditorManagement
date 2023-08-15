@@ -2362,8 +2362,9 @@ namespace EditorManagement.Functions.Editors
                                         modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
                                     }
 
-                                    xRT.sizeDelta = new Vector2(350f, 224f);
-                                    layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 60f);
+                                    //xRT.sizeDelta = new Vector2(350f, 224f);
+                                    xRT.sizeDelta = new Vector2(350f, 284f);
+                                    layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 100f);
 
                                     //Global playSound (Takes from soundlibrary if true, else takes from the current level folder)
                                     {
@@ -2469,6 +2470,115 @@ namespace EditorManagement.Functions.Editors
                                             {
                                                 ppif.text = (float.Parse(ppif.text) - 0.1f).ToString();
                                             });
+                                        }
+                                    }
+                                    
+                                    //Volume
+                                    if (commands.Count > 3)
+                                    {
+                                        var ppvalueG = Instantiate(valueG);
+                                        ppvalueG.transform.SetParent(layout.transform);
+                                        ppvalueG.transform.localScale = Vector3.one;
+
+                                        ppvalueG.name = "volume";
+
+                                        ppvalueG.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Volume";
+
+                                        var ppinput = ppvalueG.transform.Find("input");
+                                        var ppif = ppinput.gameObject.AddComponent<InputField>();
+                                        {
+                                            ppif.onValueChanged.RemoveAllListeners();
+                                            ppif.characterValidation = InputField.CharacterValidation.None;
+                                            ppif.characterLimit = 0;
+                                            ppif.textComponent = ppinput.Find("Text").GetComponent<Text>();
+                                            ppif.placeholder = ppinput.Find("Placeholder").GetComponent<Text>();
+                                            ppif.text = commands[3];
+                                            ppif.onValueChanged.AddListener(delegate (string _val)
+                                            {
+                                                if (float.TryParse(_val, out float num))
+                                                {
+                                                    commands[3] = num.ToString();
+                                                    modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                }
+                                            });
+                                        }
+
+                                        var xet = ppinput.gameObject.AddComponent<EventTrigger>();
+                                        xet.triggers.Clear();
+                                        xet.triggers.Add(Triggers.ScrollDelta(ppif, 0.1f, 10f, clamp: new List<float> { 0f, 2f }));
+
+                                        var xifh = ppinput.gameObject.AddComponent<InputFieldHelper>();
+                                        xifh.inputField = ppif;
+
+                                        var ppincrease = ppvalueG.transform.Find(">").GetComponent<Button>();
+                                        {
+                                            ppincrease.onClick.RemoveAllListeners();
+                                            ppincrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(float.Parse(ppif.text) + 0.1f, 0f, 2f).ToString();
+                                            });
+                                        }
+
+                                        var ppdecrease = ppvalueG.transform.Find("<").GetComponent<Button>();
+                                        {
+                                            ppdecrease.onClick.RemoveAllListeners();
+                                            ppdecrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(float.Parse(ppif.text) - 0.1f, 0f, 2f).ToString();
+                                            });
+                                        }
+                                    }
+
+                                    //Loop
+                                    if (commands.Count > 4)
+                                    {
+                                        var constantG = new GameObject("loop");
+                                        {
+                                            constantG.transform.SetParent(layout.transform);
+                                            constantG.transform.localScale = Vector3.one;
+
+                                            var valueGRT = constantG.AddComponent<RectTransform>();
+                                            var valueGHLG = constantG.AddComponent<HorizontalLayoutGroup>();
+
+                                            valueGHLG.childControlHeight = false;
+                                            valueGHLG.childControlWidth = false;
+                                            valueGHLG.childForceExpandWidth = false;
+                                            valueGHLG.spacing = 8f;
+                                        }
+
+                                        var bo = Instantiate(boolInput);
+                                        {
+                                            bo.transform.SetParent(constantG.transform);
+                                            bo.transform.localScale = Vector3.one;
+
+                                            if (bo.GetComponent<Toggle>())
+                                            {
+                                                var toggle = bo.GetComponent<Toggle>();
+                                                toggle.onValueChanged.RemoveAllListeners();
+                                                toggle.isOn = bool.Parse(commands[4]);
+                                                toggle.onValueChanged.AddListener(delegate (bool _val)
+                                                {
+                                                    commands[4] = _val.ToString();
+                                                    modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                });
+                                            }
+                                        }
+
+                                        //Label
+                                        {
+                                            var l = Instantiate(label);
+                                            l.name = "label";
+                                            l.transform.SetParent(constantG.transform);
+                                            l.transform.SetAsFirstSibling();
+                                            l.transform.localScale = Vector3.one;
+                                            l.transform.GetChild(0).GetComponent<Text>().text = "Loop";
+                                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(247f, 20f);
+                                            l.transform.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+                                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                            {
+                                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                            }
                                         }
                                     }
 
@@ -3700,7 +3810,7 @@ namespace EditorManagement.Functions.Editors
 
                                 //No Values
                                 {
-                                    if (cmd == "playerKill" || cmd == "playerKillAll" || cmd == "showMouse" || cmd == "hideMouse" || cmd == "playerCollide" || cmd == "playerMoving" || cmd == "playerBoosting" || cmd == "playerAlive" || cmd == "mouseOver" || cmd == "playerBoost" || cmd == "playerBoostAll" || cmd == "playerDisableBoost" || cmd == "disableObject" || cmd == "disableObjectTree")
+                                    if (cmd == "playerKill" || cmd == "playerKillAll" || cmd == "showMouse" || cmd == "hideMouse" || cmd == "playerCollide" || cmd == "playerMoving" || cmd == "playerBoosting" || cmd == "playerAlive" || cmd == "mouseOver" || cmd == "playerBoost" || cmd == "playerBoostAll" || cmd == "playerDisableBoost" || cmd == "disableObject" || cmd == "disableObjectTree" || cmd == "bulletCollide" || cmd == "onPlayerHit" || cmd == "playerDistanceLesser" || cmd == "playerDistanceGreater")
                                     {
                                         switch (commands[0])
                                         {
@@ -4025,7 +4135,7 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
-                                if (cmd == "addVariable" || cmd == "subVariable" || cmd == "setVariable")
+                                if (cmd == "addVariable" || cmd == "subVariable" || cmd == "setVariable" || cmd.Contains("variableOther"))
                                 {
                                     var w = Instantiate(valueG);
                                     w.transform.SetParent(layout.transform);
@@ -4434,6 +4544,85 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
+                                if (cmd == "setPlayerModel")
+                                {
+                                    xRT.sizeDelta = new Vector2(350f, 164f);
+                                    layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 40f);
+
+                                    //Pitch (multiplies by current global pitch)
+                                    {
+                                        var ppvalueG = Instantiate(valueG);
+                                        ppvalueG.transform.SetParent(layout.transform);
+                                        ppvalueG.transform.localScale = Vector3.one;
+
+                                        ppvalueG.name = "index";
+
+                                        ppvalueG.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Index";
+
+                                        var ppinput = ppvalueG.transform.Find("input");
+                                        var ppif = ppinput.gameObject.AddComponent<InputField>();
+                                        {
+                                            ppif.onValueChanged.RemoveAllListeners();
+                                            ppif.characterValidation = InputField.CharacterValidation.None;
+                                            ppif.characterLimit = 0;
+                                            ppif.textComponent = ppinput.Find("Text").GetComponent<Text>();
+                                            ppif.placeholder = ppinput.Find("Placeholder").GetComponent<Text>();
+                                            ppif.text = commands[1];
+                                            ppif.onValueChanged.AddListener(delegate (string _val)
+                                            {
+                                                if (float.TryParse(_val, out float num))
+                                                {
+                                                    commands[1] = Mathf.Clamp(num, 0, 3).ToString();
+                                                    modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                }
+                                            });
+                                        }
+
+                                        var xet = ppinput.gameObject.AddComponent<EventTrigger>();
+                                        xet.triggers.Clear();
+                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, 3 }));
+
+                                        var xifh = ppinput.gameObject.AddComponent<InputFieldHelper>();
+                                        xifh.inputField = ppif;
+
+                                        var ppincrease = ppvalueG.transform.Find(">").GetComponent<Button>();
+                                        {
+                                            ppincrease.onClick.RemoveAllListeners();
+                                            ppincrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) + 1, 0, 3).ToString();
+                                            });
+                                        }
+
+                                        var ppdecrease = ppvalueG.transform.Find("<").GetComponent<Button>();
+                                        {
+                                            ppdecrease.onClick.RemoveAllListeners();
+                                            ppdecrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) - 1, 0, 3).ToString();
+                                            });
+                                        }
+                                    }
+
+                                    Destroy(valueG.transform.Find("<").gameObject);
+                                    Destroy(valueG.transform.Find(">").gameObject);
+
+                                    var input = valueG.transform.Find("input");
+                                    var xif = input.gameObject.AddComponent<InputField>();
+                                    {
+                                        xif.onValueChanged.RemoveAllListeners();
+                                        xif.characterValidation = InputField.CharacterValidation.None;
+                                        xif.characterLimit = 0;
+                                        xif.textComponent = input.Find("Text").GetComponent<Text>();
+                                        xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                                        xif.text = value;
+                                        xif.onValueChanged.AddListener(delegate (string _val)
+                                        {
+                                            modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, _val);
+                                        });
+                                    }
+                                }
+
                                 //Delete Modifier
                                 {
                                     int tmpIndex = j;
@@ -4574,6 +4763,9 @@ namespace EditorManagement.Functions.Editors
         public static string searchTerm;
         public static void RefreshDefaultModifiersList()
         {
+            if (ModCompatibility.sharedFunctions.ContainsKey("ObjectModifiersModifierList"))
+                defaultModifiers = (List<string>)ModCompatibility.sharedFunctions["ObjectModifiersModifierList"];
+
             var dialog = EditorManager.inst.GetDialog("Default Modifiers Popup").Dialog.gameObject;
 
             var contentM = dialog.transform.Find("mask/content");
