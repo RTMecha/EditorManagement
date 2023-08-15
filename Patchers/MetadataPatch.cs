@@ -79,41 +79,45 @@ namespace EditorManagement.Patchers
 
 			for (int i = 0; i < DataManager.inst.difficulties.Count; i++)
 			{
-				if (!transform.Find("song/difficulty/toggles").GetChild(i).GetComponent<HoverUI>())
+				var difficulty = transform.Find("song/difficulty/toggles").GetChild(i);
+
+				if (!difficulty.GetComponent<HoverUI>())
                 {
-					var hoverUI = transform.Find("song/difficulty/toggles").GetChild(i).gameObject.AddComponent<HoverUI>();
+					var hoverUI = difficulty.gameObject.AddComponent<HoverUI>();
 					hoverUI.animatePos = false;
 					hoverUI.animateSca = true;
 					hoverUI.size = 1.1f;
 				}
-				transform.Find("song/difficulty/toggles").GetChild(i).gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(69f, 32f);
-				transform.Find("song/difficulty/toggles").GetChild(i).Find("Background").gameObject.GetComponent<Image>().color = DataManager.inst.difficulties[i].color;
-				transform.Find("song/difficulty/toggles").GetChild(i).Find("Background/Text").GetComponent<Text>().fontSize = 19;
+				difficulty.gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(69f, 32f);
+				difficulty.Find("Background").gameObject.GetComponent<Image>().color = DataManager.inst.difficulties[i].color;
+				difficulty.Find("Background/Text").GetComponent<Text>().fontSize = 19;
 
 				int tmpIndex = i;
-				transform.Find("song/difficulty/toggles").GetChild(i).GetComponent<Toggle>().onValueChanged.RemoveAllListeners();
-				transform.Find("song/difficulty/toggles").GetChild(i).GetComponent<Toggle>().isOn = (DataManager.inst.metaData.song.difficulty == i);
-				transform.Find("song/difficulty/toggles").GetChild(i).GetComponent<Toggle>().onValueChanged.AddListener(delegate (bool _val)
+				var difficultyToggle = difficulty.GetComponent<Toggle>();
+				difficultyToggle.onValueChanged.RemoveAllListeners();
+				difficultyToggle.isOn = (DataManager.inst.metaData.song.difficulty == i);
+				difficultyToggle.onValueChanged.AddListener(delegate (bool _val)
 				{
 					DataManager.inst.metaData.song.difficulty = tmpIndex;
 				});
 			}
 
-			transform.Find("song/difficulty/toggles").gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(468f, -16f);
+			transform.Find("song/difficulty/toggles").GetComponent<RectTransform>().anchoredPosition = new Vector2(468f, -16f);
 
 			Button uploadButton = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content/submit/submit").gameObject.GetComponent<Button>();
 			uploadButton.onClick.ClearAll();
 			uploadButton.onClick.AddListener(delegate ()
 			{
-				string rawProfileJSON = null;
-				rawProfileJSON = FileManager.inst.LoadJSONFile(EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/level.lsb");
+				RTEditor.RefreshWarningPopup("This will create an encrypted song.lsen file to use instead of level.ogg. Are you sure you want to do this?", delegate ()
+				{
+					RTEditor.inst.StartCoroutine(RTEditor.EncryptLevel());
 
-				JSONNode jsonnode = JSON.Parse(rawProfileJSON);
-
-				RTEditor.inst.StartCoroutine(RTEditor.EncryptLevel());
-
-				//RTFile.WriteToFile(EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/encryptedlevel.lsb", LSEncryption.EncryptText(rawProfileJSON, "5erewtdvtedsfdSFCDS"));
-				EditorManager.inst.DisplayNotification("Encrypted song file to " + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", 2f, EditorManager.NotificationType.Success, false);
+					EditorManager.inst.DisplayNotification("Encrypted song file to " + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel + "/song.lsen", 2f, EditorManager.NotificationType.Success, false);
+					EditorManager.inst.HideDialog("Warning Popup");
+				}, delegate ()
+				{
+					EditorManager.inst.HideDialog("Warning Popup");
+				});
 			});
 		}
 	}
