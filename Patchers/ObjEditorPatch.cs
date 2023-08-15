@@ -35,6 +35,8 @@ namespace EditorManagement.Patchers
 
 		public static MethodInfo createKeyframes;
 
+		public static MethodInfo updateHighlightedKeyframe;
+
 		public static float timeCalc()
         {
 			return (float)timeCalcObj.Invoke(ObjEditor.inst, new object[] { });
@@ -63,6 +65,11 @@ namespace EditorManagement.Patchers
 		public static void SetKeyframeColor(int _index, int _value)
         {
 			setKeyframeColor.Invoke(ObjEditor.inst, new object[] { _index, _value });
+        }
+
+		public static void UpdateHighlightedKeyframe()
+        {
+			updateHighlightedKeyframe.Invoke(ObjEditor.inst, new object[] { });
         }
 
 		[HarmonyPatch("RefreshKeyframeGUI")]
@@ -227,6 +234,8 @@ namespace EditorManagement.Patchers
 				setKeyframeColor = AccessTools.Method(typeof(ObjEditor), "SetKeyframeColor");
 
 				createKeyframes = AccessTools.Method(typeof(ObjEditor), "CreateKeyframes");
+
+				updateHighlightedKeyframe = AccessTools.Method(typeof(ObjEditor), "UpdateHighlightedKeyframe");
 			}
 			
 			//Layers
@@ -667,7 +676,7 @@ namespace EditorManagement.Patchers
 					}
 				}
 				ResizeKeyframeTimeline();
-				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+				//ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
 				AccessTools.Method(typeof(ObjEditor), "UpdateHighlightedKeyframe").Invoke(ObjEditor.inst, new object[] { });
 				foreach (ObjEditor.ObjectSelection obj in ObjEditor.inst.selectedObjects)
 				{
@@ -678,6 +687,35 @@ namespace EditorManagement.Patchers
 		}
 
 		public static float og;
+
+		[HarmonyPatch("CreateKeyframeEndDragTrigger")]
+		[HarmonyPrefix]
+		static bool CreateKeyframeEndDragTriggerPatch(ObjEditor __instance, ref EventTrigger.Entry __result, EventTriggerType __0, int __1, int __2)
+        {
+			__result = CreateKeyframeEndDragTrigger(__instance, __0, __1, __2);
+			return false;
+        }
+
+		private static EventTrigger.Entry CreateKeyframeEndDragTrigger(ObjEditor __instance, EventTriggerType _type, int _kind, int _keyframe)
+		{
+			EventTrigger.Entry entry = new EventTrigger.Entry();
+			entry.eventID = _type;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				timeCalc();
+				DataManager.GameData.EventKeyframe tmp = __instance.currentObjectSelection.GetObjectData().events[_kind][_keyframe];
+				__instance.UpdateKeyframeOrder(true);
+				CreateKeyframes(-1);
+				int keyframe = __instance.currentObjectSelection.GetObjectData().events[_kind].FindIndex((DataManager.GameData.EventKeyframe x) => x == tmp);
+				__instance.SetCurrentKeyframe(_kind, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
+				UpdateHighlightedKeyframe();
+				__instance.RenderTimelineObject(__instance.currentObjectSelection);
+				RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+				ObjectManager.inst.updateObjects(__instance.currentObjectSelection);
+				__instance.timelineKeyframesDrag = false;
+			});
+			return entry;
+		}
 
 		[HarmonyPatch("SetMainTimelineZoom")]
 		[HarmonyPrefix]
