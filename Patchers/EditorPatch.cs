@@ -971,7 +971,7 @@ namespace EditorManagement.Patchers
 		public static void InputPlayers()
         {
 			InputDataManager.inst.players.Clear();
-			if (reloadSelectedPlayers && playerStorage.Count > 0)
+			if (reloadSelectedPlayers && playerStorage.Count > 1)
 			{
 				foreach (var player in playerStorage)
                 {
@@ -1154,66 +1154,38 @@ namespace EditorManagement.Patchers
 				&& !EditorManager.inst.IsOverDropDown
 				&& EditorManager.inst.IsOverObjTimeline
 				&& !LSHelpers.IsUsingInputField()
-				&& !IsOverMainTimeline)
+				&& !IsOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
 			{
-				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
-				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.KeyframeZoomAmount.Value;
-				}
-				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
-				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.KeyframeZoomAmount.Value;
-				}
+				float multiply = 1f;
+				if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+					multiply = 2f;
+				if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+					multiply = 0.1f;
 
-				//Zooms more
-				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
+				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed)
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.KeyframeZoomAmount.Value * 2f;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.KeyframeZoomAmount.Value * multiply;
 				}
-				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
+				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed)
 				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.KeyframeZoomAmount.Value * 2f;
-				}
-
-				//Zooms less
-				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
-				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + ConfigEntries.KeyframeZoomAmount.Value * 0.5f;
-				}
-				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
-				{
-					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.KeyframeZoomAmount.Value * 0.5f;
+					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.KeyframeZoomAmount.Value * multiply;
 				}
 			}
-			if (!EditorManager.inst.IsOverDropDown && !EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline)
+			if (!EditorManager.inst.IsOverDropDown && !EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
 			{
-				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
-				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.MainZoomAmount.Value;
-				}
-				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftShift))
-				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.MainZoomAmount.Value;
-				}
+				float multiply = 1f;
+				if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+					multiply = 2f;
+				if (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift))
+					multiply = 0.1f;
 
-				//Zooms more
-				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
+				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed)
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.MainZoomAmount.Value * 2f;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.MainZoomAmount.Value * multiply;
 				}
-				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.LeftAlt))
+				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed)
 				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.MainZoomAmount.Value * 2f;
-				}
-
-				//Zooms more
-				if (InputDataManager.inst.editorActions.ZoomIn.WasPressed && !Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt))
-				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + ConfigEntries.MainZoomAmount.Value * 0.5f;
-				}
-				if (InputDataManager.inst.editorActions.ZoomOut.WasPressed && !Input.GetKey(KeyCode.LeftShift) && Input.GetKey(KeyCode.LeftAlt))
-				{
-					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.MainZoomAmount.Value * 0.5f;
+					EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - ConfigEntries.MainZoomAmount.Value * multiply;
 				}
 			}
 			if (InputDataManager.inst.editorActions.ShowHelp.WasPressed)
