@@ -1176,6 +1176,41 @@ namespace EditorManagement.Functions.Editors
 			yield break;
 		}
 
+		public static IEnumerator GroupSelectKeyframes(bool _add = true)
+        {
+			ienumRunning = true;
+
+			float delay = 0f;
+			bool flag = false;
+			int num = 0;
+			foreach (var list in ObjEditor.inst.timelineKeyframes)
+			{
+				int num2 = 0;
+				foreach (var gameObject2 in list)
+				{
+					if (RTMath.RectTransformToScreenSpace(ObjEditor.inst.SelectionBoxImage.rectTransform).Overlaps(RTMath.RectTransformToScreenSpace(gameObject2.transform.GetChild(0).GetComponent<Image>().rectTransform)) && gameObject2.activeSelf)
+					{
+						yield return new WaitForSeconds(delay);
+						if (!flag && !_add)
+						{
+							ObjEditor.inst.SetCurrentKeyframe(num, num2, false, false);
+							flag = true;
+						}
+						else
+						{
+							ObjEditor.inst.SetCurrentKeyframe(num, num2, false, true);
+						}
+						delay += 0.0001f;
+					}
+					num2++;
+				}
+				num++;
+			}
+
+			ienumRunning = false;
+			yield break;
+        }
+
 		public static void Delete()
 		{
 			if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object))
@@ -7726,10 +7761,10 @@ namespace EditorManagement.Functions.Editors
 				var _objects = new List<BeatmapObject>();
 				for (int aIndex = 0; aIndex < jn["objects"].Count; ++aIndex)
 				{
-					Parser.ParseObject(jn["objects"][aIndex], delegate (BeatmapObject _beatmapObject)
+					inst.StartCoroutine(Parser.ParseObject(jn["objects"][aIndex], delegate (BeatmapObject _beatmapObject)
 					{
 						_objects.Add(_beatmapObject);
-					});
+					}));
 					//_objects.Add(DataManager.GameData.BeatmapObject.ParseGameObject(jsonNode["objects"][aIndex]));
 				}
 				var _prefabObjects = new List<DataManager.GameData.PrefabObject>();
@@ -7737,6 +7772,7 @@ namespace EditorManagement.Functions.Editors
 				{
 					_prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jn["prefab_objects"][aIndex]));
 				}
+
 				__instance.LoadedPrefabs.Add(new DataManager.GameData.Prefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects));
 				__instance.LoadedPrefabsFiles.Add(lsFile.FullPath);
 			}
