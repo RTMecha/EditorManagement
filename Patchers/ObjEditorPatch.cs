@@ -81,9 +81,81 @@ namespace EditorManagement.Patchers
         }
 
 		[HarmonyPatch("Awake")]
-		[HarmonyPostfix]
-		private static void CreateNewDepthText(ObjEditor __instance)
+		[HarmonyPrefix]
+		static bool AwakePrefix(ObjEditor __instance)
 		{
+            //og code
+            {
+
+				if (ObjEditor.inst == null)
+				{
+					ObjEditor.inst = __instance;
+				}
+				else if (ObjEditor.inst != __instance)
+				{
+					Destroy(__instance.gameObject);
+				}
+				__instance.timelineKeyframes.Add(new List<GameObject>());
+				__instance.timelineKeyframes.Add(new List<GameObject>());
+				__instance.timelineKeyframes.Add(new List<GameObject>());
+				__instance.timelineKeyframes.Add(new List<GameObject>());
+				EventTrigger.Entry entry = new EventTrigger.Entry();
+				entry.eventID = EventTriggerType.BeginDrag;
+				entry.callback.AddListener(delegate (BaseEventData eventData)
+				{
+					//Debug.Log("START DRAG");
+					PointerEventData pointerEventData = (PointerEventData)eventData;
+					__instance.SelectionBoxImage.gameObject.SetActive(true);
+					__instance.DragStartPos = pointerEventData.position * EditorManager.inst.ScreenScaleInverse;
+					__instance.SelectionRect = default(Rect);
+					//Debug.Log("Start Drag");
+				});
+				EventTrigger.Entry entry2 = new EventTrigger.Entry();
+				entry2.eventID = EventTriggerType.Drag;
+				entry2.callback.AddListener(delegate (BaseEventData eventData)
+				{
+					Vector3 vector = ((PointerEventData)eventData).position * EditorManager.inst.ScreenScaleInverse;
+					if (vector.x < __instance.DragStartPos.x)
+					{
+						__instance.SelectionRect.xMin = vector.x;
+						__instance.SelectionRect.xMax = __instance.DragStartPos.x;
+					}
+					else
+					{
+						__instance.SelectionRect.xMin = __instance.DragStartPos.x;
+						__instance.SelectionRect.xMax = vector.x;
+					}
+					if (vector.y < __instance.DragStartPos.y)
+					{
+						__instance.SelectionRect.yMin = vector.y;
+						__instance.SelectionRect.yMax = __instance.DragStartPos.y;
+					}
+					else
+					{
+						__instance.SelectionRect.yMin = __instance.DragStartPos.y;
+						__instance.SelectionRect.yMax = vector.y;
+					}
+					__instance.SelectionBoxImage.rectTransform.offsetMin = __instance.SelectionRect.min;
+					__instance.SelectionBoxImage.rectTransform.offsetMax = __instance.SelectionRect.max;
+				});
+				EventTrigger.Entry entry3 = new EventTrigger.Entry();
+				entry3.eventID = EventTriggerType.EndDrag;
+				entry3.callback.AddListener(delegate (BaseEventData eventData)
+				{
+					PointerEventData pointerEventData = (PointerEventData)eventData;
+					__instance.DragEndPos = pointerEventData.position;
+					__instance.SelectionBoxImage.gameObject.SetActive(false);
+
+					RTEditor.inst.StartCoroutine(RTEditor.GroupSelectKeyframes(Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)));
+				});
+				foreach (GameObject gameObject in __instance.SelectionArea)
+				{
+					gameObject.GetComponent<EventTrigger>().triggers.Add(entry);
+					gameObject.GetComponent<EventTrigger>().triggers.Add(entry2);
+					gameObject.GetComponent<EventTrigger>().triggers.Add(entry3);
+				}
+			}
+
 			//Add spacer
 			Transform contentParent = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content").transform;
 			GameObject spacer = new GameObject("spacer");
@@ -306,6 +378,8 @@ namespace EditorManagement.Patchers
 
 			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation").transform.GetChild(1).gameObject);
 			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color").transform.GetChild(1).gameObject);
+
+			return false;
 		}
 
 		[HarmonyPatch("Start")]
