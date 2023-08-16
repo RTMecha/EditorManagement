@@ -90,25 +90,34 @@ namespace EditorManagement.Functions.Components
                     }
                     if (type == Type.String)
                     {
-                        if (inputField.text.Contains("Left"))
-                        {
-                            inputField.text = inputField.text.Replace("Left", "Right");
-                        }
-                        if (inputField.text.Contains("Right"))
-                        {
-                            inputField.text = inputField.text.Replace("Right", "Left");
-                        }
-                        if (inputField.text.Contains("left"))
-                        {
-                            inputField.text = inputField.text.Replace("left", "right");
-                        }
-                        if (inputField.text.Contains("right"))
-                        {
-                            inputField.text = inputField.text.Replace("right", "left");
-                        }
+                        inputField.text = Flip(inputField.text);
                     }
                 }
             }
+        }
+
+        string Flip(string str)
+        {
+            switch (str)
+            {
+                case "Left":
+                    {
+                        return str.Replace("Left", "Right");
+                    }
+                case "Right":
+                    {
+                        return str.Replace("Right", "Left");
+                    }
+                case "left":
+                    {
+                        return str.Replace("left", "right");
+                    }
+                case "right":
+                    {
+                        return str.Replace("right", "left");
+                    }
+            }
+            return str;
         }
     }
 }
