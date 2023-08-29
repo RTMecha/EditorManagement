@@ -98,26 +98,10 @@ namespace EditorManagement.Functions.Components
 
         string Flip(string str)
         {
-            switch (str)
-            {
-                case "Left":
-                    {
-                        return str.Replace("Left", "Right");
-                    }
-                case "Right":
-                    {
-                        return str.Replace("Right", "Left");
-                    }
-                case "left":
-                    {
-                        return str.Replace("left", "right");
-                    }
-                case "right":
-                    {
-                        return str.Replace("right", "left");
-                    }
-            }
-            return str;
+            string s;
+            s = str.Replace("Left", "LSLeft87344874").Replace("Right", "LSRight87344874").Replace("left", "LSleft87344874").Replace("right", "LSright87344874").Replace("LEFT", "LSLEFT87344874").Replace("RIGHT", "LSRIGHT87344874");
+
+            return s.Replace("LSLeft87344874", "Right").Replace("LSRight87344874", "Left").Replace("LSleft87344874", "right").Replace("LSright87344874", "left").Replace("LSLEFT87344874", "RIGHT").Replace("LSRIGHT87344874", "LEFT");
         }
     }
 }
