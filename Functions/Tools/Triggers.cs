@@ -1910,33 +1910,63 @@ namespace EditorManagement.Functions.Tools
 					}
 					else if (__instance.currentObjectSelection.IsObject() && _obj.IsObject() && pointerEventData.button != PointerEventData.InputButton.Right)
                     {
-						var list = new List<string>();
+						var dictionary = new Dictionary<string, bool>();
 
-						var parentChain = __instance.currentObjectSelection.GetObjectData().GetParentChain();
-						var top = parentChain[parentChain.Count - 1];
+						foreach (var obj in DataManager.inst.gameData.beatmapObjects)
+						{
+							bool flag = true;
+							if (!string.IsNullOrEmpty(obj.parent))
+							{
+								string parentID = ObjEditor.inst.currentObjectSelection.GetObjectData().id;
+								while (!string.IsNullOrEmpty(parentID))
+								{
+									if (parentID == obj.parent)
+									{
+										flag = false;
+										break;
+									}
+									int num2 = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
+									if (num2 != -1)
+									{
+										parentID = DataManager.inst.gameData.beatmapObjects[num2].id;
+									}
+									else
+									{
+										parentID = null;
+									}
+								}
+							}
+							if (!dictionary.ContainsKey(obj.id))
+								dictionary.Add(obj.id, flag);
+						}
 
-						foreach (var obj in top.GetChildChain())
-                        {
-							for (int i = 0; i < obj.Count; i++)
-                            {
-								var beatmapObject = obj[i];
-								if (!list.Contains(beatmapObject.id))
-                                {
-									list.Add(beatmapObject.id);
-                                }
-                            }
-                        }
+						//var list = new List<string>();
 
-						foreach (var parent in parentChain)
-                        {
-							if (list.Contains(parent.id) && parent.id != __instance.currentObjectSelection.GetObjectData().id)
-								list.Remove(parent.id);
-                        }
+						//var parentChain = __instance.currentObjectSelection.GetObjectData().GetParentChain();
+						//var top = parentChain[parentChain.Count - 1];
 
-						if (!list.Contains(__instance.currentObjectSelection.GetObjectData().id))
-							list.Add(__instance.currentObjectSelection.GetObjectData().id);
+						//foreach (var obj in top.GetChildChain())
+      //                  {
+						//	for (int i = 0; i < obj.Count; i++)
+      //                      {
+						//		var beatmapObject = obj[i];
+						//		if (!list.Contains(beatmapObject.id))
+      //                          {
+						//			list.Add(beatmapObject.id);
+      //                          }
+      //                      }
+      //                  }
 
-						if (!list.Contains(_obj.GetObjectData().id))
+						//foreach (var parent in parentChain)
+      //                  {
+						//	if (list.Contains(parent.id) && parent.id != __instance.currentObjectSelection.GetObjectData().id)
+						//		list.Remove(parent.id);
+      //                  }
+
+						//if (!list.Contains(__instance.currentObjectSelection.GetObjectData().id))
+						//	list.Add(__instance.currentObjectSelection.GetObjectData().id);
+
+						if (dictionary.ContainsKey(_obj.GetObjectData().id) && dictionary[_obj.GetObjectData().id])
 						{
 							__instance.currentObjectSelection.GetObjectData().parent = _obj.GetObjectData().id;
 							ObjectManager.inst.updateObjects(__instance.currentObjectSelection);

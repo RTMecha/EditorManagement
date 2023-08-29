@@ -1854,7 +1854,6 @@ namespace EditorManagement.Patchers
 			RTEditor.RefreshWarningPopup("Are you sure you want to quit to main menu?", delegate ()
 			{
 				RTEditor.inst.allowQuit = true;
-				InputDataManager.inst.ClearInputs();
 				__instance.QuitToMenu();
 			}, delegate ()
 			{

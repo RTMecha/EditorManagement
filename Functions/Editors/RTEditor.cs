@@ -3277,65 +3277,95 @@ namespace EditorManagement.Functions.Editors
 
 			//File Dropdown
 			{
-				HoverTooltip fileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File").GetComponent<HoverTooltip>();
-				HoverTooltip newFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/New Level").GetComponent<HoverTooltip>();
-				HoverTooltip openFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Open").GetComponent<HoverTooltip>();
-				HoverTooltip openFolderFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Open Level Folder").GetComponent<HoverTooltip>();
-				HoverTooltip saveFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Save").GetComponent<HoverTooltip>();
-				HoverTooltip saveAsFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Save As").GetComponent<HoverTooltip>();
-				HoverTooltip toggleFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Toggle Play Mode").GetComponent<HoverTooltip>();
-				HoverTooltip quitMenuFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu").GetComponent<HoverTooltip>();
-				HoverTooltip quitFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit Game").GetComponent<HoverTooltip>();
-
-				fileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Show the general options for the editor.", ""));
-
-				newFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a new level.", "", new List<string>()));
-				openFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Opens the level list popup, where you can choose a level to open.", "", new List<string> { "Ctrl + O" }));
-				openFolderFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Opens the folder the current level is located at.", ""));
-				saveFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Saves the current level and metadata.", "", new List<string> { "Ctrl + S" }));
-				saveAsFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Saves a copy of the current level.", "", new List<string> { "Alt + S" }));
-				toggleFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Toggles preview mode.", "", new List<string> { "~" }));
-				quitMenuFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Quits to main menu.", ""));
-				quitFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Quits the game entirely.", ""));
-
-				if (EditorPatch.keybindsType != null)
+				try
 				{
-					string newLevelMod = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", false }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
-					string newLevelMai = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", true }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
-					newFileDDTip.tooltipLangauges.Clear();
-					newFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a new level.", "", new List<string> { newLevelMod + " + " + newLevelMai }));
+					HoverTooltip fileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File").GetComponent<HoverTooltip>();
+					HoverTooltip newFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/New Level").GetComponent<HoverTooltip>();
+					HoverTooltip openFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Open").GetComponent<HoverTooltip>();
+					HoverTooltip openFolderFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Open Level Folder").GetComponent<HoverTooltip>();
+					HoverTooltip saveFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Save").GetComponent<HoverTooltip>();
+					HoverTooltip saveAsFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Save As").GetComponent<HoverTooltip>();
+					HoverTooltip toggleFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Toggle Play Mode").GetComponent<HoverTooltip>();
+					HoverTooltip quitMenuFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu").GetComponent<HoverTooltip>();
+					HoverTooltip quitFileDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit Game").GetComponent<HoverTooltip>();
 
-					string saveMod = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", false }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
-					string saveMai = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", true }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
-					saveFileDDTip.tooltipLangauges.Clear();
-					saveFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a new level.", "", new List<string> { saveMod + " + " + saveMai }));
+					fileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Show the general options for the editor.", ""));
+
+					newFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a new level.", "", new List<string>()));
+					openFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Opens the level list popup, where you can choose a level to open.", "", new List<string> { "Ctrl + O" }));
+					openFolderFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Opens the folder the current level is located at.", ""));
+					saveFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Saves the current level and metadata.", "", new List<string> { "Ctrl + S" }));
+					saveAsFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Saves a copy of the current level.", "", new List<string> { "Alt + S" }));
+					toggleFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Toggles preview mode.", "", new List<string> { "~" }));
+					quitMenuFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Quits to main menu.", ""));
+					quitFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Quits the game entirely.", ""));
+
+					try
+					{
+						if (EditorPatch.keybindsType != null)
+						{
+							string newLevelMod = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", false }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
+							string newLevelMai = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", true }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
+							newFileDDTip.tooltipLangauges.Clear();
+							newFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a new level.", "", new List<string> { newLevelMod + " + " + newLevelMai }));
+
+							string saveMod = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", false }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
+							string saveMai = EditorPatch.GetKeyCodeName.Invoke(EditorPatch.keybindsType, new object[] { "New Level", true }).ToString().Replace("Left", "Left ").Replace("Right", "Right ");
+							saveFileDDTip.tooltipLangauges.Clear();
+							saveFileDDTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a new level.", "", new List<string> { saveMod + " + " + saveMai }));
+						}
+					}
+					catch (Exception ex)
+					{
+						LogException(ex, "Failed to GetKeyCodes for File Dropdown.");
+					}
 				}
-			}
+				catch (Exception ex)
+				{
+					LogException(ex, "There was an error in setting File Dropdown tooltips.");
+				}
+            }
 
 			//Edit Dropdown
 			{
-				HoverTooltip undoDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Undo").GetComponent<HoverTooltip>();
-				HoverTooltip redoDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Redo").GetComponent<HoverTooltip>();
+				try
+				{
+					HoverTooltip undoDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Undo").GetComponent<HoverTooltip>();
+					HoverTooltip redoDDTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Redo").GetComponent<HoverTooltip>();
 
-				undoDDTip.tooltipLangauges.Add(Triggers.NewTooltip("[WIP] Undoes the last action.", "", new List<string> { "Ctrl + Z" }));
-				redoDDTip.tooltipLangauges.Add(Triggers.NewTooltip("[WIP] Redoes the last undone action.", "", new List<string> { "Ctrl + Shift + Z" }));
+					undoDDTip.tooltipLangauges.Add(Triggers.NewTooltip("[WIP] Undoes the last action.", "", new List<string> { "Ctrl + Z" }));
+					redoDDTip.tooltipLangauges.Add(Triggers.NewTooltip("[WIP] Redoes the last undone action.", "", new List<string> { "Ctrl + Shift + Z" }));
+				}
+				catch (Exception ex)
+				{
+					LogException(ex, "There was an error in setting Edit Dropdown tooltips.");
+				}
 			}
 
 			//View Dropdown
 			{
-				var objTag = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Timeline Zoom");
-				var plaEdit = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Grid View");
-				var shoHelp = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Show Help");
+				try
+				{
+					var objTag = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Timeline Zoom");
+					var plaEdit = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Grid View");
+					var shoHelp = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Show Help");
 
-				Triggers.AddTooltip(objTag, "Modify objects to do anything you want!", "", new List<string> { "F3" });
-				Triggers.AddTooltip(plaEdit, "Create your own player models to use in stories / gameplay.", "", new List<string> { "F6" });
-				Triggers.AddTooltip(shoHelp, "Toggles the Info box.", "", new List<string> { "Ctrl + H" });
+					Triggers.AddTooltip(objTag, "Modify objects to do anything you want!", "", new List<string> { "F3" });
+					Triggers.AddTooltip(plaEdit, "Create your own player models to use in stories / gameplay.", "", new List<string> { "F6" });
+					Triggers.AddTooltip(shoHelp, "Toggles the Info box.", "", new List<string> { "Ctrl + H" });
+				}
+				catch (Exception ex)
+				{
+					LogException(ex, "There was an error in setting View Dropdown tooltips.");
+				}
 			}
 
-			var list = Resources.FindObjectsOfTypeAll<HoverTooltip>().ToList();
+			//var list = Resources.FindObjectsOfTypeAll<HoverTooltip>().ToList();
 
 			yield break;
 		}
+
+		public static void LogException(Exception ex, string str) => Debug.LogErrorFormat("{0}{1}\nEXCEPTION: {2}\nSTACKTRACE: {3}", EditorPlugin.className, str, ex.Message, ex.StackTrace);
 
 		public static void SearchObjectsCreator()
 		{
@@ -5620,6 +5650,11 @@ namespace EditorManagement.Functions.Editors
 			defaultIF.SetActive(true);
 			t.SetParent(null);
 			__instance.speedText.transform.parent.SetParent(null);
+
+			if (defaultIF.TryGetComponent(out InputField frick))
+            {
+				frick.textComponent.fontSize = 19;
+            }
 
 			Debug.LogFormat("{0}Instantiating new time object", EditorPlugin.className);
 			var timeObj = Instantiate(t.gameObject);
