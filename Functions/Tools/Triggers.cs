@@ -20,6 +20,8 @@ using SimpleJSON;
 using HarmonyLib;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 using EventKeyframe = DataManager.GameData.EventKeyframe;
@@ -1555,9 +1557,133 @@ namespace EditorManagement.Functions.Tools
 								}
 							});
 
-							var et = _p.Find("opacity").GetComponent<EventTrigger>();
-							et.triggers.Clear();
-							et.triggers.Add(ScrollDelta(opacity, 0.1f, 10f, false, new List<float> { 0f, 1f }));
+							AddEventTrigger(_p.Find("opacity").gameObject, new List<EventTrigger.Entry> { ScrollDelta(opacity, 0.1f, 10f, false, new List<float> { 0f, 1f }) });
+						}
+
+						if (_p.Find("huesatval"))
+						{
+							var hue = _p.Find("huesatval/x").GetComponent<InputField>();
+
+							hue.onValueChanged.RemoveAllListeners();
+							hue.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[2].ToString();
+							hue.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[2] = n;
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							//hue.gameObject.AddComponent<InputFieldHelper>();
+
+							Destroy(_p.transform.Find("huesatval").GetComponent<EventTrigger>());
+
+							AddEventTrigger(hue.gameObject, new List<EventTrigger.Entry> { ScrollDelta(hue, 0.1f, 10f) });
+							IncreaseDecreaseButtons(hue, 0.1f, 10f);
+
+							var sat = _p.Find("huesatval/y").GetComponent<InputField>();
+
+							sat.onValueChanged.RemoveAllListeners();
+							sat.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[3].ToString();
+							sat.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[3] = n;
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							//sat.gameObject.AddComponent<InputFieldHelper>();
+
+							AddEventTrigger(sat.gameObject, new List<EventTrigger.Entry> { ScrollDelta(sat, 0.1f, 10f) });
+							IncreaseDecreaseButtons(sat, 0.1f, 10f);
+
+							var val = _p.Find("huesatval/z").GetComponent<InputField>();
+
+							val.onValueChanged.RemoveAllListeners();
+							val.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[4].ToString();
+							val.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[4] = n;
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							//val.gameObject.AddComponent<InputFieldHelper>();
+
+							AddEventTrigger(val.gameObject, new List<EventTrigger.Entry> { ScrollDelta(val, 0.1f, 10f) });
+							IncreaseDecreaseButtons(val, 0.1f, 10f);
+						}
+
+						if (_p.Find("hue"))
+						{
+							var opacity = _p.Find("hue/x").GetComponent<InputField>();
+
+							opacity.onValueChanged.RemoveAllListeners();
+							opacity.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[2].ToString();
+							opacity.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[2] = n;
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							opacity.gameObject.AddComponent<InputFieldHelper>();
+
+							AddEventTrigger(_p.Find("hue").gameObject, new List<EventTrigger.Entry> { ScrollDelta(opacity, 0.1f, 10f) });
+							IncreaseDecreaseButtons(opacity, 0.1f, 10f);
+						}
+
+						if (_p.Find("sat"))
+						{
+							var opacity = _p.Find("sat/x").GetComponent<InputField>();
+
+							opacity.onValueChanged.RemoveAllListeners();
+							opacity.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[3].ToString();
+							opacity.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[3] = n;
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							AddEventTrigger(_p.Find("sat").gameObject, new List<EventTrigger.Entry> { ScrollDelta(opacity, 0.1f, 10f) });
+							IncreaseDecreaseButtons(opacity, 0.1f, 10f);
+
+							opacity.gameObject.AddComponent<InputFieldHelper>();
+
+							//var et = _p.Find("sat").GetComponent<EventTrigger>();
+							//et.triggers.Clear();
+							//et.triggers.Add(ScrollDelta(opacity, 0.1f, 10f));
+						}
+
+						if (_p.Find("val"))
+						{
+							var opacity = _p.Find("val/x").GetComponent<InputField>();
+
+							opacity.onValueChanged.RemoveAllListeners();
+							opacity.text = _beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[4].ToString();
+							opacity.onValueChanged.AddListener(delegate (string _val)
+							{
+								if (float.TryParse(_val, out float n))
+								{
+									_beatmapObject.events[_t][ObjEditor.inst.currentKeyframe].eventValues[4] = n;
+									ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+								}
+							});
+
+							opacity.gameObject.AddComponent<InputFieldHelper>();
+
+							AddEventTrigger(_p.Find("val").gameObject, new List<EventTrigger.Entry> { ScrollDelta(opacity, 0.1f, 10f) });
+							IncreaseDecreaseButtons(opacity, 0.1f, 10f);
 						}
 					}
 				}
@@ -1760,6 +1886,89 @@ namespace EditorManagement.Functions.Tools
 		}
 
 		public static Dictionary<int, List<KeyCode>> quickPrefabs = new Dictionary<int, List<KeyCode>>();
+
+		public static EventTrigger.Entry CreateBeatmapObjectTrigger(ObjEditor __instance, ObjEditor.ObjectSelection _obj)
+		{
+			var entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.PointerUp;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				var pointerEventData = (PointerEventData)eventData;
+
+				if (!__instance.beatmapObjectsDrag)
+				{
+					if (!RTEditor.inst.parentPickerEnabled)
+					{
+						if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
+						{
+							__instance.AddSelectedObject(_obj);
+						}
+						else
+						{
+							__instance.SetCurrentObj(_obj);
+						}
+					}
+					else if (__instance.currentObjectSelection.IsObject() && _obj.IsObject() && pointerEventData.button != PointerEventData.InputButton.Right)
+                    {
+						var list = new List<string>();
+
+						var parentChain = __instance.currentObjectSelection.GetObjectData().GetParentChain();
+						var top = parentChain[parentChain.Count - 1];
+
+						foreach (var obj in top.GetChildChain())
+                        {
+							for (int i = 0; i < obj.Count; i++)
+                            {
+								var beatmapObject = obj[i];
+								if (!list.Contains(beatmapObject.id))
+                                {
+									list.Add(beatmapObject.id);
+                                }
+                            }
+                        }
+
+						foreach (var parent in parentChain)
+                        {
+							if (list.Contains(parent.id) && parent.id != __instance.currentObjectSelection.GetObjectData().id)
+								list.Remove(parent.id);
+                        }
+
+						if (!list.Contains(__instance.currentObjectSelection.GetObjectData().id))
+							list.Add(__instance.currentObjectSelection.GetObjectData().id);
+
+						if (!list.Contains(_obj.GetObjectData().id))
+						{
+							__instance.currentObjectSelection.GetObjectData().parent = _obj.GetObjectData().id;
+							ObjectManager.inst.updateObjects(__instance.currentObjectSelection);
+
+							RTEditor.inst.parentPickerEnabled = false;
+							RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+						}
+						else
+						{
+							EditorManager.inst.DisplayNotification("Cannot set parent to child!", 1f, EditorManager.NotificationType.Warning);
+						}
+                    }
+
+					foreach (var obj in __instance.selectedObjects)
+					{
+						__instance.RenderTimelineObject(obj);
+					}
+
+					float timelineTime = EditorManager.inst.GetTimelineTime(0f);
+					if (__instance.currentObjectSelection.IsObject())
+					{
+						__instance.mouseOffsetXForDrag = __instance.currentObjectSelection.GetObjectData().StartTime - timelineTime;
+						return;
+					}
+					if (__instance.currentObjectSelection.IsPrefab())
+					{
+						__instance.mouseOffsetXForDrag = __instance.currentObjectSelection.GetPrefabObjectData().StartTime - timelineTime;
+					}
+				}
+			});
+			return entry;
+		}
 
 		public static void UpgradeSave()
         {
