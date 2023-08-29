@@ -17,6 +17,8 @@ using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Tools;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -2303,7 +2305,7 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             //Bool
-                            if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate" || key == "Bullet Constant" || key == "Bullet Hurt Players")
+                            if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate" || key == "Bullet Constant" || key == "Bullet Hurt Players" || key == "Bullet AutoKill")
                             {
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
