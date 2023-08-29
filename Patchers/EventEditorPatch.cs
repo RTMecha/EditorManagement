@@ -20,6 +20,8 @@ using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Patchers
 {
@@ -3192,24 +3194,24 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("RenderThemeEditor")]
 		[HarmonyPrefix]
-		public static bool RenderThemeEditor(int __0)
+		public static bool RenderThemeEditor(EventEditor __instance, int __0)
 		{
-			Debug.Log("ID: " + __0);
+			Debug.LogFormat("{0}ID: {1}", EditorPlugin.className, __0);
 			if (__0 != -1)
 			{
-				EventEditor.inst.previewTheme = DataManager.BeatmapTheme.DeepCopy(DataManager.inst.GetTheme(__0), true);
+				__instance.previewTheme = DataManager.BeatmapTheme.DeepCopy(DataManager.inst.GetTheme(__0), true);
 			}
 			else
 			{
-				EventEditor.inst.previewTheme = new DataManager.BeatmapTheme();
-				EventEditor.inst.previewTheme.ClearBeatmap();
+				__instance.previewTheme = new DataManager.BeatmapTheme();
+				__instance.previewTheme.ClearBeatmap();
 			}
 
-			Transform theme = EventEditor.inst.dialogLeft.Find("theme");
+			var theme = __instance.dialogLeft.Find("theme");
 			theme.gameObject.SetActive(true);
-			EventEditor.inst.showTheme = true;
-			Transform themeContent = theme.Find("theme/viewport/content");
-			Transform actions = theme.Find("actions");
+			__instance.showTheme = true;
+			var themeContent = theme.Find("theme/viewport/content");
+			var actions = theme.Find("actions");
 			theme.Find("theme").localRotation = Quaternion.Euler(Vector3.zero);
 
 			foreach (var child in themeContent)
@@ -3224,15 +3226,15 @@ namespace EditorManagement.Patchers
 			var update = actions.Find("update").GetComponent<Button>();
 
 			name.onValueChanged.RemoveAllListeners();
-			name.text = EventEditor.inst.previewTheme.name;
+			name.text = __instance.previewTheme.name;
 			name.onValueChanged.AddListener(delegate (string val)
 			{
-				EventEditor.inst.previewTheme.name = val;
+				__instance.previewTheme.name = val;
 			});
 			cancel.onClick.RemoveAllListeners();
 			cancel.onClick.AddListener(delegate ()
 			{
-				EventEditor.inst.showTheme = false;
+				__instance.showTheme = false;
 				theme.gameObject.SetActive(false);
 			});
 			createNew.onClick.RemoveAllListeners();
@@ -3249,18 +3251,18 @@ namespace EditorManagement.Patchers
 			}
 			createNew.onClick.AddListener(delegate ()
 			{
-				EventEditor.inst.previewTheme.id = null;
-				ThemeEditor.inst.SaveTheme(DataManager.BeatmapTheme.DeepCopy(EventEditor.inst.previewTheme, false));
-				EventEditor.inst.StartCoroutine(ThemeEditor.inst.LoadThemes());
-				Transform child = EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType);
-				EventEditor.inst.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
-				EventEditor.inst.RenderThemePreview(child);
-				EventEditor.inst.showTheme = false;
+				__instance.previewTheme.id = null;
+				ThemeEditor.inst.SaveTheme(DataManager.BeatmapTheme.DeepCopy(__instance.previewTheme));
+				__instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				var child = __instance.dialogRight.GetChild(__instance.currentEventType);
+				__instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				__instance.RenderThemePreview(child);
+				__instance.showTheme = false;
 				theme.gameObject.SetActive(false);
 			});
 			update.onClick.AddListener(delegate ()
 			{
-				List<FileManager.LSFile> fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
+				var fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
 				fileList = (from x in fileList
 							orderby x.Name.ToLower()
 							select x).ToList();
@@ -3271,12 +3273,12 @@ namespace EditorManagement.Patchers
 						FileManager.inst.DeleteFileRaw(lsfile.FullPath);
 					}
 				}
-				ThemeEditor.inst.SaveTheme(DataManager.BeatmapTheme.DeepCopy(EventEditor.inst.previewTheme, true));
-				EventEditor.inst.StartCoroutine(ThemeEditor.inst.LoadThemes());
-				Transform child = EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType);
-				EventEditor.inst.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
-				EventEditor.inst.RenderThemePreview(child);
-				EventEditor.inst.showTheme = false;
+				ThemeEditor.inst.SaveTheme(DataManager.BeatmapTheme.DeepCopy(__instance.previewTheme, true));
+				__instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				var child = EventEditor.inst.dialogRight.GetChild(__instance.currentEventType);
+				__instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				__instance.RenderThemePreview(child);
+				__instance.showTheme = false;
 				theme.gameObject.SetActive(false);
 			});
 
@@ -3286,29 +3288,29 @@ namespace EditorManagement.Patchers
 			var bgDropper = themeContent.Find("bg/preview/dropper").GetComponent<Image>();
 
 			bgHex.onValueChanged.RemoveAllListeners();
-			bgHex.text = LSColors.ColorToHex(EventEditor.inst.previewTheme.backgroundColor);
-			bgPreview.color = EventEditor.inst.previewTheme.backgroundColor;
+			bgHex.text = LSColors.ColorToHex(__instance.previewTheme.backgroundColor);
+			bgPreview.color = __instance.previewTheme.backgroundColor;
 			bgHex.onValueChanged.AddListener(delegate (string val)
 			{
 				if (val.Length == 6)
 				{
 					bgPreview.color = LSColors.HexToColor(val);
-					EventEditor.inst.previewTheme.backgroundColor = LSColors.HexToColor(val);
+					__instance.previewTheme.backgroundColor = LSColors.HexToColor(val);
 				}
                 else
                 {
 					bgPreview.color = LSColors.pink500;
-					EventEditor.inst.previewTheme.backgroundColor = LSColors.pink500;
+					__instance.previewTheme.backgroundColor = LSColors.pink500;
 				}
 
-				bgDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.backgroundColor));
+				bgDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.backgroundColor));
 				bgPreviewET.triggers.Clear();
-				bgPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, EventEditor.inst.previewTheme.backgroundColor));
+				bgPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, __instance.previewTheme.backgroundColor));
 			});
 
-			bgDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.backgroundColor));
+			bgDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.backgroundColor));
 			bgPreviewET.triggers.Clear();
-			bgPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, EventEditor.inst.previewTheme.backgroundColor));
+			bgPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, __instance.previewTheme.backgroundColor));
 
 			var guiHex = themeContent.Find("gui/hex").GetComponent<InputField>();
 			var guiPreview = themeContent.Find("gui/preview").GetComponent<Image>();
@@ -3319,29 +3321,29 @@ namespace EditorManagement.Patchers
 			guiHex.characterLimit = 8;
 			guiHex.characterValidation = InputField.CharacterValidation.None;
 			guiHex.contentType = InputField.ContentType.Standard;
-			guiHex.text = RTEditor.ColorToHex(EventEditor.inst.previewTheme.guiColor);
-			guiPreview.color = EventEditor.inst.previewTheme.guiColor;
+			guiHex.text = RTEditor.ColorToHex(__instance.previewTheme.guiColor);
+			guiPreview.color = __instance.previewTheme.guiColor;
 			guiHex.onValueChanged.AddListener(delegate (string val)
 			{
 				if (val.Length == 8)
 				{
 					guiPreview.color = LSColors.HexToColorAlpha(val);
-					EventEditor.inst.previewTheme.guiColor = LSColors.HexToColorAlpha(val);
+					__instance.previewTheme.guiColor = LSColors.HexToColorAlpha(val);
 				}
 				else
 				{
 					guiPreview.color = LSColors.pink500;
-					EventEditor.inst.previewTheme.guiColor = LSColors.pink500;
+					__instance.previewTheme.guiColor = LSColors.pink500;
 				}
 
-				guiDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.guiColor));
+				guiDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.guiColor));
 				guiPreviewET.triggers.Clear();
-				guiPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, EventEditor.inst.previewTheme.guiColor));
+				guiPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, __instance.previewTheme.guiColor));
 			});
 
-			guiDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.guiColor));
+			guiDropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.guiColor));
 			guiPreviewET.triggers.Clear();
-			guiPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, EventEditor.inst.previewTheme.guiColor));
+			guiPreviewET.triggers.Add(Triggers.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, __instance.previewTheme.guiColor));
 
 			for (int i = 0; i < 4; i++)
 			{
@@ -3354,29 +3356,29 @@ namespace EditorManagement.Patchers
 				hex.characterLimit = 8;
 				hex.characterValidation = InputField.CharacterValidation.None;
 				hex.contentType = InputField.ContentType.Standard;
-				hex.text = RTEditor.ColorToHex(EventEditor.inst.previewTheme.playerColors[indexTmp]);
-				preview.color = EventEditor.inst.previewTheme.playerColors[indexTmp];
+				hex.text = RTEditor.ColorToHex(__instance.previewTheme.playerColors[indexTmp]);
+				preview.color = __instance.previewTheme.playerColors[indexTmp];
 				hex.GetComponent<InputField>().onValueChanged.AddListener(delegate (string val)
 				{
 					if (val.Length == 8)
 					{
 						preview.color = LSColors.HexToColorAlpha(val);
-						EventEditor.inst.previewTheme.playerColors[indexTmp] = LSColors.HexToColorAlpha(val);
+						__instance.previewTheme.playerColors[indexTmp] = LSColors.HexToColorAlpha(val);
 					}
 					else
                     {
 						preview.color = LSColors.pink500;
-						EventEditor.inst.previewTheme.playerColors[indexTmp] = LSColors.pink500;
+						__instance.previewTheme.playerColors[indexTmp] = LSColors.pink500;
 					}
 
-					dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.playerColors[indexTmp]));
+					dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.playerColors[indexTmp]));
 					previewET.triggers.Clear();
-					previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, EventEditor.inst.previewTheme.playerColors[indexTmp]));
+					previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, __instance.previewTheme.playerColors[indexTmp]));
 				});
 
-				dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.playerColors[indexTmp]));
+				dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.playerColors[indexTmp]));
 				previewET.triggers.Clear();
-				previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, EventEditor.inst.previewTheme.playerColors[indexTmp]));
+				previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, __instance.previewTheme.playerColors[indexTmp]));
 			}
 
 			for (int i = 0; i < 18; i++)
@@ -3391,29 +3393,29 @@ namespace EditorManagement.Patchers
 				hex.characterLimit = 8;
 				hex.characterValidation = InputField.CharacterValidation.None;
 				hex.contentType = InputField.ContentType.Standard;
-				hex.text = RTEditor.ColorToHex(EventEditor.inst.previewTheme.objectColors[indexTmp]);
-				preview.color = EventEditor.inst.previewTheme.objectColors[indexTmp];
+				hex.text = RTEditor.ColorToHex(__instance.previewTheme.objectColors[indexTmp]);
+				preview.color = __instance.previewTheme.objectColors[indexTmp];
 				hex.onValueChanged.AddListener(delegate (string val)
 				{
 					if (val.Length == 8)
 					{
 						preview.color = LSColors.HexToColorAlpha(val);
-						EventEditor.inst.previewTheme.objectColors[indexTmp] = LSColors.HexToColorAlpha(val);
+						__instance.previewTheme.objectColors[indexTmp] = LSColors.HexToColorAlpha(val);
 					}
 					else
                     {
 						preview.color = LSColors.pink500;
-						EventEditor.inst.previewTheme.objectColors[indexTmp] = LSColors.pink500;
+						__instance.previewTheme.objectColors[indexTmp] = LSColors.pink500;
 					}
 
-					dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.objectColors[indexTmp]));
+					dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.objectColors[indexTmp]));
 					previewET.triggers.Clear();
-					previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, EventEditor.inst.previewTheme.objectColors[indexTmp]));
+					previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, __instance.previewTheme.objectColors[indexTmp]));
 				});
 
-				dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.objectColors[indexTmp]));
+				dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.objectColors[indexTmp]));
 				previewET.triggers.Clear();
-				previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, EventEditor.inst.previewTheme.objectColors[indexTmp]));
+				previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, __instance.previewTheme.objectColors[indexTmp]));
 			}
 
 			for (int i = 0; i < 9; i++)
@@ -3424,36 +3426,36 @@ namespace EditorManagement.Patchers
 				var dropper = themeContent.Find("background" + i + "/preview").GetChild(0).GetComponent<Image>();
 				int indexTmp = i;
 				hex.onValueChanged.RemoveAllListeners();
-				hex.text = LSColors.ColorToHex(EventEditor.inst.previewTheme.backgroundColors[indexTmp]);
-				preview.color = EventEditor.inst.previewTheme.backgroundColors[indexTmp];
+				hex.text = LSColors.ColorToHex(__instance.previewTheme.backgroundColors[indexTmp]);
+				preview.color = __instance.previewTheme.backgroundColors[indexTmp];
 				hex.onValueChanged.AddListener(delegate (string val)
 				{
 					if (val.Length == 6)
 					{
 						preview.color = LSColors.HexToColor(val);
-						EventEditor.inst.previewTheme.backgroundColors[indexTmp] = LSColors.HexToColor(val);
+						__instance.previewTheme.backgroundColors[indexTmp] = LSColors.HexToColor(val);
 					}
 					else
                     {
 						preview.GetComponent<Image>().color = LSColors.pink500;
-						EventEditor.inst.previewTheme.backgroundColors[indexTmp] = LSColors.pink500;
+						__instance.previewTheme.backgroundColors[indexTmp] = LSColors.pink500;
 					}
 
-					dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.objectColors[indexTmp]));
+					dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.objectColors[indexTmp]));
 					previewET.triggers.Clear();
-					previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, EventEditor.inst.previewTheme.backgroundColors[indexTmp]));
+					previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, __instance.previewTheme.backgroundColors[indexTmp]));
 				});
 
-				dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(EventEditor.inst.previewTheme.objectColors[indexTmp]));
+				dropper.color = Triggers.InvertColorHue(Triggers.InvertColorValue(__instance.previewTheme.objectColors[indexTmp]));
 				previewET.triggers.Clear();
-				previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, EventEditor.inst.previewTheme.backgroundColors[indexTmp]));
+				previewET.triggers.Add(Triggers.CreatePreviewClickTrigger(preview, dropper, hex, __instance.previewTheme.backgroundColors[indexTmp]));
 			}
 			return false;
 		}
 
 		[HarmonyPatch("CreatePreviewClickTrigger")]
 		[HarmonyPrefix]
-		private static bool CreatePreviewClickTriggerPatch(ref EventTrigger.Entry __result, Transform __0, Transform __1, Color __2)
+		static bool CreatePreviewClickTriggerPatch(ref EventTrigger.Entry __result, Transform __0, Transform __1, Color __2)
         {
 			__result = Triggers.CreatePreviewClickTrigger(__0.GetComponent<Image>(), __0.GetChild(0).GetComponent<Image>(), __1.GetComponent<InputField>(), __2);
 			return false;

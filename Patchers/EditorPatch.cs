@@ -22,6 +22,8 @@ using LSFunctions;
 using Crosstales.FB;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Patchers
 {
@@ -972,30 +974,26 @@ namespace EditorManagement.Patchers
         {
 			InputDataManager.inst.players.Clear();
 			if (reloadSelectedPlayers && playerStorage.Count > 1)
-			{
 				foreach (var player in playerStorage)
-                {
 					InputDataManager.inst.players.Add(player);
-                }
-            }
 			else
 				InputDataManager.inst.players.Add(new InputDataManager.CustomPlayer(true, 0, null));
 		}
 
 		[HarmonyPatch("Update")]
 		[HarmonyPostfix]
-		private static void EditorUpdatePatch()
+		static void UpdatePostfix()
 		{
 			if (EditorManager.inst.GUI.activeSelf == true && EditorManager.inst.isEditing == true)
 			{
-				//Create Local Variables
+				// Create Local Variables
 
 				if (RTEditor.timeIF != null && !RTEditor.timeIF.isFocused)
 				{
 					RTEditor.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 				}
 
-				if (GameObject.Find("Game Systems/EventManager") && GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager"))
+				if (ModCompatibility.eventsCorePlugin != null)
 				{
 					var rt = GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager");
 
@@ -1400,11 +1398,21 @@ namespace EditorManagement.Patchers
 		}
 
 		[HarmonyPatch("OpenBeatmapPopup")]
-		[HarmonyPostfix]
-		private static void EditorOpenBeatmapPopupPatch()
+		[HarmonyPrefix]
+		static bool EditorOpenBeatmapPopupPatch(EditorManager __instance)
 		{
+			Debug.LogFormat("{0}Open Beatmap Popup", EditorPlugin.className);
+			InputField component = __instance.GetDialog("Open File Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
+			if (__instance.openFileSearch == null)
+				__instance.openFileSearch = "";
+
+			component.text = __instance.openFileSearch;
+			__instance.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
+			__instance.RenderOpenBeatmapPopup();
+			__instance.ShowDialog("Open File Popup");
+
 			//Create Local Variables
-			GameObject openLevel = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject;
+			GameObject openLevel = __instance.GetDialog("Open File Popup").Dialog.gameObject;
 			Transform openTLevel = openLevel.transform;
 			RectTransform openRTLevel = openLevel.GetComponent<RectTransform>();
 			GridLayoutGroup openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
@@ -1421,6 +1429,8 @@ namespace EditorManagement.Patchers
 			openGridLVL.constraint = (GridLayoutGroup.Constraint)ConfigEntries.OpenFileCellConstraintType.Value;
 			openGridLVL.constraintCount = ConfigEntries.OpenFileCellConstraintCount.Value;
 			openGridLVL.spacing = ConfigEntries.OpenFileCellSpacing.Value;
+
+			return false;
 		}
 
 		[HarmonyPatch("AssignWaveformTextures")]
@@ -1844,6 +1854,7 @@ namespace EditorManagement.Patchers
 			RTEditor.RefreshWarningPopup("Are you sure you want to quit to main menu?", delegate ()
 			{
 				RTEditor.inst.allowQuit = true;
+				InputDataManager.inst.ClearInputs();
 				__instance.QuitToMenu();
 			}, delegate ()
 			{

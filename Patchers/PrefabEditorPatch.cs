@@ -355,7 +355,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         private static bool ExpandCurrentPrefabPatch()
         {
-            RTEditor.ExpandCurrentPrefab();
+            RTEditor.inst.StartCoroutine(RTEditor.ExpandCurrentPrefab());
             return false;
         }
 

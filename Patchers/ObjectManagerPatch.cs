@@ -20,6 +20,8 @@ using EditorManagement.Functions.Tools;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Patchers
 {
