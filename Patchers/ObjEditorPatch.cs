@@ -13,6 +13,7 @@ using SimpleJSON;
 using HarmonyLib;
 
 using LSFunctions;
+using TMPro;
 
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Components;
@@ -20,6 +21,8 @@ using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Patchers
 {
@@ -262,7 +265,7 @@ namespace EditorManagement.Patchers
 				yoif.onValueChanged.RemoveAllListeners();
 			}
 
-			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin") || GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
+			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin") || ModCompatibility.catalystType == ModCompatibility.CatalystType.Editor)
 			{
 				//Opacity
 				{
@@ -278,6 +281,110 @@ namespace EditorManagement.Patchers
 					opacity.name = "opacity";
 
 					Triggers.AddTooltip(opacity.gameObject, "Set the opacity percentage here.", "If the color is already slightly transparent or the object is a helper, it will multiply the current opacity value with the helper and/or color alpha values.");
+				}
+
+				bool test = false;
+
+                //Test
+                {
+					var opacityLabel = Instantiate(__instance.KeyframeDialogs[2].transform.Find("label").gameObject);
+					opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+					opacityLabel.transform.localScale = Vector3.one;
+					opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Hue";
+					opacityLabel.name = "label";
+
+					opacityLabel.AddComponent<HorizontalLayoutGroup>();
+
+					var n2 = Instantiate(opacityLabel.transform.GetChild(0).gameObject);
+					n2.transform.SetParent(opacityLabel.transform);
+					n2.transform.localScale = Vector3.one;
+					if (n2.GetComponent<Text>())
+						n2.GetComponent<Text>().text = "Saturation";
+
+					var n3 = Instantiate(opacityLabel.transform.GetChild(0).gameObject);
+					n3.transform.SetParent(opacityLabel.transform);
+					n3.transform.localScale = Vector3.one;
+					if (n3.GetComponent<Text>())
+						n3.GetComponent<Text>().text = "Value";
+
+					var opacity = Instantiate(__instance.KeyframeDialogs[1].transform.Find("scale").gameObject);
+					opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+					opacity.transform.localScale = Vector3.one;
+					opacity.name = "huesatval";
+
+					var z = Instantiate(opacity.transform.GetChild(1).gameObject);
+					z.transform.SetParent(opacity.transform);
+					z.transform.localScale = Vector3.one;
+					z.name = "z";
+
+					for (int i = 0; i < opacity.transform.childCount; i++)
+                    {
+						if (!opacity.transform.GetChild(i).GetComponent<InputFieldHelper>())
+							opacity.transform.GetChild(i).gameObject.AddComponent<InputFieldHelper>();
+
+						var horizontal = opacity.transform.GetChild(i).GetComponent<HorizontalLayoutGroup>();
+						var input = opacity.transform.GetChild(i).Find("input").GetComponent<RectTransform>();
+
+						horizontal.childControlWidth = false;
+
+						input.sizeDelta = new Vector2(60f, 32f);
+
+						var layout = opacity.transform.GetChild(i).GetComponent<LayoutElement>();
+						layout.minWidth = 109f;
+                    }
+
+					//Triggers.AddTooltip(opacity.gameObject, "Set the hue value here.", "Shifts the hue levels of the objects' color.");
+				}
+
+				if (test)
+				{
+					//Hue
+					{
+						var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
+						opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+						opacityLabel.transform.localScale = Vector3.one;
+						opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Hue";
+						opacityLabel.name = "label";
+
+						var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
+						opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+						opacity.transform.localScale = Vector3.one;
+						opacity.name = "hue";
+
+						Triggers.AddTooltip(opacity.gameObject, "Set the hue value here.", "Shifts the hue levels of the objects' color.");
+					}
+
+					//Saturation
+					{
+						var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
+						opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+						opacityLabel.transform.localScale = Vector3.one;
+						opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Saturation";
+						opacityLabel.name = "label";
+
+						var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
+						opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+						opacity.transform.localScale = Vector3.one;
+						opacity.name = "sat";
+
+						Triggers.AddTooltip(opacity.gameObject, "Set the hue value here.", "Shifts the saturation levels of the objects' color.");
+					}
+
+					//Value
+					{
+						var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
+						opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+						opacityLabel.transform.localScale = Vector3.one;
+						opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Value";
+						opacityLabel.name = "label";
+
+						var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
+						opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+						opacity.transform.localScale = Vector3.one;
+						opacity.name = "val";
+
+						Triggers.AddTooltip(opacity.gameObject, "Set the (brightness) value here.", "Shifts the value (brightness) levels of the objects' color.");
+					}
 				}
 
 				//Position Z
@@ -352,16 +459,18 @@ namespace EditorManagement.Patchers
 				parent.GetComponent<HorizontalLayoutGroup>().childControlWidth = false;
 				parent.GetComponent<HorizontalLayoutGroup>().spacing = 4f;
 
-				parent.transform.Find("text").GetComponent<RectTransform>().sizeDelta = new Vector2(241f, 32f);
+				parent.transform.Find("text").GetComponent<RectTransform>().sizeDelta = new Vector2(201f, 32f);
 
-				GameObject resetParent = Instantiate(close);
+				var resetParent = Instantiate(close);
 				resetParent.transform.SetParent(parent.transform);
 				resetParent.transform.localScale = Vector3.one;
 				resetParent.name = "clear parent";
 				resetParent.transform.SetSiblingIndex(1);
 
-				resetParent.GetComponent<Button>().onClick.RemoveAllListeners();
-				resetParent.GetComponent<Button>().onClick.AddListener(delegate ()
+				var resetParentButton = resetParent.GetComponent<Button>();
+
+				resetParentButton.onClick.ClearAll();
+				resetParentButton.onClick.AddListener(delegate ()
 				{
 					ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "";
 
@@ -369,6 +478,28 @@ namespace EditorManagement.Patchers
 
 					ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
 				});
+
+				var parentPicker = Instantiate(close);
+				parentPicker.transform.SetParent(parent.transform);
+				parentPicker.transform.localScale = Vector3.one;
+				parentPicker.name = "parent picker";
+				parentPicker.transform.SetSiblingIndex(2);
+
+				var parentPickerButton = parentPicker.GetComponent<Button>();
+
+				parentPickerButton.onClick.ClearAll();
+				parentPickerButton.onClick.AddListener(delegate ()
+				{
+					RTEditor.inst.parentPickerEnabled = true;
+					//EditorManager.inst.DisplayNotification("Parent picker enabled! Click on a timeline object to set the parent.", 3f);
+				});
+
+				var cb = parentPickerButton.colors;
+				cb.normalColor = new Color(0.0569f, 0.4827f, 0.9718f, 1f);
+				parentPickerButton.colors = cb;
+
+				if (parentPicker.transform.childCount >= 0 && RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/theme/viewport/content/player0/preview/dropper", out GameObject dropper) && dropper.TryGetComponent(out Image dropperImage))
+					parentPicker.transform.GetChild(0).GetComponent<Image>().sprite = dropperImage.sprite;
 
 				parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
 				parent.transform.Find("more").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
@@ -428,13 +559,12 @@ namespace EditorManagement.Patchers
 		}
 
 		[HarmonyPatch("CreateTimelineObject")]
-		[HarmonyPostfix]
-		private static void CreateTimelineObjectPostfix(ref GameObject __result)
+		[HarmonyPrefix]
+		static bool CreateTimelineObjectPostfix(ObjEditor __instance, ref GameObject __result, ObjEditor.ObjectSelection __0)
         {
-			var hoverUI = __result.AddComponent<HoverUI>();
-			hoverUI.animatePos = false;
-			hoverUI.animateSca = true;
-			hoverUI.size = ConfigEntries.TimelineObjectHoverSize.Value;
+			__result = RTEditor.CreateTimelineObject(__instance, __0);
+
+			return false;
         }
 
 		[HarmonyPatch("CreateKeyframes")]
