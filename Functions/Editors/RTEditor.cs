@@ -31,6 +31,7 @@ using Crosstales.FB;
 using CielaSpike;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
 using BeatmapObject = DataManager.GameData.BeatmapObject;
@@ -47,7 +48,6 @@ namespace EditorManagement.Functions.Editors
 		public static bool ienumRunning;
 
 		public static List<string> notifications = new List<string>();
-		public static Dictionary<string, HoverTooltip> tooltips = new Dictionary<string, HoverTooltip>();
 
 		public static string propertiesSearch;
 
@@ -93,9 +93,14 @@ namespace EditorManagement.Functions.Editors
 
 		public static GameObject defaultIF;
 
+		public bool parentPickerEnabled = false;
+
+		public GameObject mousePicker;
+		RectTransform mousePickerRT;
+
 		#endregion
 
-		private void Awake()
+		void Awake()
         {
             if (inst == null)
             {
@@ -105,9 +110,28 @@ namespace EditorManagement.Functions.Editors
             {
                 Destroy(gameObject);
             }
+
+			mousePicker = new GameObject("picker");
+			mousePicker.transform.SetParent(EditorManager.inst.GetDialog("Parent Selector").Dialog.parent.parent);
+			mousePicker.transform.localScale = Vector3.one;
+			mousePicker.layer = 5;
+			mousePickerRT = mousePicker.AddComponent<RectTransform>();
+
+			var img = new GameObject("image");
+			img.transform.SetParent(mousePicker.transform);
+			img.transform.localScale = Vector3.one;
+			img.layer = 5;
+
+			var imgRT = img.AddComponent<RectTransform>();
+			imgRT.anchoredPosition = new Vector2(-930f, -520f);
+			imgRT.sizeDelta = new Vector2(32f, 32f);
+
+			var image = img.AddComponent<Image>();
+
+			UIManager.GetImage(image, RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_dropper.png");
         }
 
-		private void Update()
+		void Update()
 		{
 			if (EditorManager.inst.isEditing)
 			{
@@ -136,6 +160,30 @@ namespace EditorManagement.Functions.Editors
 				{
 					Debug.LogFormat("{0}Text Object Kevin Encrypt: {1}", EditorPlugin.className, RTHelpers.AlphabetKevinEncrypt(currentObjectSelection.text));
 				}
+			}
+
+			if (Input.GetMouseButtonDown(1))
+				parentPickerEnabled = false;
+
+			if (mousePicker != null)
+				mousePicker.SetActive(parentPickerEnabled);
+
+			if (mousePicker != null && mousePickerRT != null && parentPickerEnabled)
+            {
+				float num = (float)Screen.width / 1920f;
+				num = 1f / num;
+				float x = mousePickerRT.sizeDelta.x;
+				float y = mousePickerRT.sizeDelta.y;
+				Vector3 zero = Vector3.zero;
+				//if ((Input.mousePosition.x + x + 32f) * num >= 1920f)
+				//{
+				//	zero.x -= x;
+				//}
+				//if ((Input.mousePosition.y + y + 32f) * num >= 1080f)
+				//{
+				//	zero.y -= y;
+				//}
+				mousePickerRT.anchoredPosition = (Input.mousePosition + zero) * num;
 			}
 		}
 
@@ -907,6 +955,92 @@ namespace EditorManagement.Functions.Editors
 			return null;
 		}
 
+		public static GameObject CreateTimelineObject(ObjEditor __instance, ObjEditor.ObjectSelection _selection)
+		{
+			GameObject gameObject = null;
+			if (_selection.IsObject() && !string.IsNullOrEmpty(_selection.ID) && _selection.Index != -1)
+			{
+				if (__instance.beatmapObjects.ContainsKey(_selection.ID))
+				{
+					Destroy(__instance.beatmapObjects[_selection.ID]);
+				}
+				var beatmapObject = _selection.GetObjectData();
+				float startTime = beatmapObject.StartTime;
+
+				gameObject = Instantiate(__instance.timelineObjectPrefab);
+				gameObject.name = beatmapObject.name;
+				gameObject.transform.SetParent(EditorManager.inst.timeline.transform);
+				gameObject.transform.localScale = Vector3.one;
+				gameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = "";
+
+				if (__instance.beatmapObjects.ContainsKey(_selection.ID))
+				{
+					__instance.beatmapObjects[_selection.ID] = gameObject;
+				}
+				else
+				{
+					__instance.beatmapObjects.Add(_selection.ID, gameObject);
+				}
+
+				var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, _selection.ID);
+				//objectSelection.DebugLog();
+
+				var createBeatmapObjectStartDragTrigger = (EventTrigger.Entry)__instance.GetType().GetMethod("CreateBeatmapObjectStartDragTrigger", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(__instance, new object[] { EventTriggerType.BeginDrag, objectSelection });
+				var createBeatmapObjectEndDragTrigger = (EventTrigger.Entry)__instance.GetType().GetMethod("CreateBeatmapObjectEndDragTrigger", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(__instance, new object[] { EventTriggerType.EndDrag, objectSelection });
+
+				Triggers.AddEventTrigger(gameObject, new List<EventTrigger.Entry> { Triggers.CreateBeatmapObjectTrigger(__instance, objectSelection), createBeatmapObjectStartDragTrigger, createBeatmapObjectEndDragTrigger });
+
+				//gameObject.GetComponent<EventTrigger>().triggers.Add(Triggers.CreateBeatmapObjectTrigger(__instance, objectSelection));
+				//gameObject.GetComponent<EventTrigger>().triggers.Add(createBeatmapObjectStartDragTrigger);
+				//gameObject.GetComponent<EventTrigger>().triggers.Add(createBeatmapObjectEndDragTrigger);
+			}
+			else if (_selection.IsPrefab() && !string.IsNullOrEmpty(_selection.ID) && _selection.GetPrefabData() != null && _selection.Index != -1)
+			{
+				if (__instance.prefabObjects.ContainsKey(_selection.ID))
+				{
+					Destroy(__instance.prefabObjects[_selection.ID]);
+				}
+				float startTime2 = _selection.GetPrefabObjectData().StartTime;
+
+				gameObject = Instantiate(__instance.timelineObjectPrefab);
+				gameObject.name = _selection.GetPrefabData().Name;
+				gameObject.transform.SetParent(EditorManager.inst.timeline.transform);
+				gameObject.transform.localScale = Vector3.one;
+				gameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = "";
+
+				if (__instance.prefabObjects.ContainsKey(_selection.ID))
+				{
+					__instance.prefabObjects[_selection.ID] = gameObject;
+				}
+				else
+				{
+					__instance.prefabObjects.Add(_selection.ID, gameObject);
+				}
+
+				var obj = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, _selection.ID);
+				//_selection.DebugLog();
+
+				var createBeatmapObjectStartDragTrigger = (EventTrigger.Entry)__instance.GetType().GetMethod("CreateBeatmapObjectStartDragTrigger", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(__instance, new object[] { EventTriggerType.BeginDrag, obj });
+				var createBeatmapObjectEndDragTrigger = (EventTrigger.Entry)__instance.GetType().GetMethod("CreateBeatmapObjectEndDragTrigger", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(__instance, new object[] { EventTriggerType.EndDrag, obj });
+
+				Triggers.AddEventTrigger(gameObject, new List<EventTrigger.Entry> { Triggers.CreateBeatmapObjectTrigger(__instance, obj), createBeatmapObjectStartDragTrigger, createBeatmapObjectEndDragTrigger });
+
+				//gameObject.GetComponent<EventTrigger>().triggers.Add(Triggers.CreateBeatmapObjectTrigger(__instance, obj));
+				//gameObject.GetComponent<EventTrigger>().triggers.Add(createBeatmapObjectStartDragTrigger);
+				//gameObject.GetComponent<EventTrigger>().triggers.Add(createBeatmapObjectEndDragTrigger);
+			}
+
+			if (gameObject != null)
+            {
+				var hoverUI = gameObject.AddComponent<HoverUI>();
+				hoverUI.animatePos = false;
+				hoverUI.animateSca = true;
+				hoverUI.size = ConfigEntries.TimelineObjectHoverSize.Value;
+			}
+
+			return gameObject;
+		}
+
 		public static void Duplicate(bool _regen = true)
 		{
 			Copy(false, true, _regen);
@@ -1653,23 +1787,39 @@ namespace EditorManagement.Functions.Editors
 			yield break;
 		}
 
-		public static void ExpandCurrentPrefab()
+		public static IEnumerator ExpandCurrentPrefab()
 		{
 			if (ObjEditor.inst.currentObjectSelection.IsPrefab())
 			{
+				Debug.LogFormat("{0}Attempting to expand prefab!", EditorPlugin.className);
 				string id = ObjEditor.inst.currentObjectSelection.GetPrefabObjectData().ID;
+
+				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+				{
+					if (beatmapObject.prefabInstanceID == id && beatmapObject.fromPrefab)
+					{
+						if (ModCompatibility.inst != null && ModCompatibility.catalyst != null && ModCompatibility.catalystInstance != null && ModCompatibility.catalystType == ModCompatibility.CatalystType.Editor)
+						{
+							ModCompatibility.catalystInstance.GetType().GetMethod("updateProcessor", types: new[] { typeof(BeatmapObject), typeof(bool) }).Invoke(ModCompatibility.catalystInstance, new object[] { beatmapObject, false });
+						}
+					}
+				}
+
 				inst.StartCoroutine(AddExpandedPrefabToLevel(ObjEditor.inst.currentObjectSelection.GetPrefabObjectData()));
+
 				ObjectManager.inst.terminateObject(ObjEditor.inst.currentObjectSelection);
 				Destroy(ObjEditor.inst.prefabObjects[id]);
 				ObjEditor.inst.prefabObjects.Remove(id);
-				DataManager.inst.gameData.prefabObjects.RemoveAll((Predicate<DataManager.GameData.PrefabObject>)(x => x.ID == id));
-				DataManager.inst.gameData.beatmapObjects.RemoveAll((Predicate<BeatmapObject>)(x => x.prefabInstanceID == id && x.fromPrefab));
+
+				DataManager.inst.gameData.prefabObjects.RemoveAll(x => x.ID == id);
+				DataManager.inst.gameData.beatmapObjects.RemoveAll(x => x.prefabInstanceID == id && x.fromPrefab);
 				ObjEditor.inst.selectedObjects.Clear();
 			}
 			else
 			{
 				EditorManager.inst.DisplayNotification("Can't expand non-prefab!", 2f, EditorManager.NotificationType.Error);
 			}
+			yield break;
 		}
 
 		public static IEnumerator DeleteKeyframes()
@@ -1690,7 +1840,7 @@ namespace EditorManagement.Functions.Editors
 
 			EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
 
-			foreach (ObjEditor.KeyframeSelection keyframeSelection2 in list)
+			foreach (var keyframeSelection2 in list)
 			{
 				if (keyframeSelection2.Index != 0)
 				{
@@ -1705,9 +1855,9 @@ namespace EditorManagement.Functions.Editors
 					EditorManager.inst.DisplayNotification("Can't delete first Keyframe", 2f, EditorManager.NotificationType.Error, false);
 				}
 			}
-			ObjEditor.inst.SetCurrentKeyframe(0, false);
+			ObjEditor.inst.SetCurrentKeyframe(0);
 			ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
-			ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+			ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
 
 			var editor = ObjEditor.inst;
 			MethodInfo createKeyframes = editor.GetType().GetMethod("CreateKeyframes", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -2034,7 +2184,7 @@ namespace EditorManagement.Functions.Editors
 			foreach (var keyframeSelection in _keyframes.Keys)
 			{
 				yield return new WaitForSeconds(delay);
-				DataManager.GameData.EventKeyframe eventKeyframe = DataManager.GameData.EventKeyframe.DeepCopy(_keyframes[keyframeSelection], true);
+				DataManager.GameData.EventKeyframe eventKeyframe = DataManager.GameData.EventKeyframe.DeepCopy(_keyframes[keyframeSelection]);
 				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type].Add(eventKeyframe);
 				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type] = (from x in DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type]
 																							orderby x.eventTime
@@ -2867,10 +3017,11 @@ namespace EditorManagement.Functions.Editors
 
                         BeatmapObject beatmapObjectParent = null;
 						ObjEditor.ObjectSelection tmp = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, parent);
-						if (DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.id == parent) != null)
+						if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null)
 						{
-							beatmapObjectParent = DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.id == parent);
-							parentTextText.text = beatmapObjectParent.name + string.Format(" [{0}]", beatmapObject.GetParentChain().Count);
+							beatmapObjectParent = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent);
+							parentTextText.text = beatmapObjectParent.name;
+							tfv.Find("parent/text").GetComponent<HoverTooltip>().tooltipLangauges[0].hint = string.Format("Parent chain count: [{0}]\n(Inclusive)", beatmapObject.GetParentChain().Count);
 						}
 						else if (parent == "CAMERA_PARENT" && ObjectModifiersEditor.inst != null)
 						{
@@ -3067,24 +3218,62 @@ namespace EditorManagement.Functions.Editors
 		public static IEnumerator SetupTooltips()
 		{
 			yield return new WaitForSeconds(2f);
-			HoverTooltip depthTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/depth/depth").GetComponent<HoverTooltip>();
-			HoverTooltip timelineTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline").GetComponent<HoverTooltip>();
-			HoverTooltip textShapeTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/shapesettings/5").GetComponent<HoverTooltip>();
-			HoverTooltip prefabTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/prefab").GetComponent<HoverTooltip>();
-			HoverTooltip objectTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/object").GetComponent<HoverTooltip>();
-			HoverTooltip eventTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event").GetComponent<HoverTooltip>();
-			HoverTooltip bgTip = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/background").GetComponent<HoverTooltip>();
 
-			depthTip.tooltipLangauges.Add(Triggers.NewTooltip("Set the depth layer of the object.", "Depth is if an object shows above or below another object. However, higher number does not equal higher depth here since it's reversed.<br>Higher number = lower depth<br>Lower number = higher depth."));
-			timelineTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a keyframe in one of the four keyframe bins by right clicking.", "Each keyframe that controls the objects' base properties like position, scale, rotation and color are located here."));
-			textShapeTip.tooltipLangauges.Add(Triggers.NewTooltip("Write your custom text here.", "Anything you write here will show up as a text object. There are a lot of formatting options, such as < b >, < i >, < br >, < color = #FFFFFF > < alpha = #FF > and more. (without the spaces between)"));
-			prefabTip.tooltipLangauges.Add(Triggers.NewTooltip("Save groups of objects across levels.", "Prefabs act as a collection of objects that you can easily transfer from one level to the next, or even share online."));
-			objectTip.tooltipLangauges.Add(Triggers.NewTooltip("Beatmap Objects.", "The very thing levels are made of!"));
-			eventTip.tooltipLangauges.Add(Triggers.NewTooltip("Use Markers to time and separate segments of a level.", "Markers can be helpful towards organizing the level into segments or remembering specific timings. You can also use markers to loop specific parts of the song if you enable it through the EditorManagement Config."));
-			bgTip.tooltipLangauges.Add(Triggers.NewTooltip("Create or look at the list of 3D backgrounds here.", "3D backgrounds are completely static, but they can scale up and down to the reactive channels of the music."));
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/depth/depth", out GameObject depth) && depth.TryGetComponent(out HoverTooltip depthTip))
+			{
+				depthTip.tooltipLangauges.Add(Triggers.NewTooltip("Set the depth layer of the object.", "Depth is if an object shows above or below another object. However, higher number does not equal higher depth here since it's reversed.<br>Higher number = lower depth<br>Lower number = higher depth."));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set depth tooltip!", EditorPlugin.className);
 
-			var eventLabelTip = EventEditor.inst.EventHolders.GetComponent<HoverTooltip>();
-			eventLabelTip.tooltipLangauges.Add(Triggers.NewTooltip("Create an event keyframe to spice up your level!", "Each event keyframe type has its own properties that you can utilize."));
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline", out GameObject timeline) && timeline.TryGetComponent(out HoverTooltip timelineTip))
+			{
+				timelineTip.tooltipLangauges.Add(Triggers.NewTooltip("Create a keyframe in one of the four keyframe bins by right clicking.", "Each keyframe that controls the objects' base properties like position, scale, rotation and color are located here."));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set timeline tooltip!", EditorPlugin.className);
+
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/shapesettings/5", out GameObject textShape) && textShape.TryGetComponent(out HoverTooltip textShapeTip))
+			{
+				textShapeTip.tooltipLangauges.Add(Triggers.NewTooltip("Write your custom text here.", "Anything you write here will show up as a text object. There are a lot of formatting options, such as < b >, < i >, < br >, < color = #FFFFFF > < alpha = #FF > and more. (without the spaces between)"));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set text shape tooltip!", EditorPlugin.className);
+
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/prefab", out GameObject prefab) && prefab.TryGetComponent(out HoverTooltip prefabTip))
+			{
+				prefabTip.tooltipLangauges.Add(Triggers.NewTooltip("Save groups of objects across levels.", "Prefabs act as a collection of objects that you can easily transfer from one level to the next, or even share online."));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set prefab tooltip!", EditorPlugin.className);
+
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/object", out GameObject @object) && @object.TryGetComponent(out HoverTooltip objectTip))
+			{
+				objectTip.tooltipLangauges.Add(Triggers.NewTooltip("Beatmap Objects.", "The very thing levels are made of!"));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set object tooltip!", EditorPlugin.className);
+
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event", out GameObject @event) && @event.TryGetComponent(out HoverTooltip eventTip))
+			{
+				eventTip.tooltipLangauges.Add(Triggers.NewTooltip("Use Markers to time and separate segments of a level.", "Markers can be helpful towards organizing the level into segments or remembering specific timings. You can also use markers to loop specific parts of the song if you enable it through the EditorManagement Config."));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set event tooltip!", EditorPlugin.className);
+
+			if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/background", out GameObject bg) && bg.TryGetComponent(out HoverTooltip bgTip))
+			{
+				bgTip.tooltipLangauges.Add(Triggers.NewTooltip("Create or look at the list of 3D backgrounds here.", "3D backgrounds are completely static, but they can scale up and down to the reactive channels of the music."));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set bg tooltip!", EditorPlugin.className);
+
+			if (EventEditor.inst.EventHolders.TryGetComponent(out HoverTooltip eventLabelTip))
+			{
+				eventLabelTip.tooltipLangauges.Add(Triggers.NewTooltip("Create an event keyframe to spice up your level!", "Each event keyframe type has its own properties that you can utilize."));
+			}
+			else
+				Debug.LogErrorFormat("{0}Could not set event holders tooltip!", EditorPlugin.className);
 
 			//File Dropdown
 			{
@@ -3143,18 +3332,8 @@ namespace EditorManagement.Functions.Editors
 				Triggers.AddTooltip(shoHelp, "Toggles the Info box.", "", new List<string> { "Ctrl + H" });
 			}
 
-			List<GameObject> list = (from obj in Resources.FindObjectsOfTypeAll<GameObject>()
-									 where obj.GetComponent<HoverTooltip>() != null
-									 select obj).ToList();
+			var list = Resources.FindObjectsOfTypeAll<HoverTooltip>().ToList();
 
-			foreach (var l in list)
-			{
-				string n = l.name;
-				if (!tooltips.ContainsKey(n))
-				{
-					tooltips.Add(n, l.GetComponent<HoverTooltip>());
-				}
-			}
 			yield break;
 		}
 
@@ -3214,6 +3393,23 @@ namespace EditorManagement.Functions.Editors
 			{
 				Triggers.AddEditorDialog("Object Search Popup", objectSearch);
 			}
+		}
+
+		static void ROSTest()
+        {
+			EditorManager.inst.ShowDialog("Object Search Popup");
+
+			RefreshObjectSearch2(delegate ()
+			{
+				foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+				{
+					if (objectSelection.IsObject())
+					{
+						objectSelection.GetObjectData().parent = "";
+						ObjectManager.inst.updateObjects(objectSelection);
+					}
+				}
+			}, true, "");
 		}
 
 		public static void RefreshObjectSearch2(Action action, bool multi = false, string multiValue = "")
@@ -3878,6 +4074,8 @@ namespace EditorManagement.Functions.Editors
 			ObjEditor.inst.RenderTimelineObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID));
 		}
 
+		public Dictionary<string, GameObject> themeBars = new Dictionary<string, GameObject>();
+
 		public static IEnumerator RenderThemeList(Transform __0, string __1)
 		{
 			var eventEditor = EventEditor.inst;
@@ -3901,7 +4099,7 @@ namespace EditorManagement.Functions.Editors
 				tf.localScale = Vector2.one;
 				cr.GetComponent<Button>().onClick.AddListener(delegate ()
 				{
-					EventEditorPatch.RenderThemeEditor(-1);
+					EventEditorPatch.RenderThemeEditor(eventEditor, -1);
 				});
 
 				foreach (var themeTmp in DataManager.inst.AllThemes)
@@ -3931,7 +4129,7 @@ namespace EditorManagement.Functions.Editors
 						});
 						ttf.Find("edit").GetComponent<Button>().onClick.AddListener(delegate ()
 						{
-							EventEditorPatch.RenderThemeEditor(int.Parse(tmpThemeID));
+							EventEditorPatch.RenderThemeEditor(eventEditor, int.Parse(tmpThemeID));
 						});
 
 						var delete = ttf.Find("delete").GetComponent<Button>();
@@ -3962,6 +4160,132 @@ namespace EditorManagement.Functions.Editors
 				}
 
 				Debug.LogFormat("{0}Finished rendering theme list and took {1} to complete!", EditorPlugin.className, sw.Elapsed);
+				loadingThemes = false;
+			}
+
+			yield break;
+		}
+
+		public static IEnumerator RenderThemeListNew(Transform __0, string __1)
+		{
+			var eventEditor = EventEditor.inst;
+			var themeEditor = ThemeEditor.inst;
+
+			if (!loadingThemes && !eventEditor.eventDrag)
+			{
+				loadingThemes = true;
+				Debug.LogFormat("{0}Rendering theme list...", EditorPlugin.className);
+
+				var sw = new System.Diagnostics.Stopwatch();
+				sw.Start();
+
+				var parent = __0.Find("themes/viewport/content");
+				//LSHelpers.DeleteChildren(parent);
+				int num = 0;
+
+				if (!inst.themeBars.ContainsKey("NEWTHEME"))
+				{
+					var cr = Instantiate(eventEditor.ThemeAdd);
+					var tf = cr.transform;
+					tf.SetParent(parent);
+					cr.SetActive(true);
+					tf.localScale = Vector2.one;
+					cr.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						EventEditorPatch.RenderThemeEditor(eventEditor, -1);
+					});
+					inst.themeBars.Add("NEWTHEME", cr);
+				}
+
+				foreach (var theme in inst.themeBars)
+                {
+					if (DataManager.inst.AllThemes.Find(x => x.id == theme.Key) == null && theme.Key != "NEWTHEME")
+                    {
+						Destroy(inst.themeBars[theme.Key]);
+						inst.themeBars.Remove(theme.Key);
+					}
+					else if (DataManager.inst.AllThemes.Find(x => x.id == theme.Key) != null && theme.Key != "NEWTHEME")
+                    {
+						var ttf = theme.Value.transform;
+
+						inst.StartCoroutine(GetThemeSprite(DataManager.inst.AllThemes.Find(x => x.id == theme.Key), delegate (Sprite _sprite)
+						{
+							ttf.Find("image").GetComponent<Image>().sprite = _sprite;
+						}));
+					}
+                }
+
+				foreach (var themeTmp in DataManager.inst.AllThemes)
+				{
+					var tmpThemeID = themeTmp.id;
+					if (themeTmp.name.ToLower().Contains(__1.ToLower()) && !inst.themeBars.ContainsKey(tmpThemeID))
+					{
+						int tmpVal = num;
+
+						var tobj = Instantiate(eventEditor.ThemePanel);
+						var ttf = tobj.transform;
+						ttf.SetParent(parent);
+						ttf.localScale = Vector2.one;
+						tobj.name = tmpThemeID;
+
+						var image = ttf.Find("image");
+
+						inst.StartCoroutine(GetThemeSprite(themeTmp, delegate (Sprite _sprite)
+						{
+							image.GetComponent<Image>().sprite = _sprite;
+						}));
+
+						image.GetComponent<Button>().onClick.AddListener(delegate ()
+						{
+							int n = 0;
+							if (DataManager.inst.AllThemes.Find(x => x.id == tmpThemeID) != null)
+                            {
+								n = int.Parse(tmpThemeID);
+                            }
+
+							DataManager.inst.gameData.eventObjects.allEvents[eventEditor.currentEventType][eventEditor.currentEvent].eventValues[0] = n;
+							//DataManager.inst.gameData.eventObjects.allEvents[eventEditor.currentEventType][eventEditor.currentEvent].eventValues[0] = DataManager.inst.GetThemeIndexToID(tmpVal);
+							EventManager.inst.updateEvents();
+							eventEditor.RenderThemePreview(__0);
+						});
+						ttf.Find("edit").GetComponent<Button>().onClick.AddListener(delegate ()
+						{
+							EventEditorPatch.RenderThemeEditor(eventEditor, int.Parse(tmpThemeID));
+						});
+
+						var delete = ttf.Find("delete").GetComponent<Button>();
+
+						delete.interactable = tmpVal >= DataManager.inst.BeatmapThemes.Count;
+						delete.onClick.AddListener(delegate ()
+						{
+							EditorManager.inst.ShowDialog("Warning Popup");
+							RefreshWarningPopup("Are you sure you want to delete this theme?", delegate ()
+							{
+								themeEditor.DeleteTheme(themeTmp);
+								eventEditor.previewTheme.id = null;
+								eventEditor.StartCoroutine(themeEditor.LoadThemes());
+								Transform child = eventEditor.dialogRight.GetChild(eventEditor.currentEventType);
+								eventEditor.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+								eventEditor.RenderThemePreview(child);
+								eventEditor.showTheme = false;
+								eventEditor.dialogLeft.Find("theme").gameObject.SetActive(false);
+								EditorManager.inst.HideDialog("Warning Popup");
+							}, delegate ()
+							{
+								EditorManager.inst.HideDialog("Warning Popup");
+							});
+						});
+						ttf.Find("text").GetComponent<Text>().text = themeTmp.name;
+
+						inst.themeBars.Add(tmpThemeID, tobj);
+					}
+					num++;
+				}
+
+				Debug.LogFormat("{0}Finished rendering theme list and took {1} to complete!", EditorPlugin.className, sw.Elapsed);
+				sw.Stop();
+				sw = null;
+
 				loadingThemes = false;
 			}
 
@@ -4111,7 +4435,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("FFE7E7");
-					categoryColors.Add(LSColors.HexToColor("FFE7E7"));
+					//categoryColors.Add(LSColors.HexToColor("FFE7E7"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4122,17 +4446,10 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "General Editor Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("General Editor Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
 						currentCategory = EditorProperty.EditorPropCategory.General;
@@ -4174,7 +4491,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("C0ACE1");
-					categoryColors.Add(LSColors.HexToColor("C0ACE1"));
+					//categoryColors.Add(LSColors.HexToColor("C0ACE1"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4185,17 +4502,10 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "Timeline Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Timeline Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
 						currentCategory = EditorProperty.EditorPropCategory.Timeline;
@@ -4237,7 +4547,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("F17BB8");
-					categoryColors.Add(LSColors.HexToColor("F17BB8"));
+					//categoryColors.Add(LSColors.HexToColor("F17BB8"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4248,17 +4558,10 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "Data Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Data Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
 						currentCategory = EditorProperty.EditorPropCategory.Data;
@@ -4301,7 +4604,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("2F426D");
-					categoryColors.Add(LSColors.HexToColor("2F426D"));
+					//categoryColors.Add(LSColors.HexToColor("2F426D"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4312,17 +4615,10 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "GUI Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("GUI Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
 						currentCategory = EditorProperty.EditorPropCategory.EditorGUI;
@@ -4343,10 +4639,10 @@ namespace EditorManagement.Functions.Editors
 					textText.fontSize = 20;
 				}
 
-				//Keybinds
+				//Functions
 				{
 					GameObject gameObject = Instantiate(prefabTMP);
-					gameObject.name = "keybinds";
+					gameObject.name = "functions";
 					gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
 					gameObject.layer = 5;
 					RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
@@ -4364,7 +4660,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("4076DF");
-					categoryColors.Add(LSColors.HexToColor("4076DF"));
+					//categoryColors.Add(LSColors.HexToColor("4076DF"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4375,20 +4671,13 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "Keybinds Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Functions Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
-						currentCategory = EditorProperty.EditorPropCategory.Keybinds;
+						currentCategory = EditorProperty.EditorPropCategory.Functions;
 						RenderPropertiesWindow();
 					});
 
@@ -4399,7 +4688,7 @@ namespace EditorManagement.Functions.Editors
 					Text textText = textGameObject.GetComponent<Text>();
 
 					textRectTransform.anchoredPosition = Vector2.zero;
-					textText.text = "Keybinds";
+					textText.text = "Functions";
 					textText.alignment = TextAnchor.MiddleCenter;
 					textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
 					textText.font = textFont.font;
@@ -4427,7 +4716,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("6CCBCF");
-					categoryColors.Add(LSColors.HexToColor("6CCBCF"));
+					//categoryColors.Add(LSColors.HexToColor("6CCBCF"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4438,17 +4727,10 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "Fields Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Fields Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
 						currentCategory = EditorProperty.EditorPropCategory.Fields;
@@ -4490,7 +4772,7 @@ namespace EditorManagement.Functions.Editors
 					rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
 					image.color = LSColors.HexToColor("1B1B1C");
-					categoryColors.Add(LSColors.HexToColor("1B1B1C"));
+					//categoryColors.Add(LSColors.HexToColor("1B1B1C"));
 
 					ColorBlock cb2 = button.colors;
 					cb2.normalColor = new Color(1f, 1f, 1f, 1f);
@@ -4501,17 +4783,10 @@ namespace EditorManagement.Functions.Editors
 
 					HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
-					HoverTooltip.Tooltip tooltip = new HoverTooltip.Tooltip();
-					tooltip.desc = "Preview Settings";
-					tooltip.hint = "";
-
 					hoverTooltip.tooltipLangauges.Clear();
-					hoverTooltip.tooltipLangauges.Add(tooltip);
+					hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Preview Settings", ""));
 
-					button.onClick.m_Calls.m_ExecutingCalls.Clear();
-					button.onClick.m_Calls.m_PersistentCalls.Clear();
-					button.onClick.m_PersistentCalls.m_Calls.Clear();
-					button.onClick.RemoveAllListeners();
+					button.onClick.ClearAll();
 					button.onClick.AddListener(delegate ()
 					{
 						currentCategory = EditorProperty.EditorPropCategory.Preview;
@@ -4540,11 +4815,9 @@ namespace EditorManagement.Functions.Editors
 			propWin.transform.Find("Text").GetComponent<Text>().text = "Preferences";
 			propWin.transform.Find("Text 1").GetComponent<Text>().text = "F10";
 
-			propWin.GetComponent<Button>().onClick.m_Calls.m_ExecutingCalls.Clear();
-			propWin.GetComponent<Button>().onClick.m_Calls.m_PersistentCalls.Clear();
-			propWin.GetComponent<Button>().onClick.m_PersistentCalls.m_Calls.Clear();
-			propWin.GetComponent<Button>().onClick.RemoveAllListeners();
-			propWin.GetComponent<Button>().onClick.AddListener(delegate ()
+			var propWinButton = propWin.GetComponent<Button>();
+			propWinButton.onClick.ClearAll();
+			propWinButton.onClick.AddListener(delegate ()
 			{
 				OpenPropertiesWindow();
 			});
@@ -4609,7 +4882,7 @@ namespace EditorManagement.Functions.Editors
 			var editorDialog = EditorManager.inst.GetDialog("Editor Properties Popup").Dialog;
 			for (int i = 0; i < editorDialog.Find("crumbs").childCount; i++)
 			{
-				var col = editorDialog.Find("crumbs").GetChild(i).GetComponent<Image>().color;
+				//var col = editorDialog.Find("crumbs").GetChild(i).GetComponent<Image>().color;
 				editorDialog.Find("crumbs").GetChild(i).localScale = Vector3.one;
 				if (i == _tab)
 				{
@@ -4622,7 +4895,17 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-		public static List<Color> categoryColors = new List<Color>();
+		public static List<Color> categoryColors = new List<Color>
+		{
+			LSColors.HexToColor("FFE7E7"),
+			LSColors.HexToColor("C0ACE1"),
+			LSColors.HexToColor("F17BB8"),
+			LSColors.HexToColor("2F426D"),
+			LSColors.HexToColor("4076DF"),
+			LSColors.HexToColor("6CCBCF"),
+			LSColors.HexToColor("1B1B1C")
+
+		};
 
 		public static float SnapToBPM(float _time)
 		{
@@ -5278,6 +5561,45 @@ namespace EditorManagement.Functions.Editors
 								});
 
 								Triggers.AddEventTrigger(bar2, new List<EventTrigger.Entry> { Triggers.CreatePreviewClickTrigger(bar2Color, image2, xif, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup") });
+
+								break;
+							}
+						case EditorProperty.ValueType.Function:
+							{
+								GameObject x = Instantiate(singleInput);
+								x.transform.SetParent(editorDialog.Find("mask/content"));
+								x.name = "input [FUNCTION]";
+
+								Destroy(x.GetComponent<EventInfo>());
+								Destroy(x.GetComponent<EventTrigger>());
+								Destroy(x.GetComponent<InputField>());
+
+								x.transform.localScale = Vector3.one;
+								x.transform.GetChild(0).localScale = Vector3.one;
+
+								var l = Instantiate(label);
+								l.transform.SetParent(x.transform);
+								l.transform.SetAsFirstSibling();
+								l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+								l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+
+								var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+								{
+									ltextrt.anchoredPosition = new Vector2(10f, -5f);
+								}
+
+								x.GetComponent<Image>().enabled = true;
+								x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+								Triggers.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+								Destroy(x.transform.Find("input").gameObject);
+
+								var button = x.AddComponent<Button>();
+								button.onClick.AddListener(delegate ()
+								{
+									prop.action();
+								});
 
 								break;
 							}
@@ -7021,6 +7343,10 @@ namespace EditorManagement.Functions.Editors
 							jn["beatmap_objects"][i]["events"]["col"][j]["t"] = list[i].events[3][j].eventTime.ToString();
 							jn["beatmap_objects"][i]["events"]["col"][j]["x"] = list[i].events[3][j].eventValues[0].ToString();
 							jn["beatmap_objects"][i]["events"]["col"][j]["y"] = list[i].events[3][j].eventValues[1].ToString();
+							jn["beatmap_objects"][i]["events"]["col"][j]["z"] = list[i].events[3][j].eventValues[2].ToString();
+							jn["beatmap_objects"][i]["events"]["col"][j]["x2"] = list[i].events[3][j].eventValues[3].ToString();
+							jn["beatmap_objects"][i]["events"]["col"][j]["y2"] = list[i].events[3][j].eventValues[4].ToString();
+							
 							if (list[i].events[3][j].curveType.Name != "Linear")
 							{
 								jn["beatmap_objects"][i]["events"]["col"][j]["ct"] = list[i].events[3][j].curveType.Name.ToString();
@@ -7974,7 +8300,6 @@ namespace EditorManagement.Functions.Editors
 
 			Triggers.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(timeIF, 0.1f, 10f, false, new List<float> { 0f, AudioManager.inst.CurrentAudioSource.clip.length }) });
 
-			if (!string.IsNullOrEmpty(EditorManager.inst.currentLoadedLevel))
 			{
 				if (ConfigEntries.LevelLoadsSavedTime.Value == true)
 				{
@@ -7983,12 +8308,12 @@ namespace EditorManagement.Functions.Editors
 				if (ConfigEntries.LevelPausesOnStart.Value == true)
 				{
 					AudioManager.inst.CurrentAudioSource.Pause();
+					__instance.UpdatePlayButton();
 				}
 
-				if (RTFile.FileExists(RTFile.ApplicationDirectory + text + EditorManager.inst.currentLoadedLevel + "/editor.lse"))
+				if (RTFile.FileExists(RTFile.ApplicationDirectory + text + "/editor.lse"))
 				{
-					string rawProfileJSON = null;
-					rawProfileJSON = FileManager.inst.LoadJSONFile(text + EditorManager.inst.currentLoadedLevel + "/editor.lse");
+					string rawProfileJSON = FileManager.inst.LoadJSONFile(text + "/editor.lse");
 
 					JSONNode jsonnode = JSON.Parse(rawProfileJSON);
 
@@ -9285,7 +9610,8 @@ namespace EditorManagement.Functions.Editors
 			new EditorProperty("EX-Prefab Prefab Path Length", EditorProperty.ValueType.Float, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.PrefabEXPathSca, "Length of the prefab path input field."),
 			new EditorProperty("EX-Prefab Prefab Refresh Pos", EditorProperty.ValueType.Vector2, EditorProperty.EditorPropCategory.EditorGUI, ConfigEntries.PrefabEXRefreshPos, "Position of the prefab refresh button."),
 
-			//Keybinds
+			//Functions
+			new EditorProperty("Display Random Notification", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions, delegate () { EditorManager.inst.DisplayNotification("Test", 2f); }, "Button."),
 
 			//Fields
 			new EditorProperty("Theme Template Name", EditorProperty.ValueType.String, EditorProperty.EditorPropCategory.Fields, ConfigEntries.TemplateThemeName, ""),
@@ -9380,7 +9706,7 @@ namespace EditorManagement.Functions.Editors
 				Timeline,
 				Data,
 				EditorGUI,
-				Keybinds,
+				Functions,
 				Fields,
 				Preview
 			}
