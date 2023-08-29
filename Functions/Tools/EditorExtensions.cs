@@ -15,6 +15,8 @@ using SimpleJSON;
 using TMPro;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 using Obj = UnityEngine.Object;
 using BeatmapObject = DataManager.GameData.BeatmapObject;
