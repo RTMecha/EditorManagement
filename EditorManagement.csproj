@@ -4,7 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>EditorManagement</AssemblyName>
     <Description>EditorManagement aims to make the Project Arrhythmia LEGACY editor more powerful than ever.</Description>
-    <Version>1.9.16</Version>
+    <Version>1.10.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>

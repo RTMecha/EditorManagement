@@ -25,18 +25,20 @@ using EditorManagement.Functions.Tools;
 using EditorManagement.Patchers;
 
 using RTFunctions.Functions.Components;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.9.16")]
+    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.0")]
 	[BepInProcess("Project Arrhythmia.exe")]
-	[BepInIncompatibility("com.mecha.renderdepthunlimited")]
-	[BepInIncompatibility("com.mecha.originoffset")]
-	[BepInIncompatibility("com.mecha.cursorcolor")]
-	[BepInIncompatibility("com.mecha.noautokillselectable")]
-	[BepInIncompatibility("com.mecha.eventsplus")]
-	[BepInIncompatibility("com.mecha.newthemesystems")]
-	[BepInIncompatibility("com.mecha.prefabadditions")]
+	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
+	//[BepInIncompatibility("com.mecha.originoffset")]
+	//[BepInIncompatibility("com.mecha.cursorcolor")]
+	//[BepInIncompatibility("com.mecha.noautokillselectable")]
+	//[BepInIncompatibility("com.mecha.eventsplus")]
+	//[BepInIncompatibility("com.mecha.newthemesystems")]
+	//[BepInIncompatibility("com.mecha.prefabadditions")]
 	[BepInDependency("com.mecha.rtfunctions")]
 	public class EditorPlugin : BaseUnityPlugin
 	{
@@ -980,40 +982,6 @@ namespace EditorManagement
 			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<string, GameObject>), "Remove", new[] { typeof(string) })));
 			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Pop));
 			return matcher.InstructionEnumeration();
-		}
-
-		[HarmonyPatch(typeof(SystemManager), "Update")]
-		[HarmonyPrefix]
-		private static bool SystemManagerUpdatePrefix()
-		{
-			if ((Input.GetKeyDown(KeyCode.P) && !LSHelpers.IsUsingInputField()) || (Input.GetKeyDown(KeyCode.F9) && !LSHelpers.IsUsingInputField()))
-			{
-				TakeScreenshot();
-			}
-			if (Input.GetKeyDown(KeyCode.F11) && !LSHelpers.IsUsingInputField())
-			{
-				DataManager.inst.UpdateSettingBool("FullScreen", !DataManager.inst.GetSettingBool("FullScreen"));
-				SaveManager.inst.ApplyVideoSettings();
-			}
-			return false;
-        }
-
-		public static void TakeScreenshot()
-		{
-			string text = Application.dataPath.Substring(0, Application.dataPath.LastIndexOf("/")) + "/screenshots";
-			if (!Directory.Exists(text))
-			{
-				Directory.CreateDirectory(text);
-			}
-			ScreenCapture.CaptureScreenshot(text + "/" + DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss") + ".png", 1);
-			Debug.Log(string.Concat(new string[]
-			{
-				"Took Screenshot! - ",
-				text,
-				"/",
-				DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"),
-				".png"
-			}));
 		}
 
 		public static void RepeatReminder()
