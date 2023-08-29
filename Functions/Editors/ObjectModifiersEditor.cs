@@ -14,6 +14,8 @@ using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Tools;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 
@@ -2148,7 +2150,7 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
-                                if (cmd == "setPitch" || cmd == "addPitch" || cmd == "setMusicTime" || cmd == "pitchEquals" || cmd == "pitchLesserEquals" || cmd == "pitchGreaterEquals" || cmd == "pitchLesser" || cmd == "pitchGreater")
+                                if (cmd == "setPitch" || cmd == "addPitch" || cmd == "setMusicTime" || cmd == "pitchEquals" || cmd == "pitchLesserEquals" || cmd == "pitchGreaterEquals" || cmd == "pitchLesser" || cmd == "pitchGreater" || cmd == "playerDistanceLesser" || cmd == "playerDistanceGreater" || cmd == "blackHole")
                                 {
                                     //xRT.sizeDelta = new Vector2(350f, 224f);
                                     //layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 60f);
@@ -3810,7 +3812,7 @@ namespace EditorManagement.Functions.Editors
 
                                 //No Values
                                 {
-                                    if (cmd == "playerKill" || cmd == "playerKillAll" || cmd == "showMouse" || cmd == "hideMouse" || cmd == "playerCollide" || cmd == "playerMoving" || cmd == "playerBoosting" || cmd == "playerAlive" || cmd == "mouseOver" || cmd == "playerBoost" || cmd == "playerBoostAll" || cmd == "playerDisableBoost" || cmd == "disableObject" || cmd == "disableObjectTree" || cmd == "bulletCollide" || cmd == "onPlayerHit" || cmd == "playerDistanceLesser" || cmd == "playerDistanceGreater")
+                                    if (cmd == "playerKill" || cmd == "playerKillAll" || cmd == "showMouse" || cmd == "hideMouse" || cmd == "playerCollide" || cmd == "playerMoving" || cmd == "playerBoosting" || cmd == "playerAlive" || cmd == "mouseOver" || cmd == "playerBoost" || cmd == "playerBoostAll" || cmd == "playerDisableBoost" || cmd == "disableObject" || cmd == "disableObjectTree" || cmd == "bulletCollide" || cmd == "onPlayerHit")
                                     {
                                         switch (commands[0])
                                         {
@@ -4623,6 +4625,146 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
+                                if (cmd == "eventOffset")
+                                {
+                                    xRT.sizeDelta = new Vector2(350f, 194f);
+                                    layout.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 60f);
+
+                                    //Pitch (multiplies by current global pitch)
+                                    {
+                                        var ppvalueG = Instantiate(valueG);
+                                        ppvalueG.transform.SetParent(layout.transform);
+                                        ppvalueG.transform.localScale = Vector3.one;
+
+                                        ppvalueG.name = "index";
+
+                                        ppvalueG.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "Index";
+
+                                        var ppinput = ppvalueG.transform.Find("input");
+                                        var ppif = ppinput.gameObject.AddComponent<InputField>();
+                                        {
+                                            ppif.onValueChanged.RemoveAllListeners();
+                                            ppif.characterValidation = InputField.CharacterValidation.None;
+                                            ppif.characterLimit = 0;
+                                            ppif.textComponent = ppinput.Find("Text").GetComponent<Text>();
+                                            ppif.placeholder = ppinput.Find("Placeholder").GetComponent<Text>();
+                                            ppif.text = commands[1];
+                                            ppif.onValueChanged.AddListener(delegate (string _val)
+                                            {
+                                                if (int.TryParse(_val, out int num))
+                                                {
+                                                    commands[1] = num.ToString();
+                                                    modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                }
+                                            });
+                                        }
+
+                                        var xet = ppinput.gameObject.AddComponent<EventTrigger>();
+                                        xet.triggers.Clear();
+                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, 16 }));
+
+                                        var xifh = ppinput.gameObject.AddComponent<InputFieldHelper>();
+                                        xifh.inputField = ppif;
+
+                                        var ppincrease = ppvalueG.transform.Find(">").GetComponent<Button>();
+                                        {
+                                            ppincrease.onClick.RemoveAllListeners();
+                                            ppincrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) + 1, 0, 16).ToString();
+                                            });
+                                        }
+
+                                        var ppdecrease = ppvalueG.transform.Find("<").GetComponent<Button>();
+                                        {
+                                            ppdecrease.onClick.RemoveAllListeners();
+                                            ppdecrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) - 1, 0, 16).ToString();
+                                            });
+                                        }
+                                    }
+                                    
+                                    //Pitch (multiplies by current global pitch)
+                                    {
+                                        var ppvalueG = Instantiate(valueG);
+                                        ppvalueG.transform.SetParent(layout.transform);
+                                        ppvalueG.transform.localScale = Vector3.one;
+
+                                        ppvalueG.name = "index";
+
+                                        ppvalueG.transform.GetChild(0).GetChild(0).GetComponent<Text>().text = "VIndex";
+
+                                        var ppinput = ppvalueG.transform.Find("input");
+                                        var ppif = ppinput.gameObject.AddComponent<InputField>();
+                                        {
+                                            ppif.onValueChanged.RemoveAllListeners();
+                                            ppif.characterValidation = InputField.CharacterValidation.None;
+                                            ppif.characterLimit = 0;
+                                            ppif.textComponent = ppinput.Find("Text").GetComponent<Text>();
+                                            ppif.placeholder = ppinput.Find("Placeholder").GetComponent<Text>();
+                                            ppif.text = commands[2];
+                                            ppif.onValueChanged.AddListener(delegate (string _val)
+                                            {
+                                                if (int.TryParse(_val, out int num))
+                                                {
+                                                    commands[2] = num.ToString();
+                                                    modifier.GetType().GetField("command", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, commands);
+                                                }
+                                            });
+                                        }
+
+                                        var xet = ppinput.gameObject.AddComponent<EventTrigger>();
+                                        xet.triggers.Clear();
+                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, 16 }));
+
+                                        var xifh = ppinput.gameObject.AddComponent<InputFieldHelper>();
+                                        xifh.inputField = ppif;
+
+                                        var ppincrease = ppvalueG.transform.Find(">").GetComponent<Button>();
+                                        {
+                                            ppincrease.onClick.RemoveAllListeners();
+                                            ppincrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) + 1, 0, 16).ToString();
+                                            });
+                                        }
+
+                                        var ppdecrease = ppvalueG.transform.Find("<").GetComponent<Button>();
+                                        {
+                                            ppdecrease.onClick.RemoveAllListeners();
+                                            ppdecrease.onClick.AddListener(delegate ()
+                                            {
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) - 1, 0, 16).ToString();
+                                            });
+                                        }
+                                    }
+
+                                    //Destroy(valueG.transform.Find("<").gameObject);
+                                    //Destroy(valueG.transform.Find(">").gameObject);
+
+                                    var input = valueG.transform.Find("input");
+                                    var xif = input.gameObject.AddComponent<InputField>();
+                                    {
+                                        xif.onValueChanged.RemoveAllListeners();
+                                        xif.characterValidation = InputField.CharacterValidation.None;
+                                        xif.characterLimit = 0;
+                                        xif.textComponent = input.Find("Text").GetComponent<Text>();
+                                        xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                                        xif.text = value;
+                                        xif.onValueChanged.AddListener(delegate (string _val)
+                                        {
+                                            if (float.TryParse(_val, out float num))
+                                            {
+                                                modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, num.ToString());
+                                            }
+                                        });
+
+                                        Triggers.IncreaseDecreaseButtons(xif, 0.1f, 10f, valueG.transform);
+                                        Triggers.AddEventTrigger(input.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(xif, 0.1f, 10f) });
+                                    }
+                                }
+
                                 //Delete Modifier
                                 {
                                     int tmpIndex = j;
@@ -4635,10 +4777,7 @@ namespace EditorManagement.Functions.Editors
                                     delete.name = "delete";
 
                                     var deleteButton = delete.GetComponent<Button>();
-                                    deleteButton.onClick.m_Calls.m_ExecutingCalls.Clear();
-                                    deleteButton.onClick.m_Calls.m_PersistentCalls.Clear();
-                                    deleteButton.onClick.m_PersistentCalls.m_Calls.Clear();
-                                    deleteButton.onClick.RemoveAllListeners();
+                                    deleteButton.onClick.ClearAll();
                                     deleteButton.onClick.AddListener(delegate ()
                                     {
                                         RemoveModifierIndex(beatmapObject, tmpIndex);
