@@ -63,7 +63,7 @@ namespace EditorManagement.Patchers
 			eventEditorTitleColors.Add("- Blur Editor -", new Color(0.2470588f, 0.427451f, 0.4509804f, 1f)); //5
 			eventEditorTitleColors.Add("- Pixelize Editor -", new Color(0.1882353f, 0.3372549f, 0.3254902f, 1f)); //6
 			eventEditorTitleColors.Add("- BG Editor -", new Color(0.3137255f, 0.4117647f, 0.3176471f, 1f)); //7
-			eventEditorTitleColors.Add("- Screen Overlay Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f)); //8
+			eventEditorTitleColors.Add("- Invert Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f)); //8
 			eventEditorTitleColors.Add("- Timeline Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f)); //9
 			eventEditorTitleColors.Add("- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f)); //10
 			eventEditorTitleColors.Add("- Follow Player Editor -", new Color(1f, 0.5960785f, 0f, 1f)); //11
@@ -136,7 +136,7 @@ namespace EditorManagement.Patchers
 						eventLabels.transform.GetChild(4).GetChild(0).GetComponent<Text>().text = "Blur";
 						eventLabels.transform.GetChild(5).GetChild(0).GetComponent<Text>().text = "Pixelize";
 						eventLabels.transform.GetChild(6).GetChild(0).GetComponent<Text>().text = "BG";
-						eventLabels.transform.GetChild(7).GetChild(0).GetComponent<Text>().text = "Screen Overlay";
+						eventLabels.transform.GetChild(7).GetChild(0).GetComponent<Text>().text = "Invert";
 						eventLabels.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Timeline";
 						eventLabels.transform.GetChild(9).GetChild(0).GetComponent<Text>().text = "Player";
 						eventLabels.transform.GetChild(10).GetChild(0).GetComponent<Text>().text = "Follow Player";
@@ -639,26 +639,26 @@ namespace EditorManagement.Patchers
 				var overlay = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/colorsplit"));
 				overlay.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right").transform);
 				overlay.transform.localScale = Vector3.one;
-				overlay.name = "overlay";
+				overlay.name = "invert";
 
-				overlay.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Overlay Opacity";
+				overlay.transform.GetChild(8).GetChild(0).GetComponent<Text>().text = "Invert Amount";
 				overlay.transform.Find("offset").gameObject.name = "alpha";
 
-				var colorOverlayLabel = Instantiate(overlay.transform.GetChild(8).gameObject);
-				colorOverlayLabel.transform.SetParent(overlay.transform);
-				colorOverlayLabel.transform.localScale = Vector3.one;
-				colorOverlayLabel.transform.GetChild(0).GetComponent<Text>().text = "Overlay Color";
+				//var colorOverlayLabel = Instantiate(overlay.transform.GetChild(8).gameObject);
+				//colorOverlayLabel.transform.SetParent(overlay.transform);
+				//colorOverlayLabel.transform.localScale = Vector3.one;
+				//colorOverlayLabel.transform.GetChild(0).GetComponent<Text>().text = "Overlay Color";
 
-				var colorOverlay = Instantiate(gradient.transform.Find("color1").gameObject);
-				colorOverlay.transform.SetParent(overlay.transform);
-				colorOverlay.transform.localScale = Vector3.one;
-				colorOverlay.name = "color";
+				//var colorOverlay = Instantiate(gradient.transform.Find("color1").gameObject);
+				//colorOverlay.transform.SetParent(overlay.transform);
+				//colorOverlay.transform.localScale = Vector3.one;
+				//colorOverlay.name = "color";
 
-				overlayColorButtons.Clear();
-				for (int i = 0; i < 19; i++)
-				{
-					overlayColorButtons.Add(colorOverlay.transform.GetChild(i).gameObject.GetComponent<Toggle>());
-				}
+				//overlayColorButtons.Clear();
+				//for (int i = 0; i < 19; i++)
+				//{
+				//	overlayColorButtons.Add(colorOverlay.transform.GetChild(i).gameObject.GetComponent<Toggle>());
+				//}
 
 				//Timeline
 				var tl = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move"));
@@ -872,7 +872,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Update")]
 		[HarmonyPrefix]
-		private static bool UpdatePatch(EventEditor __instance)
+		static bool UpdatePatch(EventEditor __instance)
         {
 			if (__instance.previewTheme.objectColors.Count == 9)
 			{
@@ -961,7 +961,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("RenderEventsDialog")]
         [HarmonyPrefix]
-        private static bool RenderEventsDialogPatch(EventEditor __instance)
+        static bool RenderEventsDialogPatch(EventEditor __instance)
         {
 			Debug.LogFormat("{0}Rendering Events Dialog", EditorPlugin.className);
 			var eventManager = EventManager.inst;
@@ -1563,7 +1563,7 @@ namespace EditorManagement.Patchers
 								Triggers.IncreaseDecreaseButtons(xif, 1f, 10f);
 								Triggers.IncreaseDecreaseButtons(yif, 1f, 10f);
 								Triggers.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(xif, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(xif, yif, 0.1f, 10f) });
-								Triggers.AddEventTrigger(yif.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(xif, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(xif, yif, 0.1f, 10f) });
+								Triggers.AddEventTrigger(yif.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(yif, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(xif, yif, 0.1f, 10f) });
 
 								if (!xif.gameObject.GetComponent<InputFieldHelper>())
 								{
@@ -1603,7 +1603,7 @@ namespace EditorManagement.Patchers
 								Triggers.IncreaseDecreaseButtons(xif, 1f, 10f, null, new List<float> { 0f, float.PositiveInfinity });
 								Triggers.IncreaseDecreaseButtons(yif, 1f, 10f, null, new List<float> { 0f, float.PositiveInfinity });
 								Triggers.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(xif, 0.1f, 10f, false, new List<float> { 0f, float.PositiveInfinity }), Triggers.ScrollDeltaVector2(xif, yif, 0.1f, 10f, new List<float> { 0f, float.PositiveInfinity }) });
-								Triggers.AddEventTrigger(yif.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(xif, 0.1f, 10f, false, new List<float> { 0f, float.PositiveInfinity }), Triggers.ScrollDeltaVector2(xif, yif, 0.1f, 10f, new List<float> { 0f, float.PositiveInfinity }) });
+								Triggers.AddEventTrigger(yif.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(yif, 0.1f, 10f, false, new List<float> { 0f, float.PositiveInfinity }), Triggers.ScrollDeltaVector2(xif, yif, 0.1f, 10f, new List<float> { 0f, float.PositiveInfinity }) });
 
 								if (!xif.gameObject.GetComponent<InputFieldHelper>())
 								{
@@ -2321,49 +2321,53 @@ namespace EditorManagement.Patchers
 						}
 						break;
                     }
-				case 21: //Overlay
+				case 21: //Invert
 					{
-						int num = 0;
-						foreach (Toggle toggle in overlayColorButtons)
-						{
-							if (num < 18)
-							{
-								toggle.GetComponent<Image>().color = GameManager.inst.LiveTheme.objectColors[num];
-							}
-							else
-							{
-								toggle.GetComponent<Image>().color = Color.black;
-							}
-							toggle.onValueChanged.RemoveAllListeners();
-							if (num == currentKeyframe.eventValues[0])
-							{
-								toggle.isOn = true;
-							}
-							else
-							{
-								toggle.isOn = false;
-							}
-							int tmpIndex = num;
-							toggle.onValueChanged.AddListener(delegate (bool val)
-							{
-								SetOverlayColor(tmpIndex);
-							});
-							num++;
-						}
+						//int num = 0;
+						//foreach (Toggle toggle in overlayColorButtons)
+						//{
+						//	if (num < 18)
+						//	{
+						//		toggle.GetComponent<Image>().color = GameManager.inst.LiveTheme.objectColors[num];
+						//	}
+						//	else
+						//	{
+						//		toggle.GetComponent<Image>().color = Color.black;
+						//	}
+						//	toggle.onValueChanged.RemoveAllListeners();
+						//	if (num == currentKeyframe.eventValues[0])
+						//	{
+						//		toggle.isOn = true;
+						//	}
+						//	else
+						//	{
+						//		toggle.isOn = false;
+						//	}
+						//	int tmpIndex = num;
+						//	toggle.onValueChanged.AddListener(delegate (bool val)
+						//	{
+						//		SetOverlayColor(tmpIndex);
+						//	});
+						//	num++;
+						//}
 
 						var inputField = dialogTmp.Find("alpha").GetComponent<InputField>();
 						inputField.onValueChanged.RemoveAllListeners();
-						inputField.text = currentKeyframe.eventValues[1].ToString("f2");
+						inputField.text = currentKeyframe.eventValues[0].ToString("f2");
 						inputField.onValueChanged.AddListener(delegate (string val)
 						{
 							float num = float.Parse(val);
 							num = Mathf.Clamp(num, 0f, 1f);
-							currentKeyframe.eventValues[1] = num;
+							currentKeyframe.eventValues[0] = num;
 							eventManager.updateEvents();
 						});
 
 						Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f, null, new List<float> { 0f, 1f });
 						Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f, false, new List<float> { 0f, 1f }) });
+						
+						//Triggers.IncreaseDecreaseButtons(inputField, 1f, 10f);
+						//Triggers.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(inputField, 0.1f, 10f) });
+
 						break;
                     }
 				case 22: //Timeline
