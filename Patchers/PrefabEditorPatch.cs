@@ -23,6 +23,7 @@ using EditorManagement.Functions.Tools;
 using LSFunctions;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
 
 namespace EditorManagement.Patchers
 {
@@ -47,10 +48,11 @@ namespace EditorManagement.Patchers
         public static InputField nameIF;
         public static Text objectCount;
         public static Text prefabObjectCount;
+        public static Text prefabObjectTimelineCount;
 
         [HarmonyPatch("Awake")]
         [HarmonyPostfix]
-        private static void CreateNewInputFields(PrefabEditor __instance)
+        static void CreateNewInputFields(PrefabEditor __instance)
         {
             __instance.StartCoroutine(SetupPrefabOffsets());
         }
@@ -144,6 +146,36 @@ namespace EditorManagement.Patchers
                 rot.name = "rotation";
             }
 
+            //Repeat Count
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorLeft);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "repeat count label";
+                rotLabel.transform.GetChild(0).GetComponent<Text>().text = "Repeat Count";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+
+                var rot = Instantiate(singleInput);
+                rot.transform.SetParent(prefabSelectorLeft);
+                rot.transform.localScale = Vector3.one;
+                rot.name = "repeat count";
+            }
+            
+            //Repeat Offset Time
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorLeft);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "repeat offset time label";
+                rotLabel.transform.GetChild(0).GetComponent<Text>().text = "Repeat Offset Time";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+
+                var rot = Instantiate(singleInput);
+                rot.transform.SetParent(prefabSelectorLeft);
+                rot.transform.localScale = Vector3.one;
+                rot.name = "repeat offset time";
+            }
+
             //Layers
             {
                 var layers = Instantiate(singleInput);
@@ -152,7 +184,7 @@ namespace EditorManagement.Patchers
                 layers.transform.SetSiblingIndex(0);
                 layers.name = "layers";
             }
-
+            
             //Name
             {
                 var rotLabel = Instantiate(labelTemp);
@@ -196,6 +228,21 @@ namespace EditorManagement.Patchers
                 typeIF.contentType = InputField.ContentType.Standard;
             }
 
+            //Save Prefab
+            {
+                var label = Instantiate(prefabSelectorLeft.GetChild(0).gameObject);
+                label.transform.SetParent(prefabSelectorRight);
+                label.transform.localScale = Vector3.one;
+                label.name = "save prefab label";
+                label.transform.GetChild(0).GetComponent<Text>().text = "Apply all changes to external prefabs";
+
+                var savePrefab = Instantiate(prefabSelectorLeft.GetChild(1).gameObject);
+                savePrefab.transform.SetParent(prefabSelectorRight);
+                savePrefab.transform.localScale = Vector3.one;
+                savePrefab.name = "save prefab";
+                savePrefab.transform.GetChild(0).GetComponent<Text>().text = "Save Prefab";
+            }
+
             //Object Count
             {
                 var rotLabel = Instantiate(labelTemp);
@@ -221,11 +268,25 @@ namespace EditorManagement.Patchers
                 prefabObjectCount.text = "Prefab Object Count: 0";
                 Destroy(rotLabel.transform.GetChild(1).gameObject);
             }
+
+            //Prefab Object Timeline Count
+            {
+                var rotLabel = Instantiate(labelTemp);
+                rotLabel.transform.SetParent(prefabSelectorRight);
+                rotLabel.transform.localScale = Vector3.one;
+                rotLabel.name = "count label";
+
+                prefabObjectTimelineCount = rotLabel.transform.GetChild(0).GetComponent<Text>();
+
+                prefabObjectTimelineCount.text = "Prefab Object (Timeline) Count: 0";
+                Destroy(rotLabel.transform.GetChild(1).gameObject);
+            }
+
         }
 
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        private static void StartPostfix()
+        static void StartPostfix()
         {
             Debug.Log("Creating prefab types...");
             Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
@@ -302,14 +363,14 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("CreateNewPrefab")]
         [HarmonyPrefix]
-        private static bool CreateNewPrefabPatch()
+        static bool CreateNewPrefabPrefix(PrefabEditor __instance)
         {
             if (ObjEditor.inst.selectedObjects.Count <= 0)
             {
                 EditorManager.inst.DisplayNotification("Can't save prefab without any objects in it!", 2f, EditorManager.NotificationType.Error, false);
                 return false;
             }
-            DataManager.GameData.Prefab prefab = new DataManager.GameData.Prefab(PrefabEditor.inst.NewPrefabName, PrefabEditor.inst.NewPrefabType, PrefabEditor.inst.NewPrefabOffset, ObjEditor.inst.selectedObjects);
+            var prefab = new DataManager.GameData.Prefab(__instance.NewPrefabName, __instance.NewPrefabType, __instance.NewPrefabOffset, ObjEditor.inst.selectedObjects);
             if (string.IsNullOrEmpty(PrefabEditor.inst.NewPrefabName))
             {
                 EditorManager.inst.DisplayNotification("Can't save prefab without a name!", 2f, EditorManager.NotificationType.Error, false);
@@ -317,20 +378,20 @@ namespace EditorManagement.Patchers
             }
             if (EditorPlugin.createInternal)
             {
-                PrefabEditor.inst.ImportPrefabIntoLevel(prefab);
+                __instance.ImportPrefabIntoLevel(prefab);
             }
             else
             {
-                PrefabEditor.inst.SavePrefab(prefab);
+                __instance.SavePrefab(prefab);
             }
-            PrefabEditor.inst.OpenPopup();
+            __instance.OpenPopup();
             ObjEditor.inst.OpenDialog();
             return false;
         }
 
         [HarmonyPatch("OpenPopup")]
         [HarmonyPostfix]
-        private static void PrefabReferences(ref InputField ___externalSearch, ref InputField ___internalSearch, ref string ___externalSearchStr, ref string ___internalSearchStr, ref Transform ___externalContent, ref Transform ___internalContent, ref Transform ___externalPrefabDialog, ref Transform ___internalPrefabDialog)
+        static void PrefabReferences(ref InputField ___externalSearch, ref InputField ___internalSearch, ref string ___externalSearchStr, ref string ___internalSearchStr, ref Transform ___externalContent, ref Transform ___internalContent, ref Transform ___externalPrefabDialog, ref Transform ___internalPrefabDialog)
         {
             Debug.LogFormat("PrefabEditor References: \n{0}\n{1}\n{2}\n{3}\n{4}\n{5}\n{6}\n{7}", ___externalSearch, ___internalSearch, ___externalSearchStr, ___internalSearchStr, ___externalContent, ___internalPrefabDialog, ___externalPrefabDialog, ___internalPrefabDialog);
             externalSearch = ___externalSearch;
@@ -345,7 +406,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
-        private static void UpdatePatch(ref string ___externalSearchStr, ref string ___internalSearchStr)
+        static void UpdatePatch(ref string ___externalSearchStr, ref string ___internalSearchStr)
         {
             externalSearchStr = ___externalSearchStr;
             internalSearchStr = ___internalSearchStr;
@@ -353,7 +414,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ExpandCurrentPrefab")]
         [HarmonyPrefix]
-        private static bool ExpandCurrentPrefabPatch()
+        static bool ExpandCurrentPrefabPatch()
         {
             RTEditor.inst.StartCoroutine(RTEditor.ExpandCurrentPrefab());
             return false;
@@ -361,7 +422,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ReloadExternalPrefabsInPopup")]
         [HarmonyPostfix]
-        private static void SetPopupSizesPostfix()
+        static void SetPopupSizesPostfix()
         {
             //Internal Config
             {
@@ -396,7 +457,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ReloadExternalPrefabsInPopup")]
         [HarmonyPrefix]
-        private static bool ReloadExternalPrefabsInPopupPatch(bool __0)
+        static bool ReloadExternalPrefabsInPopupPatch(bool __0)
         {
             if (externalPrefabDialog == null || externalSearch == null || externalContent == null)
             {
@@ -409,7 +470,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ReloadInternalPrefabsInPopup")]
         [HarmonyPrefix]
-        private static bool ReloadInternalPrefabsInPopupPatch(bool __0)
+        static bool ReloadInternalPrefabsInPopupPatch(bool __0)
         {
             if (internalPrefabDialog == null || internalSearch == null || internalContent == null)
             {
@@ -422,33 +483,48 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("LoadExternalPrefabs")]
         [HarmonyPrefix]
-        private static bool LoadExternalPrefabsPrefix(PrefabEditor __instance, ref IEnumerator __result)
+        static bool LoadExternalPrefabsPrefix(PrefabEditor __instance, ref IEnumerator __result)
         {
             __result = RTEditor.LoadExternalPrefabs(__instance);
             return false;
         }
 
+        //[HarmonyPatch("SavePrefab")]
+        //[HarmonyTranspiler]
+        //static IEnumerable<CodeInstruction> SavePrefabTranspiler(IEnumerable<CodeInstruction> instructions)
+        //{
+        //    return new CodeMatcher(instructions)
+        //        .Start()
+        //        .Advance(25)
+        //        .ThrowIfNotMatch("Is not beatmaps/prefabs/", new CodeMatch(OpCodes.Ldstr))
+        //        .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListSlash")))
+        //        .ThrowIfNotMatch("Is not ldsfld 1", new CodeMatch(OpCodes.Ldsfld))
+        //        .Start()
+        //        .Advance(40)
+        //        .ThrowIfNotMatch("Is not beatmaps/prefabs", new CodeMatch(OpCodes.Ldstr))
+        //        .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListPath")))
+        //        .ThrowIfNotMatch("Is not ldsfld 2", new CodeMatch(OpCodes.Ldsfld))
+        //        .InstructionEnumeration();
+        //}
+
         [HarmonyPatch("SavePrefab")]
-        [HarmonyTranspiler]
-        private static IEnumerable<CodeInstruction> SavePrefabTranspiler(IEnumerable<CodeInstruction> instructions)
+        [HarmonyPrefix]
+        static bool SavePrefab(PrefabEditor __instance, DataManager.GameData.Prefab _prefab)
         {
-            return new CodeMatcher(instructions)
-                .Start()
-                .Advance(25)
-                .ThrowIfNotMatch("Is not beatmaps/prefabs/", new CodeMatch(OpCodes.Ldstr))
-                .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListSlash")))
-                .ThrowIfNotMatch("Is not ldsfld 1", new CodeMatch(OpCodes.Ldsfld))
-                .Start()
-                .Advance(40)
-                .ThrowIfNotMatch("Is not beatmaps/prefabs", new CodeMatch(OpCodes.Ldstr))
-                .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListPath")))
-                .ThrowIfNotMatch("Is not ldsfld 2", new CodeMatch(OpCodes.Ldsfld))
-                .InstructionEnumeration();
+            EditorManager.inst.DisplayNotification(string.Format("Saving Prefab to System [{0}]!", _prefab.Name), 2f, EditorManager.NotificationType.Warning, false);
+            Debug.LogFormat("{0}Saving Prefab to File System!", EditorPlugin.className);
+            __instance.LoadedPrefabs.Add(_prefab);
+            __instance.LoadedPrefabsFiles.Add(RTFile.ApplicationDirectory + EditorPlugin.prefabListSlash + _prefab.Name.ToLower().Replace(" ", "_") + ".lsp");
+            var jsonnode = DataManager.inst.GeneratePrefabJSON(_prefab);
+
+            FileManager.inst.SaveJSONFile(EditorPlugin.prefabListPath, _prefab.Name.ToLower().Replace(" ", "_") + ".lsp", jsonnode.ToString());
+            EditorManager.inst.DisplayNotification(string.Format("Saved prefab [{0}]!", _prefab.Name), 2f, EditorManager.NotificationType.Success);
+            return false;
         }
 
         [HarmonyPatch("OpenPrefabDialog")]
         [HarmonyPrefix]
-        private static bool SetPrefabValues(PrefabEditor __instance)
+        static bool SetPrefabValues(PrefabEditor __instance)
         {
             #region Original Code
             if (ObjEditor.inst.currentObjectSelection.IsObject() || ObjEditor.inst.currentObjectSelection.GetPrefabData() == null)
@@ -528,6 +604,7 @@ namespace EditorManagement.Patchers
             #endregion
 
             #region My Code
+
             if (isPrefab && ObjEditor.inst.currentObjectSelection.GetPrefabObjectData() != null)
             {
                 var currentPrefab = ObjEditor.inst.currentObjectSelection.GetPrefabObjectData();
@@ -755,6 +832,39 @@ namespace EditorManagement.Patchers
                     }
                 }
 
+                var prefabCount = prefabSelectorLeft.Find("repeat count").GetComponent<InputField>();
+                var prefabOffsetTime = prefabSelectorLeft.Find("repeat offset time").GetComponent<InputField>();
+
+                prefabCount.onValueChanged.ClearAll();
+                prefabCount.text = Mathf.Clamp(currentPrefab.RepeatCount, 0, 1000).ToString();
+                prefabCount.onValueChanged.AddListener(delegate (string _val)
+                {
+                    if (int.TryParse(_val, out int num))
+                    {
+                        num = Mathf.Clamp(num, 0, 1000);
+                        currentPrefab.RepeatCount = num;
+                        ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+                    }
+                });
+
+                prefabOffsetTime.onValueChanged.ClearAll();
+                prefabOffsetTime.text = Mathf.Clamp(currentPrefab.RepeatOffsetTime, 0f, 60f).ToString();
+                prefabOffsetTime.onValueChanged.AddListener(delegate (string _val)
+                {
+                    if (float.TryParse(_val, out float num))
+                    {
+                        num = Mathf.Clamp(num, 0f, 60f);
+                        currentPrefab.RepeatOffsetTime = num;
+                        ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+                    }
+                });
+
+                Triggers.AddEventTrigger(prefabCount.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(prefabCount, 1, clamp: new List<int> { 0, 1000 }) });
+                Triggers.AddEventTrigger(prefabOffsetTime.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(prefabOffsetTime, 0.1f, 10f, clamp: new List<float> { 0f, 60f }) });
+
+                Triggers.IncreaseDecreaseButtonsInt(prefabCount, 1, clamp: new List<int> { 0, 1000 });
+                Triggers.IncreaseDecreaseButtons(prefabOffsetTime, 1f, 10f, clamp: new List<float> { 0f, 60f });
+
                 //Global Settings
                 {
                     nameIF.onValueChanged.RemoveAllListeners();
@@ -866,19 +976,58 @@ namespace EditorManagement.Patchers
                         }
                     });
 
+                    var savePrefab = prefabSelectorRight.Find("save prefab").GetComponent<Button>();
+                    savePrefab.onClick.ClearAll();
+                    savePrefab.onClick.AddListener(delegate ()
+                    {
+                        if (__instance.LoadedPrefabs.Find(x => x.Name == prefab.Name) != null)
+                        {
+                            var externalPrefab = __instance.LoadedPrefabs.Find(x => x.Name == prefab.Name);
+                            var index = __instance.LoadedPrefabs.FindIndex(x => x.Name == prefab.Name);
+
+                            Debug.LogFormat("{0}External Prefab: {1}", EditorPlugin.className, externalPrefab.Name);
+                            Debug.LogFormat("{0}External Prefab Index: {1}", EditorPlugin.className, index);
+
+                            if (index >= 0)
+                            {
+                                FileManager.inst.DeleteFileRaw(__instance.LoadedPrefabsFiles[index]);
+                                Debug.LogFormat("{0}Deleted File", EditorPlugin.className);
+                                __instance.LoadedPrefabs.RemoveAt(index);
+                                Debug.LogFormat("{0}Removed Prefab", EditorPlugin.className);
+                                __instance.LoadedPrefabsFiles.RemoveAt(index);
+                                Debug.LogFormat("{0}Removed Prefab File", EditorPlugin.className);
+
+                                __instance.SavePrefab(prefab);
+                                Debug.LogFormat("{0}Saved Prefab", EditorPlugin.className);
+
+                                if (externalContent != null)
+                                    __instance.ReloadExternalPrefabsInPopup();
+
+                                EditorManager.inst.DisplayNotification("Applied all changes to external prefab!", 2f, EditorManager.NotificationType.Success);
+                            }
+                        }
+                        else
+                        {
+                            __instance.SavePrefab(prefab);
+                            EditorManager.inst.DisplayNotification("External Prefab with same name does not exist!", 2f, EditorManager.NotificationType.Error);
+                        }
+                    });
+
                     objectCount.text = "Object Count: " + prefab.objects.Count.ToString();
                     prefabObjectCount.text = "Prefab Object Count: " + prefab.prefabObjects.Count;
+                    prefabObjectTimelineCount.text = "Prefab Object (Timeline) Count: " + DataManager.inst.gameData.prefabObjects.FindAll(x => x.prefabID == prefab.ID).Count;
                 }
             }
             if (!isPrefab)
             {
                 EditorManager.inst.DisplayNotification("Cannot edit non-prefab!", 1f, EditorManager.NotificationType.Error);
             }
+
             #endregion
             return false;
         }
 
-        public static void SearchPrefabType(string t, DataManager.GameData.Prefab prefab)
+        static void SearchPrefabType(string t, DataManager.GameData.Prefab prefab)
         {
             typeIF.onValueChanged.RemoveAllListeners();
             typeIF.text = t;
@@ -904,7 +1053,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("OpenDialog")]
         [HarmonyPostfix]
-        private static void PrefabLayout()
+        static void PrefabLayout()
         {
             if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").GetComponent<VerticalLayoutGroup>())
             {
@@ -925,20 +1074,20 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ImportPrefabIntoLevel")]
         [HarmonyPrefix]
-        private static bool ImportPrefabIntoLevel(PrefabEditor __instance, DataManager.GameData.Prefab _prefab)
+        static bool ImportPrefabIntoLevel(PrefabEditor __instance, DataManager.GameData.Prefab _prefab)
         {
             Debug.LogFormat("{0}Adding Prefab: [{1}]", EditorPlugin.className, _prefab.Name);
             DataManager.GameData.Prefab tmpPrefab = DataManager.GameData.Prefab.DeepCopy(_prefab, true);
-            int num = DataManager.inst.gameData.prefabs.FindAll((DataManager.GameData.Prefab x) => Regex.Replace(x.Name, "( +\\[\\d+])", string.Empty) == tmpPrefab.Name).Count<DataManager.GameData.Prefab>();
+            int num = DataManager.inst.gameData.prefabs.FindAll(x => Regex.Replace(x.Name, "( +\\[\\d+])", string.Empty) == tmpPrefab.Name).Count();
             if (num > 0)
             {
                 DataManager.GameData.Prefab tmpPrefab2 = tmpPrefab;
                 tmpPrefab2.Name = string.Concat(new object[]
                 {
-                tmpPrefab2.Name,
-                " [",
-                num,
-                "]"
+                    tmpPrefab2.Name,
+                    " [",
+                    num,
+                    "]"
                 });
             }
             DataManager.inst.gameData.prefabs.Add(tmpPrefab);
