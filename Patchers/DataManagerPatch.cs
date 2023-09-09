@@ -21,6 +21,8 @@ using EditorManagement.Functions.Tools;
 
 using RTFunctions.Functions;
 
+using PrefabObject = DataManager.GameData.PrefabObject;
+
 namespace EditorManagement.Patchers
 {
     [HarmonyPatch(typeof(DataManager))]
@@ -105,6 +107,64 @@ namespace EditorManagement.Patchers
             __instance.backgroundColors.Add(ConfigEntries.TemplateThemeBGColor8.Value);
             __instance.backgroundColors.Add(ConfigEntries.TemplateThemeBGColor9.Value);
             return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(DataManager.GameData.PrefabObject))]
+    public class DataManagerPrefabObjectPatch : MonoBehaviour
+    {
+        [HarmonyPatch("DeepCopy")]
+        [HarmonyPrefix]
+        static bool DeepCopyPrefix(ref PrefabObject __result, PrefabObject __0, bool __1)
+        {
+            __result = DeepCopy(__0, __1);
+
+            return false;
+        }
+
+        public static PrefabObject DeepCopy(PrefabObject orig, bool _newID = true)
+        {
+            if (orig.events == null)
+            {
+                orig.events = new List<DataManager.GameData.EventKeyframe>
+                {
+                    new DataManager.GameData.EventKeyframe(),
+                    new DataManager.GameData.EventKeyframe(),
+                    new DataManager.GameData.EventKeyframe(),
+                    new DataManager.GameData.EventKeyframe()
+                };
+            }
+            var prefabObject = new PrefabObject
+            {
+                active = orig.active,
+                ID = (_newID ? LSText.randomString(16) : orig.ID),
+                prefabID = orig.prefabID,
+                StartTime = orig.StartTime,
+                RepeatCount = orig.RepeatCount,
+                RepeatOffsetTime = orig.RepeatOffsetTime,
+                editorData = new DataManager.GameData.BeatmapObject.EditorData
+                {
+                    Bin = orig.editorData.Bin,
+                    Layer = orig.editorData.Layer,
+                    locked = orig.editorData.locked,
+                    collapse = orig.editorData.collapse
+                }
+            };
+            prefabObject.events.Clear();
+            foreach (var eventKeyframe in orig.events)
+            {
+                var item = new DataManager.GameData.EventKeyframe
+                {
+                    active = eventKeyframe.active,
+                    eventTime = eventKeyframe.eventTime,
+                    random = eventKeyframe.random,
+                    curveType = eventKeyframe.curveType,
+                    eventValues = (float[])eventKeyframe.eventValues.Clone(),
+                    eventRandomValues = (float[])eventKeyframe.eventRandomValues.Clone()
+                };
+                prefabObject.events.Add(item);
+            }
+            return prefabObject;
         }
     }
 }
