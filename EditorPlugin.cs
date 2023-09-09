@@ -30,7 +30,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.1")]
+    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.2")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	//[BepInIncompatibility("com.mecha.originoffset")]
@@ -422,6 +422,7 @@ namespace EditorManagement
 				harmony.PatchAll(typeof(ThemeEditorPatch));
 				harmony.PatchAll(typeof(ObjectManagerPatch));
 				harmony.PatchAll(typeof(EventsInstance));
+				harmony.PatchAll(typeof(DataManagerPrefabObjectPatch));
 
 				harmony.Patch(layerSetter, prefix: layerPatch);
 				harmony.Patch(binSetter, prefix: binPatch);
