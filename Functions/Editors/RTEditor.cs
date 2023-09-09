@@ -1224,7 +1224,7 @@ namespace EditorManagement.Functions.Editors
 
 				List<DataManager.GameData.PrefabObject> _prefabObjects = new List<DataManager.GameData.PrefabObject>();
 				for (int aIndex = 0; aIndex < jn["prefab_objects"].Count; ++aIndex)
-					_prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jn["prefab_objects"][aIndex]));
+					_prefabObjects.Add(ParsePrefabObject(jn["prefab_objects"][aIndex]));
 
 				pr = new DataManager.GameData.Prefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects);
 
@@ -1257,6 +1257,118 @@ namespace EditorManagement.Functions.Editors
 					}
 				}
 			}
+		}
+
+		public static DataManager.GameData.PrefabObject ParsePrefabObject(JSONNode jn)
+		{
+			var prefabObject = new DataManager.GameData.PrefabObject();
+			prefabObject.ID = jn["id"];
+			prefabObject.prefabID = jn["pid"];
+			prefabObject.StartTime = jn["st"].AsFloat;
+			if (jn["id"] != null)
+			{
+				prefabObject.ID = jn["id"];
+			}
+			else
+			{
+				prefabObject.ID = LSText.randomString(16);
+			}
+			if (jn["ed"]["locked"] != null)
+			{
+				prefabObject.editorData.locked = jn["ed"]["locked"].AsBool;
+			}
+			if (jn["ed"]["shrink"] != null)
+			{
+				prefabObject.editorData.collapse = jn["ed"]["shrink"].AsBool;
+			}
+			if (jn["ed"]["bin"] != null)
+			{
+				prefabObject.editorData.Bin = jn["ed"]["bin"].AsInt;
+			}
+			if (jn["ed"]["layer"] != null)
+			{
+				prefabObject.editorData.Layer = jn["ed"]["layer"].AsInt;
+			}
+
+			prefabObject.events.Clear();
+
+			if (jn["e"][0]["pos"] != null)
+			{
+				DataManager.GameData.EventKeyframe kf = new DataManager.GameData.EventKeyframe();
+				JSONNode jnpos = jn["e"][0]["pos"];
+
+				var x = float.Parse(jnpos["x"]);
+				var y = float.Parse(jnpos["y"]);
+
+				Debug.LogFormat("{0}Pos Offset (X: {1}, Y: {2})", EditorPlugin.className, x, y);
+
+				kf.SetEventValues(new float[]
+				{
+					x,
+					y
+				});
+				kf.random = jnpos["r"].AsInt;
+				kf.SetEventRandomValues(new float[]
+				{
+					jnpos["rx"].AsFloat,
+					jnpos["ry"].AsFloat,
+					jnpos["rz"].AsFloat
+				});
+				kf.active = false;
+				prefabObject.events.Add(kf);
+			}
+			else
+			{
+				Debug.LogErrorFormat("{0}Failed to parse Prefab Pos Offset due to JSONNode being null: {1}", EditorPlugin.className, jn["e"][0]["pos"] == null);
+
+				prefabObject.events.Add(new DataManager.GameData.EventKeyframe(new float[2] { 0f, 0f }, new float[2] { 0f, 0f }));
+            }
+			if (jn["e"][1]["sca"] != null)
+			{
+				DataManager.GameData.EventKeyframe kf = new DataManager.GameData.EventKeyframe();
+				JSONNode jnsca = jn["e"][1]["sca"];
+				kf.SetEventValues(new float[]
+				{
+					float.Parse(jnsca["x"]),
+					float.Parse(jnsca["y"])
+				});
+				kf.random = jnsca["r"].AsInt;
+				kf.SetEventRandomValues(new float[]
+				{
+					jnsca["rx"].AsFloat,
+					jnsca["ry"].AsFloat,
+					jnsca["rz"].AsFloat
+				});
+				kf.active = false;
+				prefabObject.events.Add(kf);
+			}
+			else
+			{
+				prefabObject.events.Add(new DataManager.GameData.EventKeyframe(new float[2] { 1f, 1f }, new float[2] { 1f, 1f }));
+			}
+			if (jn["e"][2]["rot"] != null)
+			{
+				DataManager.GameData.EventKeyframe kf = new DataManager.GameData.EventKeyframe();
+				JSONNode jnrot = jn["e"][2]["rot"];
+				kf.SetEventValues(new float[]
+				{
+					float.Parse(jnrot["x"])
+				});
+				kf.random = jnrot["r"].AsInt;
+				kf.SetEventRandomValues(new float[]
+				{
+					jnrot["rx"].AsFloat,
+					0f,
+					jnrot["rz"].AsFloat
+				});
+				kf.active = false;
+				prefabObject.events.Add(kf);
+			}
+			else
+			{
+				prefabObject.events.Add(new DataManager.GameData.EventKeyframe(new float[1] { 0f }, new float[1] { 0f }));
+			}
+			return prefabObject;
 		}
 
 		public static IEnumerator GroupSelectObjects(bool _add = true)
@@ -1983,34 +2095,40 @@ namespace EditorManagement.Functions.Editors
 					string str = LSText.randomString(16);
 					dictionary1.Add(beatmapObject.id, str);
 				}
-				Dictionary<string, string> dictionary2 = new Dictionary<string, string>();
+				Dictionary<string, string> prefabInstances = new Dictionary<string, string>();
 				foreach (BeatmapObject beatmapObject in _obj.objects)
 				{
-					if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !dictionary2.ContainsKey(beatmapObject.prefabInstanceID))
+					if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !prefabInstances.ContainsKey(beatmapObject.prefabInstanceID))
 					{
 						string str = LSText.randomString(16);
-						dictionary2.Add(beatmapObject.prefabInstanceID, str);
+						prefabInstances.Add(beatmapObject.prefabInstanceID, str);
 					}
 				}
 				foreach (BeatmapObject beatmapObject1 in _obj.objects)
 				{
 					yield return new WaitForSeconds(delay);
-                    BeatmapObject beatmapObj = beatmapObject1;
-                    BeatmapObject beatmapObject2 = BeatmapObject.DeepCopy(beatmapObj, false);
-					if (dictionary1.ContainsKey(beatmapObj.id))
-						beatmapObject2.id = dictionary1[beatmapObj.id];
-					if (dictionary1.ContainsKey(beatmapObj.parent))
-						beatmapObject2.parent = dictionary1[beatmapObj.parent];
-					else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObj.parent) == -1)
+                    BeatmapObject orig = beatmapObject1;
+                    BeatmapObject beatmapObject2 = BeatmapObject.DeepCopy(orig, false);
+					if (dictionary1.ContainsKey(orig.id))
+						beatmapObject2.id = dictionary1[orig.id];
+					if (dictionary1.ContainsKey(orig.parent))
+						beatmapObject2.parent = dictionary1[orig.parent];
+					else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == orig.parent) == -1)
 						beatmapObject2.parent = "";
-					beatmapObject2.prefabID = beatmapObj.prefabID;
-					if (_regen && !string.IsNullOrEmpty(beatmapObj.prefabInstanceID))
+
+					beatmapObject2.prefabID = orig.prefabID;
+					if (_regen)
 					{
-						beatmapObject2.prefabInstanceID = dictionary2[beatmapObj.prefabInstanceID];
+						//beatmapObject2.prefabInstanceID = dictionary2[orig.prefabInstanceID];
+						beatmapObject2.prefabID = "";
+						beatmapObject2.prefabInstanceID = "";
 					}
 					else
-						beatmapObject2.prefabInstanceID = beatmapObj.prefabInstanceID;
-					beatmapObject2.fromPrefab = beatmapObj.fromPrefab;
+					{
+						beatmapObject2.prefabInstanceID = orig.prefabInstanceID;
+					}
+
+					beatmapObject2.fromPrefab = orig.fromPrefab;
 					if (_undone == false)
 					{
 						if (_offsetTime == 0.0)
@@ -2062,7 +2180,7 @@ namespace EditorManagement.Functions.Editors
 					if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin") && _dictionary != null)
 					{
 						var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
-						objectModifiersPlugin.GetMethod("AddModifierObjectWithValues").Invoke(objectModifiersPlugin, new object[] { beatmapObject2, _dictionary[beatmapObj.id] });
+						objectModifiersPlugin.GetMethod("AddModifierObjectWithValues").Invoke(objectModifiersPlugin, new object[] { beatmapObject2, _dictionary[orig.id] });
 					}
 
 					delay += 0.0001f;
@@ -2085,6 +2203,15 @@ namespace EditorManagement.Functions.Editors
 					if (dictionary3.ContainsKey(prefabObject1.ID))
 						prefabObject2.ID = dictionary3[prefabObject1.ID];
 					prefabObject2.prefabID = prefabObject1.prefabID;
+
+					foreach (var kf in prefabObject1.events)
+                    {
+						if (kf.eventValues.Length == 1)
+							Debug.LogFormat("{0}KF (X: {1})", EditorPlugin.className, kf.eventValues[0]);
+						if (kf.eventValues.Length == 2)
+							Debug.LogFormat("{0}KF (X: {1}, Y: {2})", EditorPlugin.className, kf.eventValues[0], kf.eventValues[1]);
+                    }
+
 					if (_undone == false)
 					{
 						if (_offsetTime == 0.0)
@@ -2523,6 +2650,11 @@ namespace EditorManagement.Functions.Editors
 				{
 					var oxIF = tfv.Find("origin/x").GetComponent<InputField>();
 
+					if (!oxIF.gameObject.GetComponent<InputFieldHelper>())
+                    {
+						oxIF.gameObject.AddComponent<InputFieldHelper>();
+                    }
+
 					oxIF.onValueChanged.RemoveAllListeners();
 					oxIF.text = beatmapObject.origin.x.ToString();
 					oxIF.onValueChanged.AddListener(delegate (string _value)
@@ -2533,6 +2665,11 @@ namespace EditorManagement.Functions.Editors
 					});
 
 					var oyIF = tfv.Find("origin/y").GetComponent<InputField>();
+
+					if (!oyIF.gameObject.GetComponent<InputFieldHelper>())
+					{
+						oyIF.gameObject.AddComponent<InputFieldHelper>();
+					}
 
 					oyIF.onValueChanged.RemoveAllListeners();
 					oyIF.text = beatmapObject.origin.y.ToString();
@@ -2755,7 +2892,7 @@ namespace EditorManagement.Functions.Editors
 					});
 
 					time.triggers.Clear();
-					time.triggers.Add(Triggers.ScrollDelta(timeIF, 1f, 2f));
+					time.triggers.Add(Triggers.ScrollDelta(timeIF, 0.1f, 10f));
 
 					Triggers.ObjEditorInputFieldValues(timeIF, "StartTime", beatmapObject.StartTime, EditorProperty.ValueType.Float, true, true, true);
 
@@ -7136,6 +7273,12 @@ namespace EditorManagement.Functions.Editors
 				jn["prefab_objects"][i]["id"] = _data.prefabObjects[i].ID.ToString();
 				jn["prefab_objects"][i]["pid"] = _data.prefabObjects[i].prefabID.ToString();
 				jn["prefab_objects"][i]["st"] = _data.prefabObjects[i].StartTime.ToString();
+
+				if (_data.prefabObjects[i].RepeatCount > 0)
+					jn["prefab_objects"][i]["rc"] = _data.prefabObjects[i].RepeatCount.ToString();
+				if (_data.prefabObjects[i].RepeatOffsetTime > 0f)
+					jn["prefab_objects"][i]["ro"] = _data.prefabObjects[i].RepeatOffsetTime.ToString();
+
 				if (_data.prefabObjects[i].editorData.locked)
 				{
 					jn["prefab_objects"][i]["ed"]["locked"] = _data.prefabObjects[i].editorData.locked.ToString();
@@ -7875,18 +8018,18 @@ namespace EditorManagement.Functions.Editors
 				for (int i = 0; i < _data.eventObjects.allEvents[21].Count(); i++)
 				{
 					var eventKeyframe = _data.eventObjects.allEvents[21][i];
-					jn["events"]["overlay"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["overlay"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					jn["events"]["overlay"][i]["y"] = eventKeyframe.eventValues[1].ToString();
+					jn["events"]["invert"][i]["t"] = eventKeyframe.eventTime.ToString();
+					jn["events"]["invert"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+					jn["events"]["invert"][i]["y"] = eventKeyframe.eventValues[1].ToString();
 					if (eventKeyframe.curveType.Name != "Linear")
 					{
-						jn["events"]["overlay"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						jn["events"]["invert"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
 					}
 					if (eventKeyframe.random != 0)
 					{
-						jn["events"]["overlay"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["overlay"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["overlay"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						jn["events"]["invert"][i]["r"] = eventKeyframe.random.ToString();
+						jn["events"]["invert"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+						jn["events"]["invert"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
 					}
 				}
 			}
@@ -8019,6 +8162,9 @@ namespace EditorManagement.Functions.Editors
 
 		public void AutoSaveLevel()
 		{
+			if (Time.time == 0f || EditorManager.inst.loading)
+				return;
+
 			if (!EditorManager.inst.hasLoadedLevel)
 			{
 				EditorManager.inst.DisplayNotification("Beatmap can't autosave until you load a level.", 3f, EditorManager.NotificationType.Error, false);
@@ -8029,27 +8175,27 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification("Already attempting to save the beatmap!", 2f, EditorManager.NotificationType.Error, false);
 				return;
 			}
-			string text = string.Concat(new string[]
+			string autosavePath = string.Concat(new string[]
 			{
-			FileManager.GetAppPath(),
-			"/",
-			GameManager.inst.basePath,
-			"autosaves/autosave_",
-			DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"),
-			".lsb"
+				FileManager.GetAppPath(),
+				"/",
+				GameManager.inst.basePath,
+				"autosaves/autosave_",
+				DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"),
+				".lsb"
 			});
 			if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + GameManager.inst.basePath + "autosaves"))
 			{
 				Directory.CreateDirectory(RTFile.ApplicationDirectory + GameManager.inst.basePath + "autosaves");
 			}
 			EditorManager.inst.DisplayNotification("Autosaving backup!", 2f, EditorManager.NotificationType.Warning, false);
-			EditorManager.inst.autosaves.Add(text);
+			EditorManager.inst.autosaves.Add(autosavePath);
 			while (EditorManager.inst.autosaves.Count > ConfigEntries.AutoSaveLimit.Value)
 			{
 				File.Delete(EditorManager.inst.autosaves.First());
 				EditorManager.inst.autosaves.RemoveAt(0);
 			}
-			EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(text));
+			EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(autosavePath));
 		}
 
 		public static IEnumerator LoadThemes()
@@ -8319,19 +8465,29 @@ namespace EditorManagement.Functions.Editors
 			{
 				Directory.CreateDirectory(RTFile.ApplicationDirectory + GameManager.inst.basePath + "autosaves");
 			}
-			string[] files = Directory.GetFiles(FileManager.GetAppPath() + "/" + GameManager.inst.basePath, "autosaves/autosave_*.lsb", SearchOption.TopDirectoryOnly);
-			files.ToList().Sort();
-			int num = 0;
-			foreach (string text2 in files)
+
+			// Change this to instead add the files to EditorManager.inst.autosaves
 			{
-				if (num != files.Count() - 1)
-				{
-					File.Delete(text2);
-				}
-				num++;
+				string[] files = Directory.GetFiles(FileManager.GetAppPath() + "/" + GameManager.inst.basePath, "autosaves/autosave_*.lsb", SearchOption.TopDirectoryOnly);
+				files.ToList().Sort();
+				//int num = 0;
+				//foreach (string text2 in files)
+				//{
+				//	if (num != files.Count() - 1)
+				//	{
+				//		File.Delete(text2);
+				//	}
+				//	num++;
+				//}
+
+				foreach (var file in files)
+                {
+					__instance.autosaves.Add(file);
+                }
+
+				SetAutosave();
 			}
 
-			SetAutosave();
 
 			Triggers.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(timeIF, 0.1f, 10f, false, new List<float> { 0f, AudioManager.inst.CurrentAudioSource.clip.length }) });
 
@@ -8797,17 +8953,17 @@ namespace EditorManagement.Functions.Editors
 				gameData.eventObjects.allEvents[20] = list14;
 			}
 
-			//Overlay
+			//Invert
 			if (gameData.eventObjects.allEvents.Count > 21)
 			{
 				List<DataManager.GameData.EventKeyframe> list14 = new List<DataManager.GameData.EventKeyframe>();
 				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
 				eventKeyframe15.eventTime = 0f;
 				eventKeyframe15.SetEventValues(new float[2]
-					{
-						18f,
-						0f
-					});
+				{
+					0f,
+					0f
+				});
 				list14.Add(eventKeyframe15);
 
 				gameData.eventObjects.allEvents[21] = list14;
@@ -8820,15 +8976,15 @@ namespace EditorManagement.Functions.Editors
 				DataManager.GameData.EventKeyframe eventKeyframe15 = new DataManager.GameData.EventKeyframe();
 				eventKeyframe15.eventTime = 0f;
 				eventKeyframe15.SetEventValues(new float[7]
-					{
-						0f,
-						0f,
-						-342f,
-						1f,
-						1f,
-						0f,
-						18f
-					});
+				{
+					0f,
+					0f,
+					-342f,
+					1f,
+					1f,
+					0f,
+					18f
+				});
 				list14.Add(eventKeyframe15);
 
 				gameData.eventObjects.allEvents[22] = list14;
@@ -9500,6 +9656,102 @@ namespace EditorManagement.Functions.Editors
 				ObjEditor.inst.currentObjectSelection.GetObjectData().text = jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf(EditorManager.inst.currentLoadedLevel) + EditorManager.inst.currentLoadedLevel.Length + 1), "");
 				inst.StartCoroutine(RefreshObjectGUI());
 			}
+		}
+
+		public static void KFTest()
+        {
+			inst.StartCoroutine(KeyframesLoop(type: 3, action: delegate (DataManager.GameData.EventKeyframe eventKeyframe)
+			{
+				if (eventKeyframe.eventValues[0] == 7f)
+					eventKeyframe.eventValues[0] = 8f;
+				if (eventKeyframe.eventValues[0] == 6f)
+					eventKeyframe.eventValues[0] = 7f;
+			}));
+
+			var array = new float[2]
+			{
+				0f,
+				9f
+			};
+
+			array.AddItem(0f);
+
+			array.Add(0f);
+        }
+
+		public static List<BeatmapObject> SelectedBeatmapObjects
+        {
+			get
+            {
+				return (from x in ObjEditor.inst.selectedObjects
+						where x.IsObject()
+						select x.GetObjectData()).ToList();
+			}
+        }
+
+		public static List<DataManager.GameData.PrefabObject> SelectedPrefabObjects
+        {
+			get
+            {
+				return (from x in ObjEditor.inst.selectedObjects
+						where x.IsPrefab()
+						select x.GetPrefabObjectData()).ToList();
+            }
+        }
+
+		public static IEnumerator KeyframeSelectionLoop(bool all = false, int type = 0, Action<DataManager.GameData.EventKeyframe> action = null)
+        {
+			foreach (var bm in SelectedBeatmapObjects)
+			{
+				if (all)
+				{
+					for (int i = 0; i < bm.events.Count; i++)
+					{
+						foreach (var kf in bm.events[i])
+						{
+							if (action != null)
+								action(kf);
+						}
+					}
+				}
+				else
+				{
+					foreach (var kf in bm.events[type])
+					{
+						if (action != null)
+							action(kf);
+					}
+				}
+			}
+			yield break;
+        }
+
+		public static IEnumerator KeyframesLoop(bool all = false, int type = 0, Action<DataManager.GameData.EventKeyframe> action = null)
+        {
+			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+			{
+				if (all)
+				{
+					for (int i = 0; i < beatmapObject.events.Count; i++)
+					{
+						foreach (var kf in beatmapObject.events[i])
+						{
+							if (action != null)
+								action(kf);
+						}
+					}
+				}
+				else
+                {
+					foreach (var kf in beatmapObject.events[type])
+					{
+						if (action != null)
+							action(kf);
+                    }
+                }
+            }
+			ObjectManager.inst.updateObjects();
+			yield break;
 		}
 
 		#endregion
