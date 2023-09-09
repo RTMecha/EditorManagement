@@ -1497,6 +1497,9 @@ namespace EditorManagement.Functions.Tools
 
 							if (_t != 2)
 							{
+								if (!randomValue.GetChild(index).GetComponent<InputFieldHelper>())
+									randomValue.GetChild(index).gameObject.AddComponent<InputFieldHelper>();
+
 								var randET = randomValue.GetChild(index).GetComponent<EventTrigger>();
 								randET.triggers.Clear();
 								randET.triggers.Add(ScrollDelta(randomValueX, 0.1f, 10f, true));
@@ -1504,6 +1507,9 @@ namespace EditorManagement.Functions.Tools
 							}
 							else
 							{
+								if (!randomValue.GetComponent<InputFieldHelper>())
+									randomValue.gameObject.AddComponent<InputFieldHelper>();
+
 								var randET = randomValue.GetComponent<EventTrigger>();
 								randET.triggers.Clear();
 								randET.triggers.Add(ScrollDelta(randomValueX, 15f, 3f));
