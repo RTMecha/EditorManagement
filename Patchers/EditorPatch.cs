@@ -231,6 +231,7 @@ namespace EditorManagement.Patchers
 						ObjectManager.inst.updateObjects();
 						DataManager.inst.gameData = null;
 						DataManager.inst.gameData = new DataManager.GameData();
+						ObjectManager.inst.updateObjects();
 						SceneManager.inst.LoadScene("Input Select");
 					}, delegate ()
 					{
@@ -1029,7 +1030,7 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
 			}
 
-			if (!LSHelpers.IsUsingInputField())
+			if (!LSHelpers.IsUsingInputField() && ((!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]) || IsOverMainTimeline))
 			{
 				if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.X))
 				{
@@ -1131,15 +1132,27 @@ namespace EditorManagement.Patchers
 
 				if (Input.GetKeyDown(KeyCode.PageUp))
 				{
-					int x = int.Parse(RTEditor.layersIF.text);
-					x += 1;
-					RTEditor.layersIF.text = x.ToString();
+					string s = RTEditor.layersIF.text;
+					if (s == "E")
+						RTEditor.layersIF.text = "6";
+					else
+					{
+						int x = int.Parse(RTEditor.layersIF.text);
+						x += 1;
+						RTEditor.layersIF.text = x.ToString();
+					}
 				}
 				if (Input.GetKeyDown(KeyCode.PageDown))
 				{
-					int x = int.Parse(RTEditor.layersIF.text);
-					x -= 1;
-					RTEditor.layersIF.text = x.ToString();
+					string s = RTEditor.layersIF.text;
+					if (s == "E")
+						RTEditor.layersIF.text = "5";
+					else
+					{
+						int x = int.Parse(RTEditor.layersIF.text);
+						x -= 1;
+						RTEditor.layersIF.text = x.ToString();
+					}
 				}
 			}
 		}
@@ -1149,7 +1162,6 @@ namespace EditorManagement.Patchers
 		private static bool ViewShortcutsPatch()
         {
 			if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
-				&& !EditorManager.inst.IsOverDropDown
 				&& EditorManager.inst.IsOverObjTimeline
 				&& !LSHelpers.IsUsingInputField()
 				&& !IsOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
@@ -1169,7 +1181,8 @@ namespace EditorManagement.Patchers
 					ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - ConfigEntries.KeyframeZoomAmount.Value * multiply;
 				}
 			}
-			if (!EditorManager.inst.IsOverDropDown && !EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
+
+			if (!EditorManager.inst.IsOverObjTimeline && IsOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
 			{
 				float multiply = 1f;
 				if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
