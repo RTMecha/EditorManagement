@@ -153,9 +153,10 @@ namespace EditorManagement.Patchers
 				});
 				foreach (GameObject gameObject in __instance.SelectionArea)
 				{
-					gameObject.GetComponent<EventTrigger>().triggers.Add(entry);
-					gameObject.GetComponent<EventTrigger>().triggers.Add(entry2);
-					gameObject.GetComponent<EventTrigger>().triggers.Add(entry3);
+					var eventTr = gameObject.GetComponent<EventTrigger>();
+					eventTr.triggers.Add(entry);
+					eventTr.triggers.Add(entry2);
+					eventTr.triggers.Add(entry3);
 				}
 			}
 
