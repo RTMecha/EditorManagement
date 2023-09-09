@@ -1265,6 +1265,13 @@ namespace EditorManagement.Functions.Editors
 			prefabObject.ID = jn["id"];
 			prefabObject.prefabID = jn["pid"];
 			prefabObject.StartTime = jn["st"].AsFloat;
+
+			if (!string.IsNullOrEmpty(jn["rc"]))
+				prefabObject.RepeatCount = int.Parse(jn["rc"]);
+
+			if (!string.IsNullOrEmpty(jn["ro"]))
+				prefabObject.RepeatOffsetTime = float.Parse(jn["ro"]);
+
 			if (jn["id"] != null)
 			{
 				prefabObject.ID = jn["id"];
