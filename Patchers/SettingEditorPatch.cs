@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+
+using UnityEngine;
 using UnityEngine.UI;
 
 using HarmonyLib;
@@ -8,6 +10,7 @@ using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Patchers
 {
@@ -16,7 +19,7 @@ namespace EditorManagement.Patchers
     {
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
-		private static void SettingAwakePatch()
+		static void SettingAwakePatch()
 		{
 			//Main Variables
 			Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
@@ -283,7 +286,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Update")]
 		[HarmonyPostfix]
-		private static void SettingUpdatePatch()
+		static void SettingUpdatePatch()
 		{
 			if (EditorManager.inst.isEditing == true && EditorManager.inst.hasLoadedLevel && EditorManager.inst != null)
 			{
@@ -300,8 +303,8 @@ namespace EditorManagement.Patchers
 					int onscreennum = 0;
 
 					int posnum = 0;
-					float camPosX = 1.775f * EventManager.inst.camZoom + EventManager.inst.camPos.x;
-					float camPosY = 1f * EventManager.inst.camZoom + EventManager.inst.camPos.y;
+					float camPosX = 1.775f * EventManager.inst.cam.orthographicSize + EventManager.inst.cam.transform.position.x;
+					float camPosY = 1f * EventManager.inst.cam.orthographicSize + EventManager.inst.cam.transform.position.y;
 
 					if (DataManager.inst.gameData.beatmapObjects.Count > 0 && DataManager.inst.gameData.eventObjects.allEvents.Count > 0 && EditorManager.inst.hasLoadedLevel)
 					{
@@ -341,11 +344,39 @@ namespace EditorManagement.Patchers
 								onscreennum += 1;
 							}
 
-							foreach (var keyframe in beatmapObject.events[0])
+							//foreach (var keyframe in beatmapObject.events[0])
+							//{
+							//	if (keyframe.eventValues[0] > camPosX || keyframe.eventValues[0] < -camPosX || keyframe.eventValues[1] > camPosY || keyframe.eventValues[1] < -camPosY)
+							//	{
+							//		posnum += 1;
+							//	}
+							//}
+
+							if (Objects.beatmapObjects.ContainsKey(beatmapObject.id))
 							{
-								if (keyframe.eventValues[0] > camPosX || keyframe.eventValues[0] < -camPosX || keyframe.eventValues[1] > camPosY || keyframe.eventValues[1] < -camPosY)
+								var functionObject = Objects.beatmapObjects[beatmapObject.id];
+								if (functionObject.gameObject != null && functionObject.meshFilter != null)
 								{
-									posnum += 1;
+									var lossyScale = Vector3.one;
+									var position = functionObject.gameObject.transform.position;
+
+									foreach (var chain in functionObject.transformChain)
+									{
+										var chvector = chain.transform.localScale;
+										lossyScale = new Vector3(lossyScale.x * chvector.x, lossyScale.y * chvector.y, 1f);
+									}
+
+									var array = new Vector3[functionObject.meshFilter.mesh.vertices.Length];
+									for (int i = 0; i < array.Length; i++)
+									{
+										var a = functionObject.meshFilter.mesh.vertices[i];
+										array[i] = new Vector3(a.x * lossyScale.x, a.y * lossyScale.y, 0f) + position;
+									}
+
+									if (array.All(x => x.x > camPosX || x.y > camPosY || x.x < -camPosX || x.y < -camPosY))
+									{
+										posnum += 1;
+									}
 								}
 							}
 
@@ -383,7 +414,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Render")]
 		[HarmonyPostfix]
-		private static void SettingRenderPatch()
+		static void SettingRenderPatch()
 		{
 			EditorManager.inst.CancelInvoke("LoadingIconUpdate");
 			EditorManager.inst.InvokeRepeating("LoadingIconUpdate", 0f, UnityEngine.Random.Range(0.01f, 0.4f));
