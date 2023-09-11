@@ -540,7 +540,7 @@ namespace EditorManagement
 				if (ConfigEntries.AutoSaveLoopTime.Value != prevAutoSaveRepeat)
 				{
 					Debug.LogFormat("{0}Setting Autosaving", className);
-					ConfigEntries.AutoSaveLoopTime.Value = prevAutoSaveRepeat;
+					prevAutoSaveRepeat = ConfigEntries.AutoSaveLoopTime.Value;
 
 					RTEditor.SetAutosave();
 				}
