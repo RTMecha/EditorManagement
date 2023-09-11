@@ -68,6 +68,8 @@ namespace EditorManagement.Patchers
 			eventEditorTitleColors.Add("- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f)); //10
 			eventEditorTitleColors.Add("- Follow Player Editor -", new Color(1f, 0.5960785f, 0f, 1f)); //11
 			eventEditorTitleColors.Add("- Audio Editor -", new Color(1f, 0.3490196f, 0f, 1f)); //12
+			//eventEditorTitleColors.Add("- Glitch Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f)); //13
+			//eventEditorTitleColors.Add("- Misc Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f)); //14
 
 			RenderTitles();
 		}
@@ -142,7 +144,7 @@ namespace EditorManagement.Patchers
 						eventLabels.transform.GetChild(10).GetChild(0).GetComponent<Text>().text = "Follow Player";
 						eventLabels.transform.GetChild(11).GetChild(0).GetComponent<Text>().text = "Audio";
 						eventLabels.transform.GetChild(12).GetChild(0).GetComponent<Text>().text = "Glitch (Coming soon)";
-						eventLabels.transform.GetChild(13).GetChild(0).GetComponent<Text>().text = "??? (Coming soon)";
+						eventLabels.transform.GetChild(13).GetChild(0).GetComponent<Text>().text = "Misc (Coming soon)";
 						break;
                     }
             }
