@@ -568,9 +568,9 @@ namespace EditorManagement.Patchers
 			return false;
         }
 
-		[HarmonyPatch("CreateKeyframes")]
-		[HarmonyPostfix]
-		private static void CreateKeyframesPostfix()
+		//[HarmonyPatch("CreateKeyframes")]
+		//[HarmonyPostfix]
+		static void CreateKeyframesPostfix()
         {
 			for (int i = 0; i < ObjEditor.inst.timelineKeyframes.Count; i++)
             {
@@ -589,7 +589,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("CopyObject")]
 		[HarmonyPrefix]
-		private static bool CopyObject(ObjEditor __instance)
+		static bool CopyObject(ObjEditor __instance)
 		{
 			var e = new List<ObjEditor.ObjectSelection>();
 			foreach (var prefab in __instance.selectedObjects)
@@ -969,5 +969,53 @@ namespace EditorManagement.Patchers
 			__result = __instance.name;
 			return false;
         }
-    }
+
+		[HarmonyPatch("PasteKeyframes")]
+		[HarmonyPrefix]
+		static bool PasteKeyframesPrefix(ObjEditor __instance, ref string __result)
+        {
+			__result = PasteKeyframes(__instance);
+			return false;
+        }
+
+		public static string PasteKeyframes(ObjEditor __instance)
+		{
+			if (__instance.copiedObjectKeyframes.Keys.Count() <= 0)
+			{
+				Debug.LogErrorFormat("{0}No copied event yet!", EditorPlugin.className);
+				return "";
+			}
+			foreach (var keyframeSelection in __instance.copiedObjectKeyframes.Keys)
+			{
+				var eventKeyframe = DataManager.GameData.EventKeyframe.DeepCopy(__instance.copiedObjectKeyframes[keyframeSelection]);
+				Debug.LogFormat("Create Keyframe _ {0} - {1}", new object[]
+				{
+					eventKeyframe.eventTime,
+					eventKeyframe.eventValues[0]
+				});
+
+				eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - __instance.currentObjectSelection.GetObjectData().StartTime + eventKeyframe.eventTime;
+				if (eventKeyframe.eventTime <= 0f)
+				{
+					eventKeyframe.eventTime = 0.001f;
+				}
+
+				Debug.LogFormat("Create Keyframe __ {0} - {1}", new object[]
+				{
+					eventKeyframe.eventTime,
+					eventKeyframe.eventValues[0]
+				});
+
+				__instance.currentObjectSelection.GetObjectData().events[keyframeSelection.Type].Add(eventKeyframe);
+			}
+
+			__instance.UpdateKeyframeOrder();
+			CreateKeyframes(-1);
+			ResizeKeyframeTimeline();
+			__instance.RenderTimelineObject(__instance.currentObjectSelection);
+			ObjectManager.inst.updateObjects(__instance.currentObjectSelection);
+
+			return "";
+		}
+	}
 }
