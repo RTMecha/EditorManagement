@@ -16,6 +16,8 @@ namespace EditorManagement.Functions
 {
     public static class ConfigEntries
 	{
+		public static ConfigEntry<bool> ShowExampleOnStart { get; set; }
+
 		public static ConfigEntry<KeyCode> OpenPlayerEditor { get; set; }
 
 		public static ConfigEntry<float> TimelineBarButtonsHoverSize { get; set; }

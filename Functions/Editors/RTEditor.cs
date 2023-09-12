@@ -23,6 +23,7 @@ using TMPro;
 using LSFunctions;
 
 using EditorManagement.Functions.Components;
+using EditorManagement.Functions.Components.Example;
 using EditorManagement.Functions.Tools;
 using EditorManagement.Patchers;
 
@@ -481,7 +482,7 @@ namespace EditorManagement.Functions.Editors
 				beatmapObject.shapeOption = 0;
 				beatmapObject.text = "text";
 				beatmapObject.name = "text";
-				beatmapObject.objectType = BeatmapObject.ObjectType.Decoration;
+				beatmapObject.objectType = ObjectType.Decoration;
 			}
 
 			ObjectManager.inst.updateObjects(tmpSelection);
@@ -534,7 +535,7 @@ namespace EditorManagement.Functions.Editors
 			{
 				var beatmapObject = tmpSelection.GetObjectData();
 				beatmapObject.name = "helper";
-				beatmapObject.objectType = BeatmapObject.ObjectType.Helper;
+				beatmapObject.objectType = ObjectType.Helper;
 			}
 
 			ObjectManager.inst.updateObjects(tmpSelection);
@@ -560,7 +561,7 @@ namespace EditorManagement.Functions.Editors
 			{
 				var beatmapObject = tmpSelection.GetObjectData();
 				beatmapObject.name = "decoration";
-				beatmapObject.objectType = BeatmapObject.ObjectType.Decoration;
+				beatmapObject.objectType = ObjectType.Decoration;
 			}
 
 			ObjectManager.inst.updateObjects(tmpSelection);
@@ -586,7 +587,7 @@ namespace EditorManagement.Functions.Editors
 			{
 				var beatmapObject = tmpSelection.GetObjectData();
 				beatmapObject.name = "empty";
-				beatmapObject.objectType = BeatmapObject.ObjectType.Empty;
+				beatmapObject.objectType = ObjectType.Empty;
 			}
 
 			ObjectManager.inst.updateObjects(tmpSelection);
@@ -822,17 +823,17 @@ namespace EditorManagement.Functions.Editors
 					}
 					gameObject.GetComponent<RectTransform>().sizeDelta = new Vector2(num, 20f);
 					gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(startTime * EditorManager.inst.Zoom, (float)(-20 * Mathf.Clamp(objData.editorData.Bin, 0, 14)));
-					if (objData.objectType == BeatmapObject.ObjectType.Helper)
+					if (objData.objectType == ObjectType.Helper)
 					{
 						gameObject.GetComponent<Image>().sprite = ObjEditor.inst.HelperSprite;
 						gameObject.GetComponent<Image>().type = Image.Type.Tiled;
 					}
-					else if (objData.objectType == BeatmapObject.ObjectType.Decoration)
+					else if (objData.objectType == ObjectType.Decoration)
 					{
 						gameObject.GetComponent<Image>().sprite = ObjEditor.inst.DecorationSprite;
 						gameObject.GetComponent<Image>().type = Image.Type.Tiled;
 					}
-					else if (objData.objectType == BeatmapObject.ObjectType.Empty)
+					else if (objData.objectType == ObjectType.Empty)
 					{
 						gameObject.GetComponent<Image>().sprite = ObjEditor.inst.EmptySprite;
 						gameObject.GetComponent<Image>().type = Image.Type.Tiled;
@@ -4468,7 +4469,10 @@ namespace EditorManagement.Functions.Editors
 
 		public static IEnumerator SetupTimelineTriggers()
 		{
-			yield return new WaitForSeconds(1.5f);
+			yield return new WaitForSeconds(1f);
+			if (ConfigEntries.ShowExampleOnStart.Value)
+				ExampleManager.Init();
+
 			EventTrigger.Entry entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.PointerEnter;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
@@ -6917,8 +6921,24 @@ namespace EditorManagement.Functions.Editors
 			RefreshObjectSearch(_multi, _multiValue, objEditor, objectManager);
 		}
 
+		public static List<LevelItem> levelItems = new List<LevelItem>();
+		public class LevelItem
+        {
+			public LevelItem(EditorManager.MetadataWrapper level, GameObject gameObject, RectTransform rectTransform, Image icon)
+            {
+				this.level = level; this.gameObject = gameObject; this.rectTransform = rectTransform; this.icon = icon;
+            }
+
+			public EditorManager.MetadataWrapper level;
+			public GameObject gameObject;
+			public RectTransform rectTransform;
+			public Image icon;
+        }
+
 		public static void RenderBeatmapSet()
 		{
+			levelItems.Clear();
+
 			int foldClamp = ConfigEntries.OpenFileFolderNameMax.Value;
 			int songClamp = ConfigEntries.OpenFileSongNameMax.Value;
 			int artiClamp = ConfigEntries.OpenFileArtistNameMax.Value;
@@ -6956,8 +6976,10 @@ namespace EditorManagement.Functions.Editors
 				dateClamp = 16;
 			}
 
-			//Cover
-			if (EditorPlugin.levelFilter == 0 && EditorPlugin.levelAscend == false)
+            #region Sorting
+
+            //Cover
+            if (EditorPlugin.levelFilter == 0 && EditorPlugin.levelAscend == false)
 			{
 				var result = new List<EditorManager.MetadataWrapper>();
 				result = (from x in EditorManager.inst.loadedLevels
@@ -7096,15 +7118,17 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.loadedLevels = result;
 			}
 
-			Transform transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask").Find("content");
+            #endregion
+
+            Transform transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask").Find("content");
 			var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
 			foreach (object obj in transform)
 			{
 				Destroy(((Transform)obj).gameObject);
 			}
-			foreach (EditorManager.MetadataWrapper metadataWrapper in EditorManager.inst.loadedLevels)
+			foreach (var metadataWrapper in EditorManager.inst.loadedLevels)
 			{
-				DataManager.MetaData metadata = metadataWrapper.metadata;
+				var metadata = metadataWrapper.metadata;
 				string name = metadataWrapper.folder;
 
 				string difficultyName = "None";
@@ -7250,6 +7274,8 @@ namespace EditorManagement.Functions.Editors
 								});
 							});
 						}
+
+						levelItems.Add(new LevelItem(metadataWrapper, gameObject, gameObject.GetComponent<RectTransform>(), iconImage));
 					}
 				}
 			}
@@ -7281,10 +7307,17 @@ namespace EditorManagement.Functions.Editors
 				jn["prefab_objects"][i]["pid"] = _data.prefabObjects[i].prefabID.ToString();
 				jn["prefab_objects"][i]["st"] = _data.prefabObjects[i].StartTime.ToString();
 
-				if (_data.prefabObjects[i].RepeatCount > 0)
-					jn["prefab_objects"][i]["rc"] = _data.prefabObjects[i].RepeatCount.ToString();
-				if (_data.prefabObjects[i].RepeatOffsetTime > 0f)
-					jn["prefab_objects"][i]["ro"] = _data.prefabObjects[i].RepeatOffsetTime.ToString();
+				try
+				{
+					if (_data.prefabObjects[i].RepeatCount > 0)
+						jn["prefab_objects"][i]["rc"] = _data.prefabObjects[i].RepeatCount.ToString();
+					if (_data.prefabObjects[i].RepeatOffsetTime > 0f)
+						jn["prefab_objects"][i]["ro"] = _data.prefabObjects[i].RepeatOffsetTime.ToString();
+				}
+				catch (Exception ex)
+                {
+					Debug.LogFormat("{0}Prefab Object Editor!\nMESSAGE: {1}\nSTACKTRACE: {2}", EditorPlugin.className, ex.Message, ex.StackTrace);
+                }
 
 				if (_data.prefabObjects[i].editorData.locked)
 				{
@@ -8593,6 +8626,12 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 
+			if (ExampleManager.inst)
+            {
+				var dialogues = ExampleManager.inst.dialogueDictionary["LoadedLevel"].dialogues;
+				ExampleManager.inst.Say(dialogues[dialogues.Length - 1]);
+            }
+
 			__instance.loading = false;
 
 			yield break;
@@ -9684,7 +9723,13 @@ namespace EditorManagement.Functions.Editors
 			array.AddItem(0f);
 
 			array.Add(0f);
-        }
+		}
+
+		//foreach (var beatmapObject in RTEditor.SelectedBeatmapObjects)
+		//{
+		//	beatmapObject.autoKillOffset = AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime;
+		//	beatmapObject.autoKillType = DataManager.GameData.BeatmapObject.AutoKillType.LastKeyframeOffset;
+		//}
 
 		public static List<BeatmapObject> SelectedBeatmapObjects
         {

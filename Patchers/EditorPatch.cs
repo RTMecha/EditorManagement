@@ -16,6 +16,7 @@ using HarmonyLib;
 
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Components;
+using EditorManagement.Functions.Components.Example;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using LSFunctions;
@@ -24,6 +25,11 @@ using Crosstales.FB;
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Animation;
+using RTFunctions.Functions.Animation.Keyframe;
+
+using DGEase = DG.Tweening.Ease;
+using Ease = RTFunctions.Functions.Animation.Ease;
 
 namespace EditorManagement.Patchers
 {
@@ -37,7 +43,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPrefix]
-		public static bool EditorAwakePatch(EditorManager __instance)
+		static bool EditorAwakePatch(EditorManager __instance)
 		{
 			//OG Code
 			{
@@ -53,32 +59,32 @@ namespace EditorManagement.Patchers
 				{
 					Destroy(__instance.gameObject);
 				}
-				__instance.curveDictionary.Add(0, Ease.Linear);
-				__instance.curveDictionary.Add(1, Ease.InSine);
-				__instance.curveDictionary.Add(2, Ease.OutSine);
-				__instance.curveDictionary.Add(3, Ease.InOutSine);
-				__instance.curveDictionary.Add(4, Ease.InElastic);
-				__instance.curveDictionary.Add(5, Ease.OutElastic);
-				__instance.curveDictionary.Add(6, Ease.InOutElastic);
-				__instance.curveDictionary.Add(7, Ease.InBack);
-				__instance.curveDictionary.Add(8, Ease.OutBack);
-				__instance.curveDictionary.Add(9, Ease.InOutBack);
-				__instance.curveDictionary.Add(10, Ease.InBounce);
-				__instance.curveDictionary.Add(11, Ease.OutBounce);
-				__instance.curveDictionary.Add(12, Ease.InOutBounce);
-				__instance.curveDictionaryBack.Add(Ease.Linear, 0);
-				__instance.curveDictionaryBack.Add(Ease.InSine, 1);
-				__instance.curveDictionaryBack.Add(Ease.OutSine, 2);
-				__instance.curveDictionaryBack.Add(Ease.InOutSine, 3);
-				__instance.curveDictionaryBack.Add(Ease.InElastic, 4);
-				__instance.curveDictionaryBack.Add(Ease.OutElastic, 5);
-				__instance.curveDictionaryBack.Add(Ease.InOutElastic, 6);
-				__instance.curveDictionaryBack.Add(Ease.InBack, 7);
-				__instance.curveDictionaryBack.Add(Ease.OutBack, 8);
-				__instance.curveDictionaryBack.Add(Ease.InOutBack, 9);
-				__instance.curveDictionaryBack.Add(Ease.InBounce, 10);
-				__instance.curveDictionaryBack.Add(Ease.OutBounce, 11);
-				__instance.curveDictionaryBack.Add(Ease.InOutBounce, 12);
+				__instance.curveDictionary.Add(0, DGEase.Linear);
+				__instance.curveDictionary.Add(1, DGEase.InSine);
+				__instance.curveDictionary.Add(2, DGEase.OutSine);
+				__instance.curveDictionary.Add(3, DGEase.InOutSine);
+				__instance.curveDictionary.Add(4, DGEase.InElastic);
+				__instance.curveDictionary.Add(5, DGEase.OutElastic);
+				__instance.curveDictionary.Add(6, DGEase.InOutElastic);
+				__instance.curveDictionary.Add(7, DGEase.InBack);
+				__instance.curveDictionary.Add(8, DGEase.OutBack);
+				__instance.curveDictionary.Add(9, DGEase.InOutBack);
+				__instance.curveDictionary.Add(10, DGEase.InBounce);
+				__instance.curveDictionary.Add(11, DGEase.OutBounce);
+				__instance.curveDictionary.Add(12, DGEase.InOutBounce);
+				__instance.curveDictionaryBack.Add(DGEase.Linear, 0);
+				__instance.curveDictionaryBack.Add(DGEase.InSine, 1);
+				__instance.curveDictionaryBack.Add(DGEase.OutSine, 2);
+				__instance.curveDictionaryBack.Add(DGEase.InOutSine, 3);
+				__instance.curveDictionaryBack.Add(DGEase.InElastic, 4);
+				__instance.curveDictionaryBack.Add(DGEase.OutElastic, 5);
+				__instance.curveDictionaryBack.Add(DGEase.InOutElastic, 6);
+				__instance.curveDictionaryBack.Add(DGEase.InBack, 7);
+				__instance.curveDictionaryBack.Add(DGEase.OutBack, 8);
+				__instance.curveDictionaryBack.Add(DGEase.InOutBack, 9);
+				__instance.curveDictionaryBack.Add(DGEase.InBounce, 10);
+				__instance.curveDictionaryBack.Add(DGEase.OutBounce, 11);
+				__instance.curveDictionaryBack.Add(DGEase.InOutBounce, 12);
 				__instance.RefreshDialogDictionary();
 
 				var list = (from x in Resources.FindObjectsOfTypeAll<Dropdown>()
@@ -213,31 +219,121 @@ namespace EditorManagement.Patchers
 
 				Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").GetComponent<HideDropdownOptions>());
 
-				var exitToArcade = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu"));
-				exitToArcade.name = "Quit to Arcade";
-				exitToArcade.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown").transform);
-				exitToArcade.transform.localScale = Vector3.one;
-				exitToArcade.transform.SetSiblingIndex(7);
-				exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Quit to Arcade";
-
-				var ex = exitToArcade.GetComponent<Button>();
-				ex.onClick.ClearAll();
-				ex.onClick.AddListener(delegate ()
 				{
-					EditorManager.inst.ShowDialog("Warning Popup");
-					RTEditor.RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+					var exitToArcade = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu"));
+					exitToArcade.name = "Quit to Arcade";
+					exitToArcade.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown").transform);
+					exitToArcade.transform.localScale = Vector3.one;
+					exitToArcade.transform.SetSiblingIndex(7);
+					exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Quit to Arcade";
+
+					var ex = exitToArcade.GetComponent<Button>();
+					ex.onClick.ClearAll();
+					ex.onClick.AddListener(delegate ()
 					{
-						DOTween.Clear();
-						ObjectManager.inst.updateObjects();
-						DataManager.inst.gameData = null;
-						DataManager.inst.gameData = new DataManager.GameData();
-						ObjectManager.inst.updateObjects();
-						SceneManager.inst.LoadScene("Input Select");
-					}, delegate ()
-					{
-						EditorManager.inst.HideDialog("Warning Popup");
+						if (ExampleManager.inst)
+                        {
+							ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(3f, -65f, Ease.SineInOut), new FloatKeyframe(4f, -64f, Ease.SineInOut) }, new List<IKeyframe<float>> { new FloatKeyframe(4f, 176f, Ease.SineInOut) });
+							var animation = new ExampleManager.Animation("Face Sad");
+
+							float tbrowLeft = -15f;
+
+							float tbrowRight = 15f;
+							if (ExampleManager.inst.browRight.localRotation.eulerAngles.z > 180f)
+								tbrowRight = 345f;
+
+							animation.floatAnimations = new List<ExampleManager.Animation.AnimationObject<float>>
+							{
+								new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+								{
+									new FloatKeyframe(0f, ExampleManager.inst.browLeft.localRotation.eulerAngles.z, Ease.Linear),
+									new FloatKeyframe(0.7f, tbrowLeft, Ease.SineInOut),
+								}, delegate (float x)
+								{
+									ExampleManager.inst.browLeft.localRotation = Quaternion.Euler(0f, 0f, x);
+								}),
+								new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+								{
+									new FloatKeyframe(0f, ExampleManager.inst.browRight.localRotation.eulerAngles.z, Ease.Linear),
+									new FloatKeyframe(0.7f, tbrowRight, Ease.SineInOut),
+								}, delegate (float x)
+								{
+									ExampleManager.inst.browRight.localRotation = Quaternion.Euler(0f, 0f, x);
+								}),
+							};
+
+							ExampleManager.inst.PlayOnce(animation);
+							//ExampleManager.inst.Say("Are you sure you want to quit to the arcade?", new List<IKeyframe<float>> { new FloatKeyframe(0f, -64f, Ease.Linear) }, new List<IKeyframe<float>> { new FloatKeyframe(0f, 400f, Ease.Linear) });
+							ExampleManager.inst.Say("Are you sure you want to quit to the arcade?", onComplete: delegate () { ExampleManager.inst.talking = false; });
+						}
+
+						EditorManager.inst.ShowDialog("Warning Popup");
+						RTEditor.RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+						{
+							DOTween.Clear();
+							ObjectManager.inst.updateObjects();
+							DataManager.inst.gameData = null;
+							DataManager.inst.gameData = new DataManager.GameData();
+							ObjectManager.inst.updateObjects();
+							SceneManager.inst.LoadScene("Input Select");
+						}, delegate ()
+						{
+							if (ExampleManager.inst)
+							{
+								var animation = new ExampleManager.Animation("Face Sad");
+
+								float tbrowLeft = 0f;
+								if (ExampleManager.inst.browLeft.localRotation.eulerAngles.z > 180f)
+									tbrowLeft = 360f;
+
+								float tbrowRight = 0f;
+								if (ExampleManager.inst.browRight.localRotation.eulerAngles.z > 180f)
+									tbrowRight = 360f;
+
+								animation.floatAnimations = new List<ExampleManager.Animation.AnimationObject<float>>
+								{
+									new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+									{
+										new FloatKeyframe(0f, ExampleManager.inst.browLeft.localRotation.eulerAngles.z, Ease.Linear),
+										new FloatKeyframe(0.7f, tbrowLeft, Ease.SineInOut),
+									}, delegate (float x)
+									{
+										ExampleManager.inst.browLeft.localRotation = Quaternion.Euler(0f, 0f, x);
+									}),
+									new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+									{
+										new FloatKeyframe(0f, ExampleManager.inst.browRight.localRotation.eulerAngles.z, Ease.Linear),
+										new FloatKeyframe(0.7f, tbrowRight, Ease.SineInOut),
+									}, delegate (float x)
+									{
+										ExampleManager.inst.browRight.localRotation = Quaternion.Euler(0f, 0f, x);
+									}),
+								};
+
+								ExampleManager.inst.PlayOnce(animation);
+							}
+
+							EditorManager.inst.HideDialog("Warning Popup");
+						});
 					});
-				});
+				}
+				
+				{
+					var exitToArcade = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu"));
+					exitToArcade.name = "Get Example";
+					exitToArcade.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown").transform);
+					exitToArcade.transform.localScale = Vector3.one;
+					exitToArcade.transform.SetSiblingIndex(4);
+					exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Get Example";
+
+					var ex = exitToArcade.GetComponent<Button>();
+					ex.onClick.ClearAll();
+					ex.onClick.AddListener(delegate ()
+					{
+						if (!ExampleManager.inst)
+							ExampleManager.Init();
+					});
+				}
 
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Join Discord/Text").GetComponent<Text>().text = "Modder's Discord";
 				GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Help/Help Dropdown/Watch Tutorials/Text").GetComponent<Text>().text = "Watch PA History";
@@ -898,7 +994,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
-		private static void PropertiesWindow(EditorManager __instance)
+		static void PropertiesWindow(EditorManager __instance)
         {
 			RTEditor.inst.StartCoroutine(RTEditor.CreatePropertiesWindow());
 			//Player Editor
@@ -920,7 +1016,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Start")]
 		[HarmonyPostfix]
-		private static void EditorStartPatch()
+		static void EditorStartPatch()
 		{
 			EditorPlugin.RepeatReminder();
 
@@ -958,7 +1054,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Start")]
 		[HarmonyPrefix]
-		private static void StartPrefix()
+		static void StartPrefix()
         {
 			Debug.LogFormat("{0}Player Count: {1}", EditorPlugin.className, InputDataManager.inst.players.Count);
 			playerStorage.Clear();
@@ -1159,7 +1255,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("handleViewShortcuts")]
 		[HarmonyPrefix]
-		private static bool ViewShortcutsPatch()
+		static bool ViewShortcutsPatch()
         {
 			if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
 				&& EditorManager.inst.IsOverObjTimeline
@@ -1208,7 +1304,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("updatePointer")]
 		[HarmonyPrefix]
-		private static bool updatePointerPrefix()
+		static bool updatePointerPrefix()
         {
 			Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
 			float value = EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>().value;
@@ -1254,7 +1350,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("AddToPitch")]
 		[HarmonyPrefix]
-		private static bool AddToPitchPrefix(EditorManager __instance, float __0)
+		static bool AddToPitchPrefix(EditorManager __instance, float __0)
         {
 			if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt))
 			{
@@ -1274,7 +1370,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("ToggleEditor")]
 		[HarmonyPostfix]
-		private static void ToggleEditorPatch()
+		static void ToggleEditorPatch()
         {
 			if (EditorManager.inst.isEditing)
             {
@@ -1285,7 +1381,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("CloseOpenBeatmapPopup")]
 		[HarmonyPrefix]
-		private static bool CloseOpenFilePopupPatch(EditorManager __instance)
+		static bool CloseOpenFilePopupPatch(EditorManager __instance)
         {
 			if (EditorManager.inst.hasLoadedLevel)
             {
@@ -1300,7 +1396,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SaveBeatmap")]
 		[HarmonyPrefix]
-		private static void SaveBeatmapPrefix()
+		static void SaveBeatmapPrefix()
 		{
 			string str = "beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel;
 			if (RTFile.FileExists(RTFile.ApplicationDirectory + str + "/level-previous.lsb"))
@@ -1314,7 +1410,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SaveBeatmap")]
 		[HarmonyPostfix]
-		private static void EditorSaveBeatmapPatch()
+		static void EditorSaveBeatmapPatch()
 		{
 			DataManager.inst.gameData.beatmapData.editorData.timelinePos = AudioManager.inst.CurrentAudioSource.time;
 			DataManager.inst.metaData.song.BPM = SettingEditor.inst.SnapBPM;
@@ -1364,7 +1460,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SaveBeatmapAs", new Type[] { })]
 		[HarmonyPostfix]
-		private static void EditorSaveBeatmapAsPatch()
+		static void EditorSaveBeatmapAsPatch()
 		{
 			if (EditorManager.inst.hasLoadedLevel)
 			{
@@ -1405,7 +1501,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("RenderOpenBeatmapPopup")]
 		[HarmonyPostfix]
-		private static void EditorRenderOpenBeatmapPopupPatch()
+		static void EditorRenderOpenBeatmapPopupPatch()
 		{
 			RTEditor.RenderBeatmapSet();
 		}
@@ -1448,14 +1544,14 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("AssignWaveformTextures")]
 		[HarmonyPrefix]
-		private static bool AssignWaveformTexturesPatch()
+		static bool AssignWaveformTexturesPatch()
 		{
 			return false;
 		}
 
 		[HarmonyPatch("RenderTimeline")]
 		[HarmonyPrefix]
-		private static bool RenderTimelinePatch()
+		static bool RenderTimelinePatch()
 		{
 			if (EditorManager.inst.layer == 5)
 			{
@@ -1476,7 +1572,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("RenderParentSearchList")]
 		[HarmonyPrefix]
-		private static bool RenderParentSearchList(EditorManager __instance)
+		static bool RenderParentSearchList(EditorManager __instance)
 		{
 			Transform transform = __instance.GetDialog("Parent Selector").Dialog.Find("mask/content");
 
@@ -1585,7 +1681,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("GetLevelList")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> GetLevelListTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> GetLevelListTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -1611,7 +1707,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("LoadLevel")]
 		[HarmonyPrefix]
-		private static bool LoadLevelPrefix(EditorManager __instance, ref IEnumerator __result, string __0)
+		static bool LoadLevelPrefix(EditorManager __instance, ref IEnumerator __result, string __0)
 		{
 			__result = RTEditor.LoadLevel(__instance, __0);
 			return false;
@@ -1619,7 +1715,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("CreateNewLevel")]
 		[HarmonyPrefix]
-		private static bool CreateNewLevelPatch(EditorManager __instance)
+		static bool CreateNewLevelPatch(EditorManager __instance)
         {
 			RTEditor.CreateNewLevel(__instance);
 			return false;
@@ -1659,7 +1755,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("OpenAlbumArtSelector")]
 		[HarmonyPrefix]
-		private static void OpenAlbumArtSelector(EditorManager __instance)
+		static bool OpenAlbumArtSelector(EditorManager __instance)
 		{
 			string jpgFile = FileBrowser.OpenSingleFile("jpg");
 			Debug.Log("Selected file: " + jpgFile);
@@ -1676,11 +1772,12 @@ namespace EditorManagement.Patchers
 					__instance.DisplayNotification("Please resize your image to be less then or equal to 512 x 512 pixels. It must also be a jpg.", 2f, EditorManager.NotificationType.Error, false);
 				}));
 			}
+			return false;
 		}
 
 		[HarmonyPatch("GetAlbumSprite", MethodType.Enumerator)]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> AlbumSpriteTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> AlbumSpriteTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -1693,7 +1790,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("OpenLevelFolder")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> OpenLevelFolderTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> OpenLevelFolderTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -1710,7 +1807,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("OpenTutorials")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> OpenTutorialsTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> OpenTutorialsTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -1720,7 +1817,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("OpenDiscord")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> OpenDiscordTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> OpenDiscordTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -1730,7 +1827,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("CreateGrid")]
 		[HarmonyPostfix]
-		public static void Reminder()
+		static void Reminder()
 		{
 			if (ConfigEntries.ReminderActive.Value == true)
 			{

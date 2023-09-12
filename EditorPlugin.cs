@@ -165,6 +165,8 @@ namespace EditorManagement
 				ConfigEntries.PrefabExampleTemplate = Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.");
 
 				ConfigEntries.PasteOffset = Config.Bind("General", "Paste Offset", false, "When enabled objects that are pasted will be pasted at an offset based on the distance between the audio time and the copied object. Otherwise, the objects will be pasted at the earliest objects start time.");
+
+				ConfigEntries.ShowExampleOnStart = Config.Bind("General", "Spawn Example on Editor start", true, "If enabled, the Example Editor Assistant will spawn when you enter the editor.");
 			}
 
             //Timeline
