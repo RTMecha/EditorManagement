@@ -2840,14 +2840,12 @@ namespace EditorManagement.Functions.Editors
 							{
 								float startTime = beatmapObject.StartTime;
 								if (num < startTime)
-								{
 									num = startTime + 0.1f;
-								}
 							}
+
 							if (num < 0f)
-							{
 								num = 0f;
-							}
+
 							beatmapObject.autoKillOffset = num;
 							objectManager.updateObjects(currentObjectSelection);
 							objEditor.RenderTimelineObject(currentObjectSelection);
@@ -2857,7 +2855,16 @@ namespace EditorManagement.Functions.Editors
 						aksetButt.onClick.RemoveAllListeners();
 						aksetButt.onClick.AddListener(delegate ()
 						{
-							beatmapObject.autoKillOffset = AudioManager.inst.CurrentAudioSource.time;
+							float num = 0f;
+
+							if (beatmapObject.autoKillType == BeatmapObject.AutoKillType.SongTime)
+								num = AudioManager.inst.CurrentAudioSource.time;
+							else num = AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime;
+
+							if (num < 0f)
+								num = 0f;
+
+							beatmapObject.autoKillOffset = num;
 							objectManager.updateObjects(currentObjectSelection);
 							objEditor.RenderTimelineObject(currentObjectSelection);
 						});
@@ -7281,6 +7288,12 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
+		public static void RenderTimeline()
+        {
+			var bpm = SettingEditor.inst.SnapBPM;
+			
+        }
+
 		#endregion
 
 		#region Data
@@ -7646,525 +7659,529 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 			Debug.Log("Saving Event Objects");
-			for (int i = 0; i < _data.eventObjects.allEvents[0].Count(); i++)
 			{
-				jn["events"]["pos"][i]["t"] = _data.eventObjects.allEvents[0][i].eventTime.ToString();
-				jn["events"]["pos"][i]["x"] = _data.eventObjects.allEvents[0][i].eventValues[0].ToString();
-				jn["events"]["pos"][i]["y"] = _data.eventObjects.allEvents[0][i].eventValues[1].ToString();
-				if (_data.eventObjects.allEvents[0][i].curveType.Name != "Linear")
-				{
-					jn["events"]["pos"][i]["ct"] = _data.eventObjects.allEvents[0][i].curveType.Name.ToString();
-				}
-				if (_data.eventObjects.allEvents[0][i].random != 0)
-				{
-					jn["events"]["pos"][i]["r"] = _data.eventObjects.allEvents[0][i].random.ToString();
-					jn["events"]["pos"][i]["rx"] = _data.eventObjects.allEvents[0][i].eventRandomValues[0].ToString();
-					jn["events"]["pos"][i]["ry"] = _data.eventObjects.allEvents[0][i].eventRandomValues[1].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[1].Count(); i++)
-			{
-				jn["events"]["zoom"][i]["t"] = _data.eventObjects.allEvents[1][i].eventTime.ToString();
-				jn["events"]["zoom"][i]["x"] = _data.eventObjects.allEvents[1][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[1][i].curveType.Name != "Linear")
-				{
-					jn["events"]["zoom"][i]["ct"] = _data.eventObjects.allEvents[1][i].curveType.Name.ToString();
-				}
-				if (_data.eventObjects.allEvents[1][i].random != 0)
-				{
-					jn["events"]["zoom"][i]["r"] = _data.eventObjects.allEvents[1][i].random.ToString();
-					jn["events"]["zoom"][i]["rx"] = _data.eventObjects.allEvents[1][i].eventRandomValues[0].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[2].Count(); i++)
-			{
-				jn["events"]["rot"][i]["t"] = _data.eventObjects.allEvents[2][i].eventTime.ToString();
-				jn["events"]["rot"][i]["x"] = _data.eventObjects.allEvents[2][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[2][i].curveType.Name != "Linear")
-				{
-					jn["events"]["rot"][i]["ct"] = _data.eventObjects.allEvents[2][i].curveType.Name.ToString();
-				}
-				if (_data.eventObjects.allEvents[2][i].random != 0)
-				{
-					jn["events"]["rot"][i]["r"] = _data.eventObjects.allEvents[2][i].random.ToString();
-					jn["events"]["rot"][i]["rx"] = _data.eventObjects.allEvents[2][i].eventRandomValues[0].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[3].Count(); i++)
-			{
-				jn["events"]["shake"][i]["t"] = _data.eventObjects.allEvents[3][i].eventTime.ToString();
-				jn["events"]["shake"][i]["x"] = _data.eventObjects.allEvents[3][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[3][i].eventValues.Length > 1)
-					jn["events"]["shake"][i]["y"] = _data.eventObjects.allEvents[3][i].eventValues[1].ToString();
-				if (_data.eventObjects.allEvents[3][i].eventValues.Length > 2)
-					jn["events"]["shake"][i]["z"] = _data.eventObjects.allEvents[3][i].eventValues[2].ToString();
+				var allEvents = _data.eventObjects.allEvents;
 
-				if (_data.eventObjects.allEvents[3][i].curveType.Name != "Linear")
+				for (int i = 0; i < _data.eventObjects.allEvents[0].Count(); i++)
 				{
-					jn["events"]["shake"][i]["ct"] = _data.eventObjects.allEvents[3][i].curveType.Name.ToString();
+					jn["events"]["pos"][i]["t"] = _data.eventObjects.allEvents[0][i].eventTime.ToString();
+					jn["events"]["pos"][i]["x"] = _data.eventObjects.allEvents[0][i].eventValues[0].ToString();
+					jn["events"]["pos"][i]["y"] = _data.eventObjects.allEvents[0][i].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[0][i].curveType.Name != "Linear")
+					{
+						jn["events"]["pos"][i]["ct"] = _data.eventObjects.allEvents[0][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[0][i].random != 0)
+					{
+						jn["events"]["pos"][i]["r"] = _data.eventObjects.allEvents[0][i].random.ToString();
+						jn["events"]["pos"][i]["rx"] = _data.eventObjects.allEvents[0][i].eventRandomValues[0].ToString();
+						jn["events"]["pos"][i]["ry"] = _data.eventObjects.allEvents[0][i].eventRandomValues[1].ToString();
+					}
 				}
-				if (_data.eventObjects.allEvents[3][i].random != 0)
+				for (int i = 0; i < _data.eventObjects.allEvents[1].Count(); i++)
 				{
-					jn["events"]["shake"][i]["r"] = _data.eventObjects.allEvents[3][i].random.ToString();
-					jn["events"]["shake"][i]["rx"] = _data.eventObjects.allEvents[3][i].eventRandomValues[0].ToString();
-					jn["events"]["shake"][i]["ry"] = _data.eventObjects.allEvents[3][i].eventRandomValues[1].ToString();
+					jn["events"]["zoom"][i]["t"] = _data.eventObjects.allEvents[1][i].eventTime.ToString();
+					jn["events"]["zoom"][i]["x"] = _data.eventObjects.allEvents[1][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[1][i].curveType.Name != "Linear")
+					{
+						jn["events"]["zoom"][i]["ct"] = _data.eventObjects.allEvents[1][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[1][i].random != 0)
+					{
+						jn["events"]["zoom"][i]["r"] = _data.eventObjects.allEvents[1][i].random.ToString();
+						jn["events"]["zoom"][i]["rx"] = _data.eventObjects.allEvents[1][i].eventRandomValues[0].ToString();
+					}
 				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[4].Count(); i++)
-			{
-				jn["events"]["theme"][i]["t"] = _data.eventObjects.allEvents[4][i].eventTime.ToString();
-				jn["events"]["theme"][i]["x"] = _data.eventObjects.allEvents[4][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[4][i].curveType.Name != "Linear")
+				for (int i = 0; i < _data.eventObjects.allEvents[2].Count(); i++)
 				{
-					jn["events"]["theme"][i]["ct"] = _data.eventObjects.allEvents[4][i].curveType.Name.ToString();
+					jn["events"]["rot"][i]["t"] = _data.eventObjects.allEvents[2][i].eventTime.ToString();
+					jn["events"]["rot"][i]["x"] = _data.eventObjects.allEvents[2][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[2][i].curveType.Name != "Linear")
+					{
+						jn["events"]["rot"][i]["ct"] = _data.eventObjects.allEvents[2][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[2][i].random != 0)
+					{
+						jn["events"]["rot"][i]["r"] = _data.eventObjects.allEvents[2][i].random.ToString();
+						jn["events"]["rot"][i]["rx"] = _data.eventObjects.allEvents[2][i].eventRandomValues[0].ToString();
+					}
 				}
-				if (_data.eventObjects.allEvents[4][i].random != 0)
+				for (int i = 0; i < _data.eventObjects.allEvents[3].Count(); i++)
 				{
-					jn["events"]["theme"][i]["r"] = _data.eventObjects.allEvents[4][i].random.ToString();
-					jn["events"]["theme"][i]["rx"] = _data.eventObjects.allEvents[4][i].eventRandomValues[0].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[5].Count(); i++)
-			{
-				jn["events"]["chroma"][i]["t"] = _data.eventObjects.allEvents[5][i].eventTime.ToString();
-				jn["events"]["chroma"][i]["x"] = _data.eventObjects.allEvents[5][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[5][i].curveType.Name != "Linear")
-				{
-					jn["events"]["chroma"][i]["ct"] = _data.eventObjects.allEvents[5][i].curveType.Name.ToString();
-				}
-				if (_data.eventObjects.allEvents[5][i].random != 0)
-				{
-					jn["events"]["chroma"][i]["r"] = _data.eventObjects.allEvents[5][i].random.ToString();
-					jn["events"]["chroma"][i]["rx"] = _data.eventObjects.allEvents[5][i].eventRandomValues[0].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[6].Count(); i++)
-			{
-				jn["events"]["bloom"][i]["t"] = _data.eventObjects.allEvents[6][i].eventTime.ToString();
-				jn["events"]["bloom"][i]["x"] = _data.eventObjects.allEvents[6][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[6][i].eventValues.Length > 1)
-					jn["events"]["bloom"][i]["y"] = _data.eventObjects.allEvents[6][i].eventValues[1].ToString();
-				if (_data.eventObjects.allEvents[6][i].eventValues.Length > 2)
-					jn["events"]["bloom"][i]["z"] = _data.eventObjects.allEvents[6][i].eventValues[2].ToString();
-				if (_data.eventObjects.allEvents[6][i].eventValues.Length > 3)
-					jn["events"]["bloom"][i]["x2"] = _data.eventObjects.allEvents[6][i].eventValues[3].ToString();
-				if (_data.eventObjects.allEvents[6][i].eventValues.Length > 4)
-					jn["events"]["bloom"][i]["y2"] = _data.eventObjects.allEvents[6][i].eventValues[4].ToString();
+					jn["events"]["shake"][i]["t"] = _data.eventObjects.allEvents[3][i].eventTime.ToString();
+					jn["events"]["shake"][i]["x"] = _data.eventObjects.allEvents[3][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[3][i].eventValues.Length > 1)
+						jn["events"]["shake"][i]["y"] = _data.eventObjects.allEvents[3][i].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[3][i].eventValues.Length > 2)
+						jn["events"]["shake"][i]["z"] = _data.eventObjects.allEvents[3][i].eventValues[2].ToString();
 
-				if (_data.eventObjects.allEvents[6][i].curveType.Name != "Linear")
-				{
-					jn["events"]["bloom"][i]["ct"] = _data.eventObjects.allEvents[6][i].curveType.Name.ToString();
+					if (_data.eventObjects.allEvents[3][i].curveType.Name != "Linear")
+					{
+						jn["events"]["shake"][i]["ct"] = _data.eventObjects.allEvents[3][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[3][i].random != 0)
+					{
+						jn["events"]["shake"][i]["r"] = _data.eventObjects.allEvents[3][i].random.ToString();
+						jn["events"]["shake"][i]["rx"] = _data.eventObjects.allEvents[3][i].eventRandomValues[0].ToString();
+						jn["events"]["shake"][i]["ry"] = _data.eventObjects.allEvents[3][i].eventRandomValues[1].ToString();
+					}
 				}
-				if (_data.eventObjects.allEvents[6][i].random != 0)
+				for (int i = 0; i < _data.eventObjects.allEvents[4].Count(); i++)
 				{
-					jn["events"]["bloom"][i]["r"] = _data.eventObjects.allEvents[6][i].random.ToString();
-					jn["events"]["bloom"][i]["rx"] = _data.eventObjects.allEvents[6][i].eventRandomValues[0].ToString();
+					jn["events"]["theme"][i]["t"] = _data.eventObjects.allEvents[4][i].eventTime.ToString();
+					jn["events"]["theme"][i]["x"] = _data.eventObjects.allEvents[4][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[4][i].curveType.Name != "Linear")
+					{
+						jn["events"]["theme"][i]["ct"] = _data.eventObjects.allEvents[4][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[4][i].random != 0)
+					{
+						jn["events"]["theme"][i]["r"] = _data.eventObjects.allEvents[4][i].random.ToString();
+						jn["events"]["theme"][i]["rx"] = _data.eventObjects.allEvents[4][i].eventRandomValues[0].ToString();
+					}
 				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[7].Count(); i++)
-			{
-				jn["events"]["vignette"][i]["t"] = _data.eventObjects.allEvents[7][i].eventTime.ToString();
-				jn["events"]["vignette"][i]["x"] = _data.eventObjects.allEvents[7][i].eventValues[0].ToString();
-				jn["events"]["vignette"][i]["y"] = _data.eventObjects.allEvents[7][i].eventValues[1].ToString();
-				jn["events"]["vignette"][i]["z"] = _data.eventObjects.allEvents[7][i].eventValues[2].ToString();
-				jn["events"]["vignette"][i]["x2"] = _data.eventObjects.allEvents[7][i].eventValues[3].ToString();
-				jn["events"]["vignette"][i]["y2"] = _data.eventObjects.allEvents[7][i].eventValues[4].ToString();
-				jn["events"]["vignette"][i]["z2"] = _data.eventObjects.allEvents[7][i].eventValues[5].ToString();
-				if (_data.eventObjects.allEvents[7][i].eventValues.Length > 6)
-					jn["events"]["vignette"][i]["x3"] = _data.eventObjects.allEvents[7][i].eventValues[6].ToString();
+				for (int i = 0; i < _data.eventObjects.allEvents[5].Count(); i++)
+				{
+					jn["events"]["chroma"][i]["t"] = _data.eventObjects.allEvents[5][i].eventTime.ToString();
+					jn["events"]["chroma"][i]["x"] = _data.eventObjects.allEvents[5][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[5][i].curveType.Name != "Linear")
+					{
+						jn["events"]["chroma"][i]["ct"] = _data.eventObjects.allEvents[5][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[5][i].random != 0)
+					{
+						jn["events"]["chroma"][i]["r"] = _data.eventObjects.allEvents[5][i].random.ToString();
+						jn["events"]["chroma"][i]["rx"] = _data.eventObjects.allEvents[5][i].eventRandomValues[0].ToString();
+					}
+				}
+				for (int i = 0; i < _data.eventObjects.allEvents[6].Count(); i++)
+				{
+					jn["events"]["bloom"][i]["t"] = _data.eventObjects.allEvents[6][i].eventTime.ToString();
+					jn["events"]["bloom"][i]["x"] = _data.eventObjects.allEvents[6][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[6][i].eventValues.Length > 1)
+						jn["events"]["bloom"][i]["y"] = _data.eventObjects.allEvents[6][i].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[6][i].eventValues.Length > 2)
+						jn["events"]["bloom"][i]["z"] = _data.eventObjects.allEvents[6][i].eventValues[2].ToString();
+					if (_data.eventObjects.allEvents[6][i].eventValues.Length > 3)
+						jn["events"]["bloom"][i]["x2"] = _data.eventObjects.allEvents[6][i].eventValues[3].ToString();
+					if (_data.eventObjects.allEvents[6][i].eventValues.Length > 4)
+						jn["events"]["bloom"][i]["y2"] = _data.eventObjects.allEvents[6][i].eventValues[4].ToString();
 
-				if (_data.eventObjects.allEvents[7][i].curveType.Name != "Linear")
-				{
-					jn["events"]["vignette"][i]["ct"] = _data.eventObjects.allEvents[7][i].curveType.Name.ToString();
+					if (_data.eventObjects.allEvents[6][i].curveType.Name != "Linear")
+					{
+						jn["events"]["bloom"][i]["ct"] = _data.eventObjects.allEvents[6][i].curveType.Name.ToString();
+					}
+					if (_data.eventObjects.allEvents[6][i].random != 0)
+					{
+						jn["events"]["bloom"][i]["r"] = _data.eventObjects.allEvents[6][i].random.ToString();
+						jn["events"]["bloom"][i]["rx"] = _data.eventObjects.allEvents[6][i].eventRandomValues[0].ToString();
+					}
 				}
-				if (_data.eventObjects.allEvents[7][i].random != 0)
+				for (int i = 0; i < _data.eventObjects.allEvents[7].Count(); i++)
 				{
-					jn["events"]["vignette"][i]["r"] = _data.eventObjects.allEvents[7][i].random.ToString();
-					jn["events"]["vignette"][i]["rx"] = _data.eventObjects.allEvents[7][i].eventRandomValues[0].ToString();
-					jn["events"]["vignette"][i]["ry"] = _data.eventObjects.allEvents[7][i].eventRandomValues[1].ToString();
-					jn["events"]["vignette"][i]["value_random_z"] = _data.eventObjects.allEvents[7][i].eventRandomValues[2].ToString();
-					jn["events"]["vignette"][i]["value_random_x2"] = _data.eventObjects.allEvents[7][i].eventRandomValues[3].ToString();
-					jn["events"]["vignette"][i]["value_random_y2"] = _data.eventObjects.allEvents[7][i].eventRandomValues[4].ToString();
-					jn["events"]["vignette"][i]["value_random_z2"] = _data.eventObjects.allEvents[7][i].eventRandomValues[5].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[8].Count(); i++)
-			{
-				jn["events"]["lens"][i]["t"] = _data.eventObjects.allEvents[8][i].eventTime.ToString();
-                jn["events"]["lens"][i]["x"] = _data.eventObjects.allEvents[8][i].eventValues[0].ToString();
-				if (_data.eventObjects.allEvents[8][i].eventValues.Length > 1)
-					jn["events"]["lens"][i]["y"] = _data.eventObjects.allEvents[8][i].eventValues[1].ToString();
-				if (_data.eventObjects.allEvents[8][i].eventValues.Length > 2)
-					jn["events"]["lens"][i]["z"] = _data.eventObjects.allEvents[8][i].eventValues[2].ToString();
-				if (_data.eventObjects.allEvents[8][i].eventValues.Length > 3)
-					jn["events"]["lens"][i]["x2"] = _data.eventObjects.allEvents[8][i].eventValues[3].ToString();
-				if (_data.eventObjects.allEvents[8][i].eventValues.Length > 4)
-					jn["events"]["lens"][i]["y2"] = _data.eventObjects.allEvents[8][i].eventValues[4].ToString();
-				if (_data.eventObjects.allEvents[8][i].eventValues.Length > 5)
-					jn["events"]["lens"][i]["z2"] = _data.eventObjects.allEvents[8][i].eventValues[5].ToString();
+					jn["events"]["vignette"][i]["t"] = _data.eventObjects.allEvents[7][i].eventTime.ToString();
+					jn["events"]["vignette"][i]["x"] = _data.eventObjects.allEvents[7][i].eventValues[0].ToString();
+					jn["events"]["vignette"][i]["y"] = _data.eventObjects.allEvents[7][i].eventValues[1].ToString();
+					jn["events"]["vignette"][i]["z"] = _data.eventObjects.allEvents[7][i].eventValues[2].ToString();
+					jn["events"]["vignette"][i]["x2"] = _data.eventObjects.allEvents[7][i].eventValues[3].ToString();
+					jn["events"]["vignette"][i]["y2"] = _data.eventObjects.allEvents[7][i].eventValues[4].ToString();
+					jn["events"]["vignette"][i]["z2"] = _data.eventObjects.allEvents[7][i].eventValues[5].ToString();
+					if (_data.eventObjects.allEvents[7][i].eventValues.Length > 6)
+						jn["events"]["vignette"][i]["x3"] = _data.eventObjects.allEvents[7][i].eventValues[6].ToString();
 
-				if (_data.eventObjects.allEvents[8][i].curveType.Name != "Linear")
-				{
-					jn["events"]["lens"][i]["ct"] = _data.eventObjects.allEvents[8][i].curveType.Name.ToString();
-				}
-				if (_data.eventObjects.allEvents[8][i].random != 0)
-				{
-					jn["events"]["lens"][i]["r"] = _data.eventObjects.allEvents[8][i].random.ToString();
-					jn["events"]["lens"][i]["rx"] = _data.eventObjects.allEvents[8][i].eventRandomValues[0].ToString();
-				}
-			}
-			for (int i = 0; i < _data.eventObjects.allEvents[9].Count(); i++)
-			{
-				jn["events"]["grain"][i]["t"] = _data.eventObjects.allEvents[9][i].eventTime.ToString();
-				jn["events"]["grain"][i]["x"] = _data.eventObjects.allEvents[9][i].eventValues[0].ToString();
-				jn["events"]["grain"][i]["y"] = _data.eventObjects.allEvents[9][i].eventValues[1].ToString();
-				jn["events"]["grain"][i]["z"] = _data.eventObjects.allEvents[9][i].eventValues[2].ToString();
-				if (_data.eventObjects.allEvents[9][i].curveType.Name != "Linear")
-				{
-					jn["events"]["grain"][i]["ct"] = _data.eventObjects.allEvents[9][i].curveType.Name.ToString();
-				}
-				if (_data.eventObjects.allEvents[9][i].random != 0)
-				{
-					jn["events"]["grain"][i]["r"] = _data.eventObjects.allEvents[9][i].random.ToString();
-					jn["events"]["grain"][i]["rx"] = _data.eventObjects.allEvents[9][i].eventRandomValues[0].ToString();
-					jn["events"]["grain"][i]["ry"] = _data.eventObjects.allEvents[9][i].eventRandomValues[1].ToString();
-					jn["events"]["grain"][i]["value_random_z"] = _data.eventObjects.allEvents[9][i].eventRandomValues[2].ToString();
-				}
-			}
-			if (_data.eventObjects.allEvents.Count > 10)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[10].Count(); i++)
-				{
-					jn["events"]["cg"][i]["t"] = _data.eventObjects.allEvents[10][i].eventTime.ToString();
-					jn["events"]["cg"][i]["x"] = _data.eventObjects.allEvents[10][i].eventValues[0].ToString();
-					jn["events"]["cg"][i]["y"] = _data.eventObjects.allEvents[10][i].eventValues[1].ToString();
-					jn["events"]["cg"][i]["z"] = _data.eventObjects.allEvents[10][i].eventValues[2].ToString();
-					jn["events"]["cg"][i]["x2"] = _data.eventObjects.allEvents[10][i].eventValues[3].ToString();
-					jn["events"]["cg"][i]["y2"] = _data.eventObjects.allEvents[10][i].eventValues[4].ToString();
-					jn["events"]["cg"][i]["z2"] = _data.eventObjects.allEvents[10][i].eventValues[5].ToString();
-					jn["events"]["cg"][i]["x3"] = _data.eventObjects.allEvents[10][i].eventValues[6].ToString();
-					jn["events"]["cg"][i]["y3"] = _data.eventObjects.allEvents[10][i].eventValues[7].ToString();
-					jn["events"]["cg"][i]["z3"] = _data.eventObjects.allEvents[10][i].eventValues[8].ToString();
-					if (_data.eventObjects.allEvents[10][i].curveType.Name != "Linear")
+					if (_data.eventObjects.allEvents[7][i].curveType.Name != "Linear")
 					{
-						jn["events"]["cg"][i]["ct"] = _data.eventObjects.allEvents[10][i].curveType.Name.ToString();
+						jn["events"]["vignette"][i]["ct"] = _data.eventObjects.allEvents[7][i].curveType.Name.ToString();
 					}
-					if (_data.eventObjects.allEvents[10][i].random != 0)
+					if (_data.eventObjects.allEvents[7][i].random != 0)
 					{
-						jn["events"]["cg"][i]["r"] = _data.eventObjects.allEvents[10][i].random.ToString();
-						jn["events"]["cg"][i]["rx"] = _data.eventObjects.allEvents[10][i].eventRandomValues[0].ToString();
-						jn["events"]["cg"][i]["ry"] = _data.eventObjects.allEvents[10][i].eventRandomValues[1].ToString();
+						jn["events"]["vignette"][i]["r"] = _data.eventObjects.allEvents[7][i].random.ToString();
+						jn["events"]["vignette"][i]["rx"] = _data.eventObjects.allEvents[7][i].eventRandomValues[0].ToString();
+						jn["events"]["vignette"][i]["ry"] = _data.eventObjects.allEvents[7][i].eventRandomValues[1].ToString();
+						jn["events"]["vignette"][i]["value_random_z"] = _data.eventObjects.allEvents[7][i].eventRandomValues[2].ToString();
+						jn["events"]["vignette"][i]["value_random_x2"] = _data.eventObjects.allEvents[7][i].eventRandomValues[3].ToString();
+						jn["events"]["vignette"][i]["value_random_y2"] = _data.eventObjects.allEvents[7][i].eventRandomValues[4].ToString();
+						jn["events"]["vignette"][i]["value_random_z2"] = _data.eventObjects.allEvents[7][i].eventRandomValues[5].ToString();
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 11)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[11].Count(); i++)
+				for (int i = 0; i < _data.eventObjects.allEvents[8].Count(); i++)
 				{
-					jn["events"]["rip"][i]["t"] = _data.eventObjects.allEvents[11][i].eventTime.ToString();
-					jn["events"]["rip"][i]["x"] = _data.eventObjects.allEvents[11][i].eventValues[0].ToString();
-					jn["events"]["rip"][i]["y"] = _data.eventObjects.allEvents[11][i].eventValues[1].ToString();
-					jn["events"]["rip"][i]["z"] = _data.eventObjects.allEvents[11][i].eventValues[2].ToString();
-					jn["events"]["rip"][i]["x2"] = _data.eventObjects.allEvents[11][i].eventValues[3].ToString();
-					jn["events"]["rip"][i]["y2"] = _data.eventObjects.allEvents[11][i].eventValues[4].ToString();
-					if (_data.eventObjects.allEvents[11][i].curveType.Name != "Linear")
+					jn["events"]["lens"][i]["t"] = _data.eventObjects.allEvents[8][i].eventTime.ToString();
+					jn["events"]["lens"][i]["x"] = _data.eventObjects.allEvents[8][i].eventValues[0].ToString();
+					if (_data.eventObjects.allEvents[8][i].eventValues.Length > 1)
+						jn["events"]["lens"][i]["y"] = _data.eventObjects.allEvents[8][i].eventValues[1].ToString();
+					if (_data.eventObjects.allEvents[8][i].eventValues.Length > 2)
+						jn["events"]["lens"][i]["z"] = _data.eventObjects.allEvents[8][i].eventValues[2].ToString();
+					if (_data.eventObjects.allEvents[8][i].eventValues.Length > 3)
+						jn["events"]["lens"][i]["x2"] = _data.eventObjects.allEvents[8][i].eventValues[3].ToString();
+					if (_data.eventObjects.allEvents[8][i].eventValues.Length > 4)
+						jn["events"]["lens"][i]["y2"] = _data.eventObjects.allEvents[8][i].eventValues[4].ToString();
+					if (_data.eventObjects.allEvents[8][i].eventValues.Length > 5)
+						jn["events"]["lens"][i]["z2"] = _data.eventObjects.allEvents[8][i].eventValues[5].ToString();
+
+					if (_data.eventObjects.allEvents[8][i].curveType.Name != "Linear")
 					{
-						jn["events"]["rip"][i]["ct"] = _data.eventObjects.allEvents[11][i].curveType.Name.ToString();
+						jn["events"]["lens"][i]["ct"] = _data.eventObjects.allEvents[8][i].curveType.Name.ToString();
 					}
-					if (_data.eventObjects.allEvents[11][i].random != 0)
+					if (_data.eventObjects.allEvents[8][i].random != 0)
 					{
-						jn["events"]["rip"][i]["r"] = _data.eventObjects.allEvents[11][i].random.ToString();
-						jn["events"]["rip"][i]["rx"] = _data.eventObjects.allEvents[11][i].eventRandomValues[0].ToString();
-						jn["events"]["rip"][i]["ry"] = _data.eventObjects.allEvents[11][i].eventRandomValues[1].ToString();
+						jn["events"]["lens"][i]["r"] = _data.eventObjects.allEvents[8][i].random.ToString();
+						jn["events"]["lens"][i]["rx"] = _data.eventObjects.allEvents[8][i].eventRandomValues[0].ToString();
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 12)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[12].Count(); i++)
+				for (int i = 0; i < _data.eventObjects.allEvents[9].Count(); i++)
 				{
-					jn["events"]["rb"][i]["t"] = _data.eventObjects.allEvents[12][i].eventTime.ToString();
-					jn["events"]["rb"][i]["x"] = _data.eventObjects.allEvents[12][i].eventValues[0].ToString();
-					jn["events"]["rb"][i]["y"] = _data.eventObjects.allEvents[12][i].eventValues[1].ToString();
-					if (_data.eventObjects.allEvents[12][i].curveType.Name != "Linear")
+					jn["events"]["grain"][i]["t"] = _data.eventObjects.allEvents[9][i].eventTime.ToString();
+					jn["events"]["grain"][i]["x"] = _data.eventObjects.allEvents[9][i].eventValues[0].ToString();
+					jn["events"]["grain"][i]["y"] = _data.eventObjects.allEvents[9][i].eventValues[1].ToString();
+					jn["events"]["grain"][i]["z"] = _data.eventObjects.allEvents[9][i].eventValues[2].ToString();
+					if (_data.eventObjects.allEvents[9][i].curveType.Name != "Linear")
 					{
-						jn["events"]["rb"][i]["ct"] = _data.eventObjects.allEvents[12][i].curveType.Name.ToString();
+						jn["events"]["grain"][i]["ct"] = _data.eventObjects.allEvents[9][i].curveType.Name.ToString();
 					}
-					if (_data.eventObjects.allEvents[12][i].random != 0)
+					if (_data.eventObjects.allEvents[9][i].random != 0)
 					{
-						jn["events"]["rb"][i]["r"] = _data.eventObjects.allEvents[12][i].random.ToString();
-						jn["events"]["rb"][i]["rx"] = _data.eventObjects.allEvents[12][i].eventRandomValues[0].ToString();
-						jn["events"]["rb"][i]["ry"] = _data.eventObjects.allEvents[12][i].eventRandomValues[1].ToString();
+						jn["events"]["grain"][i]["r"] = _data.eventObjects.allEvents[9][i].random.ToString();
+						jn["events"]["grain"][i]["rx"] = _data.eventObjects.allEvents[9][i].eventRandomValues[0].ToString();
+						jn["events"]["grain"][i]["ry"] = _data.eventObjects.allEvents[9][i].eventRandomValues[1].ToString();
+						jn["events"]["grain"][i]["value_random_z"] = _data.eventObjects.allEvents[9][i].eventRandomValues[2].ToString();
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 13)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[13].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 10)
 				{
-					jn["events"]["cs"][i]["t"] = _data.eventObjects.allEvents[13][i].eventTime.ToString();
-					jn["events"]["cs"][i]["x"] = _data.eventObjects.allEvents[13][i].eventValues[0].ToString();
-					jn["events"]["cs"][i]["y"] = _data.eventObjects.allEvents[13][i].eventValues[1].ToString();
-					if (_data.eventObjects.allEvents[13][i].curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[10].Count(); i++)
 					{
-						jn["events"]["cs"][i]["ct"] = _data.eventObjects.allEvents[13][i].curveType.Name.ToString();
-					}
-					if (_data.eventObjects.allEvents[13][i].random != 0)
-					{
-						jn["events"]["cs"][i]["r"] = _data.eventObjects.allEvents[13][i].random.ToString();
-						jn["events"]["cs"][i]["rx"] = _data.eventObjects.allEvents[13][i].eventRandomValues[0].ToString();
-						jn["events"]["cs"][i]["ry"] = _data.eventObjects.allEvents[13][i].eventRandomValues[1].ToString();
+						jn["events"]["cg"][i]["t"] = _data.eventObjects.allEvents[10][i].eventTime.ToString();
+						jn["events"]["cg"][i]["x"] = _data.eventObjects.allEvents[10][i].eventValues[0].ToString();
+						jn["events"]["cg"][i]["y"] = _data.eventObjects.allEvents[10][i].eventValues[1].ToString();
+						jn["events"]["cg"][i]["z"] = _data.eventObjects.allEvents[10][i].eventValues[2].ToString();
+						jn["events"]["cg"][i]["x2"] = _data.eventObjects.allEvents[10][i].eventValues[3].ToString();
+						jn["events"]["cg"][i]["y2"] = _data.eventObjects.allEvents[10][i].eventValues[4].ToString();
+						jn["events"]["cg"][i]["z2"] = _data.eventObjects.allEvents[10][i].eventValues[5].ToString();
+						jn["events"]["cg"][i]["x3"] = _data.eventObjects.allEvents[10][i].eventValues[6].ToString();
+						jn["events"]["cg"][i]["y3"] = _data.eventObjects.allEvents[10][i].eventValues[7].ToString();
+						jn["events"]["cg"][i]["z3"] = _data.eventObjects.allEvents[10][i].eventValues[8].ToString();
+						if (_data.eventObjects.allEvents[10][i].curveType.Name != "Linear")
+						{
+							jn["events"]["cg"][i]["ct"] = _data.eventObjects.allEvents[10][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[10][i].random != 0)
+						{
+							jn["events"]["cg"][i]["r"] = _data.eventObjects.allEvents[10][i].random.ToString();
+							jn["events"]["cg"][i]["rx"] = _data.eventObjects.allEvents[10][i].eventRandomValues[0].ToString();
+							jn["events"]["cg"][i]["ry"] = _data.eventObjects.allEvents[10][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 14)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[14].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 11)
 				{
-					jn["events"]["offset"][i]["t"] = _data.eventObjects.allEvents[14][i].eventTime.ToString();
-					jn["events"]["offset"][i]["x"] = _data.eventObjects.allEvents[14][i].eventValues[0].ToString();
-					jn["events"]["offset"][i]["y"] = _data.eventObjects.allEvents[14][i].eventValues[1].ToString();
-					if (_data.eventObjects.allEvents[14][i].curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[11].Count(); i++)
 					{
-						jn["events"]["offset"][i]["ct"] = _data.eventObjects.allEvents[14][i].curveType.Name.ToString();
-					}
-					if (_data.eventObjects.allEvents[14][i].random != 0)
-					{
-						jn["events"]["offset"][i]["r"] = _data.eventObjects.allEvents[14][i].random.ToString();
-						jn["events"]["offset"][i]["rx"] = _data.eventObjects.allEvents[14][i].eventRandomValues[0].ToString();
-						jn["events"]["offset"][i]["ry"] = _data.eventObjects.allEvents[14][i].eventRandomValues[1].ToString();
+						jn["events"]["rip"][i]["t"] = _data.eventObjects.allEvents[11][i].eventTime.ToString();
+						jn["events"]["rip"][i]["x"] = _data.eventObjects.allEvents[11][i].eventValues[0].ToString();
+						jn["events"]["rip"][i]["y"] = _data.eventObjects.allEvents[11][i].eventValues[1].ToString();
+						jn["events"]["rip"][i]["z"] = _data.eventObjects.allEvents[11][i].eventValues[2].ToString();
+						jn["events"]["rip"][i]["x2"] = _data.eventObjects.allEvents[11][i].eventValues[3].ToString();
+						jn["events"]["rip"][i]["y2"] = _data.eventObjects.allEvents[11][i].eventValues[4].ToString();
+						if (_data.eventObjects.allEvents[11][i].curveType.Name != "Linear")
+						{
+							jn["events"]["rip"][i]["ct"] = _data.eventObjects.allEvents[11][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[11][i].random != 0)
+						{
+							jn["events"]["rip"][i]["r"] = _data.eventObjects.allEvents[11][i].random.ToString();
+							jn["events"]["rip"][i]["rx"] = _data.eventObjects.allEvents[11][i].eventRandomValues[0].ToString();
+							jn["events"]["rip"][i]["ry"] = _data.eventObjects.allEvents[11][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 15)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[15].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 12)
 				{
-					jn["events"]["grd"][i]["t"] = _data.eventObjects.allEvents[15][i].eventTime.ToString();
-					jn["events"]["grd"][i]["x"] = _data.eventObjects.allEvents[15][i].eventValues[0].ToString();
-					jn["events"]["grd"][i]["y"] = _data.eventObjects.allEvents[15][i].eventValues[1].ToString();
-					jn["events"]["grd"][i]["z"] = _data.eventObjects.allEvents[15][i].eventValues[2].ToString();
-					jn["events"]["grd"][i]["x2"] = _data.eventObjects.allEvents[15][i].eventValues[3].ToString();
-					jn["events"]["grd"][i]["y2"] = _data.eventObjects.allEvents[15][i].eventValues[4].ToString();
-					if (_data.eventObjects.allEvents[15][i].curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[12].Count(); i++)
 					{
-						jn["events"]["grd"][i]["ct"] = _data.eventObjects.allEvents[15][i].curveType.Name.ToString();
-					}
-					if (_data.eventObjects.allEvents[15][i].random != 0)
-					{
-						jn["events"]["grd"][i]["r"] = _data.eventObjects.allEvents[15][i].random.ToString();
-						jn["events"]["grd"][i]["rx"] = _data.eventObjects.allEvents[15][i].eventRandomValues[0].ToString();
-						jn["events"]["grd"][i]["ry"] = _data.eventObjects.allEvents[15][i].eventRandomValues[1].ToString();
+						jn["events"]["rb"][i]["t"] = _data.eventObjects.allEvents[12][i].eventTime.ToString();
+						jn["events"]["rb"][i]["x"] = _data.eventObjects.allEvents[12][i].eventValues[0].ToString();
+						jn["events"]["rb"][i]["y"] = _data.eventObjects.allEvents[12][i].eventValues[1].ToString();
+						if (_data.eventObjects.allEvents[12][i].curveType.Name != "Linear")
+						{
+							jn["events"]["rb"][i]["ct"] = _data.eventObjects.allEvents[12][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[12][i].random != 0)
+						{
+							jn["events"]["rb"][i]["r"] = _data.eventObjects.allEvents[12][i].random.ToString();
+							jn["events"]["rb"][i]["rx"] = _data.eventObjects.allEvents[12][i].eventRandomValues[0].ToString();
+							jn["events"]["rb"][i]["ry"] = _data.eventObjects.allEvents[12][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 16)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[16].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 13)
 				{
-					jn["events"]["dbv"][i]["t"] = _data.eventObjects.allEvents[16][i].eventTime.ToString();
-					jn["events"]["dbv"][i]["x"] = _data.eventObjects.allEvents[16][i].eventValues[0].ToString();
-					if (_data.eventObjects.allEvents[16][i].curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[13].Count(); i++)
 					{
-						jn["events"]["dbv"][i]["ct"] = _data.eventObjects.allEvents[16][i].curveType.Name.ToString();
-					}
-					if (_data.eventObjects.allEvents[16][i].random != 0)
-					{
-						jn["events"]["dbv"][i]["r"] = _data.eventObjects.allEvents[16][i].random.ToString();
-						jn["events"]["dbv"][i]["rx"] = _data.eventObjects.allEvents[16][i].eventRandomValues[0].ToString();
-						jn["events"]["dbv"][i]["ry"] = _data.eventObjects.allEvents[16][i].eventRandomValues[1].ToString();
+						jn["events"]["cs"][i]["t"] = _data.eventObjects.allEvents[13][i].eventTime.ToString();
+						jn["events"]["cs"][i]["x"] = _data.eventObjects.allEvents[13][i].eventValues[0].ToString();
+						jn["events"]["cs"][i]["y"] = _data.eventObjects.allEvents[13][i].eventValues[1].ToString();
+						if (_data.eventObjects.allEvents[13][i].curveType.Name != "Linear")
+						{
+							jn["events"]["cs"][i]["ct"] = _data.eventObjects.allEvents[13][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[13][i].random != 0)
+						{
+							jn["events"]["cs"][i]["r"] = _data.eventObjects.allEvents[13][i].random.ToString();
+							jn["events"]["cs"][i]["rx"] = _data.eventObjects.allEvents[13][i].eventRandomValues[0].ToString();
+							jn["events"]["cs"][i]["ry"] = _data.eventObjects.allEvents[13][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 17)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[17].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 14)
 				{
-					jn["events"]["scan"][i]["t"] = _data.eventObjects.allEvents[17][i].eventTime.ToString();
-					jn["events"]["scan"][i]["x"] = _data.eventObjects.allEvents[17][i].eventValues[0].ToString();
-					jn["events"]["scan"][i]["y"] = _data.eventObjects.allEvents[17][i].eventValues[1].ToString();
-					jn["events"]["scan"][i]["z"] = _data.eventObjects.allEvents[17][i].eventValues[2].ToString();
-					if (_data.eventObjects.allEvents[17][i].curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[14].Count(); i++)
 					{
-						jn["events"]["scan"][i]["ct"] = _data.eventObjects.allEvents[17][i].curveType.Name.ToString();
-					}
-					if (_data.eventObjects.allEvents[17][i].random != 0)
-					{
-						jn["events"]["scan"][i]["r"] = _data.eventObjects.allEvents[17][i].random.ToString();
-						jn["events"]["scan"][i]["rx"] = _data.eventObjects.allEvents[17][i].eventRandomValues[0].ToString();
-						jn["events"]["scan"][i]["ry"] = _data.eventObjects.allEvents[17][i].eventRandomValues[1].ToString();
+						jn["events"]["offset"][i]["t"] = _data.eventObjects.allEvents[14][i].eventTime.ToString();
+						jn["events"]["offset"][i]["x"] = _data.eventObjects.allEvents[14][i].eventValues[0].ToString();
+						jn["events"]["offset"][i]["y"] = _data.eventObjects.allEvents[14][i].eventValues[1].ToString();
+						if (_data.eventObjects.allEvents[14][i].curveType.Name != "Linear")
+						{
+							jn["events"]["offset"][i]["ct"] = _data.eventObjects.allEvents[14][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[14][i].random != 0)
+						{
+							jn["events"]["offset"][i]["r"] = _data.eventObjects.allEvents[14][i].random.ToString();
+							jn["events"]["offset"][i]["rx"] = _data.eventObjects.allEvents[14][i].eventRandomValues[0].ToString();
+							jn["events"]["offset"][i]["ry"] = _data.eventObjects.allEvents[14][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 18)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[18].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 15)
 				{
-					jn["events"]["blur"][i]["t"] = _data.eventObjects.allEvents[18][i].eventTime.ToString();
-					jn["events"]["blur"][i]["x"] = _data.eventObjects.allEvents[18][i].eventValues[0].ToString();
-					jn["events"]["blur"][i]["y"] = _data.eventObjects.allEvents[18][i].eventValues[1].ToString();
-					if (_data.eventObjects.allEvents[18][i].curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[15].Count(); i++)
 					{
-						jn["events"]["blur"][i]["ct"] = _data.eventObjects.allEvents[18][i].curveType.Name.ToString();
-					}
-					if (_data.eventObjects.allEvents[18][i].random != 0)
-					{
-						jn["events"]["blur"][i]["r"] = _data.eventObjects.allEvents[18][i].random.ToString();
-						jn["events"]["blur"][i]["rx"] = _data.eventObjects.allEvents[18][i].eventRandomValues[0].ToString();
-						jn["events"]["blur"][i]["ry"] = _data.eventObjects.allEvents[18][i].eventRandomValues[1].ToString();
+						jn["events"]["grd"][i]["t"] = _data.eventObjects.allEvents[15][i].eventTime.ToString();
+						jn["events"]["grd"][i]["x"] = _data.eventObjects.allEvents[15][i].eventValues[0].ToString();
+						jn["events"]["grd"][i]["y"] = _data.eventObjects.allEvents[15][i].eventValues[1].ToString();
+						jn["events"]["grd"][i]["z"] = _data.eventObjects.allEvents[15][i].eventValues[2].ToString();
+						jn["events"]["grd"][i]["x2"] = _data.eventObjects.allEvents[15][i].eventValues[3].ToString();
+						jn["events"]["grd"][i]["y2"] = _data.eventObjects.allEvents[15][i].eventValues[4].ToString();
+						if (_data.eventObjects.allEvents[15][i].curveType.Name != "Linear")
+						{
+							jn["events"]["grd"][i]["ct"] = _data.eventObjects.allEvents[15][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[15][i].random != 0)
+						{
+							jn["events"]["grd"][i]["r"] = _data.eventObjects.allEvents[15][i].random.ToString();
+							jn["events"]["grd"][i]["rx"] = _data.eventObjects.allEvents[15][i].eventRandomValues[0].ToString();
+							jn["events"]["grd"][i]["ry"] = _data.eventObjects.allEvents[15][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 19)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[19].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 16)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[19][i];
-					jn["events"]["pixel"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["pixel"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[16].Count(); i++)
 					{
-						jn["events"]["pixel"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
-					}
-					if (eventKeyframe.random != 0)
-					{
-						jn["events"]["pixel"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["pixel"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["pixel"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						jn["events"]["dbv"][i]["t"] = _data.eventObjects.allEvents[16][i].eventTime.ToString();
+						jn["events"]["dbv"][i]["x"] = _data.eventObjects.allEvents[16][i].eventValues[0].ToString();
+						if (_data.eventObjects.allEvents[16][i].curveType.Name != "Linear")
+						{
+							jn["events"]["dbv"][i]["ct"] = _data.eventObjects.allEvents[16][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[16][i].random != 0)
+						{
+							jn["events"]["dbv"][i]["r"] = _data.eventObjects.allEvents[16][i].random.ToString();
+							jn["events"]["dbv"][i]["rx"] = _data.eventObjects.allEvents[16][i].eventRandomValues[0].ToString();
+							jn["events"]["dbv"][i]["ry"] = _data.eventObjects.allEvents[16][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 20)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[20].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 17)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[20][i];
-					jn["events"]["bg"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["bg"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[17].Count(); i++)
 					{
-						jn["events"]["bg"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
-					}
-					if (eventKeyframe.random != 0)
-					{
-						jn["events"]["bg"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["bg"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["bg"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						jn["events"]["scan"][i]["t"] = _data.eventObjects.allEvents[17][i].eventTime.ToString();
+						jn["events"]["scan"][i]["x"] = _data.eventObjects.allEvents[17][i].eventValues[0].ToString();
+						jn["events"]["scan"][i]["y"] = _data.eventObjects.allEvents[17][i].eventValues[1].ToString();
+						jn["events"]["scan"][i]["z"] = _data.eventObjects.allEvents[17][i].eventValues[2].ToString();
+						if (_data.eventObjects.allEvents[17][i].curveType.Name != "Linear")
+						{
+							jn["events"]["scan"][i]["ct"] = _data.eventObjects.allEvents[17][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[17][i].random != 0)
+						{
+							jn["events"]["scan"][i]["r"] = _data.eventObjects.allEvents[17][i].random.ToString();
+							jn["events"]["scan"][i]["rx"] = _data.eventObjects.allEvents[17][i].eventRandomValues[0].ToString();
+							jn["events"]["scan"][i]["ry"] = _data.eventObjects.allEvents[17][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 21)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[21].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 18)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[21][i];
-					jn["events"]["invert"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["invert"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					jn["events"]["invert"][i]["y"] = eventKeyframe.eventValues[1].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[18].Count(); i++)
 					{
-						jn["events"]["invert"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
-					}
-					if (eventKeyframe.random != 0)
-					{
-						jn["events"]["invert"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["invert"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["invert"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						jn["events"]["blur"][i]["t"] = _data.eventObjects.allEvents[18][i].eventTime.ToString();
+						jn["events"]["blur"][i]["x"] = _data.eventObjects.allEvents[18][i].eventValues[0].ToString();
+						jn["events"]["blur"][i]["y"] = _data.eventObjects.allEvents[18][i].eventValues[1].ToString();
+						if (_data.eventObjects.allEvents[18][i].curveType.Name != "Linear")
+						{
+							jn["events"]["blur"][i]["ct"] = _data.eventObjects.allEvents[18][i].curveType.Name.ToString();
+						}
+						if (_data.eventObjects.allEvents[18][i].random != 0)
+						{
+							jn["events"]["blur"][i]["r"] = _data.eventObjects.allEvents[18][i].random.ToString();
+							jn["events"]["blur"][i]["rx"] = _data.eventObjects.allEvents[18][i].eventRandomValues[0].ToString();
+							jn["events"]["blur"][i]["ry"] = _data.eventObjects.allEvents[18][i].eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 22)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[22].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 19)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[22][i];
-					jn["events"]["timeline"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["timeline"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					jn["events"]["timeline"][i]["y"] = eventKeyframe.eventValues[1].ToString();
-					jn["events"]["timeline"][i]["z"] = eventKeyframe.eventValues[2].ToString();
-					jn["events"]["timeline"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
-					jn["events"]["timeline"][i]["y2"] = eventKeyframe.eventValues[4].ToString();
-					jn["events"]["timeline"][i]["z2"] = eventKeyframe.eventValues[5].ToString();
-					jn["events"]["timeline"][i]["x3"] = eventKeyframe.eventValues[6].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[19].Count(); i++)
 					{
-						jn["events"]["timeline"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
-					}
-					if (eventKeyframe.random != 0)
-					{
-						jn["events"]["timeline"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["timeline"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["timeline"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						var eventKeyframe = _data.eventObjects.allEvents[19][i];
+						jn["events"]["pixel"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["pixel"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["pixel"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["pixel"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["pixel"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["pixel"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 23)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[23].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 20)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[23][i];
-					jn["events"]["player"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["player"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					jn["events"]["player"][i]["y"] = eventKeyframe.eventValues[1].ToString();
-					jn["events"]["player"][i]["z"] = eventKeyframe.eventValues[2].ToString();
-					jn["events"]["player"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[20].Count(); i++)
 					{
-						jn["events"]["player"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
-					}
-					if (eventKeyframe.random != 0)
-					{
-						jn["events"]["player"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["player"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["player"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						var eventKeyframe = _data.eventObjects.allEvents[20][i];
+						jn["events"]["bg"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["bg"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["bg"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["bg"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["bg"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["bg"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 24)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[24].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 21)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[24][i];
-					jn["events"]["follow_player"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["follow_player"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					jn["events"]["follow_player"][i]["y"] = eventKeyframe.eventValues[1].ToString();
-					jn["events"]["follow_player"][i]["z"] = eventKeyframe.eventValues[2].ToString();
-					jn["events"]["follow_player"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
-					jn["events"]["follow_player"][i]["y2"] = eventKeyframe.eventValues[4].ToString();
-					jn["events"]["follow_player"][i]["z2"] = eventKeyframe.eventValues[5].ToString();
-					jn["events"]["follow_player"][i]["x3"] = eventKeyframe.eventValues[6].ToString();
-					jn["events"]["follow_player"][i]["y3"] = eventKeyframe.eventValues[7].ToString();
-					jn["events"]["follow_player"][i]["z3"] = eventKeyframe.eventValues[8].ToString();
-					jn["events"]["follow_player"][i]["x4"] = eventKeyframe.eventValues[9].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[21].Count(); i++)
 					{
-						jn["events"]["follow_player"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
-					}
-					if (eventKeyframe.random != 0)
-					{
-						jn["events"]["follow_player"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["follow_player"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["follow_player"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						var eventKeyframe = _data.eventObjects.allEvents[21][i];
+						jn["events"]["invert"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["invert"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						jn["events"]["invert"][i]["y"] = eventKeyframe.eventValues[1].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["invert"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["invert"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["invert"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["invert"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
 					}
 				}
-			}
-			if (_data.eventObjects.allEvents.Count > 25)
-			{
-				for (int i = 0; i < _data.eventObjects.allEvents[25].Count(); i++)
+				if (_data.eventObjects.allEvents.Count > 22)
 				{
-					var eventKeyframe = _data.eventObjects.allEvents[25][i];
-					jn["events"]["audio"][i]["t"] = eventKeyframe.eventTime.ToString();
-					jn["events"]["audio"][i]["x"] = eventKeyframe.eventValues[0].ToString();
-					jn["events"]["audio"][i]["y"] = eventKeyframe.eventValues[1].ToString();
-					if (eventKeyframe.curveType.Name != "Linear")
+					for (int i = 0; i < _data.eventObjects.allEvents[22].Count(); i++)
 					{
-						jn["events"]["audio"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						var eventKeyframe = _data.eventObjects.allEvents[22][i];
+						jn["events"]["timeline"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["timeline"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						jn["events"]["timeline"][i]["y"] = eventKeyframe.eventValues[1].ToString();
+						jn["events"]["timeline"][i]["z"] = eventKeyframe.eventValues[2].ToString();
+						jn["events"]["timeline"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
+						jn["events"]["timeline"][i]["y2"] = eventKeyframe.eventValues[4].ToString();
+						jn["events"]["timeline"][i]["z2"] = eventKeyframe.eventValues[5].ToString();
+						jn["events"]["timeline"][i]["x3"] = eventKeyframe.eventValues[6].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["timeline"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["timeline"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["timeline"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["timeline"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
 					}
-					if (eventKeyframe.random != 0)
+				}
+				if (_data.eventObjects.allEvents.Count > 23)
+				{
+					for (int i = 0; i < _data.eventObjects.allEvents[23].Count(); i++)
 					{
-						jn["events"]["audio"][i]["r"] = eventKeyframe.random.ToString();
-						jn["events"]["audio"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
-						jn["events"]["audio"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						var eventKeyframe = _data.eventObjects.allEvents[23][i];
+						jn["events"]["player"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["player"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						jn["events"]["player"][i]["y"] = eventKeyframe.eventValues[1].ToString();
+						jn["events"]["player"][i]["z"] = eventKeyframe.eventValues[2].ToString();
+						jn["events"]["player"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["player"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["player"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["player"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["player"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
+					}
+				}
+				if (_data.eventObjects.allEvents.Count > 24)
+				{
+					for (int i = 0; i < _data.eventObjects.allEvents[24].Count(); i++)
+					{
+						var eventKeyframe = _data.eventObjects.allEvents[24][i];
+						jn["events"]["follow_player"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["follow_player"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						jn["events"]["follow_player"][i]["y"] = eventKeyframe.eventValues[1].ToString();
+						jn["events"]["follow_player"][i]["z"] = eventKeyframe.eventValues[2].ToString();
+						jn["events"]["follow_player"][i]["x2"] = eventKeyframe.eventValues[3].ToString();
+						jn["events"]["follow_player"][i]["y2"] = eventKeyframe.eventValues[4].ToString();
+						jn["events"]["follow_player"][i]["z2"] = eventKeyframe.eventValues[5].ToString();
+						jn["events"]["follow_player"][i]["x3"] = eventKeyframe.eventValues[6].ToString();
+						jn["events"]["follow_player"][i]["y3"] = eventKeyframe.eventValues[7].ToString();
+						jn["events"]["follow_player"][i]["z3"] = eventKeyframe.eventValues[8].ToString();
+						jn["events"]["follow_player"][i]["x4"] = eventKeyframe.eventValues[9].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["follow_player"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["follow_player"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["follow_player"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["follow_player"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
+					}
+				}
+				if (_data.eventObjects.allEvents.Count > 25)
+				{
+					for (int i = 0; i < _data.eventObjects.allEvents[25].Count(); i++)
+					{
+						var eventKeyframe = _data.eventObjects.allEvents[25][i];
+						jn["events"]["audio"][i]["t"] = eventKeyframe.eventTime.ToString();
+						jn["events"]["audio"][i]["x"] = eventKeyframe.eventValues[0].ToString();
+						jn["events"]["audio"][i]["y"] = eventKeyframe.eventValues[1].ToString();
+						if (eventKeyframe.curveType.Name != "Linear")
+						{
+							jn["events"]["audio"][i]["ct"] = eventKeyframe.curveType.Name.ToString();
+						}
+						if (eventKeyframe.random != 0)
+						{
+							jn["events"]["audio"][i]["r"] = eventKeyframe.random.ToString();
+							jn["events"]["audio"][i]["rx"] = eventKeyframe.eventRandomValues[0].ToString();
+							jn["events"]["audio"][i]["ry"] = eventKeyframe.eventRandomValues[1].ToString();
+						}
 					}
 				}
 			}
@@ -8186,12 +8203,16 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 
+			autoSaving = false;
+
 			yield break;
         }
 
 		public static Dictionary<string, DataManager.BeatmapTheme> savedBeatmapThemes = new Dictionary<string, DataManager.BeatmapTheme>();
 
 		public static bool themesLoading = false;
+
+		public static bool autoSaving = false;
 
 		public static void SetAutosave()
 		{
@@ -8236,6 +8257,8 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.autosaves.RemoveAt(0);
 			}
 			EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(autosavePath));
+
+			autoSaving = true;
 		}
 
 		public static IEnumerator LoadThemes()
@@ -8417,15 +8440,15 @@ namespace EditorManagement.Functions.Editors
                 }
 			}
 
-			//fileInfo.text = "Loading Themes for [" + _levelName + "]";
-			//Debug.LogFormat("{0}Loading themes for {1}...", EditorPlugin.className, _levelName);
-			//yield return inst.StartCoroutine(LoadThemes());
-			//float delayTheme = 0f;
-			//while (themesLoading)
-			//{
-			//	yield return new WaitForSeconds(delayTheme);
-			//	delayTheme += 0.0001f;
-			//}
+			fileInfo.text = "Loading Themes for [" + _levelName + "]";
+			Debug.LogFormat("{0}Loading themes for {1}...", EditorPlugin.className, _levelName);
+			yield return inst.StartCoroutine(LoadThemes());
+			float delayTheme = 0f;
+			while (themesLoading)
+			{
+				yield return new WaitForSeconds(delayTheme);
+				delayTheme += 0.0001f;
+			}
 
 			Debug.LogFormat("{0}Music is null: ", EditorPlugin.className, song == null);
 
