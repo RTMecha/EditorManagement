@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 using HarmonyLib;
 
@@ -103,6 +104,8 @@ namespace EditorManagement.Functions.Components.Example
 		#endregion
 
 		#region Dialogue
+
+		public string lastDialogue;
 
 		AudioClip speakSound;
 
@@ -390,6 +393,104 @@ namespace EditorManagement.Functions.Components.Example
             }
         }
 
+		#endregion
+
+		#region Talk
+
+		public InputField chatter;
+		public Transform chatterBase;
+
+		public bool chatting = false;
+
+		float timeSinceLastInteractedOffset = 0f;
+		float timeSinceLastInteracted = 0f;
+
+		public void HandleChatting()
+        {
+			if (chatter == null || chatting)
+				return;
+
+			chatting = true;
+
+			string text = chatter.text;
+			string toLower = text.ToLower();
+			var words = text.Split(' ').ToList();
+			if (words[0].ToLower() == "hello")
+			{
+				Say("Hey, " + RTFunctions.FunctionsPlugin.displayName + "! How are you doing?", onComplete: delegate () { chatting = false; });
+			}
+			else if (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && (toLower.Contains("repeat") || toLower.Contains("loop") || toLower.Contains("time")) && RegexMatch(new Regex(@"to ([0-9.]+)"), text, out Match autoSaveLoopTime) && float.TryParse(autoSaveLoopTime.Groups[1].ToString(), out float loop))
+			{
+				ConfigEntries.AutoSaveLoopTime.Value = loop;
+				Say("Set AutoSave loop time to " + loop + "!", onComplete: delegate () { chatting = false; });
+			}
+			else if (toLower.Contains("set") && (toLower.Contains("autosave") || toLower.Contains("auto save")) && toLower.Contains("limit") && RegexMatch(new Regex(@"to ([0-9]+)"), text, out Match autoSaveLimitMatch) && int.TryParse(autoSaveLimitMatch.Groups[1].ToString(), out int limit))
+			{
+				ConfigEntries.AutoSaveLimit.Value = limit;
+				Say("Set AutoSave loop time to " + limit + "!", onComplete: delegate () { chatting = false; });
+			}
+			else if (toLower.Contains("flip") && toLower.Contains("object"))
+			{
+				bool hasFlipped = false;
+				foreach (var objectSelection in ObjEditor.inst.selectedObjects)
+				{
+					if (objectSelection.IsObject() && objectSelection.GetObjectData() != null)
+					{
+						var beatmapObject = objectSelection.GetObjectData();
+						beatmapObject.name = RTHelpers.Flip(beatmapObject.name);
+						for (int i = 0; i < 3; i++)
+						{
+							foreach (var kf in beatmapObject.events[i])
+							{
+								kf.eventValues[0] = -kf.eventValues[0];
+							}
+						}
+						ObjEditor.inst.RenderTimelineObject(objectSelection);
+						ObjectManager.inst.updateObjects(objectSelection);
+						hasFlipped = true;
+					}
+				}
+
+				if (ObjEditor.inst.selectedObjects.Count == 1 && ObjEditor.inst.currentObjectSelection.IsObject())
+					inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+
+				if (hasFlipped)
+				{
+					var animation = new Animation("Flip!");
+					animation.floatAnimations = new List<Animation.AnimationObject<float>>
+					{
+						new Animation.AnimationObject<float>(new List<IKeyframe<float>>
+						{
+							new FloatKeyframe(0f, 0f, Ease.Linear),
+							new FloatKeyframe(0.2f, 360f, Ease.SineOut)
+						}, delegate (float x)
+						{
+							parentRotscale.localRotation = Quaternion.Euler(0f, 0f, x);
+						}),
+					};
+
+					Say("Object flipped!", onComplete: delegate () { chatting = false; });
+				}
+				else
+					Say("I couldn't flip that... sorry...", onComplete: delegate () { chatting = false; });
+			}
+			else if (toLower.Contains("give") && toLower.Contains("random") && toLower.Contains("number"))
+			{
+				var randomString = LSText.randomNumString(UnityEngine.Random.Range(1, 16));
+
+				LSText.CopyToClipboard(randomString);
+
+				Say("Okay, here's a random number: " + randomString + ". It has been copied to your clipboard!", onComplete: delegate () { chatting = false; });
+			}
+			else chatting = false;
+        }
+
+		public bool RegexMatch(Regex regex, string text, out Match match)
+        {
+			match = regex.Match(text);
+			return match.Success;
+        }
+
         #endregion
 
         float speed = 10f;
@@ -410,6 +511,7 @@ namespace EditorManagement.Functions.Components.Example
 		void Awake()
 		{
 			timeOffset = Time.time;
+			timeSinceLastInteractedOffset = Time.time;
 
 			if (inst == null)
 				inst = this;
@@ -426,6 +528,7 @@ namespace EditorManagement.Functions.Components.Example
         {
 			//time += add * speed;
 			time = Time.time - timeOffset;
+			timeSinceLastInteracted = Time.time - timeSinceLastInteractedOffset;
 
 			if (animations != null)
 			{
@@ -467,6 +570,11 @@ namespace EditorManagement.Functions.Components.Example
 				if (floatingParent != null)
 					floatingParent.localPosition = new Vector3(0f, (Ease.SineInOut(floatingLevel) - 0.5f) * 2f, 0f);
 
+				if (chatterBase != null)
+                {
+					chatterBase.localPosition = new Vector3(TotalPosition.x, TotalPosition.y - 110f, 0f);
+                }
+
 				if (TotalPosition.x < 130f && TotalPosition.y > -80f)
 				{
 					if (previewSayCanChange)
@@ -475,7 +583,7 @@ namespace EditorManagement.Functions.Components.Example
 						previewSayCanChange = false;
 					}
 
-					if (dialogueDictionary["OnPreview"].CanSay && previewSay && !ExampleManager.inst.talking)
+					if (dialogueDictionary["OnPreview"].CanSay && previewSay && !talking)
 					{
 						dialogueDictionary["OnPreview"].canSay = false;
 						var dialogues = dialogueDictionary["OnPreview"].dialogues;
@@ -587,6 +695,11 @@ namespace EditorManagement.Functions.Components.Example
 
 					faceX.localPosition = new Vector3(-((target.x - dragPos.x) * po), 0f);
 					faceY.localPosition = new Vector3(0f, -((target.y - dragPos.y) * po));
+
+					if (Input.GetKeyDown(KeyCode.G))
+                    {
+						chatterBase.gameObject.SetActive(!chatterBase.gameObject.activeSelf);
+					}
 				}
 
 				if (draggingLeftHand)
@@ -2082,7 +2195,7 @@ namespace EditorManagement.Functions.Components.Example
 			}
 
 			SetParent(EditorParent);
-
+			yield return StartCoroutine(SpawnChatter());
 			yield return StartCoroutine(SetupAnimations());
 			yield return StartCoroutine(SpawnDialogue());
 
@@ -2090,6 +2203,32 @@ namespace EditorManagement.Functions.Components.Example
 
 			yield break;
 		}
+
+		IEnumerator SpawnChatter()
+        {
+			var uiField = UIManager.GenerateUIInputField("Discussion", EditorParent);
+
+			chatterBase = ((GameObject)uiField["GameObject"]).transform;
+			chatter = (InputField)uiField["InputField"];
+
+			chatter.textComponent.color = new Color(0.1188679f, 0.1188679f, 0.1188679f, 1f);
+
+			((RectTransform)chatterBase).sizeDelta = new Vector2(200f, 32f);
+
+			chatter.onValueChanged.AddListener(delegate (string _val)
+			{
+				Debug.LogFormat("{0}Chatter: {1}", className, _val);
+			});
+
+			chatter.onEndEdit.AddListener(delegate (string _val)
+			{
+				HandleChatting();
+			});
+
+			chatterBase.gameObject.SetActive(false);
+
+			yield break;
+        }
 
 		IEnumerator SpawnDialogue()
         {
@@ -2196,6 +2335,8 @@ namespace EditorManagement.Functions.Components.Example
 					 animations.Remove(anim);
 				 });
 
+			lastDialogue = dialogue;
+
 			var animation = new Animation("DIALOGUE: " + dialogue);
 
 			var ogMouth = mouthLower.localScale.y;
@@ -2206,7 +2347,7 @@ namespace EditorManagement.Functions.Components.Example
 			float t = 0.1f;
 
 			var r = textLength * time * 10;
-			for (int i = 0; i < (int)r; i++)
+			for (int i = 0; i < (int)r / 2; i++)
 			{
 				list.Add(new FloatKeyframe(t * time, ogMouth * 1.85f, Ease.SineOut));
 				t += 0.1f;
@@ -2233,7 +2374,7 @@ namespace EditorManagement.Functions.Components.Example
 				new Animation.AnimationObject<float>(new List<IKeyframe<float>>
 				{
 					new FloatKeyframe(0f, 90f, Ease.Linear),
-					new FloatKeyframe(3f * time, 0f, Ease.ElasticOut),
+					new FloatKeyframe(1.5f * time, 0f, Ease.ElasticOut),
 				}, delegate (float x)
 				{
 					dialogueBase.localRotation = Quaternion.Euler(0f, 0f, x);
@@ -2266,7 +2407,8 @@ namespace EditorManagement.Functions.Components.Example
 				new Animation.AnimationObject<float>(list, delegate (float x)
 				{
 					if (mouthLower != null)
-						mouthLower.localScale = new Vector3(1f, x, 1f);
+						mouthLower.localScale = new Vector3(1f, Mathf.Clamp(0f, x, 1.5f), 1f);
+					//Debug.LogFormat("{0}Mouth: {1}", className, x);
 				}),
 				new Animation.AnimationObject<float>(listX, delegate (float x)
 				{
@@ -2290,16 +2432,30 @@ namespace EditorManagement.Functions.Components.Example
 			{
 				new Animation.AnimationObject<Vector2>(new List<IKeyframe<Vector2>>
 				{
-					new Vector2Keyframe(0f, new Vector2(0f, 0f), Ease.Linear),
-					new Vector2Keyframe(1f * time, new Vector2(1.1f, 1.1f), Ease.SineOut),
-					new Vector2Keyframe(2f * time, new Vector2(1f, 1f), Ease.SineInOut),
-					new Vector2Keyframe(stayTime * time, new Vector2(1f, 1f), Ease.Linear),
-					new Vector2Keyframe(stayTime + 2f * time, new Vector2(0f, 0f), Ease.BackIn),
+					new Vector2Keyframe(0f, Vector2.zero, Ease.Linear),
+					new Vector2Keyframe(0.2f * time, new Vector2(1.1f, 1.1f), Ease.SineOut),
+					new Vector2Keyframe(0.8f * time, Vector2.one, Ease.SineInOut),
+					new Vector2Keyframe(stayTime * time, Vector2.one, Ease.Linear),
+					new Vector2Keyframe((stayTime + 0.3f) * time, Vector2.zero, Ease.BackIn),
+					new Vector2Keyframe((stayTime + 0.6f) * time, Vector2.zero, Ease.Linear),
 				}, delegate (Vector2 x)
 				{
 					dialogueBase.transform.localScale = new Vector3(x.x, x.y, 1f);
 				}),
 			};
+
+			animation.completed[2] = true;
+			animation.completed[3] = true;
+
+			for (int i = 0; i < animation.floatAnimations.Count; i++)
+            {
+				Debug.LogFormat("{0}Float Animation {1} Length: {2} Count: {3}", className, i, animation.floatAnimations[i].Length, animation.floatAnimations[i].keyframes.Count);
+            }
+			
+			for (int i = 0; i < animation.vector2Animations.Count; i++)
+            {
+				Debug.LogFormat("{0}Vector2 Animation {1} Length: {2} Count: {3}", className, i, animation.vector2Animations[i].Length, animation.vector2Animations[i].keyframes.Count);
+            }
 
 			animation.onComplete = delegate ()
 			{
@@ -2308,6 +2464,8 @@ namespace EditorManagement.Functions.Components.Example
 					onComplete();
 
 				animation = null;
+
+				Debug.LogFormat("{0}Say onComplete", className);
 			};
 
 			animations.Add(animation);
@@ -2634,13 +2792,13 @@ namespace EditorManagement.Functions.Components.Example
 				//time += add * speed;
 				time = Time.time - timeOffset;
 
-				if (floatAnimations.Count < 1)
+				if (floatAnimations == null || floatAnimations.Count < 1)
 					completed[0] = true;
 
 				for (int i = 0; i < floatAnimations.Count; i++)
 				{
 					var anim = floatAnimations[i];
-					if (anim.Length > time)
+					if (anim.Length >= time)
 					{
 						anim.completed = false;
 						if (anim.action != null)
@@ -2648,18 +2806,24 @@ namespace EditorManagement.Functions.Components.Example
 					}
 					else if (!anim.completed)
 					{
-						completed[0] = true;
+						anim.completed = true;
+						Debug.LogFormat("{0}Completed Float Animations for [{1}] at {2}", className, name, time);
 						anim.Completed();
 					}
 				}
 
-				if (vector2Animations.Count < 1)
+				if (floatAnimations.All(x => x.completed) && !completed[0])
+				{
+					completed[0] = true;
+				}
+
+				if (vector2Animations == null || vector2Animations.Count < 1)
 					completed[1] = true;
 
 				for (int i = 0; i < vector2Animations.Count; i++)
 				{
 					var anim = vector2Animations[i];
-					if (anim.Length > time)
+					if (anim.Length >= time)
 					{
 						anim.completed = false;
 						if (anim.action != null)
@@ -2667,18 +2831,24 @@ namespace EditorManagement.Functions.Components.Example
 					}
 					else if (!anim.completed)
 					{
-						completed[1] = true;
+						anim.completed = true;
+						Debug.LogFormat("{0}Completed Vector2 Animations for [{1}] at {2}", className, name, time);
 						anim.Completed();
 					}
 				}
 
-				if (vector3Animations.Count < 1)
+				if (vector2Animations.All(x => x.completed) && !completed[1])
+				{
+					completed[1] = true;
+				}
+
+				if (vector3Animations == null || vector3Animations.Count < 1)
 					completed[2] = true;
 
 				for (int i = 0; i < vector3Animations.Count; i++)
 				{
 					var anim = vector3Animations[i];
-					if (anim.Length > time)
+					if (anim.Length >= time)
 					{
 						anim.completed = false;
 						if (anim.action != null)
@@ -2686,18 +2856,24 @@ namespace EditorManagement.Functions.Components.Example
 					}
 					else if (!anim.completed)
 					{
-						completed[2] = true;
+						anim.completed = true;
+						Debug.LogFormat("{0}Completed Vector3 Animations for [{1}] at {2}", className, name, time);
 						anim.Completed();
 					}
 				}
 
-				if (colorAnimations.Count < 1)
+				if (vector3Animations.All(x => x.completed) && !completed[2])
+				{
+					completed[2] = true;
+				}
+
+				if (colorAnimations == null || colorAnimations.Count < 1)
 					completed[3] = true;
 
 				for (int i = 0; i < colorAnimations.Count; i++)
                 {
 					var anim = colorAnimations[i];
-					if (anim.Length > time)
+					if (anim.Length >= time)
                     {
 						anim.completed = false;
 						if (anim.action != null)
@@ -2705,12 +2881,18 @@ namespace EditorManagement.Functions.Components.Example
                     }
 					else if (!anim.completed)
                     {
-						completed[3] = true;
+						anim.completed = true;
+						Debug.LogFormat("{0}Completed Color Animations for [{1}] at {2}", className, name, time);
 						anim.Completed();
                     }
                 }
 
-				if (completed.All(x => x == true))
+				if (colorAnimations.All(x => x.completed) && !completed[3])
+				{
+					completed[3] = true;
+				}
+
+				if (completed.All(x => x == true) && playing)
                 {
 					playing = false;
 					if (onComplete != null)
@@ -2756,10 +2938,14 @@ namespace EditorManagement.Functions.Components.Example
 					get
                     {
 						float t = 0f;
-						foreach (var kf in keyframes)
-                        {
-							t += kf.Time;
-                        }
+
+						var x = keyframes.OrderBy(x => x.Time).ToList();
+						t = x[x.Count - 1].Time;
+
+						//foreach (var kf in keyframes)
+      //                  {
+						//	t += kf.Time;
+      //                  }
 						return t;
                     }
                 }
