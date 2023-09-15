@@ -1946,6 +1946,9 @@ namespace EditorManagement.Functions.Tools
 								dictionary.Add(obj.id, flag);
 						}
 
+						if (dictionary.ContainsKey(__instance.currentObjectSelection.GetObjectData().id))
+							dictionary[__instance.currentObjectSelection.GetObjectData().id] = false;
+
 						//var list = new List<string>();
 
 						//var parentChain = __instance.currentObjectSelection.GetObjectData().GetParentChain();
@@ -1982,7 +1985,7 @@ namespace EditorManagement.Functions.Tools
 						}
 						else
 						{
-							EditorManager.inst.DisplayNotification("Cannot set parent to child!", 1f, EditorManager.NotificationType.Warning);
+							EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
 						}
                     }
 
