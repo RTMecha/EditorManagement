@@ -275,6 +275,11 @@ namespace EditorManagement.Patchers
 							DataManager.inst.gameData = null;
 							DataManager.inst.gameData = new DataManager.GameData();
 							ObjectManager.inst.updateObjects();
+
+							ArcadeManager.inst.skippedLoad = false;
+							ArcadeManager.inst.forcedSkip = false;
+							DataManager.inst.UpdateSettingBool("IsArcade", true);
+
 							SceneManager.inst.LoadScene("Input Select");
 						}, delegate ()
 						{
