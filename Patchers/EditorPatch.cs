@@ -16,7 +16,6 @@ using HarmonyLib;
 
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Components.Example;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using LSFunctions;
@@ -231,41 +230,40 @@ namespace EditorManagement.Patchers
 					ex.onClick.ClearAll();
 					ex.onClick.AddListener(delegate ()
 					{
-						if (ExampleManager.inst)
-                        {
-							ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(3f, -65f, Ease.SineInOut), new FloatKeyframe(4f, -64f, Ease.SineInOut) }, new List<IKeyframe<float>> { new FloatKeyframe(4f, 176f, Ease.SineInOut) });
-							var animation = new ExampleManager.Animation("Face Sad");
+						//if (ExampleManager.inst)
+                        //{
+						//	ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(3f, -65f, Ease.SineInOut), new FloatKeyframe(4f, -64f, Ease.SineInOut) }, new List<IKeyframe<float>> { new FloatKeyframe(4f, 176f, Ease.SineInOut) });
+						//	var animation = new ExampleManager.Animation("Face Sad");
 
-							float tbrowLeft = -15f;
+						//	float tbrowLeft = -15f;
 
-							float tbrowRight = 15f;
-							if (ExampleManager.inst.browRight.localRotation.eulerAngles.z > 180f)
-								tbrowRight = 345f;
+						//	float tbrowRight = 15f;
+						//	if (ExampleManager.inst.browRight.localRotation.eulerAngles.z > 180f)
+						//		tbrowRight = 345f;
 
-							animation.floatAnimations = new List<ExampleManager.Animation.AnimationObject<float>>
-							{
-								new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
-								{
-									new FloatKeyframe(0f, ExampleManager.inst.browLeft.localRotation.eulerAngles.z, Ease.Linear),
-									new FloatKeyframe(0.7f, tbrowLeft, Ease.SineInOut),
-								}, delegate (float x)
-								{
-									ExampleManager.inst.browLeft.localRotation = Quaternion.Euler(0f, 0f, x);
-								}),
-								new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
-								{
-									new FloatKeyframe(0f, ExampleManager.inst.browRight.localRotation.eulerAngles.z, Ease.Linear),
-									new FloatKeyframe(0.7f, tbrowRight, Ease.SineInOut),
-								}, delegate (float x)
-								{
-									ExampleManager.inst.browRight.localRotation = Quaternion.Euler(0f, 0f, x);
-								}),
-							};
+						//	animation.floatAnimations = new List<ExampleManager.Animation.AnimationObject<float>>
+						//	{
+						//		new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+						//		{
+						//			new FloatKeyframe(0f, ExampleManager.inst.browLeft.localRotation.eulerAngles.z, Ease.Linear),
+						//			new FloatKeyframe(0.7f, tbrowLeft, Ease.SineInOut),
+						//		}, delegate (float x)
+						//		{
+						//			ExampleManager.inst.browLeft.localRotation = Quaternion.Euler(0f, 0f, x);
+						//		}),
+						//		new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+						//		{
+						//			new FloatKeyframe(0f, ExampleManager.inst.browRight.localRotation.eulerAngles.z, Ease.Linear),
+						//			new FloatKeyframe(0.7f, tbrowRight, Ease.SineInOut),
+						//		}, delegate (float x)
+						//		{
+						//			ExampleManager.inst.browRight.localRotation = Quaternion.Euler(0f, 0f, x);
+						//		}),
+						//	};
 
-							ExampleManager.inst.PlayOnce(animation);
-							//ExampleManager.inst.Say("Are you sure you want to quit to the arcade?", new List<IKeyframe<float>> { new FloatKeyframe(0f, -64f, Ease.Linear) }, new List<IKeyframe<float>> { new FloatKeyframe(0f, 400f, Ease.Linear) });
-							ExampleManager.inst.Say("Are you sure you want to quit to the arcade?", onComplete: delegate () { ExampleManager.inst.talking = false; });
-						}
+						//	ExampleManager.inst.PlayOnce(animation);
+						//	ExampleManager.inst.Say("Are you sure you want to quit to the arcade?", onComplete: delegate () { ExampleManager.inst.talking = false; });
+						//}
 
 						EditorManager.inst.ShowDialog("Warning Popup");
 						RTEditor.RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
@@ -283,46 +281,47 @@ namespace EditorManagement.Patchers
 							SceneManager.inst.LoadScene("Input Select");
 						}, delegate ()
 						{
-							if (ExampleManager.inst)
-							{
-								var animation = new ExampleManager.Animation("Face Sad");
+							//if (ExampleManager.inst)
+							//{
+							//	var animation = new ExampleManager.Animation("Face Sad");
 
-								float tbrowLeft = 0f;
-								if (ExampleManager.inst.browLeft.localRotation.eulerAngles.z > 180f)
-									tbrowLeft = 360f;
+							//	float tbrowLeft = 0f;
+							//	if (ExampleManager.inst.browLeft.localRotation.eulerAngles.z > 180f)
+							//		tbrowLeft = 360f;
 
-								float tbrowRight = 0f;
-								if (ExampleManager.inst.browRight.localRotation.eulerAngles.z > 180f)
-									tbrowRight = 360f;
+							//	float tbrowRight = 0f;
+							//	if (ExampleManager.inst.browRight.localRotation.eulerAngles.z > 180f)
+							//		tbrowRight = 360f;
 
-								animation.floatAnimations = new List<ExampleManager.Animation.AnimationObject<float>>
-								{
-									new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
-									{
-										new FloatKeyframe(0f, ExampleManager.inst.browLeft.localRotation.eulerAngles.z, Ease.Linear),
-										new FloatKeyframe(0.7f, tbrowLeft, Ease.SineInOut),
-									}, delegate (float x)
-									{
-										ExampleManager.inst.browLeft.localRotation = Quaternion.Euler(0f, 0f, x);
-									}),
-									new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
-									{
-										new FloatKeyframe(0f, ExampleManager.inst.browRight.localRotation.eulerAngles.z, Ease.Linear),
-										new FloatKeyframe(0.7f, tbrowRight, Ease.SineInOut),
-									}, delegate (float x)
-									{
-										ExampleManager.inst.browRight.localRotation = Quaternion.Euler(0f, 0f, x);
-									}),
-								};
+							//	animation.floatAnimations = new List<ExampleManager.Animation.AnimationObject<float>>
+							//	{
+							//		new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+							//		{
+							//			new FloatKeyframe(0f, ExampleManager.inst.browLeft.localRotation.eulerAngles.z, Ease.Linear),
+							//			new FloatKeyframe(0.7f, tbrowLeft, Ease.SineInOut),
+							//		}, delegate (float x)
+							//		{
+							//			ExampleManager.inst.browLeft.localRotation = Quaternion.Euler(0f, 0f, x);
+							//		}),
+							//		new ExampleManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+							//		{
+							//			new FloatKeyframe(0f, ExampleManager.inst.browRight.localRotation.eulerAngles.z, Ease.Linear),
+							//			new FloatKeyframe(0.7f, tbrowRight, Ease.SineInOut),
+							//		}, delegate (float x)
+							//		{
+							//			ExampleManager.inst.browRight.localRotation = Quaternion.Euler(0f, 0f, x);
+							//		}),
+							//	};
 
-								ExampleManager.inst.PlayOnce(animation);
-							}
+							//	ExampleManager.inst.PlayOnce(animation);
+							//}
 
 							EditorManager.inst.HideDialog("Warning Popup");
 						});
 					});
 				}
 				
+				if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
 				{
 					var exitToArcade = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown/Quit to Main Menu"));
 					exitToArcade.name = "Get Example";
@@ -335,8 +334,11 @@ namespace EditorManagement.Patchers
 					ex.onClick.ClearAll();
 					ex.onClick.AddListener(delegate ()
 					{
-						if (!ExampleManager.inst)
-							ExampleManager.Init();
+						//if (!ExampleManager.inst)
+						//	ExampleManager.Init();
+
+						if (ModCompatibility.mods["ExampleCompanion"].methods.ContainsKey("InitExample"))
+							ModCompatibility.mods["ExampleCompanion"].Invoke("InitExample", new object[] { });
 					});
 				}
 
@@ -993,6 +995,19 @@ namespace EditorManagement.Patchers
 			RTEditor.WarningPopupCreator();
 			RTEditor.inst.StartCoroutine(RTEditor.SetupTooltips());
 			RTEditor.CreateMultiObjectEditor();
+
+			if (!ModCompatibility.sharedFunctions.ContainsKey("EditorOnLoadLevel"))
+			{
+				Action action = delegate () { };
+
+				ModCompatibility.sharedFunctions.Add("EditorOnLoadLevel", action);
+			}
+			else
+			{
+				Action action = delegate () { };
+
+				ModCompatibility.sharedFunctions["EditorOnLoadLevel"] = action;
+			}
 
 			return false;
 		}
@@ -1998,5 +2013,13 @@ namespace EditorManagement.Patchers
 
 			return false;
         }
-	}
+
+		[HarmonyPatch("OpenedLevel", MethodType.Getter)]
+		[HarmonyPrefix]
+		static bool OpenedLevelPrefix(EditorManager __instance, ref bool __result)
+        {
+			__result = (bool)__instance.GetType().GetField("wasOpenLevel", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(__instance) && __instance.hasLoadedLevel;
+			return false;
+        }
+    }
 }

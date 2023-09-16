@@ -16,7 +16,6 @@ using LSFunctions;
 
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Components.Example;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 
@@ -92,65 +91,66 @@ namespace EditorManagement.Patchers
 		public static bool eventsCore = false;
 		public static void SetEventLayer(int _layer)
         {
-			if (ExampleManager.inst && (!ExampleManager.inst.tutorials["Events Basics"] && ExampleManager.inst.guideType == ExampleManager.GuideType.Beginner || !ExampleManager.inst.tutorials["Events Modded"] && ExampleManager.inst.guideType == ExampleManager.GuideType.Familiar))
-			{
-				ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(1f, -378f, Ease.SineInOut), }, new List<IKeyframe<float>> { new FloatKeyframe(1f, -36f, Ease.SineIn) });
-				switch (ExampleManager.inst.guideType)
-				{
-					case ExampleManager.GuideType.Beginner:
-						{
-							ExampleManager.inst.talking = true;
-							ExampleManager.inst.dialogueDictionary["OnPreview"].canSay = false;
+			//if (ExampleManager.inst && (!ExampleManager.inst.tutorials["Events Basics"] && ExampleManager.inst.guideType == ExampleManager.GuideType.Beginner || !ExampleManager.inst.tutorials["Events Modded"] && ExampleManager.inst.guideType == ExampleManager.GuideType.Familiar))
+			//{
+			//	ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(1f, -378f, Ease.SineInOut), }, new List<IKeyframe<float>> { new FloatKeyframe(1f, -36f, Ease.SineIn) });
+			//	switch (ExampleManager.inst.guideType)
+			//	{
+			//		case ExampleManager.GuideType.Beginner:
+			//			{
+			//				ExampleManager.inst.talking = true;
+			//				ExampleManager.inst.dialogueDictionary["OnPreview"].canSay = false;
 
-							ExampleManager.inst.Say("This is the event layer. Do you know how to use it?", onComplete: delegate ()
-							{
-								EditorManager.inst.ShowDialog("Warning Popup");
-								RTEditor.RefreshWarningPopup("Do you want to go through the Events Tutorial?", delegate ()
-								{
-									EditorManager.inst.HideDialog("Warning Popup");
-									ExampleManager.inst.Say("Each row is a different type of event, for reference...", onComplete: delegate ()
-									{
-										ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(1f, -750f, Ease.SineInOut) }, new List<IKeyframe<float>> { new FloatKeyframe(2f, -250f, Ease.SineInOut) });
-										ExampleManager.inst.Say("The first row is for the camera's position, the second is the cameras' zoom and so on.", onComplete: delegate ()
-										{
-											ExampleManager.inst.tutorials["Events Basics"] = true;
+			//				ExampleManager.inst.Say("This is the event layer. Do you know how to use it?", onComplete: delegate ()
+			//				{
+			//					EditorManager.inst.ShowDialog("Warning Popup");
+			//					RTEditor.RefreshWarningPopup("Do you want to go through the Events Tutorial?", delegate ()
+			//					{
+			//						EditorManager.inst.HideDialog("Warning Popup");
+			//						ExampleManager.inst.Say("Each row is a different type of event, for reference...", onComplete: delegate ()
+			//						{
+			//							ExampleManager.inst.Move(new List<IKeyframe<float>> { new FloatKeyframe(1f, -750f, Ease.SineInOut) }, new List<IKeyframe<float>> { new FloatKeyframe(2f, -250f, Ease.SineInOut) });
+			//							ExampleManager.inst.Say("The first row is for the camera's position, the second is the cameras' zoom and so on.", onComplete: delegate ()
+			//							{
+			//								ExampleManager.inst.tutorials["Events Basics"] = true;
 
-											EditorManager.inst.ShowDialog("Warning Popup");
-											RTEditor.RefreshWarningPopup("", delegate ()
-											{
-												ExampleManager.inst.Say("Okay. I will no longer talk because I have run out of things to say.", onComplete: delegate ()
-												{
-													ExampleManager.inst.talking = false;
-													EditorManager.inst.HideDialog("Warning Popup");
-												});
-											}, delegate ()
-											{
-												ExampleManager.inst.talking = false;
-												EditorManager.inst.HideDialog("Warning Popup");
-											});
-											ExampleManager.inst.Say("Would you like to learn more?");
-										});
-									});
-								}, delegate ()
-								{
-									ExampleManager.inst.talking = false;
-								});
+			//								EditorManager.inst.ShowDialog("Warning Popup");
+			//								RTEditor.RefreshWarningPopup("", delegate ()
+			//								{
+			//									ExampleManager.inst.Say("Okay. I will no longer talk because I have run out of things to say.", onComplete: delegate ()
+			//									{
+			//										ExampleManager.inst.talking = false;
+			//										EditorManager.inst.HideDialog("Warning Popup");
+			//									});
+			//								}, delegate ()
+			//								{
+			//									ExampleManager.inst.talking = false;
+			//									EditorManager.inst.HideDialog("Warning Popup");
+			//								});
+			//								ExampleManager.inst.Say("Would you like to learn more?");
+			//							});
+			//						});
+			//					}, delegate ()
+			//					{
+			//						ExampleManager.inst.tutorials["Events Basics"] = true;
+			//						ExampleManager.inst.talking = false;
+			//					});
 
-							});
-							break;
-						}
-					case ExampleManager.GuideType.Familiar:
-						{
+			//				});
+			//				break;
+			//			}
+			//		case ExampleManager.GuideType.Familiar:
+			//			{
 
-							break;
-						}
-					case ExampleManager.GuideType.Companion:
-						{
+			//				break;
+			//			}
+			//		case ExampleManager.GuideType.Companion:
+			//			{
 
-							break;
-						}
-				}
-			}
+			//				break;
+			//			}
+			//	}
+			//}
 			eventLayer = _layer;
 			RTEditor.SetLayer(5);
 			CreateEventObjectsPrefix();

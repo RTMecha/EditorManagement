@@ -23,7 +23,6 @@ using TMPro;
 using LSFunctions;
 
 using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Components.Example;
 using EditorManagement.Functions.Tools;
 using EditorManagement.Patchers;
 
@@ -4477,8 +4476,6 @@ namespace EditorManagement.Functions.Editors
 		public static IEnumerator SetupTimelineTriggers()
 		{
 			yield return new WaitForSeconds(1f);
-			if (ConfigEntries.ShowExampleOnStart.Value)
-				ExampleManager.Init();
 
 			EventTrigger.Entry entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.PointerEnter;
@@ -6928,20 +6925,8 @@ namespace EditorManagement.Functions.Editors
 			RefreshObjectSearch(_multi, _multiValue, objEditor, objectManager);
 		}
 
-		public static List<LevelItem> levelItems = new List<LevelItem>();
-		public class LevelItem
-        {
-			public LevelItem(EditorManager.MetadataWrapper level, GameObject gameObject, RectTransform rectTransform, Image icon)
-            {
-				this.level = level; this.gameObject = gameObject; this.rectTransform = rectTransform; this.icon = icon;
-            }
-
-			public EditorManager.MetadataWrapper level;
-			public GameObject gameObject;
-			public RectTransform rectTransform;
-			public Image icon;
-        }
-
+		public static List<LevelFolder<EditorManager.MetadataWrapper>> levelItems = new List<LevelFolder<EditorManager.MetadataWrapper>>();
+		
 		public static void RenderBeatmapSet()
 		{
 			levelItems.Clear();
@@ -7282,10 +7267,14 @@ namespace EditorManagement.Functions.Editors
 							});
 						}
 
-						levelItems.Add(new LevelItem(metadataWrapper, gameObject, gameObject.GetComponent<RectTransform>(), iconImage));
+						levelItems.Add(new LevelFolder<EditorManager.MetadataWrapper>(metadataWrapper, gameObject, gameObject.GetComponent<RectTransform>(), iconImage));
 					}
 				}
 			}
+
+			if (ModCompatibility.sharedFunctions.ContainsKey("EditorLevelFolders"))
+				ModCompatibility.sharedFunctions["EditorLevelFolders"] = levelItems;
+			else ModCompatibility.sharedFunctions.Add("EditorLevelFolders", levelItems);
 		}
 
 		public static void RenderTimeline()
@@ -8649,11 +8638,8 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 
-			if (ExampleManager.inst)
-            {
-				var dialogues = ExampleManager.inst.dialogueDictionary["LoadedLevel"].dialogues;
-				ExampleManager.inst.Say(dialogues[dialogues.Length - 1]);
-            }
+			if (ModCompatibility.sharedFunctions.ContainsKey("EditorOnLoadLevel"))
+				((Action)ModCompatibility.sharedFunctions["EditorOnLoadLevel"])();
 
 			__instance.loading = false;
 
