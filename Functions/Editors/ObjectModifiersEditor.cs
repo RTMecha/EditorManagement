@@ -2356,7 +2356,7 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
-                                if (cmd == "playSound")
+                                if (cmd == "playSound" || cmd == "playSoundOnline")
                                 {
                                     if (commands.Count == 1)
                                     {
@@ -2604,7 +2604,7 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
-                                if (cmd == "loadLevel")
+                                if (cmd == "loadLevel" || cmd == "code")
                                 {
                                     Triggers.AddTooltip(x, commands[0], "");
 
