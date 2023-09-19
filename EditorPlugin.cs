@@ -30,7 +30,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.2")]
+    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.3")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	//[BepInIncompatibility("com.mecha.originoffset")]
