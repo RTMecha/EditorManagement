@@ -29,6 +29,15 @@ namespace EditorManagement.Functions.Tools
 		public static Material fontMaterial;
 		public static Font inconsolataFont = Font.GetDefault();
 
+		public static Vector2 ToVector2(this Vector3 vector3) => new Vector2(vector3.x, vector3.y);
+
+		public static void ForeachPredicate<T>(this List<T> ts, Predicate<T> predicate, Action<T> action) => ts.FindAll(predicate).ForEach(action);
+
+		public static void Add<T>(this T[] ts, T item)
+        {
+			ts.AddItem(item);
+        }
+
 		public static void DeleteChildren(this Transform _tf, bool instant = false)
         {
 			LSFunctions.LSHelpers.DeleteChildren(_tf, instant);

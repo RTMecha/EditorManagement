@@ -25,14 +25,14 @@ namespace EditorManagement.Patchers
     {
         [HarmonyPatch("Start")]
         [HarmonyPostfix]
-        public static void DestroyThemeListLayout()
+        static void DestroyThemeListLayout()
         {
             Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<VerticalLayoutGroup>());
         }
 
 		[HarmonyPatch("DeleteTheme")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> DeleteThemeTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> DeleteThemeTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -44,7 +44,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SaveTheme")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> SaveThemeTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> SaveThemeTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -56,7 +56,7 @@ namespace EditorManagement.Patchers
 		
 		[HarmonyPatch("SaveTheme")]
 		[HarmonyPrefix]
-		private static bool SaveThemePrefixPatch(DataManager.BeatmapTheme __0)
+		static bool SaveThemePrefixPatch(DataManager.BeatmapTheme __0)
 		{
 			Debug.LogFormat("Saving {0} ({1}) to File System!", __0.id, __0.name);
 			JSONNode jsonnode = JSON.Parse("{}");
@@ -90,7 +90,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("LoadThemes")]
 		[HarmonyPrefix]
-		private static bool LoadThemesPrefix(ThemeEditor __instance, ref IEnumerator __result)
+		static bool LoadThemesPrefix(ThemeEditor __instance, ref IEnumerator __result)
         {
 			Debug.LogFormat("{0}Started Loading themes...", EditorPlugin.className);
 			__result = RTEditor.LoadThemes();

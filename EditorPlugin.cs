@@ -30,7 +30,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.3")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.3")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	//[BepInIncompatibility("com.mecha.originoffset")]
@@ -52,8 +52,8 @@ namespace EditorManagement
 		//Update list
 
 		public static EditorPlugin inst;
-		public static string className = "[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] " + PluginInfo.PLUGIN_VERSION + "\n";
-		private readonly Harmony harmony = new Harmony("Editor");
+		public static string className = $"[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] {PluginInfo.PLUGIN_VERSION}\n";
+		readonly Harmony harmony = new Harmony("Editor");
 
 		public static float scrollBar;
 		public static float timeEdit;
@@ -80,7 +80,6 @@ namespace EditorManagement
 
 		public static bool createInternal = true;
 
-		public static List<SaveManager.ArcadeLevel> arcadeQueue = new List<SaveManager.ArcadeLevel>();
 		public static int current;
 
 		public static Type catalyst;
@@ -142,7 +141,7 @@ namespace EditorManagement
 			},
 		};
 
-		private void Awake()
+		void Awake()
 		{
 			inst = this;
 
@@ -507,16 +506,16 @@ namespace EditorManagement
 
 		#endregion
 
-		private static void UpdateEditorManagementConfigs(object sender, EventArgs e)
+		static void UpdateEditorManagementConfigs(object sender, EventArgs e)
 		{
 			if (EditorManager.inst != null)
 			{
-				Debug.LogFormat("{0}Repeating Reminder", className);
+				Debug.Log($"{className}Repeating Reminder");
 				RepeatReminder();
 
 				if (ConfigEntries.RenderTimeline.Value && ConfigEntries.GenerateWaveform.Value && (lastWaveformType != ConfigEntries.WaveformMode.Value || lastWaveformBGColor != ConfigEntries.WaveformBGColor.Value || lastWaveformTopColor != ConfigEntries.WaveformTopColor.Value || lastWaveformBottomColor != ConfigEntries.WaveformBottomColor.Value))
 				{
-					Debug.LogFormat("{0}Setting Waveform", className);
+					Debug.Log($"{className}Setting Waveform");
 					RTEditor.inst.StartCoroutine(RTEditor.AssignTimelineTexture());
 
 					lastWaveformType = ConfigEntries.WaveformMode.Value;
@@ -525,7 +524,7 @@ namespace EditorManagement
 					lastWaveformBottomColor = ConfigEntries.WaveformBottomColor.Value;
 				}
 
-				Debug.LogFormat("{0}Setting Markers", className);
+				Debug.Log($"{className}Setting Markers");
 				if (prevMarkerColors.Count < 1)
 				{
 					foreach (var col in MarkerEditor.inst.markerColors)
@@ -547,7 +546,7 @@ namespace EditorManagement
 
 				if (ConfigEntries.AutoSaveLoopTime.Value != prevAutoSaveRepeat)
 				{
-					Debug.LogFormat("{0}Setting Autosaving", className);
+					Debug.Log($"{className}Setting Autosaving");
 					prevAutoSaveRepeat = ConfigEntries.AutoSaveLoopTime.Value;
 
 					RTEditor.SetAutosave();
@@ -555,7 +554,7 @@ namespace EditorManagement
 
 				if (ConfigEntries.ChangesRefreshLevelList.Value && EditorManager.inst.loadedLevels.Count < 60)
 				{
-					Debug.LogFormat("{0}Getting Level List", className);
+					Debug.Log("${className}Getting Level List");
 					EditorManager.inst.GetLevelList();
 					RTEditor.RenderBeatmapSet();
 				}
@@ -568,7 +567,7 @@ namespace EditorManagement
 
 				//Open File Popup
 				{
-					Debug.LogFormat("{0}Open Level Values", className);
+					Debug.Log($"{className}Open Level Values");
 
 					var openLevel = EditorManager.inst.GetDialog("Open File Popup").Dialog.gameObject;
 					var openTLevel = openLevel.transform;
@@ -604,7 +603,7 @@ namespace EditorManagement
 					fButtonBUTT.colors = cb;
 				}
 
-				Debug.LogFormat("{0}Setting Notifications", className);
+				Debug.Log($"{className}Setting Notifications");
 				var notifications = EditorManager.inst.notification;
 
 				var notifyRT = notifications.GetComponent<RectTransform>();
@@ -623,7 +622,7 @@ namespace EditorManagement
 					notifyGroup.childAlignment = TextAnchor.UpperLeft;
 				}
 
-				Debug.LogFormat("{0}Setting Zoom Cap", className);
+				Debug.Log($"{className}Setting Zoom Cap");
 				if (ConfigEntries.KeyframeZoomBounds.Value != lastKeyframeZoomBounds)
 				{
 					lastKeyframeZoomBounds = ConfigEntries.KeyframeZoomBounds.Value;
@@ -637,7 +636,7 @@ namespace EditorManagement
 					EditorManager.inst.RenderTimeline();
 				}
 
-				Debug.LogFormat("{0}Setting Other File Popups", className);
+				Debug.Log($"{className}Setting Other File Popups");
 				RectTransform dropdownRT = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("tod-dropdown(Clone)").gameObject.GetComponent<RectTransform>();
 				dropdownRT.anchoredPosition = ConfigEntries.OpenFileDropdownPosition.Value;
 
@@ -649,7 +648,7 @@ namespace EditorManagement
 				eprt.sizeDelta = new Vector2(ConfigEntries.OpenFilePathLength.Value, 34f);
 				EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("reload").gameObject.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.OpenFileRefreshPosition.Value;
 
-				Debug.LogFormat("{0}Setting Objects", className);
+				Debug.Log($"{className}Setting Objects");
 				if (ConfigEntries.PreviewSelectFix.Value != emptyDisable)
 				{
 					emptyDisable = ConfigEntries.PreviewSelectFix.Value;
@@ -666,14 +665,12 @@ namespace EditorManagement
 					ObjectManager.inst.updateObjects();
 				}
 
-				Debug.LogFormat("{0}Setting Other Mods", className);
-				{
+				Debug.Log($"{className}Setting Other Mods");
 					SetShowable();
-				}
 
 				//There's a problem somewhere below but Idk where
 
-				Debug.LogFormat("{0}Setting Cursor Color", className);
+				Debug.Log($"{className}Setting Cursor Color");
 				{
 					if (prevMainTimelineColor != ConfigEntries.MainTimelineSliderColor.Value)
 					{
@@ -747,18 +744,18 @@ namespace EditorManagement
 					}
 				}
 
-				Debug.LogFormat("{0}Setting Prefabs", className);
+				Debug.Log($"{className}Setting Prefabs");
 				{
 					//Create Local Variables
 
-					Debug.LogFormat("{0}Setting Prefab Variables", className);
+					Debug.Log($"{className}Setting Prefab Variables");
 					GameObject internalPrefab = GameObject.Find("Prefab Popup/internal prefabs");
 					GameObject externalPrefab = GameObject.Find("Prefab Popup/external prefabs");
 
-					Debug.LogFormat("{0}Getting Components", className);
+					Debug.Log($"{className}Getting Components");
 					if (internalPrefab.transform.Find("mask/content").gameObject.TryGetComponent(out GridLayoutGroup inPMCGridLay))
 					{
-						Debug.LogFormat("{0}Internal Values", className);
+						Debug.Log($"{className}Internal Values");
 						internalPrefab.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.PrefabINANCH.Value;
 						internalPrefab.GetComponent<RectTransform>().sizeDelta = ConfigEntries.PrefabINSD.Value;
 						inPMCGridLay.spacing = ConfigEntries.PrefabINCellSpacing.Value;
@@ -771,7 +768,7 @@ namespace EditorManagement
 
 					if (externalPrefab.transform.Find("mask/content").gameObject.TryGetComponent(out GridLayoutGroup exPMCGridLay))
 					{
-						Debug.LogFormat("{0}External Values", className);
+						Debug.Log($"{className}External Values");
 						externalPrefab.GetComponent<RectTransform>().anchoredPosition = ConfigEntries.PrefabEXANCH.Value;
 						externalPrefab.GetComponent<RectTransform>().sizeDelta = ConfigEntries.PrefabEXSD.Value;
 						exPMCGridLay.spacing = ConfigEntries.PrefabEXCellSpacing.Value;
@@ -792,11 +789,10 @@ namespace EditorManagement
 					{
 						if (PrefabEditorPatch.internalContent != null)
 						{
-							Debug.LogFormat("{0}Internal Buttons", className);
+							Debug.Log($"{className}Internal Buttons");
 							foreach (object obj in PrefabEditorPatch.internalContent.transform)
 							{
 								Transform child = (Transform)obj;
-
 
 								if (child.gameObject.TryGetComponent(out HoverUI hoverUI))
 								{
@@ -830,7 +826,7 @@ namespace EditorManagement
 
 						if (PrefabEditorPatch.externalContent != null)
 						{
-							Debug.LogFormat("{0}External Buttons", className);
+							Debug.Log($"{className}External Buttons");
 							foreach (object obj in PrefabEditorPatch.externalContent.transform)
 							{
 								Transform child = (Transform)obj;
@@ -926,6 +922,7 @@ namespace EditorManagement
 
 			string lister = "";
 
+			int i = 0;
 			foreach (var l in allLayers)
 			{
 				int num = l + 1;
@@ -935,8 +932,11 @@ namespace EditorManagement
 				}
 				if (!lister.Contains(num.ToString()))
 				{
-					lister += num.ToString() + ", ";
+					lister += num.ToString();
+					if (i != allLayers.Count - 1)
+						lister += ", ";
 				}
+				i++;
 			}
 
 			RTEditor.DisplayNotification("List Object Layers", "Objects on Layers:<br>[ " + lister + " ]", 2f, EditorManager.NotificationType.Info);
@@ -944,7 +944,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(GameManager), "Update")]
 		[HarmonyPostfix]
-		private static void GameUpdatePatch()
+		static void GameUpdatePatch()
         {
 			if (EditorManager.inst == null && tracker != null)
             {
@@ -998,7 +998,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(PrefabEditor), "CollapseCurrentPrefab")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> CCPrefabTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> CCPrefabTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			var matcher = new CodeMatcher(instructions).Start().Advance(128);
 			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(ObjEditor), "inst")));
@@ -1018,7 +1018,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(ColorPicker), "UpdateValues")]
 		[HarmonyPrefix]
-		private static bool UpdateValuesPrefix(ColorPicker __instance, ref Color __0)
+		static bool UpdateValuesPrefix(ColorPicker __instance, ref Color __0)
 		{
 			double hue;
 			double sat;
@@ -1105,7 +1105,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(ColorPicker), "Start")]
 		[HarmonyPrefix]
-		private static bool ColorPickerStartPrefix(ColorPicker __instance)
+		static bool ColorPickerStartPrefix(ColorPicker __instance)
 		{
 			__instance.hueSliderTexture = new Texture2D(1, 359, TextureFormat.ARGB32, false);
 			Color[] array = new Color[359];
@@ -1142,7 +1142,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(DataManager), "SaveMetadata", typeof(string), typeof(DataManager.MetaData))]
 		[HarmonyPrefix]
-		private static bool SaveMetadataPrefix(LSError __result, string __0, DataManager.MetaData __1)
+		static bool SaveMetadataPrefix(LSError __result, string __0, DataManager.MetaData __1)
 		{
 			string rawProfileJSON = "{}";
 			if (RTFile.FileExists(__0))
@@ -1153,19 +1153,23 @@ namespace EditorManagement
 			JSONNode jn = JSON.Parse(rawProfileJSON);
 			if (ConfigEntries.EditorDebug.Value)
 			{
-				Debug.Log("Saving Metadata to " + __0);
-				Debug.Log("A-N: " + __1.artist.Name);
-				Debug.Log("A-L: " + __1.artist.Link);
-				Debug.Log("A-LT: " + __1.artist.LinkType.ToString());
-				Debug.Log("C-SN: " + __1.creator.steam_name);
-				Debug.Log("C-SID: " + __1.creator.steam_id.ToString());
-				Debug.Log("S-T: " + __1.song.title);
-				Debug.Log("S-D: " + __1.song.difficulty.ToString());
-				Debug.Log("S-DE: " + __1.song.description);
-				Debug.Log("S-BPM: " + __1.song.BPM.ToString());
-				Debug.Log("S-T: " + __1.song.time.ToString());
-				Debug.Log("S-PS: " + __1.song.previewStart.ToString());
-				Debug.Log("S-PL: " + __1.song.previewLength.ToString());
+				string m = string.Concat
+					(
+						$"{className}Saving Metadata to {__0}\n",
+						$"Artist-Name: {__1.artist.Name}",
+						$"Artist-Link: {__1.artist.Link}",
+						$"Artist-LinkType: {__1.artist.LinkType}",
+						$"Creator-SteamName: {__1.creator.steam_name}",
+						$"Creator-SteamID: {__1.creator.steam_id}",
+						$"Song-Title: {__1.song.title}",
+						$"Song-Description: {__1.song.description}",
+						$"Song-BPM: {__1.song.BPM}",
+						$"Song-Time: {__1.song.time}",
+						$"Song-PreviewStart: {__1.song.previewStart}",
+						$"Song-PreviewLength: {__1.song.previewLength}"
+					);
+
+				Debug.Log(m);
 			}
 
 			jn["artist"]["name"] = __1.artist.Name;
@@ -1186,11 +1190,11 @@ namespace EditorManagement
 				if (string.IsNullOrEmpty(jn["beatmap"]["date_original"]))
 				{
 					if (ConfigEntries.EditorDebug.Value)
-						Debug.Log(__1.beatmap.date_edited);
+						Debug.Log($"{className}{__1.beatmap.date_edited}");
 					jn["beatmap"]["date_original"] = __1.beatmap.date_edited;
 				}
 				if (ConfigEntries.EditorDebug.Value)
-					Debug.Log(DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"));
+					Debug.Log($"{className}{DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss")}");
 				jn["beatmap"]["date_edited"] = DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss");
 			}
 			else
@@ -1207,7 +1211,7 @@ namespace EditorManagement
 		
 		[HarmonyPatch(typeof(BackgroundEditor), "Awake")]
 		[HarmonyPostfix]
-		private static void BackgroundEditorAwakePostfix()
+		static void BackgroundEditorAwakePostfix()
         {
 			GameObject bgRight = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/BackgroundDialog/data/right");
 			GameObject bgLeft = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/BackgroundDialog/data/left");
@@ -1330,7 +1334,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(Debug), "Log", new Type[] { typeof(object) })]
 		[HarmonyPostfix]
-		private static void LogNotifications(object __0)
+		static void LogNotifications(object __0)
         {
 			if (EditorManager.inst != null && ConfigEntries.EditorDebug.Value == true)
             {
@@ -1342,7 +1346,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(Debug), "LogFormat", typeof(string), typeof(object[]))]
 		[HarmonyPostfix]
-		private static void LogNotifications(string __0, params object[] __1)
+		static void LogNotifications(string __0, params object[] __1)
         {
 			if (EditorManager.inst != null && ConfigEntries.EditorDebug.Value == true)
             {
@@ -1353,7 +1357,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(Debug), "LogError", new Type[] { typeof(object) })]
 		[HarmonyPostfix]
-		private static void LogErrorNotifications(object __0)
+		static void LogErrorNotifications(object __0)
         {
 			if (EditorManager.inst != null && ConfigEntries.EditorDebug.Value == true)
             {
@@ -1365,7 +1369,7 @@ namespace EditorManagement
 
 		[HarmonyPatch(typeof(Debug), "LogWarning", new Type[] { typeof(object) })]
 		[HarmonyPostfix]
-		private static void LogWarningNotifications(object __0)
+		static void LogWarningNotifications(object __0)
         {
 			if (EditorManager.inst != null && ConfigEntries.EditorDebug.Value == true)
             {
