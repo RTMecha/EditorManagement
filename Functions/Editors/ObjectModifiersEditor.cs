@@ -10,8 +10,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+using LSFunctions;
+
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Tools;
+using EditorManagement.Functions;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
@@ -34,6 +37,10 @@ namespace EditorManagement.Functions.Editors
         public static RectTransform scrollViewRT;
 
         public static bool showModifiers;
+
+        public static InputField replEditor;
+        public static GameObject replBase;
+        public static Text replText;
 
         private void Awake()
         {
@@ -159,6 +166,78 @@ namespace EditorManagement.Functions.Editors
             LSFunctions.LSHelpers.DeleteChildren(content);
 
             scrollView.gameObject.SetActive(showModifiers);
+
+            var font = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/Text").GetComponent<Text>().font;
+
+            replBase = new GameObject("REPL Editor");
+            replBase.transform.SetParent(EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.parent);
+            replBase.transform.localScale = Vector3.one;
+            var replRT = replBase.AddComponent<RectTransform>();
+
+            replRT.anchoredPosition = Vector2.zero;
+
+            var uiField = UIManager.GenerateUIInputField("REPL Editor", replBase.transform);
+
+            replEditor = (InputField)uiField["InputField"];
+
+            ((Image)uiField["Image"]).color = new Color(0.1132075f, 0.1132075f, 0.1132075f);
+
+            replEditor.lineType = InputField.LineType.MultiLineNewline;
+            replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
+            replEditor.textComponent.font = font;
+
+            ((RectTransform)uiField["RectTransform"]).anchoredPosition = Vector2.zero;
+            ((RectTransform)uiField["RectTransform"]).sizeDelta = new Vector2(1000f, 550f);
+
+            var uiTop = UIManager.GenerateUIImage("Panel", replBase.transform);
+
+            UIManager.SetRectTransform((RectTransform)uiTop["RectTransform"], new Vector2(0f, 291f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1000f, 32f));
+
+            ((Image)uiTop["Image"]).color = new Color(0.1973585f, 0.1973585f, 0.1973585f);
+
+            var close = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x").gameObject);
+            close.transform.SetParent(((GameObject)uiTop["GameObject"]).transform);
+            close.transform.localScale = Vector3.one;
+
+            close.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
+            var closeButton = close.GetComponent<Button>();
+            closeButton.onClick.ClearAll();
+            closeButton.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.HideDialog("REPL Editor Popup");
+                RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+            });
+
+            var uiTitle = UIManager.GenerateUIText("Title", ((GameObject)uiTop["GameObject"]).transform);
+            UIManager.SetRectTransform(((RectTransform)uiTitle["RectTransform"]), new Vector2(-350f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(300f, 32f));
+            ((Text)uiTitle["Text"]).text = "REPL Editor";
+            ((Text)uiTitle["Text"]).alignment = TextAnchor.MiddleLeft;
+            ((Text)uiTitle["Text"]).font = font;
+
+            var rtext = Instantiate(replEditor.textComponent.gameObject);
+            rtext.transform.SetParent(replEditor.transform);
+            rtext.transform.localScale = Vector3.one;
+
+            var rttext = rtext.GetComponent<RectTransform>();
+            rttext.anchoredPosition = new Vector2(2f, 0f);
+            rttext.sizeDelta = new Vector2(-12f, -8f);
+
+            var selectUI = ((GameObject)uiTop["GameObject"]).AddComponent<SelectUI>();
+            selectUI.target = replBase.transform;
+
+            //((RectTransform)replEditor.textComponent.transform).anchoredPosition = new Vector2(9999f, 9999f);
+            replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 0f);
+            //replEditor.textComponent.GetComponent<CanvasRenderer>().cull = true;
+
+            replEditor.customCaretColor = true;
+            replEditor.caretColor = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
+
+            replText = rtext.GetComponent<Text>();
+
+            replBase.SetActive(false);
+
+            Triggers.AddEditorDialog("REPL Editor Popup", replBase);
         }
 
         //I probably should write this so it switches between what command it is and has the same copied and pasted code but altered just so it's not spaghetti
@@ -2475,7 +2554,7 @@ namespace EditorManagement.Functions.Editors
                                             });
                                         }
                                     }
-                                    
+
                                     //Volume
                                     if (commands.Count > 3)
                                     {
@@ -2621,6 +2700,20 @@ namespace EditorManagement.Functions.Editors
                                         {
                                             modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, _val);
                                         });
+                                    }
+
+                                    if (cmd == "code")
+                                    {
+                                        Triggers.AddTooltip(input.gameObject, "Right click this to open the REPL Editor.", "");
+
+                                        var clickable = input.gameObject.AddComponent<EditorClickable>();
+                                        clickable.onClick = delegate (PointerEventData x)
+                                        {
+                                            if (x.button == PointerEventData.InputButton.Right)
+                                            {
+                                                OpenREPLEditor(modifier, value);
+                                            }
+                                        };
                                     }
 
                                     Destroy(valueG.transform.Find(">").gameObject);
@@ -4707,7 +4800,7 @@ namespace EditorManagement.Functions.Editors
                                             });
                                         }
                                     }
-                                    
+
                                     //Pitch (multiplies by current global pitch)
                                     {
                                         var ppvalueG = Instantiate(valueG);
@@ -4973,6 +5066,25 @@ namespace EditorManagement.Functions.Editors
                 }
                 num6++;
             }
+        }
+
+        public static void OpenREPLEditor(object modifier, string value)
+        {
+            EditorManager.inst.ShowDialog("REPL Editor Popup");
+            replEditor.onValueChanged.ClearAll();
+            replEditor.text = value;
+            replText.text = RTCode.ConvertREPL(value);
+            replEditor.onValueChanged.AddListener(delegate (string _val)
+            {
+                replText.text = RTCode.ConvertREPL(_val);
+                modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, _val);
+            });
+
+            replEditor.onEndEdit.RemoveAllListeners();
+            replEditor.onEndEdit.AddListener(delegate (string _val)
+            {
+                RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+            });
         }
 
         public static void CreateDefaultModifiersList()
