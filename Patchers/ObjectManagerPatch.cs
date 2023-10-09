@@ -157,88 +157,61 @@ namespace EditorManagement.Patchers
 			}
 		}
 
-		[HarmonyPatch("Update")]
-		[HarmonyPostfix]
-		private static void UpdatePostfixPatch()
-		{
-			if (EditorManager.inst != null && DataManager.inst.gameData != null && DataManager.inst.gameData.beatmapObjects.Count > 0)
-			{
-				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-				{
-					if (beatmapObject != null && Objects.beatmapObjects.ContainsKey(beatmapObject.id) && Objects.beatmapObjects[beatmapObject.id].gameObject != null)
-					{
-						var functionObject = Objects.beatmapObjects[beatmapObject.id];
+		//[HarmonyPatch("Update")]
+		//[HarmonyPostfix]
+		//private static void UpdatePostfixPatch()
+		//{
+		//	if (EditorManager.inst != null && DataManager.inst.gameData != null && DataManager.inst.gameData.beatmapObjects.Count > 0)
+		//	{
+		//		foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+		//		{
+		//			if (beatmapObject != null && Objects.beatmapObjects.ContainsKey(beatmapObject.id) && Objects.beatmapObjects[beatmapObject.id].gameObject != null)
+		//			{
+		//				var functionObject = Objects.beatmapObjects[beatmapObject.id];
 
-						var gameObject = functionObject.gameObject;
+		//				var gameObject = functionObject.gameObject;
 
-						Material mat = null;
-						if (functionObject.renderer != null)
-						{
-							mat = functionObject.renderer.material;
-						}
+		//				Material mat = null;
+		//				if (functionObject.renderer != null)
+		//				{
+		//					mat = functionObject.renderer.material;
+		//				}
 
-						if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value)
-						{
-							Destroy(functionObject.selectObject);
-							if (gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
-								Destroy(rt2);
-						}
+		//				if (beatmapObject.objectType == DataManager.GameData.BeatmapObject.ObjectType.Empty && ConfigEntries.PreviewSelectFix.Value)
+		//				{
+		//					Destroy(functionObject.selectObject);
+		//					if (gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
+		//						Destroy(rt2);
+		//				}
 
-						if (!functionObject.otherComponents.ContainsKey("RTObject") && gameObject.TryGetComponent(out RTObject rt) && rt != null)
-                        {
-							functionObject.otherComponents.Add("RTObject", rt);
-                        }
-						if (functionObject.otherComponents.ContainsKey("RTObject") && (functionObject.otherComponents["RTObject"].ToString() == "null" || functionObject.otherComponents["RTObject"] == null))
-                        {
-							if (gameObject != null && gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
-								functionObject.otherComponents["RTObject"] = rt2;
-							else
-								functionObject.otherComponents.Remove("RTObject");
-						}
+		//				if (!functionObject.otherComponents.ContainsKey("RTObject") && gameObject.TryGetComponent(out RTObject rt) && rt != null)
+  //                      {
+		//					functionObject.otherComponents.Add("RTObject", rt);
+  //                      }
+		//				if (functionObject.otherComponents.ContainsKey("RTObject") && (functionObject.otherComponents["RTObject"].ToString() == "null" || functionObject.otherComponents["RTObject"] == null))
+  //                      {
+		//					if (gameObject != null && gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
+		//						functionObject.otherComponents["RTObject"] = rt2;
+		//					else
+		//						functionObject.otherComponents.Remove("RTObject");
+		//				}
 
-						if (functionObject.otherComponents.ContainsKey("RTObject") && functionObject.otherComponents["RTObject"] != null && functionObject.otherComponents["RTObject"].ToString() != "null")
-						{
-							if (gameObject != null && gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
-							{
-								rt2.SetObject(beatmapObject.id);
-								rt2.highlightColor = ConfigEntries.HighlightColor.Value;
-								rt2.highlightDoubleColor = ConfigEntries.HighlightDoubleColor.Value;
-								rt2.highlightObjects = ConfigEntries.HighlightObjects.Value;
-								rt2.layerOpacity = ConfigEntries.ShowObjectsAlpha.Value;
-								rt2.showObjectsOnlyOnLayer = ConfigEntries.ShowObjectsOnLayer.Value;
-							}
-						}
-
-						//if (ConfigEntries.ShowEmpties.Value)
-						//{
-						//	if (!gameObject.GetComponent<MeshFilter>() && !gameObject.GetComponent<MeshRenderer>())
-						//	{
-						//		MeshFilter mesh = gameObject.AddComponent<MeshFilter>();
-						//		gameObject.AddComponent<MeshRenderer>();
-
-						//		mesh.mesh = ObjectManager.inst.objectPrefabs[0].options[0].GetComponentInChildren<MeshFilter>().mesh;
-
-						//		gameObject.transform.localPosition = new Vector3(gameObject.transform.localPosition.x, gameObject.transform.localPosition.y, -9.6f);
-						//	}
-						//}
-
-						//if (ConfigEntries.ShowDamagable.Value)
-						//{
-						//	if (beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Normal && beatmapObject.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty && gameObject.GetComponent<Renderer>())
-						//	{
-						//		gameObject.GetComponent<Renderer>().enabled = false;
-						//	}
-						//}
-
-						if (ConfigEntries.ShowObjectsOnLayer.Value && mat != null && mat.HasProperty("_Color"))
-						{
-							Color objColor = mat.color;
-							mat.color = LSColors.fadeColor(objColor, objColor.a * ConfigEntries.ShowObjectsAlpha.Value);
-						}
-					}
-				}
-			}
-		}
+		//				if (functionObject.otherComponents.ContainsKey("RTObject") && functionObject.otherComponents["RTObject"] != null && functionObject.otherComponents["RTObject"].ToString() != "null")
+		//				{
+		//					if (gameObject != null && gameObject.TryGetComponent(out RTObject rt2) && rt2 != null)
+		//					{
+		//						rt2.SetObject(beatmapObject.id);
+		//						rt2.highlightColor = ConfigEntries.HighlightColor.Value;
+		//						rt2.highlightDoubleColor = ConfigEntries.HighlightDoubleColor.Value;
+		//						rt2.highlightObjects = ConfigEntries.HighlightObjects.Value;
+		//						rt2.layerOpacity = ConfigEntries.ShowObjectsAlpha.Value;
+		//						rt2.showObjectsOnlyOnLayer = ConfigEntries.ShowObjectsOnLayer.Value;
+		//					}
+		//				}
+		//			}
+		//		}
+		//	}
+		//}
 
 		//[HarmonyPatch("Update")]
 		//[HarmonyTranspiler]

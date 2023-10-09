@@ -27,10 +27,13 @@ using EditorManagement.Patchers;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
+using RTFunctions.Functions.Optimization.Objects;
+using RTFunctions.Functions.Optimization.Objects.Visual;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.3")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.4")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	//[BepInIncompatibility("com.mecha.originoffset")]
@@ -359,12 +362,12 @@ namespace EditorManagement
 			{
 				ConfigEntries.ShowObjectsOnLayer = Config.Bind("Preview", "Show only objects on current layer?", false, "If enabled, all objects not on current layer will be set to transparent");
 				ConfigEntries.ShowObjectsAlpha = Config.Bind("Preview", "Visible object opacity", 0.2f, "Opacity of the objects not on the current layer.");
-				ConfigEntries.ShowEmpties = Config.Bind("Preview", "Show empties", false, "If enabled, show all objects that are set to the empty object type.");
-				ConfigEntries.ShowDamagable = Config.Bind("Preview", "Only Show Damagable", false, "If enabled, only objects that can damage the player will be shown.");
+				ConfigEntries.ShowEmpties = Config.Bind("Preview", "Show empties (Does not work)", false, "If enabled, show all objects that are set to the empty object type.");
+				ConfigEntries.ShowDamagable = Config.Bind("Preview", "Only Show Damagable (Does not work)", false, "If enabled, only objects that can damage the player will be shown.");
 				ConfigEntries.HighlightObjects = Config.Bind("Preview", "Highlight Objects", true, "If enabled and if cursor hovers over an object, it will be highlighted.");
 				ConfigEntries.HighlightColor = Config.Bind("Preview", "Object Highlight Amount", new Color(0.1f, 0.1f, 0.1f), "If an object is hovered, it adds this amount of color to the hovered object.");
 				ConfigEntries.HighlightDoubleColor = Config.Bind("Preview", "Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to all color channels.");
-				ConfigEntries.PreviewSelectFix = Config.Bind("Preview", "Empties not selectable in preview", true, "If enabled, empties will not be selectable in preview.");
+				ConfigEntries.PreviewSelectFix = Config.Bind("Preview", "Empties not selectable in preview (Deprecated)", true, "If enabled, empties will not be selectable in preview.");
 				ConfigEntries.ShowSelector = Config.Bind("Preview", "Show Drag Selector", false, "If enabled, a circular point with arrows will appear that allows you to move objects when the circlular point is dragged around and scale the object when the arrows are dragged.");
 				emptyDisable = ConfigEntries.PreviewSelectFix.Value;
 				emptyVisible = ConfigEntries.ShowEmpties.Value;
@@ -434,6 +437,22 @@ namespace EditorManagement
 				mod.methods.Add("SetConfigEntry", GetType().GetMethod("SetConfigEntry"));
 				mod.methods.Add("RefreshObjectGUI", GetType().GetMethod("RefreshObjectGUI"));
 				ModCompatibility.mods.Add("EditorManagement", mod);
+            }
+
+            try
+			{
+				ModCompatibility.sharedFunctions.Add("HighlightColor", ConfigEntries.HighlightColor.Value);
+				ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", ConfigEntries.HighlightDoubleColor.Value);
+
+				ModCompatibility.sharedFunctions.Add("CanHightlightObjects", ConfigEntries.HighlightObjects.Value);
+				ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", ConfigEntries.ShowObjectsAlpha.Value);
+				ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", ConfigEntries.ShowObjectsOnLayer.Value);
+				ModCompatibility.sharedFunctions.Add("ShowEmpties", ConfigEntries.ShowEmpties.Value);
+				ModCompatibility.sharedFunctions.Add("ShowDamagable", ConfigEntries.ShowDamagable.Value);
+			}
+            catch
+            {
+
             }
 		}
 
@@ -513,7 +532,52 @@ namespace EditorManagement
 				Debug.Log($"{className}Repeating Reminder");
 				RepeatReminder();
 
-				if (ConfigEntries.RenderTimeline.Value && ConfigEntries.GenerateWaveform.Value && (lastWaveformType != ConfigEntries.WaveformMode.Value || lastWaveformBGColor != ConfigEntries.WaveformBGColor.Value || lastWaveformTopColor != ConfigEntries.WaveformTopColor.Value || lastWaveformBottomColor != ConfigEntries.WaveformBottomColor.Value))
+                try
+				{
+					if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
+						ModCompatibility.sharedFunctions.Add("HighlightColor", ConfigEntries.HighlightColor.Value);
+					else
+						ModCompatibility.sharedFunctions["HighlightColor"] = ConfigEntries.HighlightColor.Value;
+
+					if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
+						ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", ConfigEntries.HighlightDoubleColor.Value);
+					else
+						ModCompatibility.sharedFunctions["HighlightDoubleColor"] = ConfigEntries.HighlightDoubleColor.Value;
+
+					if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
+						ModCompatibility.sharedFunctions.Add("CanHightlightObjects", ConfigEntries.HighlightObjects.Value);
+					else
+						ModCompatibility.sharedFunctions["CanHightlightObjects"] = ConfigEntries.HighlightObjects.Value;
+
+					if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
+						ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", ConfigEntries.ShowObjectsAlpha.Value);
+					else
+						ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = ConfigEntries.ShowObjectsAlpha.Value;
+
+					if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
+						ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", ConfigEntries.ShowObjectsOnLayer.Value);
+					else
+						ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = ConfigEntries.ShowObjectsOnLayer.Value;
+
+					if (!ModCompatibility.sharedFunctions.ContainsKey("ShowEmpties"))
+						ModCompatibility.sharedFunctions.Add("ShowEmpties", ConfigEntries.ShowEmpties.Value);
+					else
+						ModCompatibility.sharedFunctions["ShowEmpties"] = ConfigEntries.ShowEmpties.Value;
+
+					if (!ModCompatibility.sharedFunctions.ContainsKey("ShowDamagable"))
+						ModCompatibility.sharedFunctions.Add("ShowDamagable", ConfigEntries.ShowDamagable.Value);
+					else
+						ModCompatibility.sharedFunctions["ShowDamagable"] = ConfigEntries.ShowDamagable.Value;
+
+					ObjectManager.inst.updateObjects();
+				}
+                catch (Exception ex)
+                {
+					Debug.Log($"{className}Error!{ex}");
+                }
+
+				if (ConfigEntries.RenderTimeline.Value && ConfigEntries.GenerateWaveform.Value &&
+					(lastWaveformType != ConfigEntries.WaveformMode.Value || lastWaveformBGColor != ConfigEntries.WaveformBGColor.Value || lastWaveformTopColor != ConfigEntries.WaveformTopColor.Value || lastWaveformBottomColor != ConfigEntries.WaveformBottomColor.Value))
 				{
 					Debug.Log($"{className}Setting Waveform");
 					RTEditor.inst.StartCoroutine(RTEditor.AssignTimelineTexture());
@@ -946,54 +1010,8 @@ namespace EditorManagement
 		[HarmonyPostfix]
 		static void GameUpdatePatch()
         {
-			if (EditorManager.inst == null && tracker != null)
-            {
+			if (!EditorManager.inst && tracker)
 				Destroy(tracker);
-            }
-
-			if (EditorManager.inst != null && catalyst == null)
-			{
-				foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-				{
-					if (beatmapObject != null && Objects.beatmapObjects.ContainsKey(beatmapObject.id))
-					{
-						var functionObject = Objects.beatmapObjects[beatmapObject.id];
-
-						var gameObject = functionObject.gameObject;
-						Material mat = null;
-						if (functionObject.renderer != null)
-						{
-							mat = functionObject.renderer.material;
-						}
-
-                        if (EditorManager.inst.isEditing == true && mat != null && mat.HasProperty("_Color") && functionObject.rtObject != null && functionObject.rtObject.selected == true && ConfigEntries.HighlightObjects.Value == true)
-                        {
-                            if (Input.GetKey(KeyCode.LeftShift))
-                            {
-                                Color colorHover = new Color(ConfigEntries.HighlightDoubleColor.Value.r, ConfigEntries.HighlightDoubleColor.Value.g, ConfigEntries.HighlightDoubleColor.Value.b);
-
-                                if (mat.color.r > 0.9f && mat.color.g > 0.9f && mat.color.b > 0.9f)
-                                {
-                                    colorHover = new Color(-ConfigEntries.HighlightDoubleColor.Value.r, -ConfigEntries.HighlightDoubleColor.Value.g, -ConfigEntries.HighlightDoubleColor.Value.b);
-                                }
-
-								mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
-                            }
-                            else
-                            {
-                                Color colorHover = new Color(ConfigEntries.HighlightColor.Value.r, ConfigEntries.HighlightColor.Value.g, ConfigEntries.HighlightColor.Value.b);
-
-                                if (mat.color.r > 0.95f && mat.color.g > 0.95f && mat.color.b > 0.95f)
-                                {
-                                    colorHover = new Color(-ConfigEntries.HighlightColor.Value.r, -ConfigEntries.HighlightColor.Value.g, -ConfigEntries.HighlightColor.Value.b);
-                                }
-
-								mat.color += new Color(colorHover.r, colorHover.g, colorHover.b, 0f);
-                            }
-                        }
-                    }
-				}
-			}
         }
 
 		[HarmonyPatch(typeof(PrefabEditor), "CollapseCurrentPrefab")]

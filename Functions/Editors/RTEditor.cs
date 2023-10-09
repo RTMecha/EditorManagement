@@ -33,6 +33,7 @@ using CielaSpike;
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
 
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
@@ -97,6 +98,9 @@ namespace EditorManagement.Functions.Editors
 
 		public GameObject mousePicker;
 		RectTransform mousePickerRT;
+
+		public bool selectingKey = false;
+		public object keyToSet;
 
 		#endregion
 
@@ -185,6 +189,20 @@ namespace EditorManagement.Functions.Editors
 				//}
 				mousePickerRT.anchoredPosition = (Input.mousePosition + zero) * num;
 			}
+
+			if (selectingKey && keyToSet != null && keyToSet.GetType() == typeof(ConfigEntry<KeyCode>))
+            {
+				var configEntry = (ConfigEntry<KeyCode>)keyToSet;
+				
+				for (int i = 0; i < 345; i++)
+                {
+					if (Input.GetKeyDown((KeyCode)i))
+                    {
+						configEntry.Value = (KeyCode)i;
+						selectingKey = false;
+                    }
+                }
+            }
 		}
 
         #region Notifications
@@ -1836,10 +1854,12 @@ namespace EditorManagement.Functions.Editors
 		{
 			int index = _obj.Index;
 
-			if (ModCompatibility.inst != null && ModCompatibility.catalyst != null && ModCompatibility.catalystType == ModCompatibility.CatalystType.Editor)
-            {
-				ModCompatibility.catalyst.GetMethod("updateProcessor", types: new[] { typeof(ObjEditor.ObjectSelection), typeof(bool) }).Invoke(ModCompatibility.catalyst, new object[] { _obj, false });
-            }
+			//if (ModCompatibility.inst != null && ModCompatibility.catalyst != null && ModCompatibility.catalystType == ModCompatibility.CatalystType.Editor)
+   //         {
+			//	ModCompatibility.catalyst.GetMethod("updateProcessor", types: new[] { typeof(ObjEditor.ObjectSelection), typeof(bool) }).Invoke(ModCompatibility.catalyst, new object[] { _obj, false });
+   //         }
+
+			Updater.updateProcessor(_obj, false);
 
 			if (_obj.IsObject())
 			{
@@ -1874,8 +1894,12 @@ namespace EditorManagement.Functions.Editors
 						if (beatmapObject.parent == id)
                         {
 							beatmapObject.parent = "";
-							updateObjects(beatmapObject);
-                        }
+
+							var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, beatmapObject.id);
+							objectSelection.Index = DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject);
+
+							Updater.updateProcessor(objectSelection, true);
+						}
                     }
 				}
 				else
@@ -1885,6 +1909,15 @@ namespace EditorManagement.Functions.Editors
 			}
 			else if (_obj.IsPrefab())
 			{
+				foreach (var bm in DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == _obj.ID))
+                {
+					var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, bm.id);
+					objectSelection.Index = DataManager.inst.gameData.beatmapObjects.IndexOf(bm);
+
+					Updater.updateProcessor(objectSelection, false);
+					//ModCompatibility.catalyst.GetMethod("updateProcessor", types: new[] { typeof(ObjEditor.ObjectSelection), typeof(bool) }).Invoke(ModCompatibility.catalyst, new object[] { objectSelection, false });
+				}
+
 				ObjEditor.inst.selectedObjects.Remove(_obj);
 				Destroy(ObjEditor.inst.prefabObjects[_obj.ID]);
 				ObjEditor.inst.prefabObjects.Remove(_obj.ID);
@@ -1919,7 +1952,12 @@ namespace EditorManagement.Functions.Editors
 					{
 						if (ModCompatibility.inst != null && ModCompatibility.catalyst != null && ModCompatibility.catalystInstance != null && ModCompatibility.catalystType == ModCompatibility.CatalystType.Editor)
 						{
-							ModCompatibility.catalystInstance.GetType().GetMethod("updateProcessor", types: new[] { typeof(BeatmapObject), typeof(bool) }).Invoke(ModCompatibility.catalystInstance, new object[] { beatmapObject, false });
+							var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, beatmapObject.id);
+							objectSelection.Index = DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject);
+
+							Updater.updateProcessor(objectSelection, false);
+
+							//ModCompatibility.catalystInstance.GetType().GetMethod("updateProcessor", types: new[] { typeof(ObjEditor.ObjectSelection), typeof(bool) }).Invoke(ModCompatibility.catalystInstance, new object[] { objectSelection, false });
 						}
 					}
 				}
@@ -7277,10 +7315,29 @@ namespace EditorManagement.Functions.Editors
 			else ModCompatibility.sharedFunctions.Add("EditorLevelFolders", levelItems);
 		}
 
-		public static void RenderTimeline()
+		public static IEnumerator RenderTimeline(float wait = 0.0001f)
         {
 			var bpm = SettingEditor.inst.SnapBPM;
-			
+
+			Texture2D texture = null;
+
+			for (int i = 0; i < AudioManager.inst.CurrentAudioSource.clip.length * 100; i++)
+            {
+				for (int j = 0; j < 300; j++)
+                {
+					if (i % bpm > bpm - 0.5f && i % bpm < bpm)
+						yield return SetPixel(texture, i, j, new Color(1f, 1f, 1f, 0.3f));
+					//yield return new WaitForSeconds(wait);
+                }
+            }
+
+			yield break;
+        }
+
+		public static object SetPixel(Texture2D texture, int x, int y, Color color)
+		{
+			texture.SetPixel(x, y, color);
+			return null;
         }
 
 		#endregion
@@ -9414,9 +9471,15 @@ namespace EditorManagement.Functions.Editors
 			return Color.white - invertedColorSum / colors.Count;
 		}
 
-        #endregion
+		#endregion
 
 		#region Misc Functions
+
+		public static void SetKey(ConfigEntry<KeyCode> configEntry)
+        {
+			inst.selectingKey = true;
+			inst.keyToSet = configEntry;
+        }
 
 		public static IEnumerator RespawnPlayersDefault()
 		{
@@ -9815,6 +9878,62 @@ namespace EditorManagement.Functions.Editors
 			yield break;
 		}
 
+		public static IEnumerator GenerateDuplicationWave(int amount = 14, int reset = 0, float offset = 0.02f, float position = 1.5f, float wait = 0.2f)
+		{
+			var bm = ObjEditor.inst.currentObjectSelection.GetObjectData();
+			float sca = 0f;
+			int bin = bm.editorData.Bin;
+			for (int i = 0; i < amount; i++)
+			{
+				Duplicate();
+				yield return new WaitForSeconds(wait);
+
+				bm = ObjEditor.inst.currentObjectSelection.GetObjectData();
+				bin++;
+
+				if (bin > 14)
+				{
+					bin = reset;
+					bm.editorData.Bin = bin;
+					ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
+				}
+
+				bm.StartTime += offset;
+				sca += offset;
+				bm.SetParentOffset(1, sca);
+				bm.events[0][0].eventValues[0] += position;
+			}
+		}
+
+		public static IEnumerator GenerateNewWave(BeatmapObject parent, int amount = 14, int reset = 0, float offset = 0.02f, float position = 1.5f, float wait = 0.2f)
+        {
+			float poskf = 0f;
+			float sca = 0f;
+			int bin = reset;
+			for (int i = 0; i < amount; i++)
+			{
+				var objectSelection = CreateNewDefaultObject();
+				var bm = objectSelection.GetObjectData();
+				yield return new WaitForSeconds(wait);
+
+				bin++;
+				bm.editorData.Bin = bin;
+
+				if (bin > 14)
+                {
+					bin = reset;
+					bm.editorData.Bin = bin;
+					ObjEditor.inst.RenderTimelineObject(ObjEditor.inst.currentObjectSelection);
+				}
+
+				bm.StartTime += offset;
+				sca += offset;
+				bm.SetParentOffset(1, sca);
+				poskf += position;
+				bm.events[0][0].eventValues[0] = poskf;
+			}
+		}
+
 		#endregion
 
 		#region EditorProperties
@@ -9992,9 +10111,9 @@ namespace EditorManagement.Functions.Editors
 			new EditorProperty("Show Object Dragger", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowSelector, "Allows objects's position and scale to directly be modified within the editor preview window."),
 			new EditorProperty("Show Only On Layer", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowObjectsOnLayer, "Will make any objects not on the current editor layer transparent."),
 			new EditorProperty("Not On Layer Opacity", EditorProperty.ValueType.FloatSlider, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowObjectsAlpha, "How transparent the objects not on the current editor layer should be."),
-			new EditorProperty("Show Empties", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowEmpties, "If empties should be shown. Good for understanding character rigs."),
-			new EditorProperty("Show Only Damagable", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowDamagable, "Will only show objects that can hit you."),
-			new EditorProperty("Empties Preview Fix", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.PreviewSelectFix, "Empties will become unselectable in the editor preview window."),
+			new EditorProperty("Show Empties (Does not work)", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowEmpties, "If empties should be shown. Good for understanding character rigs."),
+			new EditorProperty("Show Only Damagable (Does not work)", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.ShowDamagable, "Will only show objects that can hit you."),
+			new EditorProperty("Empties Preview Fix (Deprecated)", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.PreviewSelectFix, "Empties will become unselectable in the editor preview window."),
 			new EditorProperty("Highlight Objects", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Preview, ConfigEntries.HighlightObjects, "If hovering over an object should highlight it."),
 			new EditorProperty("Highlight Color", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Preview, ConfigEntries.HighlightColor, "The color will set to this amount."),
 			new EditorProperty("Highlight Color Shift", EditorProperty.ValueType.Color, EditorProperty.EditorPropCategory.Preview, ConfigEntries.HighlightDoubleColor, "When holding shift, the color will set to this amount."),

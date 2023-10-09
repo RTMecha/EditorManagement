@@ -11,6 +11,9 @@ using EditorManagement.Functions;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
+using RTFunctions.Functions.Optimization.Objects;
+using RTFunctions.Functions.Optimization.Objects.Visual;
 
 namespace EditorManagement.Patchers
 {
@@ -352,24 +355,22 @@ namespace EditorManagement.Patchers
 							//	}
 							//}
 
-							if (Objects.beatmapObjects.ContainsKey(beatmapObject.id))
+							if (Updater.TryGetObject(beatmapObject, out LevelObject levelObject) && levelObject.visualObject.GameObject && levelObject.visualObject.GameObject.TryGetComponent(out MeshFilter meshFilter))
 							{
-								var functionObject = Objects.beatmapObjects[beatmapObject.id];
-								if (functionObject.gameObject != null && functionObject.meshFilter != null)
 								{
 									var lossyScale = Vector3.one;
-									var position = functionObject.gameObject.transform.position;
+									var position = levelObject.visualObject.GameObject.transform.position;
 
-									foreach (var chain in functionObject.transformChain)
+									foreach (var chain in levelObject.transformChain)
 									{
 										var chvector = chain.transform.localScale;
 										lossyScale = new Vector3(lossyScale.x * chvector.x, lossyScale.y * chvector.y, 1f);
 									}
 
-									var array = new Vector3[functionObject.meshFilter.mesh.vertices.Length];
+									var array = new Vector3[meshFilter.mesh.vertices.Length];
 									for (int i = 0; i < array.Length; i++)
 									{
-										var a = functionObject.meshFilter.mesh.vertices[i];
+										var a = meshFilter.mesh.vertices[i];
 										array[i] = new Vector3(a.x * lossyScale.x, a.y * lossyScale.y, 0f) + position;
 									}
 
