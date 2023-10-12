@@ -770,6 +770,23 @@ namespace EditorManagement.Patchers
 
                 }
 			}
+
+            // Fade Color
+            {
+				var colorLabel = Instantiate(label);
+				colorLabel.transform.SetParent(__instance.left);
+				colorLabel.transform.localScale = Vector3.one;
+				colorLabel.name = "label";
+				colorLabel.transform.SetSiblingIndex(14);
+				colorLabel.transform.GetChild(0).GetComponent<Text>().text = "Fade Color";
+
+				var color = __instance.left.Find("color");
+				var fadeColor = Instantiate(color.gameObject);
+				fadeColor.transform.SetParent(__instance.left);
+				fadeColor.transform.localScale = Vector3.one;
+				fadeColor.name = "fade-color";
+				fadeColor.transform.SetSiblingIndex(15);
+			}
 		}
 
         [HarmonyPatch("OpenDialog")]
@@ -781,7 +798,7 @@ namespace EditorManagement.Patchers
 			__instance.left = __instance.dialog.Find("data/left/Object Scroll View/Viewport/Content");
 			__instance.right = __instance.dialog.Find("data/right");
 
-			DataManager.GameData.BackgroundObject backgroundObject = DataManager.inst.gameData.backgroundObjects[_bg];
+			var backgroundObject = DataManager.inst.gameData.backgroundObjects[_bg];
 			var bg = Objects.backgroundObjects[_bg];
 
 			__instance.left.Find("name/active").GetComponent<Toggle>().isOn = backgroundObject.active;
@@ -894,27 +911,51 @@ namespace EditorManagement.Patchers
 			__instance.left.Find("reactive/slider").GetComponent<Slider>().value = backgroundObject.reactiveScale;
 
 			LSHelpers.DeleteChildren(__instance.left.Find("color"));
+			LSHelpers.DeleteChildren(__instance.left.Find("fade-color"));
 
 			int num = 0;
 			foreach (var col in GameManager.inst.LiveTheme.backgroundColors)
 			{
-				var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
-				gameObject.name = "color gui";
-				gameObject.transform.SetParent(__instance.left.Find("color"));
-				gameObject.transform.localScale = Vector3.one;
-				gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
-				gameObject.transform.Find("Image").gameObject.SetActive(false);
-
-				if (backgroundObject.color == num)
+				int colTmp = num;
+				// Top Color
 				{
-					gameObject.transform.Find("Image").gameObject.SetActive(true);
+					var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
+					gameObject.name = "color gui";
+					gameObject.transform.SetParent(__instance.left.Find("color"));
+					gameObject.transform.localScale = Vector3.one;
+					gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
+					gameObject.transform.Find("Image").gameObject.SetActive(false);
+
+					if (backgroundObject.color == num)
+					{
+						gameObject.transform.Find("Image").gameObject.SetActive(true);
+					}
+
+					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						__instance.SetColor(colTmp);
+					});
 				}
 
-				int colTmp = num;
-				gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+				// Fade Color
 				{
-					__instance.SetColor(colTmp);
-				});
+					var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
+					gameObject.name = "color gui";
+					gameObject.transform.SetParent(__instance.left.Find("fade-color"));
+					gameObject.transform.localScale = Vector3.one;
+					gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
+					gameObject.transform.Find("Image").gameObject.SetActive(false);
+
+					if (bg.FadeColor == num)
+					{
+						gameObject.transform.Find("Image").gameObject.SetActive(true);
+					}
+
+					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						SetColor(__instance, colTmp);
+					});
+				}
 				num++;
 			}
 
@@ -1128,6 +1169,28 @@ namespace EditorManagement.Patchers
 
 			return false;
 		}
+		public static void SetColor(BackgroundEditor __instance, int _col)
+		{
+			Objects.backgroundObjects[__instance.currentObj].FadeColor = _col;
+			__instance.UpdateBackground(__instance.currentObj);
+			UpdateColorSelection(__instance);
+		}
+
+		public static void UpdateColorSelection(BackgroundEditor __instance)
+		{
+			var bg = Objects.backgroundObjects[__instance.currentObj];
+			int num = 0;
+			foreach (Color color in GameManager.inst.LiveTheme.backgroundColors)
+			{
+				GameObject gameObject = __instance.left.Find("fade-color").GetChild(num).gameObject;
+				gameObject.transform.Find("Image").gameObject.SetActive(false);
+				if (bg.FadeColor == num)
+				{
+					gameObject.transform.Find("Image").gameObject.SetActive(true);
+				}
+				num++;
+			}
+		}
 
 		[HarmonyPatch("CreateNewBackground")]
 		[HarmonyPrefix]
@@ -1207,7 +1270,7 @@ namespace EditorManagement.Patchers
 			bgGameObject.SetActive(backgroundObject.active);
 			bgGameObject.transform.localPosition = new Vector3(backgroundObject.pos.x, backgroundObject.pos.y, (float)(32 + backgroundObject.layer * 10));
 			bgGameObject.transform.localScale = new Vector3(backgroundObject.scale.x, backgroundObject.scale.y, 10f);
-			bgGameObject.transform.transform.localRotation = Quaternion.Euler(new Vector3(0f, 0f, backgroundObject.rot));
+			bgGameObject.transform.transform.localRotation = Quaternion.Euler(new Vector3(bg == null ? 0f : bg.rotation.x, bg == null ? 0f : bg.rotation.y, backgroundObject.rot));
 			//bgGameObject.GetComponent<Renderer>().material.color = GameManager.inst.LiveTheme.backgroundColors[Mathf.Clamp(backgroundObject.color, 0, GameManager.inst.LiveTheme.backgroundColors.Count - 1)];
 
 			foreach (object obj in BackgroundManager.inst.backgroundObjects[__0].transform)

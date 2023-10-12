@@ -7673,6 +7673,7 @@ namespace EditorManagement.Functions.Editors
 					jn["bg_objects"][i]["depth"] = bg.depth.ToString();
 					jn["bg_objects"][i]["s"] = bg.shape.Type.ToString();
 					jn["bg_objects"][i]["so"] = bg.shape.Option.ToString();
+					jn["bg_objects"][i]["color_fade"] = bg.FadeColor.ToString();
 
                     {
 						jn["bg_objects"][i]["rc"]["pos"]["i"]["x"] = bg.reactivePosIntensity.x.ToString();
