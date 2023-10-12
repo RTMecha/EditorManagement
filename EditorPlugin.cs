@@ -148,8 +148,6 @@ namespace EditorManagement
 		{
 			inst = this;
 
-			Logger.LogInfo("Plugin Editor Management is loaded!");
-
 			var fontLimit = new AcceptableValueRange<int>(1, 40);
 
 			//General
@@ -213,6 +211,7 @@ namespace EditorManagement
 				ConfigEntries.SavingUpdatesTime = Config.Bind("Data", "Saving Updates Edited Date", false, "Enabling this will save date_edited in metadata.lsb as the most recent.");
 				ConfigEntries.LevelLoadsSavedTime = Config.Bind("Data", "Level Loads Last Time", true, "Sets the editor position (audio time, layer, etc) to the last saved editor position on level load.");
 				ConfigEntries.LevelPausesOnStart = Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.");
+				ConfigEntries.SaveOpacityToThemes = Config.Bind("Data", "Saving Saves Beatmap Opacity", true, "Turn this off if you don't want themes to break in unmodded PA.");
 			}
 
 			//Editor GUI
@@ -425,6 +424,7 @@ namespace EditorManagement
 				harmony.PatchAll(typeof(ObjectManagerPatch));
 				harmony.PatchAll(typeof(EventsInstance));
 				harmony.PatchAll(typeof(DataManagerPrefabObjectPatch));
+				harmony.PatchAll(typeof(BackgroundEditorPatch));
 
 				harmony.Patch(layerSetter, prefix: layerPatch);
 				harmony.Patch(binSetter, prefix: binPatch);
@@ -454,6 +454,8 @@ namespace EditorManagement
             {
 
             }
+
+			Logger.LogInfo("Plugin Editor Management is loaded!");
 		}
 
 		void Update()
@@ -948,13 +950,6 @@ namespace EditorManagement
 
 		public static void SetShowable()
 		{
-			if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
-			{
-				var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
-
-				objectModifiersPlugin.GetMethod("SetShowable").Invoke(objectModifiersPlugin, new object[] { ConfigEntries.ShowObjectsOnLayer.Value, ConfigEntries.ShowObjectsAlpha.Value, ConfigEntries.HighlightObjects.Value, ConfigEntries.HighlightColor.Value, ConfigEntries.HighlightDoubleColor.Value });
-			}
-
 			if (GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin"))
 			{
 				var eventsCorePlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin").GetType();
@@ -1227,104 +1222,6 @@ namespace EditorManagement
 			return false;
         }
 		
-		[HarmonyPatch(typeof(BackgroundEditor), "Awake")]
-		[HarmonyPostfix]
-		static void BackgroundEditorAwakePostfix()
-        {
-			GameObject bgRight = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/BackgroundDialog/data/right");
-			GameObject bgLeft = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/BackgroundDialog/data/left");
-
-			var createTip = bgRight.transform.Find("create").GetComponent<HoverTooltip>();
-			HoverTooltip.Tooltip createTooltip = new HoverTooltip.Tooltip();
-			createTooltip.desc = "Create New Background Object";
-			createTooltip.hint = "Press this to create a new background object.";
-			createTip.tooltipLangauges.Add(createTooltip);
-
-			var destroyAll = Instantiate(bgRight.transform.Find("create").gameObject);
-			destroyAll.transform.SetParent(bgRight.transform);
-			destroyAll.transform.localScale = Vector3.one;
-			destroyAll.transform.SetSiblingIndex(2);
-			destroyAll.name = "destroy";
-
-			destroyAll.GetComponent<Image>().color = new Color(1f, 0.131f, 0.231f, 1f);
-			destroyAll.transform.GetChild(0).GetComponent<Text>().text = "Delete All Backgrounds";
-			destroyAll.transform.GetChild(0).localScale = Vector3.one;
-
-			var destroyAllButtons = destroyAll.GetComponent<Button>();
-			destroyAllButtons.onClick.m_Calls.m_ExecutingCalls.Clear();
-			destroyAllButtons.onClick.m_Calls.m_PersistentCalls.Clear();
-			destroyAllButtons.onClick.m_PersistentCalls.m_Calls.Clear();
-			destroyAllButtons.onClick.RemoveAllListeners();
-			destroyAllButtons.onClick.AddListener(delegate ()
-			{
-				if (DataManager.inst.gameData.backgroundObjects.Count > 1)
-				{
-					EditorManager.inst.ShowDialog("Warning Popup");
-					RTEditor.RefreshWarningPopup("Are you sure you want to delete all backgrounds?", delegate ()
-					{
-						RTEditor.DeleteAllBackgrounds();
-						EditorManager.inst.HideDialog("Warning Popup");
-					}, delegate ()
-					{
-						EditorManager.inst.HideDialog("Warning Popup");
-					});
-				}
-				else
-                {
-					EditorManager.inst.DisplayNotification("Cannot delete only background object.", 2f, EditorManager.NotificationType.Warning);
-                }
-			});
-
-			var destroyAllTip = destroyAll.GetComponent<HoverTooltip>();
-			HoverTooltip.Tooltip destroyAllTooltip = new HoverTooltip.Tooltip();
-			destroyAllTooltip.desc = "Destroy All Objects";
-			destroyAllTooltip.hint = "Press this to destroy all background objects, EXCEPT the first one.";
-			destroyAllTip.tooltipLangauges.Clear();
-			destroyAllTip.tooltipLangauges.Add(destroyAllTooltip);
-
-			var createBGs = Instantiate(bgLeft.transform.Find("name").gameObject);
-			createBGs.transform.SetParent(bgRight.transform);
-			createBGs.transform.localScale = Vector3.one;
-			createBGs.transform.SetSiblingIndex(2);
-			createBGs.name = "create bgs";
-
-			var name = createBGs.transform.Find("name").GetComponent<InputField>();
-			var nameRT = name.GetComponent<RectTransform>();
-
-			name.onValueChanged.m_Calls.m_ExecutingCalls.Clear();
-			name.onValueChanged.m_Calls.m_PersistentCalls.Clear();
-			name.onValueChanged.m_PersistentCalls.m_Calls.Clear();
-			name.onValueChanged.RemoveAllListeners();
-
-			Destroy(createBGs.transform.Find("active").gameObject);
-			nameRT.localScale = Vector3.one;
-			name.text = "12";
-			name.characterValidation = InputField.CharacterValidation.Integer;
-			nameRT.sizeDelta = new Vector2(80f, 34f);
-
-			var createAll = Instantiate(bgRight.transform.Find("create").gameObject);
-			createAll.transform.SetParent(createBGs.transform);
-			createAll.transform.localScale = Vector3.one;
-			createAll.name = "create";
-
-			createAll.GetComponent<Image>().color = new Color(0.6252f, 0.2789f, 0.6649f, 1f);
-			createAll.GetComponent<RectTransform>().sizeDelta = new Vector2(278f, 34f);
-			createAll.transform.GetChild(0).GetComponent<Text>().text = "Create Backgrounds";
-			createAll.transform.GetChild(0).localScale = Vector3.one;
-
-			var buttonCreate = createAll.GetComponent<Button>();
-			buttonCreate.onClick.m_Calls.m_ExecutingCalls.Clear();
-			buttonCreate.onClick.m_Calls.m_PersistentCalls.Clear();
-			buttonCreate.onClick.m_PersistentCalls.m_Calls.Clear();
-			buttonCreate.onClick.RemoveAllListeners();
-			buttonCreate.onClick.AddListener(delegate ()
-			{
-				RTEditor.CreateBackgrounds(int.Parse(createBGs.transform.GetChild(0).GetComponent<InputField>().text));
-			});
-
-			bgRight.transform.Find("backgrounds").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 524f);
-		}
-
 		public static void SetNewMarkerColors()
         {
 			MarkerEditor.inst.markerColors = new List<Color>
