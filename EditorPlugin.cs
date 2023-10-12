@@ -33,7 +33,7 @@ using RTFunctions.Functions.Optimization.Objects.Visual;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.5")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.6")]
 	[BepInProcess("Project Arrhythmia.exe")]
 	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
 	//[BepInIncompatibility("com.mecha.originoffset")]
