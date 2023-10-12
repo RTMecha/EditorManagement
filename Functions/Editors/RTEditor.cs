@@ -1059,15 +1059,9 @@ namespace EditorManagement.Functions.Editors
 			return gameObject;
 		}
 
-		public static void Duplicate(bool _regen = true)
-		{
-			Copy(false, true, _regen);
-		}
+		public static void Duplicate(bool _regen = true) => Copy(false, true, _regen);
 
-		public static void Cut()
-		{
-			Copy(true, false);
-		}
+		public static void Cut() => Copy(true, false);
 
 		public static void Copy(bool _cut = false, bool _dup = false, bool _regen = true)
 		{
@@ -1762,61 +1756,6 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-		public static ObjectManager updateObjects(BeatmapObject _beatmapObject)
-		{
-			string id = _beatmapObject.id;
-			if (!_beatmapObject.fromPrefab)
-			{
-				if (ObjectManager.inst.beatmapGameObjects.ContainsKey(id))
-				{
-					Destroy(ObjectManager.inst.beatmapGameObjects[id].obj);
-					ObjectManager.inst.beatmapGameObjects[id].sequence.all.Kill(false);
-					ObjectManager.inst.beatmapGameObjects[id].sequence.col.Kill(false);
-					ObjectManager.inst.beatmapGameObjects.Remove(id);
-				}
-				if (!_beatmapObject.fromPrefab)
-				{
-					_beatmapObject.active = false;
-					for (int j = 0; j < _beatmapObject.events.Count; j++)
-					{
-						for (int k = 0; k < _beatmapObject.events[j].Count; k++)
-						{
-							_beatmapObject.events[j][k].active = false;
-						}
-					}
-				}
-			}
-			ObjectManager.inst.updateObjects(_beatmapObject.id);
-			return ObjectManager.inst;
-		}
-
-		public static IEnumerator IupdateObjects(BeatmapObject _beatmapObject)
-		{
-			string id = _beatmapObject.id;
-			if (!_beatmapObject.fromPrefab)
-			{
-				if (ObjectManager.inst.beatmapGameObjects.ContainsKey(id))
-				{
-					Destroy(ObjectManager.inst.beatmapGameObjects[id].obj);
-					ObjectManager.inst.beatmapGameObjects[id].sequence.all.Kill();
-					ObjectManager.inst.beatmapGameObjects[id].sequence.col.Kill();
-					ObjectManager.inst.beatmapGameObjects.Remove(id);
-				}
-				if (!_beatmapObject.fromPrefab)
-				{
-					_beatmapObject.active = false;
-					for (int i = 0; i < _beatmapObject.events.Count; i++)
-					{
-						for (int j = 0; j < _beatmapObject.events[i].Count; j++)
-						{
-							_beatmapObject.events[i][j].active = false;
-						}
-					}
-				}
-			}
-			yield break;
-		}
-
 		public static IEnumerator DeleteObjects(List<ObjEditor.ObjectSelection> _objs, bool _set = true)
 		{
 			ienumRunning = true;
@@ -1950,15 +1889,10 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (beatmapObject.prefabInstanceID == id && beatmapObject.fromPrefab)
 					{
-						if (ModCompatibility.inst != null && ModCompatibility.catalyst != null && ModCompatibility.catalystInstance != null && ModCompatibility.catalystType == ModCompatibility.CatalystType.Editor)
-						{
-							var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, beatmapObject.id);
-							objectSelection.Index = DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject);
+						var objectSelection = new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, beatmapObject.id);
+						objectSelection.Index = DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject);
 
-							Updater.updateProcessor(objectSelection, false);
-
-							//ModCompatibility.catalystInstance.GetType().GetMethod("updateProcessor", types: new[] { typeof(ObjEditor.ObjectSelection), typeof(bool) }).Invoke(ModCompatibility.catalystInstance, new object[] { objectSelection, false });
-						}
+						Updater.updateProcessor(objectSelection, false);
 					}
 				}
 
@@ -1997,13 +1931,15 @@ namespace EditorManagement.Functions.Editors
 
 			EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
 
+			var selection = ObjEditor.inst.currentObjectSelection.GetObjectData();
+
 			foreach (var keyframeSelection2 in list)
 			{
 				if (keyframeSelection2.Index != 0)
 				{
 					yield return new WaitForSeconds(delay);
 
-					ObjEditor.inst.currentObjectSelection.GetObjectData().events[keyframeSelection2.Type].RemoveAt(keyframeSelection2.Index);
+					selection.events[keyframeSelection2.Type].RemoveAt(keyframeSelection2.Index);
 
 					delay += 0.0001f;
 				}
@@ -2222,6 +2158,7 @@ namespace EditorManagement.Functions.Editors
 					{
 						ObjectModifiersEditor.AddModifierObject(beatmapObject2);
 					}
+
 					if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin") && _dictionary != null)
 					{
 						var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
@@ -2327,6 +2264,50 @@ namespace EditorManagement.Functions.Editors
 
 			ienumRunning = false;
 			yield break;
+		}
+
+		public static void AddPrefabObjectToLevel(DataManager.GameData.Prefab _prefab)
+		{
+			DataManager.GameData.PrefabObject prefabObject = new DataManager.GameData.PrefabObject();
+			prefabObject.ID = LSText.randomString(16);
+			prefabObject.prefabID = _prefab.ID;
+			prefabObject.StartTime = EditorManager.inst.CurrentAudioPos;
+			prefabObject.editorData.Layer = EditorManager.inst.layer;
+
+			prefabObject.events[1].eventValues = new float[2]
+			{
+				1f,
+				1f
+			};
+
+			DataManager.inst.gameData.prefabObjects.Add(prefabObject);
+			ObjectManager.inst.updateObjects();
+			if (prefabObject.editorData.Layer != EditorManager.inst.layer)
+			{
+				EditorManager.inst.SetLayer(prefabObject.editorData.Layer);
+			}
+
+			try
+			{
+				if (DataManager.inst.gameData.prefabs.IndexOf(_prefab) > -1)
+				{
+					var modPrefab = Objects.prefabs[DataManager.inst.gameData.prefabs.IndexOf(_prefab)];
+
+					var modPrefabObject = new Objects.PrefabObject(prefabObject);
+
+					modPrefabObject.modifiers = modPrefab.modifiers;
+
+					if (!Objects.prefabObjects.ContainsKey(prefabObject.ID))
+						Objects.prefabObjects.Add(prefabObject.ID, modPrefabObject);
+				}
+			}
+			catch (Exception ex)
+			{
+				UnityEngine.Debug.Log($"{EditorPlugin.className}Failed to set prefab object.\nEXCEPTION: {ex.Message}\nSTACKTRACE: {ex.StackTrace}");
+			}
+
+
+			ObjEditor.inst.RenderTimelineObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID));
 		}
 
 		public static void CopyEventKeyframes(Dictionary<EventEditor.KeyframeSelection, DataManager.GameData.EventKeyframe> _keyframes)
@@ -4268,29 +4249,6 @@ namespace EditorManagement.Functions.Editors
 
 			tf.localScale = Vector3.one;
 			yield break;
-		}
-
-		public static void AddPrefabObjectToLevel(DataManager.GameData.Prefab _prefab)
-		{
-			DataManager.GameData.PrefabObject prefabObject = new DataManager.GameData.PrefabObject();
-			prefabObject.ID = LSText.randomString(16);
-			prefabObject.prefabID = _prefab.ID;
-			prefabObject.StartTime = EditorManager.inst.CurrentAudioPos;
-			prefabObject.editorData.Layer = EditorManager.inst.layer;
-
-			prefabObject.events[1].eventValues = new float[2]
-			{
-				1f,
-				1f
-			};
-
-			DataManager.inst.gameData.prefabObjects.Add(prefabObject);
-			ObjectManager.inst.updateObjects(prefabObject.ID);
-			if (prefabObject.editorData.Layer != EditorManager.inst.layer)
-			{
-				EditorManager.inst.SetLayer(prefabObject.editorData.Layer);
-			}
-			ObjEditor.inst.RenderTimelineObject(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID));
 		}
 
 		public Dictionary<string, GameObject> themeBars = new Dictionary<string, GameObject>();
@@ -7374,9 +7332,9 @@ namespace EditorManagement.Functions.Editors
 						jn["prefab_objects"][i]["ro"] = _data.prefabObjects[i].RepeatOffsetTime.ToString();
 				}
 				catch (Exception ex)
-                {
-					Debug.LogFormat("{0}Prefab Object Editor!\nMESSAGE: {1}\nSTACKTRACE: {2}", EditorPlugin.className, ex.Message, ex.StackTrace);
-                }
+				{
+					Debug.Log($"{EditorPlugin.className}Prefab Object Editor!\nMESSAGE: {ex.Message}\nSTACKTRACE: {ex.StackTrace}");
+				}
 
 				if (_data.prefabObjects[i].editorData.locked)
 				{
@@ -7415,10 +7373,13 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 			Debug.Log("Saving Level Data");
-			jn["level_data"]["level_version"] = _data.beatmapData.levelData.levelVersion.ToString();
-			jn["level_data"]["background_color"] = _data.beatmapData.levelData.backgroundColor.ToString();
-			jn["level_data"]["follow_player"] = _data.beatmapData.levelData.followPlayer.ToString();
-			jn["level_data"]["show_intro"] = _data.beatmapData.levelData.showIntro.ToString();
+			{
+				jn["level_data"]["level_version"] = _data.beatmapData.levelData.levelVersion.ToString();
+				jn["level_data"]["background_color"] = _data.beatmapData.levelData.backgroundColor.ToString();
+				jn["level_data"]["follow_player"] = _data.beatmapData.levelData.followPlayer.ToString();
+				jn["level_data"]["show_intro"] = _data.beatmapData.levelData.showIntro.ToString();
+				jn["level_data"]["bg_zoom"] = RTHelpers.perspectiveZoom.ToString();
+			}
 			Debug.Log("Saving prefabs");
 			if (DataManager.inst.gameData.prefabs != null)
 			{
@@ -7469,15 +7430,21 @@ namespace EditorManagement.Functions.Editors
 					jn["themes"][i]["bg"] = LSColors.ColorToHex(levelThemes[i].backgroundColor);
 					for (int j = 0; j < levelThemes[i].playerColors.Count; j++)
 					{
-						jn["themes"][i]["players"][j] = ColorToHex(levelThemes[i].playerColors[j]);
+						if (ConfigEntries.SaveOpacityToThemes.Value)
+							jn["themes"][i]["players"][j] = ColorToHex(levelThemes[i].playerColors[j]);
+						else
+							jn["themes"][i]["players"][j] = LSColors.ColorToHex(levelThemes[i].playerColors[j]);
 					}
 					for (int j = 0; j < levelThemes[i].objectColors.Count; j++)
 					{
-						jn["themes"][i]["objs"][j] = ColorToHex(levelThemes[i].objectColors[j]);
+						if (ConfigEntries.SaveOpacityToThemes.Value)
+							jn["themes"][i]["objs"][j] = ColorToHex(levelThemes[i].objectColors[j]);
+						else
+							jn["themes"][i]["objs"][j] = LSColors.ColorToHex(levelThemes[i].objectColors[j]);
 					}
 					for (int j = 0; j < levelThemes[i].backgroundColors.Count; j++)
 					{
-						jn["themes"][i]["bgs"][j] = ColorToHex(levelThemes[i].backgroundColors[j]);
+						jn["themes"][i]["bgs"][j] = LSColors.ColorToHex(levelThemes[i].backgroundColors[j]);
 					}
 				}
 			}
@@ -7698,6 +7665,43 @@ namespace EditorManagement.Functions.Editors
 				jn["bg_objects"][i]["color"] = _data.backgroundObjects[i].color.ToString();
 				jn["bg_objects"][i]["layer"] = _data.backgroundObjects[i].layer.ToString();
 				jn["bg_objects"][i]["fade"] = _data.backgroundObjects[i].drawFade.ToString();
+
+                try
+				{
+					var bg = Objects.backgroundObjects[i];
+					jn["bg_objects"][i]["zscale"] = bg.zscale.ToString();
+					jn["bg_objects"][i]["depth"] = bg.depth.ToString();
+					jn["bg_objects"][i]["s"] = bg.shape.Type.ToString();
+					jn["bg_objects"][i]["so"] = bg.shape.Option.ToString();
+
+                    {
+						jn["bg_objects"][i]["rc"]["pos"]["i"]["x"] = bg.reactivePosIntensity.x.ToString();
+						jn["bg_objects"][i]["rc"]["pos"]["i"]["y"] = bg.reactivePosIntensity.y.ToString();
+						jn["bg_objects"][i]["rc"]["pos"]["s"]["x"] = bg.reactivePosSamples.x.ToString();
+						jn["bg_objects"][i]["rc"]["pos"]["s"]["y"] = bg.reactivePosSamples.y.ToString();
+
+						jn["bg_objects"][i]["rc"]["z"]["active"] = bg.reactiveIncludesZ.ToString();
+						jn["bg_objects"][i]["rc"]["z"]["i"] = bg.reactiveZIntensity.ToString();
+						jn["bg_objects"][i]["rc"]["z"]["s"] = bg.reactiveZSample.ToString();
+
+						jn["bg_objects"][i]["rc"]["sca"]["i"]["x"] = bg.reactiveScaIntensity.x.ToString();
+						jn["bg_objects"][i]["rc"]["sca"]["i"]["y"] = bg.reactiveScaIntensity.y.ToString();
+						jn["bg_objects"][i]["rc"]["sca"]["s"]["x"] = bg.reactiveScaSamples.x.ToString();
+						jn["bg_objects"][i]["rc"]["sca"]["s"]["y"] = bg.reactiveScaSamples.y.ToString();
+
+						jn["bg_objects"][i]["rc"]["rot"]["i"] = bg.reactiveRotIntensity.ToString();
+						jn["bg_objects"][i]["rc"]["rot"]["s"] = bg.reactiveRotSample.ToString();
+						
+						jn["bg_objects"][i]["rc"]["col"]["i"] = bg.reactiveColIntensity.ToString();
+						jn["bg_objects"][i]["rc"]["col"]["s"] = bg.reactiveColSample.ToString();
+						jn["bg_objects"][i]["rc"]["col"]["c"] = bg.reactiveCol.ToString();
+					}
+				}
+                catch (Exception ex)
+				{
+					Debug.Log($"{EditorPlugin.className}BG Mod error!\nMESSAGE: {ex.Message}\nSTACKTRACE: {ex.StackTrace}");
+				}
+
 				if (_data.backgroundObjects[i].reactive)
 				{
 					jn["bg_objects"][i]["r_set"]["type"] = _data.backgroundObjects[i].reactiveType.ToString();
@@ -8360,6 +8364,7 @@ namespace EditorManagement.Functions.Editors
 		{
 			PrefabEditor.inst.LoadedPrefabs.Clear();
 			PrefabEditor.inst.LoadedPrefabsFiles.Clear();
+			Objects.externalPrefabs.Clear();
 			yield return inst.StartCoroutine(LoadExternalPrefabs(PrefabEditor.inst));
 			PrefabEditor.inst.ReloadExternalPrefabsInPopup();
 			EditorManager.inst.DisplayNotification("Updated external prefabs!", 2f, EditorManager.NotificationType.Success, false);
@@ -8371,6 +8376,7 @@ namespace EditorManagement.Functions.Editors
 			var folders = FileManager.inst.GetFileList(EditorPlugin.prefabListPath, "lsp");
 			while (folders.Count <= 0)
 				yield return null;
+			Objects.externalPrefabs.Clear();
 			foreach (var lsFile in folders)
 			{
 				var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsFile.FullPath));
@@ -8389,7 +8395,20 @@ namespace EditorManagement.Functions.Editors
 					_prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jn["prefab_objects"][aIndex]));
 				}
 
-				__instance.LoadedPrefabs.Add(new DataManager.GameData.Prefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects));
+				var prefab = new DataManager.GameData.Prefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects);
+
+				if (jn["id"] != null)
+					prefab.ID = jn["id"];
+				else
+					prefab.ID = LSText.randomString(16);
+
+				var modPrefab = new Objects.Prefab(prefab);
+
+				Objects.externalPrefabs.Add(modPrefab);
+				for (int i = 0; i < jn["objects"].Count; i++)
+					__instance.StartCoroutine(Parser.ParsePrefabModifiers(jn["objects"][i], modPrefab));
+
+				__instance.LoadedPrefabs.Add(prefab);
 				__instance.LoadedPrefabsFiles.Add(lsFile.FullPath);
 			}
 		}
@@ -9196,6 +9215,11 @@ namespace EditorManagement.Functions.Editors
 					backgroundObject.reactiveScale = UnityEngine.Random.Range(0.01f, 0.04f);
 				}
 				gameData.backgroundObjects.Add(backgroundObject);
+
+				var bg = new Objects.BackgroundObject(backgroundObject);
+				bg.shape = Objects.Shapes3D[UnityEngine.Random.Range(0, 27)];
+
+				Objects.backgroundObjects.Add(bg);
 			}
 
             BeatmapObject beatmapObject = CreateNewBeatmapObject(0.5f, false);
@@ -9597,21 +9621,21 @@ namespace EditorManagement.Functions.Editors
 				backgroundObject.reactive = (UnityEngine.Random.value > 0.5f);
 				if (backgroundObject.reactive)
 				{
-					switch (UnityEngine.Random.Range(0, 4))
-					{
-						case 0:
-							backgroundObject.reactiveType = DataManager.GameData.BackgroundObject.ReactiveType.LOW;
-							break;
-						case 1:
-							backgroundObject.reactiveType = DataManager.GameData.BackgroundObject.ReactiveType.MID;
-							break;
-						case 2:
-							backgroundObject.reactiveType = DataManager.GameData.BackgroundObject.ReactiveType.HIGH;
-							break;
-					}
+					backgroundObject.reactiveType = (DataManager.GameData.BackgroundObject.ReactiveType)UnityEngine.Random.Range(0, 4);
+
 					backgroundObject.reactiveScale = UnityEngine.Random.Range(0.01f, 0.04f);
 				}
 				DataManager.inst.gameData.backgroundObjects.Add(backgroundObject);
+
+				var bg = new Objects.BackgroundObject(backgroundObject);
+
+				bg.reactivePosIntensity = new Vector2(UnityEngine.Random.Range(0, 100) > 65 ? UnityEngine.Random.Range(0f, 1f) : 0f, UnityEngine.Random.Range(0, 100) > 65 ? UnityEngine.Random.Range(0f, 1f) : 0f);
+				bg.reactiveScaIntensity = new Vector2(UnityEngine.Random.Range(0, 100) > 45 ? UnityEngine.Random.Range(0f, 1f) : 0f, UnityEngine.Random.Range(0, 100) > 45 ? UnityEngine.Random.Range(0f, 1f) : 0f);
+				bg.reactiveRotIntensity = UnityEngine.Random.Range(0, 100) > 45 ? UnityEngine.Random.Range(0f, 1f) : 0f;
+				bg.reactiveCol = UnityEngine.Random.Range(1, 6);
+				bg.shape = Objects.Shapes[UnityEngine.Random.Range(0, Objects.Shapes.Count - 1)];
+
+				Objects.backgroundObjects.Add(bg);
 			}
 
 			BackgroundManager.inst.UpdateBackgrounds();
@@ -9626,6 +9650,8 @@ namespace EditorManagement.Functions.Editors
 			{
 				int nooo = Mathf.Clamp(i, 1, DataManager.inst.gameData.backgroundObjects.Count - 1);
 				DataManager.inst.gameData.backgroundObjects.RemoveAt(nooo);
+
+				Objects.backgroundObjects.RemoveAt(nooo);
 			}
 
 			BackgroundEditor.inst.SetCurrentBackground(0);
@@ -9977,6 +10003,7 @@ namespace EditorManagement.Functions.Editors
 			new EditorProperty("Saving Updates Edited Date", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Data, ConfigEntries.SavingUpdatesTime, "If you want the date edited to be the current date you save on, enable this. Can be good for keeping organized with what levels you did recently."),
 			new EditorProperty("Level Loads Last Time", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Data, ConfigEntries.LevelLoadsSavedTime, "Sets the editor position (audio time, layer, etc) to the last saved editor position on level load."),
 			new EditorProperty("Level Pauses on Start", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Data, ConfigEntries.LevelPausesOnStart, "Editor pauses on level load."),
+			new EditorProperty("Saving Saves Beatmap Opacity", EditorProperty.ValueType.Bool, EditorProperty.EditorPropCategory.Data, ConfigEntries.SaveOpacityToThemes, "Turn this off if you don't want themes to break in unmodded PA."),
 			//new EditorProperty("Manage Prefab Types", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Data, delegate () { }, "Opens the Prefab Type editor."),
 
 			//Editor GUI

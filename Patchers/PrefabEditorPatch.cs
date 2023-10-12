@@ -24,6 +24,7 @@ using LSFunctions;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Patchers
 {
@@ -285,10 +286,16 @@ namespace EditorManagement.Patchers
         }
 
         [HarmonyPatch("Start")]
-        [HarmonyPostfix]
-        static void StartPostfix()
+        [HarmonyPrefix]
+        static bool StartPrefix(PrefabEditor __instance)
         {
-            Debug.Log("Creating prefab types...");
+            __instance.StartCoroutine(RTEditor.LoadExternalPrefabs(__instance));
+            __instance.OffsetLine = Instantiate(__instance.OffsetLinePrefab);
+            __instance.OffsetLine.name = "offset line";
+            __instance.OffsetLine.transform.SetParent(EditorManager.inst.timeline.transform);
+            __instance.OffsetLine.transform.localScale = Vector3.one;
+
+            Debug.Log($"{EditorPlugin.className}Creating prefab types...");
             Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
             GameObject prefabCol9 = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types/col_9");
 
@@ -359,6 +366,8 @@ namespace EditorManagement.Patchers
             //addPrefabT.transform.Find("type-name").GetComponent<Text>().horizontalOverflow = ConfigEntries.PrefabINTypeHOverflow.Value;
             //addPrefabT.transform.Find("type-name").GetComponent<Text>().verticalOverflow = ConfigEntries.PrefabINTypeVOverflow.Value;
             //addPrefabT.transform.Find("type-name").GetComponent<Text>().fontSize = ConfigEntries.PrefabINTypeFontSize.Value;
+
+            return false;
         }
 
         [HarmonyPatch("CreateNewPrefab")]
@@ -371,6 +380,7 @@ namespace EditorManagement.Patchers
                 return false;
             }
             var prefab = new DataManager.GameData.Prefab(__instance.NewPrefabName, __instance.NewPrefabType, __instance.NewPrefabOffset, ObjEditor.inst.selectedObjects);
+            prefab.ID = LSText.randomString(16);
             if (string.IsNullOrEmpty(PrefabEditor.inst.NewPrefabName))
             {
                 EditorManager.inst.DisplayNotification("Can't save prefab without a name!", 2f, EditorManager.NotificationType.Error, false);
@@ -383,6 +393,20 @@ namespace EditorManagement.Patchers
             else
             {
                 __instance.SavePrefab(prefab);
+
+                var modPrefab = new Objects.Prefab(prefab);
+
+                foreach (var beatmapObject in ObjEditor.inst.selectedObjects.FindAll(x => x.IsObject() && x.GetObjectData() != null).Select(x => x.GetObjectData()))
+                {
+                    var count = ModCompatibility.GetModifierCount(beatmapObject);
+
+                    List<object> list = new List<object>();
+
+                    for (int i = 0; i < count; i++)
+                        list.Add(ModCompatibility.GetModifierIndex(beatmapObject, i));
+
+                    modPrefab.modifiers.Add(beatmapObject.id, list);
+                }
             }
             __instance.OpenPopup();
             ObjEditor.inst.OpenDialog();
@@ -1077,7 +1101,8 @@ namespace EditorManagement.Patchers
         static bool ImportPrefabIntoLevel(PrefabEditor __instance, DataManager.GameData.Prefab _prefab)
         {
             Debug.LogFormat("{0}Adding Prefab: [{1}]", EditorPlugin.className, _prefab.Name);
-            DataManager.GameData.Prefab tmpPrefab = DataManager.GameData.Prefab.DeepCopy(_prefab, true);
+
+            DataManager.GameData.Prefab tmpPrefab = DataManager.GameData.Prefab.DeepCopy(_prefab);
             int num = DataManager.inst.gameData.prefabs.FindAll(x => Regex.Replace(x.Name, "( +\\[\\d+])", string.Empty) == tmpPrefab.Name).Count();
             if (num > 0)
             {
@@ -1090,10 +1115,29 @@ namespace EditorManagement.Patchers
                     "]"
                 });
             }
+
             DataManager.inst.gameData.prefabs.Add(tmpPrefab);
             __instance.ReloadInternalPrefabsInPopup();
+
+            try
+            {
+                var modPrefab = Objects.Prefab.DeepCopy(Objects.externalPrefabs[__instance.LoadedPrefabs.IndexOf(_prefab)]);
+                Objects.prefabs.Add(modPrefab);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"{EditorPlugin.className}Error!\nEXCEPTION: {ex.Message}\nSTACKTRACE: {ex.StackTrace}");
+            }
+
             return false;
         }
 
+        [HarmonyPatch("AddPrefabObjectToLevel")]
+        [HarmonyPrefix]
+        static bool AddPrefabObjectToLevel(DataManager.GameData.Prefab __0)
+        {
+            RTEditor.AddPrefabObjectToLevel(__0);
+            return false;
+        }
     }
 }
