@@ -1612,42 +1612,39 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.HideDialog("Parent Selector");
 			});
 
-			if (ObjectModifiersEditor.inst != null && ObjectModifiersEditor.objectModifiersPlugin != null)
+			if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "camera".Contains(__instance.parentSearch.ToLower()))
 			{
-				if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "camera".Contains(__instance.parentSearch.ToLower()))
-                {
-					var cam = Instantiate(__instance.folderButtonPrefab);
-					cam.name = "Camera";
-					cam.transform.SetParent(transform);
-					cam.transform.localScale = Vector3.one;
-					cam.transform.GetChild(0).GetComponent<Text>().text = "Camera";
-					cam.GetComponent<Button>().onClick.AddListener(delegate ()
-					{
-						ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "CAMERA_PARENT";
-						ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
-						EditorManager.inst.HideDialog("Parent Selector");
-						RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
-					});
-				}
-
-				if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "player".Contains(__instance.parentSearch.ToLower()))
-                {
-					var cam = Instantiate(__instance.folderButtonPrefab);
-					cam.name = "Player";
-					cam.transform.SetParent(transform);
-					cam.transform.localScale = Vector3.one;
-					cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
-					cam.GetComponent<Button>().onClick.AddListener(delegate ()
-					{
-						ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "PLAYER_PARENT";
-						ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
-						EditorManager.inst.HideDialog("Parent Selector");
-						RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
-					});
-				}
+				var cam = Instantiate(__instance.folderButtonPrefab);
+				cam.name = "Camera";
+				cam.transform.SetParent(transform);
+				cam.transform.localScale = Vector3.one;
+				cam.transform.GetChild(0).GetComponent<Text>().text = "Camera";
+				cam.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "CAMERA_PARENT";
+					ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+					EditorManager.inst.HideDialog("Parent Selector");
+					RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+				});
 			}
 
-			foreach (var obj in DataManager.inst.gameData.beatmapObjects)
+            //if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "player".Contains(__instance.parentSearch.ToLower()))
+            //{
+            //    var cam = Instantiate(__instance.folderButtonPrefab);
+            //    cam.name = "Player";
+            //    cam.transform.SetParent(transform);
+            //    cam.transform.localScale = Vector3.one;
+            //    cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
+            //    cam.GetComponent<Button>().onClick.AddListener(delegate ()
+            //    {
+            //        ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "PLAYER_PARENT";
+            //        ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+            //        EditorManager.inst.HideDialog("Parent Selector");
+            //        RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+            //    });
+            //}
+
+            foreach (var obj in DataManager.inst.gameData.beatmapObjects)
 			{
 				if (!obj.fromPrefab)
 				{
