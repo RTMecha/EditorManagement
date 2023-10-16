@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -24,39 +23,32 @@ using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using EditorManagement.Patchers;
 
-using RTFunctions.Functions.Components;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Functions.Optimization.Objects;
-using RTFunctions.Functions.Optimization.Objects.Visual;
 
 namespace EditorManagement
 {
-	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.6")]
+	[BepInPlugin("com.mecha.editormanagement", "Editor Management", " 1.10.7")]
 	[BepInProcess("Project Arrhythmia.exe")]
-	//[BepInIncompatibility("com.mecha.renderdepthunlimited")]
-	//[BepInIncompatibility("com.mecha.originoffset")]
-	//[BepInIncompatibility("com.mecha.cursorcolor")]
-	//[BepInIncompatibility("com.mecha.noautokillselectable")]
-	//[BepInIncompatibility("com.mecha.eventsplus")]
-	//[BepInIncompatibility("com.mecha.newthemesystems")]
-	//[BepInIncompatibility("com.mecha.prefabadditions")]
 	[BepInDependency("com.mecha.rtfunctions")]
 	public class EditorPlugin : BaseUnityPlugin
 	{
-		//TODO
-		//Clean up some code, optimize and bug fix.
-		//Fix the prefab search bug. (Kinda fixed?)
-		//Work on a prefab keybind thing. (Later)
-		//Add randomization accessibility to Prefab Object dialog since prefab objects can use randomization.
-		//Fix Object Dragger so it creates a keyframe at the current audio time, interpolates the value between the previous and next keyframes and sets the new keyframe's value to that.
+        //TODO
+        // Clean up some code, optimize and bug fix.
+        // Fix the prefab search bug. (Kinda fixed?)
+        // Work on a prefab keybind thing. (Later)
+        // Add randomization accessibility to Prefab Object dialog since prefab objects can use randomization.
+        // Fix Object Dragger so it creates a keyframe at the current audio time, interpolates the value between the previous and next keyframes and sets the new keyframe's value to that.
+		// ^ either that, or have the current and previous keyframes of a specific type show as a preview selectable item.
+		// Revamp SettingEditor so it can show a lot more detail and some level specific variables can be set.
 
-		//Update list
+        //Update list
 
-		public static EditorPlugin inst;
+        public static EditorPlugin inst;
 		public static string className = $"[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] {PluginInfo.PLUGIN_VERSION}\n";
 		readonly Harmony harmony = new Harmony("Editor");
+
+		#region Variables
 
 		public static float scrollBar;
 		public static float timeEdit;
@@ -143,6 +135,34 @@ namespace EditorManagement
 				Name = "Misc 4"
 			},
 		};
+
+		public static bool emptyDisable;
+		public static bool emptyVisible;
+		public static bool showDamagable;
+		public static GameObject tracker;
+		public static DraggableObject draggableObject;
+
+		#endregion
+
+		#region Comparison Variables
+
+		public static List<Color> prevMarkerColors = new List<Color>();
+
+		public static float prevAutoSaveRepeat;
+
+		public static Vector2 lastMainZoomBounds;
+		public static Vector2 lastKeyframeZoomBounds;
+
+		public static WaveformType lastWaveformType;
+		public static Color lastWaveformTopColor;
+		public static Color lastWaveformBottomColor;
+		public static Color lastWaveformBGColor;
+
+		public static Color prevMainTimelineColor;
+		public static Color prevKeyframeTimelineColor;
+		public static Color prevSelectedObjectsColor;
+
+		#endregion
 
 		void Awake()
 		{
@@ -464,70 +484,7 @@ namespace EditorManagement
 				EventEditorPatch.doneEvents = false;
         }
 
-		#region Property Setters (Helped by Enchart)
-
-		public static bool LayerSetterPrefix(int value, DataManager.GameData.BeatmapObject.EditorData __instance)
-		{
-			var field = __instance.GetType().GetField("layer", BindingFlags.NonPublic | BindingFlags.Instance);
-			field.SetValue(__instance, value);
-			return false;
-		}
-		public static bool BinSetterPrefix(int value, DataManager.GameData.BeatmapObject.EditorData __instance)
-		{
-			var field = __instance.GetType().GetField("bin", BindingFlags.NonPublic | BindingFlags.Instance);
-			field.SetValue(__instance, value);
-			return false;
-		}
-		public static bool DepthSetterPrefix(int value, DataManager.GameData.BeatmapObject __instance)
-		{
-			var field = __instance.GetType().GetField("depth", BindingFlags.NonPublic | BindingFlags.Instance);
-			field.SetValue(__instance, value);
-			return false;
-		}
-
-        #endregion
-
-        public static void SetCatalyst()
-        {
-			if (catalyst == null && catInstalled == 0)
-            {
-				if (!GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase"))
-				{
-					catInstalled = 1;
-					return;
-				}
-
-				catInstalled = 2;
-				catalyst = GameObject.Find("BepInEx_Manager").GetComponentByName("CatalystBase").GetType();
-				
-				if ((string)catalyst.GetField("Name").GetValue(catalyst) == "Editor Catalyst")
-                {
-					catInstalled = 3;
-                }
-			}
-        }
-
-		#region Comparison Variables
-
-		public static List<Color> prevMarkerColors = new List<Color>();
-
-		public static float prevAutoSaveRepeat;
-
-		public static Vector2 lastMainZoomBounds;
-		public static Vector2 lastKeyframeZoomBounds;
-
-		public static WaveformType lastWaveformType;
-		public static Color lastWaveformTopColor;
-		public static Color lastWaveformBottomColor;
-		public static Color lastWaveformBGColor;
-
-		public static Color prevMainTimelineColor;
-		public static Color prevKeyframeTimelineColor;
-		public static Color prevSelectedObjectsColor;
-
-		#endregion
-
-		static void UpdateEditorManagementConfigs(object sender, EventArgs e)
+        static void UpdateEditorManagementConfigs(object sender, EventArgs e)
 		{
 			if (EditorManager.inst != null)
 			{
@@ -731,9 +688,6 @@ namespace EditorManagement
 					ObjectManager.inst.updateObjects();
 				}
 
-				Debug.Log($"{className}Setting Other Mods");
-					SetShowable();
-
 				//There's a problem somewhere below but Idk where
 
 				Debug.Log($"{className}Setting Cursor Color");
@@ -931,6 +885,8 @@ namespace EditorManagement
 			}
 		}
 
+		#region Methods
+
 		public static void SetConfigEntry(string name, object value)
         {
 			if (RTEditor.editorProperties.TryFind(x => x.name == name, out RTEditor.EditorProperty editorProperty))
@@ -947,22 +903,6 @@ namespace EditorManagement
         }
 
 		public static void RefreshObjectGUI() => inst.StartCoroutine(RTEditor.RefreshObjectGUI());
-
-		public static void SetShowable()
-		{
-			if (GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin"))
-			{
-				var eventsCorePlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("EventsCorePlugin").GetType();
-
-				eventsCorePlugin.GetMethod("SetShowable").Invoke(eventsCorePlugin, new object[] { ConfigEntries.ShowObjectsOnLayer.Value, ConfigEntries.ShowObjectsAlpha.Value, ConfigEntries.HighlightObjects.Value, ConfigEntries.HighlightColor.Value, ConfigEntries.HighlightDoubleColor.Value });
-			}
-		}
-
-		public static bool emptyDisable;
-		public static bool emptyVisible;
-		public static bool showDamagable;
-		public static GameObject tracker;
-		public static DraggableObject draggableObject;
 
 		public static void ListObjectLayers()
 		{
@@ -1001,6 +941,64 @@ namespace EditorManagement
 			RTEditor.DisplayNotification("List Object Layers", "Objects on Layers:<br>[ " + lister + " ]", 2f, EditorManager.NotificationType.Info);
 		}
 
+		public static void SetNewMarkerColors()
+		{
+			MarkerEditor.inst.markerColors = new List<Color>
+			{
+				new Color(0.8745f, 0.4745f, 0.4392f, 1f),
+				new Color(1f, 0.502f, 0.6706f, 1f),
+				new Color(0.9176f, 0.502f, 0.9882f, 1f),
+				new Color(0.702f, 0.5333f, 1f, 1f),
+				new Color(0.549f, 0.6196f, 1f, 1f),
+				new Color(0.502f, 0.8471f, 1f, 1f),
+				new Color(0.6549f, 1f, 0.9216f, 1f),
+				new Color(0.9569f, 1f, 0.5059f, 1f),
+				new Color(1f, 0.8196f, 0.502f, 1f),
+				ConfigEntries.MarkerColN0.Value,
+				ConfigEntries.MarkerColN1.Value,
+				ConfigEntries.MarkerColN2.Value,
+				ConfigEntries.MarkerColN3.Value,
+				ConfigEntries.MarkerColN4.Value,
+				ConfigEntries.MarkerColN5.Value,
+				ConfigEntries.MarkerColN6.Value,
+				ConfigEntries.MarkerColN7.Value,
+				ConfigEntries.MarkerColN8.Value,
+			};
+		}
+
+		public static void RepeatReminder()
+		{
+			EditorManager.inst.CancelInvoke("CreateGrid");
+			EditorManager.inst.InvokeRepeating("CreateGrid", ConfigEntries.ReminderLoopTime.Value, ConfigEntries.ReminderLoopTime.Value);
+		}
+
+		#endregion
+
+		#region Property Setters (Helped by Enchart)
+
+		public static bool LayerSetterPrefix(int value, DataManager.GameData.BeatmapObject.EditorData __instance)
+		{
+			var field = __instance.GetType().GetField("layer", BindingFlags.NonPublic | BindingFlags.Instance);
+			field.SetValue(__instance, value);
+			return false;
+		}
+		public static bool BinSetterPrefix(int value, DataManager.GameData.BeatmapObject.EditorData __instance)
+		{
+			var field = __instance.GetType().GetField("bin", BindingFlags.NonPublic | BindingFlags.Instance);
+			field.SetValue(__instance, value);
+			return false;
+		}
+		public static bool DepthSetterPrefix(int value, DataManager.GameData.BeatmapObject __instance)
+		{
+			var field = __instance.GetType().GetField("depth", BindingFlags.NonPublic | BindingFlags.Instance);
+			field.SetValue(__instance, value);
+			return false;
+		}
+
+		#endregion
+
+		#region Patches
+
 		[HarmonyPatch(typeof(GameManager), "Update")]
 		[HarmonyPostfix]
 		static void GameUpdatePatch()
@@ -1021,12 +1019,6 @@ namespace EditorManagement
 			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Callvirt, AccessTools.Method(typeof(Dictionary<string, GameObject>), "Remove", new[] { typeof(string) })));
 			matcher = matcher.InsertAndAdvance(new CodeInstruction(OpCodes.Pop));
 			return matcher.InstructionEnumeration();
-		}
-
-		public static void RepeatReminder()
-        {
-			EditorManager.inst.CancelInvoke("CreateGrid");
-			EditorManager.inst.InvokeRepeating("CreateGrid", ConfigEntries.ReminderLoopTime.Value, ConfigEntries.ReminderLoopTime.Value);
 		}
 
 		[HarmonyPatch(typeof(ColorPicker), "UpdateValues")]
@@ -1222,31 +1214,6 @@ namespace EditorManagement
 			return false;
         }
 		
-		public static void SetNewMarkerColors()
-        {
-			MarkerEditor.inst.markerColors = new List<Color>
-			{
-				new Color(0.8745f, 0.4745f, 0.4392f, 1f),
-				new Color(1f, 0.502f, 0.6706f, 1f),
-				new Color(0.9176f, 0.502f, 0.9882f, 1f),
-				new Color(0.702f, 0.5333f, 1f, 1f),
-				new Color(0.549f, 0.6196f, 1f, 1f),
-				new Color(0.502f, 0.8471f, 1f, 1f),
-				new Color(0.6549f, 1f, 0.9216f, 1f),
-				new Color(0.9569f, 1f, 0.5059f, 1f),
-				new Color(1f, 0.8196f, 0.502f, 1f),
-				ConfigEntries.MarkerColN0.Value,
-				ConfigEntries.MarkerColN1.Value,
-				ConfigEntries.MarkerColN2.Value,
-				ConfigEntries.MarkerColN3.Value,
-				ConfigEntries.MarkerColN4.Value,
-				ConfigEntries.MarkerColN5.Value,
-				ConfigEntries.MarkerColN6.Value,
-				ConfigEntries.MarkerColN7.Value,
-				ConfigEntries.MarkerColN8.Value,
-			};
-		}
-
 		[HarmonyPatch(typeof(Debug), "Log", new Type[] { typeof(object) })]
 		[HarmonyPostfix]
 		static void LogNotifications(object __0)
@@ -1293,5 +1260,7 @@ namespace EditorManagement
 				RTEditor.DisplayNotification(__0.ToString(), str, 2f, EditorManager.NotificationType.Warning);
             }
         }
-	}
+
+        #endregion
+    }
 }
