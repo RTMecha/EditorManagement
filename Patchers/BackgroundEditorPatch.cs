@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 
 using HarmonyLib;
 
@@ -189,6 +188,10 @@ namespace EditorManagement.Patchers
 				scale.Find("y/text-field").GetComponent<RectTransform>().sizeDelta = new Vector2(125f, 32f);
 
 				__instance.left.Find("color").GetComponent<GridLayoutGroup>().spacing = new Vector2(7.7f, 0f);
+
+				var rotSlider = __instance.left.Find("rotation/slider").GetComponent<Slider>();
+				rotSlider.maxValue = 360f;
+				rotSlider.minValue = -360f;
 			}
 
 			var label = __instance.left.GetChild(10).gameObject;
@@ -765,10 +768,206 @@ namespace EditorManagement.Patchers
 					}
 				}
 
-                // Reactive Z
-                {
+				// Reactive Color
+				{
+					// Samples
+					{
+						var iLabel = Instantiate(label);
+						iLabel.transform.SetParent(__instance.left);
+						iLabel.transform.localScale = Vector3.one;
+						iLabel.name = "label";
+						iLabel.transform.GetChild(0).GetComponent<Text>().text = "Reactive Color Sample";
+						iLabel.transform.SetSiblingIndex(34);
 
-                }
+						var position = Instantiate(__instance.left.Find("position").gameObject);
+						position.transform.SetParent(__instance.left);
+						position.transform.localScale = Vector3.one;
+						position.name = "reactive-color-sample";
+						position.transform.SetSiblingIndex(35);
+
+						DestroyImmediate(position.transform.Find("y").gameObject);
+
+						var x = position.transform.Find("x");
+						var xif = x.GetComponent<InputField>();
+						var xleft = x.Find("<").GetComponent<Button>();
+						var xright = x.Find(">").GetComponent<Button>();
+
+
+						xif.onValueChanged.ClearAll();
+						xif.onValueChanged.AddListener(delegate (string _val)
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveColSample = int.Parse(_val);
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xleft.onClick.ClearAll();
+						xleft.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveColSample -= 1;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xright.onClick.ClearAll();
+						xright.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveColSample += 1;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+					}
+
+					// Intensity
+					{
+						var iLabel = Instantiate(label);
+						iLabel.transform.SetParent(__instance.left);
+						iLabel.transform.localScale = Vector3.one;
+						iLabel.name = "label";
+						iLabel.transform.GetChild(0).GetComponent<Text>().text = "Reactive Color Intensity";
+						iLabel.transform.SetSiblingIndex(36);
+
+						var position = Instantiate(__instance.left.Find("position").gameObject);
+						position.transform.SetParent(__instance.left);
+						position.transform.localScale = Vector3.one;
+						position.name = "reactive-color-intensity";
+						position.transform.SetSiblingIndex(37);
+
+						DestroyImmediate(position.transform.Find("y").gameObject);
+
+						var x = position.transform.Find("x");
+						var xif = x.GetComponent<InputField>();
+						var xleft = x.Find("<").GetComponent<Button>();
+						var xright = x.Find(">").GetComponent<Button>();
+
+						xif.onValueChanged.ClearAll();
+						xif.onValueChanged.AddListener(delegate (string _val)
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveColIntensity = float.Parse(_val);
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xleft.onClick.ClearAll();
+						xleft.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveColIntensity -= 0.1f;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xright.onClick.ClearAll();
+						xright.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveColIntensity += 0.1f;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+					}
+
+					// Reactive Color
+                    {
+						var colorLabel = Instantiate(label);
+						colorLabel.transform.SetParent(__instance.left);
+						colorLabel.transform.localScale = Vector3.one;
+						colorLabel.name = "label";
+						colorLabel.transform.SetSiblingIndex(38);
+						colorLabel.transform.GetChild(0).GetComponent<Text>().text = "Reactive Color";
+
+						var color = __instance.left.Find("color");
+						var fadeColor = Instantiate(color.gameObject);
+						fadeColor.transform.SetParent(__instance.left);
+						fadeColor.transform.localScale = Vector3.one;
+						fadeColor.name = "reactive-color";
+						fadeColor.transform.SetSiblingIndex(39);
+					}
+				}
+
+				// Reactive Z
+				{
+					// Samples
+					{
+						var iLabel = Instantiate(label);
+						iLabel.transform.SetParent(__instance.left);
+						iLabel.transform.localScale = Vector3.one;
+						iLabel.name = "label";
+						iLabel.transform.GetChild(0).GetComponent<Text>().text = "Reactive Z Sample";
+						iLabel.transform.SetSiblingIndex(40);
+
+						var position = Instantiate(__instance.left.Find("position").gameObject);
+						position.transform.SetParent(__instance.left);
+						position.transform.localScale = Vector3.one;
+						position.name = "reactive-z-sample";
+						position.transform.SetSiblingIndex(41);
+
+						DestroyImmediate(position.transform.Find("y").gameObject);
+
+						var x = position.transform.Find("x");
+						var xif = x.GetComponent<InputField>();
+						var xleft = x.Find("<").GetComponent<Button>();
+						var xright = x.Find(">").GetComponent<Button>();
+
+
+						xif.onValueChanged.ClearAll();
+						xif.onValueChanged.AddListener(delegate (string _val)
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveZSample = int.Parse(_val);
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xleft.onClick.ClearAll();
+						xleft.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveZSample -= 1;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xright.onClick.ClearAll();
+						xright.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveZSample += 1;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+					}
+
+					// Intensity
+					{
+						var iLabel = Instantiate(label);
+						iLabel.transform.SetParent(__instance.left);
+						iLabel.transform.localScale = Vector3.one;
+						iLabel.name = "label";
+						iLabel.transform.GetChild(0).GetComponent<Text>().text = "Reactive Z Intensity";
+						iLabel.transform.SetSiblingIndex(42);
+
+						var position = Instantiate(__instance.left.Find("position").gameObject);
+						position.transform.SetParent(__instance.left);
+						position.transform.localScale = Vector3.one;
+						position.name = "reactive-z-intensity";
+						position.transform.SetSiblingIndex(43);
+
+						DestroyImmediate(position.transform.Find("y").gameObject);
+
+						var x = position.transform.Find("x");
+						var xif = x.GetComponent<InputField>();
+						var xleft = x.Find("<").GetComponent<Button>();
+						var xright = x.Find(">").GetComponent<Button>();
+
+						xif.onValueChanged.ClearAll();
+						xif.onValueChanged.AddListener(delegate (string _val)
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveZIntensity = float.Parse(_val);
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xleft.onClick.ClearAll();
+						xleft.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveZIntensity -= 0.1f;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+
+						xright.onClick.ClearAll();
+						xright.onClick.AddListener(delegate ()
+						{
+							Objects.backgroundObjects[__instance.currentObj].reactiveZIntensity += 0.1f;
+							BackgroundManager.inst.UpdateBackgrounds();
+						});
+					}
+				}
 			}
 
             // Fade Color
@@ -787,9 +986,87 @@ namespace EditorManagement.Patchers
 				fadeColor.name = "fade-color";
 				fadeColor.transform.SetSiblingIndex(15);
 			}
+
+			// Rotation
+			{
+				var index = __instance.left.Find("rotation").GetSiblingIndex();
+
+				var iLabel = Instantiate(label);
+				iLabel.transform.SetParent(__instance.left);
+				iLabel.transform.localScale = Vector3.one;
+				iLabel.name = "label";
+				iLabel.transform.GetChild(0).GetComponent<Text>().text = "3D Rotation";
+				iLabel.transform.SetSiblingIndex(index - 1);
+
+				var iterations = Instantiate(__instance.left.Find("position").gameObject);
+				iterations.transform.SetParent(__instance.left);
+				iterations.transform.localScale = Vector3.one;
+				iterations.name = "depth-rotation";
+				//DestroyImmediate(iterations.transform.GetChild(1).gameObject);
+				iterations.transform.SetSiblingIndex(index);
+
+				var x = iterations.transform.Find("x");
+				var xif = x.GetComponent<InputField>();
+				var xleft = x.Find("<").GetComponent<Button>();
+				var xright = x.Find(">").GetComponent<Button>();
+
+				xif.onValueChanged.ClearAll();
+				xif.onValueChanged.AddListener(delegate (string _val)
+				{
+					if (CurrentSelectedModBG != null)
+						Objects.backgroundObjects[__instance.currentObj].rotation.x = float.Parse(_val);
+					BackgroundManager.inst.UpdateBackgrounds();
+				});
+
+				xleft.onClick.ClearAll();
+				xleft.onClick.AddListener(delegate ()
+				{
+					if (CurrentSelectedModBG != null)
+						Objects.backgroundObjects[__instance.currentObj].rotation.x -= 0.1f;
+					BackgroundManager.inst.UpdateBackgrounds();
+				});
+
+				xright.onClick.ClearAll();
+				xright.onClick.AddListener(delegate ()
+				{
+					if (CurrentSelectedModBG != null)
+						Objects.backgroundObjects[__instance.currentObj].rotation.x += 0.1f;
+					BackgroundManager.inst.UpdateBackgrounds();
+				});
+
+				var y = iterations.transform.Find("y");
+				var yif = y.GetComponent<InputField>();
+				var yleft = y.Find("<").GetComponent<Button>();
+				var yright = y.Find(">").GetComponent<Button>();
+
+				yif.onValueChanged.ClearAll();
+				yif.onValueChanged.AddListener(delegate (string _val)
+				{
+					if (CurrentSelectedModBG != null)
+						Objects.backgroundObjects[__instance.currentObj].rotation.y = float.Parse(_val);
+					BackgroundManager.inst.UpdateBackgrounds();
+				});
+
+				yleft.onClick.ClearAll();
+				yleft.onClick.AddListener(delegate ()
+				{
+					if (CurrentSelectedModBG != null)
+						Objects.backgroundObjects[__instance.currentObj].rotation.y -= 0.1f;
+					BackgroundManager.inst.UpdateBackgrounds();
+				});
+
+				yright.onClick.ClearAll();
+				yright.onClick.AddListener(delegate ()
+				{
+					if (CurrentSelectedModBG != null)
+						Objects.backgroundObjects[__instance.currentObj].rotation.y += 0.1f;
+					BackgroundManager.inst.UpdateBackgrounds();
+				});
+			}
+
 		}
 
-        [HarmonyPatch("OpenDialog")]
+		[HarmonyPatch("OpenDialog")]
 		[HarmonyPrefix]
 		static bool OpenDialog(BackgroundEditor __instance, int _bg)
 		{
@@ -892,7 +1169,31 @@ namespace EditorManagement.Patchers
 				et.triggers.Add(Triggers.ScrollDelta(rotIF, 15f, 3));
 			}
 
-			__instance.left.Find("rotation/slider").GetComponent<Slider>().value = backgroundObject.rot;
+			var rotSlider = __instance.left.Find("rotation/slider").GetComponent<Slider>();
+			rotSlider.maxValue = 360f;
+			rotSlider.minValue = -360f;
+			rotSlider.value = backgroundObject.rot;
+
+			// 3D Rotation
+			{
+				var depthRotation = __instance.left.Find("depth-rotation");
+				var x = depthRotation.Find("x").GetComponent<InputField>();
+				var y = depthRotation.Find("y").GetComponent<InputField>();
+
+				x.text = bg.rotation.x.ToString();
+				y.text = bg.rotation.y.ToString();
+
+				if (!depthRotation.Find("x").GetComponent<EventTrigger>())
+				{
+					var etX = x.gameObject.AddComponent<EventTrigger>();
+					var etY = y.gameObject.AddComponent<EventTrigger>();
+
+					etX.triggers.Add(Triggers.ScrollDelta(x, 0.1f, 10f, true));
+					etX.triggers.Add(Triggers.ScrollDeltaVector2(x, y, 0.1f, 10f));
+					etY.triggers.Add(Triggers.ScrollDelta(y, 0.1f, 10f, true));
+					etY.triggers.Add(Triggers.ScrollDeltaVector2(x, y, 0.1f, 10f));
+				}
+			}
 
 			try
 			{
@@ -912,6 +1213,7 @@ namespace EditorManagement.Patchers
 
 			LSHelpers.DeleteChildren(__instance.left.Find("color"));
 			LSHelpers.DeleteChildren(__instance.left.Find("fade-color"));
+			LSHelpers.DeleteChildren(__instance.left.Find("reactive-color"));
 
 			int num = 0;
 			foreach (var col in GameManager.inst.LiveTheme.backgroundColors)
@@ -954,6 +1256,26 @@ namespace EditorManagement.Patchers
 					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
 						SetColor(__instance, colTmp);
+					});
+				}
+
+				// Reactive Color
+				{
+					var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
+					gameObject.name = "color gui";
+					gameObject.transform.SetParent(__instance.left.Find("reactive-color"));
+					gameObject.transform.localScale = Vector3.one;
+					gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
+					gameObject.transform.Find("Image").gameObject.SetActive(false);
+
+					if (bg.reactiveCol == num)
+					{
+						gameObject.transform.Find("Image").gameObject.SetActive(true);
+					}
+
+					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						SetColorReactive(__instance, colTmp);
 					});
 				}
 				num++;
@@ -1162,6 +1484,64 @@ namespace EditorManagement.Patchers
 						}
 					}
 				}
+
+				// Color
+				{
+					// Samples
+					{
+						var reactiveX = __instance.left.Find("reactive-color-sample/x").GetComponent<InputField>();
+						reactiveX.text = bg.reactiveColSample.ToString();
+
+						if (!reactiveX.GetComponent<EventTrigger>())
+						{
+							var etX = reactiveX.gameObject.AddComponent<EventTrigger>();
+
+							etX.triggers.Add(Triggers.ScrollDeltaInt(reactiveX, 1));
+						}
+					}
+
+					// Intensity
+					{
+						var reactiveX = __instance.left.Find("reactive-color-intensity/x").GetComponent<InputField>();
+						reactiveX.text = bg.reactiveColIntensity.ToString();
+
+						if (!reactiveX.GetComponent<EventTrigger>())
+						{
+							var etX = reactiveX.gameObject.AddComponent<EventTrigger>();
+
+							etX.triggers.Add(Triggers.ScrollDelta(reactiveX, 0.1f, 10f));
+						}
+					}
+				}
+
+				// Z
+				{
+					// Samples
+					{
+						var reactiveX = __instance.left.Find("reactive-z-sample/x").GetComponent<InputField>();
+						reactiveX.text = bg.reactiveZSample.ToString();
+
+						if (!reactiveX.GetComponent<EventTrigger>())
+						{
+							var etX = reactiveX.gameObject.AddComponent<EventTrigger>();
+
+							etX.triggers.Add(Triggers.ScrollDeltaInt(reactiveX, 1));
+						}
+					}
+
+					// Intensity
+					{
+						var reactiveX = __instance.left.Find("reactive-z-intensity/x").GetComponent<InputField>();
+						reactiveX.text = bg.reactiveZIntensity.ToString();
+
+						if (!reactiveX.GetComponent<EventTrigger>())
+						{
+							var etX = reactiveX.gameObject.AddComponent<EventTrigger>();
+
+							etX.triggers.Add(Triggers.ScrollDelta(reactiveX, 0.1f, 10f));
+						}
+					}
+				}
 			}
 
 			__instance.UpdateBackgroundList();
@@ -1169,13 +1549,14 @@ namespace EditorManagement.Patchers
 
 			return false;
 		}
+
 		public static void SetColor(BackgroundEditor __instance, int _col)
 		{
 			Objects.backgroundObjects[__instance.currentObj].FadeColor = _col;
 			__instance.UpdateBackground(__instance.currentObj);
 			UpdateColorSelection(__instance);
 		}
-
+		
 		public static void UpdateColorSelection(BackgroundEditor __instance)
 		{
 			var bg = Objects.backgroundObjects[__instance.currentObj];
@@ -1185,6 +1566,29 @@ namespace EditorManagement.Patchers
 				GameObject gameObject = __instance.left.Find("fade-color").GetChild(num).gameObject;
 				gameObject.transform.Find("Image").gameObject.SetActive(false);
 				if (bg.FadeColor == num)
+				{
+					gameObject.transform.Find("Image").gameObject.SetActive(true);
+				}
+				num++;
+			}
+		}
+
+		public static void SetColorReactive(BackgroundEditor __instance, int _col)
+		{
+			Objects.backgroundObjects[__instance.currentObj].reactiveCol = _col;
+			__instance.UpdateBackground(__instance.currentObj);
+			UpdateColorReactiveSelection(__instance);
+		}
+
+		public static void UpdateColorReactiveSelection(BackgroundEditor __instance)
+		{
+			var bg = Objects.backgroundObjects[__instance.currentObj];
+			int num = 0;
+			foreach (Color color in GameManager.inst.LiveTheme.backgroundColors)
+			{
+				GameObject gameObject = __instance.left.Find("reactive-color").GetChild(num).gameObject;
+				gameObject.transform.Find("Image").gameObject.SetActive(false);
+				if (bg.reactiveCol == num)
 				{
 					gameObject.transform.Find("Image").gameObject.SetActive(true);
 				}
@@ -1270,10 +1674,10 @@ namespace EditorManagement.Patchers
 			bgGameObject.SetActive(backgroundObject.active);
 			bgGameObject.transform.localPosition = new Vector3(backgroundObject.pos.x, backgroundObject.pos.y, (float)(32 + backgroundObject.layer * 10));
 			bgGameObject.transform.localScale = new Vector3(backgroundObject.scale.x, backgroundObject.scale.y, 10f);
-			bgGameObject.transform.transform.localRotation = Quaternion.Euler(new Vector3(bg == null ? 0f : bg.rotation.x, bg == null ? 0f : bg.rotation.y, backgroundObject.rot));
-			//bgGameObject.GetComponent<Renderer>().material.color = GameManager.inst.LiveTheme.backgroundColors[Mathf.Clamp(backgroundObject.color, 0, GameManager.inst.LiveTheme.backgroundColors.Count - 1)];
+			//bgGameObject.transform.transform.localRotation = Quaternion.Euler(new Vector3(bg == null ? 0f : bg.rotation.x, bg == null ? 0f : bg.rotation.y, backgroundObject.rot));
+			bgGameObject.transform.localRotation = Quaternion.Euler(new Vector3(bg.rotation.x, bg.rotation.y, backgroundObject.rot));
 
-			foreach (object obj in BackgroundManager.inst.backgroundObjects[__0].transform)
+			foreach (object obj in bgGameObject.transform)
 				Destroy(((Transform)obj).gameObject);
 
 			bg.gameObjects.Clear();
@@ -1289,7 +1693,7 @@ namespace EditorManagement.Patchers
 				for (int i = 1; i < bg.depth - backgroundObject.layer; i++)
 				{
 					var gameObject = Instantiate(BackgroundManager.inst.backgroundFadePrefab, Vector3.zero, Quaternion.identity);
-					gameObject.name = "Fade [" + i + "]";
+					gameObject.name = $"{backgroundObject.name} Fade [{i}]";
 					gameObject.transform.SetParent(BackgroundManager.inst.backgroundObjects[__0].transform);
 					gameObject.transform.localPosition = new Vector3(0f, 0f, (float)i);
 					gameObject.transform.localScale = Vector3.one;
