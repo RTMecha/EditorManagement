@@ -42,7 +42,9 @@ namespace EditorManagement.Functions.Editors
 {
     public class RTEditor : MonoBehaviour
     {
-        #region Variables
+		#region Variables
+
+		public static bool debug;
 
         public static RTEditor inst;
 
@@ -101,6 +103,7 @@ namespace EditorManagement.Functions.Editors
 
 		public bool selectingKey = false;
 		public object keyToSet;
+		public Action onKeySet;
 
 		#endregion
 
@@ -200,6 +203,9 @@ namespace EditorManagement.Functions.Editors
                     {
 						configEntry.Value = (KeyCode)i;
 						selectingKey = false;
+
+						if (onKeySet != null)
+							onKeySet();
                     }
                 }
             }
@@ -409,7 +415,25 @@ namespace EditorManagement.Functions.Editors
 			}
 
 			yield break;
-		}
+        }
+
+        public static void Log(object message)
+        {
+			if (debug)
+				Debug.Log(message);
+        }
+		
+        public static void LogError(object message)
+        {
+			if (debug)
+				Debug.LogError(message);
+        }
+		
+        public static void LogWarning(object message)
+        {
+			if (debug)
+				Debug.LogWarning(message);
+        }
 
         #endregion
 
@@ -2671,7 +2695,7 @@ namespace EditorManagement.Functions.Editors
 
 				var tfv = objEditor.ObjectView.transform;
 
-				Debug.LogFormat("{0}Refresh Object GUI: Origin", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Origin");
 				//Origin
 				{
 					var oxIF = tfv.Find("origin/x").GetComponent<InputField>();
@@ -2756,7 +2780,7 @@ namespace EditorManagement.Functions.Editors
 					}
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: General", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: General");
 				//General
 				{
 					var editorBin = tfv.Find("editor/bin").GetComponent<Slider>();
@@ -2778,22 +2802,19 @@ namespace EditorManagement.Functions.Editors
 
 					var objType = tfv.Find("name/object-type").GetComponent<Dropdown>();
 
-					if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
-                    {
-						objType.options = new List<Dropdown.OptionData>
-						{
-							new Dropdown.OptionData("Normal"),
-							new Dropdown.OptionData("Helper"),
-							new Dropdown.OptionData("Decoration"),
-							new Dropdown.OptionData("Empty"),
-							new Dropdown.OptionData("Solid")
-						};
-                    }
+					objType.options = new List<Dropdown.OptionData>
+					{
+						new Dropdown.OptionData("Normal"),
+						new Dropdown.OptionData("Helper"),
+						new Dropdown.OptionData("Decoration"),
+						new Dropdown.OptionData("Empty"),
+						new Dropdown.OptionData("Solid")
+					};
 
 					Triggers.ObjEditorDropdownValues(objType, "objectType", beatmapObject.objectType, true, true);
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: Layers", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Layers");
 				//Layers
 				{
 					var editorLayers = tfv.Find("editor/layers");
@@ -2834,7 +2855,7 @@ namespace EditorManagement.Functions.Editors
 					Triggers.AddEventTrigger(editorLayers.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(editorLayersIF, 1, false, new List<int> { 1, int.MaxValue }) });
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: Autokill", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Autokill");
 				//Autokill
 				{
 					var akType = tfv.Find("autokill/tod-dropdown").GetComponent<Dropdown>();
@@ -2909,7 +2930,7 @@ namespace EditorManagement.Functions.Editors
 					});
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: Start Time", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Start Time");
 				//Start Time
 				{
 					var time = tfv.Find("time").GetComponent<EventTrigger>();
@@ -3000,7 +3021,7 @@ namespace EditorManagement.Functions.Editors
 					});
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: Depth", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Depth");
 				//Depth
 				{
 					var depthSlider = tfv.Find("depth/depth").GetComponent<Slider>();
@@ -3043,7 +3064,7 @@ namespace EditorManagement.Functions.Editors
 					Triggers.AddEventTrigger(depthText.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(depthText, 1) });
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: Shape", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Shape");
 				//Shape Settings
 				{
 					var shapeSettings = tfv.Find("shapesettings");
@@ -3172,7 +3193,7 @@ namespace EditorManagement.Functions.Editors
 				}
 
 				string parent = beatmapObject.parent;
-				Debug.LogFormat("{0}Refresh Object GUI: Parent {1}", EditorPlugin.className, parent);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Parent {parent}");
 				//RefreshParentGUI
 				{
 					//Make this more optimized.
@@ -3206,7 +3227,7 @@ namespace EditorManagement.Functions.Editors
 						parentText.onClick.RemoveAllListeners();
 						parentText.onClick.AddListener(delegate ()
 						{
-							if (DataManager.inst.gameData.beatmapObjects.Find((BeatmapObject x) => x.id == parent) != null && (parent != "CAMERA_PARENT" && parent != "PLAYER_PARENT" && ObjectModifiersEditor.inst != null && ObjectModifiersEditor.objectModifiersPlugin != null || ObjectModifiersEditor.objectModifiersPlugin == null))
+							if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null && parent != "CAMERA_PARENT" && parent != "PLAYER_PARENT")
 								ObjEditor.inst.SetCurrentObj(tmp);
 							else
 							{
@@ -3249,32 +3270,35 @@ namespace EditorManagement.Functions.Editors
 					});
 				}
 
-				Debug.LogFormat("{0}Refresh Object GUI: Prefab stuff", EditorPlugin.className);
+				Log($"{EditorPlugin.className}Refresh Object GUI: Prefab stuff");
 				tfv.Find("collapselabel").gameObject.SetActive(beatmapObject.prefabID != "");
 				tfv.Find("applyprefab").gameObject.SetActive(beatmapObject.prefabID != "");
 
-				var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
-				if (inspector != null && !tfv.Find("inspect"))
-                {
-                    var inspect = Instantiate(tfv.Find("applyprefab").gameObject);
-					inspect.SetActive(true);
-                    inspect.transform.SetParent(tfv);
-					inspect.transform.SetSiblingIndex(19);
-					inspect.transform.localScale = Vector3.one;
-					inspect.name = "inspect";
-
-					inspect.transform.GetChild(0).GetComponent<Text>().text = "Inspect";
-				}
-
-				if (tfv.Find("inspect"))
+				if (ModCompatibility.mods.ContainsKey("UnityExplorer"))
 				{
-					var deleteButton = tfv.Find("inspect").GetComponent<Button>();
-					deleteButton.onClick.ClearAll();
-					deleteButton.onClick.AddListener(delegate ()
+					var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
+					if (inspector != null && !tfv.Find("inspect"))
 					{
-						if (beatmapObject.GetGameObject() != null)
-							inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { beatmapObject.GetGameObject(), null });
-					});
+						var inspect = Instantiate(tfv.Find("applyprefab").gameObject);
+						inspect.SetActive(true);
+						inspect.transform.SetParent(tfv);
+						inspect.transform.SetSiblingIndex(19);
+						inspect.transform.localScale = Vector3.one;
+						inspect.name = "inspect";
+
+						inspect.transform.GetChild(0).GetComponent<Text>().text = "Inspect";
+					}
+
+					if (tfv.Find("inspect"))
+					{
+						var deleteButton = tfv.Find("inspect").GetComponent<Button>();
+						deleteButton.onClick.ClearAll();
+						deleteButton.onClick.AddListener(delegate ()
+						{
+							if (beatmapObject.GetGameObject() != null)
+								inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { beatmapObject.GetGameObject(), null });
+						});
+					}
 				}
 
 				if (ObjEditor.inst.keyframeSelections.Count <= 1)
@@ -3284,7 +3308,7 @@ namespace EditorManagement.Functions.Editors
 						ObjEditor.inst.KeyframeDialogs[i].SetActive(i == ObjEditor.inst.currentKeyframeKind);
 					}
 
-					Debug.LogFormat("{0}Refresh Object GUI: Keyframes", EditorPlugin.className);
+					Log($"{EditorPlugin.className}Refresh Object GUI: Keyframes");
 					//Keyframes
 					{
 						var kfdialog = ObjEditor.inst.KeyframeDialogs[ObjEditor.inst.currentKeyframeKind].transform;
@@ -3292,21 +3316,28 @@ namespace EditorManagement.Functions.Editors
 						{
 							Triggers.ObjEditorKeyframeDialog(kfdialog, ObjEditor.inst.currentKeyframeKind, beatmapObject);
 						}
+
+						var timeDecreaseGreat = kfdialog.Find("time/<<").GetComponent<Button>();
+						var timeDecrease = kfdialog.Find("time/<").GetComponent<Button>();
+						var timeIncrease = kfdialog.Find("time/>").GetComponent<Button>();
+						var timeIncreaseGreat = kfdialog.Find("time/>>").GetComponent<Button>();
+						var timeSet = kfdialog.Find("time/time").GetComponent<InputField>();
+
 						if (ObjEditor.inst.currentKeyframe == 0)
 						{
-							kfdialog.Find("time/<<").GetComponent<Button>().interactable = false;
-							kfdialog.Find("time/<").GetComponent<Button>().interactable = false;
-							kfdialog.Find("time/>").GetComponent<Button>().interactable = false;
-							kfdialog.Find("time/>>").GetComponent<Button>().interactable = false;
-							kfdialog.Find("time/time").GetComponent<InputField>().interactable = false;
+							timeDecreaseGreat.interactable = false;
+							timeDecrease.interactable = false;
+							timeIncrease.interactable = false;
+							timeIncreaseGreat.interactable = false;
+							timeSet.interactable = false;
 						}
 						else
 						{
-							kfdialog.Find("time/<<").GetComponent<Button>().interactable = true;
-							kfdialog.Find("time/<").GetComponent<Button>().interactable = true;
-							kfdialog.Find("time/>").GetComponent<Button>().interactable = true;
-							kfdialog.Find("time/>>").GetComponent<Button>().interactable = true;
-							kfdialog.Find("time/time").GetComponent<InputField>().interactable = true;
+							timeDecreaseGreat.interactable = true;
+							timeDecrease.interactable = true;
+							timeIncrease.interactable = true;
+							timeIncreaseGreat.interactable = true;
+							timeSet.interactable = true;
 						}
 
 						var superLeft = kfdialog.Find("edit/<<").GetComponent<Button>();
@@ -5085,10 +5116,7 @@ namespace EditorManagement.Functions.Editors
 
 		};
 
-		public static float SnapToBPM(float _time)
-		{
-			return Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / ConfigEntries.BPMSnapDivisions.Value)) * (SettingEditor.inst.BPMMulti / ConfigEntries.BPMSnapDivisions.Value);
-		}
+		public static float SnapToBPM(float _time) => Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / ConfigEntries.BPMSnapDivisions.Value)) * (SettingEditor.inst.BPMMulti / ConfigEntries.BPMSnapDivisions.Value);
 
 		public static void RenderPropertiesWindow()
 		{
@@ -5574,6 +5602,8 @@ namespace EditorManagement.Functions.Editors
 							}
 						case EditorProperty.ValueType.Enum:
 							{
+								bool isKeyCode = prop.configEntry.GetType() == typeof(ConfigEntry<KeyCode>);
+
 								var bar = Instantiate(singleInput);
 
 								Destroy(bar.GetComponent<EventInfo>());
@@ -5593,7 +5623,7 @@ namespace EditorManagement.Functions.Editors
 								l.transform.SetAsFirstSibling();
 								l.transform.localScale = Vector3.one;
 								l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-								l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(522f, 20f);
+								l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(isKeyCode ? 482 : 522f, 20f);
 
 								var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
 								{
@@ -5602,6 +5632,28 @@ namespace EditorManagement.Functions.Editors
 
 								bar.GetComponent<Image>().enabled = true;
 								bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+								if (isKeyCode)
+								{
+									var gameObject = new GameObject("selector");
+									gameObject.transform.SetParent(bar.transform);
+									gameObject.transform.localScale = Vector3.one;
+									var rectTransform = gameObject.AddComponent<RectTransform>();
+									gameObject.AddComponent<CanvasRenderer>();
+
+									rectTransform.sizeDelta = new Vector2(32f, 32f);
+
+									var image = gameObject.AddComponent<Image>();
+
+									var button = gameObject.AddComponent<Button>();
+									button.onClick.AddListener(delegate ()
+									{
+										inst.selectingKey = true;
+										inst.keyToSet = prop.configEntry;
+
+										inst.onKeySet = RenderPropertiesWindow;
+									});
+								}
 
 								GameObject x = Instantiate(dropdownInput);
 								x.transform.SetParent(bar.transform);
@@ -7674,6 +7726,8 @@ namespace EditorManagement.Functions.Editors
 					jn["bg_objects"][i]["s"] = bg.shape.Type.ToString();
 					jn["bg_objects"][i]["so"] = bg.shape.Option.ToString();
 					jn["bg_objects"][i]["color_fade"] = bg.FadeColor.ToString();
+					jn["bg_objects"][i]["r_offset"]["x"] = bg.rotation.x.ToString();
+					jn["bg_objects"][i]["r_offset"]["y"] = bg.rotation.y.ToString();
 
                     {
 						jn["bg_objects"][i]["rc"]["pos"]["i"]["x"] = bg.reactivePosIntensity.x.ToString();
@@ -7681,7 +7735,7 @@ namespace EditorManagement.Functions.Editors
 						jn["bg_objects"][i]["rc"]["pos"]["s"]["x"] = bg.reactivePosSamples.x.ToString();
 						jn["bg_objects"][i]["rc"]["pos"]["s"]["y"] = bg.reactivePosSamples.y.ToString();
 
-						jn["bg_objects"][i]["rc"]["z"]["active"] = bg.reactiveIncludesZ.ToString();
+						//jn["bg_objects"][i]["rc"]["z"]["active"] = bg.reactiveIncludesZ.ToString();
 						jn["bg_objects"][i]["rc"]["z"]["i"] = bg.reactiveZIntensity.ToString();
 						jn["bg_objects"][i]["rc"]["z"]["s"] = bg.reactiveZSample.ToString();
 
@@ -8425,7 +8479,9 @@ namespace EditorManagement.Functions.Editors
 
 			SetLayer(0);
 
-			objectManager.PurgeObjects();
+			//objectManager.PurgeObjects();
+			Updater.updateObjects(false);
+
 			__instance.InvokeRepeating("LoadingIconUpdate", 0f, 0.05f);
 			__instance.currentLoadedLevel = _levelName;
 			__instance.SetPitch(1f);
@@ -9539,10 +9595,7 @@ namespace EditorManagement.Functions.Editors
 			return "no shape";
 		}
 
-		public static string ColorToHex(Color32 color)
-		{
-			return color.r.ToString("X2") + color.g.ToString("X2") + color.b.ToString("X2") + color.a.ToString("X2");
-		}
+		public static string ColorToHex(Color32 color) => color.r.ToString("X2") + color.g.ToString("X2") + color.b.ToString("X2") + color.a.ToString("X2");
 
 		public static string secondsToTime(float _seconds)
 		{
@@ -9770,13 +9823,11 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-		//Try to work on sub-folders
 		public static void OpenImageSelector()
 		{
 			if (ObjEditor.inst.currentObjectSelection.IsPrefab() && ObjEditor.inst.currentObjectSelection.GetObjectData().shape != 6)
-			{
 				return;
-			}
+
 			var editorPath = RTFile.ApplicationDirectory + EditorPlugin.levelListSlash + EditorManager.inst.currentLoadedLevel;
 			string jpgFile = FileBrowser.OpenSingleFile("Select an image!", editorPath, new string[] { "png", "jpg" });
 			Debug.LogFormat("{0}Selected file: {1}", EditorPlugin.className, jpgFile);
@@ -9798,7 +9849,9 @@ namespace EditorManagement.Functions.Editors
 					jpgFileLocation = editorPath + "/" + levelPath;
 				}
 				Debug.LogFormat("{0}jpgFileLocation: {1}", EditorPlugin.className, jpgFileLocation);
-				ObjEditor.inst.currentObjectSelection.GetObjectData().text = jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf(EditorManager.inst.currentLoadedLevel) + EditorManager.inst.currentLoadedLevel.Length + 1), "");
+				//ObjEditor.inst.currentObjectSelection.GetObjectData().text = jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf(EditorManager.inst.currentLoadedLevel) + EditorManager.inst.currentLoadedLevel.Length + 1), "");
+				ObjEditor.inst.currentObjectSelection.GetObjectData().text = jpgFileLocation.Replace(jpgFileLocation.Substring(0, jpgFileLocation.LastIndexOf('/') + 1), "");
+				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
 				inst.StartCoroutine(RefreshObjectGUI());
 			}
 		}

@@ -6,14 +6,10 @@ using UnityEngine.UI;
 using HarmonyLib;
 
 using EditorManagement.Functions.Editors;
-using EditorManagement.Functions.Components;
-using EditorManagement.Functions;
 
 using RTFunctions.Functions;
-using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
 using RTFunctions.Functions.Optimization.Objects;
-using RTFunctions.Functions.Optimization.Objects.Visual;
 
 namespace EditorManagement.Patchers
 {

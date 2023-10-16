@@ -77,7 +77,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("RefreshKeyframeGUI")]
 		[HarmonyPrefix]
-		private static bool RefreshKeyframeGUIPrefix()
+		static bool RefreshKeyframeGUIPrefix()
         {
 			RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
 			return false;
@@ -516,7 +516,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Start")]
 		[HarmonyPrefix]
-		private static bool StartPrefix(ObjEditor __instance)
+		static bool StartPrefix(ObjEditor __instance)
 		{
 			__instance.colorButtons.Clear();
 			for (int i = 1; i <= 18; i++)
@@ -546,7 +546,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("AddPrefabExpandedToLevel")]
 		[HarmonyTranspiler]
-		private static IEnumerable<CodeInstruction> AddPrefabTranspiler(IEnumerable<CodeInstruction> instructions)
+		static IEnumerable<CodeInstruction> AddPrefabTranspiler(IEnumerable<CodeInstruction> instructions)
 		{
 			return new CodeMatcher(instructions)
 				.Start()
@@ -618,7 +618,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SetCurrentObj")]
 		[HarmonyPostfix]
-		private static void SetCurrentObjPostfix(ObjEditor.ObjectSelection __0)
+		static void SetCurrentObjPostfix(ObjEditor.ObjectSelection __0)
         {
 			if (EditorPlugin.draggableObject != null && !RTEditor.ienumRunning)
 			{
@@ -717,7 +717,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("AddSelectedObject")]
 		[HarmonyPrefix]
-		public static bool AddSelectedObject(ObjEditor __instance, ObjEditor.ObjectSelection __0)
+		static bool AddSelectedObject(ObjEditor __instance, ObjEditor.ObjectSelection __0)
 		{
 			RTEditor.AddSelectedObject(__instance, __0, true);
 			return false;
@@ -725,7 +725,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("RenderTimelineObject")]
 		[HarmonyPrefix]
-		private static bool RenderTimelineObjectPrefix(ref GameObject __result, ObjEditor.ObjectSelection __0)
+		static bool RenderTimelineObjectPrefix(ref GameObject __result, ObjEditor.ObjectSelection __0)
         {
 			__result = RTEditor.RenderTimelineObject(__0);
 			return false;
@@ -733,14 +733,14 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SnapToBPM")]
 		[HarmonyPostfix]
-		private static void SnapToBPMPostfix(float __result, float __0)
+		static void SnapToBPMPostfix(float __result, float __0)
         {
 			Debug.Log("[<color=#00796b>ObjEditor</color>]\nSnap Input: " + __0 + "\nSnap Result: " + __result);
         }
 
 		[HarmonyPatch("Update")]
 		[HarmonyPrefix]
-		private static bool UpdatePrefix()
+		static bool UpdatePrefix()
         {
 			if (!EditorManager.inst.IsUsingInputField())
 			{
@@ -827,7 +827,7 @@ namespace EditorManagement.Patchers
 			return false;
         }
 
-		private static void Dragger()
+		static void Dragger()
 		{
 			if (ObjEditor.inst.timelineKeyframesDrag)
 			{
@@ -901,7 +901,7 @@ namespace EditorManagement.Patchers
 			return false;
         }
 
-		private static EventTrigger.Entry CreateKeyframeEndDragTrigger(ObjEditor __instance, EventTriggerType _type, int _kind, int _keyframe)
+		static EventTrigger.Entry CreateKeyframeEndDragTrigger(ObjEditor __instance, EventTriggerType _type, int _kind, int _keyframe)
 		{
 			EventTrigger.Entry entry = new EventTrigger.Entry();
 			entry.eventID = _type;
@@ -924,7 +924,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SetMainTimelineZoom")]
 		[HarmonyPrefix]
-		private static bool TimelineZoomSizer(float __0, bool __1, ref float __2)
+		static bool TimelineZoomSizer(float __0, bool __1, ref float __2)
         {
 			var resizeKeyframeTimeline = AccessTools.Method(typeof(ObjEditor), "ResizeKeyframeTimeline");
 			var createKeyframes = AccessTools.Method(typeof(ObjEditor), "CreateKeyframes");
@@ -948,7 +948,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("UpdateTimelineScrollRect")]
 		[HarmonyPostfix]
-		private static void DoTheThing(float __0, float __1)
+		static void DoTheThing(float __0, float __1)
         {
 			if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Scrollbar Horizontal") && GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Scrollbar Horizontal").GetComponent<Scrollbar>())
 			{
@@ -962,7 +962,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("DeleteObject")]
 		[HarmonyPrefix]
-		private static bool DeleteObjectPrefix(ObjEditor __instance, ObjEditor.ObjectSelection __0, bool __1, ref string __result)
+		static bool DeleteObjectPrefix(ObjEditor __instance, ObjEditor.ObjectSelection __0, bool __1, ref string __result)
         {
 			RTEditor.DeleteObject(__0, __1);
 

@@ -17,15 +17,12 @@ using HarmonyLib;
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
-using EditorManagement.Functions.Tools;
 using LSFunctions;
 using Crosstales.FB;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
-using RTFunctions.Functions.Animation;
-using RTFunctions.Functions.Animation.Keyframe;
 
 using DGEase = DG.Tweening.Ease;
 using Ease = RTFunctions.Functions.Animation.Ease;
@@ -1030,8 +1027,6 @@ namespace EditorManagement.Patchers
 				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
 				gameObject.AddComponent<ObjectModifiersEditor>();
 			}
-
-			EditorPlugin.SetShowable();
 		}
 
 		[HarmonyPatch("Start")]
@@ -1095,6 +1090,291 @@ namespace EditorManagement.Patchers
 					InputDataManager.inst.players.Add(player);
 			else
 				InputDataManager.inst.players.Add(new InputDataManager.CustomPlayer(true, 0, null));
+		}
+
+		//[HarmonyPatch("Update")]
+		//[HarmonyPrefix]
+		static bool UpdatePrefix(EditorManager __instance)
+		{
+			__instance.ScreenScale = (float)Screen.width / 1920f;
+			__instance.ScreenScaleInverse = 1f / __instance.ScreenScale;
+			if (__instance.showHelp)
+			{
+				float num = (float)Screen.width / 1920f;
+				num = 1f / num;
+				float x = __instance.mouseTooltip.GetComponent<RectTransform>().sizeDelta.x;
+				float y = __instance.mouseTooltip.GetComponent<RectTransform>().sizeDelta.y;
+				Vector3 zero = Vector3.zero;
+				if ((Input.mousePosition.x + x + 32f) * num >= 1920f)
+				{
+					zero.x -= x;
+				}
+				if ((Input.mousePosition.y + y + 32f) * num >= 1080f)
+				{
+					zero.y -= y;
+				}
+				__instance.mouseTooltip.GetComponent<RectTransform>().anchoredPosition = (Input.mousePosition + zero) * num;
+			}
+			if (InputDataManager.inst.editorActions.RefreshObject.WasPressed)
+			{
+				ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
+			}
+			if (GameManager.inst.gameState == GameManager.State.Playing)
+			{
+				if (__instance.canEdit)
+				{
+					if (InputDataManager.inst.editorActions.ToggleEditor.WasPressed && !__instance.IsUsingInputField())
+					{
+						__instance.ToggleEditor();
+					}
+					foreach (InputDataManager.CustomPlayer customPlayer in InputDataManager.inst.players)
+					{
+						if (customPlayer.player && customPlayer.player.Actions.Pause.WasPressed && !__instance.isEditing)
+						{
+							__instance.isEditing = true;
+						}
+					}
+					if (__instance.isEditing)
+					{
+						if (!__instance.IsUsingInputField())
+						{
+							if (InputDataManager.inst.editorActions.TogglePlay.WasPressed)
+							{
+								__instance.TogglePlayingSong();
+							}
+							if (InputDataManager.inst.editorActions.Undo.WasPressed)
+							{
+								__instance.history.Undo();
+							}
+							if (InputDataManager.inst.editorActions.Redo.WasPressed)
+							{
+								__instance.history.Redo();
+							}
+							if (InputDataManager.inst.editorActions.Layer1.WasPressed)
+							{
+								__instance.SetLayer(0);
+							}
+							if (InputDataManager.inst.editorActions.Layer2.WasPressed)
+							{
+								__instance.SetLayer(1);
+							}
+							if (InputDataManager.inst.editorActions.Layer3.WasPressed)
+							{
+								__instance.SetLayer(2);
+							}
+							if (InputDataManager.inst.editorActions.Layer4.WasPressed)
+							{
+								__instance.SetLayer(3);
+							}
+							if (InputDataManager.inst.editorActions.Layer5.WasPressed)
+							{
+								__instance.SetLayer(4);
+							}
+							if (InputDataManager.inst.editorActions.LayerEvent.WasPressed)
+							{
+								__instance.SetLayer(5);
+							}
+							if (InputDataManager.inst.editorActions.GoToCurrentTime.WasPressed)
+							{
+								Debug.Log("Go to Current Time");
+								__instance.StartCoroutine(__instance.UpdateTimelineScrollRect(0f, AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length));
+							}
+							if (!InputDataManager.inst.editorActions.GoToCurrentTime.WasPressed && InputDataManager.inst.editorActions.GoToStart.WasPressed)
+							{
+								Debug.Log("Go to Start Time");
+								__instance.StartCoroutine(__instance.UpdateTimelineScrollRect(0f, 0f));
+							}
+							if (InputDataManager.inst.editorActions.GoToEnd.WasPressed)
+							{
+								Debug.Log("Go to End Time");
+								__instance.StartCoroutine(__instance.UpdateTimelineScrollRect(0f, 1f));
+							}
+							if (InputDataManager.inst.editorActions.SmallTimelineJumpLeft.WasPressed && !InputDataManager.inst.editorActions.LargeTimelineJumpLeft.WasPressed && !InputDataManager.inst.editorActions.JumpToPreviousMarker.WasPressed)
+							{
+								AudioManager.inst.CurrentAudioSource.Pause();
+								__instance.UpdatePlayButton();
+								AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time - 0.1f);
+								//if (EditorManager.UpdatedAudioPos != null)
+								//{
+								//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+								//}
+							}
+							if (InputDataManager.inst.editorActions.SmallTimelineJumpRight.WasPressed && !InputDataManager.inst.editorActions.LargeTimelineJumpRight.WasPressed && !InputDataManager.inst.editorActions.JumpToNextMarker.WasPressed)
+							{
+								AudioManager.inst.CurrentAudioSource.Pause();
+								__instance.UpdatePlayButton();
+								AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time + 0.1f);
+								//if (EditorManager.UpdatedAudioPos != null)
+								//{
+								//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+								//}
+							}
+							if (InputDataManager.inst.editorActions.LargeTimelineJumpLeft.WasPressed && !InputDataManager.inst.editorActions.JumpToPreviousMarker.WasPressed)
+							{
+								AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time - 5f);
+								//if (EditorManager.UpdatedAudioPos != null)
+								//{
+								//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+								//}
+							}
+							if (InputDataManager.inst.editorActions.LargeTimelineJumpRight.WasPressed && !InputDataManager.inst.editorActions.JumpToNextMarker.WasPressed)
+							{
+								AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time + 5f);
+								//if (EditorManager.UpdatedAudioPos != null)
+								//{
+								//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+								//}
+							}
+							if (InputDataManager.inst.editorActions.PitchUp.WasPressed && AudioManager.inst.CurrentAudioSource.pitch + 0.1f < 2f)
+							{
+								AudioManager.inst.SetPitch(AudioManager.inst.CurrentAudioSource.pitch + 0.1f);
+								//if (EditorManager.UpdatedAudioPos != null)
+								//{
+								//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+								//}
+							}
+							if (InputDataManager.inst.editorActions.PitchDown.WasPressed && AudioManager.inst.CurrentAudioSource.pitch - 0.1f > 0f)
+							{
+								AudioManager.inst.SetPitch(AudioManager.inst.CurrentAudioSource.pitch - 0.1f);
+								//if (EditorManager.UpdatedAudioPos != null)
+								//{
+								//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+								//}
+							}
+							__instance.handleViewShortcuts();
+							if (InputDataManager.inst.editorActions.OpenLevel.WasPressed)
+							{
+								__instance.OpenBeatmapPopup();
+							}
+							if (InputDataManager.inst.editorActions.SaveLevel.WasPressed)
+							{
+								__instance.SaveBeatmap();
+							}
+							if (InputDataManager.inst.editorActions.Cut.WasPressed)
+							{
+								__instance.Cut();
+							}
+							if (InputDataManager.inst.editorActions.Copy.WasPressed)
+							{
+								__instance.Copy(false, false);
+							}
+							if (InputDataManager.inst.editorActions.Duplicate.WasPressed)
+							{
+								__instance.Duplicate();
+							}
+							if (InputDataManager.inst.editorActions.Paste.WasPressed)
+							{
+								__instance.Paste(0f);
+							}
+							if (InputDataManager.inst.editorActions.Delete.WasPressed)
+							{
+								__instance.Delete();
+							}
+						}
+						__instance.timelineTime.GetComponent<Text>().text = string.Format("{0:0}:{1:00}.{2:000}", Mathf.Floor(__instance.CurrentAudioPos / 60f), Mathf.Floor(__instance.CurrentAudioPos % 60f), Mathf.Floor(AudioManager.inst.CurrentAudioSource.time * 1000f % 1000f));
+					}
+					if (!__instance.firstOpened)
+					{
+                        //__instance.AssignWaveformTextures();
+                        //__instance.UpdateTimelineSizes();
+
+                        {
+							if (AudioManager.inst.CurrentAudioSource.clip != null)
+							{
+								__instance.markerTimeline.GetComponent<RectTransform>().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * __instance.Zoom, __instance.markerTimeline.GetComponent<RectTransform>().sizeDelta.y);
+								__instance.timeline.GetComponent<RectTransform>().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * __instance.Zoom, __instance.timeline.GetComponent<RectTransform>().sizeDelta.y);
+								__instance.timelineWaveformOverlay.GetComponent<RectTransform>().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * __instance.Zoom, __instance.timeline.GetComponent<RectTransform>().sizeDelta.y);
+							}
+						}
+
+						__instance.firstOpened = true;
+						ObjEditor.inst.CreateTimelineObjects();
+						EventEditor.inst.CreateEventObjects();
+						CheckpointEditor.inst.CreateGhostCheckpoints();
+						GameManager.inst.UpdateTimeline();
+						__instance.CreateGrid();
+						ObjEditor.inst.SetCurrentObj(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Object, 0));
+						EventEditor.inst.SetCurrentEvent(0, 0);
+						CheckpointEditor.inst.SetCurrentCheckpoint(0);
+						__instance.TogglePlayingSong();
+						__instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+						if (__instance.loadedLevels.Count > 0)
+						{
+							__instance.OpenBeatmapPopup();
+						}
+						else
+						{
+							__instance.OpenNewLevelPopup();
+						}
+					}
+					if (__instance.OpenedEditor)
+					{
+						GameManager.inst.ResetCheckpoints(true);
+						GameManager.inst.playerGUI.SetActive(false);
+						LSHelpers.ShowCursor();
+						__instance.GUI.SetActive(true);
+						__instance.ShowGUI();
+                        //__instance.SetPlayersInvinsible(true);
+                        {
+							GameManager.inst.Camera.GetComponent<Camera>().rect = new Rect(0f, 0.3708f, 0.601f, 0.601f);
+							GameManager.inst.CameraPerspective.GetComponent<Camera>().rect = new Rect(0f, 0.3708f, 0.601f, 0.601f);
+						}
+						//__instance.SetEditRenderArea();
+						//if (EditorManager.UpdatedAudioPos != null)
+						//{
+						//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+						//}
+						GameManager.inst.UpdateTimeline();
+					}
+					else if (__instance.ClosedEditor)
+					{
+						GameManager.inst.playerGUI.SetActive(true);
+						LSHelpers.HideCursor();
+						__instance.GUI.SetActive(false);
+						AudioManager.inst.CurrentAudioSource.Play();
+						//__instance.SetPlayersInvinsible(false);
+						//__instance.SetNormalRenderArea();
+                        {
+							GameManager.inst.Camera.GetComponent<Camera>().rect = new Rect(0f, 0f, 1f, 1f);
+							GameManager.inst.CameraPerspective.GetComponent<Camera>().rect = new Rect(0f, 0f, 1f, 1f);
+						}
+						//if (EditorManager.UpdatedAudioPos != null)
+						//{
+						//	EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+						//}
+						GameManager.inst.UpdateTimeline();
+					}
+					__instance.updatePointer();
+					__instance.UpdateTooltip();
+					__instance.UpdateEditButtons();
+					if (EventManager.inst.changedZoom)
+					{
+						__instance.UpdateGrid();
+					}
+					//__instance.speedText.GetComponent<Text>().text = AudioManager.inst.pitch.ToString("f1");
+					//__instance.wasEditing = __instance.isEditing;
+				}
+				else if (!__instance.canEdit && __instance.isEditing)
+				{
+					__instance.GUI.SetActive(false);
+					AudioManager.inst.SetPitch(1f);
+					//__instance.SetPlayersInvinsible(false);
+					//__instance.SetNormalRenderArea();
+					{
+						GameManager.inst.Camera.GetComponent<Camera>().rect = new Rect(0f, 0f, 1f, 1f);
+						GameManager.inst.CameraPerspective.GetComponent<Camera>().rect = new Rect(0f, 0f, 1f, 1f);
+					}
+					__instance.isEditing = false;
+				}
+			}
+			//if (__instance.prevAudioTime > AudioManager.inst.CurrentAudioSource.time && EditorManager.UpdatedAudioPos != null)
+			//{
+				//EditorManager.UpdatedAudioPos(AudioManager.inst.CurrentAudioSource.isPlaying, AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.pitch);
+			//}
+			__instance.prevAudioTime = AudioManager.inst.CurrentAudioSource.time;
+			//__instance.lastLayer = __instance.layer;
+
+			return false;
 		}
 
 		[HarmonyPatch("Update")]
@@ -1521,10 +1801,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("RenderOpenBeatmapPopup")]
 		[HarmonyPostfix]
-		static void EditorRenderOpenBeatmapPopupPatch()
-		{
-			RTEditor.RenderBeatmapSet();
-		}
+		static void EditorRenderOpenBeatmapPopupPatch() => RTEditor.RenderBeatmapSet();
 
 		[HarmonyPatch("OpenBeatmapPopup")]
 		[HarmonyPrefix]
@@ -1564,10 +1841,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("AssignWaveformTextures")]
 		[HarmonyPrefix]
-		static bool AssignWaveformTexturesPatch()
-		{
-			return false;
-		}
+		static bool AssignWaveformTexturesPatch() => false;
 
 		[HarmonyPatch("RenderTimeline")]
 		[HarmonyPrefix]
@@ -1628,21 +1902,21 @@ namespace EditorManagement.Patchers
 				});
 			}
 
-            //if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "player".Contains(__instance.parentSearch.ToLower()))
-            //{
-            //    var cam = Instantiate(__instance.folderButtonPrefab);
-            //    cam.name = "Player";
-            //    cam.transform.SetParent(transform);
-            //    cam.transform.localScale = Vector3.one;
-            //    cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
-            //    cam.GetComponent<Button>().onClick.AddListener(delegate ()
-            //    {
-            //        ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "PLAYER_PARENT";
-            //        ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
-            //        EditorManager.inst.HideDialog("Parent Selector");
-            //        RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
-            //    });
-            //}
+            if (__instance.parentSearch == null || !(__instance.parentSearch != "") || "player".Contains(__instance.parentSearch.ToLower()))
+            {
+                var cam = Instantiate(__instance.folderButtonPrefab);
+                cam.name = "Player";
+                cam.transform.SetParent(transform);
+                cam.transform.localScale = Vector3.one;
+                cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
+                cam.GetComponent<Button>().onClick.AddListener(delegate ()
+                {
+                    ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "PLAYER_PARENT";
+                    ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
+                    EditorManager.inst.HideDialog("Parent Selector");
+                    RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI());
+                });
+            }
 
             foreach (var obj in DataManager.inst.gameData.beatmapObjects)
 			{
@@ -1868,7 +2142,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("DisplayNotification")]
         [HarmonyPrefix]
-        private static bool DisplayNotificationPrefix(string __0, float __1, EditorManager.NotificationType __2)
+        static bool DisplayNotificationPrefix(string __0, float __1, EditorManager.NotificationType __2)
         {
             RTEditor.inst.StartCoroutine(RTEditor.DisplayDefaultNotification(__0, __1, __2));
             return false;
@@ -1876,7 +2150,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("SnapToBPM")]
 		[HarmonyPrefix]
-		private static bool SnapToBPMPostfix(ref float __result, float __0)
+		static bool SnapToBPMPostfix(ref float __result, float __0)
 		{
 			__result = RTEditor.SnapToBPM(__0);
 			return false;
@@ -1884,7 +2158,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("ClearDialogs")]
 		[HarmonyPrefix]
-		private static bool ClearDialogsPrefix(EditorManager.EditorDialog.DialogType[] __0)
+		static bool ClearDialogsPrefix(EditorManager.EditorDialog.DialogType[] __0)
         {
 			foreach (EditorManager.EditorDialog editorDialog in EditorManager.inst.EditorDialogs)
 			{
@@ -1915,7 +2189,7 @@ namespace EditorManagement.Patchers
 
 		//[HarmonyPatch("SetDialogStatus")]
 		//[HarmonyPrefix]
-		private static bool SetDialogStatusPrefix(string __0, bool __1, bool __2)
+		static bool SetDialogStatusPrefix(string __0, bool __1, bool __2)
         {
 			var editorDialogsDictionaryInst = AccessTools.Field(typeof(EditorManager), "EditorDialogsDictionary").GetValue(EditorManager.inst);
 
@@ -1964,14 +2238,14 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("LoadBaseLevel")]
 		[HarmonyPostfix]
-		private static void LoadBaseLevelPostfix()
+		static void LoadBaseLevelPostfix()
         {
 			EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(true);
 		}
 
 		[HarmonyPatch("QuitToMenu")]
 		[HarmonyPrefix]
-		private static bool QuitToMenuPrefix(EditorManager __instance)
+		static bool QuitToMenuPrefix(EditorManager __instance)
         {
 			if (RTEditor.inst.allowQuit)
             {
@@ -1992,7 +2266,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("QuitGame")]
 		[HarmonyPrefix]
-		private static bool QuitGamePrefix(EditorManager __instance)
+		static bool QuitGamePrefix(EditorManager __instance)
         {
 			if (RTEditor.inst.allowQuit)
             {

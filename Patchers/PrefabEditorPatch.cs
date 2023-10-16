@@ -1,23 +1,16 @@
 ﻿using System;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using System.IO;
 
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
-using SimpleJSON;
-
 using HarmonyLib;
 
 using EditorManagement.Functions.Editors;
-using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Tools;
 using LSFunctions;
@@ -512,24 +505,6 @@ namespace EditorManagement.Patchers
             __result = RTEditor.LoadExternalPrefabs(__instance);
             return false;
         }
-
-        //[HarmonyPatch("SavePrefab")]
-        //[HarmonyTranspiler]
-        //static IEnumerable<CodeInstruction> SavePrefabTranspiler(IEnumerable<CodeInstruction> instructions)
-        //{
-        //    return new CodeMatcher(instructions)
-        //        .Start()
-        //        .Advance(25)
-        //        .ThrowIfNotMatch("Is not beatmaps/prefabs/", new CodeMatch(OpCodes.Ldstr))
-        //        .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListSlash")))
-        //        .ThrowIfNotMatch("Is not ldsfld 1", new CodeMatch(OpCodes.Ldsfld))
-        //        .Start()
-        //        .Advance(40)
-        //        .ThrowIfNotMatch("Is not beatmaps/prefabs", new CodeMatch(OpCodes.Ldstr))
-        //        .SetInstruction(new CodeInstruction(OpCodes.Ldsfld, AccessTools.Field(typeof(EditorPlugin), "prefabListPath")))
-        //        .ThrowIfNotMatch("Is not ldsfld 2", new CodeMatch(OpCodes.Ldsfld))
-        //        .InstructionEnumeration();
-        //}
 
         [HarmonyPatch("SavePrefab")]
         [HarmonyPrefix]
@@ -1132,8 +1107,8 @@ namespace EditorManagement.Patchers
             return false;
         }
 
-        [HarmonyPatch("AddPrefabObjectToLevel")]
-        [HarmonyPrefix]
+        //[HarmonyPatch("AddPrefabObjectToLevel")]
+        //[HarmonyPrefix]
         static bool AddPrefabObjectToLevel(DataManager.GameData.Prefab __0)
         {
             RTEditor.AddPrefabObjectToLevel(__0);
