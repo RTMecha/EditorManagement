@@ -7455,22 +7455,31 @@ namespace EditorManagement.Functions.Editors
 					foreach (var keyframe in DataManager.inst.gameData.eventObjects.allEvents[4])
 					{
 						var eventValue = keyframe.eventValues[0].ToString();
-						if (eventValue.Length == 4 && id.Length == 6)
-                        {
-							eventValue = "00" + eventValue;
-                        }
-						if (eventValue.Length == 5 && id.Length == 6)
-                        {
-							eventValue = "0" + eventValue;
-                        }
-						if (beatmapTheme.id == eventValue && levelThemes.Find(x => x.id == eventValue) == null)
+
+						if (int.TryParse(id, out int num) && (int)keyframe.eventValues[0] == num && levelThemes.Find(x => int.TryParse(x.id, out int xid) && xid == (int)keyframe.eventValues[0]) == null)
+						//if (int.TryParse(id, out int num) && (int)keyframe.eventValues[0] == num && levelThemes.Find(x => x.IDToInt() == (int)keyframe.eventValues[0]) == null)
 						{
 							levelThemes.Add(beatmapTheme);
+							if (!savedBeatmapThemes.ContainsKey(id))
+								savedBeatmapThemes.Add(id, beatmapTheme);
 						}
 
-						if (beatmapTheme.id == eventValue && !savedBeatmapThemes.ContainsKey(id))
-							savedBeatmapThemes.Add(id, beatmapTheme);
-					}
+                        //if (eventValue.Length == 4 && id.Length == 6)
+                        //{
+                        //    eventValue = "00" + eventValue;
+                        //}
+                        //if (eventValue.Length == 5 && id.Length == 6)
+                        //{
+                        //    eventValue = "0" + eventValue;
+                        //}
+                        //if (beatmapTheme.id == eventValue && levelThemes.Find(x => x.id == eventValue) == null)
+                        //{
+                        //    levelThemes.Add(beatmapTheme);
+                        //}
+
+                        //if (beatmapTheme.id == eventValue && !savedBeatmapThemes.ContainsKey(id))
+                        //    savedBeatmapThemes.Add(id, beatmapTheme);
+                    }
 				}
 
 				for (int i = 0; i < levelThemes.Count; i++)
@@ -7478,7 +7487,10 @@ namespace EditorManagement.Functions.Editors
 					Debug.LogFormat("{0}Saving " + levelThemes[i].id + " - " + levelThemes[i].name + " to level!", EditorPlugin.className);
 					jn["themes"][i]["id"] = levelThemes[i].id;
 					jn["themes"][i]["name"] = levelThemes[i].name;
-					jn["themes"][i]["gui"] = ColorToHex(levelThemes[i].guiColor);
+					if (ConfigEntries.SaveOpacityToThemes.Value)
+						jn["themes"][i]["gui"] = ColorToHex(levelThemes[i].guiColor);
+					else
+						jn["themes"][i]["gui"] = LSColors.ColorToHex(levelThemes[i].guiColor);
 					jn["themes"][i]["bg"] = LSColors.ColorToHex(levelThemes[i].backgroundColor);
 					for (int j = 0; j < levelThemes[i].playerColors.Count; j++)
 					{
@@ -8389,6 +8401,7 @@ namespace EditorManagement.Functions.Editors
 					orderby x.Name.ToLower()
 					select x).ToList();
 
+			// Check if this breaks something later
 			while (folders.Count <= 0)
 			{
 				yield return null;
@@ -8396,7 +8409,6 @@ namespace EditorManagement.Functions.Editors
 
 			foreach (var folder in folders)
 			{
-				//yield return new WaitForSeconds(delay);
 				var lsfile = folder;
 				var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath));
 				var orig = DataManager.BeatmapTheme.Parse(jn, true);
@@ -8409,7 +8421,6 @@ namespace EditorManagement.Functions.Editors
 					ThemeEditor.inst.SaveTheme(beatmapTheme2);
 					dataManager.BeatmapThemes.Add(beatmapTheme2);
 				}
-				//delay += 0.0001f;
 			}
 			themesLoading = false;
 			yield break;
@@ -8429,6 +8440,7 @@ namespace EditorManagement.Functions.Editors
 		public static IEnumerator LoadExternalPrefabs(PrefabEditor __instance)
 		{
 			var folders = FileManager.inst.GetFileList(EditorPlugin.prefabListPath, "lsp");
+			// Investigate what this does
 			while (folders.Count <= 0)
 				yield return null;
 			Objects.externalPrefabs.Clear();
@@ -9318,6 +9330,12 @@ namespace EditorManagement.Functions.Editors
 			yield break;
 		}
 
+		public static object SetColor(Color[] array, int num, Color color)
+        {
+			array[num] = color;
+			return null;
+        }
+
 		public static IEnumerator GetWaveformTexture(AudioClip clip, int textureWidth, int textureHeight, Color background, Color waveform, Action<Texture2D> action)
 		{
 			Debug.LogFormat("{0}Generating Beta Waveform", EditorPlugin.className);
@@ -9328,7 +9346,9 @@ namespace EditorManagement.Functions.Editors
 			Color[] array = new Color[texture2D.width * texture2D.height];
 			for (int i = 0; i < array.Length; i++)
 			{
-				array[i] = background;
+				//array[i] = background;
+
+				yield return SetColor(array, num, background);
 			}
 			Debug.LogFormat("{0}Generating Beta Waveform at {1}", EditorPlugin.className, sw.Elapsed);
 			texture2D.SetPixels(array);
