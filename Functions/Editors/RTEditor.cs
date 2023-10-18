@@ -8303,7 +8303,7 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 
-			Debug.LogFormat("{0}Saving Entire Beatmap", EditorPlugin.className);
+			Debug.Log($"{EditorPlugin.className}Saving Entire Beatmap");
 			Debug.LogFormat("{0}Path: {1}", EditorPlugin.className, _path);
 			RTFile.WriteToFile(_path, jn.ToString());
 
