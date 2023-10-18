@@ -2683,6 +2683,27 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 }
 
+                                if (cmd == "updateObject" || cmd == "copyColor")
+                                {
+                                    Destroy(valueG.transform.Find("<").gameObject);
+                                    Destroy(valueG.transform.Find(">").gameObject);
+
+                                    var input = valueG.transform.Find("input");
+                                    var xif = input.gameObject.AddComponent<InputField>();
+                                    {
+                                        xif.onValueChanged.RemoveAllListeners();
+                                        xif.characterValidation = InputField.CharacterValidation.None;
+                                        xif.characterLimit = 0;
+                                        xif.textComponent = input.Find("Text").GetComponent<Text>();
+                                        xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                                        xif.text = value;
+                                        xif.onValueChanged.AddListener(delegate (string _val)
+                                        {
+                                            modifier.GetType().GetField("value", BindingFlags.Public | BindingFlags.Instance).SetValue(modifier, _val);
+                                        });
+                                    }
+                                }
+
                                 if (cmd == "loadLevel" || cmd == "code")
                                 {
                                     Triggers.AddTooltip(x, commands[0], "");
@@ -4777,7 +4798,7 @@ namespace EditorManagement.Functions.Editors
 
                                         var xet = ppinput.gameObject.AddComponent<EventTrigger>();
                                         xet.triggers.Clear();
-                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, 16 }));
+                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, 25 }));
 
                                         var xifh = ppinput.gameObject.AddComponent<InputFieldHelper>();
                                         xifh.inputField = ppif;
@@ -4787,7 +4808,7 @@ namespace EditorManagement.Functions.Editors
                                             ppincrease.onClick.RemoveAllListeners();
                                             ppincrease.onClick.AddListener(delegate ()
                                             {
-                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) + 1, 0, 16).ToString();
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) + 1, 0, 25).ToString();
                                             });
                                         }
 
@@ -4796,7 +4817,7 @@ namespace EditorManagement.Functions.Editors
                                             ppdecrease.onClick.RemoveAllListeners();
                                             ppdecrease.onClick.AddListener(delegate ()
                                             {
-                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) - 1, 0, 16).ToString();
+                                                ppif.text = Mathf.Clamp(int.Parse(ppif.text) - 1, 0, 25).ToString();
                                             });
                                         }
                                     }
@@ -4832,7 +4853,7 @@ namespace EditorManagement.Functions.Editors
 
                                         var xet = ppinput.gameObject.AddComponent<EventTrigger>();
                                         xet.triggers.Clear();
-                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, 16 }));
+                                        xet.triggers.Add(Triggers.ScrollDeltaInt(ppif, 1, clamp: new List<int> { 0, DataManager.inst.gameData.eventObjects.allEvents[int.Parse(commands[1])][0].eventValues.Length - 1 }));
 
                                         var xifh = ppinput.gameObject.AddComponent<InputFieldHelper>();
                                         xifh.inputField = ppif;
