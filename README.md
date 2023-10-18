@@ -3,16 +3,20 @@ EditorManagement aims to make the Project Arrhythmia (Legacy) editor more powerf
 
 Features this mod contains:
 
-- New layer system that allows you to go well beyond 5 editor layers.
-- More tooltips.
-- Level list that can load from any directory within "application path/beatmaps" and can be sorted by different types such as level name and artist name.
-- Adds extra difficulties (Master and animation), however this might eventually be moved to a separate mod for those who don't want all the editor stuff but want the difficulties.
+- New layer system that allows you to go well beyond 5 editor layers. (Rather than having 5 buttons, it's a singular input field that allows you to set the layer all the way up to the integer limit)
+- Level list that can load from any directory within "application path/beatmaps" and can be sorted by different types such as level name and artist name. Path saving and loading also works for themes and prefabs.
+- Prefabs can now be created internally rather than just externally.
 - Adds marker looping so you can loop between a set end marker and a set start marker.
-- Little reminder pops up at a set repeat time to remind you to have a break :)
-- Fixes naming of prefabs and themes, now allowing you to type in names any way you want. (Prefabs use to not allow spaces and themes used to require the first letter of each word to be uppercase AND didn't allow numbers or other symbols.
+- Little reminder pops up at a set repeat time to remind you to have a break! (Completely optional)
+- Fixes naming of prefabs and themes, now allowing you to type in names any way you want. (Prefabs use to not allow spaces and themes used to require the first letter of each word to be uppercase AND didn't allow numbers or other symbols)
 - Autosave changes, can now be customized at a set repeat rate and file limit. Autosaves now save in "level path/autosaves" rather than just "level path".
-- Last editor position (Layer, timeline scrollbar, audio time, zoom) now saves to "level path/editor.lse" and can also load from there whenever you open a level. (Audio time savess to "level path/level.lsb")
-- Adds Multi Object editor with options to change the group selected objects layer, depth and more.
+- Last editor position (Layer, timeline scrollbar, audio time, zoom) now saves to "level path/editor.lse" and can also load from there whenever you open a level. (Audio time saves to "level path/level.lsb" as "timeline_pos")
+- Adds Multi Object editor with options to change the group selected objects layer, depth and more. (Includes syncing of objects)
+- Object Search for finding a specific object you can't find anywhere in your timeline!
+- Scroll wheeling on most input fields involving numbers. (Hold Shift to increase / decrease both X and Y variables if that exists. Hold Ctrl to increase / decrease the amount by a large sum. Hold Alt to do the same but with a smaller sum.)
+- Only used themes now save to level.lsb. (It used to save every theme to the file)
+- More tooltips.
+- Full support for other mods (EventsCore, CreativePlayers and ObjectModifiers).
 
 ![2023-02-16_04 27 37](https://user-images.githubusercontent.com/125487712/219107098-69ce2d9f-473a-4970-bbb3-7b10a8e0c8d8.png)
 
