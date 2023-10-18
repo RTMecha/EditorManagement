@@ -45,7 +45,7 @@ namespace EditorManagement.Patchers
 				openLinkButton.onClick.RemoveAllListeners();
 				openLinkButton.onClick.AddListener(delegate ()
 				{
-					Application.OpenURL(string.Format(DataManager.inst.linkTypes[DataManager.inst.metaData.artist.LinkType].linkFormat, DataManager.inst.metaData.artist.Link));
+					Application.OpenURL(DataManager.inst.metaData.artist.getUrl());
 				});
 
 				ColorBlock cb = openLinkButton.colors;
