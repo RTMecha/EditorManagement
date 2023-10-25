@@ -24,6 +24,10 @@ namespace EditorManagement.Functions.Editors
 {
     public class CreativePlayersEditor : MonoBehaviour
     {
+        public static Type playerPlugin;
+        public static CreativePlayersEditor inst;
+        public static Type playerExtensions;
+
         public static GameObject editorDialogObject;
         public static Transform editorDialogTransform;
         public static Transform editorDialogTitle;
@@ -49,10 +53,6 @@ namespace EditorManagement.Functions.Editors
         public static string customSearchTerm;
 
         public static List<GameObject> playerObjects = new List<GameObject>();
-
-        public static Type playerPlugin;
-        public static CreativePlayersEditor inst;
-        public static Type playerExtensions;
 
         public static Font editorFont;
 
