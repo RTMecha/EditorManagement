@@ -42,7 +42,7 @@ namespace EditorManagement.Functions.Editors
         public static GameObject replBase;
         public static Text replText;
 
-        private void Awake()
+        void Awake()
         {
             if (!GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
             {
@@ -57,6 +57,22 @@ namespace EditorManagement.Functions.Editors
                 CreateModifiersOnAwake();
                 CreateDefaultModifiersList();
             }
+        }
+
+        float time;
+        float timeOffset;
+        bool setTime;
+
+        void Update()
+        {
+            if (!setTime)
+            {
+                timeOffset = Time.time;
+                setTime = true;
+            }
+
+            time = timeOffset - Time.time;
+            timeOffset = Time.time;
         }
 
         #region Plugin stuff
