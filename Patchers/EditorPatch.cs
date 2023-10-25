@@ -1014,18 +1014,25 @@ namespace EditorManagement.Patchers
 		static void PropertiesWindow(EditorManager __instance)
         {
 			RTEditor.inst.StartCoroutine(RTEditor.CreatePropertiesWindow());
-			//Player Editor
+			// Player Editor
 			{
 				GameObject gameObject = new GameObject("PlayerEditorManager");
 				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
 				gameObject.AddComponent<CreativePlayersEditor>();
 			}
 
-			//Object Modifiers Editor
+			// Object Modifiers Editor
 			{
 				GameObject gameObject = new GameObject("ObjectModifiersEditor");
 				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
 				gameObject.AddComponent<ObjectModifiersEditor>();
+			}
+
+            // Level Combiner
+            {
+				var gameObject = new GameObject("LevelCombiner");
+				gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
+				gameObject.AddComponent<LevelCombiner>();
 			}
 		}
 
