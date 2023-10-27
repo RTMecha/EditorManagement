@@ -492,10 +492,21 @@ namespace EditorManagement.Functions.Editors
 					EditorManager.inst.DisplayNotification($"Combined {first.folder} and {second.folder} to {savePath}!", 3f, EditorManager.NotificationType.Success);
 				};
 
+				string save = savePath;
+				if (!save.Contains("level.lsb") && save.LastIndexOf('/') == save.Length - 1)
+					save += "level.lsb";
+				else if (!save.Contains("/level.lsb"))
+					save += "/level.lsb";
+
+				if (!save.Contains(RTFile.ApplicationDirectory) && !save.Contains(EditorPlugin.levelListSlash))
+					save = RTFile.ApplicationDirectory + EditorPlugin.levelListSlash + save;
+				else if (!save.Contains(RTFile.ApplicationDirectory))
+					save = RTFile.ApplicationDirectory + save;
+
 				ProjectData.Combiner.Combine(
 					RTFile.ApplicationDirectory + EditorPlugin.levelListSlash + first.folder + "/level.lsb",
 					RTFile.ApplicationDirectory + EditorPlugin.levelListSlash + second.folder + "/level.lsb",
-					savePath);
+					save);
 			}
 
 			if (first == null)
