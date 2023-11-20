@@ -13,12 +13,14 @@ using LSFunctions;
 
 using EditorManagement.Functions.Editors;
 
+using RTFunctions.Functions;
+
 namespace EditorManagement.Functions.Components
 {
     public class InputFieldHelper : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         public InputField inputField;
-        private bool hovered;
+        bool hovered;
         public Type type = Type.Num;
         public enum Type
         {
@@ -26,11 +28,13 @@ namespace EditorManagement.Functions.Components
             String
         }
 
-        private void Start()
+        public void Init(InputField inputField, Type type)
         {
-            if (GetComponent<InputField>())
+            this.inputField = inputField;
+            this.type = type;
+            if (inputField)
             {
-                inputField = GetComponent<InputField>();
+                inputField.onEndEdit.ClearAll();
                 inputField.onEndEdit.AddListener(delegate (string _val)
                 {
                     var regexPlus = new System.Text.RegularExpressions.Regex(@"(.*?)\s\+\s(.*?)");
@@ -55,21 +59,13 @@ namespace EditorManagement.Functions.Components
             }
         }
 
-        public void OnPointerEnter(PointerEventData pointerEventData)
-        {
-            hovered = true;
-            //RTEditor.hoveringOIF = true;
-        }
+        public void OnPointerEnter(PointerEventData pointerEventData) => hovered = true;
 
-        public void OnPointerExit(PointerEventData pointerEventData)
-        {
-            hovered = false;
-            RTEditor.hoveringOIF = false;
-        }
+        public void OnPointerExit(PointerEventData pointerEventData) => hovered = false;
 
-        private void Update()
+        void Update()
         {
-            if (hovered && inputField != null)
+            if (hovered && inputField)
             {
                 if (Input.GetMouseButtonDown(2))
                 {
@@ -81,17 +77,11 @@ namespace EditorManagement.Functions.Components
                             inputField.text = num.ToString();
                         }
                         else
-                        {
-                            if (EditorManager.inst != null)
-                            {
+                            if (EditorManager.inst)
                                 EditorManager.inst.DisplayNotification("Could not invert number!", 1f, EditorManager.NotificationType.Error);
-                            }
-                        }
                     }
                     if (type == Type.String)
-                    {
                         inputField.text = Flip(inputField.text);
-                    }
                 }
             }
         }
