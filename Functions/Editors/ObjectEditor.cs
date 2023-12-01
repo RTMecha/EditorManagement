@@ -63,6 +63,11 @@ namespace EditorManagement.Functions.Editors
 
         public List<TimelineObject<EventKeyframe>> copiedObjectKeyframes = new List<TimelineObject<EventKeyframe>>();
 
+        public EventKeyframe CopiedPositionData { get; set; }
+        public EventKeyframe CopiedScaleData { get; set; }
+        public EventKeyframe CopiedRotationData { get; set; }
+        public EventKeyframe CopiedColorData { get; set; }
+
         public void OpenDialog()
         {
             if (SelectedBeatmapObjects.Count == 1)
@@ -1093,7 +1098,7 @@ namespace EditorManagement.Functions.Editors
         //        _obj.GetTimelineObject().GetComponent<Image>().color = ObjEditor.inst.NormalColor;
         //}
 
-        public void SetCurrentObject<T>(TimelineObject<T> timelineObject)
+        public void SetCurrentObject<T>(TimelineObject<T> timelineObject, bool bringTo = false)
         {
             if (DataManager.inst.gameData.beatmapObjects.Count > 0)
             {
@@ -1107,8 +1112,13 @@ namespace EditorManagement.Functions.Editors
                     if (timelineObject.IsPrefabObject)
                         PrefabEditor.inst.OpenPrefabDialog();
                 }
+
+                if (bringTo)
+                    AudioManager.inst.SetMusicTime(timelineObject.Time);
             }
         }
+
+        public static void SetCurrentBeatmapObject(int index) => inst.SetCurrentObject(RTEditor.inst.TimelineBeatmapObjects[index]);
 
         public void SetCurrentKeyframe(BeatmapObject beatmapObject, int _keyframe, bool _bringTo = false)
         {
@@ -1360,13 +1370,9 @@ namespace EditorManagement.Functions.Editors
             if (!string.IsNullOrEmpty(timelineObject.ID))
             {
                 if (!timelineObject.GameObject)
-                {
                     gameObject = CreateTimelineObject(timelineObject);
-                }
                 else
-                {
                     gameObject = timelineObject.GameObject;
-                }
 
                 if (RTEditor.inst.Layer == timelineObject.Layer)
                 {
@@ -1384,6 +1390,9 @@ namespace EditorManagement.Functions.Editors
                     Color color = ObjEditor.inst.NormalColor;
                     if (timelineObject.IsBeatmapObject)
                     {
+                        if (!RTEditor.inst.timelineBeatmapObjects.ContainsKey(timelineObject.ID))
+                            RTEditor.inst.timelineBeatmapObjects.Add(timelineObject.ID, timelineObject as TimelineObject<BeatmapObject>);
+
                         var beatmapObject = timelineObject.Data as BaseBeatmapObject;
 
                         locked = beatmapObject.editorData.locked;
@@ -1430,6 +1439,9 @@ namespace EditorManagement.Functions.Editors
 
                     if (timelineObject.IsPrefabObject)
                     {
+                        if (!RTEditor.inst.timelinePrefabObjects.ContainsKey(timelineObject.ID))
+                            RTEditor.inst.timelinePrefabObjects.Add(timelineObject.ID, timelineObject as TimelineObject<PrefabObject>);
+
                         var prefabObject = timelineObject.Data as BasePrefabObject;
                         var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
 
@@ -1827,10 +1839,10 @@ namespace EditorManagement.Functions.Editors
             var name = (InputField)ObjectUIElements["Name IF"];
 
             // Allows for left / right flipping.
-            if (!name.GetComponent<InputFieldHelper>() && name.gameObject)
+            if (!name.GetComponent<InputFieldSwapper>() && name.gameObject)
             {
-                var t = name.gameObject.AddComponent<InputFieldHelper>();
-                t.Init(name, InputFieldHelper.Type.String);
+                var t = name.gameObject.AddComponent<InputFieldSwapper>();
+                t.Init(name, InputFieldSwapper.Type.String);
             }
 
             name.onValueChanged.ClearAll(
@@ -1841,8 +1853,8 @@ namespace EditorManagement.Functions.Editors
                 beatmapObject.name = _val;
 
                 // Since name has no effect on the physical object, we will only need to update the timeline object.
-                if (beatmapObject.TryGetObjectSelection(out BaseObjectSelection objectSelection))
-                    ObjEditor.inst.RenderTimelineObject(objectSelection);
+                if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
+                    RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
             });
         }
 
@@ -1877,11 +1889,9 @@ namespace EditorManagement.Functions.Editors
 
                 // ObjectType affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject);
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject);
             });
         }
 
@@ -1921,16 +1931,14 @@ namespace EditorManagement.Functions.Editors
 
                     // StartTime affects both physical object and timeline object.
                     if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                    {
                         RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                        if (UpdateObjects)
-                            Updater.UpdateProcessor(beatmapObject, "StartTime");
-                    }
+                    if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "StartTime");
                 }
             });
 
             time.triggers.Clear();
-            time.triggers.Add(TriggerHelper.ScrollDelta(timeIF, 0.1f, 10f, clamp: new List<float> { 0f, AudioManager.inst.CurrentAudioSource.clip.length }));
+            time.triggers.Add(TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length));
 
             timeJumpLargeLeft.onClick.RemoveAllListeners();
             timeJumpLargeLeft.interactable = (beatmapObject.StartTime > 0f);
@@ -1942,11 +1950,9 @@ namespace EditorManagement.Functions.Editors
 
                 // StartTime affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "StartTime");
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "StartTime");
 
                 ResizeKeyframeTimeline(beatmapObject);
             });
@@ -1961,11 +1967,9 @@ namespace EditorManagement.Functions.Editors
 
                 // StartTime affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "StartTime");
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "StartTime");
 
                 ResizeKeyframeTimeline(beatmapObject);
             });
@@ -1977,11 +1981,9 @@ namespace EditorManagement.Functions.Editors
 
                 // StartTime affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "StartTime");
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "StartTime");
 
                 ResizeKeyframeTimeline(beatmapObject);
             });
@@ -1995,11 +1997,9 @@ namespace EditorManagement.Functions.Editors
 
                 // StartTime affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "StartTime");
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "StartTime");
 
                 ResizeKeyframeTimeline(beatmapObject);
             });
@@ -2013,11 +2013,9 @@ namespace EditorManagement.Functions.Editors
 
                 // StartTime affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "StartTime");
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "StartTime");
 
                 ResizeKeyframeTimeline(beatmapObject);
             });
@@ -2037,11 +2035,10 @@ namespace EditorManagement.Functions.Editors
                 beatmapObject.autoKillType = (AutoKillType)_val;
                 // AutoKillType affects both physical object and timeline object.
                 if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                {
                     RenderTimelineObject(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id]);
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "Autokill");
-                }
+                if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "Autokill");
+
             });
 
             var todValue = (Transform)ObjectUIElements["Autokill TOD Value"];
@@ -2106,7 +2103,7 @@ namespace EditorManagement.Functions.Editors
                 });
 
                 // Add Scrolling for easy changing of values.
-                TriggerHelper.AddEventTrigger(todValue.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(akOffset, 0.1f, 10f, false, new List<float> { 0f, float.PositiveInfinity }) });
+                TriggerHelper.AddEventTrigger(todValue.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(akOffset, 0.1f, 10f, 0f, float.PositiveInfinity) });
             }
             else
             {
@@ -2174,7 +2171,6 @@ namespace EditorManagement.Functions.Editors
             if (!string.IsNullOrEmpty(parent))
             {
                 BaseBeatmapObject beatmapObjectParent = null;
-                var tmp = new BaseObjectSelection(BaseObjectSelection.SelectionType.Object, parent);
                 if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null)
                 {
                     beatmapObjectParent = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent);
@@ -2190,8 +2186,11 @@ namespace EditorManagement.Functions.Editors
                 parentText.onClick.RemoveAllListeners();
                 parentText.onClick.AddListener(delegate ()
                 {
-                    if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null && parent != "CAMERA_PARENT" && parent != "PLAYER_PARENT")
-                        ObjEditor.inst.SetCurrentObj(tmp);
+                    if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null &&
+                    parent != "CAMERA_PARENT" &&
+                    parent != "PLAYER_PARENT" &&
+                    RTEditor.inst.timelineBeatmapObjects.ContainsKey(parent))
+                        SetCurrentObject(RTEditor.inst.timelineBeatmapObjects[parent]);
                     else
                     {
                         EditorManager.inst.SetLayer(5);
@@ -2274,10 +2273,10 @@ namespace EditorManagement.Functions.Editors
         {
             var oxIF = (InputField)ObjectUIElements["Origin X IF"];
 
-            if (!oxIF.gameObject.GetComponent<InputFieldHelper>())
+            if (!oxIF.gameObject.GetComponent<InputFieldSwapper>())
             {
-                var ifh = oxIF.gameObject.AddComponent<InputFieldHelper>();
-                ifh.Init(oxIF, InputFieldHelper.Type.Num);
+                var ifh = oxIF.gameObject.AddComponent<InputFieldSwapper>();
+                ifh.Init(oxIF, InputFieldSwapper.Type.Num);
             }
 
             oxIF.onValueChanged.RemoveAllListeners();
@@ -2296,10 +2295,10 @@ namespace EditorManagement.Functions.Editors
 
             var oyIF = (InputField)ObjectUIElements["Origin Y IF"];
 
-            if (!oyIF.gameObject.GetComponent<InputFieldHelper>())
+            if (!oyIF.gameObject.GetComponent<InputFieldSwapper>())
             {
-                var ifh = oyIF.gameObject.AddComponent<InputFieldHelper>();
-                ifh.Init(oyIF, InputFieldHelper.Type.Num);
+                var ifh = oyIF.gameObject.AddComponent<InputFieldSwapper>();
+                ifh.Init(oyIF, InputFieldSwapper.Type.Num);
             }
 
             oyIF.onValueChanged.RemoveAllListeners();
@@ -2319,8 +2318,10 @@ namespace EditorManagement.Functions.Editors
             TriggerHelper.IncreaseDecreaseButtons(oxIF, 0.1f, 10f);
             TriggerHelper.IncreaseDecreaseButtons(oyIF, 0.1f, 10f);
 
-            TriggerHelper.AddEventTrigger(oxIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(oxIF, 0.1f, 10f, true), TriggerHelper.ScrollDeltaVector2(oxIF, oyIF, 0.1f, 10f) });
-            TriggerHelper.AddEventTrigger(oyIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(oyIF, 0.1f, 10f, true), TriggerHelper.ScrollDeltaVector2(oxIF, oyIF, 0.1f, 10f) });
+            TriggerHelper.AddEventTrigger(oxIF.gameObject, new List<EventTrigger.Entry>
+            { TriggerHelper.ScrollDelta(oxIF, multi: true), TriggerHelper.ScrollDeltaVector2(oxIF, oyIF, 0.1f, 10f) });
+            TriggerHelper.AddEventTrigger(oyIF.gameObject, new List<EventTrigger.Entry>
+            { TriggerHelper.ScrollDelta(oyIF, multi: true), TriggerHelper.ScrollDeltaVector2(oxIF, oyIF, 0.1f, 10f) });
         }
 
         /// <summary>
@@ -2513,10 +2514,10 @@ namespace EditorManagement.Functions.Editors
             var depthSlider = (Slider)ObjectUIElements["Depth Slider"];
             var depthText = (InputField)ObjectUIElements["Depth IF"];
 
-            if (!depthText.GetComponent<InputFieldHelper>())
+            if (!depthText.GetComponent<InputFieldSwapper>())
             {
-                var ifh = depthText.gameObject.AddComponent<InputFieldHelper>();
-                ifh.Init(depthText, InputFieldHelper.Type.Num);
+                var ifh = depthText.gameObject.AddComponent<InputFieldSwapper>();
+                ifh.Init(depthText, InputFieldSwapper.Type.Num);
             }
 
             depthText.onValueChanged.RemoveAllListeners();
@@ -2621,7 +2622,7 @@ namespace EditorManagement.Functions.Editors
             });
 
             if (editorLayersIF.gameObject)
-                TriggerHelper.AddEventTrigger(editorLayersIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(editorLayersIF, 1, false, new List<int> { 1, int.MaxValue }) });
+                TriggerHelper.AddEventTrigger(editorLayersIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(editorLayersIF, 1, 1, int.MaxValue) });
         }
 
         /// <summary>
@@ -3132,7 +3133,7 @@ namespace EditorManagement.Functions.Editors
                     SetKeyframeTime(beatmapObject, float.Parse(_value), false);
                 });
 
-                TriggerHelper.IncreaseDecreaseButtons(tif, 0.1f, 10f, p);
+                TriggerHelper.IncreaseDecreaseButtons(tif, 0.1f, 10f, t: p);
 
                 p.Find("curves_label").gameObject.SetActive(ObjEditor.inst.currentKeyframe != 0);
                 p.Find("curves").gameObject.SetActive(ObjEditor.inst.currentKeyframe != 0);
@@ -3176,23 +3177,23 @@ namespace EditorManagement.Functions.Editors
                             var posLeft = pos.Find("<").GetComponent<Button>();
                             var posRight = pos.Find(">").GetComponent<Button>();
 
-                            if (!pos.GetComponent<InputFieldHelper>())
+                            if (!pos.GetComponent<InputFieldSwapper>())
                             {
-                                var ifh = pos.gameObject.AddComponent<InputFieldHelper>();
-                                ifh.Init(posIF, InputFieldHelper.Type.Num);
+                                var ifh = pos.gameObject.AddComponent<InputFieldSwapper>();
+                                ifh.Init(posIF, InputFieldSwapper.Type.Num);
                             }
 
                             posET.triggers.Clear();
                             if (type != 2)
                             {
                                 //Debug.LogFormat("{0}Refresh Object GUI: Keyframe " + type + " [" + (i + 1) + "/" + limt + "]", EditorPlugin.className);
-                                posET.triggers.Add(TriggerHelper.ScrollDelta(posIF, 0.1f, 10f, true));
+                                posET.triggers.Add(TriggerHelper.ScrollDelta(posIF, multi: true));
                                 posET.triggers.Add(TriggerHelper.ScrollDeltaVector2(p.GetChild(9).GetChild(0).GetComponent<InputField>(), p.GetChild(9).GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
                             }
                             else
                             {
                                 //Debug.LogFormat("{0}Refresh Object GUI: Keyframe " + type + " [" + (i + 1) + "/" + limt + "]", EditorPlugin.className);
-                                posET.triggers.Add(TriggerHelper.ScrollDelta(posIF, 15f, 3f, false));
+                                posET.triggers.Add(TriggerHelper.ScrollDelta(posIF, 15f, 3f));
                             }
 
                             int current = i;
@@ -3349,10 +3350,10 @@ namespace EditorManagement.Functions.Editors
                         }
                     });
 
-                    if (!randomInterval.GetComponent<InputFieldHelper>())
+                    if (!randomInterval.GetComponent<InputFieldSwapper>())
                     {
-                        var ifh = randomInterval.gameObject.AddComponent<InputFieldHelper>();
-                        ifh.Init(randomIntervalIF, InputFieldHelper.Type.Num);
+                        var ifh = randomInterval.gameObject.AddComponent<InputFieldSwapper>();
+                        ifh.Init(randomIntervalIF, InputFieldSwapper.Type.Num);
                     }
 
                     TriggerHelper.AddEventTrigger(randomInterval.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(randomIntervalIF, 0.1f, 10f) });
@@ -3379,40 +3380,25 @@ namespace EditorManagement.Functions.Editors
 
                             TriggerHelper.IncreaseDecreaseButtons(randomValueX, 0.1f, 10f);
 
-                            //randomValueX.transform.Find("<").GetComponent<Button>().onClick.RemoveAllListeners();
-                            //randomValueX.transform.Find(">").GetComponent<Button>().onClick.RemoveAllListeners();
-                            //randomValueX.transform.Find("<").GetComponent<Button>().onClick.AddListener(delegate ()
-                            //{
-                            //    float x = beatmapObject.events[type][ObjEditor.inst.currentKeyframe].eventRandomValues[index];
-                            //    x -= 1f;
-                            //    randomValueX.text = x.ToString();
-                            //});
-                            //randomValueX.transform.Find(">").GetComponent<Button>().onClick.AddListener(delegate ()
-                            //{
-                            //    float x = beatmapObject.events[type][ObjEditor.inst.currentKeyframe].eventRandomValues[index];
-                            //    x += 1f;
-                            //    randomValueX.text = x.ToString();
-                            //});
-
                             if (type != 2)
                             {
-                                if (!randomValue.GetChild(index).GetComponent<InputFieldHelper>())
+                                if (!randomValue.GetChild(index).GetComponent<InputFieldSwapper>())
                                 {
-                                    var ifh = randomValue.GetChild(index).gameObject.AddComponent<InputFieldHelper>();
-                                    ifh.Init(randomValueX, InputFieldHelper.Type.Num);
+                                    var ifh = randomValue.GetChild(index).gameObject.AddComponent<InputFieldSwapper>();
+                                    ifh.Init(randomValueX, InputFieldSwapper.Type.Num);
                                 }
 
                                 var randET = randomValue.GetChild(index).GetComponent<EventTrigger>();
                                 randET.triggers.Clear();
-                                randET.triggers.Add(TriggerHelper.ScrollDelta(randomValueX, 0.1f, 10f, true));
+                                randET.triggers.Add(TriggerHelper.ScrollDelta(randomValueX, multi: true));
                                 randET.triggers.Add(TriggerHelper.ScrollDeltaVector2(randomValue.GetChild(0).GetComponent<InputField>(), randomValue.GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
                             }
                             else
                             {
-                                if (!randomValue.GetComponent<InputFieldHelper>())
+                                if (!randomValue.GetComponent<InputFieldSwapper>())
                                 {
-                                    var ifh = randomValue.gameObject.AddComponent<InputFieldHelper>();
-                                    ifh.Init(randomValueX, InputFieldHelper.Type.Num);
+                                    var ifh = randomValue.gameObject.AddComponent<InputFieldSwapper>();
+                                    ifh.Init(randomValueX, InputFieldSwapper.Type.Num);
                                 }
 
                                 var randET = randomValue.GetComponent<EventTrigger>();
@@ -3477,12 +3463,11 @@ namespace EditorManagement.Functions.Editors
                                     keyframe.eventValues[1] = Mathf.Clamp(-n + 1, 0f, 1f);
 
                                     // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects && beatmapObject.TryGetObjectSelection(out BaseObjectSelection objectSelection))
-                                        ObjectManager.inst.updateObjects(objectSelection);
+                                    Updater.UpdateProcessor(beatmapObject);
                                 }
                             });
 
-                            TriggerHelper.AddEventTrigger(p.Find("opacity").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(opacity, 0.1f, 10f, false, new List<float> { 0f, 1f }) });
+                            TriggerHelper.AddEventTrigger(p.Find("opacity").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(opacity, 0.1f, 10f, 0f, 1f) });
                         }
 
                         if (p.Find("huesatval"))
@@ -3498,8 +3483,8 @@ namespace EditorManagement.Functions.Editors
                                     keyframe.eventValues[2] = n;
 
                                     // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects && beatmapObject.TryGetObjectSelection(out BaseObjectSelection objectSelection))
-                                        ObjectManager.inst.updateObjects(objectSelection);
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3521,8 +3506,8 @@ namespace EditorManagement.Functions.Editors
                                     keyframe.eventValues[3] = n;
 
                                     // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects && beatmapObject.TryGetObjectSelection(out BaseObjectSelection objectSelection))
-                                        ObjectManager.inst.updateObjects(objectSelection);
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3542,8 +3527,8 @@ namespace EditorManagement.Functions.Editors
                                     keyframe.eventValues[4] = n;
 
                                     // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects && beatmapObject.TryGetObjectSelection(out BaseObjectSelection objectSelection))
-                                        ObjectManager.inst.updateObjects(objectSelection);
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 

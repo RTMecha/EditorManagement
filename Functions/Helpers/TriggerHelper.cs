@@ -9,8 +9,11 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 
+using LSFunctions;
+
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
+using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
 
@@ -40,326 +43,61 @@ namespace EditorManagement.Functions.Helpers
 				et.triggers.Add(entry);
 		}
 
-		public static EventTrigger.Entry ScrollDelta(InputField _if, float _amount, float _divide, bool _multi = false, List<float> clamp = null)
+
+		public static EventTrigger.Entry ScrollDelta(InputField _if, float amount = 0.1f, float mutliply = 10f, float min = 0f, float max = 0f, bool multi = false)
 		{
-			EventTrigger.Entry entry = new EventTrigger.Entry();
+			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.Scroll;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				PointerEventData pointerEventData = (PointerEventData)eventData;
+				var pointerEventData = (PointerEventData)eventData;
 
 				if (float.TryParse(_if.text, out float result))
 				{
-					if (!_multi)
+					if (!multi || !Input.GetKey(KeyCode.LeftShift))
 					{
-						//Small
-						if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								float x = result;
-								x -= _amount / _divide;
+						// Small Amount
+						bool holdingAlt = Input.GetKey(KeyCode.LeftAlt);
 
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
+						// Large Amount
+						bool holdingCtrl = Input.GetKey(KeyCode.LeftControl);
 
-								_if.text = x.ToString("f2");
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								float x = result;
-								x += _amount / _divide;
+						if (pointerEventData.scrollDelta.y < 0f)
+							result -= holdingAlt ? amount / mutliply : holdingCtrl ? amount * mutliply : amount;
+						if (pointerEventData.scrollDelta.y > 0f)
+							result += holdingAlt ? amount / mutliply : holdingCtrl ? amount * mutliply : amount;
 
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
+						if (min != 0f && max != 0f)
+							result = Mathf.Clamp(result, min, max);
 
-								_if.text = x.ToString("f2");
-							}
-						}
-
-						//Big
-						if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								float x = result;
-								x -= _amount * _divide;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								float x = result;
-								x += _amount * _divide;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-							}
-						}
-
-						//Normal
-						if (!Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								float x = result;
-								x -= _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								float x = result;
-								x += _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-							}
-						}
-					}
-					else if (!Input.GetKey(KeyCode.LeftShift))
-					{
-						//Small
-						if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								float x = result;
-								x -= _amount / _divide;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								float x = result;
-								x += _amount / _divide;
-								_if.text = x.ToString("f2");
-							}
-						}
-
-						//Big
-						if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								float x = result;
-								x -= _amount * _divide;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								float x = result;
-								x += _amount * _divide;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-							}
-						}
-
-						//Normal
-						if (!Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								float x = result;
-								x -= _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								float x = result;
-								x += _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString("f2");
-							}
-						}
+						_if.text = result.ToString("f2");
 					}
 				}
 			});
 			return entry;
 		}
 
-		public static EventTrigger.Entry ScrollDeltaInt(InputField _if, int _amount, bool _multi = false, List<int> clamp = null)
+		public static EventTrigger.Entry ScrollDeltaInt(InputField _if, int _amount = 1, int min = 0, int max = 0, bool multi = false)
 		{
-			EventTrigger.Entry entry = new EventTrigger.Entry();
+			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.Scroll;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				PointerEventData pointerEventData = (PointerEventData)eventData;
+				var pointerEventData = (PointerEventData)eventData;
 
 				if (int.TryParse(_if.text, out int result))
 				{
-					if (!_multi)
+					if (!multi || !Input.GetKey(KeyCode.LeftShift))
 					{
-						if (Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								int x = result;
-								x -= _amount * 10;
+						if (pointerEventData.scrollDelta.y < 0f)
+							result -= _amount * (Input.GetKey(KeyCode.LeftControl) ? 10 : 1);
+						if (pointerEventData.scrollDelta.y > 0f)
+							result += _amount * (Input.GetKey(KeyCode.LeftControl) ? 10 : 1);
 
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
+						if (min != 0f && max != 0f)
+							result = Mathf.Clamp(result, min, max);
 
-								_if.text = x.ToString();
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								int x = result;
-								x += _amount * 10;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-							}
-						}
-						else
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								int x = result;
-								x -= _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								int x = result;
-								x += _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-							}
-						}
-					}
-					else if (!Input.GetKey(KeyCode.LeftShift))
-					{
-						if (Input.GetKey(KeyCode.LeftControl))
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								int x = result;
-								x -= _amount * 10;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								int x = result;
-								x += _amount * 10;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-							}
-						}
-						else
-						{
-							if (pointerEventData.scrollDelta.y < 0f)
-							{
-								int x = result;
-								x -= _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-								return;
-							}
-							if (pointerEventData.scrollDelta.y > 0f)
-							{
-								int x = result;
-								x += _amount;
-
-								if (clamp != null)
-								{
-									x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								}
-
-								_if.text = x.ToString();
-							}
-						}
+						_if.text = result.ToString();
 					}
 				}
 			});
@@ -368,151 +106,41 @@ namespace EditorManagement.Functions.Helpers
 
 		public static EventTrigger.Entry ScrollDeltaVector2(InputField _ifX, InputField _ifY, float _amount, float _divide, List<float> clamp = null)
 		{
-			EventTrigger.Entry entry = new EventTrigger.Entry();
+			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.Scroll;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				PointerEventData pointerEventData = (PointerEventData)eventData;
-				if (Input.GetKey(KeyCode.LeftShift))
+				var pointerEventData = (PointerEventData)eventData;
+				if (Input.GetKey(KeyCode.LeftShift) && float.TryParse(_ifX.text, out float x) && float.TryParse(_ifY.text, out float y))
 				{
-					//Small
-					if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
+					// Small Amount
+					bool holdingAlt = Input.GetKey(KeyCode.LeftAlt);
+
+					// Large Amount
+					bool holdingCtrl = Input.GetKey(KeyCode.LeftControl);
+
+					if (pointerEventData.scrollDelta.y < 0f)
 					{
-						if (pointerEventData.scrollDelta.y < 0f)
-						{
-							float x = float.Parse(_ifX.text);
-							float y = float.Parse(_ifY.text);
-
-							x -= _amount / _divide;
-							y -= _amount / _divide;
-
-							if (clamp != null)
-							{
-								x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								if (clamp.Count == 2)
-									y = Mathf.Clamp(y, clamp[0], clamp[1]);
-								else
-									y = Mathf.Clamp(y, clamp[2], clamp[3]);
-							}
-
-							_ifX.text = x.ToString("f2");
-							_ifY.text = y.ToString("f2");
-							return;
-						}
-						if (pointerEventData.scrollDelta.y > 0f)
-						{
-							float x = float.Parse(_ifX.text);
-							float y = float.Parse(_ifY.text);
-
-							x += _amount / _divide;
-							y += _amount / _divide;
-
-							if (clamp != null)
-							{
-								x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								if (clamp.Count == 2)
-									y = Mathf.Clamp(y, clamp[0], clamp[1]);
-								else
-									y = Mathf.Clamp(y, clamp[2], clamp[3]);
-							}
-
-							_ifX.text = x.ToString("f2");
-							_ifY.text = y.ToString("f2");
-						}
+						x -= holdingAlt && !holdingCtrl ? _amount / _divide : !holdingAlt && holdingCtrl ? _amount * _divide : _amount;
+						y -= holdingAlt && !holdingCtrl ? _amount / _divide : !holdingAlt && holdingCtrl ? _amount * _divide : _amount;
+					}
+					if (pointerEventData.scrollDelta.y > 0f)
+                    {
+						x += holdingAlt && !holdingCtrl ? _amount / _divide : !holdingAlt && holdingCtrl ? _amount * _divide : _amount;
+						y += holdingAlt && !holdingCtrl ? _amount / _divide : !holdingAlt && holdingCtrl ? _amount * _divide : _amount;
 					}
 
-					//Big
-					if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
+					if (clamp != null && clamp.Count > 1)
 					{
-						if (pointerEventData.scrollDelta.y < 0f)
-						{
-							float x = float.Parse(_ifX.text);
-							float y = float.Parse(_ifY.text);
-
-							x -= _amount * _divide;
-							y -= _amount * _divide;
-
-
-							if (clamp != null)
-							{
-								x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								if (clamp.Count == 2)
-									y = Mathf.Clamp(y, clamp[0], clamp[1]);
-								else
-									y = Mathf.Clamp(y, clamp[2], clamp[3]);
-							}
-
-							_ifX.text = x.ToString("f2");
-							_ifY.text = y.ToString("f2");
-							return;
-						}
-						if (pointerEventData.scrollDelta.y > 0f)
-						{
-							float x = float.Parse(_ifX.text);
-							float y = float.Parse(_ifY.text);
-
-							x += _amount * _divide;
-							y += _amount * _divide;
-
-							if (clamp != null)
-							{
-								x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								if (clamp.Count == 2)
-									y = Mathf.Clamp(y, clamp[0], clamp[1]);
-								else
-									y = Mathf.Clamp(y, clamp[2], clamp[3]);
-							}
-
-							_ifX.text = x.ToString("f2");
-							_ifY.text = y.ToString("f2");
-						}
+						x = Mathf.Clamp(x, clamp[0], clamp[1]);
+						if (clamp.Count == 2)
+							y = Mathf.Clamp(y, clamp[0], clamp[1]);
+						else
+							y = Mathf.Clamp(y, clamp[2], clamp[3]);
 					}
 
-					//Normal
-					if (!Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-					{
-						if (pointerEventData.scrollDelta.y < 0f)
-						{
-							float x = float.Parse(_ifX.text);
-							float y = float.Parse(_ifY.text);
-
-							x -= _amount;
-							y -= _amount;
-
-							if (clamp != null)
-							{
-								x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								if (clamp.Count == 2)
-									y = Mathf.Clamp(y, clamp[0], clamp[1]);
-								else
-									y = Mathf.Clamp(y, clamp[2], clamp[3]);
-							}
-
-							_ifX.text = x.ToString("f2");
-							_ifY.text = y.ToString("f2");
-							return;
-						}
-						if (pointerEventData.scrollDelta.y > 0f)
-						{
-							float x = float.Parse(_ifX.text);
-							float y = float.Parse(_ifY.text);
-
-							x += _amount;
-							y += _amount;
-
-							if (clamp != null)
-							{
-								x = Mathf.Clamp(x, clamp[0], clamp[1]);
-								if (clamp.Count == 2)
-									y = Mathf.Clamp(y, clamp[0], clamp[1]);
-								else
-									y = Mathf.Clamp(y, clamp[2], clamp[3]);
-							}
-
-							_ifX.text = x.ToString("f2");
-							_ifY.text = y.ToString("f2");
-						}
-					}
+					_ifX.text = x.ToString("f2");
+					_ifY.text = y.ToString("f2");
 				}
 			});
 			return entry;
@@ -624,14 +252,9 @@ namespace EditorManagement.Functions.Helpers
 			return entry;
 		}
 
-		public static void IncreaseDecreaseButtons(InputField _if, float _amount, float _divide, Transform t = null, List<float> clamp = null)
+		public static void IncreaseDecreaseButtons(InputField _if, float _amount = 0.1f, float _divide = 10f, float min = 0f, float max = 0f, Transform t = null)
 		{
-			var tf = _if.transform;
-
-			if (t != null)
-			{
-				tf = t;
-			}
+			var tf = !t ? _if.transform : t;
 
 			float num = _amount;
 
@@ -641,35 +264,29 @@ namespace EditorManagement.Functions.Helpers
 			btR.onClick.ClearAll();
 			btR.onClick.AddListener(delegate ()
 			{
-				//Small
-				if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-					num = _amount / _divide;
+				if (float.TryParse(_if.text, out float result))
+				{
+					result -= Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount;
 
-				//Big
-				if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
-					num = _amount * _divide;
+					if (min != 0f && max != 0f)
+						result = Mathf.Clamp(result, min, max);
 
-				if (clamp == null)
-					_if.text = (float.Parse(_if.text) - num).ToString();
-				else
-					_if.text = Mathf.Clamp(float.Parse(_if.text) - num, clamp[0], clamp[1]).ToString();
+					_if.text = result.ToString();
+				}
 			});
 
 			btL.onClick.ClearAll();
 			btL.onClick.AddListener(delegate ()
 			{
-				//Small
-				if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-					num = _amount / _divide;
+				if (float.TryParse(_if.text, out float result))
+				{
+					result -= Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount;
 
-				//Big
-				if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
-					num = _amount * _divide;
+					if (min != 0f && max != 0f)
+						result = Mathf.Clamp(result, min, max);
 
-				if (clamp == null)
-					_if.text = (float.Parse(_if.text) + num).ToString();
-				else
-					_if.text = Mathf.Clamp(float.Parse(_if.text) + num, clamp[0], clamp[1]).ToString();
+					_if.text = result.ToString();
+				}
 			});
 
 			if (tf.TryFind("<<", out Transform btLargeRTF) && btLargeRTF.gameObject.TryGetComponent(out Button btLargeR))
@@ -677,18 +294,15 @@ namespace EditorManagement.Functions.Helpers
 				btLargeR.onClick.ClearAll();
 				btLargeR.onClick.AddListener(delegate ()
 				{
-					//Small
-					if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-						num = _amount / _divide * 10;
+					if (float.TryParse(_if.text, out float result))
+					{
+						result -= (Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount) * 10f;
 
-					//Big
-					if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
-						num = _amount * _divide * 10;
+						if (min != 0f && max != 0f)
+							result = Mathf.Clamp(result, min, max);
 
-					if (clamp == null)
-						_if.text = (float.Parse(_if.text) + num).ToString();
-					else
-						_if.text = Mathf.Clamp(float.Parse(_if.text) + num, clamp[0], clamp[1]).ToString();
+						_if.text = result.ToString();
+					}
 				});
 			}
 
@@ -697,30 +311,24 @@ namespace EditorManagement.Functions.Helpers
 				btLargeL.onClick.ClearAll();
 				btLargeL.onClick.AddListener(delegate ()
 				{
-					//Small
-					if (Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.LeftControl))
-						num = _amount / _divide * 10;
+					if (float.TryParse(_if.text, out float result))
+					{
+						result += (Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount) * 10f;
 
-					//Big
-					if (!Input.GetKey(KeyCode.LeftAlt) && Input.GetKey(KeyCode.LeftControl))
-						num = _amount * _divide * 10;
+						if (min != 0f && max != 0f)
+							result = Mathf.Clamp(result, min, max);
 
-					if (clamp == null)
-						_if.text = (float.Parse(_if.text) + num).ToString();
-					else
-						_if.text = Mathf.Clamp(float.Parse(_if.text) + num, clamp[0], clamp[1]).ToString();
+						_if.text = result.ToString();
+					}
 				});
 			}
 		}
-
-		public static void IncreaseDecreaseButtonsInt(InputField _if, int _amount, Transform t = null, List<int> clamp = null)
+		
+		public static void IncreaseDecreaseButtonsInt(InputField _if, int _amount = 1, int min = 0, int max = 0, Transform t = null)
 		{
-			var tf = _if.transform;
+			var tf = !t ? _if.transform : t;
 
-			if (t != null)
-			{
-				tf = t;
-			}
+			float num = _amount;
 
 			var btR = tf.Find("<").GetComponent<Button>();
 			var btL = tf.Find(">").GetComponent<Button>();
@@ -728,41 +336,41 @@ namespace EditorManagement.Functions.Helpers
 			btR.onClick.RemoveAllListeners();
 			btR.onClick.AddListener(delegate ()
 			{
-				int num = int.Parse(_if.text);
-				if (Input.GetKey(KeyCode.LeftControl))
-					num -= _amount * 10;
-				else
-					num -= _amount;
-
-				if (clamp != null)
+				if (float.TryParse(_if.text, out float result))
 				{
-					num = Mathf.Clamp(num, clamp[0], clamp[1]);
-				}
+					result -= Input.GetKey(KeyCode.LeftControl) ? _amount * 10 : _amount;
 
-				_if.text = num.ToString();
+					if (min != 0f && max != 0f)
+						result = Mathf.Clamp(result, min, max);
+
+					_if.text = result.ToString();
+				}
 			});
 
 			btL.onClick.RemoveAllListeners();
 			btL.onClick.AddListener(delegate ()
 			{
-				int num = int.Parse(_if.text);
-				if (Input.GetKey(KeyCode.LeftControl))
-					num += _amount * 10;
-				else
-					num += _amount;
-
-				if (clamp != null)
+				if (float.TryParse(_if.text, out float result))
 				{
-					num = Mathf.Clamp(num, clamp[0], clamp[1]);
-				}
+					result += Input.GetKey(KeyCode.LeftControl) ? _amount * 10 : _amount;
 
-				_if.text = num.ToString();
+					if (min != 0f && max != 0f)
+						result = Mathf.Clamp(result, min, max);
+
+					_if.text = result.ToString();
+				}
 			});
 		}
 
-        #region Keyframes
+		public static void SetInteractable(bool interactable, params Selectable[] buttons)
+        {
+			foreach (var button in buttons)
+				button.interactable = interactable;
+        }
 
-        public static EventTrigger.Entry CreateKeyframeStartDragTrigger(BeatmapObject beatmapObject, int type, int index)
+		#region Keyframes
+
+		public static EventTrigger.Entry CreateKeyframeStartDragTrigger(BeatmapObject beatmapObject, int type, int index)
 		{
 			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.BeginDrag;
@@ -812,17 +420,13 @@ namespace EditorManagement.Functions.Helpers
 			{
 				ObjEditorPatch.timeCalc();
 				var tmp = beatmapObject.events[_kind][_keyframe];
-				ObjEditor.inst.UpdateKeyframeOrder(true);
+				ObjectEditor.inst.UpdateKeyframeOrder(beatmapObject);
 				ObjectEditor.inst.CreateKeyframes(beatmapObject);
 				int keyframe = beatmapObject.events[_kind].FindIndex(x => x == tmp);
 
 				ObjEditor.inst.SetCurrentKeyframe(_kind, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
 
 				// Keyframes affect both physical object and timeline object.
-				if (beatmapObject.TryGetObjectSelection(out ObjectSelection objectSelection))
-				{
-					ObjEditor.inst.RenderTimelineObject(objectSelection);
-				}
 
 				if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
                 {
@@ -1281,6 +885,52 @@ namespace EditorManagement.Functions.Helpers
 			return startDragTrigger;
 		}
 
+
+		#endregion
+
+		#region Themes
+
+		public static EventTrigger.Entry CreatePreviewClickTrigger(Image _preview, Image _dropper, InputField _hex, Color _col, string popupName = "")
+		{
+			EventTrigger.Entry previewClickTrigger = new EventTrigger.Entry();
+			previewClickTrigger.eventID = EventTriggerType.PointerClick;
+			previewClickTrigger.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				EditorManager.inst.ShowDialog("Color Picker");
+				if (!string.IsNullOrEmpty(popupName))
+				{
+					EditorManager.inst.HideDialog(popupName);
+				}
+
+				var colorPickerTF = EditorManager.inst.GetDialog("Color Picker").Dialog.Find("content/Color Picker");
+				var colorPicker = colorPickerTF.GetComponent<ColorPicker>();
+
+				colorPicker.SwitchCurrentColor(_col);
+
+				var save = colorPickerTF.Find("info/hex/save").GetComponent<Button>();
+
+				save.onClick.RemoveAllListeners();
+				save.onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.ClearPopups();
+					if (!string.IsNullOrEmpty(popupName))
+					{
+						EditorManager.inst.ShowDialog(popupName);
+					}
+					double saturation;
+					double num;
+					LSColors.ColorToHSV(colorPicker.currentColor, out double _, out saturation, out num);
+					_hex.text = colorPicker.currentHex;
+					_preview.color = colorPicker.currentColor;
+
+					if (_dropper != null)
+					{
+						_dropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(colorPicker.currentColor));
+					}
+				});
+			});
+			return previewClickTrigger;
+		}
 
 		#endregion
 	}

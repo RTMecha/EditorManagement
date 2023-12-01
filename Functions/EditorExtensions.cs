@@ -28,57 +28,6 @@ namespace EditorManagement.Functions
 
         #region Data
 
-        public static ObjectSelection GetObjectSelection(this BeatmapObject beatmapObject) => ObjEditor.inst.selectedObjects.Find(x => x.ID == beatmapObject.id);
-
-        public static bool TryGetObjectSelection(this BeatmapObject beatmapObject, out ObjectSelection objectSelection)
-        {
-            var obj = beatmapObject.GetObjectSelection();
-            if (obj != null)
-            {
-                objectSelection = obj;
-                return true;
-            }
-            objectSelection = null;
-            return false;
-        }
-
-        public static bool TryGetObject(this ObjectSelection objectSelection, out BeatmapObject beatmapObject)
-        {
-            if (objectSelection.IsObject())
-            {
-                beatmapObject = objectSelection.GetObjectData();
-                return true;
-            }
-            beatmapObject = null;
-            return false;
-        }
-
-        public static bool TryGetPrefabObject(this ObjectSelection objectSelection, out PrefabObject prefabObject)
-        {
-            if (objectSelection.IsPrefab())
-            {
-                prefabObject = objectSelection.GetPrefabObjectData();
-                return true;
-            }
-            prefabObject = null;
-            return false;
-        }
-        
-        public static bool TryGetPrefab(this ObjectSelection objectSelection, out Prefab prefab)
-        {
-            if (objectSelection.IsPrefab())
-            {
-                prefab = objectSelection.GetPrefabData();
-                return true;
-            }
-            prefab = null;
-            return false;
-        }
-
-        public static EventKeyframe GetBeatmapObjectKeyframe(this KeyframeSelection keyframeSelection) => ObjEditor.inst.currentObjectSelection?.GetObjectData().events[keyframeSelection.Type][keyframeSelection.Index];
-
-        public static EventKeyframe GetEventKeyframe(this KeyframeSelection keyframeSelection) => DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type][keyframeSelection.Index];
-
         /// <summary>
         /// Set an EventKeyframe's easing via an integer. If the number is within the range of the list, then the ease is set.
         /// </summary>
@@ -143,80 +92,6 @@ namespace EditorManagement.Functions
             return length;
         }
 
-        /// <summary>
-        /// Gets the ObjectSelection StartTime.
-        /// </summary>
-        /// <param name="objectSelection"></param>
-        /// <returns></returns>
-        public static float GetStartTime(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.StartTime;
-
-            if (objectSelection.TryGetPrefabObject(out PrefabObject prefabObject))
-                return prefabObject.StartTime;
-
-            return 0f;
-        }
-
-        public static int GetBin(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.editorData.Bin;
-            if (objectSelection.TryGetPrefabObject(out PrefabObject prefabObject))
-                return prefabObject.editorData.Bin;
-            return 0;
-        }
-        
-        public static int GetLayer(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.editorData.Layer;
-            if (objectSelection.TryGetPrefabObject(out PrefabObject prefabObject))
-                return prefabObject.editorData.Layer;
-            return 0;
-        }
-
-        public static bool GetCollapsed(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.editorData.collapse;
-            if (objectSelection.TryGetPrefabObject(out PrefabObject prefabObject))
-                return prefabObject.editorData.collapse;
-            return false;
-        }
-        
-        public static bool GetLocked(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.editorData.locked;
-            if (objectSelection.TryGetPrefabObject(out PrefabObject prefabObject))
-                return prefabObject.editorData.locked;
-            return false;
-        }
-
-        public static string GetName(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.name;
-
-            if (objectSelection.IsPrefab())
-                return objectSelection.GetPrefabData()?.Name;
-
-            return "Object";
-        }
-
-        public static float GetLifeLength(this ObjectSelection objectSelection)
-        {
-            if (objectSelection.TryGetObject(out BeatmapObject beatmapObject))
-                return beatmapObject.GetObjectLifeLength(_takeCollapseIntoConsideration: true);
-
-            if (objectSelection.TryGetPrefab(out Prefab prefab))
-                return prefab.GetPrefabLifeLength(objectSelection.GetPrefabObjectData(), true);
-
-            return 0f;
-        }
-
         public static Color GetPrefabTypeColor(this BeatmapObject _beatmapObject)
         {
             var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == _beatmapObject.prefabID);
@@ -236,5 +111,19 @@ namespace EditorManagement.Functions
         }
 
         #endregion
+
+        public static T GetItem<T>(this T _list, int index)
+        {
+            var list = _list.GetType().GetField("_items", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_list) as T[];
+
+            return list[index];
+        }
+
+        public static int GetCount<T>(this T _list)
+        {
+            var list = _list.GetType().GetField("_items", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(_list) as T[];
+
+            return list.Length;
+        }
     }
 }
