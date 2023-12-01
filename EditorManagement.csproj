@@ -33,6 +33,9 @@
     <Reference Include="BepInEx">
       <HintPath>..\..\4.1.16 Mods\lib\BepInEx.dll</HintPath>
     </Reference>
+    <Reference Include="DOTween">
+      <HintPath>..\lib\DOTween.dll</HintPath>
+    </Reference>
     <Reference Include="InControl">
       <HintPath>..\..\4.1.16 Mods\lib\InControl.dll</HintPath>
     </Reference>

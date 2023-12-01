@@ -17,7 +17,7 @@ using RTFunctions.Functions;
 
 namespace EditorManagement.Functions.Components
 {
-    public class InputFieldHelper : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+    public class InputFieldSwapper : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
         public InputField inputField;
         bool hovered;
@@ -32,32 +32,14 @@ namespace EditorManagement.Functions.Components
         {
             this.inputField = inputField;
             this.type = type;
-            if (inputField)
-            {
-                inputField.onEndEdit.ClearAll();
-                inputField.onEndEdit.AddListener(delegate (string _val)
-                {
-                    var regexPlus = new System.Text.RegularExpressions.Regex(@"(.*?)\s\+\s(.*?)");
-                    var matchPlus = regexPlus.Match(_val);
-                    if (matchPlus.Success && float.TryParse(matchPlus.Groups[1].ToString(), out float startPlus) && float.TryParse(matchPlus.Groups[2].ToString(), out float endPlus))
-                    {
-                        if (_val.Contains(matchPlus.Groups[1].ToString() + "+" + matchPlus.Groups[2].ToString()))
-                            inputField.text = _val.Replace(matchPlus.Groups[1].ToString() + "+" + matchPlus.Groups[2].ToString(), (startPlus + endPlus).ToString());
-                        else if (_val.Contains(matchPlus.Groups[1].ToString() + " + " + matchPlus.Groups[2].ToString()))
-                            inputField.text = _val.Replace(matchPlus.Groups[1].ToString() + " + " + matchPlus.Groups[2].ToString(), (startPlus + endPlus).ToString());
-                    }
-                    var regexMinus = new System.Text.RegularExpressions.Regex(@"(.*?)\s-\s(.*?)");
-                    var matchMinus = regexMinus.Match(_val);
-                    if (matchMinus.Success && float.TryParse(matchMinus.Groups[1].ToString(), out float startMinus) && float.TryParse(matchMinus.Groups[2].ToString(), out float endMinus))
-                    {
-                        if (_val.Contains(matchMinus.Groups[1].ToString() + "+" + matchMinus.Groups[2].ToString()))
-                            inputField.text = _val.Replace(matchMinus.Groups[1].ToString() + "-" + matchMinus.Groups[2].ToString(), (startMinus + endMinus).ToString());
-                        else if (_val.Contains(matchMinus.Groups[1].ToString() + " + " + matchMinus.Groups[2].ToString()))
-                            inputField.text = _val.Replace(matchMinus.Groups[1].ToString() + " - " + matchMinus.Groups[2].ToString(), (startMinus + endMinus).ToString());
-                    }
-                });
-            }
         }
+
+        public void Init(InputField inputField)
+        {
+            this.inputField = inputField;
+            type = Type.Num;
+        }
+
 
         public void OnPointerEnter(PointerEventData pointerEventData) => hovered = true;
 

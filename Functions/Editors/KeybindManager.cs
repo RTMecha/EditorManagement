@@ -152,15 +152,15 @@ namespace EditorManagement.Functions.Editors
 
         public class Keybind
         {
-            public Keybind(string id, KeyCode keyCode, KeyCode keyCodeDown, Action<Keybind> action)
+            public Keybind(string id, List<Key> keys, int actionType, Action<Keybind> action)
             {
                 this.id = id;
-                KeyCode = keyCode;
-                KeyCodeDown = keyCodeDown;
+                this.keys = keys;
+                ActionType = actionType;
                 Action = action;
             }
 
-            public static Keybind ParseKeyAction(JSONNode jn)
+            public static Keybind Parse(JSONNode jn)
             {
                 string id = jn["id"];
 
@@ -169,6 +169,7 @@ namespace EditorManagement.Functions.Editors
                     Debug.LogError($"{className}No action assigned to key!");
                 };
 
+                int actionType = jn["action"].AsInt;
                 switch (jn["action"].AsInt)
                 {
                     case 0:
@@ -216,12 +217,19 @@ namespace EditorManagement.Functions.Editors
                         }
                 }
 
-                return new Keybind(id, (KeyCode)jn["key"].AsInt, (KeyCode)jn["keydown"].AsInt, action);
+                List<Key> keys = new List<Key>();
+                for (int i = 0; i < jn["keys"].Count; i++)
+                    keys.Add(Key.Parse(jn["keys"][i]));
+
+                return new Keybind(id, keys, actionType, action);
             }
 
             public void Activate()
             {
                 if (inst.KeyCodeHandler(KeyCode, KeyCodeDown))
+                    Action?.Invoke(this);
+
+                if (keys.All(x => Input.GetKey(x.KeyCode) && x.InteractType == Key.Type.Pressed || Input.GetKeyDown(x.KeyCode) && x.InteractType == Key.Type.Down || Input.GetKeyUp(x.KeyCode) && x.InteractType == Key.Type.Up))
                     Action?.Invoke(this);
             }
 
@@ -229,7 +237,31 @@ namespace EditorManagement.Functions.Editors
             public Dictionary<string, string> settings = new Dictionary<string, string>();
             public KeyCode KeyCode { get; set; }
             public KeyCode KeyCodeDown { get; set; }
+            public int ActionType { get; set; }
             public Action<Keybind> Action { get; set; }
+
+            public List<Key> keys = new List<Key>();
+
+            public class Key
+            {
+                public Key(Type type, KeyCode keyCode)
+                {
+                    InteractType = type;
+                    KeyCode = keyCode;
+                }
+
+                public enum Type
+                {
+                    Down,
+                    Pressed,
+                    Up
+                }
+
+                public Type InteractType { get; set; }
+                public KeyCode KeyCode { get; set; }
+
+                public static Key Parse(JSONNode jn) => new Key((Type)jn["type"].AsInt, (KeyCode)jn["key"].AsInt);
+            }
         }
     }
 }
