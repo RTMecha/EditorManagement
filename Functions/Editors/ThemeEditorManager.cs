@@ -32,15 +32,20 @@ namespace EditorManagement.Functions.Editors
         {
 			inst = this;
 
-			var themeParent = EventEditor.inst.dialogLeft.Find("theme/theme/viewport/content");
-			for (int i = 10; i < 19; i++)
+			var themeParent = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/left/theme/theme/viewport/content");
+			Debug.Log($"{EditorPlugin.className}ThemeParent: {themeParent == null}");
+            try
 			{
-				GameObject col = Instantiate(themeParent.Find("object8").gameObject);
-				col.name = "object" + (i - 1).ToString();
-				col.transform.SetParent(themeParent);
-				col.transform.Find("text").GetComponent<Text>().text = i.ToString();
-				col.transform.SetSiblingIndex(8 + i);
+				for (int i = 10; i < 19; i++)
+				{
+					var col = themeParent.Find("object8").gameObject.Duplicate(themeParent, "object" + (i - 1).ToString(), 8 + i);
+					col.transform.Find("text").GetComponent<Text>().text = i.ToString();
+				}
 			}
+            catch (Exception ex)
+            {
+				Debug.LogError($"{EditorPlugin.className}{ex}");
+            }
 		}
 
 		public void RenderThemeContent(Transform __0, string __1)

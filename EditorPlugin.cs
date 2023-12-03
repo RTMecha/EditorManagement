@@ -10,6 +10,7 @@ using UnityEngine;
 
 using EditorManagement.Patchers;
 using EditorManagement.Functions;
+using EditorManagement.Functions.Editors;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
@@ -29,8 +30,8 @@ namespace EditorManagement
 
 		public static List<int> allLayers = new List<int>();
 
-		public static float timeEdit;
-        public static float itsTheTime;
+		public static float timeOffset;
+        public static float timeEditing;
 
         public static int levelFilter = 0;
         public static bool levelAscend = true;
@@ -39,33 +40,87 @@ namespace EditorManagement
         {
             inst = this;
 
-            Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
-
-            harmony.PatchAll();
-
-            if (!ModCompatibility.mods.ContainsKey("EditorManagement"))
+            try
+			{
+				harmony.PatchAll();
+			}
+			catch (Exception ex)
             {
-                var mod = new ModCompatibility.Mod(this, GetType());
-                ModCompatibility.mods.Add("EditorManagement", mod);
+				Logger.LogError("PatchAll Error" + ex.ToString());
+            }
+			
+            try
+			{
+				if (!ModCompatibility.mods.ContainsKey("EditorManagement"))
+				{
+					var mod = new ModCompatibility.Mod(this, GetType());
+					ModCompatibility.mods.Add("EditorManagement", mod);
+				}
+			}
+			catch (Exception ex)
+            {
+				Logger.LogError("Mod Error" + ex.ToString());
+            }
+			
+            try
+			{
+				SetPreviewConfig();
+			}
+			catch (Exception ex)
+            {
+				Logger.LogError($"SharedFunctions Error{ex}");
             }
 
-            ModCompatibility.sharedFunctions.Add("HighlightColor", ConfigEntries.HighlightColor.Value);
-            ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", ConfigEntries.HighlightDoubleColor.Value);
+			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
-            ModCompatibility.sharedFunctions.Add("CanHightlightObjects", ConfigEntries.HighlightObjects.Value);
-            ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", ConfigEntries.ShowObjectsAlpha.Value);
-            ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", ConfigEntries.ShowObjectsOnLayer.Value);
-            ModCompatibility.sharedFunctions.Add("ShowEmpties", ConfigEntries.ShowEmpties.Value);
-            ModCompatibility.sharedFunctions.Add("ShowDamagable", ConfigEntries.ShowDamagable.Value);
-
-            // Plugin startup logic
-            Logger.LogInfo($"Plugin EditorManagement is loaded!");
+			// Plugin startup logic
+			Logger.LogInfo($"Plugin EditorManagement is loaded!");
         }
 
         void UpdateEditorManagementConfigs(object sender, SettingChangedEventArgs e)
-        {
+		{
+			try
+			{
+				SetPreviewConfig();
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError($"SharedFunctions Error{ex}");
+			}
+		}
 
-        }
+		public static void SetPreviewConfig()
+		{
+			if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
+				ModCompatibility.sharedFunctions.Add("HighlightColor", RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value);
+			else
+				ModCompatibility.sharedFunctions["HighlightColor"] = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
+			if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
+				ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value);
+			else
+				ModCompatibility.sharedFunctions["HighlightDoubleColor"] = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
+			if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
+				ModCompatibility.sharedFunctions.Add("CanHightlightObjects", RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value);
+			else
+				ModCompatibility.sharedFunctions["CanHightlightObjects"] = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
+
+			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
+				ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value);
+			else
+				ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
+			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
+				ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value);
+			else
+				ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
+			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowEmpties"))
+				ModCompatibility.sharedFunctions.Add("ShowEmpties", RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value);
+			else
+				ModCompatibility.sharedFunctions["ShowEmpties"] = RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value;
+			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowDamagable"))
+				ModCompatibility.sharedFunctions.Add("ShowDamagable", RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value);
+			else
+				ModCompatibility.sharedFunctions["ShowDamagable"] = RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value;
+		}
 
 		public static void ListObjectLayers()
 		{
@@ -102,31 +157,6 @@ namespace EditorManagement
 			}
 
 			EditorManager.inst.DisplayNotification("Objects on Layers:<br>[ " + lister + " ]", 2f, EditorManager.NotificationType.Info);
-		}
-
-		public static void SetNewMarkerColors()
-		{
-			MarkerEditor.inst.markerColors = new List<Color>
-			{
-				new Color(0.8745f, 0.4745f, 0.4392f, 1f),
-				new Color(1f, 0.502f, 0.6706f, 1f),
-				new Color(0.9176f, 0.502f, 0.9882f, 1f),
-				new Color(0.702f, 0.5333f, 1f, 1f),
-				new Color(0.549f, 0.6196f, 1f, 1f),
-				new Color(0.502f, 0.8471f, 1f, 1f),
-				new Color(0.6549f, 1f, 0.9216f, 1f),
-				new Color(0.9569f, 1f, 0.5059f, 1f),
-				new Color(1f, 0.8196f, 0.502f, 1f),
-				ConfigEntries.MarkerColN0.Value,
-				ConfigEntries.MarkerColN1.Value,
-				ConfigEntries.MarkerColN2.Value,
-				ConfigEntries.MarkerColN3.Value,
-				ConfigEntries.MarkerColN4.Value,
-				ConfigEntries.MarkerColN5.Value,
-				ConfigEntries.MarkerColN6.Value,
-				ConfigEntries.MarkerColN7.Value,
-				ConfigEntries.MarkerColN8.Value,
-			};
 		}
 
 		public static bool DontRun() => false;

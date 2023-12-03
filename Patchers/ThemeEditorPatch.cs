@@ -16,36 +16,40 @@ using EditorManagement.Functions.Editors;
 
 namespace EditorManagement.Patchers
 {
+    [HarmonyPatch(typeof(ThemeEditor))]
     public class ThemeEditorPatch : MonoBehaviour
     {
         public static ThemeEditor Instance { get => ThemeEditor.inst; set => ThemeEditor.inst = value; }
 
-        public static void Init()
+        [HarmonyPatch("Awake")]
+        [HarmonyPostfix]
+        static void AwakePostfix(ThemeEditor __instance)
         {
-            Patcher.CreatePatch(Instance.Awake, PatchType.Postfix, delegate (ThemeEditor __instance)
-            {
-                ThemeEditorManager.Init(__instance);
-                Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<VerticalLayoutGroup>());
-                return false;
-            });
-
-            Patcher.CreatePatch(Instance.Start, PatchType.Prefix, EditorPlugin.DontRun);
-
-            Patcher.CreatePatch(Instance.DeleteTheme, PatchType.Prefix, delegate (DataManager.BeatmapTheme __0)
-            {
-                ThemeEditorManager.inst.DeleteTheme(__0);
-                return false;
-            });
-
-            Patcher.CreatePatch(Instance.SaveTheme, PatchType.Prefix, delegate (DataManager.BeatmapTheme __0)
-            {
-                ThemeEditorManager.inst.SaveTheme(__0);
-                return false;
-            });
-
-            Patcher.CreatePatch(AccessTools.Method(typeof(ThemeEditor), "LoadThemes"), PatchType.Prefix, AccessTools.Method(typeof(ThemeEditorPatch), "LoadThemesPrefix"));
+            Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<VerticalLayoutGroup>());
         }
 
+        [HarmonyPatch("Start")]
+        [HarmonyPrefix]
+        static bool StartPrefix() => false;
+
+        [HarmonyPatch("DeleteTheme")]
+        [HarmonyPrefix]
+        static bool DeleteThemePrefix(DataManager.BeatmapTheme __0)
+        {
+            ThemeEditorManager.inst.DeleteTheme(__0);
+            return false;
+        }
+        
+        [HarmonyPatch("SaveTheme")]
+        [HarmonyPrefix]
+        static bool SaveThemePrefix(DataManager.BeatmapTheme __0)
+        {
+            ThemeEditorManager.inst.SaveTheme(__0);
+            return false;
+        }
+
+        [HarmonyPatch("LoadThemes")]
+        [HarmonyPrefix]
         static bool LoadThemesPrefix(ref IEnumerator __result)
         {
             __result = RTEditor.inst.LoadThemes(false);

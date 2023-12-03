@@ -56,6 +56,8 @@ namespace EditorManagement.Functions.Editors
 
         public bool createInternal;
 
+        public bool selectingPrefab;
+
         #endregion
 
         public static void Init(PrefabEditor prefabEditor) => prefabEditor?.gameObject?.AddComponent<PrefabEditorManager>();
@@ -83,8 +85,8 @@ namespace EditorManagement.Functions.Editors
                 PrefabEditor.inst.NewPrefabName,
                 PrefabEditor.inst.NewPrefabType,
                 PrefabEditor.inst.NewPrefabOffset,
-                ObjectEditor.inst.SelectedBeatmapObjects.Select(x => x.Data).ToList(),
-                ObjectEditor.inst.SelectedPrefabObjects.Select(x => x.Data).ToList());
+                ObjectEditor.inst.SelectedBeatmapObjects.Select(x => x.GetData<BeatmapObject>()).ToList(),
+                ObjectEditor.inst.SelectedPrefabObjects.Select(x => x.GetData<PrefabObject>()).ToList());
 
             PrefabEditor.inst.SavePrefab(prefab);
             PrefabEditor.inst.OpenPopup();
@@ -127,7 +129,7 @@ namespace EditorManagement.Functions.Editors
             DataManager.inst.gameData.prefabObjects.RemoveAll(x => x.prefabID == id);
 
             PrefabEditor.inst.ReloadInternalPrefabsInPopup();
-            ObjectEditor.RenderTimelineObjects();
+            ObjectEditor.inst.RenderTimelineObjects();
 
             ObjectManager.inst.updateObjects();
         }
@@ -171,24 +173,20 @@ namespace EditorManagement.Functions.Editors
             int num = 0;
             foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
             {
-                if (beatmapObject.name.ToLower().Contains(PrefabEditor.inst.gridSearch.text.ToLower()) || string.IsNullOrEmpty(PrefabEditor.inst.gridSearch.text.ToLower()))
+                if (RTHelpers.SearchString(beatmapObject.name, PrefabEditor.inst.gridSearch.text))
                 {
-                    var tmpGridObj = Instantiate(PrefabEditor.inst.selectionPrefab, Vector3.zero, Quaternion.identity);
-                    tmpGridObj.name = "grid";
-                    tmpGridObj.transform.SetParent(PrefabEditor.inst.gridContent);
-                    tmpGridObj.transform.localScale = Vector3.one;
+                    var tmpGridObj = PrefabEditor.inst.selectionPrefab.Duplicate(PrefabEditor.inst.gridContent, "grid");
                     tmpGridObj.transform.Find("text").GetComponent<Text>().text = beatmapObject.name;
                     int tmpIndex = num;
 
-                    if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
+                    if (RTEditor.inst.timelineObjects.TryFind(x => x.ID == beatmapObject.id, out TimelineObject timelineObject))
                     {
-                        var timelineObject = RTEditor.inst.timelineBeatmapObjects[beatmapObject.id];
-                        var toggle = tmpGridObj.GetComponent<Toggle>();
-                        toggle.onValueChanged.RemoveAllListeners();
-                        toggle.isOn = timelineObject.selected;
-                        toggle.onValueChanged.AddListener(delegate (bool _value)
+                        tmpGridObj.GetComponentAndPerformAction(delegate (Toggle x)
                         {
-                            timelineObject.selected = _value;
+                            x.NewValueChangedListener(timelineObject.selected, delegate (bool _val)
+                            {
+                                timelineObject.selected = _val;
+                            });
                         });
                     }
                 }
@@ -196,63 +194,34 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        // Redo this
+        // Redo this (add selectingPrefab just in case this goes wrong)
         public void OpenPrefabDialog()
         {
-            if (ObjectEditor.inst.CurrentPrefabObjectSelection == null || ObjectEditor.inst.CurrentPrefabObjectSelection.Data == null)
+            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            if (ObjectEditor.inst.CurrentSelection == null || ObjectEditor.inst.CurrentSelection.Data == null || !ObjectEditor.inst.CurrentSelection.IsPrefabObject)
             {
-                EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
                 EditorManager.inst.ShowDialog("Object Editor", false);
                 return;
             }
-            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+
             EditorManager.inst.ShowDialog("Prefab Selector");
             var transform = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/right");
 
-            transform.Find("time").GetComponent<EventTrigger>().triggers.Clear();
+            var timeInput = transform.Find("time/time").GetComponent<InputField>();
 
-            //var entry = new EventTrigger.Entry();
-            //entry.eventID = EventTriggerType.Scroll;
-            //entry.callback.AddListener(delegate (BaseEventData eventData)
-            //{
-            //    var pointerEventData = (PointerEventData)eventData;
-            //    if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-            //    {
-            //        if (pointerEventData.scrollDelta.y < 0f)
-            //            PrefabEditor.inst.AddPrefabOffset(-1f);
-            //        if (pointerEventData.scrollDelta.y > 0f)
-            //            PrefabEditor.inst.AddPrefabOffset(1f);
-            //    }
-            //    else
-            //    {
-            //        if (pointerEventData.scrollDelta.y < 0f)
-            //            PrefabEditor.inst.AddPrefabOffset(-0.1f);
-            //        if (pointerEventData.scrollDelta.y > 0f)
-            //            PrefabEditor.inst.AddPrefabOffset(0.1f);
-            //    }
-            //});
+            TriggerHelper.AddEventTriggerParams(transform.Find("time").gameObject, TriggerHelper.ScrollDelta(timeInput));
 
-            //transform.Find("time").GetComponent<EventTrigger>().triggers.Add(entry);
-
-            transform.Find("time/time").GetComponent<InputField>().onValueChanged.RemoveAllListeners();
-            transform.Find("time/time").GetComponent<InputField>().text = ObjEditor.inst.currentObjectSelection.GetPrefabData().Offset.ToString();
-            transform.Find("time/time").GetComponent<InputField>().onValueChanged.AddListener(delegate (string _value)
+            timeInput.NewValueChangedListener(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().GetPrefab().Offset.ToString(), delegate (string _val)
             {
-                PrefabEditor.inst.SetPrefabOffset(_value);
+                PrefabEditor.inst.SetPrefabOffset(_val);
             });
+
             transform = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
-            foreach (object obj in transform.Find("editor/layer").transform)
+
+            transform.Find("editor/bin").GetComponent<Slider>().NewValueChangedListener(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.Bin, delegate (float _val)
             {
-                ((Transform)obj).GetComponent<Toggle>().interactable = false;
-            }
-            //transform.Find("editor/layer").GetChild(ObjEditor.inst.currentObjectSelection.GetPrefabObjectData().editorData.Layer).GetComponent<Toggle>().isOn = true;
-            foreach (object obj2 in transform.transform.Find("editor/layer").transform)
-            {
-                ((Transform)obj2).GetComponent<Toggle>().interactable = true;
-            }
-            transform.Find("editor/bin").GetComponent<Slider>().interactable = false;
-            transform.Find("editor/bin").GetComponent<Slider>().value = (float)ObjEditor.inst.currentObjectSelection.GetPrefabObjectData().editorData.Bin;
-            transform.Find("editor/bin").GetComponent<Slider>().interactable = true;
+                ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.Bin = (int)_val;
+            });
         }
 
         public void OpenDialog()
@@ -448,16 +417,37 @@ namespace EditorManagement.Functions.Editors
 
             bool isExternal = _d == PrefabDialog.External;
 
-            name.horizontalOverflow = isExternal ? ConfigEntries.PrefabEXNameHOverflow.Value : ConfigEntries.PrefabINNameHOverflow.Value;
-            name.verticalOverflow = isExternal ? ConfigEntries.PrefabEXNameVOverflow.Value : ConfigEntries.PrefabINNameVOverflow.Value;
-            name.fontSize = isExternal ? ConfigEntries.PrefabEXNameFontSize.Value : ConfigEntries.PrefabINNameFontSize.Value;
-            typeName.horizontalOverflow = isExternal ? ConfigEntries.PrefabEXTypeHOverflow.Value : ConfigEntries.PrefabINTypeHOverflow.Value;
-            typeName.verticalOverflow = isExternal ? ConfigEntries.PrefabEXTypeVOverflow.Value : ConfigEntries.PrefabINTypeVOverflow.Value;
-            typeName.fontSize = isExternal ? ConfigEntries.PrefabEXTypeFontSize.Value : ConfigEntries.PrefabINTypeFontSize.Value;
+            name.horizontalOverflow = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+
+            name.verticalOverflow = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+
+            name.fontSize = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
+
+            typeName.horizontalOverflow = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+
+            typeName.verticalOverflow = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+
+            typeName.fontSize = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
 
 
-            deleteRT.anchoredPosition = isExternal ? ConfigEntries.PrefabEXLDeletePos.Value : ConfigEntries.PrefabINLDeletePos.Value;
-            deleteRT.sizeDelta = isExternal ? ConfigEntries.PrefabEXLDeleteSca.Value : ConfigEntries.PrefabINLDeleteSca.Value;
+            deleteRT.anchoredPosition = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
+            deleteRT.sizeDelta = isExternal ?
+                RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
+                RTEditor.GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
             gameObject.transform.SetParent(isExternal ? externalContent : internalContent);
 
             tf.localScale = Vector3.one;
@@ -519,13 +509,18 @@ namespace EditorManagement.Functions.Editors
 
         public void CollapseCurrentPrefab()
         {
-            if (ObjectEditor.inst.CurrentSelection.prefabInstanceID != "")
+            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
             {
-                var editorData = ObjectEditor.inst.CurrentSelection.editorData;
-                string prefabInstanceID = ObjectEditor.inst.CurrentSelection.prefabInstanceID;
+                var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+                if (!bm || bm.prefabInstanceID != "")
+                    return;
+
+                var editorData = bm.editorData;
+                string prefabInstanceID = bm.prefabInstanceID;
                 float startTime = DataManager.inst.gameData.beatmapObjects.Find(x => x.prefabInstanceID == prefabInstanceID).StartTime;
 
-                var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == ObjectEditor.inst.CurrentSelection.prefabID);
+                var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == bm.prefabID);
 
                 var prefabObject = new PrefabObject(prefab.ID, startTime);
                 prefabObject.editorData.Bin = editorData.Bin;
@@ -533,14 +528,15 @@ namespace EditorManagement.Functions.Editors
                 var prefab2 = new Prefab(prefab.Name, prefab.Type, prefab.Offset, DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == prefabInstanceID).Select(x => (BeatmapObject)x).ToList(), new List<PrefabObject>());
 
                 prefab2.ID = prefab.ID;
-                int index = DataManager.inst.gameData.prefabs.FindIndex(x => x.ID == ObjectEditor.inst.CurrentSelection.prefabID);
+                int index = DataManager.inst.gameData.prefabs.FindIndex(x => x.ID == bm.prefabID);
                 DataManager.inst.gameData.prefabs[index] = prefab2;
-                var list = DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == prefabInstanceID);
-                foreach (var beatmapObject in list)
+                var list = RTEditor.inst.TimelineBeatmapObjects.FindAll(x => x.GetData<BeatmapObject>().prefabInstanceID == prefabInstanceID);
+                foreach (var timelineObject in list)
                 {
-                    if (RTEditor.inst.timelineBeatmapObjects.ContainsKey(beatmapObject.id))
-                        Destroy(RTEditor.inst.timelineBeatmapObjects[beatmapObject.id].GameObject);
-                    RTEditor.inst.timelineBeatmapObjects.Remove(beatmapObject.id);
+                    Destroy(timelineObject.GameObject);
+                    var a = RTEditor.inst.timelineObjects.FindIndex(x => x.ID == timelineObject.ID);
+                    if (a >= 0)
+                        RTEditor.inst.timelineObjects.RemoveAt(a);
                 }
 
                 DataManager.inst.gameData.beatmapObjects.RemoveAll(x => x.prefabInstanceID == prefabInstanceID);
@@ -549,9 +545,8 @@ namespace EditorManagement.Functions.Editors
                 Updater.UpdatePrefab(prefabObject);
 
                 //ObjectManager.inst.updateObjects(new ObjEditor.ObjectSelection(ObjEditor.ObjectSelection.SelectionType.Prefab, prefabObject.ID), true);
-                ObjectEditor.RenderTimelineObjects();
-                if (RTEditor.inst.timelinePrefabObjects.ContainsKey(prefabObject.ID))
-                    ObjectEditor.inst.SetCurrentObject(RTEditor.inst.timelinePrefabObjects[prefabObject.ID]);
+                //ObjectEditor.inst.RenderTimelineObjects();
+                ObjectEditor.inst.SetCurrentObject(new TimelineObject(prefabObject));
 
                 EditorManager.inst.DisplayNotification("Replaced all instances of Prefab!", 2f, EditorManager.NotificationType.Success);
             }
@@ -561,10 +556,10 @@ namespace EditorManagement.Functions.Editors
 
         public void SetPrefabLayer(float _value)
         {
-            if (ObjectEditor.inst.CurrentPrefabObjectSelection && ObjectEditor.inst.CurrentPrefabObjectSelection.Data != null)
+            if (ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.Data != null && ObjectEditor.inst.CurrentSelection.IsPrefabObject)
             {
-                ObjectEditor.inst.CurrentPrefabObjectSelection.Data.editorData.Layer = (int)_value;
-                ObjectEditor.RenderTimelineObject(ObjectEditor.inst.CurrentPrefabObjectSelection);
+                ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.Layer = (int)_value;
+                ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
             }
             else
                 EditorManager.inst.DisplayNotification("Can't edit non-prefab!", 2f, EditorManager.NotificationType.Error);
@@ -572,10 +567,10 @@ namespace EditorManagement.Functions.Editors
 
         public void SetPrefabBin(float _value)
         {
-            if (ObjectEditor.inst.CurrentPrefabObjectSelection && ObjectEditor.inst.CurrentPrefabObjectSelection.Data != null)
+            if (ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.Data != null)
             {
-                ObjectEditor.inst.CurrentPrefabObjectSelection.Data.editorData.Bin = (int)_value;
-                ObjectEditor.RenderTimelineObject(ObjectEditor.inst.CurrentPrefabObjectSelection);
+                ObjectEditor.inst.CurrentSelection.Bin = (int)_value;
+                ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
             }
             else
                 EditorManager.inst.DisplayNotification("Can't edit non-prefab!", 2f, EditorManager.NotificationType.Error);
@@ -583,18 +578,18 @@ namespace EditorManagement.Functions.Editors
 
         public void SetPrefabOffset(string _value)
         {
-            if (ObjectEditor.inst.CurrentPrefabObjectSelection && ObjectEditor.inst.CurrentPrefabObjectSelection.Data != null)
+            if (ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.Data != null)
             {
                 string text;
                 float offset = DataManager.inst.ParseFloat(_value, out text);
                 EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/right/time/time").GetComponent<InputField>().text = text;
-                ObjectEditor.inst.CurrentPrefabObjectSelection.Data.GetPrefab().Offset = offset;
+                ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().GetPrefab().Offset = offset;
                 int num = 0;
                 foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
                 {
-                    if (prefabObject.editorData.Layer == EditorManager.inst.layer && prefabObject.prefabID == ObjectEditor.inst.CurrentPrefabObjectSelection.Data.prefabID)
+                    if (prefabObject.editorData.Layer == EditorManager.inst.layer && prefabObject.prefabID == ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().prefabID)
                     {
-                        ObjectEditor.RenderTimelineObject(RTEditor.inst.timelinePrefabObjects[prefabObject.ID]);
+                        ObjectEditor.inst.RenderTimelineObject(RTEditor.inst.TimelinePrefabObjects.Find(x => x.ID == prefabObject.ID));
                         Updater.UpdatePrefab(prefabObject);
                     }
                     num++;
@@ -606,9 +601,9 @@ namespace EditorManagement.Functions.Editors
 
         public void AddPrefabOffset(float _value)
         {
-            if (ObjectEditor.inst.CurrentPrefabObjectSelection && ObjectEditor.inst.CurrentPrefabObjectSelection.Data != null)
+            if (ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.Data != null)
             {
-                float num = ObjectEditor.inst.CurrentPrefabObjectSelection.Data.GetPrefab().Offset + _value;
+                float num = ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().GetPrefab().Offset + _value;
                 EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/right").Find("time/time").GetComponent<InputField>().text = num.ToString();
             }
             else
@@ -617,9 +612,9 @@ namespace EditorManagement.Functions.Editors
 
         public void ExpandCurrentPrefab()
         {
-            if (ObjectEditor.inst.CurrentPrefabObjectSelection && ObjectEditor.inst.CurrentPrefabObjectSelection.Data != null)
+            if (ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.Data != null)
             {
-                var prefabObject = ObjectEditor.inst.CurrentPrefabObjectSelection.Data;
+                var prefabObject = ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>();
                 string id = prefabObject.ID;
                 ObjectManager.inst.AddExpandedPrefabToLevel(prefabObject);
                 //ObjectManager.inst.terminateObject(ObjEditor.inst.currentObjectSelection);
@@ -629,17 +624,16 @@ namespace EditorManagement.Functions.Editors
 
                 Updater.UpdatePrefab(prefabObject, false);
 
-                Destroy(RTEditor.inst.timelinePrefabObjects[id].GameObject);
-                RTEditor.inst.timelinePrefabObjects.Remove(id);
+                RTEditor.inst.RemoveTimelineObject(RTEditor.inst.timelineObjects.Find(x => x.ID == id));
 
                 DataManager.inst.gameData.prefabObjects.RemoveAll(x => x.ID == id);
                 DataManager.inst.gameData.beatmapObjects.RemoveAll(x => x.prefabInstanceID == id && x.fromPrefab);
                 ObjectEditor.inst.DeselectAllObjects();
 
-                ObjectEditor.RenderTimelineObjects();
+                ObjectEditor.inst.RenderTimelineObjects();
 
                 foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == id))
-                    ObjectEditor.inst.AddSelectedObject(new TimelineObject<BeatmapObject>((BeatmapObject)beatmapObject));
+                    ObjectEditor.inst.AddSelectedObject(new TimelineObject((BeatmapObject)beatmapObject));
             }
             else
                 EditorManager.inst.DisplayNotification("Can't expand non-prefab!", 2f, EditorManager.NotificationType.Error);
@@ -668,7 +662,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdatePrefab(prefabObject);
 
-            ObjectEditor.RenderTimelineObject(new TimelineObject<PrefabObject>(prefabObject));
+            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
         }
     }
 }
