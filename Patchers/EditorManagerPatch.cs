@@ -17,6 +17,7 @@ using SimpleJSON;
 using Crosstales.FB;
 
 using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
 using RTFunctions.Patchers;
@@ -24,7 +25,7 @@ using RTFunctions.Patchers;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Editors;
 
-using BeatmapObject = DataManager.GameData.BeatmapObject;
+using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using EventKeyframe = DataManager.GameData.EventKeyframe;
 using Prefab = DataManager.GameData.Prefab;
 using PrefabObject = DataManager.GameData.PrefabObject;
@@ -50,43 +51,43 @@ namespace EditorManagement.Patchers
         /// <summary>
         /// Inits patches for EditorManager
         /// </summary>
-        public static void Init()
-        {
-            Type = typeof(EditorManager);
-            Patcher.CreatePatch(Instance.Awake, PatchType.Prefix, (PrefixMethod<EditorManager>)AwakePrefix);
-            Patcher.CreatePatch(Instance.Start, PatchType.Prefix, StartPrefix);
-            Patcher.CreatePatch(Instance.Update, PatchType.Prefix, UpdatePrefix);
+        //public static void Init()
+        //{
+        //    Type = typeof(EditorManager);
+        //    Patcher.CreatePatch(Instance.Awake, PatchType.Prefix, (PrefixMethod<EditorManager>)AwakePrefix);
+        //    Patcher.CreatePatch(Instance.Start, PatchType.Prefix, StartPrefix);
+        //    Patcher.CreatePatch(Instance.Update, PatchType.Prefix, UpdatePrefix);
 
-            Patcher.CreatePatch(Instance.OpenGuides, PatchType.Prefix, OpenGuidesPrefix);
-            Patcher.CreatePatch(Instance.OpenSteamWorkshop, PatchType.Prefix, OpenSteamWorkshopPrefix);
-            Patcher.CreatePatch(Instance.OpenDiscord, PatchType.Prefix, OpenDiscordPrefix);
-            Patcher.CreatePatch(Instance.OpenTutorials, PatchType.Prefix, OpenTutorialsPrefix);
-            Patcher.CreatePatch(Instance.OpenVerifiedSongs, PatchType.Prefix, OpenVerifiedSongsPrefix);
+        //    Patcher.CreatePatch(Instance.OpenGuides, PatchType.Prefix, OpenGuidesPrefix);
+        //    Patcher.CreatePatch(Instance.OpenSteamWorkshop, PatchType.Prefix, OpenSteamWorkshopPrefix);
+        //    Patcher.CreatePatch(Instance.OpenDiscord, PatchType.Prefix, OpenDiscordPrefix);
+        //    Patcher.CreatePatch(Instance.OpenTutorials, PatchType.Prefix, OpenTutorialsPrefix);
+        //    Patcher.CreatePatch(Instance.OpenVerifiedSongs, PatchType.Prefix, OpenVerifiedSongsPrefix);
 
-            Patcher.CreatePatch(AccessTools.Method(Type, "SnapToBPM"), PatchType.Prefix, AccessTools.Method(typeof(EditorManagerPatch), "SnapToBPMPrefix"));
+        //    Patcher.CreatePatch(AccessTools.Method(Type, "SnapToBPM"), PatchType.Prefix, AccessTools.Method(typeof(EditorManagerPatch), "SnapToBPMPrefix"));
 
-            Patcher.CreatePatch<int, int>(Instance.SetLayer, PatchType.Prefix, SetLayerPrefix);
+        //    Patcher.CreatePatch<int, int>(Instance.SetLayer, PatchType.Prefix, SetLayerPrefix);
 
-            Patcher.CreatePatch(Instance.GetLevelList, PatchType.Prefix, GetLevelListPrefix);
+        //    Patcher.CreatePatch(Instance.GetLevelList, PatchType.Prefix, GetLevelListPrefix);
 
-            Patcher.CreatePatch(Instance.LoadBaseLevel, PatchType.Prefix, LoadBaseLevelPrefix);
+        //    Patcher.CreatePatch(Instance.LoadBaseLevel, PatchType.Prefix, LoadBaseLevelPrefix);
 
-            Patcher.CreatePatch<string, string>(Instance.SetFileInfoPopupText, PatchType.Prefix, SetFileInfoPopupTextPrefix);
+        //    Patcher.CreatePatch<string, string>(Instance.SetFileInfoPopupText, PatchType.Prefix, SetFileInfoPopupTextPrefix);
 
-            Patcher.CreatePatch(AccessTools.Method(Type, "LoadLevel"), PatchType.Prefix, AccessTools.Method(typeof(EditorManagerPatch), "LoadLevelPrefix"));
+        //    Patcher.CreatePatch(AccessTools.Method(Type, "LoadLevel"), PatchType.Prefix, AccessTools.Method(typeof(EditorManagerPatch), "LoadLevelPrefix"));
 
-            Patcher.CreatePatch(Instance.AutoSaveLevel, PatchType.Prefix, EditorPlugin.DontRun);
+        //    Patcher.CreatePatch(Instance.AutoSaveLevel, PatchType.Prefix, EditorPlugin.DontRun);
 
-            Patcher.CreatePatch<string, float, EditorManager.NotificationType, bool>(Instance.DisplayNotification, PatchType.Prefix, DisplayNotificationPrefix);
+        //    Patcher.CreatePatch<string, float, EditorManager.NotificationType, bool>(Instance.DisplayNotification, PatchType.Prefix, DisplayNotificationPrefix);
 
-            Patcher.CreatePatch(AccessTools.Method(typeof(SelectObjectInEditor), "Update"), PatchType.Prefix, (PrefixMethod)EditorPlugin.DontRun);
+        //    Patcher.CreatePatch(AccessTools.Method(typeof(SelectObjectInEditor), "Update"), PatchType.Prefix, (PrefixMethod)EditorPlugin.DontRun);
 
-            Patcher.CreatePatch(Instance.CreateNewLevel, PatchType.Prefix, delegate ()
-            {
-                RTEditor.inst.CreateNewLevel();
-                return false;
-            });
-        }
+        //    Patcher.CreatePatch(Instance.CreateNewLevel, PatchType.Prefix, delegate ()
+        //    {
+        //        RTEditor.inst.CreateNewLevel();
+        //        return false;
+        //    });
+        //}
 
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
@@ -193,6 +194,9 @@ namespace EditorManagement.Patchers
             }
 
             RTEditor.Init(__instance);
+            KeybindManager.Init(__instance);
+
+            ThemeEditorManager.Init(ThemeEditor.inst);
             EditorThemeManager.Init();
 
             return false;
@@ -231,25 +235,7 @@ namespace EditorManagement.Patchers
             LoadBaseLevelPrefix();
             Instance.DisplayNotification("Base Level Loaded", 2f, EditorManager.NotificationType.Info);
 
-            var folderButton = EditorManager.inst.folderButtonPrefab;
-            Button fButtonBUTT = folderButton.GetComponent<Button>();
-            Text fButtonText = folderButton.transform.Find("folder-name").GetComponent<Text>();
-            //Folder button
-            fButtonText.horizontalOverflow = ConfigEntries.OpenFileTextHorizontalWrap.Value;
-            fButtonText.verticalOverflow = ConfigEntries.OpenFileTextVerticalWrap.Value;
-            fButtonText.color = ConfigEntries.OpenFileTextColor.Value;
-            fButtonText.fontSize = ConfigEntries.OpenFileTextFontSize.Value;
-
-            //Folder Button Colors
-            ColorBlock cb = fButtonBUTT.colors;
-            cb.normalColor = ConfigEntries.OpenFileButtonNormalColor.Value;
-            cb.pressedColor = ConfigEntries.OpenFileButtonPressedColor.Value;
-            cb.highlightedColor = ConfigEntries.OpenFileButtonHighlightedColor.Value;
-            cb.selectedColor = ConfigEntries.OpenFileButtonSelectedColor.Value;
-            cb.fadeDuration = ConfigEntries.OpenFileButtonFadeDuration.Value;
-            fButtonBUTT.colors = cb;
-
-            EditorPlugin.timeEdit = EditorPlugin.itsTheTime;
+            EditorPlugin.timeOffset = EditorPlugin.timeEditing;
 
             InputDataManager.inst.editorActions.Cut.ClearBindings();
             InputDataManager.inst.editorActions.Copy.ClearBindings();
@@ -294,9 +280,7 @@ namespace EditorManagement.Patchers
                 if (Instance.canEdit)
                 {
                     if (InputDataManager.inst.editorActions.ToggleEditor.WasPressed && !Instance.IsUsingInputField())
-                    {
                         Instance.ToggleEditor();
-                    }
 
                     foreach (var customPlayer in InputDataManager.inst.players)
                     {
@@ -311,71 +295,12 @@ namespace EditorManagement.Patchers
                         if (!Instance.IsUsingInputField())
                         {
                             // Probably replace this with new KeybindManager system
-                            if (InputDataManager.inst.editorActions.RefreshObject.WasPressed && ObjectEditor.inst.CurrentSelection)
-                                Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection);
-
-                            if (InputDataManager.inst.editorActions.TogglePlay.WasPressed)
-                                Instance.TogglePlayingSong();
-                            if (InputDataManager.inst.editorActions.Undo.WasPressed)
-                                Instance.history.Undo();
-                            if (InputDataManager.inst.editorActions.Redo.WasPressed)
-                                Instance.history.Redo();
-                            if (InputDataManager.inst.editorActions.Layer1.WasPressed)
-                                Instance.SetLayer(0);
-                            if (InputDataManager.inst.editorActions.Layer2.WasPressed)
-                                Instance.SetLayer(1);
-                            if (InputDataManager.inst.editorActions.Layer3.WasPressed)
-                                Instance.SetLayer(2);
-                            if (InputDataManager.inst.editorActions.Layer4.WasPressed)
-                                Instance.SetLayer(3);
-                            if (InputDataManager.inst.editorActions.Layer5.WasPressed)
-                                Instance.SetLayer(4);
-                            if (InputDataManager.inst.editorActions.LayerEvent.WasPressed)
-                                Instance.SetLayer(5);
-
-                            if (InputDataManager.inst.editorActions.GoToCurrentTime.WasPressed)
-                            {
-                                Debug.Log("Go to Current Time");
-                                Instance.StartCoroutine(Instance.UpdateTimelineScrollRect(0f, AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length));
-                            }
-                            if (!InputDataManager.inst.editorActions.GoToCurrentTime.WasPressed && InputDataManager.inst.editorActions.GoToStart.WasPressed)
-                            {
-                                Debug.Log("Go to Start Time");
-                                Instance.StartCoroutine(Instance.UpdateTimelineScrollRect(0f, 0f));
-                            }
-                            if (InputDataManager.inst.editorActions.GoToEnd.WasPressed)
-                            {
-                                Debug.Log("Go to End Time");
-                                Instance.StartCoroutine(Instance.UpdateTimelineScrollRect(0f, 1f));
-                            }
-
-                            if (InputDataManager.inst.editorActions.SmallTimelineJumpLeft.WasPressed && !InputDataManager.inst.editorActions.LargeTimelineJumpLeft.WasPressed && !InputDataManager.inst.editorActions.JumpToPreviousMarker.WasPressed)
-                            {
-                                AudioManager.inst.CurrentAudioSource.Pause();
-                                Instance.UpdatePlayButton();
-                                AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time - 0.1f);
-                            }
-                            if (InputDataManager.inst.editorActions.SmallTimelineJumpRight.WasPressed && !InputDataManager.inst.editorActions.LargeTimelineJumpRight.WasPressed && !InputDataManager.inst.editorActions.JumpToNextMarker.WasPressed)
-                            {
-                                AudioManager.inst.CurrentAudioSource.Pause();
-                                Instance.UpdatePlayButton();
-                                AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time + 0.1f);
-                            }
-
-                            if (InputDataManager.inst.editorActions.LargeTimelineJumpLeft.WasPressed && !InputDataManager.inst.editorActions.JumpToPreviousMarker.WasPressed)
-                                AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time - 5f);
-                            if (InputDataManager.inst.editorActions.LargeTimelineJumpRight.WasPressed && !InputDataManager.inst.editorActions.JumpToNextMarker.WasPressed)
-                                AudioManager.inst.SetMusicTime(AudioManager.inst.CurrentAudioSource.time + 5f);
-                            if (InputDataManager.inst.editorActions.PitchUp.WasPressed && AudioManager.inst.CurrentAudioSource.pitch + 0.1f < 2f)
-                                AudioManager.inst.SetPitch(AudioManager.inst.CurrentAudioSource.pitch + 0.1f);
-                            if (InputDataManager.inst.editorActions.PitchDown.WasPressed && AudioManager.inst.CurrentAudioSource.pitch - 0.1f > 0f)
-                                AudioManager.inst.SetPitch(AudioManager.inst.CurrentAudioSource.pitch - 0.1f);
 
                             Instance.handleViewShortcuts();
-                            if (InputDataManager.inst.editorActions.OpenLevel.WasPressed)
-                                Instance.OpenBeatmapPopup();
-                            if (InputDataManager.inst.editorActions.SaveLevel.WasPressed)
-                                Instance.SaveBeatmap();
+                            //if (InputDataManager.inst.editorActions.OpenLevel.WasPressed)
+                            //    Instance.OpenBeatmapPopup();
+                            //if (InputDataManager.inst.editorActions.SaveLevel.WasPressed)
+                            //    Instance.SaveBeatmap();
                             if (InputDataManager.inst.editorActions.Cut.WasPressed)
                                 Instance.Cut();
                             if (InputDataManager.inst.editorActions.Copy.WasPressed)
@@ -390,23 +315,43 @@ namespace EditorManagement.Patchers
                     }
                     if (!Instance.firstOpened)
                     {
-                        Instance.AssignWaveformTextures();
-                        Instance.UpdateTimelineSizes();
-                        Instance.firstOpened = true;
-                        ObjectEditor.CreateTimelineObjects();
-                        EventEditor.inst.CreateEventObjects();
-                        CheckpointEditor.inst.CreateGhostCheckpoints();
-                        GameManager.inst.UpdateTimeline();
-                        //Instance.CreateGrid();
-                        ObjectEditor.inst.SetCurrentObject(RTEditor.inst.TimelineBeatmapObjects[0]);
-                        EventEditor.inst.SetCurrentEvent(0, 0);
-                        CheckpointEditor.inst.SetCurrentCheckpoint(0);
-                        Instance.TogglePlayingSong();
-                        Instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-                        if (Instance.loadedLevels.Count > 0)
-                            Instance.OpenBeatmapPopup();
-                        else
-                            Instance.OpenNewLevelPopup();
+                        try
+                        {
+                            Instance.AssignWaveformTextures();
+                            Instance.UpdateTimelineSizes();
+                            Instance.firstOpened = true;
+
+                            // If the NullReference is in this area, then it's somewhere below.
+
+                            Debug.Log($"{Instance.className}First opened: Create Timeline Objects");
+                            ObjectEditor.inst.CreateTimelineObjects();
+                            Debug.Log($"{Instance.className}First opened: Create Event Objects");
+                            RTEventEditor.inst.CreateEventObjects();
+                            Debug.Log($"{Instance.className}First opened: Create Ghost Checkpoints");
+                            CheckpointEditor.inst.CreateGhostCheckpoints();
+                            Debug.Log($"{Instance.className}First opened: Update Timeline");
+                            GameManager.inst.UpdateTimeline();
+                            if (RTEditor.inst.TimelineBeatmapObjects.Count > 0)
+                            {
+                                Debug.Log($"{Instance.className}First opened: Set Current Object");
+                                ObjectEditor.inst.SetCurrentObject(RTEditor.inst.TimelineBeatmapObjects[0], openDialog: false);
+                            }
+                            Debug.Log($"{Instance.className}First opened: Set Current Checkpoint");
+                            CheckpointEditor.inst.SetCurrentCheckpoint(0);
+                            Debug.Log($"{Instance.className}First opened: Toggle Playing Song");
+                            Instance.TogglePlayingSong();
+                            Debug.Log($"{Instance.className}First opened: Clear Dialogs");
+                            Instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+                            Debug.Log($"{Instance.className}First opened: Open Beatmap / New Level Popup");
+                            if (Instance.loadedLevels.Count > 0)
+                                Instance.OpenBeatmapPopup();
+                            else
+                                Instance.OpenNewLevelPopup();
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError($"{Instance.className}First opened error!{ex}");
+                        }
                     }
 
                     if (Instance.OpenedEditor)
@@ -433,10 +378,13 @@ namespace EditorManagement.Patchers
                     Instance.updatePointer();
                     Instance.UpdateTooltip();
                     Instance.UpdateEditButtons();
-                    //Instance.speedText.GetComponent<Text>().text = AudioManager.inst.pitch.ToString("f1");
 
-                    // Optimize plz
-                    Instance.timelineTime.GetComponent<Text>().text = string.Format("{0:0}:{1:00}.{2:000}", Mathf.Floor(Instance.CurrentAudioPos / 60f), Mathf.Floor(Instance.CurrentAudioPos % 60f), Mathf.Floor(AudioManager.inst.CurrentAudioSource.time * 1000f % 1000f));
+                    if (RTEditor.inst.timelineTime)
+                        RTEditor.inst.timelineTime.text = string.Format("{0:0}:{1:00}.{2:000}",
+                            Mathf.Floor(Instance.CurrentAudioPos / 60f),
+                            Mathf.Floor(Instance.CurrentAudioPos % 60f),
+                            Mathf.Floor(AudioManager.inst.CurrentAudioSource.time * 1000f % 1000f));
+
                     Instance.wasEditing = Instance.isEditing;
                 }
                 else if (!Instance.canEdit && Instance.isEditing)
@@ -452,161 +400,33 @@ namespace EditorManagement.Patchers
             if (EditorManager.inst.GUI.activeSelf == true && EditorManager.inst.isEditing == true)
             {
                 // Create Local Variables
-
-                if (RTEditor.timeIF != null && !RTEditor.timeIF.isFocused)
-                {
+                if (RTEditor.timeIF && !RTEditor.timeIF.isFocused)
                     RTEditor.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
-                }
 
-                if (ModCompatibility.eventsCorePlugin != null)
-                {
-                    var rt = GameObject.Find("Game Systems/EventManager").GetComponentByName("RTEventManager");
+                if (RTEditor.pitchIF && !RTEditor.pitchIF.isFocused)
+                    RTEditor.pitchIF.text = ModCompatibility.sharedFunctions.ContainsKey("EventsCorePitchOffset") ?
+                        ((float)ModCompatibility.sharedFunctions["EventsCorePitchOffset"]).ToString() : AudioManager.inst.pitch.ToString();
 
-                    var f = (float)rt.GetType().GetField("pitchOffset", BindingFlags.Public | BindingFlags.Instance).GetValue(rt);
-
-                    if (RTEditor.pitchIF != null && !RTEditor.pitchIF.isFocused)
-                    {
-                        RTEditor.pitchIF.text = f.ToString();
-                    }
-                }
-                else
-                {
-                    if (RTEditor.pitchIF != null && !RTEditor.pitchIF.isFocused)
-                    {
-                        RTEditor.pitchIF.text = AudioManager.inst.pitch.ToString();
-                    }
-                }
-
-                if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading") && GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").activeSelf == true)
-                {
-                    Image image = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading").GetComponent<Image>();
-                    image.sprite = EditorManager.inst.loadingImage.sprite;
-                }
+                if (RTEditor.inst.doggoImage)
+                    RTEditor.inst.doggoImage.sprite = EditorManager.inst.loadingImage.sprite;
             }
-            EditorPlugin.itsTheTime = EditorPlugin.timeEdit + Time.time;
 
-            if (EditorManager.inst.GetDialog("Multi Object Editor").Dialog.gameObject.activeSelf == true && EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta != new Vector2(810f, 730.11f))
+            var multi = EditorManager.inst.GetDialog("Multi Object Editor").Dialog;
+            if (multi.gameObject.activeSelf && ((RectTransform)multi.Find("data")).sizeDelta != new Vector2(810f, 730.11f))
             {
-                EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
+                ((RectTransform)multi.Find("data")).sizeDelta = new Vector2(810f, 730.11f);
             }
-            if (EditorManager.inst.GetDialog("Multi Object Editor").Dialog.gameObject.activeSelf == true && EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta != new Vector2(355f, 730f))
+            if (multi.gameObject.activeSelf && ((RectTransform)multi.Find("data/left")).sizeDelta != new Vector2(355f, 730f))
             {
-                EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
+                ((RectTransform)multi.Find("data/left")).sizeDelta = new Vector2(355f, 730f);
             }
 
-            if (!LSHelpers.IsUsingInputField() && ((!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]) || RTEditor.inst.isOverMainTimeline))
+            if (!LSHelpers.IsUsingInputField() && Input.GetMouseButtonDown(2))
             {
-                if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.X))
-                {
-                    EditorManager.inst.Cut();
-                }
-                if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.C))
-                {
-                    RTEditor.inst.Copy(false, false);
-                }
-                if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.V))
-                {
-                    if (RTEditor.inst.ienumRunning == false)
-                    {
-                        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                        RTEditor.inst.Paste(0f);
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                    }
-                }
-                if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.D))
-                {
-                    if (!RTEditor.inst.ienumRunning)
-                    {
-                        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                        EditorManager.inst.Duplicate();
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                    }
-                }
-                if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.V))
-                {
-                    if (RTEditor.inst.ienumRunning == false)
-                    {
-                        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                        RTEditor.inst.Paste(0f, false);
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                    }
-                }
-                //if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.D))
-                //{
-                //    if (RTEditor.inst.ienumRunning == false)
-                //    {
-                //        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                //        EditorManager.Duplicate(false);
-                //    }
-                //    else
-                //    {
-                //        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                //    }
-                //}
-                if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete))
-                {
-                    if (!RTEditor.inst.ienumRunning)
-                    {
-                        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                        RTEditor.inst.Delete();
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                    }
-                }
-                if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.Z))
-                {
-                    if (RTEditor.inst.ienumRunning == false)
-                    {
-                        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                        EditorManager.inst.history.Undo();
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                    }
-                }
-                if (Input.GetKey(KeyCode.LeftControl) && Input.GetKey(KeyCode.LeftShift) && Input.GetKeyDown(KeyCode.Z))
-                {
-                    if (RTEditor.inst.ienumRunning == false)
-                    {
-                        EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                        EditorManager.inst.history.Redo();
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-                    }
-                }
-
-                if (Input.GetMouseButtonDown(2))
-                {
-                    EditorPlugin.ListObjectLayers();
-                }
-
-                if (Input.GetKeyDown(KeyCode.PageUp))
-                {
-                        int x = int.Parse(RTEditor.inst.layersIF.text);
-                        x += 1;
-                        RTEditor.inst.layersIF.text = x.ToString();
-                }
-                if (Input.GetKeyDown(KeyCode.PageDown))
-                {
-                    int x = int.Parse(RTEditor.inst.layersIF.text);
-                    x -= 1;
-                    RTEditor.inst.layersIF.text = x.ToString();
-                }
+                EditorPlugin.ListObjectLayers();
             }
+
+            EditorPlugin.timeEditing = EditorPlugin.timeOffset + Time.time;
 
             Instance.prevAudioTime = AudioManager.inst.CurrentAudioSource.time;
             return false;
@@ -746,7 +566,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("handleViewShortcuts")]
         [HarmonyPrefix]
-        static bool ViewShortcutsPatch()
+        static bool handleViewShortcutsPrefix()
         {
             if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
                 && EditorManager.inst.IsOverObjTimeline
@@ -853,7 +673,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ToggleEditor")]
         [HarmonyPostfix]
-        static void ToggleEditorPatch()
+        static void ToggleEditorPrefix()
         {
             if (EditorManager.inst.isEditing)
             {
@@ -864,7 +684,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("CloseOpenBeatmapPopup")]
         [HarmonyPrefix]
-        static bool CloseOpenFilePopupPatch(EditorManager __instance)
+        static bool CloseOpenBeatmapPopupPrefix(EditorManager __instance)
         {
             if (EditorManager.inst.hasLoadedLevel)
             {
@@ -968,7 +788,7 @@ namespace EditorManagement.Patchers
         }
 
         [HarmonyPatch("SaveBeatmapAs", new Type[] { typeof(string) })]
-        [HarmonyPostfix]
+        [HarmonyPrefix]
         static bool SaveBeatmapAsPrefix(EditorManager __instance, string __0)
         {
             if (__instance.hasLoadedLevel)
@@ -985,7 +805,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("OpenBeatmapPopup")]
         [HarmonyPrefix]
-        static bool EditorOpenBeatmapPopupPatch(EditorManager __instance)
+        static bool OpenBeatmapPopupPrefix(EditorManager __instance)
         {
             Debug.LogFormat("{0}Open Beatmap Popup", EditorPlugin.className);
             InputField component = __instance.GetDialog("Open File Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
@@ -1025,111 +845,14 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("RenderOpenBeatmapPopup")]
         [HarmonyPostfix]
-        static void EditorRenderOpenBeatmapPopupPatch() => RTEditor.inst.RefreshLevelList();
+        static void RenderOpenBeatmapPopupPrefix() => RTEditor.inst.RefreshLevelList();
 
         [HarmonyPatch("RenderParentSearchList")]
         [HarmonyPrefix]
         static bool RenderParentSearchList(EditorManager __instance)
         {
-            Transform transform = __instance.GetDialog("Parent Selector").Dialog.Find("mask/content");
-
-            foreach (object obj2 in transform)
-            {
-                Destroy(((Transform)obj2).gameObject);
-            }
-
-            GameObject gameObject = Instantiate(__instance.folderButtonPrefab);
-            gameObject.name = "No Parent";
-            gameObject.transform.SetParent(transform);
-            gameObject.transform.localScale = Vector3.one;
-            gameObject.transform.GetChild(0).GetComponent<Text>().text = "No Parent";
-            gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
-            {
-                ObjEditor.inst.SetParent("");
-                EditorManager.inst.HideDialog("Parent Selector");
-            });
-
-            if (string.IsNullOrEmpty(__instance.parentSearch) || "camera".Contains(__instance.parentSearch.ToLower()))
-            {
-                var cam = Instantiate(__instance.folderButtonPrefab);
-                cam.name = "Camera";
-                cam.transform.SetParent(transform);
-                cam.transform.localScale = Vector3.one;
-                cam.transform.GetChild(0).GetComponent<Text>().text = "Camera";
-                cam.GetComponent<Button>().onClick.AddListener(delegate ()
-                {
-                    ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "CAMERA_PARENT";
-                    Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection);
-                    EditorManager.inst.HideDialog("Parent Selector");
-                    RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection));
-                });
-            }
-
-            if (string.IsNullOrEmpty(__instance.parentSearch) || "player".Contains(__instance.parentSearch.ToLower()))
-            {
-                var cam = Instantiate(__instance.folderButtonPrefab);
-                cam.name = "Player";
-                cam.transform.SetParent(transform);
-                cam.transform.localScale = Vector3.one;
-                cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
-                cam.GetComponent<Button>().onClick.AddListener(delegate ()
-                {
-                    ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "PLAYER_PARENT";
-                    Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection);
-                    EditorManager.inst.HideDialog("Parent Selector");
-                    RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection));
-                });
-            }
-
-            foreach (var obj in DataManager.inst.gameData.beatmapObjects)
-            {
-                if (!obj.fromPrefab)
-                {
-                    int num = DataManager.inst.gameData.beatmapObjects.IndexOf(obj);
-                    if ((string.IsNullOrEmpty(__instance.parentSearch) || (obj.name + " " + num.ToString("0000")).ToLower().Contains(__instance.parentSearch.ToLower())) && obj != ObjectEditor.inst.CurrentSelection)
-                    {
-                        bool flag = true;
-                        if (!string.IsNullOrEmpty(obj.parent))
-                        {
-                            string parentID = ObjectEditor.inst.CurrentSelection.id;
-                            while (!string.IsNullOrEmpty(parentID))
-                            {
-                                if (parentID == obj.parent)
-                                {
-                                    flag = false;
-                                    break;
-                                }
-                                int num2 = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
-                                if (num2 != -1)
-                                {
-                                    parentID = DataManager.inst.gameData.beatmapObjects[num2].id;
-                                }
-                                else
-                                {
-                                    parentID = null;
-                                }
-                            }
-                        }
-                        if (flag)
-                        {
-                            GameObject gameObject2 = Instantiate(__instance.folderButtonPrefab);
-                            gameObject2.name = obj.name + " " + num.ToString("0000");
-                            gameObject2.transform.SetParent(transform);
-                            gameObject2.transform.localScale = Vector3.one;
-                            gameObject2.transform.GetChild(0).GetComponent<Text>().text = obj.name + " " + num.ToString("0000");
-                            gameObject2.GetComponent<Button>().onClick.AddListener(delegate ()
-                            {
-                                string id = obj.id;
-                                ObjectEditor.inst.CurrentSelection.parent = id;
-                                Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection);
-                                EditorManager.inst.HideDialog("Parent Selector");
-                                RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection));
-                                Debug.Log($"{__instance.className}Set Parent ID: {id}");
-                            });
-                        }
-                    }
-                }
-            }
+            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                RTEditor.inst.RefreshParentSearch(__instance, ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
             return false;
         }
 
@@ -1191,6 +914,14 @@ namespace EditorManagement.Patchers
             Debug.Log($"{__instance.className}Quit to Main Menu");
             InputDataManager.inst.players.Clear();
             SceneManager.inst.LoadScene("Main Menu");
+            return false;
+        }
+
+        [HarmonyPatch("CreateNewLevel")]
+        [HarmonyPrefix]
+        static bool CreateNewLevelPrefix()
+        {
+            RTEditor.inst.CreateNewLevel();
             return false;
         }
 

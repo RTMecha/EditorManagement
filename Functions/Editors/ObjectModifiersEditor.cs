@@ -94,7 +94,8 @@ namespace EditorManagement.Functions.Editors
             {
                 showModifiers = _val;
                 scrollView.gameObject.SetActive(showModifiers);
-                RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection));
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                    RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
             });
 
             var e = Instantiate(bmb);
@@ -3079,7 +3080,8 @@ namespace EditorManagement.Functions.Editors
             search.onValueChanged.AddListener(delegate (string _val)
             {
                 searchTerm = _val;
-                RefreshDefaultModifiersList(ObjectEditor.inst.CurrentSelection);
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                    RefreshDefaultModifiersList(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
             });
 
             var close = dialog.transform.Find("Panel/x").GetComponent<Button>();

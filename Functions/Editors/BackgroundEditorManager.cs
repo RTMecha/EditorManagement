@@ -14,6 +14,7 @@ using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
 using EditorManagement.Functions;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
 
 namespace EditorManagement.Functions.Editors
@@ -25,6 +26,8 @@ namespace EditorManagement.Functions.Editors
 		public static BackgroundObject CurrentSelectedBG => BackgroundEditor.inst == null ? null : (BackgroundObject)DataManager.inst.gameData.backgroundObjects[BackgroundEditor.inst.currentObj];
 
 		public static void Init(BackgroundEditor backgroundEditor) => backgroundEditor.gameObject.AddComponent<BackgroundEditorManager>();
+
+		public GameObject shapeButtonCopy;
 
         void Awake()
         {
@@ -157,22 +160,68 @@ namespace EditorManagement.Functions.Editors
 
 			if (__instance.left.transform.TryFind("shape", out Transform shape) && __instance.left.transform.TryFind("shapesettings", out Transform shapeOption))
 			{
-				foreach (object obj3 in shapeOption)
-				{
-					var ch = (Transform)obj3;
-					//foreach (var c in ch)
-					//{
-					//	var e = (Transform)c;
-					//	if (!e.GetComponent<HoverUI>())
-					//	{
-					//		var he = e.gameObject.AddComponent<HoverUI>();
-					//		he.animatePos = false;
-					//		he.animateSca = true;
-					//		he.size = 1.1f;
-					//	}
-					//}
-					ch.gameObject.SetActive(false);
+				if (!shapeButtonCopy)
+					shapeButtonCopy = Instantiate(shape.GetChild(0).gameObject);
+
+				LSHelpers.DeleteChildren(shape);
+				LSHelpers.DeleteChildren(shapeOption);
+
+				int last = 0;
+				foreach (var sad in Objects.Shapes3D)
+                {
+					if (last < sad.Type)
+						last = sad.Type;
+                }
+
+				for (int i = 0; i < last + 1; i++)
+                {
+					string s = Objects.GetShape3D(i, 0).name.ToLower().Replace(" ", "_");
+					if (ShapeUI.Dictionary.ContainsKey(s))
+					{
+						var ui = ShapeUI.Dictionary[s];
+						var gm = shapeButtonCopy.Duplicate(shape, (i + 1).ToString());
+						var im = gm.transform.Find("Image").GetComponent<Image>();
+						RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadImageTexture($"file://{ui.shapePath}", delegate (Texture2D x)
+						{
+							im.sprite = RTSpriteManager.CreateSprite(x);
+						});
+
+                        var hoverUI = gm.AddComponent<HoverUI>();
+                        hoverUI.animatePos = false;
+                        hoverUI.animateSca = true;
+                        hoverUI.size = 1.1f;
+                    }
+
+					int lastOption = 0;
+					foreach (var sad in Objects.Shapes3D)
+                    {
+						if (sad.type == i && lastOption < sad.Option)
+							lastOption = sad.Option;
+					}
+
+					for (int j = 0; j < lastOption + 1; j++)
+					{
+						string so = Objects.GetShape3D(i, j).name.ToLower().Replace(" ", "_");
+
+						if (ShapeUI.Dictionary.ContainsKey(so))
+						{
+							var ui = ShapeUI.Dictionary[so];
+							var gm = shapeButtonCopy.Duplicate(shapeOption, (i + 1).ToString());
+							var im = gm.transform.Find("Image").GetComponent<Image>();
+							RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadImageTexture($"file://{ui.shapePath}", delegate (Texture2D x)
+							{
+								im.sprite = RTSpriteManager.CreateSprite(x);
+							});
+
+							var hoverUI = gm.AddComponent<HoverUI>();
+							hoverUI.animatePos = false;
+							hoverUI.animateSca = true;
+							hoverUI.size = 1.1f;
+						}
+					}
 				}
+
+				LSHelpers.SetActiveChildren(shapeOption, false);
 
 				var current = shapeOption.GetChild(backgroundObject.shape.Type);
 				current.gameObject.SetActive(true);
@@ -183,14 +232,7 @@ namespace EditorManagement.Functions.Editors
 						int buttonTmp = j;
 						var shoggle = __instance.left.transform.Find("shape/" + j).GetComponent<Toggle>();
 						shoggle.onValueChanged.RemoveAllListeners();
-						if (backgroundObject.shape.Type == buttonTmp - 1)
-						{
-							__instance.left.transform.Find("shape/" + j).GetComponent<Toggle>().isOn = true;
-						}
-						else
-						{
-							__instance.left.transform.Find("shape/" + j).GetComponent<Toggle>().isOn = false;
-						}
+						shoggle.isOn = backgroundObject.shape.Type == buttonTmp - 1;
 						shoggle.onValueChanged.AddListener(delegate (bool _value)
 						{
 							if (_value)
@@ -200,14 +242,6 @@ namespace EditorManagement.Functions.Editors
 								__instance.OpenDialog(_bg);
 							}
 						});
-
-						//if (!__instance.left.transform.Find("shape/" + j).GetComponent<HoverUI>())
-						//{
-						//	var hoverUI = __instance.left.transform.Find("shape/" + j).gameObject.AddComponent<HoverUI>();
-						//	hoverUI.animatePos = false;
-						//	hoverUI.animateSca = true;
-						//	hoverUI.size = 1.1f;
-						//}
 					}
 				}
 
@@ -218,10 +252,7 @@ namespace EditorManagement.Functions.Editors
 					var toggle = current.GetChild(k).GetComponent<Toggle>();
 
 					toggle.onValueChanged.RemoveAllListeners();
-					if (backgroundObject.shape.Option == k)
-						toggle.isOn = true;
-					else
-						toggle.isOn = false;
+					toggle.isOn = backgroundObject.shape.Option == k;
 					toggle.onValueChanged.AddListener(delegate (bool _value)
 					{
 						if (_value)

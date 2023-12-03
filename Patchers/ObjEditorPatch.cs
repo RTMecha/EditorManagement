@@ -465,14 +465,14 @@ namespace EditorManagement.Patchers
 
             // ID
             {
-				var label = ObjEditor.inst.ObjectView.transform.GetChild(0);
-				var id = label.gameObject.Duplicate(ObjEditor.inst.ObjectView.transform);
-				id.transform.SetSiblingIndex(0);
-				id.name = "id";
+				var id = ObjEditor.inst.ObjectView.transform.GetChild(0).gameObject.Duplicate(ObjEditor.inst.ObjectView.transform, "id", 0);
+				Destroy(id.transform.GetChild(1).gameObject);
 			}
 
 			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation").transform.GetChild(1).gameObject);
 			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color").transform.GetChild(1).gameObject);
+
+			ObjectEditor.Init(__instance);
 
 			return false;
         }
@@ -511,25 +511,12 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool UpdatePrefix(ObjEditor __instance)
         {
-			if (!EditorManager.inst.IsUsingInputField())
-			{
-				// Replace this with new Keybind system.
-				if (InputDataManager.inst.editorActions.FirstKeyframe.WasPressed)
-					ObjectEditor.inst.SetCurrentKeyframe(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data, 0, true);
-				if (InputDataManager.inst.editorActions.BackKeyframe.WasPressed)
-					ObjectEditor.inst.AddCurrentKeyframe(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data, -1, true);
-				if (InputDataManager.inst.editorActions.ForwardKeyframe.WasPressed)
-					ObjectEditor.inst.AddCurrentKeyframe(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data, 1, true);
-				if (InputDataManager.inst.editorActions.LastKeyframe.WasPressed)
-					ObjectEditor.inst.AddCurrentKeyframe(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data, 10000, true);
-				if (InputDataManager.inst.editorActions.LockObject.WasPressed)
-					ObjEditor.inst.ToggleLockCurrentSelection();
-			}
-
-			if (!ObjEditor.inst.changingTime && ObjectEditor.inst.CurrentSelection)
+			if (!ObjEditor.inst.changingTime && ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
 			{
 				// Sets new audio time using the Object Keyframe timeline cursor.
-				ObjEditor.inst.newTime = Mathf.Clamp(EditorManager.inst.CurrentAudioPos, ObjectEditor.inst.CurrentSelection.StartTime, ObjectEditor.inst.CurrentSelection.StartTime + ObjectEditor.inst.CurrentSelection.GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset));
+				ObjEditor.inst.newTime = Mathf.Clamp(EditorManager.inst.CurrentAudioPos,
+					ObjectEditor.inst.CurrentSelection.Time,
+					ObjectEditor.inst.CurrentSelection.Time + ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset));
 				ObjEditor.inst.objTimelineSlider.value = ObjEditor.inst.newTime;
 			}
 
@@ -544,43 +531,39 @@ namespace EditorManagement.Patchers
 				if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
 				{
 					int num1 = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25.0) * EditorManager.inst.ScreenScaleInverse / 20.0)) + ObjEditor.inst.mouseOffsetYForDrag;
-					foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjects)
+
+					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
 					{
-						if (timelineObject.Data && !timelineObject.Data.editorData.locked)
-							timelineObject.Data.editorData.Bin = Mathf.Clamp(num1 + timelineObject.binOffset, 0, 14);
-						ObjectEditor.RenderTimelineObject(timelineObject);
-					}
-					foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjects)
-					{
-						if (timelineObject.Data && !timelineObject.Data.editorData.locked)
-							timelineObject.Data.editorData.Bin = Mathf.Clamp(num1 + timelineObject.binOffset, 0, 14);
-						ObjectEditor.RenderTimelineObject(timelineObject);
+						int calc = Mathf.Clamp(num1 + timelineObject.binOffset, 0, 14);
+
+						if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>() && !timelineObject.GetData<BeatmapObject>().editorData.locked)
+							timelineObject.GetData<BeatmapObject>().editorData.Bin = calc;
+						if (timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>() && !timelineObject.GetData<PrefabObject>().editorData.locked)
+							timelineObject.GetData<PrefabObject>().editorData.Bin = calc;
+
+						ObjectEditor.inst.RenderTimelineObject(timelineObject);
 					}
 				}
 				else
 				{
 					float num3 = Mathf.Round(Mathf.Clamp(EditorManager.inst.GetTimelineTime() + ObjEditor.inst.mouseOffsetXForDrag, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f;
-					if (ObjectEditor.inst.CurrentSelection && !ObjectEditor.inst.CurrentSelection.editorData.locked)
-						ObjectEditor.inst.CurrentSelection.StartTime = num3;
-					else if (ObjectEditor.inst.CurrentPrefabObjectSelection && ObjectEditor.inst.CurrentPrefabObjectSelection.Data && !ObjectEditor.inst.CurrentPrefabObjectSelection.Data.editorData.locked)
-						ObjectEditor.inst.CurrentPrefabObjectSelection.Data.StartTime = num3;
-					if (ObjectEditor.inst.CurrentBeatmapObjectSelection)
-						ObjectEditor.RenderTimelineObject(ObjectEditor.inst.CurrentBeatmapObjectSelection);
-					if (ObjectEditor.inst.CurrentPrefabObjectSelection)
-						ObjectEditor.RenderTimelineObject(ObjectEditor.inst.CurrentPrefabObjectSelection);
+					if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject && !ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.locked)
+						ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime = num3;
+					else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject && ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>() && !ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.locked)
+						ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().StartTime = num3;
+					if (ObjectEditor.inst.CurrentSelection)
+						ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
 
-					foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjects)
+					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
 					{
-						if (timelineObject.Data && !timelineObject.Data.editorData.locked)
-							timelineObject.Data.StartTime = Mathf.Clamp(num3 + timelineObject.timeOffset, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
-						ObjectEditor.RenderTimelineObject(timelineObject);
-					}
+						float calc = Mathf.Clamp(num3 + timelineObject.timeOffset, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
 
-					foreach (var timelineObject in ObjectEditor.inst.SelectedPrefabObjects)
-					{
-						if (timelineObject.Data && !timelineObject.Data.editorData.locked)
-							timelineObject.Data.StartTime = Mathf.Clamp(num3 + timelineObject.timeOffset, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
-						ObjectEditor.RenderTimelineObject(timelineObject);
+						if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>() && !timelineObject.GetData<BeatmapObject>().editorData.locked)
+							timelineObject.GetData<BeatmapObject>().StartTime = calc;
+						if (timelineObject.IsPrefabObject && timelineObject.GetData<BeatmapObject>() && !timelineObject.GetData<BeatmapObject>().editorData.locked)
+							timelineObject.GetData<PrefabObject>().StartTime = calc;
+
+						ObjectEditor.inst.RenderTimelineObject(timelineObject);
 					}
 				}
 			}
@@ -589,28 +572,33 @@ namespace EditorManagement.Patchers
 				if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
 				{
 					int num = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25.0) * EditorManager.inst.ScreenScaleInverse / 20.0));
-					if (ObjectEditor.inst.CurrentBeatmapObjectSelection.Data && !ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.editorData.locked)
-						ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.editorData.Bin = Mathf.Clamp(num, 0, 14);
-					else if (ObjectEditor.inst.CurrentPrefabObjectSelection.Data && !ObjectEditor.inst.CurrentPrefabObjectSelection.Data.editorData.locked)
-						ObjectEditor.inst.CurrentPrefabObjectSelection.Data.editorData.Bin = Mathf.Clamp(num, 0, 14);
+					num = Mathf.Clamp(num, 0, 14);
+
+					if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject &&
+						ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>() &&
+						!ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.locked)
+						ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.Bin = num;
+					else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject &&
+						ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>() &&
+						!ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.locked)
+						ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.Bin = num;
 				}
 				else
 				{
 					float num = Mathf.Round(EditorManager.inst.GetTimelineTime(ObjEditor.inst.mouseOffsetXForDrag) * 1000f) / 1000f;
-					if (ObjectEditor.inst.CurrentBeatmapObjectSelection &&
-						ObjectEditor.inst.CurrentBeatmapObjectSelection.Data &&
-						!ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.editorData.locked)
-						ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.StartTime = Mathf.Clamp(num, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
-					else if (ObjectEditor.inst.CurrentPrefabObjectSelection &&
-						ObjectEditor.inst.CurrentPrefabObjectSelection.Data &&
-						!ObjectEditor.inst.CurrentPrefabObjectSelection.Data.editorData.locked)
-						ObjectEditor.inst.CurrentPrefabObjectSelection.Data.StartTime = Mathf.Clamp(num, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
+					num = Mathf.Clamp(num, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+					if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject &&
+						ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>() &&
+						!ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.locked)
+						ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime = num;
+					else if (ObjectEditor.inst.CurrentSelection &&
+						ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>() &&
+						!ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.locked)
+						ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().StartTime = num;
 				}
 
-				if (ObjectEditor.inst.CurrentBeatmapObjectSelection)
-					ObjectEditor.RenderTimelineObject(ObjectEditor.inst.CurrentBeatmapObjectSelection);
-				if (ObjectEditor.inst.CurrentPrefabObjectSelection)
-					ObjectEditor.RenderTimelineObject(ObjectEditor.inst.CurrentPrefabObjectSelection);
+				ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
 			}
 
 			Dragger();
@@ -619,7 +607,7 @@ namespace EditorManagement.Patchers
 
 		static void Dragger()
 		{
-			if (ObjEditor.inst.timelineKeyframesDrag)
+			if (ObjEditor.inst.timelineKeyframesDrag && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
 			{
 				foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjectKeyframes)
 				{
@@ -629,11 +617,11 @@ namespace EditorManagement.Patchers
 						num6 = Mathf.Clamp(num6, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 						num6 = Mathf.Round(num6 * 1000f) / 1000f;
 
-						float calc = Mathf.Clamp(num6, 0f, ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset));
+						float calc = Mathf.Clamp(num6, 0f, ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset));
 
 						if (SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes)
 						{
-							float st = ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.StartTime;
+							float st = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime;
 							float kf = calc;
 
 							if (og == 0)
@@ -643,9 +631,9 @@ namespace EditorManagement.Patchers
 							{
 								float allt = st - RTEditor.SnapToBPM(st + kf);
 								og = RTEditor.SnapToBPM(st + kf);
-								ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.events[timelineObject.Type][timelineObject.Index].eventTime = -allt;
+								ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime = -allt;
 
-								float num7 = posCalc(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.events[timelineObject.Type][timelineObject.Index].eventTime);
+								float num7 = posCalc(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime);
 								if (num7 < 0f)
 									num7 = 0f;
 
@@ -654,9 +642,9 @@ namespace EditorManagement.Patchers
 						}
 						else
 						{
-							ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.events[timelineObject.Type][timelineObject.Index].eventTime = calc;
+							ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime = calc;
 
-							float num7 = posCalc(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data.events[timelineObject.Type][timelineObject.Index].eventTime);
+							float num7 = posCalc(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime);
 							if (num7 < 0f)
 								num7 = 0f;
 
@@ -665,11 +653,11 @@ namespace EditorManagement.Patchers
 					}
 				}
 
-				ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data);
+				ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 				//ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection, false);
 
 				foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjects)
-					ObjectEditor.RenderTimelineObject(timelineObject);
+					ObjectEditor.inst.RenderTimelineObject(timelineObject);
 			}
 		}
 
@@ -679,7 +667,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool CopyAllSelectedEventsPrefix()
         {
-			ObjectEditor.inst.CopyAllSelectedEvents(ObjectEditor.inst.CurrentSelection);
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.CopyAllSelectedEvents(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 			return false;
         }
 
@@ -687,7 +676,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool PasteKeyframesPrefix()
 		{
-			ObjectEditor.inst.PasteKeyframes(ObjectEditor.inst.CurrentSelection);
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.PasteKeyframes(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 			return false;
 		}
 
@@ -702,24 +692,27 @@ namespace EditorManagement.Patchers
 		[HarmonyPatch("SetCurrentKeyframe", new Type[] { typeof(int), typeof(bool) })]
 		[HarmonyPrefix]
 		static bool SetCurrentKeyframePrefix(int __0, bool __1 = false)
-        {
-			ObjectEditor.inst.SetCurrentKeyframe(ObjectEditor.inst.CurrentSelection, __0, __1);
+		{
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.SetCurrentKeyframe(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1);
 			return false;
         }
 
 		[HarmonyPatch("SetCurrentKeyframe", new Type[] { typeof(int), typeof(int), typeof(bool), typeof(bool) })]
 		[HarmonyPrefix]
 		static bool SetCurrentKeyframePrefix(int __0, int __1, bool __2 = false, bool __3 = false)
-        {
-			ObjectEditor.inst.SetCurrentKeyframe(ObjectEditor.inst.CurrentSelection, __0, __1);
+		{
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.SetCurrentKeyframe(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1);
 			return false;
         }
 
 		[HarmonyPatch("AddCurrentKeyframe")]
 		[HarmonyPrefix]
 		static bool AddCurrentKeyframePrefix(int __0, bool __1 = false)
-        {
-			ObjectEditor.inst.AddCurrentKeyframe(ObjectEditor.inst.CurrentSelection, __0, __1);
+		{
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.AddCurrentKeyframe(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1);
 			return false;
         }
 
@@ -727,7 +720,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool ResizeKeyframeTimelinePrefix()
 		{
-			ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentSelection);
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 			return false;
 		}
 
@@ -755,7 +749,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool CreateKeyframesPrefix()
 		{
-			ObjectEditor.inst.CreateKeyframes(ObjectEditor.inst.CurrentSelection);
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.CreateKeyframes(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
             return false;
 		}
 
@@ -763,7 +758,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool CreateKeyframeStartDragTriggerPrefix(ref EventTrigger.Entry __result, EventTriggerType __0, int __1, int __2)
         {
-			__result = TriggerHelper.CreateKeyframeStartDragTrigger(ObjectEditor.inst.CurrentSelection, RTEditor.inst.timelineKeyframes.Find(x => x.Type == __1 && x.Index == __2));
+			__result = TriggerHelper.CreateKeyframeStartDragTrigger(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), RTEditor.inst.timelineKeyframes.Find(x => x.Type == __1 && x.Index == __2));
 			return false;
         }
 
@@ -771,7 +766,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool CreateKeyframeEndDragTriggerPrefix(ref EventTrigger.Entry __result, EventTriggerType __0, int __1, int __2)
         {
-			__result = TriggerHelper.CreateKeyframeEndDragTrigger(ObjectEditor.inst.CurrentSelection, RTEditor.inst.timelineKeyframes.Find(x => x.Type == __1 && x.Index == __2));
+			__result = TriggerHelper.CreateKeyframeEndDragTrigger(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), RTEditor.inst.timelineKeyframes.Find(x => x.Type == __1 && x.Index == __2));
 			return false;
         }
 
@@ -787,20 +782,12 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool CopyObjectPrefix()
 		{
-			var a = new List<BaseBeatmapObject>();
+			var a = new List<TimelineObject>();
 			foreach (var prefab in ObjectEditor.inst.SelectedBeatmapObjects)
-				a.Add(prefab.Data);
+				a.Add(prefab);
 
 			a = (from x in a
-				 orderby x.StartTime
-				 select x).ToList();
-
-			var b = new List<BasePrefabObject>();
-			foreach (var prefab in ObjectEditor.inst.SelectedPrefabObjects)
-				b.Add(prefab.Data);
-
-			b = (from x in b
-				 orderby x.StartTime
+				 orderby x.Time
 				 select x).ToList();
 
 			float start = 0f;
@@ -809,12 +796,12 @@ namespace EditorManagement.Patchers
 			//	start = -AudioManager.inst.CurrentAudioSource.time + e[0].StartTime();
 			//}
 
-			Instance.beatmapObjCopy = new BasePrefab("copied prefab", 0, start, a, b);
+			var copy = new Prefab("copied prefab", 0, start, a.Select(x => x.GetData<BeatmapObject>()).ToList(), a.Select(x => x.GetData<PrefabObject>()).ToList());
+
+			Instance.beatmapObjCopy = copy;
 			Instance.hasCopiedObject = true;
 
-			JSONNode jsonnode = DataManager.inst.GeneratePrefabJSON(Instance.beatmapObjCopy);
-
-			RTFile.WriteToFile(Application.persistentDataPath + "/copied_objects.lsp", jsonnode.ToString());
+			RTFile.WriteToFile(Application.persistentDataPath + "/copied_objects.lsp", copy.ToJSON().ToString());
 			return false;
 		}
 
@@ -829,8 +816,9 @@ namespace EditorManagement.Patchers
 		[HarmonyPatch("AddEvent")]
 		[HarmonyPrefix]
 		static bool AddEventPrefix(ref int __result, float __0, int __1, BaseEventKeyframe __2)
-        {
-			__result = ObjectEditor.inst.AddEvent(__0, __1, (EventKeyframe)__2);
+		{
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				__result = ObjectEditor.inst.AddEvent(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1, (EventKeyframe)__2);
 			return false;
         }
 
@@ -838,18 +826,16 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool ToggleLockCurrentSelectionPrefix()
 		{
-			foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjects)
+			foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
             {
-				timelineObject.Data.editorData.locked = !timelineObject.Data.editorData.locked;
-				ObjectEditor.RenderTimelineObject(timelineObject);
+				if (timelineObject.IsBeatmapObject)
+					timelineObject.GetData<BeatmapObject>().editorData.locked = !timelineObject.GetData<BeatmapObject>().editorData.locked;
+				if (timelineObject.IsPrefabObject)
+					timelineObject.GetData<PrefabObject>().editorData.locked = !timelineObject.GetData<PrefabObject>().editorData.locked;
+
+				ObjectEditor.inst.RenderTimelineObject(timelineObject);
             }
 			
-			foreach (var timelineObject in ObjectEditor.inst.SelectedPrefabObjects)
-            {
-				timelineObject.Data.editorData.locked = !timelineObject.Data.editorData.locked;
-				ObjectEditor.RenderTimelineObject(timelineObject);
-            }
-
 			return false;
 		}
 
@@ -857,7 +843,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool UpdateKeyframeOrderPrefix(bool _setCurrent = true)
 		{
-			ObjectEditor.inst.UpdateKeyframeOrder(ObjectEditor.inst.CurrentSelection, _setCurrent);
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.UpdateKeyframeOrder(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), _setCurrent);
 			return false;
 		}
 
@@ -889,7 +876,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool RefreshKeyframeGUIPrefix()
         {
-			ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentBeatmapObjectSelection.Data));
+			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+				ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
 			return false;
         }
 

@@ -48,9 +48,9 @@ namespace EditorManagement.Functions.Editors
 
 		#region Variables
 
-		public List<TimelineObject<EventKeyframe>> SelectedKeyframes => RTEditor.inst.timelineKeyframes.FindAll(x => x.selected);
+		public List<TimelineObject> SelectedKeyframes => RTEditor.inst.timelineKeyframes.FindAll(x => x.selected);
 
-		public List<TimelineObject<EventKeyframe>> copiedEventKeyframes = new List<TimelineObject<EventKeyframe>>();
+		public List<TimelineObject> copiedEventKeyframes = new List<TimelineObject>();
 
 		public static List<List<BaseEventKeyframe>> AllEvents => DataManager.inst.gameData.eventObjects.allEvents;
 
@@ -194,7 +194,7 @@ namespace EditorManagement.Functions.Editors
 				int index = keyframeSelection2.Index;
 				var eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[type][index]);
 				eventKeyframe.eventTime -= num;
-				copiedEventKeyframes.Add(new TimelineObject<EventKeyframe>(eventKeyframe));
+				copiedEventKeyframes.Add(new TimelineObject(eventKeyframe));
 			}
 		}
 
@@ -207,7 +207,7 @@ namespace EditorManagement.Functions.Editors
 			}
 			foreach (var keyframeSelection in copiedEventKeyframes)
 			{
-				var eventKeyframe = EventKeyframe.DeepCopy(keyframeSelection.Data);
+				var eventKeyframe = EventKeyframe.DeepCopy(keyframeSelection.GetData<EventKeyframe>());
 				//Debug.LogFormat($"Create Keyframe at {eventKeyframe.eventTime} - {eventKeyframe.eventValues[0]}");
 				eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos + eventKeyframe.eventTime;
 				if (SettingEditor.inst.SnapActive)
@@ -227,8 +227,9 @@ namespace EditorManagement.Functions.Editors
 
 		public void DeselectAllKeyframes()
         {
-			foreach (var timelineObject in SelectedKeyframes)
-				timelineObject.selected = false;
+			if (SelectedKeyframes.Count > 0)
+				foreach (var timelineObject in SelectedKeyframes)
+					timelineObject.selected = false;
         }
 		public void CreateNewEventObject(int _kind = 0)
 		{
@@ -352,7 +353,7 @@ namespace EditorManagement.Functions.Editors
 
 					var image = gameObject.transform.GetChild(0).GetComponent<Image>();
 
-					var kf = new TimelineObject<EventKeyframe>((EventKeyframe)eventKeyframe);
+					var kf = new TimelineObject((EventKeyframe)eventKeyframe);
 					kf.Type = type;
 					kf.Index = index;
 					kf.GameObject = gameObject;
@@ -1502,7 +1503,7 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-		void RenderLayerBins()
+		public void RenderLayerBins()
         {
 			var eventLabels = EventEditor.inst.EventLabels;
 
