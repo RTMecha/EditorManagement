@@ -1028,6 +1028,7 @@ namespace EditorManagement.Functions.Editors
         public void AddSelectedObject(TimelineObject timelineObject)
         {
             timelineObject.selected = true;
+            CurrentSelection = timelineObject;
 
             if (SelectedObjectCount > 1)
             {
@@ -1053,6 +1054,7 @@ namespace EditorManagement.Functions.Editors
             DeselectAllObjects();
 
             timelineObject.selected = true;
+            CurrentSelection = timelineObject;
 
             if (!string.IsNullOrEmpty(timelineObject.ID) && openDialog)
             {
@@ -1174,8 +1176,13 @@ namespace EditorManagement.Functions.Editors
         {
             GameObject gameObject = null;
 
-            if (!string.IsNullOrEmpty(timelineObject.ID) && (timelineObject.IsBeatmapObject || timelineObject.IsPrefabObject))
+            if (!string.IsNullOrEmpty(timelineObject.ID))
             {
+                if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
+                    RTEditor.inst.timelineObjects.Add(timelineObject);
+                else
+                    timelineObject = RTEditor.inst.timelineObjects.Find(x => x.ID == timelineObject.ID);
+
                 if (!timelineObject.GameObject)
                     gameObject = CreateTimelineObject(timelineObject);
                 else
@@ -1195,9 +1202,6 @@ namespace EditorManagement.Functions.Editors
                     var image = gameObject.GetComponent<Image>();
 
                     var color = ObjEditor.inst.NormalColor;
-
-                    if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
-                        RTEditor.inst.timelineObjects.Add(timelineObject);
 
                     if (timelineObject.IsBeatmapObject)
                     {
@@ -1300,7 +1304,7 @@ namespace EditorManagement.Functions.Editors
 
         public void RenderTimelineObjects()
         {
-            foreach (var timelineObject in RTEditor.inst.timelineObjects)
+            foreach (var timelineObject in RTEditor.inst.timelineObjects.FindAll(x => !x.IsEventKeyframe))
                 RenderTimelineObject(timelineObject);
         }
 
@@ -1308,10 +1312,14 @@ namespace EditorManagement.Functions.Editors
         {
             GameObject gameObject = null;
 
-            if (!string.IsNullOrEmpty(timelineObject.ID) && (timelineObject.IsBeatmapObject || timelineObject.IsPrefabObject))
+            if (!string.IsNullOrEmpty(timelineObject.ID))
             {
                 if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
                     RTEditor.inst.timelineObjects.Add(timelineObject);
+                else
+                    timelineObject = RTEditor.inst.timelineObjects.Find(x => x.ID == timelineObject.ID);
+
+                Debug.Log($"{EditorPlugin.className}Creating TimelineObject: {timelineObject.ID}\nHas GameObject: {timelineObject.GameObject}");
 
                 DestroyImmediate(timelineObject.GameObject);
 

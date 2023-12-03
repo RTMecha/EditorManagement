@@ -1165,7 +1165,7 @@ namespace EditorManagement.Functions.Editors
 
                 jn["id"] = id;
                 if (ActionType >= 0 && ActionType < KeybinderMethods.Count)
-                    jn["name"] = KeybinderMethods[ActionType].ToString();
+                    jn["name"] = KeybinderMethods[ActionType].Method.Name;
                 else
                     jn["name"] = "Invalid method";
 
@@ -1190,6 +1190,7 @@ namespace EditorManagement.Functions.Editors
                 Input.GetKeyDown(x.KeyCode) && x.InteractType == Key.Type.Down ||
                 Input.GetKeyUp(x.KeyCode) && x.InteractType == Key.Type.Up) && !inst.isPressingKey)
                 {
+                    Debug.Log($"{EditorPlugin.className}Pressed!");
                     inst.isPressingKey = true;
                     Action?.Invoke(this);
                 }
