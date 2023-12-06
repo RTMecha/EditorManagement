@@ -100,7 +100,7 @@ namespace EditorManagement.Functions.Editors
 			"???",
 		};
 
-		public static Dictionary<string, Color> EventTiles => new Dictionary<string, Color>()
+		public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
         {
 			{ "- Move Editor -", new Color(0.3372549f, 0.2941177f, 0.4156863f, 1f) }, // 1
 			{ "- Zoom Editor -", new Color(0.254902f, 0.2705882f, 0.372549f, 1f) }, // 2
@@ -129,8 +129,8 @@ namespace EditorManagement.Functions.Editors
 			{ "- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
 			{ "- Follow Player Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
 			{ "- Audio Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
-			{ "- ??? Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
-			{ "- ??? Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			{ "- ??? 1 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
+			{ "- ??? 2 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
         };
 
 		public static List<Color> EventLayerColors => new List<Color>
@@ -321,15 +321,6 @@ namespace EditorManagement.Functions.Editors
 		public void CreateEventObjects()
         {
 			var eventEditor = EventEditor.inst;
-			//if (eventEditor.eventObjects.Count > 0)
-			//{
-			//	foreach (var eventObject in eventEditor.eventObjects)
-			//	{
-			//		foreach (var @object in eventObject)
-			//			Destroy(@object);
-			//		eventObject.Clear();
-			//	}
-			//}
 
 			foreach (var kf in RTEditor.inst.timelineKeyframes)
 			{
@@ -1497,9 +1488,9 @@ namespace EditorManagement.Functions.Editors
 			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
 			{
 				var title = EventEditor.inst.dialogRight.GetChild(i).GetChild(0);
-				title.GetChild(0).GetComponent<Image>().color = EventTiles.ElementAt(i).Value;
+				title.GetChild(0).GetComponent<Image>().color = EventTitles.ElementAt(i).Value;
 				title.GetChild(0).GetComponent<RectTransform>().sizeDelta = new Vector2(17f, 0f);
-				title.GetChild(1).GetComponent<Text>().text = EventTiles.ElementAt(i).Key;
+				title.GetChild(1).GetComponent<Text>().text = EventTitles.ElementAt(i).Key;
 			}
 		}
 

@@ -6,10 +6,18 @@ using System.Threading.Tasks;
 
 using UnityEngine;
 
+using RTFunctions.Functions;
+
 namespace EditorManagement.Functions.Helpers
 {
     public static class TooltipHelper
 	{
+		// Will need to use this instead of setting tooltips in random places, just so it's easier to access.
+		public static Dictionary<string, HoverTooltip.Tooltip> Tooltips => new Dictionary<string, HoverTooltip.Tooltip>
+		{
+			{ "EN - ", NewTooltip("", "") },
+		};
+
 		public static void AddTooltip(GameObject gameObject, string desc, string hint, List<string> keys = null, DataManager.Language language = DataManager.Language.english, bool clear = false)
 		{
 			var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
@@ -51,5 +59,12 @@ namespace EditorManagement.Functions.Helpers
 			_tooltip.language = _language;
 		}
 
+		public static HoverTooltip.Tooltip DeepCopy(HoverTooltip.Tooltip tooltip) => new HoverTooltip.Tooltip
+		{
+			desc = tooltip.desc,
+			hint = tooltip.hint,
+			keys = tooltip.keys.Clone(),
+			language = tooltip.language
+		};
 	}
 }

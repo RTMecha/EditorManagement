@@ -395,11 +395,13 @@ namespace EditorManagement.Functions.Helpers
 					// Used for dragging from a singular keyframe's time.
 					foreach (var timelineObject in RTEditor.inst.timelineBeatmapObjectKeyframes)
                     {
-						ObjEditor.inst.selectedKeyframeOffsets.Clear();
+						//ObjEditor.inst.selectedKeyframeOffsets.Clear();
 						if (timelineObject.Type == type && timelineObject.Index == index)
-							ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
+							//ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
+							timelineObject.timeOffset = 0f;
 						else
-							ObjEditor.inst.selectedKeyframeOffsets.Add(beatmapObject.events[timelineObject.Type][timelineObject.Index].eventTime - beatmapObject.events[type][index].eventTime);
+							//ObjEditor.inst.selectedKeyframeOffsets.Add(beatmapObject.events[timelineObject.Type][timelineObject.Index].eventTime - beatmapObject.events[type][index].eventTime);
+							timelineObject.timeOffset = beatmapObject.events[timelineObject.Type][timelineObject.Index].eventTime - beatmapObject.events[type][index].eventTime;
 					}
 
 					ObjEditor.inst.mouseOffsetXForKeyframeDrag = beatmapObject.events[type][index].eventTime - ObjEditorPatch.timeCalc();
@@ -647,18 +649,21 @@ namespace EditorManagement.Functions.Helpers
 			{
 				if (timelineObject.Index != 0)
 				{
-					var list = ObjEditor.inst.keyframeSelections;
+					var list = ObjectEditor.inst.SelectedBeatmapObjectKeyframes;
 					if (list.FindIndex(x => x.Type == timelineObject.Type && x.Index == timelineObject.Index) != -1)
 					{
-						ObjEditor.inst.selectedKeyframeOffsets.Clear();
+						//ObjEditor.inst.selectedKeyframeOffsets.Clear();
 
 						foreach (var otherTLO in ObjectEditor.inst.SelectedBeatmapObjectKeyframes)
                         {
 							if (otherTLO.Type == ObjEditor.inst.currentKeyframeKind && otherTLO.Index == ObjEditor.inst.currentKeyframe)
-								ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
+								//ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
+								otherTLO.timeOffset = 0f;
 							else
-								ObjEditor.inst.selectedKeyframeOffsets.Add(otherTLO.Time - timelineObject.Time);
-                        }
+								//ObjEditor.inst.selectedKeyframeOffsets.Add(otherTLO.Time - timelineObject.Time);
+								otherTLO.timeOffset = otherTLO.Time - timelineObject.Time;
+
+						}
 					}
 					ObjEditor.inst.mouseOffsetXForKeyframeDrag = timelineObject.Time - ObjEditorPatch.timeCalc();
 					ObjEditor.inst.timelineKeyframesDrag = true;
