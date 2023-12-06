@@ -23,6 +23,10 @@ namespace EditorManagement
     {
         // TO DO BEFORE RELEASE
         // Replace "settings" with a duplicate of the other dropdowns and put the "Level Settings" as one of the tabs.
+		// Redo keyframe system because it's really annoying to deal with internal "type" and "index" stuff. Instead gotta make a wrapped list...
+		// And probably redo the keyframe creation, rendering and dragging system.
+		// Add Copy Keyframe Data button.
+		// Redo every Hovertooltip.
 
         public static EditorPlugin inst;
         public static string className = $"[<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>] {PluginInfo.PLUGIN_VERSION}\n";
@@ -61,15 +65,8 @@ namespace EditorManagement
             {
 				Logger.LogError("Mod Error" + ex.ToString());
             }
-			
-            try
-			{
-				SetPreviewConfig();
-			}
-			catch (Exception ex)
-            {
-				Logger.LogError($"SharedFunctions Error{ex}");
-            }
+
+			SetPreviewConfig();
 
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
@@ -79,48 +76,57 @@ namespace EditorManagement
 
         void UpdateEditorManagementConfigs(object sender, SettingChangedEventArgs e)
 		{
-			try
-			{
-				SetPreviewConfig();
-			}
-			catch (Exception ex)
-			{
-				Logger.LogError($"SharedFunctions Error{ex}");
+			SetPreviewConfig();
+			if (EditorManager.inst)
+            {
+				ObjEditor.inst.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
 			}
 		}
 
 		public static void SetPreviewConfig()
 		{
-			if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
-				ModCompatibility.sharedFunctions.Add("HighlightColor", RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value);
-			else
-				ModCompatibility.sharedFunctions["HighlightColor"] = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
-			if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
-				ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value);
-			else
-				ModCompatibility.sharedFunctions["HighlightDoubleColor"] = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
-			if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
-				ModCompatibility.sharedFunctions.Add("CanHightlightObjects", RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value);
-			else
-				ModCompatibility.sharedFunctions["CanHightlightObjects"] = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
+			try
+			{
+				if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
+					ModCompatibility.sharedFunctions.Add("HighlightColor", RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value);
+				else
+					ModCompatibility.sharedFunctions["HighlightColor"] = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
+				if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
+					ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value);
+				else
+					ModCompatibility.sharedFunctions["HighlightDoubleColor"] = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
+				if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
+					ModCompatibility.sharedFunctions.Add("CanHightlightObjects", RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value);
+				else
+					ModCompatibility.sharedFunctions["CanHightlightObjects"] = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
 
-			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
-				ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value);
-			else
-				ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
-			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
-				ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value);
-			else
-				ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
-			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowEmpties"))
-				ModCompatibility.sharedFunctions.Add("ShowEmpties", RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value);
-			else
-				ModCompatibility.sharedFunctions["ShowEmpties"] = RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value;
-			if (!ModCompatibility.sharedFunctions.ContainsKey("ShowDamagable"))
-				ModCompatibility.sharedFunctions.Add("ShowDamagable", RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value);
-			else
-				ModCompatibility.sharedFunctions["ShowDamagable"] = RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value;
+				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
+					ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value);
+				else
+					ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
+				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
+					ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value);
+				else
+					ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
+				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowEmpties"))
+					ModCompatibility.sharedFunctions.Add("ShowEmpties", RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value);
+				else
+					ModCompatibility.sharedFunctions["ShowEmpties"] = RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value;
+				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowDamagable"))
+					ModCompatibility.sharedFunctions.Add("ShowDamagable", RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value);
+				else
+					ModCompatibility.sharedFunctions["ShowDamagable"] = RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value;
+			}
+			catch (Exception ex)
+			{
+				inst.Logger.LogError($"SharedFunctions Error{ex}");
+			}
 		}
+
+		public static void SetTimelineColors()
+        {
+
+        }
 
 		public static void ListObjectLayers()
 		{

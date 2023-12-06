@@ -1256,7 +1256,7 @@ namespace EditorManagement.Functions.Editors
             LayersImage.color = GetLayerColor(layer);
 
             layersIF.onValueChanged.RemoveAllListeners();
-            layersIF.text = layer.ToString();
+            layersIF.text = (layer + 1).ToString();
             layersIF.onValueChanged.AddListener(delegate (string _value)
             {
                 if (int.TryParse(_value, out int num))

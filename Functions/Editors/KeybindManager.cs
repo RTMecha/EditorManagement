@@ -60,6 +60,8 @@ namespace EditorManagement.Functions.Editors
 
             if (!RTFile.FileExists(FilePath))
                 FirstInit();
+            else
+                Load();
         }
 
         void Update()
