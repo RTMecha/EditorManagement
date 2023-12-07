@@ -2120,7 +2120,7 @@ namespace EditorManagement.Functions.Editors
             Debug.LogFormat("{0}Loading audio for {1}...", EditorPlugin.className, _levelName);
             if (RTFile.FileExists(_levelName + "/level.ogg"))
             {
-                yield return inst.StartCoroutine(FileManager.inst.LoadMusicFile(withoutFullPath + "/level.ogg", delegate (AudioClip _song)
+                yield return StartCoroutine(FileManager.inst.LoadMusicFile(withoutFullPath + "/level.ogg", delegate (AudioClip _song)
                 {
                     _song.name = withoutList;
                     if (_song)
@@ -2131,7 +2131,7 @@ namespace EditorManagement.Functions.Editors
             }
             else if (RTFile.FileExists(_levelName + "/level.wav"))
             {
-                yield return inst.StartCoroutine(FileManager.inst.LoadMusicFile(withoutFullPath + "/level.wav", delegate (AudioClip _song)
+                yield return StartCoroutine(FileManager.inst.LoadMusicFile(withoutFullPath + "/level.wav", delegate (AudioClip _song)
                 {
                     _song.name = withoutList;
                     if (_song)
@@ -2149,7 +2149,9 @@ namespace EditorManagement.Functions.Editors
                 dataManager.ParseMetadata(rawMetadataJSON, true);
                 rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
                 dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
-                inst.StartCoroutine(Parser.ParseBeatmap(rawJSON, true));
+                //StartCoroutine(Parser.ParseBeatmap(rawJSON, true));
+
+                GameData.Parse(JSON.Parse(rawJSON));
 
                 if (dataManager.metaData.beatmap.workshop_id == -1)
                     dataManager.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
@@ -2208,7 +2210,6 @@ namespace EditorManagement.Functions.Editors
             AccessTools.Method(typeof(EditorManager), "UpdateTimelineSizes").Invoke(EditorManager.inst, new object[] { });
             gameManager.UpdateTimeline();
             __instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-            CheckpointEditor.inst.SetCurrentCheckpoint(0);
             MetadataEditor.inst.Render();
             if (layerType == LayerType.Events)
                 CheckpointEditor.inst.CreateCheckpoints();
@@ -2217,7 +2218,6 @@ namespace EditorManagement.Functions.Editors
 
             fileInfo.text = "Updating states for [" + withoutList + "]";
             DiscordController.inst.OnStateChange("Editing: " + DataManager.inst.metaData.song.title);
-            objEditor.CreateTimelineObjects();
             objectManager.updateObjects();
             EventEditor.inst.CreateEventObjects();
             BackgroundManager.inst.UpdateBackgrounds();
@@ -2226,9 +2226,13 @@ namespace EditorManagement.Functions.Editors
             EventManager.inst.updateEvents();
 
             fileInfo.text = "Setting first object of [" + withoutList + "]";
-            ObjectEditor.inst.CreateTimelineObjects();
+            //ObjectEditor.inst.CreateTimelineObjects();
             ObjectEditor.inst.RenderTimelineObjects();
-            ObjectEditor.inst.SetCurrentObject(TimelineBeatmapObjects[0]);
+            ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
+            //if (timelineObjects[0].IsBeatmapObject)
+            //    ObjectEditor.inst.OpenDialog(timelineObjects[0].GetData<BeatmapObject>());
+
+            CheckpointEditor.inst.SetCurrentCheckpoint(0);
 
             fileInfo.text = "Done!";
             __instance.HideDialog("File Info Popup");
@@ -2236,38 +2240,25 @@ namespace EditorManagement.Functions.Editors
 
             gameManager.ResetCheckpoints(true);
             gameManager.gameState = GameManager.State.Playing;
+
             __instance.DisplayNotification(withoutList + " Level Loaded", 2f, EditorManager.NotificationType.Success, false);
             __instance.UpdatePlayButton();
             __instance.hasLoadedLevel = true;
 
             if (!RTFile.DirectoryExists(GameManager.inst.basePath + "/autosaves"))
-            {
                 Directory.CreateDirectory(GameManager.inst.basePath + "/autosaves");
-            }
 
-            // Change this to instead add the files to EditorManager.inst.autosaves
+            string[] files = Directory.GetFiles(GameManager.inst.basePath + "/autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
+            files.ToList().Sort();
+
+            __instance.autosaves.Clear();
+
+            foreach (var file in files)
             {
-                string[] files = Directory.GetFiles(GameManager.inst.basePath + "/autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
-                files.ToList().Sort();
-                //int num = 0;
-                //foreach (string text2 in files)
-                //{
-                //	if (num != files.Count() - 1)
-                //	{
-                //		File.Delete(text2);
-                //	}
-                //	num++;
-                //}
-
-                __instance.autosaves.Clear();
-
-                foreach (var file in files)
-                {
-                    __instance.autosaves.Add(file);
-                }
-
-                SetAutosave();
+                __instance.autosaves.Add(file);
             }
+
+            SetAutosave();
 
 
             TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
@@ -2589,7 +2580,7 @@ namespace EditorManagement.Functions.Editors
                     backgroundObject.reactiveScale = UnityEngine.Random.Range(0.01f, 0.04f);
                 }
 
-                backgroundObject.shape = Objects.Shapes3D[UnityEngine.Random.Range(0, 23)];
+                backgroundObject.shape = ShapeManager.Shapes3D[UnityEngine.Random.Range(0, 23)];
 
                 gameData.backgroundObjects.Add(backgroundObject);
             }
