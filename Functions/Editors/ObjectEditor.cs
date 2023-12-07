@@ -322,11 +322,12 @@ namespace EditorManagement.Functions.Editors
 
         public void PasteKeyframes(BeatmapObject beatmapObject)
         {
-            if (ObjEditor.inst.copiedObjectKeyframes.Keys.Count <= 0)
+            if (copiedObjectKeyframes.Count <= 0)
             {
-                Debug.LogError($"{EditorPlugin.className}No copied event yet!");
+                Debug.LogError($"{ObjEditor.inst.className}No copied event yet!");
                 return;
             }
+
             foreach (var timelineObject in copiedObjectKeyframes)
             {
                 var eventKeyframe = EventKeyframe.DeepCopy(timelineObject.GetData<EventKeyframe>());
@@ -340,8 +341,8 @@ namespace EditorManagement.Functions.Editors
             }
 
             UpdateKeyframeOrder(beatmapObject);
-            CreateKeyframes(beatmapObject);
             ResizeKeyframeTimeline(beatmapObject);
+            RenderKeyframes(beatmapObject);
 
             RenderTimelineObject(new TimelineObject(beatmapObject));
 
@@ -1044,7 +1045,7 @@ namespace EditorManagement.Functions.Editors
                     .Overlaps(RTMath.RectTransformToScreenSpace(timelineObject.Image.rectTransform)))
                 {
                     yield return new WaitForSeconds(delay);
-                    SetCurrentKeyframe(CurrentSelection.GetData<BeatmapObject>(), timelineObject.Type, timelineObject.Index, false, !first || _add);
+                    SetCurrentKeyframe(CurrentSelection.GetData<BeatmapObject>(), timelineObject.Type, timelineObject.Index, false, first && !_add);
                     first = true;
                     delay += 0.0001f;
                 }
@@ -1215,7 +1216,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public int AddEvent(BeatmapObject beatmapObject, float _time, int _kind, EventKeyframe _keyframe)
+        public int AddEvent(BeatmapObject beatmapObject, float _time, int _kind, EventKeyframe _keyframe, bool openDialog)
         {
             var eventKeyframe = EventKeyframe.DeepCopy(_keyframe);
             eventKeyframe.eventTime = _time;
@@ -1223,7 +1224,8 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.events[_kind].Add(eventKeyframe);
 
             RenderTimelineObject(new TimelineObject(beatmapObject));
-            StartCoroutine(RefreshObjectGUI(beatmapObject));
+            if (openDialog)
+                RenderKeyframeDialog(beatmapObject);
             return beatmapObject.events[_kind].FindIndex(x => x.eventTime == _time);
         }
 
@@ -2743,14 +2745,16 @@ namespace EditorManagement.Functions.Editors
                     {
                         float timeTmp = ObjEditorPatch.timeCalc();
                         int index = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime <= timeTmp);
-                        AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index]);
+                        AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
                         UpdateKeyframeOrder(beatmapObject, true);
 
-                        CreateKeyframes(beatmapObject);
+                        RenderKeyframes(beatmapObject);
 
                         int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == timeTmp);
                         SetCurrentKeyframe(beatmapObject, tmpIndex, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
                         ResizeKeyframeTimeline(beatmapObject);
+
+                        RenderKeyframeDialog(beatmapObject);
 
                         // Keyframes affect both physical object and timeline object.
                         RenderTimelineObject(new TimelineObject(beatmapObject));
