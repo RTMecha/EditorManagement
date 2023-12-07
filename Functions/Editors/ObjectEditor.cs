@@ -262,6 +262,8 @@ namespace EditorManagement.Functions.Editors
 
             RenderKeyframes(beatmapObject);
 
+            ResizeKeyframeTimeline(beatmapObject);
+
             EditorManager.inst.DisplayNotification("Deleted Object Keyframes [ " + count + " ]", 1f, EditorManager.NotificationType.Success);
 
             RTEditor.inst.ienumRunning = false;
@@ -1042,10 +1044,10 @@ namespace EditorManagement.Functions.Editors
                     RTMath.RectTransformToScreenSpace(ObjEditor.inst.SelectionBoxImage.rectTransform)
                     .Overlaps(RTMath.RectTransformToScreenSpace(timelineObject.Image.rectTransform)))
                 {
-                    yield return new WaitForSeconds(delay);
-                    SetCurrentKeyframe(CurrentSelection.GetData<BeatmapObject>(), timelineObject.Type, timelineObject.Index, false, first && !_add);
+                    //yield return new WaitForSeconds(delay);
+                    SetCurrentKeyframe(CurrentSelection.GetData<BeatmapObject>(), timelineObject.Type, timelineObject.Index, false, first && !_add || _add);
                     first = true;
-                    delay += 0.0001f;
+                    //delay += 0.0001f;
                 }
             }
 
