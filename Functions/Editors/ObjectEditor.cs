@@ -233,14 +233,28 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
 
-            foreach (var timelineObject in SelectedBeatmapObjectKeyframes)
+            var strs = new List<string>();
+            var list = SelectedBeatmapObjectKeyframes;
+            foreach (var timelineObject in list)
             {
-                yield return new WaitForSeconds(delay);
+                //yield return new WaitForSeconds(delay);
 
-                DeleteKeyframe(beatmapObject, timelineObject.Type, timelineObject.Index, false);
+                //DeleteKeyframe(beatmapObject, timelineObject);
 
-                delay += 0.0001f;
+                strs.Add(timelineObject.GetData<EventKeyframe>().id);
+
+                //delay += 0.0001f;
             }
+
+            ClearKeyframes(beatmapObject);
+
+            for (int i = 0; i < beatmapObject.events.Count; i++)
+            {
+                beatmapObject.events[i].RemoveAll(x => strs.Contains(((EventKeyframe)x).id));
+            }
+
+            var ti = GetTimelineObject(beatmapObject);
+            ti.InternalSelections.Clear();
 
             SetCurrentKeyframe(beatmapObject, 0);
             RenderTimelineObject(new TimelineObject(beatmapObject));
@@ -255,35 +269,18 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public void DeleteKeyframe()
+        public void DeleteKeyframe(BeatmapObject beatmapObject, TimelineObject timelineObject)
         {
-            if (CurrentSelection.IsBeatmapObject)
-                DeleteKeyframe(CurrentSelection.GetData<BeatmapObject>(), ObjEditor.inst.currentKeyframeKind, ObjEditor.inst.currentKeyframe);
-        }
-
-        public void DeleteKeyframe(int _type, int _index)
-        {
-            if (CurrentSelection.IsBeatmapObject)
-                DeleteKeyframe(CurrentSelection.GetData<BeatmapObject>(), _type, _index);
-        }
-
-        public void DeleteKeyframe(BeatmapObject beatmapObject, int type, int index, bool render = true)
-        {
-            if (index != 0)
+            if (timelineObject.Index != 0)
             {
-                AddCurrentKeyframe(beatmapObject, -1, false);
-                beatmapObject.events[type].RemoveAt(index);
+                Debug.Log($"{ObjEditor.inst.className}Deleting keyframe: ({timelineObject.Type}, {timelineObject.Index})");
+                beatmapObject.events[timelineObject.Type].RemoveAt(timelineObject.Index);
 
-                var delkf = RTEditor.inst.timelineBeatmapObjectKeyframes.FindIndex(x => x.Type == type && x.Index == index);
-                Destroy(RTEditor.inst.timelineBeatmapObjectKeyframes[delkf].GameObject);
-                RTEditor.inst.timelineBeatmapObjectKeyframes.RemoveAt(delkf);
+                Destroy(timelineObject.GameObject);
 
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                CreateKeyframes(beatmapObject);
-                RenderKeyframes(beatmapObject);
-                ResizeKeyframeTimeline(beatmapObject);
                 return;
             }
             EditorManager.inst.DisplayNotification("Can't delete first Keyframe", 2f, EditorManager.NotificationType.Error, false);
@@ -1038,7 +1035,8 @@ namespace EditorManagement.Functions.Editors
             float delay = 0f;
 
             bool first = false;
-            foreach (var timelineObject in RTEditor.inst.timelineBeatmapObjectKeyframes)
+            var list = RTEditor.inst.timelineBeatmapObjectKeyframes;
+            foreach (var timelineObject in list)
             {
                 if (CurrentSelection.IsBeatmapObject &&
                     RTMath.RectTransformToScreenSpace(ObjEditor.inst.SelectionBoxImage.rectTransform)
@@ -2652,7 +2650,7 @@ namespace EditorManagement.Functions.Editors
                     deleteKey.interactable = ObjEditor.inst.currentKeyframe != 0;
                     deleteKey.onClick.AddListener(delegate ()
                     {
-                        DeleteKeyframe();
+                        StartCoroutine(DeleteKeyframes(beatmapObject));
                     });
                 }
             }
@@ -2744,10 +2742,12 @@ namespace EditorManagement.Functions.Editors
                     if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
                     {
                         float timeTmp = ObjEditorPatch.timeCalc();
+
                         int index = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime <= timeTmp);
                         AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
-                        UpdateKeyframeOrder(beatmapObject, true);
+                        UpdateKeyframeOrder(beatmapObject);
 
+                        CreateKeyframes(beatmapObject);
                         RenderKeyframes(beatmapObject);
 
                         int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == timeTmp);
@@ -3372,11 +3372,7 @@ namespace EditorManagement.Functions.Editors
 
         public void UpdateKeyframeOrder(BeatmapObject beatmapObject, bool _setCurrent = true)
         {
-            var list = new List<EventKeyframe>();
-            foreach (var timelineObject in SelectedBeatmapObjectKeyframes)
-            {
-                list.Add(timelineObject.GetData<EventKeyframe>());
-            }
+            ClearKeyframes(beatmapObject);
 
             for (int i = 0; i < 4; i++)
             {
@@ -3385,15 +3381,7 @@ namespace EditorManagement.Functions.Editors
                                             select x).ToList();
             }
 
-            int num = 0;
-            foreach (var item in list)
-            {
-                int index = beatmapObject.events[SelectedBeatmapObjectKeyframes[num].Type].IndexOf(item);
-                SelectedBeatmapObjectKeyframes[num].Index = index;
-                num++;
-            }
-            list.Clear();
-            list = null;
+            RenderKeyframes(beatmapObject);
         }
 
         public static string IntToAxis(int num)
