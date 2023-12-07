@@ -24,6 +24,7 @@ using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
 using RTFunctions.Patchers;
 
 using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
@@ -49,6 +50,28 @@ namespace EditorManagement.Patchers
 
 		#region Patches
 
+		[HarmonyPatch("SetMainTimelineZoom")]
+		[HarmonyPrefix]
+		static bool SetMainTimelineZoom(float __0, bool __1 = true, float __2 = 0f)
+		{
+			if (__1)
+			{
+				ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+				ObjectEditor.inst.RenderKeyframes(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+			}
+			if (AudioManager.inst.CurrentAudioSource.clip != null)
+			{
+				__2 = AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length;
+			}
+
+			Instance.StartCoroutine(Instance.UpdateTimelineScrollRect(0f, __2));
+			//Debug.LogFormat("{0}Set Timeline Zoom -> [{1}]", new object[]
+			//{
+			//	Instance.className,
+			//	Instance.Zoom
+			//});
+			return false;
+		}
 
 		[HarmonyPatch("SetCurrentObj")]
 		[HarmonyPrefix]
@@ -351,7 +374,7 @@ namespace EditorManagement.Patchers
 
 			// Position Z
 			{
-				var positionBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/position");
+				var positionBase = ObjEditor.inst.KeyframeDialogs[0].transform.Find("position").gameObject;
 
 				var posZ = Instantiate(positionBase.transform.Find("x"));
 				posZ.transform.SetParent(positionBase.transform);
@@ -472,8 +495,36 @@ namespace EditorManagement.Patchers
 				ldm.transform.Find("title").GetComponent<Text>().text = "LDM";
 			}
 
-			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/rotation").transform.GetChild(1).gameObject);
-			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color").transform.GetChild(1).gameObject);
+			// Relative / Copy / Paste
+			{
+				var button = GameObject.Find("TimelineBar/GameObject/event");
+				for (int i = 0; i < 4; i++)
+				{
+					var parent = ObjEditor.inst.KeyframeDialogs[i].transform;
+					if (i != 3)
+					{
+						var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
+						var toggleLabel = di.GetChild(12).gameObject.Duplicate(parent, "label");
+						toggleLabel.transform.GetChild(0).GetComponent<Text>().text = "Value Additive";
+						var toggle = di.GetChild(13).gameObject.Duplicate(parent, "relative");
+						toggle.transform.GetChild(1).GetComponent<Text>().text = "Relative";
+					}
+
+					var edit = parent.Find("edit");
+					DestroyImmediate(edit.Find("spacer").gameObject);
+
+					var copy = button.Duplicate(edit, "copy", 5);
+					copy.transform.GetChild(0).GetComponent<Text>().text = "Copy";
+					copy.transform.GetComponent<Image>().color = new Color(0.24f, 0.6792f, 1f);
+					((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
+					var paste = button.Duplicate(edit, "paste", 6);
+					paste.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+					((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
+				}
+			}
+
+			Destroy(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
+			Destroy(ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(1).gameObject);
 
 			ObjectEditor.Init(__instance);
 
@@ -677,6 +728,8 @@ namespace EditorManagement.Patchers
 
 						((RectTransform)timelineObject.GameObject.transform).anchoredPosition = new Vector2(timePosition, 0f);
 
+						Updater.UpdateProcessor(beatmapObject, "Keyframes");
+
 						//if (SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes)
 						//{
 						//	float st = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime;
@@ -734,7 +787,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool OpenDialogPrefix()
         {
-			ObjectEditor.inst.OpenDialog();
+			ObjectEditor.inst.OpenDialog(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 			return false;
         }
 
@@ -867,7 +920,7 @@ namespace EditorManagement.Patchers
 		static bool AddEventPrefix(ref int __result, float __0, int __1, BaseEventKeyframe __2)
 		{
 			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
-				__result = ObjectEditor.inst.AddEvent(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1, (EventKeyframe)__2);
+				__result = ObjectEditor.inst.AddEvent(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1, (EventKeyframe)__2, true);
 			return false;
         }
 
@@ -932,7 +985,7 @@ namespace EditorManagement.Patchers
 
         #endregion
 
-        public static float posCalc(float _time) => _time * 14f * Instance.Zoom + 5f;
+        public static float posCalc(float _time) => _time * 14f * Instance.zoomVal + 5f;
 
 		public static float timeCalc()
 		{
