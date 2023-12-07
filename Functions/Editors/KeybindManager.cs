@@ -312,10 +312,22 @@ namespace EditorManagement.Functions.Editors
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.D),
-            }, 48, new Dictionary<string, string>
+            }, 49, new Dictionary<string, string>
             {
                 { "Remove Prefab Instance ID", "False" }
             }));
+
+            // Delete (Backspace key)
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Backspace),
+            }, 50));
+            
+            // Delete (Delete key)
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Delete),
+            }, 50));
 
             // Custom Code
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
@@ -324,7 +336,7 @@ namespace EditorManagement.Functions.Editors
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.I),
             }, 0, new Dictionary<string, string>
             {
-                { "Code", "Debug.Log($\"{EditorManagement.Functions.Editors.KeybindManager.className} This is an example! You can use keybind to check any settings you may have.\");" }
+                { "Code", "Debug.Log($\"{EditorManagement.Functions.Editors.KeybindManager.className} This is an example! You can use the keybind variable to check any settings you may have.\");" }
             }));
 
             Save();
@@ -405,6 +417,7 @@ namespace EditorManagement.Functions.Editors
             Copy, // 47
             Paste, // 48
             Duplicate, // 49
+            Delete, // 50
         };
 
         public static void CustomCode(Keybind keybind)
