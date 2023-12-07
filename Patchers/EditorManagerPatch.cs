@@ -15,6 +15,7 @@ using UnityEngine.EventSystems;
 using LSFunctions;
 using SimpleJSON;
 using Crosstales.FB;
+using CielaSpike;
 
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Data;
@@ -301,16 +302,16 @@ namespace EditorManagement.Patchers
                             //    Instance.OpenBeatmapPopup();
                             //if (InputDataManager.inst.editorActions.SaveLevel.WasPressed)
                             //    Instance.SaveBeatmap();
-                            if (InputDataManager.inst.editorActions.Cut.WasPressed)
-                                Instance.Cut();
-                            if (InputDataManager.inst.editorActions.Copy.WasPressed)
-                                Instance.Copy();
-                            if (InputDataManager.inst.editorActions.Duplicate.WasPressed)
-                                Instance.Duplicate();
-                            if (InputDataManager.inst.editorActions.Paste.WasPressed)
-                                Instance.Paste();
-                            if (InputDataManager.inst.editorActions.Delete.WasPressed)
-                                Instance.Delete();
+                            //if (InputDataManager.inst.editorActions.Cut.WasPressed)
+                            //    Instance.Cut();
+                            //if (InputDataManager.inst.editorActions.Copy.WasPressed)
+                            //    Instance.Copy();
+                            //if (InputDataManager.inst.editorActions.Duplicate.WasPressed)
+                            //    Instance.Duplicate();
+                            //if (InputDataManager.inst.editorActions.Paste.WasPressed)
+                            //    Instance.Paste();
+                            //if (InputDataManager.inst.editorActions.Delete.WasPressed)
+                            //    Instance.Delete();
                         }
                     }
                     if (!Instance.firstOpened)
@@ -598,8 +599,8 @@ namespace EditorManagement.Patchers
                 if (InputDataManager.inst.editorActions.ZoomOut.WasPressed)
                     EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
             }
-            if (InputDataManager.inst.editorActions.ShowHelp.WasPressed)
-                EditorManager.inst.SetShowHelp(!EditorManager.inst.showHelp);
+            //if (InputDataManager.inst.editorActions.ShowHelp.WasPressed)
+            //    EditorManager.inst.SetShowHelp(!EditorManager.inst.showHelp);
 
             return false;
         }
@@ -782,9 +783,27 @@ namespace EditorManagement.Patchers
             if (RTFile.FileExists(RTFile.ApplicationDirectory + str + "/level.lsb"))
                 File.Copy(RTFile.ApplicationDirectory + str + "/level.lsb", RTFile.ApplicationDirectory + str + "/level-previous.lsb");
 
-            DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
-            __instance.StartCoroutine(DataManager.inst.SaveData(GameManager.inst.path));
+            DataManager.inst.SaveMetadata(GameManager.inst.basePath + "/metadata.lsb");
+            __instance.StartCoroutine(SaveData(GameManager.inst.path));
             return false;
+        }
+
+        public static IEnumerator SaveData(string _path)
+        {
+            if (EditorManager.inst != null)
+            {
+                EditorManager.inst.DisplayNotification("Saving Beatmap!", 1f, EditorManager.NotificationType.Warning);
+                EditorManager.inst.savingBeatmap = true;
+            }
+            Task task;
+            yield return DataManager.inst.StartCoroutineAsync(RTFunctions.Functions.ProjectData.Writer.SaveData(_path, (GameData)DataManager.inst.gameData), out task);
+            yield return new WaitForSeconds(0.5f);
+            if (EditorManager.inst != null)
+            {
+                EditorManager.inst.DisplayNotification("Saved Beatmap!", 2f, EditorManager.NotificationType.Success);
+                EditorManager.inst.savingBeatmap = false;
+            }
+            yield break;
         }
 
         [HarmonyPatch("SaveBeatmapAs", new Type[] { typeof(string) })]
