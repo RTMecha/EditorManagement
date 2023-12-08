@@ -91,7 +91,11 @@ namespace EditorManagement.Patchers
 		
 		[HarmonyPatch("RenderTimelineObjects")]
 		[HarmonyPrefix]
-		static bool RenderTimelineObjectsPrefix() => EditorPlugin.DontRun();
+		static bool RenderTimelineObjectsPrefix()
+        {
+			ObjectEditor.inst.RenderTimelineObjects();
+			return false;
+        }
 		
 		[HarmonyPatch("DeleteObject")]
 		[HarmonyPrefix]
@@ -885,7 +889,7 @@ namespace EditorManagement.Patchers
 		static bool CopyObjectPrefix()
 		{
 			var a = new List<TimelineObject>();
-			foreach (var prefab in ObjectEditor.inst.SelectedBeatmapObjects)
+			foreach (var prefab in ObjectEditor.inst.SelectedObjects)
 				a.Add(prefab);
 
 			a = (from x in a
@@ -898,7 +902,9 @@ namespace EditorManagement.Patchers
 			//	start = -AudioManager.inst.CurrentAudioSource.time + e[0].StartTime();
 			//}
 
-			var copy = new Prefab("copied prefab", 0, start, a.Select(x => x.GetData<BeatmapObject>()).ToList(), a.Select(x => x.GetData<PrefabObject>()).ToList());
+			var copy = new Prefab("copied prefab", 0, start,
+				a.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()).ToList(),
+				a.Where(x => x.IsPrefabObject).Select(x => x.GetData<PrefabObject>()).ToList());
 
 			Instance.beatmapObjCopy = copy;
 			Instance.hasCopiedObject = true;
