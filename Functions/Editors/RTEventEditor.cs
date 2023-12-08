@@ -177,6 +177,48 @@ namespace EditorManagement.Functions.Editors
 			SetupCopies();
 		}
 
+		#region Deleting
+
+		public string DeleteKeyframe(int _type, int _event)
+		{
+			if (_event != 0)
+			{
+				string result = string.Format("Event [{0}][{1}]", _type, _event);
+				DataManager.inst.gameData.eventObjects.allEvents[_type].RemoveAt(_event);
+				CreateEventObjects();
+				EventManager.inst.updateEvents();
+				SetCurrentEvent(_type, _type - 1);
+				return result;
+			}
+			EditorManager.inst.DisplayNotification("Can't delete first Keyframe", 2f, EditorManager.NotificationType.Error, false);
+			return "";
+		}
+
+		public IEnumerator DeleteKeyframes()
+		{
+			var strs = new List<string>();
+			var list = SelectedKeyframes;
+			foreach (var timelineObject in list)
+            {
+				strs.Add(timelineObject.ID);
+            }
+
+			ClearEventObjects();
+
+			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
+			for (int i = 0; i < allEvents.Count; i++)
+            {
+				allEvents[i].RemoveAll(x => strs.Contains(((EventKeyframe)x).id));
+			}
+
+			CreateEventObjects();
+			EventManager.inst.updateEvents();
+
+			yield break;
+		}
+
+		#endregion
+
 		#region Copy / Paste
 
 		public void CopyAllSelectedEvents()
@@ -216,16 +258,16 @@ namespace EditorManagement.Functions.Editors
 				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type].Add(eventKeyframe);
 			}
 
-			ReorderTime();
+			UpdateEventOrder();
 			CreateEventObjects();
 			EventManager.inst.updateEvents();
 		}
 
-		#endregion
+        #endregion
 
-		#region Selection
+        #region Selection
 
-		public void DeselectAllKeyframes()
+        public void DeselectAllKeyframes()
         {
 			if (SelectedKeyframes.Count > 0)
 				foreach (var timelineObject in SelectedKeyframes)
@@ -257,7 +299,7 @@ namespace EditorManagement.Functions.Editors
 
 			DataManager.inst.gameData.eventObjects.allEvents[__1].Add(eventKeyframe);
 
-			ReorderTime();
+			UpdateEventOrder();
 
 			EventManager.inst.updateEvents();
 			CreateEventObjects();
@@ -277,7 +319,7 @@ namespace EditorManagement.Functions.Editors
 
 			DataManager.inst.gameData.eventObjects.allEvents[_type].Add(eventKeyframe);
 
-			ReorderTime();
+			UpdateEventOrder();
 
 			EventManager.inst.updateEvents();
 			CreateEventObjects();
@@ -311,16 +353,31 @@ namespace EditorManagement.Functions.Editors
 			EventEditor.inst.currentEventType = type;
 			EventEditor.inst.currentEvent = index;
 			RenderEventObjects();
-			//OpenDialog();
+			OpenDialog();
 		}
 
 		#endregion
 
 		#region Timeline Objects
 
+		int lastLayer;
+
+		public void ClearEventObjects()
+		{
+			foreach (var kf in RTEditor.inst.timelineKeyframes)
+			{
+				kf.selected = false;
+				Destroy(kf.GameObject);
+			}
+
+			RTEditor.inst.timelineKeyframes.Clear();
+		}
+
 		public void CreateEventObjects()
         {
 			var eventEditor = EventEditor.inst;
+
+			var list = RTEditor.inst.timelineKeyframes.Clone();
 
 			foreach (var kf in RTEditor.inst.timelineKeyframes)
 			{
@@ -350,21 +407,8 @@ namespace EditorManagement.Functions.Editors
 					kf.GameObject = gameObject;
 					kf.Image = image;
 
-					if (kf && EditorManager.inst.currentDialog.Type == EditorManager.EditorDialog.DialogType.Event)
-						image.color = eventEditor.Selected;
-					else if (eventEditor.currentEvent == index && eventEditor.currentEventType == type && EditorManager.inst.currentDialog.Type == EditorManager.EditorDialog.DialogType.Event)
-						image.color = eventEditor.Selected;
-					else
-						image.color = eventEditor.EventColors[type % EventLimit];
-
-					//if (eventEditor.keyframeSelections.FindIndex(x => x.Type == type && x.Index == index) != -1 && EditorManager.inst.currentDialog.Type == EditorManager.EditorDialog.DialogType.Event)
-					//	image.color = eventEditor.Selected;
-					//else if (eventEditor.currentEvent == index && eventEditor.currentEventType == type && EditorManager.inst.currentDialog.Type == EditorManager.EditorDialog.DialogType.Event)
-					//	image.color = eventEditor.Selected;
-					//else
-					//	image.color = eventEditor.EventColors[type % EventLimit];
-
-					//eventEditor.eventObjects[type % EventLimit].Add(gameObject);
+					if (list.Has(x => x.Type == type && x.Index == index) && lastLayer == RTEditor.inst.Layer)
+						kf.selected = list.Find(x => x.Type == type && x.Index == index).selected;
 
 					var triggers = gameObject.GetComponent<EventTrigger>().triggers;
 
@@ -376,6 +420,11 @@ namespace EditorManagement.Functions.Editors
 					RTEditor.inst.timelineKeyframes.Add(kf);
 				}
 			}
+
+			list.Clear();
+			list = null;
+
+			lastLayer = RTEditor.inst.Layer;
 
 			RenderEventObjects();
 			EventManager.inst.updateEvents();
@@ -402,13 +451,6 @@ namespace EditorManagement.Functions.Editors
 						{
 							((RectTransform)kf.GameObject.transform).anchoredPosition = new Vector2(eventTime * EditorManager.inst.Zoom - baseUnit / 2, 0.0f);
 
-							var image = kf.Image;
-
-							if (kf.selected)
-								image.color = LSColors.white;
-							else
-								image.color = eventEditor.EventColors[type % EventLimit];
-
 							kf.GameObject.SetActive(true);
 						}
 						else
@@ -418,9 +460,28 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-        #endregion
+		#endregion
 
-        #region Generate UI
+		#region Generate UI
+
+		public void OpenDialog()
+		{
+			EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+			EditorManager.inst.SetDialogStatus("Event Editor", true, true);
+
+			if (EventEditor.inst.dialogRight.childCount > EventEditor.inst.currentEventType)
+			{
+				Debug.Log($"{EventEditor.inst.className}Dialog: {EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).name}");
+				LSHelpers.SetActiveChildren(EventEditor.inst.dialogRight, false);
+				EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).gameObject.SetActive(true);
+				RenderEventsDialog();
+				RenderEventObjects();
+			}
+			else
+            {
+				Debug.LogError($"{EventEditor.inst.className}Keyframe Type {EventEditor.inst.currentEventType} does not exist.");
+            }
+		}
 
 		void SetupCopies()
 		{
@@ -1272,7 +1333,7 @@ namespace EditorManagement.Functions.Editors
 
 				toggle.isOn = num == value;
 
-				toggle.image.color = num < 18 ? GameManager.inst.LiveTheme.objectColors[num] : defaultColor;
+				toggle.image.color = num < 18 ? RTHelpers.BeatmapTheme.effectColors[num] : defaultColor;
 
 				int tmpIndex = num;
 				toggle.onValueChanged.AddListener(delegate (bool val)
@@ -1454,32 +1515,25 @@ namespace EditorManagement.Functions.Editors
 
         #region Rendering
 
-        public void ReorderTime()
+		public void UpdateEventOrder()
         {
-			var dictionary = new Dictionary<string, BaseEventKeyframe>();
+			var strs = new List<string>();
+			foreach (var timelineObject in SelectedKeyframes)
+				strs.Add(timelineObject.ID);
 
-			int type = 0;
+			ClearEventObjects();
+
 			foreach (var list in DataManager.inst.gameData.eventObjects.allEvents)
             {
-				int index = 0;
-				foreach (var kf in list)
-                {
-					var str = $"{type}, {index}";
-					if (!dictionary.ContainsKey(str))
-						dictionary.Add(str, kf);
-                }
-
 				list.OrderBy(x => x.eventTime);
             }
 
-			foreach (var pair in dictionary)
-            {
-				var str = pair.Key.Replace(" ", "").Split(',');
-				int i = int.Parse(str[0]);
-				int j = int.Parse(str[1]);
+			CreateEventObjects();
 
-				if (RTEditor.inst.timelineKeyframes.Has(x => x.Type == i && x.Index == j))
-					RTEditor.inst.timelineKeyframes.Find(x => x.Type == i && x.Index == j).Index = DataManager.inst.gameData.eventObjects.allEvents[i].IndexOf(pair.Value);
+			foreach (var timelineObject in RTEditor.inst.timelineKeyframes)
+            {
+				if (strs.Contains(timelineObject.ID))
+					timelineObject.selected = true;
             }
         }
 
