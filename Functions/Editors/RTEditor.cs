@@ -128,13 +128,23 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            foreach (var timelineObject in timelineBeatmapObjectKeyframes.Union(timelineKeyframes))
+            foreach (var timelineObject in timelineBeatmapObjectKeyframes)
             {
                 if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
                 {
                     timelineObject.GameObject.SetActive(true);
 
                     timelineObject.Image.color = timelineObject.selected ? ObjEditor.inst.SelectedColor : ObjEditor.inst.NormalColor;
+                }
+            }
+
+            foreach (var timelineObject in timelineKeyframes)
+            {
+                if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
+                {
+                    timelineObject.GameObject.SetActive(true);
+
+                    timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
                 }
             }
         }
@@ -494,11 +504,11 @@ namespace EditorManagement.Functions.Editors
 
         public static bool GenerateWaveform => true;
 
-        public static WaveformType WaveformMode => WaveformType.Legacy;
-        public static Color WaveformBGColor => new Color(0f, 0f, 0f);
-        public static Color WaveformTopColor => new Color(0f, 0f, 0f);
-        public static Color WaveformBottomColor => new Color(0f, 0f, 0f);
-        public static TextureFormat WaveformFormat => TextureFormat.ARGB32;
+        public static WaveformType WaveformMode => GetEditorProperty("Waveform Mode").GetConfigEntry<WaveformType>().Value;
+        public static Color WaveformBGColor => GetEditorProperty("Waveform BG Color").GetConfigEntry<Color>().Value;
+        public static Color WaveformTopColor => GetEditorProperty("Waveform Top Color").GetConfigEntry<Color>().Value;
+        public static Color WaveformBottomColor => GetEditorProperty("Waveform Bottom Color").GetConfigEntry<Color>().Value;
+        public static TextureFormat WaveformFormat => GetEditorProperty("Waveform Texture Format").GetConfigEntry<TextureFormat>().Value;
 
         public IEnumerator AssignTimelineTexture()
         {
@@ -933,10 +943,7 @@ namespace EditorManagement.Functions.Editors
                     }
                     else
                     {
-                        foreach (ObjectKeyframeSelection keyframeSelection in ObjEditor.inst.copiedObjectKeyframes.Keys)
-                        {
-                            ObjEditor.inst.DeleteKeyframe(keyframeSelection.Type, keyframeSelection.Index);
-                        }
+                        StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
                         EditorManager.inst.DisplayNotification("Cut Object Keyframe", 1f, EditorManager.NotificationType.Success, false);
                     }
                 }
@@ -971,14 +978,7 @@ namespace EditorManagement.Functions.Editors
             }
             if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object)) || EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab))
             {
-                float offsetTime;
-                var offsetTimeBeatmap = ObjectEditor.inst.SelectedBeatmapObjects.Min(x => x.Time);
-                var offsetTimePrefab = ObjectEditor.inst.SelectedPrefabObjects.Min(x => x.Time);
-
-                if (offsetTimeBeatmap > offsetTimePrefab)
-                    offsetTime = offsetTimePrefab;
-                else
-                    offsetTime = offsetTimeBeatmap;
+                var offsetTime = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
 
                 ObjEditor.inst.CopyObject();
                 if (!_cut)
@@ -987,7 +987,7 @@ namespace EditorManagement.Functions.Editors
                 }
                 else
                 {
-                    ObjEditor.inst.DeleteObject(ObjEditor.inst.currentObjectSelection, true);
+                    StartCoroutine(ObjectEditor.inst.DeleteObjects());
                     EditorManager.inst.DisplayNotification("Cut Beatmap Object", 1f, EditorManager.NotificationType.Success, false);
                 }
                 if (_dup)
@@ -1057,7 +1057,7 @@ namespace EditorManagement.Functions.Editors
                 if (ObjEditor.inst.currentKeyframe != 0)
                 {
                     inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
-                    EditorManager.inst.DisplayNotification("Deleted Beatmap Object Keyframe.", 1f, EditorManager.NotificationType.Success);
+                    //EditorManager.inst.DisplayNotification("Deleted Beatmap Object Keyframe.", 1f, EditorManager.NotificationType.Success);
                 }
                 else
                     EditorManager.inst.DisplayNotification("Can't Delete First Keyframe.", 1f, EditorManager.NotificationType.Error);
@@ -1067,7 +1067,7 @@ namespace EditorManagement.Functions.Editors
             {
                 if (DataManager.inst.gameData.beatmapObjects.Count > 1)
                 {
-                    if (ObjectEditor.inst.SelectedObjectCount > 1)
+                    //if (ObjectEditor.inst.SelectedObjectCount > 1)
                     {
                         var list = new List<TimelineObject>();
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
@@ -1087,7 +1087,9 @@ namespace EditorManagement.Functions.Editors
 
                         startTime = startTimeList[0];
 
-                        var prefab = new Prefab("deleted objects", 0, startTime, list.Select(x => x.GetData<BeatmapObject>()).ToList(), list.Select(x => x.GetData<PrefabObject>()).ToList());
+                        var prefab = new Prefab("deleted objects", 0, startTime,
+                            list.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()).ToList(),
+                            list.Where(x => x.IsPrefabObject).Select(x => x.GetData<PrefabObject>()).ToList());
 
                         EditorManager.inst.history.Add(new History.Command("Delete Objects", delegate ()
                         {
@@ -1100,30 +1102,30 @@ namespace EditorManagement.Functions.Editors
 
                         StartCoroutine(ObjectEditor.inst.DeleteObjects());
                     }
-                    else
-                    {
-                        Debug.LogFormat("{0}Deleting single object...", EditorPlugin.className);
-                        float startTime = ObjectEditor.inst.CurrentSelection.Time;
+                    //else
+                    //{
+                    //    Debug.LogFormat("{0}Deleting single object...", EditorPlugin.className);
+                    //    float startTime = ObjectEditor.inst.CurrentSelection.Time;
 
-                        Debug.LogFormat("{0}Assigning prefab for undo...", EditorPlugin.className);
-                        var prefab = new Prefab("deleted object", 0, startTime, ObjectEditor.inst.SelectedObjects.Select(x => x.GetData<BeatmapObject>()).ToList(), ObjectEditor.inst.SelectedObjects.Select(x => x.GetData<PrefabObject>()).ToList());
+                    //    Debug.LogFormat("{0}Assigning prefab for undo...", EditorPlugin.className);
+                    //    var prefab = new Prefab("deleted object", 0, startTime, ObjectEditor.inst.SelectedObjects.Select(x => x.GetData<BeatmapObject>()).ToList(), ObjectEditor.inst.SelectedObjects.Select(x => x.GetData<PrefabObject>()).ToList());
 
-                        Debug.LogFormat("{0}Setting history...", EditorPlugin.className);
-                        EditorManager.inst.history.Add(new History.Command("Delete Object", delegate ()
-                        {
-                            Delete();
-                        }, delegate ()
-                        {
-                            ObjectEditor.inst.DeselectAllObjects();
-                            inst.StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true));
-                        }), false);
+                    //    Debug.LogFormat("{0}Setting history...", EditorPlugin.className);
+                    //    EditorManager.inst.history.Add(new History.Command("Delete Object", delegate ()
+                    //    {
+                    //        Delete();
+                    //    }, delegate ()
+                    //    {
+                    //        ObjectEditor.inst.DeselectAllObjects();
+                    //        inst.StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true));
+                    //    }), false);
 
-                        Debug.LogFormat("{0}Finally deleting object...", EditorPlugin.className);
-                        StartCoroutine(ObjectEditor.inst.DeleteObject(ObjectEditor.inst.CurrentSelection));
+                    //    Debug.LogFormat("{0}Finally deleting object...", EditorPlugin.className);
+                    //    StartCoroutine(ObjectEditor.inst.DeleteObject(ObjectEditor.inst.CurrentSelection));
 
-                        EditorManager.inst.DisplayNotification("Deleted Beatmap Object!", 1f, EditorManager.NotificationType.Success);
-                        Debug.LogFormat("{0}Done!", EditorPlugin.className);
-                    }
+                    //    EditorManager.inst.DisplayNotification("Deleted Beatmap Object!", 1f, EditorManager.NotificationType.Success);
+                    //    Debug.LogFormat("{0}Done!", EditorPlugin.className);
+                    //}
                 }
                 else
                     EditorManager.inst.DisplayNotification("Can't Delete Only Beatmap Object", 1f, EditorManager.NotificationType.Error);
@@ -1162,8 +1164,7 @@ namespace EditorManagement.Functions.Editors
                     //	PasteEventKeyframes(dictionary);
                     //}));
 
-                    inst.StartCoroutine(DeleteEvent(RTEventEditor.inst.SelectedKeyframes));
-                    EventEditor.inst.SetCurrentEvent(0, 0);
+                    StartCoroutine(RTEventEditor.inst.DeleteKeyframes());
                     EditorManager.inst.DisplayNotification("Deleted Event Keyframes.", 1f, EditorManager.NotificationType.Success);
                 }
                 else if (EventEditor.inst.currentEvent != 0)
@@ -1192,23 +1193,6 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.DisplayNotification("Can't Delete First Checkpoint.", 1f, EditorManager.NotificationType.Error);
                 return;
             }
-        }
-
-        public IEnumerator DeleteEvent(List<TimelineObject> kfs)
-        {
-            ienumRunning = true;
-
-            float delay = 0f;
-            foreach (var selection in kfs)
-            {
-                yield return new WaitForSeconds(delay);
-                DataManager.inst.gameData.eventObjects.allEvents[selection.Type].RemoveAt(selection.Index);
-                delay += 0.0001f;
-            }
-            EventEditor.inst.CreateEventObjects();
-            EventManager.inst.updateEvents();
-
-            ienumRunning = false;
         }
 
         #endregion
@@ -2074,7 +2058,7 @@ namespace EditorManagement.Functions.Editors
             string code = $"{_levelName}/EditorLoad.cs";
             if (RTFile.FileExists(code))
             {
-                yield return inst.StartCoroutine(RTCode.IEvaluate(RTFile.ReadFromFile(code)));
+                yield return StartCoroutine(RTCode.IEvaluate(RTFile.ReadFromFile(code)));
             }
 
             layerType = LayerType.Objects;
@@ -2104,8 +2088,8 @@ namespace EditorManagement.Functions.Editors
             fileInfo.text = "Loading Level Data for [" + withoutList + "]";
 
             Debug.LogFormat("{0}Loading {1}...", EditorPlugin.className, _levelName);
-            rawJSON = FileManager.inst.LoadJSONFile(_levelName + "/level.lsb");
-            rawMetadataJSON = FileManager.inst.LoadJSONFile(_levelName + "/metadata.lsb");
+            rawJSON = FileManager.inst.LoadJSONFileRaw(_levelName + "/level.lsb");
+            rawMetadataJSON = FileManager.inst.LoadJSONFileRaw(_levelName + "/metadata.lsb");
 
             if (string.IsNullOrEmpty(rawMetadataJSON))
             {
@@ -2146,12 +2130,13 @@ namespace EditorManagement.Functions.Editors
             fileInfo.text = "Parsing Level Data for [" + withoutList + "]";
             if (!string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
             {
-                dataManager.ParseMetadata(rawMetadataJSON, true);
-                rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
-                dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
+                dataManager.ParseMetadata(rawMetadataJSON);
+                if (DataManager.inst.metaData.beatmap.game_version != "4.1.16")
+                    rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
+                //dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
                 //StartCoroutine(Parser.ParseBeatmap(rawJSON, true));
 
-                GameData.Parse(JSON.Parse(rawJSON));
+                dataManager.gameData = GameData.Parse(JSON.Parse(rawJSON));
 
                 if (dataManager.metaData.beatmap.workshop_id == -1)
                     dataManager.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
@@ -3233,6 +3218,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Waveform Top Color", LSColors.red300, "If waveform mode is Legacy, this will be the top color. Otherwise, it will be the regular color.")),
             new EditorProperty(EditorProperty.ValueType.Color,
                 Config.Bind("Timeline", "Waveform Bottom Color", LSColors.blue300, "If waveform is Legacy, this will be the bottom color. Otherwise, it will be unused.")),
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Timeline", "Waveform Texture Format", TextureFormat.ARGB32, "What format the waveform's texture should render under.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Timeline", "Marker Loop Active", false, "If the marker should loop between markers.")),
             new EditorProperty(EditorProperty.ValueType.Int,
