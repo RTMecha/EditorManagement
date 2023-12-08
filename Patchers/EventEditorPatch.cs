@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -19,6 +20,7 @@ using EditorManagement.Functions.Helpers;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Patchers;
 
@@ -65,6 +67,21 @@ namespace EditorManagement.Patchers
 				img.enabled = i < (EventsCore ? 14 : 10);
 				Instance.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>().enabled = i < (EventsCore ? 14 : 10);
 			}
+
+			var beatmapTheme = __instance.previewTheme;
+			__instance.previewTheme = new BeatmapTheme
+			{
+				id = beatmapTheme.id,
+				name = beatmapTheme.name,
+				expanded = beatmapTheme.expanded,
+				backgroundColor = beatmapTheme.backgroundColor,
+				guiAccentColor = beatmapTheme.guiColor,
+				guiColor = beatmapTheme.guiColor,
+				playerColors = beatmapTheme.playerColors,
+				objectColors = beatmapTheme.objectColors,
+				backgroundColors = beatmapTheme.backgroundColors,
+				effectColors = beatmapTheme.objectColors,
+			};
 
 			return false;
         }
@@ -115,26 +132,21 @@ namespace EditorManagement.Patchers
 
 			if (Instance.eventDrag)
 			{
-				foreach (var keyframeSelection in Instance.keyframeSelections)
-				{
-					if (keyframeSelection.Index != 0)
-					{
-						float num = EditorManager.inst.GetTimelineTime() + Instance.selectedKeyframeOffsets[Instance.keyframeSelections.IndexOf(keyframeSelection)] + Instance.mouseOffsetXForDrag;
+				foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+                {
+					if (timelineObject.Index != 0)
+                    {
+						float num = EditorManager.inst.GetTimelineTime() + timelineObject.timeOffset + Instance.mouseOffsetXForDrag;
 						num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 						if (SettingEditor.inst.SnapActive)
-						{
-							num = RTMath.RoundToNearestDecimal(EditorManager.inst.SnapToBPM(num), 3);
-						}
-						DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type][keyframeSelection.Index].eventTime = num;
+							num = EditorManager.inst.SnapToBPM(num);
+						DataManager.inst.gameData.eventObjects.allEvents[timelineObject.Type][timelineObject.Index].eventTime = num;
 					}
-				}
+                }
 
 				if (preNumber != EditorManager.inst.GetTimelineTime())
 				{
-					Instance.RenderEventsDialog();
-					Instance.UpdateEventOrder();
 					Instance.RenderEventObjects();
-					//EventManager.inst.updateEvents();
 					preNumber = EditorManager.inst.GetTimelineTime();
 				}
 			}
@@ -260,5 +272,37 @@ namespace EditorManagement.Patchers
 			ThemeEditorManager.inst.RenderThemeEditor(__0);
 			return false;
 		}
+
+		[HarmonyPatch("RenderEventsDialog")]
+		[HarmonyPrefix]
+		static bool RenderEventsDialogPrefix()
+        {
+			RTEventEditor.inst.RenderEventsDialog();
+			return false;
+        }
+
+		[HarmonyPatch("UpdateEventOrder")]
+        [HarmonyPrefix]
+        static bool UpdateEventOrderPrefix()
+        {
+			RTEventEditor.inst.UpdateEventOrder();
+			return false;
+        }
+
+		[HarmonyPatch("DeleteEvent", new Type[] { typeof(int), typeof(int) })]
+        [HarmonyPrefix]
+        static bool DeleteEventPrefix(int __0, int __1)
+        {
+			RTEventEditor.inst.DeleteKeyframe(__0, __1);
+			return false;
+        }
+
+		[HarmonyPatch("DeleteEvent", new Type[] { typeof(List<EventKeyframeSelection>) })]
+        [HarmonyPrefix]
+        static bool DeleteEventPrefix(ref IEnumerator __result)
+        {
+			__result = RTEventEditor.inst.DeleteKeyframes();
+			return false;
+        }
 	}
 }
