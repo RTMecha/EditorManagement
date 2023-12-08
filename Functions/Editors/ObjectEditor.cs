@@ -227,8 +227,6 @@ namespace EditorManagement.Functions.Editors
         {
             RTEditor.inst.ienumRunning = true;
 
-            float delay = 0f;
-
             int count = SelectedBeatmapObjectKeyframes.Count;
 
             EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
@@ -237,13 +235,7 @@ namespace EditorManagement.Functions.Editors
             var list = SelectedBeatmapObjectKeyframes;
             foreach (var timelineObject in list)
             {
-                //yield return new WaitForSeconds(delay);
-
-                //DeleteKeyframe(beatmapObject, timelineObject);
-
                 strs.Add(timelineObject.GetData<EventKeyframe>().id);
-
-                //delay += 0.0001f;
             }
 
             ClearKeyframes(beatmapObject);
@@ -361,13 +353,10 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.DisplayNotification("Pasting objects, please wait.", 1f, EditorManager.NotificationType.Success);
 
             BasePrefab pr = null;
-            Dictionary<string, Dictionary<string, object>> modifiers = null;
 
             if (RTFile.FileExists(Application.persistentDataPath + "/copied_objects.lsp"))
             {
-                JSONNode jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp"));
-
-                pr = Prefab.Parse(jn);
+                pr = Prefab.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp")));
 
                 ObjEditor.inst.hasCopiedObject = true;
             }
@@ -375,7 +364,7 @@ namespace EditorManagement.Functions.Editors
             if (pr == null)
                 inst.StartCoroutine(AddPrefabExpandedToLevel(ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
             else
-                inst.StartCoroutine(AddPrefabExpandedToLevel(pr, true, _offsetTime, false, _regen, modifiers));
+                inst.StartCoroutine(AddPrefabExpandedToLevel(pr, true, _offsetTime, false, _regen));
         }
 
         #endregion
@@ -392,7 +381,7 @@ namespace EditorManagement.Functions.Editors
         /// <param name="regen"></param>
         /// <param name="dictionary"></param>
         /// <returns></returns>
-        public IEnumerator AddPrefabExpandedToLevel(BasePrefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false, Dictionary<string, Dictionary<string, object>> dictionary = null)
+        public IEnumerator AddPrefabExpandedToLevel(BasePrefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false)
         {
             RTEditor.inst.ienumRunning = true;
             float delay = 0f;
@@ -424,9 +413,9 @@ namespace EditorManagement.Functions.Editors
                         beatmapObjectCopy.parent = "";
 
                     beatmapObjectCopy.prefabID = beatmapObject.prefabID;
-                    if (regen)
+                    if (regen) // < Probably need to add another setting to have this separate an object from being a prefab or generate a new one
                     {
-                        //beatmapObject2.prefabInstanceID = dictionary2[orig.prefabInstanceID];
+                        //beatmapObjectCopy.prefabInstanceID = dictionary2[orig.prefabInstanceID];
                         beatmapObjectCopy.prefabID = "";
                         beatmapObjectCopy.prefabInstanceID = "";
                     }
@@ -435,32 +424,39 @@ namespace EditorManagement.Functions.Editors
                         beatmapObjectCopy.prefabInstanceID = beatmapObject.prefabInstanceID;
                     }
 
-                    beatmapObjectCopy.fromPrefab = beatmapObject.fromPrefab;
-                    if (undone == false)
+                    beatmapObjectCopy.fromPrefab = false;
+
                     {
-                        if (offset == 0.0)
-                        {
-                            beatmapObjectCopy.StartTime += audioTime;
-                            beatmapObjectCopy.StartTime += prefab.Offset;
-                        }
-                        else
-                        {
-                            beatmapObjectCopy.StartTime += offset;
-                            ++beatmapObjectCopy.editorData.Bin;
-                        }
+                        beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
+                        if (offset != 0.0)
+                            ++beatmapObjectCopy.editorData.Bin; // Investigate why this is here.
                     }
-                    else
-                    {
-                        if (offset == 0.0)
-                        {
-                            beatmapObjectCopy.StartTime += prefab.Offset;
-                        }
-                        else
-                        {
-                            beatmapObjectCopy.StartTime += offset;
-                            ++beatmapObjectCopy.editorData.Bin;
-                        }
-                    }
+
+                    //if (undone == false)
+                    //{
+                    //    if (offset == 0.0)
+                    //    {
+                    //        beatmapObjectCopy.StartTime += audioTime;
+                    //        beatmapObjectCopy.StartTime += prefab.Offset;
+                    //    }
+                    //    else
+                    //    {
+                    //        beatmapObjectCopy.StartTime += offset;
+                    //        ++beatmapObjectCopy.editorData.Bin;
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    if (offset == 0.0)
+                    //    {
+                    //        beatmapObjectCopy.StartTime += prefab.Offset;
+                    //    }
+                    //    else
+                    //    {
+                    //        beatmapObjectCopy.StartTime += offset;
+                    //        ++beatmapObjectCopy.editorData.Bin;
+                    //    }
+                    //}
 
                     beatmapObjectCopy.editorData.Layer = RTEditor.inst.Layer;
                     beatmapObjectCopy.fromPrefab = false;
@@ -471,18 +467,6 @@ namespace EditorManagement.Functions.Editors
 
                     if (select)
                         AddSelectedObject(timelineObject);
-
-                    // Rework the instances.
-                    //if (ObjectModifiersEditor.inst != null)
-                    //{
-                    //    ObjectModifiersEditor.AddModifierObject(beatmapObject2);
-                    //}
-
-                    //if (GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin") && _dictionary != null)
-                    //{
-                    //    var objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
-                    //    objectModifiersPlugin.GetMethod("AddModifierObjectWithValues").Invoke(objectModifiersPlugin, new object[] { beatmapObject2, _dictionary[orig.id] });
-                    //}
 
                     delay += 0.0001f;
                 }
@@ -503,31 +487,37 @@ namespace EditorManagement.Functions.Editors
                         prefabObjectCopy.ID = prefabInstanceIDs[prefabObject.ID];
                     prefabObjectCopy.prefabID = prefabObject.prefabID;
 
-                    if (undone == false)
                     {
-                        if (offset == 0.0)
-                        {
-                            prefabObjectCopy.StartTime += audioTime;
-                            prefabObjectCopy.StartTime += prefab.Offset;
-                        }
-                        else
-                        {
-                            prefabObjectCopy.StartTime += offset;
-                            ++prefabObjectCopy.editorData.Bin;
-                        }
+                        prefabObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
+                        if (offset != 0.0)
+                            ++prefabObjectCopy.editorData.Bin; // Investigate why this is here.
                     }
-                    else
-                    {
-                        if (offset == 0.0)
-                        {
-                            prefabObjectCopy.StartTime += prefab.Offset;
-                        }
-                        else
-                        {
-                            prefabObjectCopy.StartTime += offset;
-                            ++prefabObjectCopy.editorData.Bin;
-                        }
-                    }
+
+                    //if (undone == false)
+                    //{
+                    //    if (offset == 0.0)
+                    //    {
+                    //        prefabObjectCopy.StartTime += audioTime;
+                    //        prefabObjectCopy.StartTime += prefab.Offset;
+                    //    }
+                    //    else
+                    //    {
+                    //        prefabObjectCopy.StartTime += offset;
+                    //        ++prefabObjectCopy.editorData.Bin;
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    if (offset == 0.0)
+                    //    {
+                    //        prefabObjectCopy.StartTime += prefab.Offset;
+                    //    }
+                    //    else
+                    //    {
+                    //        prefabObjectCopy.StartTime += offset;
+                    //        ++prefabObjectCopy.editorData.Bin;
+                    //    }
+                    //}
 
                     prefabObjectCopy.editorData.Layer = RTEditor.inst.Layer;
 
@@ -535,7 +525,7 @@ namespace EditorManagement.Functions.Editors
 
                     var timelineObject = new TimelineObject(prefabObjectCopy);
 
-                    CreateTimelineObject(timelineObject);
+                    //CreateTimelineObject(timelineObject);
                     RenderTimelineObject(timelineObject);
 
                     ObjectManager.inst.AddPrefabToLevel(prefabObjectCopy);
@@ -991,7 +981,7 @@ namespace EditorManagement.Functions.Editors
         {
             RTEditor.inst.ienumRunning = true;
             EditorManager.inst.DisplayNotification("Selecting objects, please wait.", 1f, EditorManager.NotificationType.Success);
-            float delay = 0f;
+            //float delay = 0f;
             var objEditor = ObjEditor.inst;
 
             if (!_add)
@@ -1006,18 +996,11 @@ namespace EditorManagement.Functions.Editors
             {
                 if (RTMath.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(RTMath.RectTransformToScreenSpace(timelineObject.Image.rectTransform)))
                 {
-                    yield return new WaitForSeconds(delay);
+                    //yield return new WaitForSeconds(delay);
                     AddSelectedObject(timelineObject);
-                    delay += 0.0001f;
+                    //delay += 0.0001f;
                 }
             }
-
-            //if (objEditor.selectedObjects.Count > 0)
-            //{
-            //    objEditor.selectedObjects = (from x in objEditor.selectedObjects
-            //                                 orderby x.Index ascending
-            //                                 select x).ToList();
-            //}
 
             if (SelectedObjectCount > 1)
                 EditorManager.inst.ShowDialog("Multi Object Editor", false);
@@ -1025,7 +1008,7 @@ namespace EditorManagement.Functions.Editors
             if (SelectedObjectCount <= 0)
                 CheckpointEditor.inst.SetCurrentCheckpoint(0);
 
-            EditorManager.inst.DisplayNotification("Selection includes " + objEditor.selectedObjects.Count + " objects!", 1f, EditorManager.NotificationType.Success);
+            EditorManager.inst.DisplayNotification($"Selection includes {SelectedObjectCount} objects!", 1f, EditorManager.NotificationType.Success);
             RTEditor.inst.ienumRunning = false;
             yield break;
         }
@@ -1033,8 +1016,6 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator GroupSelectKeyframes(bool _add = true)
         {
             RTEditor.inst.ienumRunning = true;
-
-            float delay = 0f;
 
             bool first = false;
             var list = RTEditor.inst.timelineBeatmapObjectKeyframes;
@@ -1044,10 +1025,8 @@ namespace EditorManagement.Functions.Editors
                     RTMath.RectTransformToScreenSpace(ObjEditor.inst.SelectionBoxImage.rectTransform)
                     .Overlaps(RTMath.RectTransformToScreenSpace(timelineObject.Image.rectTransform)))
                 {
-                    //yield return new WaitForSeconds(delay);
                     SetCurrentKeyframe(CurrentSelection.GetData<BeatmapObject>(), timelineObject.Type, timelineObject.Index, false, first && !_add || _add);
                     first = true;
-                    //delay += 0.0001f;
                 }
             }
 
