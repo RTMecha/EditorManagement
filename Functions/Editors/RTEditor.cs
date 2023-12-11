@@ -65,9 +65,11 @@ namespace EditorManagement.Functions.Editors
             SetupCreateObjects();
             SetupDropdowns();
             SetupDoggo();
+            SetupPaths();
             CreateObjectSearch();
             CreateWarningPopup();
             CreateREPLEditor();
+            CreateMultiObjectEditor();
 
             if (!RTFile.FileExists(EditorSettingsPath))
                 CreatePaths();
@@ -76,14 +78,14 @@ namespace EditorManagement.Functions.Editors
 
             // Player Editor
             {
-                GameObject gameObject = new GameObject("PlayerEditorManager");
+                var gameObject = new GameObject("PlayerEditorManager");
                 gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
                 gameObject.AddComponent<CreativePlayersEditor>();
             }
 
             // Object Modifiers Editor
             {
-                GameObject gameObject = new GameObject("ObjectModifiersEditor");
+                var gameObject = new GameObject("ObjectModifiersEditor");
                 gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
                 gameObject.AddComponent<ObjectModifiersEditor>();
             }
@@ -195,10 +197,10 @@ namespace EditorManagement.Functions.Editors
 
         public GameObject timelineBar;
 
-        public static InputField pitchIF;
-        public static InputField timeIF;
+        public InputField pitchIF;
+        public InputField timeIF;
 
-        public static GameObject defaultIF;
+        public GameObject defaultIF;
 
         public string objectSearchTerm;
 
@@ -214,6 +216,11 @@ namespace EditorManagement.Functions.Editors
         public Image doggoImage;
 
         public Text timelineTime;
+
+        public Image timelineSliderHandle;
+        public Image timelineSliderRuler;
+        public Image keyframeTimelineSliderHandle;
+        public Image keyframeTimelineSliderRuler;
 
         #endregion
 
@@ -1698,9 +1705,8 @@ namespace EditorManagement.Functions.Editors
 
         public void SetupPaths()
         {
-            var sortList = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown"));
-            sortList.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
-            sortList.transform.localScale = Vector3.one;
+            var sortList = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
+                .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
             var sortListRT = sortList.GetComponent<RectTransform>();
             sortListRT.anchoredPosition = GetEditorProperty("Open Level Dropdown Position").GetConfigEntry<Vector2>().Value;
@@ -1716,7 +1722,7 @@ namespace EditorManagement.Functions.Editors
                     "<br><b>Date Edited</b> Sort by date edited / created.";
             }
 
-            Dropdown sortListDD = sortList.GetComponent<Dropdown>();
+            var sortListDD = sortList.GetComponent<Dropdown>();
             Destroy(sortList.GetComponent<HideDropdownOptions>());
             sortListDD.options.Clear();
             sortListDD.onValueChanged.RemoveAllListeners();
@@ -1738,9 +1744,8 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.RenderOpenBeatmapPopup();
             });
 
-            var checkDes = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle"));
-            checkDes.transform.SetParent(EditorManager.inst.GetDialog("Open File Popup").Dialog);
-            checkDes.transform.localScale = Vector3.one;
+            var checkDes = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle")
+                .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
             var checkDesRT = checkDes.GetComponent<RectTransform>();
             checkDesRT.anchoredPosition = GetEditorProperty("Open Level Toggle Position").GetConfigEntry<Vector2>().Value;
@@ -1750,8 +1755,8 @@ namespace EditorManagement.Functions.Editors
             titleRT.sizeDelta = new Vector2(110f, 32f);
 
             var toggle = checkDes.transform.Find("toggle").GetComponent<Toggle>();
-            toggle.GetComponent<Toggle>().isOn = true;
-            toggle.GetComponent<Toggle>().onValueChanged.AddListener(delegate (bool _value)
+            toggle.isOn = true;
+            toggle.onValueChanged.AddListener(delegate (bool _value)
             {
                 levelAscend = _value;
                 EditorManager.inst.RenderOpenBeatmapPopup();
@@ -1759,22 +1764,227 @@ namespace EditorManagement.Functions.Editors
 
             if (toggle.gameObject)
                 TooltipHelper.AddTooltip(toggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
+
+            CreatePaths();
+            LoadPaths();
+
+            // EditorPath
+            {
+                var editorPathGO = GameObject.Find("TimelineBar/GameObject/Time Input")
+                    .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "editor path");
+                ((RectTransform)editorPathGO.transform).anchoredPosition = GetEditorProperty("Open Level Editor Path Pos").GetConfigEntry<Vector2>().Value;
+                ((RectTransform)editorPathGO.transform).sizeDelta = new Vector2(GetEditorProperty("Open Level Editor Path Length").GetConfigEntry<float>().Value, 34f);
+
+                var levelListTip = editorPathGO.GetComponent<HoverTooltip>();
+                if (!levelListTip)
+                    levelListTip = editorPathGO.AddComponent<HoverTooltip>();
+
+                var llTip = new HoverTooltip.Tooltip();
+
+                llTip.desc = "Level list path";
+                llTip.hint = "Input the path you want to load levels from within the beatmaps folder. For example: inputting \"editor\" into the input field will load levels from beatmaps/editor. You can also set it to sub-directories, like: \"editor/pa levels\" will take levels from \"beatmaps/editor/pa levels\".";
+
+                levelListTip.tooltipLangauges.Add(llTip);
+
+                var editorPathIF = editorPathGO.GetComponent<InputField>();
+                editorPathIF.characterValidation = InputField.CharacterValidation.None;
+                editorPathIF.text = EditorPath;
+
+                editorPathIF.onValueChanged.RemoveAllListeners();
+                editorPathIF.onValueChanged.AddListener(delegate (string _val)
+                {
+                    EditorPath = _val;
+                    SavePaths();
+                });
+
+                var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
+                    .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "reload");
+                ((RectTransform)levelListReloader.transform).anchoredPosition = GetEditorProperty("Open Level List Refresh Position").GetConfigEntry<Vector2>().Value;
+                ((RectTransform)levelListReloader.transform).sizeDelta = new Vector2(32f, 32f);
+
+                var levelListRTip = levelListReloader.AddComponent<HoverTooltip>();
+                var llRTip = new HoverTooltip.Tooltip();
+
+                llRTip.desc = "Refresh level list";
+                llRTip.hint = "Clicking this will reload the level list.";
+
+                levelListRTip.tooltipLangauges.Add(llRTip);
+
+                var levelListRButton = levelListReloader.GetComponent<Button>();
+                levelListRButton.onClick.ClearAll();
+                levelListRButton.onClick.AddListener(delegate ()
+                {
+                    EditorManager.inst.GetLevelList();
+                });
+
+                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+                if (RTFile.FileExists(jpgFileLocation))
+                {
+                    var spriteReloader = levelListReloader.GetComponent<Image>();
+
+                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+                    {
+                        spriteReloader.sprite = cover;
+                    }, delegate (string errorFile)
+                    {
+                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+                    }));
+                }
+            }
+
+            //ThemePath
+            {
+                var themePathSpacer = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme").GetChild(2).gameObject
+                    .Duplicate(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme"), "themepathers", 8);
+
+                var themePathGO = timeIF.gameObject.Duplicate(themePathSpacer.transform, "themes path");
+                ((RectTransform)themePathGO.transform).anchoredPosition = new Vector2(150f, 0f);
+                ((RectTransform)themePathGO.transform).sizeDelta = new Vector2(300f, 34f);
+
+                var themePathTip = themePathGO.AddComponent<HoverTooltip>();
+                var llTip = new HoverTooltip.Tooltip();
+
+                llTip.desc = "Theme list path";
+                llTip.hint = "Input the path you want to load themes from within the beatmaps folder. For example: inputting \"themes\" into the input field will load themes from beatmaps/themes. You can also set it to sub-directories, like: \"themes/pa colors\" will take levels from \"beatmaps/themes/pa colors\".";
+
+                themePathTip.tooltipLangauges.Add(llTip);
+
+                var themePathIF = themePathGO.GetComponent<InputField>();
+                themePathIF.characterValidation = InputField.CharacterValidation.None;
+                themePathIF.text = ThemePath;
+
+                themePathIF.onValueChanged.RemoveAllListeners();
+                themePathIF.onValueChanged.AddListener(delegate (string _val)
+                {
+                    ThemePath = _val;
+                    SavePaths();
+                });
+
+                var themePathReloader = GameObject.Find("TimelineBar/GameObject/play").Duplicate(themePathSpacer.transform, "reload themes");
+                ((RectTransform)themePathReloader.transform).anchoredPosition = new Vector2(310f, 35f);
+                ((RectTransform)themePathReloader.transform).sizeDelta = new Vector2(32f, 32f);
+
+                var levelListRTip = themePathReloader.AddComponent<HoverTooltip>();
+                var llRTip = new HoverTooltip.Tooltip();
+
+                llRTip.desc = "Refresh theme list";
+                llRTip.hint = "Clicking this will reload the theme list.";
+
+                levelListRTip.tooltipLangauges.Add(llRTip);
+
+                var levelListRButton = themePathReloader.GetComponent<Button>();
+                levelListRButton.onClick.ClearAll();
+                levelListRButton.onClick.AddListener(delegate ()
+                {
+                    StartCoroutine(LoadThemes());
+                    EventEditor.inst.RenderEventsDialog();
+                });
+
+                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+                if (RTFile.FileExists(jpgFileLocation))
+                {
+                    var spriteReloader = themePathReloader.GetComponent<Image>();
+
+                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+                    {
+                        spriteReloader.sprite = cover;
+                    }, delegate (string errorFile)
+                    {
+                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+                    }));
+                }
+            }
+
+            //PrefabPath
+            {
+                var prefabPathGO = timeIF.gameObject.Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "prefabs path");
+
+                ((RectTransform)prefabPathGO.transform).anchoredPosition = GetEditorProperty("Prefab External Prefab Path Pos").GetConfigEntry<Vector2>().Value;
+                ((RectTransform)prefabPathGO.transform).sizeDelta = new Vector2(GetEditorProperty("Prefab External Prefab Path Length").GetConfigEntry<float>().Value, 34f);
+
+                var levelListTip = prefabPathGO.AddComponent<HoverTooltip>();
+                var llTip = new HoverTooltip.Tooltip();
+
+                llTip.desc = "Prefab list path";
+                llTip.hint = "Input the path you want to load prefabs from within the beatmaps folder. For example: inputting \"prefabs\" into the input field will load levels from beatmaps/prefabs. You can also set it to sub-directories, like: \"prefabs/pa characters\" will take levels from \"beatmaps/prefabs/pa characters\".";
+
+                levelListTip.tooltipLangauges.Add(llTip);
+
+                InputField levelListIF = prefabPathGO.GetComponent<InputField>();
+                levelListIF.characterValidation = InputField.CharacterValidation.None;
+                levelListIF.text = PrefabPath;
+
+                levelListIF.onValueChanged.RemoveAllListeners();
+                levelListIF.onValueChanged.AddListener(delegate (string _val)
+                {
+                    PrefabPath = _val;
+                    SavePaths();
+                });
+
+                var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
+                    .Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "reload prefabs");
+                ((RectTransform)levelListReloader.transform).anchoredPosition = GetEditorProperty("Prefab External Prefab Refresh Pos").GetConfigEntry<Vector2>().Value;
+                ((RectTransform)levelListReloader.transform).sizeDelta = new Vector2(32f, 32f);
+
+                var levelListRTip = levelListReloader.AddComponent<HoverTooltip>();
+                var llRTip = new HoverTooltip.Tooltip();
+
+                llRTip.desc = "Refresh prefab list";
+                llRTip.hint = "Clicking this will reload the prefab list.";
+
+                levelListRTip.tooltipLangauges.Add(llRTip);
+
+                var levelListRButton = levelListReloader.GetComponent<Button>();
+                levelListRButton.onClick.ClearAll();
+                levelListRButton.onClick.AddListener(delegate ()
+                {
+                    StartCoroutine(UpdatePrefabs());
+                });
+
+                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+                if (RTFile.FileExists(jpgFileLocation))
+                {
+                    var spriteReloader = levelListReloader.GetComponent<Image>();
+
+                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+                    {
+                        spriteReloader.sprite = cover;
+                    }, delegate (string errorFile)
+                    {
+                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+                    }));
+                }
+            }
+
+            if (!ModCompatibility.sharedFunctions.ContainsKey("EditorOnLoadLevel"))
+            {
+                Action action = delegate () { };
+
+                ModCompatibility.sharedFunctions.Add("EditorOnLoadLevel", action);
+            }
+            else
+            {
+                Action action = delegate () { };
+
+                ModCompatibility.sharedFunctions["EditorOnLoadLevel"] = action;
+            }
         }
 
         public void CreateObjectSearch()
         {
-            var objectSearch = Instantiate(EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject);
-            objectSearch.transform.SetParent(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent());
-            objectSearch.transform.localScale = Vector3.one;
+            var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Object Search");
             objectSearch.transform.localPosition = Vector3.zero;
-            objectSearch.name = "Object Search";
 
-            var objectSearchRT = objectSearch.GetComponent<RectTransform>();
+            var objectSearchRT = (RectTransform)objectSearch.transform;
             objectSearchRT.sizeDelta = new Vector2(600f, 450f);
-            var objectSearchPanel = objectSearch.transform.Find("Panel").GetComponent<RectTransform>();
+            var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
             objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
             objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Object Search";
-            objectSearch.transform.Find("search-box").GetComponent<RectTransform>().sizeDelta = new Vector2(600f, 32f);
+            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
             objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
 
             var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
@@ -1797,12 +2007,11 @@ namespace EditorManagement.Functions.Editors
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
 
             // Turn this into a separate method
-            var propWin = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut"));
-            propWin.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform);
-            propWin.transform.localScale = Vector3.one;
-            propWin.name = "Search Objects";
+            var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut")
+                .Duplicate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform, "Search Objects");
+
             propWin.transform.Find("Text").GetComponent<Text>().text = "Search Objects";
-            propWin.transform.Find("Text").GetComponent<RectTransform>().sizeDelta = new Vector2(224f, 0f);
+            ((RectTransform)propWin.transform.Find("Text")).sizeDelta = new Vector2(224f, 0f);
             propWin.transform.Find("Text 1").GetComponent<Text>().text = "";
 
             var propWinButton = propWin.GetComponent<Button>();
@@ -1820,19 +2029,25 @@ namespace EditorManagement.Functions.Editors
 
             propWin.transform.Find("Image").GetComponent<Image>().sprite = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite;
 
+            //EditorHelper.AddEditorDropdown("Search Objects", "", "Edit", GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite, delegate ()
+            //{
+            //    EditorManager.inst.ShowDialog("Object Search Popup");
+            //    RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+            //    {
+            //        ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
+            //    });
+            //});
+
             EditorHelper.AddEditorPopup("Object Search Popup", objectSearch);
         }
 
         public void CreateWarningPopup()
         {
-            var warningPopup = Instantiate(EditorManager.inst.GetDialog("Save As Popup").Dialog.gameObject);
-            var warningPopupTF = warningPopup.transform;
-            warningPopupTF.SetParent(EditorManager.inst.GetDialog("Save As Popup").Dialog.GetParent());
-            warningPopupTF.localScale = Vector3.one;
-            warningPopupTF.localPosition = Vector3.zero;
-            warningPopup.name = "Warning Popup";
+            var warningPopup = EditorManager.inst.GetDialog("Save As Popup").Dialog.gameObject
+                .Duplicate(EditorManager.inst.GetDialog("Save As Popup").Dialog.GetParent(), "Warning Popup");
+            warningPopup.transform.localPosition = Vector3.zero;
 
-            var main = warningPopupTF.GetChild(0);
+            var main = warningPopup.transform.GetChild(0);
 
             var spacer1 = new GameObject
             {
@@ -1987,6 +2202,691 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorPopup("REPL Editor Popup", replBase);
         }
 
+        public void CreateMultiObjectEditor()
+        {
+            var barButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/time").transform.GetChild(4).gameObject;
+
+            var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+
+            var bcol = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+            var dataLeft = EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left");
+
+            dataLeft.gameObject.SetActive(true);
+
+            var scrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").Duplicate(dataLeft);
+
+            var parent = scrollView.transform.Find("Viewport/Content");
+
+            LSHelpers.DeleteChildren(parent);
+
+            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(383f, 690f);
+
+            dataLeft.GetChild(1).gameObject.SetActive(true);
+
+            dataLeft.GetChild(1).gameObject.name = "label layer";
+
+            //dataLeft.GetChild(1).GetChild(0).gameObject.GetComponent<Text>().text = "Set Group Layer";
+
+            dataLeft.GetChild(3).gameObject.SetActive(true);
+
+            dataLeft.GetChild(3).gameObject.name = "label depth";
+
+            //dataLeft.GetChild(3).GetChild(0).gameObject.GetComponent<Text>().text = "Set Group Depth";
+
+            dataLeft.GetChild(1).SetParent(parent);
+
+            dataLeft.GetChild(2).SetParent(parent);
+
+            var textHolder = EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/right/text holder/Text");
+            var textHolderText = textHolder.GetComponent<Text>();
+            textHolderText.text = textHolderText.text.Replace(
+                "The current version of the editor doesn't support any editing functionality.",
+                "On the left you'll see all the multi object editor tools you'll need.");
+
+            textHolderText.fontSize = 22;
+
+            textHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -125f);
+
+            textHolder.GetComponent<RectTransform>().sizeDelta = new Vector2(-68f, 0f);
+
+            var zoom = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/zoom/zoom");
+
+            var labelL = parent.Find("label layer");
+            labelL.SetParent(null);
+            Destroy(parent.Find("label depth").gameObject);
+
+            Action<string, int, string, bool, UnityAction, UnityAction, UnityAction> action
+                = delegate (string name, int siblingIndex, string placeHolder, bool doMiddle, UnityAction leftButton, UnityAction middleButton, UnityAction rightButton)
+            {
+                var gameObject = zoom.Duplicate(parent, name, siblingIndex);
+                gameObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = placeHolder;
+
+                ((RectTransform)gameObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+                if (gameObject.transform.GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                {
+                    inputField.text = "1";
+                    //TriggerHelper.AddEventTrigger(gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField, min: 0) });
+                }
+
+                var layerIF = gameObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
+
+                if (doMiddle)
+                {
+                    var multiLB = gameObject.transform.GetChild(0).Find("<").gameObject
+                    .Duplicate(gameObject.transform.GetChild(0), "|", 2);
+                    multiLB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
+
+                    var multiLBB = multiLB.GetComponent<Button>();
+
+                    multiLBB.onClick.RemoveAllListeners();
+                    multiLBB.onClick.AddListener(middleButton);
+                }
+
+                var mlsLeft = gameObject.transform.GetChild(0).Find("<").GetComponent<Button>();
+                mlsLeft.onClick.RemoveAllListeners();
+                mlsLeft.onClick.AddListener(leftButton);
+
+                var mlsRight = gameObject.transform.GetChild(0).Find(">").GetComponent<Button>();
+                mlsRight.onClick.RemoveAllListeners();
+                mlsRight.onClick.AddListener(rightButton);
+            };
+
+            Action<string> labelGenerator = delegate (string name)
+            {
+                var label = labelL.gameObject.Duplicate(parent, "label");
+                label.transform.GetChild(0).gameObject.GetComponent<Text>().text = name;
+            };
+
+            Action<string, string, Transform, UnityAction> buttonGenerator = delegate (string name, string text, Transform parent, UnityAction unityAction)
+            {
+                var gameObject = eventButton.Duplicate(parent, name);
+
+                ((RectTransform)gameObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = text;
+                gameObject.GetComponent<Image>().color = bcol;
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(unityAction);
+            };
+
+            //Layers
+            {
+                labelGenerator("Set Group Layer");
+
+                action("layer", 1, "Enter layer...", true, delegate ()
+                {
+                    if (parent.Find("layer") && parent.Find("layer").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                            {
+                                if (timelineObject.IsBeatmapObject)
+                                    timelineObject.GetData<BeatmapObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<BeatmapObject>().editorData.Layer - 1, 0, int.MaxValue);
+                                if (timelineObject.IsPrefabObject)
+                                    timelineObject.GetData<PrefabObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<PrefabObject>().editorData.Layer - 1, 0, int.MaxValue);
+                            }
+                        }
+                    }
+
+                }, delegate ()
+                {
+                    if (parent.Find("layer") && parent.Find("layer").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        inputField.text = "1";
+                        TriggerHelper.AddEventTrigger(parent.Find("layer").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField, min: 0) });
+
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                            {
+                                if (timelineObject.IsBeatmapObject)
+                                    timelineObject.GetData<BeatmapObject>().editorData.Layer = Mathf.Clamp(num - 1, 0, int.MaxValue);
+                                if (timelineObject.IsPrefabObject)
+                                    timelineObject.GetData<PrefabObject>().editorData.Layer = Mathf.Clamp(num - 1, 0, int.MaxValue);
+                            }
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("layer") && parent.Find("layer").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                            {
+                                if (timelineObject.IsBeatmapObject)
+                                    timelineObject.GetData<BeatmapObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<BeatmapObject>().editorData.Layer + 1, 0, int.MaxValue);
+                                if (timelineObject.IsPrefabObject)
+                                    timelineObject.GetData<PrefabObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<PrefabObject>().editorData.Layer + 1, 0, int.MaxValue);
+                            }
+                        }
+                    }
+                });
+            }
+
+            //Depth
+            {
+                labelGenerator("Set Group Depth");
+
+                action("depth", parent.childCount - 1, "Enter depth...", true, delegate ()
+                {
+                    if (parent.Find("depth") && parent.Find("depth").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                bm.Depth -= num;
+                            }
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("depth") && parent.Find("depth").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        inputField.text = "15";
+                        TriggerHelper.AddEventTrigger(parent.Find("depth").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField, min: 0) });
+
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                bm.Depth = num;
+                            }
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("depth") && parent.Find("depth").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                bm.Depth += num;
+                            }
+                        }
+                    }
+                });
+            }
+
+            //Song Time
+            {
+                labelGenerator("Set Song Time");
+
+                action("time", parent.childCount - 1, "Enter time...", true, delegate ()
+                {
+                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        if (float.TryParse(inputField.text, out float num))
+                        {
+                            float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                            {
+                                timelineObject.Time = AudioManager.inst.CurrentAudioSource.time - first + timelineObject.Time + num;
+                                if (timelineObject.IsBeatmapObject)
+                                    Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                                if (timelineObject.IsPrefabObject)
+                                    Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
+
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                            }
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        inputField.text = "0";
+                        TriggerHelper.AddEventTrigger(parent.Find("time").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
+
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            timelineObject.Time = AudioManager.inst.CurrentAudioSource.time;
+                            if (timelineObject.IsBeatmapObject)
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                            if (timelineObject.IsPrefabObject)
+                                Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
+
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    {
+                        if (int.TryParse(inputField.text, out int num))
+                        {
+                            float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.Time = AudioManager.inst.CurrentAudioSource.time - first + timelineObject.Time - num;
+                                if (timelineObject.IsBeatmapObject)
+                                    Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                                if (timelineObject.IsPrefabObject)
+                                    Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
+
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                            }
+                        }
+                    }
+                });
+            }
+
+            //Name
+            {
+                labelGenerator("Set Name");
+
+                var multiNameSet = zoom.Duplicate(parent, "name");
+
+                multiNameSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
+
+                var inputField = multiNameSet.transform.GetChild(0).GetComponent<InputField>();
+                inputField.characterValidation = InputField.CharacterValidation.None;
+                inputField.characterLimit = 0;
+                inputField.text = "name";
+                ((Text)inputField.placeholder).text = "Enter name...";
+
+                var multiNB = multiNameSet.transform.GetChild(0).Find("<").gameObject;
+                //multiNB.transform.SetParent(multiNameSet.transform.GetChild(0));
+                //multiNB.transform.SetSiblingIndex(2);
+                multiNB.name = "|";
+                //multiNB.transform.localScale = Vector3.one;
+                multiNB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
+
+                var multiNBB = multiNB.GetComponent<Button>();
+                multiNBB.onClick.RemoveAllListeners();
+                multiNBB.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        timelineObject.GetData<BeatmapObject>().name = inputField.text;
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+
+                var mtnRight = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Button>();
+
+                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/add.png";
+
+                if (RTFile.FileExists(jpgFileLocation))
+                {
+                    Image spriteReloader = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Image>();
+
+                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+                    {
+                        spriteReloader.sprite = cover;
+                    }, delegate (string errorFile)
+                    {
+                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+                    }));
+                }
+
+                var mtnLeftLE = multiNameSet.transform.GetChild(0).Find(">").gameObject.AddComponent<LayoutElement>();
+                mtnLeftLE.ignoreLayout = true;
+
+                var mtnLeftRT = multiNameSet.transform.GetChild(0).Find(">").GetComponent<RectTransform>();
+                mtnLeftRT.anchoredPosition = new Vector2(339f, 0f);
+                mtnLeftRT.sizeDelta = new Vector2(32f, 32f);
+
+                var mtnRightB = mtnRight.GetComponent<Button>();
+                mtnRightB.onClick.RemoveAllListeners();
+                mtnRightB.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        timelineObject.GetData<BeatmapObject>().name += inputField.text;
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
+
+            //Song Time Autokill
+            {
+                labelGenerator("Set Song Time Autokill to Current");
+
+                buttonGenerator("set autokill", "Set", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+                        bm.autoKillType = AutoKillType.SongTime;
+                        bm.autoKillOffset = AudioManager.inst.CurrentAudioSource.time;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                    }
+                });
+            }
+
+            //Cycle Object Type
+            {
+                labelGenerator("Cycle Object Type");
+
+                buttonGenerator("cycle obj type", "Cycle", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+                        bm.objectType += 1;
+                        if ((int)bm.objectType > 4)
+                            bm.objectType = 0;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        Updater.UpdateProcessor(bm, "ObjectType");
+                    }
+                });
+            }
+
+            //Lock Swap
+            {
+                labelGenerator("Swap each object's lock state");
+
+                buttonGenerator("lock swap", "Swap Lock", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Locked = !timelineObject.Locked;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
+
+            //Lock Toggle
+            {
+                labelGenerator("Toggle all object's lock state");
+
+                bool loggle = false;
+
+                buttonGenerator("lock toggle", "Toggle Lock", parent, delegate ()
+                {
+                    loggle = !loggle;
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Locked = loggle;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
+
+            //Collapse Swap
+            {
+                labelGenerator("Swap each object's collapse state");
+
+                buttonGenerator("collapse swap", "Swap Collapse", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Collapse = !timelineObject.Collapse;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
+
+            //Collapse Toggle
+            {
+                labelGenerator("Toggle all object's collapse state");
+
+                bool coggle = false;
+
+                buttonGenerator("collapse toggle", "Toggle Collapse", parent, delegate ()
+                {
+                    coggle = !coggle;
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Locked = coggle;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
+
+            //Sync object selection
+            {
+                labelGenerator("Sync to specific object");
+
+                var syncLayout = new GameObject("sync layout");
+                syncLayout.transform.SetParent(parent);
+                syncLayout.transform.localScale = Vector3.one;
+
+                var multiSyncRT = syncLayout.AddComponent<RectTransform>();
+                var multiSyncGLG = syncLayout.AddComponent<GridLayoutGroup>();
+                multiSyncGLG.spacing = new Vector2(4f, 4f);
+                multiSyncGLG.cellSize = new Vector2(61.6f, 49f);
+
+                // Start Time
+                {
+                    buttonGenerator("start time", "ST", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.Time = beatmapObject.StartTime;
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                            }
+                        });
+                    });
+                }
+
+                // Name
+                {
+                    buttonGenerator("name", "N", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().name = beatmapObject.name;
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                            }
+                        });
+                    });
+                }
+
+                // Object Type
+                {
+                    buttonGenerator("object type", "OT", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().objectType = beatmapObject.objectType;
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ObjectType");
+                            }
+                        });
+                    });
+                }
+
+                // Autokill Type
+                {
+                    buttonGenerator("autokill type", "AKT", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().autoKillType = beatmapObject.autoKillType;
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "AutoKill");
+                            }
+                        });
+                    });
+                }
+
+                // Autokill Offset
+                {
+                    buttonGenerator("autokill offset", "AKO", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().autoKillOffset = beatmapObject.autoKillOffset;
+                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "AutoKill");
+                            }
+                        });
+                    });
+                }
+
+                // Parent
+                {
+                    buttonGenerator("parent", "P", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().parent = beatmapObject.parent;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Parent");
+                            }
+                        });
+                    });
+                }
+
+                // Parent Type
+                {
+                    buttonGenerator("parent type", "PT", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().parentType = beatmapObject.parentType;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentType");
+                            }
+                        });
+                    });
+                }
+
+                // Parent Offset
+                {
+                    buttonGenerator("parent offset", "PO", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().parentOffsets = beatmapObject.parentOffsets.Clone();
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentOffset");
+                            }
+                        });
+                    });
+                }
+
+                // Origin
+                {
+                    buttonGenerator("origin", "O", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().origin = beatmapObject.origin;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Origin");
+                            }
+                        });
+                    });
+                }
+
+                // Shape
+                {
+                    buttonGenerator("shape", "S", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().shape = beatmapObject.shape;
+                                timelineObject.GetData<BeatmapObject>().shapeOption = beatmapObject.shapeOption;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Shape");
+                            }
+                        });
+                    });
+                }
+
+                // Text
+                {
+                    buttonGenerator("text", "T", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().text = beatmapObject.text;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Text");
+                            }
+                        });
+                    });
+                }
+
+                // Depth
+                {
+                    buttonGenerator("depth", "D", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().Depth = beatmapObject.Depth;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Depth");
+                            }
+                        });
+                    });
+                }
+
+                // Keyframes
+                {
+                    buttonGenerator("keyframes", "KF", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                for (int i = 0; i < timelineObject.GetData<BeatmapObject>().events.Count; i++)
+                                    timelineObject.GetData<BeatmapObject>().events[i] = beatmapObject.events[i].Clone();
+
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Keyframes");
+                            }
+                        });
+                    });
+                }
+            }
+
+            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
+            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
+        }
+
         #endregion
 
         #region Saving / Loading
@@ -2097,7 +2997,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             gameManager.path = _levelName + "/level.lsb";
-            gameManager.basePath = _levelName;
+            gameManager.basePath = _levelName + "/";
             gameManager.levelName = withoutList;
             fileInfo.text = "Loading Level Music for [" + withoutList + "]\n\nIf this is taking more than a minute or two check if the .ogg file is corrupt.";
 
@@ -2211,7 +3111,7 @@ namespace EditorManagement.Functions.Editors
             EventManager.inst.updateEvents();
 
             fileInfo.text = "Setting first object of [" + withoutList + "]";
-            //ObjectEditor.inst.CreateTimelineObjects();
+            ObjectEditor.inst.CreateTimelineObjects();
             ObjectEditor.inst.RenderTimelineObjects();
             ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
             //if (timelineObjects[0].IsBeatmapObject)
@@ -2230,10 +3130,10 @@ namespace EditorManagement.Functions.Editors
             __instance.UpdatePlayButton();
             __instance.hasLoadedLevel = true;
 
-            if (!RTFile.DirectoryExists(GameManager.inst.basePath + "/autosaves"))
-                Directory.CreateDirectory(GameManager.inst.basePath + "/autosaves");
+            if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
+                Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
 
-            string[] files = Directory.GetFiles(GameManager.inst.basePath + "/autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
+            string[] files = Directory.GetFiles(GameManager.inst.basePath + "autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
             files.ToList().Sort();
 
             __instance.autosaves.Clear();
@@ -2310,6 +3210,7 @@ namespace EditorManagement.Functions.Editors
             DataManager.inst.CustomBeatmapThemes.Clear();
             DataManager.inst.BeatmapThemeIDToIndex.Clear();
             DataManager.inst.BeatmapThemeIndexToID.Clear();
+            ((GameData)DataManager.inst.gameData).beatmapThemes.Clear();
 
             int num = 0;
             foreach (var beatmapTheme in DataManager.inst.BeatmapThemes)
@@ -2329,15 +3230,42 @@ namespace EditorManagement.Functions.Editors
                 {
                     var lsfile = folder;
                     var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath));
-                    var orig = DataManager.BeatmapTheme.Parse(jn);
+                    var orig = BeatmapTheme.Parse(jn);
+                    DataManager.inst.CustomBeatmapThemes.Add(orig);
+
+                    if (jn["id"] != null && !((GameData)DataManager.inst.gameData).beatmapThemes.ContainsKey(jn["id"]))
+                        ((GameData)DataManager.inst.gameData).beatmapThemes.Add(jn["id"], orig);
+
+                    if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(orig.id)))
+                    {
+                        var list = DataManager.inst.CustomBeatmapThemes.Where(x => x.id == orig.id).ToList();
+                        var str = "";
+                        for (int i = 0; i < list.Count; i++)
+                        {
+                            str += list[i].name;
+                            if (i != list.Count - 1)
+                                str += ", ";
+                        }
+
+                        if (EditorManager.inst != null)
+                        {
+                            EditorManager.inst.DisplayNotification($"Unable to Load theme [{orig.name}] due to conflicting themes: {str}", 2f * list.Count, EditorManager.NotificationType.Error);
+                        }
+                    }
+                    else
+                    {
+                        DataManager.inst.BeatmapThemeIndexToID.Add(DataManager.inst.AllThemes.Count - 1, int.Parse(orig.id));
+                        DataManager.inst.BeatmapThemeIDToIndex.Add(int.Parse(orig.id), DataManager.inst.AllThemes.Count - 1);
+                    }
+
                     if (jn["id"] == null)
                     {
-                        var beatmapTheme = DataManager.BeatmapTheme.DeepCopy(orig);
+                        var beatmapTheme = BeatmapTheme.DeepCopy(orig);
                         beatmapTheme.id = LSText.randomNumString(6);
-                        DataManager.inst.BeatmapThemes.Remove(orig);
+                        DataManager.inst.CustomBeatmapThemes.Remove(orig);
                         FileManager.inst.DeleteFileRaw(lsfile.FullPath);
                         ThemeEditor.inst.SaveTheme(beatmapTheme);
-                        DataManager.inst.BeatmapThemes.Add(beatmapTheme);
+                        DataManager.inst.CustomBeatmapThemes.Add(beatmapTheme);
                     }
                 }
                 themesLoading = false;
@@ -2404,7 +3332,7 @@ namespace EditorManagement.Functions.Editors
                 return;
             }
 
-            string autosavePath = $"{RTFile.ApplicationDirectory}{GameManager.inst.basePath}autosaves/autosave_{DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss")}.lsb";
+            string autosavePath = $"{GameManager.inst.basePath}autosaves/autosave_{DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss")}.lsb";
 
             //string autosavePath = string.Concat(new string[]
             //{
@@ -2415,8 +3343,9 @@ namespace EditorManagement.Functions.Editors
             //	DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"),
             //	".lsb"
             //});
-            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + GameManager.inst.basePath + "autosaves"))
-                Directory.CreateDirectory(RTFile.ApplicationDirectory + GameManager.inst.basePath + "autosaves");
+
+            if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
+                Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
 
             EditorManager.inst.DisplayNotification("Autosaving backup!", 2f, EditorManager.NotificationType.Warning, false);
 
@@ -2431,7 +3360,7 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.autosaves.RemoveAt(0);
             }
 
-            EditorManager.inst.StartCoroutine(DataManager.inst.SaveData(autosavePath));
+            EditorManager.inst.StartCoroutine(RTFunctions.Functions.ProjectData.Writer.SaveData(autosavePath, (GameData)DataManager.inst.gameData));
 
             autoSaving = true;
         }
@@ -2480,7 +3409,7 @@ namespace EditorManagement.Functions.Editors
                 File.Copy(__instance.newAudioFile, destFileName, true);
             }
 
-            inst.StartCoroutine(ProjectData.Writer.SaveData(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.lsb", CreateBaseBeatmap()));
+            StartCoroutine(ProjectData.Writer.SaveData(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.lsb", CreateBaseBeatmap()));
             var dataManager = DataManager.inst;
             var metaData = new Metadata();
             metaData.beatmap.game_version = "4.1.16";
@@ -2493,7 +3422,7 @@ namespace EditorManagement.Functions.Editors
             dataManager.metaData = metaData;
 
             dataManager.SaveMetadata(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/metadata.lsb");
-            inst.StartCoroutine(LoadLevel(__instance, RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName));
+            StartCoroutine(LoadLevel(__instance, RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName));
             __instance.HideDialog("New File Popup");
         }
 
@@ -2508,7 +3437,7 @@ namespace EditorManagement.Functions.Editors
             gameData.beatmapData.editorData = editorData;
 
             Debug.Log($"{EditorPlugin.className}Cloning Default Keyframes...");
-            var list = GameData.DefaultKeyframes.Clone();
+            var list = GameData.DefaultKeyframes;
 
             if (!ModCompatibility.mods.ContainsKey("EventsCore"))
             {
@@ -2519,15 +3448,14 @@ namespace EditorManagement.Functions.Editors
             }
 
             Debug.Log($"{EditorPlugin.className}Clearing current list");
-            if (DataManager.inst.gameData.eventObjects.allEvents == null)
-                DataManager.inst.gameData.eventObjects.allEvents = new List<List<BaseEventKeyframe>>();
-            DataManager.inst.gameData.eventObjects.allEvents.Clear();
+            if (gameData.eventObjects.allEvents == null)
+                gameData.eventObjects.allEvents = new List<List<BaseEventKeyframe>>();
+            gameData.eventObjects.allEvents.Clear();
             for (int i = 0; i < list.Count; i++)
             {
-                DataManager.inst.gameData.eventObjects.allEvents.Add(new List<BaseEventKeyframe>
-                {
-                    list[i]
-                });
+                gameData.eventObjects.allEvents.Add(new List<BaseEventKeyframe>());
+                var kf = EventKeyframe.DeepCopy((EventKeyframe)list[i]);
+                gameData.eventObjects.allEvents[i].Add(kf);
             }
 
             Debug.Log($"{EditorPlugin.className}Creating BackgroundObjects");
@@ -3322,7 +4250,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.FloatSlider,
                 Config.Bind("Editor GUI", "Timeline Bar Buttons Hover Size", 1.05f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
             new EditorProperty(EditorProperty.ValueType.FloatSlider,
-                Config.Bind("Editor GUI", "Prefab Button Hover Scale", 1.05f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
+                Config.Bind("Editor GUI", "Prefab Button Hover Size", 1.05f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
 
             // Prefab Internal
             new EditorProperty(EditorProperty.ValueType.Vector2,
@@ -3484,9 +4412,7 @@ namespace EditorManagement.Functions.Editors
             #region Functions
             
             new EditorProperty("Open Keybind Editor", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
-                delegate () { Debug.Log($"{EditorPlugin.className}Keybind Editor not implemented yet!"); }, ""),
-            new EditorProperty("Open Prefab Settings", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
-                delegate () { Debug.Log($"{EditorPlugin.className}Prefab Settings not implemented yet!"); }, ""),
+                delegate () { EditorManager.inst.ShowDialog("Keybind List Popup"); }, ""),
 
             #endregion
 
