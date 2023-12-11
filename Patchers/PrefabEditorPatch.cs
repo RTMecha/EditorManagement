@@ -53,29 +53,26 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool StartPrefix()
         {
-            //__instance.StartCoroutine(RTEditor.LoadExternalPrefabs(__instance));
-            Instance.OffsetLine = Instantiate(Instance.OffsetLinePrefab);
-            Instance.OffsetLine.name = "offset line";
-            Instance.OffsetLine.transform.SetParent(EditorManager.inst.timeline.transform);
-            Instance.OffsetLine.transform.localScale = Vector3.one;
+            Instance.StartCoroutine(RTEditor.inst.LoadPrefabs(Instance));
+            Instance.OffsetLine = Instance.OffsetLinePrefab.Duplicate(EditorManager.inst.transform.transform, "offset line");
 
-            Debug.Log($"{Instance.className}Creating prefab types...");
-            var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
+            //Debug.Log($"{Instance.className}Creating prefab types...");
+            //var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
 
-            var list = new List<GameObject>();
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                var tf = transform.Find($"col_{i}");
-                if (tf && i != 0)
-                    list.Add(tf.gameObject);
-            }
+            //var list = new List<GameObject>();
+            //for (int i = 0; i < transform.childCount; i++)
+            //{
+            //    var tf = transform.Find($"col_{i}");
+            //    if (tf)
+            //        list.Add(tf.gameObject);
+            //}
 
-            foreach (var go in list)
-                Destroy(go);
+            //foreach (var go in list)
+            //    Destroy(go);
 
-            Debug.Log($"{Instance.className}Duplicating...");
-            for (int i = 0; i < 20; i++)
-                transform.GetChild(0).gameObject.Duplicate(transform, $"col_{i}", i + 1);
+            //Debug.Log($"{Instance.className}Duplicating...");
+            //for (int i = 0; i < 20; i++)
+            //    transform.GetChild(0).gameObject.Duplicate(transform, $"col_{i}", i + 1);
 
             Debug.Log($"{Instance.className}Setting dialogs...");
             Instance.dialog = EditorManager.inst.GetDialog("Prefab Editor").Dialog;
@@ -164,7 +161,7 @@ namespace EditorManagement.Patchers
             // Name
             labelGenerator("name", "Name");
 
-            var prefabName = RTEditor.defaultIF.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "name");
+            var prefabName = RTEditor.inst.defaultIF.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "name");
 
             prefabName.GetComponentAndPerformAction(delegate (InputField inputField)
             {
@@ -232,6 +229,41 @@ namespace EditorManagement.Patchers
 
             // Object Editor list
 
+            var prefabEditorData = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data");
+
+            var prefabType = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event")
+                .Duplicate(prefabEditorData.Find("type"), "Show Type Editor");
+
+            Destroy(prefabEditorData.Find("type/types").gameObject);
+
+            ((RectTransform)prefabType.transform).sizeDelta = new Vector2(132f, 34f);
+            prefabType.transform.Find("Text").GetComponent<Text>().text = "Open Prefab Type Editor";
+            var prefabTypeButton = prefabType.GetComponent<Button>();
+            prefabTypeButton.onClick.ClearAll();
+            prefabTypeButton.onClick.AddListener(delegate ()
+            {
+                PrefabEditorManager.inst.OpenPrefabTypePopup();
+            });
+
+            ((RectTransform)prefabEditorData.Find("spacer")).sizeDelta = new Vector2(749f, 32f);
+            ((RectTransform)prefabEditorData.Find("type")).sizeDelta = new Vector2(749f,  48f);
+
+            var descriptionGO = prefabEditorData.Find("name").gameObject.Duplicate(prefabEditorData, "description", 4);
+            ((RectTransform)descriptionGO.transform).sizeDelta = new Vector2(749f, 108f);
+            descriptionGO.transform.Find("title").GetComponent<Text>().text = "Desc";
+
+            EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection").gameObject.SetActive(true);
+            ((RectTransform)EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection").transform).sizeDelta = new Vector2(749f, 300f);
+            var search = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection/search-box/search").GetComponent<InputField>();
+            search.onValueChanged.ClearAll();
+            search.onValueChanged.AddListener(delegate (string _val)
+            {
+                PrefabEditorManager.inst.ReloadSelectionContent();
+            });
+            var selectionGroup = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection/mask/content").GetComponent<GridLayoutGroup>();
+            selectionGroup.cellSize = new Vector2(172.5f, 32f);
+            selectionGroup.constraintCount = 4;
+
             return false;
         }
 
@@ -247,17 +279,12 @@ namespace EditorManagement.Patchers
             if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab) && EditorManager.inst.currentDialog.Name == "Prefab Editor")
             {
                 float num;
-                if (ObjectEditor.inst.SelectedBeatmapObjects.Count <= 0)
+                if (ObjectEditor.inst.SelectedObjects.Count <= 0)
                     num = 0f;
                 else
-                    num = ObjectEditor.inst.SelectedBeatmapObjects.Min(x => x.Time);
+                    num = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
 
-                if (ObjectEditor.inst.SelectedPrefabObjects.Count <= 0)
-                    num = 0f;
-                else
-                    num = ObjectEditor.inst.SelectedPrefabObjects.Min(x => x.Time);
-
-                if (!Instance.OffsetLine.activeSelf && ObjectEditor.inst.SelectedBeatmapObjects.Count > 0)
+                if (!Instance.OffsetLine.activeSelf && ObjectEditor.inst.SelectedObjects.Count > 0)
                 {
                     Instance.OffsetLine.transform.SetAsLastSibling();
                     Instance.OffsetLine.SetActive(true);
@@ -283,15 +310,39 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool SavePrefabPrefix(BasePrefab __0)
         {
-            PrefabEditorManager.inst.SavePrefab(__0);
+            PrefabEditorManager.inst.SavePrefab((Prefab)__0);
             return false;
         }
 
+        [HarmonyPatch("DeleteExternalPrefab")]
+        [HarmonyPrefix]
+        static bool DeleteExternalPrefabPrefix(int __0)
+        {
+            PrefabEditorManager.inst.DeleteExternalPrefab(__0);
+            return false;
+        }
+        
+        [HarmonyPatch("DeleteInternalPrefab")]
+        [HarmonyPrefix]
+        static bool DeleteInternalPrefabPrefix(int __0)
+        {
+            PrefabEditorManager.inst.DeleteInternalPrefab(__0);
+            return false;
+        }
+        
         [HarmonyPatch("ExpandCurrentPrefab")]
         [HarmonyPrefix]
         static bool ExpandCurrentPrefabPrefix()
         {
             PrefabEditorManager.inst.ExpandCurrentPrefab();
+            return false;
+        }
+        
+        [HarmonyPatch("CollapseCurrentPrefab")]
+        [HarmonyPrefix]
+        static bool CollapseCurrentPrefabPrefix()
+        {
+            PrefabEditorManager.inst.CollapseCurrentPrefab();
             return false;
         }
 
@@ -383,7 +434,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("OpenPrefabDialog")]
         [HarmonyPrefix]
-        static bool SetPrefabValues(PrefabEditor __instance)
+        static bool OpenPrefabDialogPrefix(PrefabEditor __instance)
         {
             #region Original Code
 
@@ -492,28 +543,16 @@ namespace EditorManagement.Patchers
 
                 for (int i = 0; i < 3; i++)
                 {
-                    string type = "";
+                    string[] types = new string[]
+                    {
+                        "position",
+                        "scale",
+                        "rotation"
+                    };
+
+                    string type = types[i];
                     string inx = "/x";
                     string iny = "/y";
-                    switch (i)
-                    {
-                        case 0:
-                            {
-                                type = "position";
-                                break;
-                            }
-                        case 1:
-                            {
-                                type = "scale";
-                                break;
-                            }
-                        case 2:
-                            {
-                                type = "rotation";
-                                inx = "";
-                                break;
-                            }
-                    }
 
                     var currentKeyframe = currentPrefab.events[i];
 
@@ -707,7 +746,7 @@ namespace EditorManagement.Patchers
                                 __instance.SavePrefab(prefab);
                                 Debug.LogFormat("{0}Saved Prefab", EditorPlugin.className);
 
-                                if (PrefabEditorManager.inst.externalContent != null)
+                                if (__instance.externalContent != null)
                                     __instance.ReloadExternalPrefabsInPopup();
 
                                 EditorManager.inst.DisplayNotification("Applied all changes to external prefab!", 2f, EditorManager.NotificationType.Success);
@@ -757,24 +796,12 @@ namespace EditorManagement.Patchers
         }
 
         [HarmonyPatch("OpenDialog")]
-        [HarmonyPostfix]
-        static void PrefabLayout()
+        [HarmonyPrefix]
+        static bool PrefabLayout()
         {
-            if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").GetComponent<VerticalLayoutGroup>())
-            {
-                Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").GetComponent<VerticalLayoutGroup>());
-            }
+            PrefabEditorManager.inst.OpenDialog();
 
-            if (!GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").GetComponent<GridLayoutGroup>())
-            {
-                Debug.Log("Adding Prefab Grid Layout Component.");
-                GridLayoutGroup prefabLay = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").AddComponent<GridLayoutGroup>();
-                prefabLay.cellSize = new Vector2(280f, 30f);
-                prefabLay.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                prefabLay.constraintCount = 2;
-                prefabLay.spacing = new Vector2(8f, 8f);
-                prefabLay.startAxis = GridLayoutGroup.Axis.Horizontal;
-            }
+            return false;
         }
 
         [HarmonyPatch("ImportPrefabIntoLevel")]
