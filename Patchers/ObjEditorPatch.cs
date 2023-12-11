@@ -527,6 +527,21 @@ namespace EditorManagement.Patchers
 			Destroy(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
 			Destroy(ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(1).gameObject);
 
+			// Make Shape list scrollable, for any more shapes I decide to add.
+			{
+				var shape = ObjEditor.inst.ObjectView.transform.Find("shape");
+				var rect = (RectTransform)shape;
+				var scroll = shape.gameObject.AddComponent<ScrollRect>();
+				shape.gameObject.AddComponent<Mask>();
+				var image = shape.gameObject.AddComponent<Image>();
+
+				scroll.horizontal = true;
+				scroll.vertical = false;
+				scroll.content = rect;
+				scroll.viewport = rect;
+				image.color = new Color(1f, 1f, 1f, 0.01f);
+			}
+
 			ObjectEditor.Init(__instance);
 
 			ObjectEditor.inst.shapeButtonPrefab = ObjEditor.inst.ObjectView.transform.Find("shape/1").gameObject.Duplicate(null);
