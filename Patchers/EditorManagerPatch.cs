@@ -57,6 +57,8 @@ namespace EditorManagement.Patchers
             else if (Instance != __instance)
                 Destroy(__instance.gameObject);
 
+            FontManager.inst.ChangeAllFontsInEditor();
+
             //OG Code
             {
                 InputDataManager.inst.BindMenuKeys();
