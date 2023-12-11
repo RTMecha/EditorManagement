@@ -423,52 +423,49 @@ namespace EditorManagement.Patchers
 
 			// Clear Parent
 			{
-				GameObject close = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x");
+				var close = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x");
 
-				GameObject parent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent");
+				var parent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent");
+				var hlg = parent.GetComponent<HorizontalLayoutGroup>();
+				hlg.childControlWidth = false;
+				hlg.spacing = 4f;
 
-				parent.GetComponent<HorizontalLayoutGroup>().childControlWidth = false;
-				parent.GetComponent<HorizontalLayoutGroup>().spacing = 4f;
+				((RectTransform)parent.transform.Find("text")).sizeDelta = new Vector2(201f, 32f);
 
-				parent.transform.Find("text").GetComponent<RectTransform>().sizeDelta = new Vector2(201f, 32f);
+				var resetParent = close.Duplicate(parent.transform, "clear parent", 1);
 
-				var resetParent = Instantiate(close);
-				resetParent.transform.SetParent(parent.transform);
-				resetParent.transform.localScale = Vector3.one;
-				resetParent.name = "clear parent";
-				resetParent.transform.SetSiblingIndex(1);
+                var resetParentButton = resetParent.GetComponent<Button>();
 
-				//var resetParentButton = resetParent.GetComponent<Button>();
+                resetParentButton.onClick.ClearAll();
+                resetParentButton.onClick.AddListener(delegate ()
+                {
+					var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 
-				//resetParentButton.onClick.ClearAll();
-				//resetParentButton.onClick.AddListener(delegate ()
-				//{
-				//	ObjEditor.inst.currentObjectSelection.GetObjectData().parent = "";
+					bm.parent = "";
 
-				//	RTEditor.inst.StartCoroutine(RTEditor.RefreshObjectGUI(ObjEditor.inst.currentObjectSelection.GetObjectData()));
+					ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(bm));
 
-				//	ObjectManager.inst.updateObjects(ObjEditor.inst.currentObjectSelection);
-				//});
+					Updater.UpdateProcessor(bm);
+                });
 
-				var parentPicker = Instantiate(close);
-				parentPicker.transform.SetParent(parent.transform);
-				parentPicker.transform.localScale = Vector3.one;
-				parentPicker.name = "parent picker";
-				parentPicker.transform.SetSiblingIndex(2);
+                var parentPicker = close.Duplicate(parent.transform, "parent picker", 2);
 
 				var parentPickerButton = parentPicker.GetComponent<Button>();
 
-				//parentPickerButton.onClick.ClearAll();
-				//parentPickerButton.onClick.AddListener(delegate ()
-				//{
-				//	RTEditor.inst.parentPickerEnabled = true;
-				//});
+                parentPickerButton.onClick.ClearAll();
+                parentPickerButton.onClick.AddListener(delegate ()
+                {
+                    RTEditor.inst.parentPickerEnabled = true;
+                });
 
-				var cb = parentPickerButton.colors;
+                var cb = parentPickerButton.colors;
 				cb.normalColor = new Color(0.0569f, 0.4827f, 0.9718f, 1f);
 				parentPickerButton.colors = cb;
 
-				if (parentPicker.transform.childCount >= 0 && RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/theme/viewport/content/player0/preview/dropper", out GameObject dropper) && dropper.TryGetComponent(out Image dropperImage))
+				if (parentPicker.transform.childCount >= 0
+					&& RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/theme/viewport/content/player0/preview/dropper",
+					out GameObject dropper)
+					&& dropper.TryGetComponent(out Image dropperImage))
 					parentPicker.transform.GetChild(0).GetComponent<Image>().sprite = dropperImage.sprite;
 
 				parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
@@ -952,7 +949,7 @@ namespace EditorManagement.Patchers
 		static bool UpdateKeyframeOrderPrefix(bool _setCurrent = true)
 		{
 			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
-				ObjectEditor.inst.UpdateKeyframeOrder(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), _setCurrent);
+				ObjectEditor.inst.UpdateKeyframeOrder(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 			return false;
 		}
 
@@ -1002,5 +999,76 @@ namespace EditorManagement.Patchers
 			return (mouseX - num) / Instance.Zoom / 14f * screenScale;
 		}
 
+		[HarmonyPatch("CreateNewNormalObject")]
+        [HarmonyPrefix]
+        static bool CreateNewNormalObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewNormalObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewCircleObject")]
+        [HarmonyPrefix]
+        static bool CreateNewCircleObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewCircleObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewTriangleObject")]
+        [HarmonyPrefix]
+        static bool CreateNewTriangleObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewTriangleObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewTextObject")]
+        [HarmonyPrefix]
+        static bool CreateNewTextObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewTextObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewHexagonObject")]
+        [HarmonyPrefix]
+        static bool CreateNewHexagonObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewHexagonObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewHelperObject")]
+        [HarmonyPrefix]
+        static bool CreateNewHelperObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewHelperObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewDecorationObject")]
+        [HarmonyPrefix]
+        static bool CreateNewDecorationObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewDecorationObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewEmptyObject")]
+        [HarmonyPrefix]
+        static bool CreateNewEmptyObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewEmptyObject(__0);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewPersistentObject")]
+        [HarmonyPrefix]
+        static bool CreateNewPersistentObjectPrefix(bool __0)
+        {
+			ObjectEditor.inst.CreateNewNoAutokillObject(__0);
+			return false;
+        }
 	}
 }
