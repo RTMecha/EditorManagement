@@ -222,6 +222,17 @@ namespace EditorManagement.Functions.Editors
         public Image keyframeTimelineSliderHandle;
         public Image keyframeTimelineSliderRuler;
 
+        Sprite searchSprite;
+        public Sprite SearchSprite
+        {
+            get
+            {
+                if (!searchSprite)
+                    searchSprite = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite;
+                return searchSprite;
+            }
+        }
+
         #endregion
 
         #region Notifications
@@ -2007,29 +2018,16 @@ namespace EditorManagement.Functions.Editors
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
 
             // Turn this into a separate method
-            var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut")
-                .Duplicate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform, "Search Objects");
+            //var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut")
+            //    .Duplicate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform, "Search Objects");
 
-            propWin.transform.Find("Text").GetComponent<Text>().text = "Search Objects";
-            ((RectTransform)propWin.transform.Find("Text")).sizeDelta = new Vector2(224f, 0f);
-            propWin.transform.Find("Text 1").GetComponent<Text>().text = "";
+            //propWin.transform.Find("Text").GetComponent<Text>().text = "Search Objects";
+            //((RectTransform)propWin.transform.Find("Text")).sizeDelta = new Vector2(224f, 0f);
+            //propWin.transform.Find("Text 1").GetComponent<Text>().text = "";
 
-            var propWinButton = propWin.GetComponent<Button>();
-            propWinButton.onClick.ClearAll();
-            propWinButton.onClick.AddListener(delegate ()
-            {
-                EditorManager.inst.ShowDialog("Object Search Popup");
-                RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
-                {
-                    ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
-                });
-            });
-
-            propWin.SetActive(true);
-
-            propWin.transform.Find("Image").GetComponent<Image>().sprite = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite;
-
-            //EditorHelper.AddEditorDropdown("Search Objects", "", "Edit", GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite, delegate ()
+            //var propWinButton = propWin.GetComponent<Button>();
+            //propWinButton.onClick.ClearAll();
+            //propWinButton.onClick.AddListener(delegate ()
             //{
             //    EditorManager.inst.ShowDialog("Object Search Popup");
             //    RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
@@ -2037,6 +2035,19 @@ namespace EditorManagement.Functions.Editors
             //        ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
             //    });
             //});
+
+            //propWin.SetActive(true);
+
+            //propWin.transform.Find("Image").GetComponent<Image>().sprite = SearchSprite;
+
+            EditorHelper.AddEditorDropdown("Search Objects", "", "Edit", SearchSprite, delegate ()
+            {
+                EditorManager.inst.ShowDialog("Object Search Popup");
+                RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                {
+                    ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
+                });
+            });
 
             EditorHelper.AddEditorPopup("Object Search Popup", objectSearch);
         }
