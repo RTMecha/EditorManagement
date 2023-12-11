@@ -130,8 +130,8 @@ namespace EditorManagement.Functions.Editors
             scrollRect.transform.SetParent(baseRT);
             scrollRect.transform.localScale = Vector3.one;
             var scrollRectRT = scrollRect.AddComponent<RectTransform>();
-            scrollRectRT.anchoredPosition = new Vector2(0f, 16f);
-            scrollRectRT.sizeDelta = new Vector2(400f, 565f);
+            scrollRectRT.anchoredPosition = new Vector2(0f, 0f);
+            scrollRectRT.sizeDelta = new Vector2(400f, 600f);
             var scrollRectSR = scrollRect.AddComponent<ScrollRect>();
 
             var mask = new GameObject("Mask");
@@ -204,11 +204,11 @@ namespace EditorManagement.Functions.Editors
 
                 var iconImage = icon.AddComponent<Image>();
 
-                var spacer = new GameObject("Spacer");
-                spacer.transform.SetParent(rectTransform);
-                spacer.transform.localScale = Vector3.one;
-                var spacerRT = spacer.AddComponent<RectTransform>();
-                spacerRT.sizeDelta = new Vector2(32f, 32f);
+                //var spacer = new GameObject("Spacer");
+                //spacer.transform.SetParent(rectTransform);
+                //spacer.transform.localScale = Vector3.one;
+                //var spacerRT = spacer.AddComponent<RectTransform>();
+                //spacerRT.sizeDelta = new Vector2(32f, 32f);
 
                 var nameGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Name");
                 var nameRT = nameGO.GetComponent<RectTransform>();
@@ -229,6 +229,9 @@ namespace EditorManagement.Functions.Editors
                 colorTextRT.sizeDelta = new Vector2(0f, 0f);
 
                 colorTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+
+                var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(rectTransform, "Delete");
+                ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
             }
             catch (Exception ex)
             {
@@ -375,6 +378,15 @@ namespace EditorManagement.Functions.Editors
                 color.onEndEdit.ClearAll();
                 color.onEndEdit.AddListener(delegate (string _val)
                 {
+                    RenderPrefabTypesPopup();
+                    SavePrefabTypes();
+                });
+
+                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                delete.onClick.ClearAll();
+                delete.onClick.AddListener(delegate ()
+                {
+                    DataManager.inst.PrefabTypes.RemoveAt(index);
                     RenderPrefabTypesPopup();
                     SavePrefabTypes();
                 });
