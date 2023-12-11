@@ -369,89 +369,16 @@ namespace EditorManagement.Functions.Helpers
 				button.interactable = interactable;
         }
 
-		#region Keyframes
-
-		public static EventTrigger.Entry CreateKeyframeStartDragTrigger(BeatmapObject beatmapObject, int type, int index)
-		{
-			var entry = new EventTrigger.Entry();
-			entry.eventID = EventTriggerType.BeginDrag;
-			entry.callback.AddListener(delegate (BaseEventData eventData)
-			{
-				if (index != 0)
-				{
-					//var keyframes = ObjEditor.inst.keyframeSelections;
-					//if (keyframes.FindIndex(x => x.Type == _kind && x.Index == _keyframe) != -1)
-					//{
-					//	ObjEditor.inst.selectedKeyframeOffsets.Clear();
-					//	foreach (var keyframeSelection in keyframes)
-					//	{
-					//		if (keyframeSelection.Index == ObjEditor.inst.currentKeyframe && keyframeSelection.Type == ObjEditor.inst.currentKeyframeKind)
-					//			ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
-					//		else
-					//			ObjEditor.inst.selectedKeyframeOffsets.Add(beatmapObject.events[keyframeSelection.Type][keyframeSelection.Index].eventTime - beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime);
-					//	}
-					//}
-
-					// Used for dragging from a singular keyframe's time.
-					foreach (var timelineObject in RTEditor.inst.timelineBeatmapObjectKeyframes)
-                    {
-						//ObjEditor.inst.selectedKeyframeOffsets.Clear();
-						if (timelineObject.Type == type && timelineObject.Index == index)
-							//ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
-							timelineObject.timeOffset = 0f;
-						else
-							//ObjEditor.inst.selectedKeyframeOffsets.Add(beatmapObject.events[timelineObject.Type][timelineObject.Index].eventTime - beatmapObject.events[type][index].eventTime);
-							timelineObject.timeOffset = beatmapObject.events[timelineObject.Type][timelineObject.Index].eventTime - beatmapObject.events[type][index].eventTime;
-					}
-
-					ObjEditor.inst.mouseOffsetXForKeyframeDrag = beatmapObject.events[type][index].eventTime - ObjEditorPatch.timeCalc();
-					ObjEditor.inst.timelineKeyframesDrag = true;
-				}
-				else
-					EditorManager.inst.DisplayNotification("Can't change time of first Keyframe", 2f, EditorManager.NotificationType.Warning, false);
-
-				ObjectEditor.inst.SetCurrentKeyframe(beatmapObject, type, index);
-			});
-			return entry;
-		}
-
-		public static EventTrigger.Entry CreateKeyframeEndDragTrigger(BeatmapObject beatmapObject, int _kind, int _keyframe)
-		{
-			var entry = new EventTrigger.Entry();
-			entry.eventID = EventTriggerType.EndDrag;
-			entry.callback.AddListener(delegate (BaseEventData eventData)
-			{
-				ObjEditorPatch.timeCalc();
-				var tmp = beatmapObject.events[_kind][_keyframe];
-				ObjectEditor.inst.UpdateKeyframeOrder(beatmapObject);
-				ObjectEditor.inst.CreateKeyframes(beatmapObject);
-				int keyframe = beatmapObject.events[_kind].FindIndex(x => x == tmp);
-
-				ObjEditor.inst.SetCurrentKeyframe(_kind, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
-
-				// Keyframes affect both physical object and timeline object.
-				ObjectEditor.inst.RenderTimelineObject(new TimelineObject(beatmapObject));
-				if (ObjectEditor.UpdateObjects)
-					Updater.UpdateProcessor(beatmapObject, "Keyframes");
-
-				RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
-				ObjEditor.inst.timelineKeyframesDrag = false;
-			});
-			return entry;
-		}
-
-		#endregion
-
-		#region Objects
+		#region Timeline
 
 		public static EventTrigger.Entry StartDragTrigger()
 		{
 			var editorManager = EditorManager.inst;
-			EventTrigger.Entry entry = new EventTrigger.Entry();
+			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.BeginDrag;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				PointerEventData pointerEventData = (PointerEventData)eventData;
+				var pointerEventData = (PointerEventData)eventData;
 				editorManager.SelectionBoxImage.gameObject.SetActive(true);
 				editorManager.DragStartPos = pointerEventData.position * editorManager.ScreenScaleInverse;
 				editorManager.SelectionRect = default(Rect);
@@ -462,31 +389,18 @@ namespace EditorManagement.Functions.Helpers
 		public static EventTrigger.Entry DragTrigger()
 		{
 			var editorManager = EditorManager.inst;
-			EventTrigger.Entry entry = new EventTrigger.Entry();
+			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.Drag;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				Vector3 vector = ((PointerEventData)eventData).position * editorManager.ScreenScaleInverse;
-				if (vector.x < editorManager.DragStartPos.x)
-				{
-					editorManager.SelectionRect.xMin = vector.x;
-					editorManager.SelectionRect.xMax = editorManager.DragStartPos.x;
-				}
-				else
-				{
-					editorManager.SelectionRect.xMin = editorManager.DragStartPos.x;
-					editorManager.SelectionRect.xMax = vector.x;
-				}
-				if (vector.y < editorManager.DragStartPos.y)
-				{
-					editorManager.SelectionRect.yMin = vector.y;
-					editorManager.SelectionRect.yMax = editorManager.DragStartPos.y;
-				}
-				else
-				{
-					editorManager.SelectionRect.yMin = editorManager.DragStartPos.y;
-					editorManager.SelectionRect.yMax = vector.y;
-				}
+				var vector = ((PointerEventData)eventData).position * editorManager.ScreenScaleInverse;
+
+				editorManager.SelectionRect.xMin = vector.x < editorManager.DragStartPos.x ? vector.x : editorManager.DragStartPos.x;
+				editorManager.SelectionRect.xMax = vector.x < editorManager.DragStartPos.x ? editorManager.DragStartPos.x : vector.x;
+
+				editorManager.SelectionRect.yMin = vector.y < editorManager.DragStartPos.y ? vector.y : editorManager.DragStartPos.y;
+				editorManager.SelectionRect.yMax = vector.y < editorManager.DragStartPos.y ? editorManager.DragStartPos.y : vector.y;
+
 				editorManager.SelectionBoxImage.rectTransform.offsetMin = editorManager.SelectionRect.min;
 				editorManager.SelectionBoxImage.rectTransform.offsetMax = editorManager.SelectionRect.max;
 			});
@@ -497,63 +411,84 @@ namespace EditorManagement.Functions.Helpers
 		{
 			var editorManager = EditorManager.inst;
 
-			EventTrigger.Entry entry = new EventTrigger.Entry();
+			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.EndDrag;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				PointerEventData pointerEventData = (PointerEventData)eventData;
-				EditorManager.inst.DragEndPos = pointerEventData.position;
+				EditorManager.inst.DragEndPos = ((PointerEventData)eventData).position;
 				EditorManager.inst.SelectionBoxImage.gameObject.SetActive(false);
 				if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
-				{
-					if (Input.GetKey(KeyCode.LeftShift))
-						RTEditor.inst.StartCoroutine(ObjectEditor.inst.GroupSelectObjects());
-					else
-						RTEditor.inst.StartCoroutine(ObjectEditor.inst.GroupSelectObjects(false));
-				}
+					RTEditor.inst.StartCoroutine(ObjectEditor.inst.GroupSelectObjects(Input.GetKey(KeyCode.LeftShift)));
 				else
-				{
-					bool flag = false;
-					//int type = 0;
-					//foreach (var list5 in EventEditor.inst.eventObjects)
-					//{
-					//	int index = 0;
-					//	foreach (var gameObject2 in list5)
-					//	{
-					//		if (EditorManager.RectTransformToScreenSpace(editorManager.SelectionBoxImage.rectTransform).Overlaps(EditorManager.RectTransformToScreenSpace(gameObject2.transform.GetChild(0).GetComponent<Image>().rectTransform)) && gameObject2.activeSelf)
-					//		{
-					//			if (!flag)
-					//			{
-					//				EventEditor.inst.SetCurrentEvent(type % RTEventEditor.EventLimit, index);
-					//				flag = true;
-					//			}
-					//			else
-					//			{
-					//				EventEditor.inst.AddedSelectedEvent(type % RTEventEditor.EventLimit, index);
-					//			}
-					//		}
-					//		index++;
-					//	}
-					//	type++;
-					//}
-
-					foreach (var timelineObject in RTEditor.inst.timelineKeyframes)
-                    {
-						if (timelineObject.Image && RTFunctions.Functions.IO.RTMath.RectTransformToScreenSpace(editorManager.SelectionBoxImage.rectTransform).Overlaps(RTFunctions.Functions.IO.RTMath.RectTransformToScreenSpace(timelineObject.Image.rectTransform)))
-                        {
-							if (!flag)
-                            {
-								EventEditor.inst.SetCurrentEvent(timelineObject.Type, timelineObject.Index);
-								flag = true;
-                            }
-							else
-								EventEditor.inst.AddedSelectedEvent(timelineObject.Type, timelineObject.Index);
-						}
-                    }
-				}
+					RTEventEditor.inst.StartCoroutine(RTEventEditor.inst.GroupSelectKeyframes(Input.GetKey(KeyCode.LeftShift)));
 			});
 			return entry;
 		}
+
+		#endregion
+
+		#region Keyframes
+
+		public static EventTrigger.Entry CreateKeyframeStartDragTrigger(BeatmapObject beatmapObject, TimelineObject timelineObject)
+		{
+			var entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.BeginDrag;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				if (timelineObject.Index != 0)
+				{
+					ObjEditor.inst.currentKeyframeKind = timelineObject.Type;
+					ObjEditor.inst.currentKeyframe = timelineObject.Index;
+
+					var list = ObjectEditor.inst.SelectedBeatmapObjectKeyframes;
+					if (list.FindIndex(x => x.Type == timelineObject.Type && x.Index == timelineObject.Index) != -1)
+					{
+						//ObjEditor.inst.selectedKeyframeOffsets.Clear();
+
+						foreach (var otherTLO in ObjectEditor.inst.SelectedBeatmapObjectKeyframes)
+						{
+							if (otherTLO.Type == ObjEditor.inst.currentKeyframeKind && otherTLO.Index == ObjEditor.inst.currentKeyframe)
+								//ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
+								otherTLO.timeOffset = 0f;
+							else
+								//ObjEditor.inst.selectedKeyframeOffsets.Add(otherTLO.Time - timelineObject.Time);
+								otherTLO.timeOffset = otherTLO.Time - timelineObject.Time;
+
+						}
+					}
+					ObjEditor.inst.mouseOffsetXForKeyframeDrag = timelineObject.Time - ObjEditorPatch.timeCalc();
+					ObjEditor.inst.timelineKeyframesDrag = true;
+				}
+				else
+				{
+					EditorManager.inst.DisplayNotification("Can't change time of first Keyframe", 2f, EditorManager.NotificationType.Warning, false);
+				}
+				ObjEditor.inst.SetCurrentKeyframe(timelineObject.Type, timelineObject.Index, false, false);
+			});
+			return entry;
+		}
+
+		public static EventTrigger.Entry CreateKeyframeEndDragTrigger(BeatmapObject beatmapObject, TimelineObject timelineObject)
+		{
+			var entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.EndDrag;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				ObjectEditor.inst.UpdateKeyframeOrder(beatmapObject);
+				ObjectEditor.inst.CreateKeyframes(beatmapObject);
+
+				ObjectEditor.inst.SetCurrentKeyframe(beatmapObject, timelineObject.Type, timelineObject.Index, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
+
+				ObjectEditor.inst.RenderTimelineObject(new TimelineObject(beatmapObject));
+				ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+				ObjEditor.inst.timelineKeyframesDrag = false;
+			});
+			return entry;
+		}
+
+		#endregion
+
+		#region Objects
 
 		public static EventTrigger.Entry CreateBeatmapObjectStartDragTrigger(TimelineObject timelineObject)
 		{
@@ -641,60 +576,6 @@ namespace EditorManagement.Functions.Helpers
 			return entry;
 		}
 
-		public static EventTrigger.Entry CreateKeyframeStartDragTrigger(BeatmapObject beatmapObject, TimelineObject timelineObject)
-		{
-			EventTrigger.Entry entry = new EventTrigger.Entry();
-			entry.eventID = EventTriggerType.BeginDrag;
-			entry.callback.AddListener(delegate (BaseEventData eventData)
-			{
-				if (timelineObject.Index != 0)
-				{
-					var list = ObjectEditor.inst.SelectedBeatmapObjectKeyframes;
-					if (list.FindIndex(x => x.Type == timelineObject.Type && x.Index == timelineObject.Index) != -1)
-					{
-						//ObjEditor.inst.selectedKeyframeOffsets.Clear();
-
-						foreach (var otherTLO in ObjectEditor.inst.SelectedBeatmapObjectKeyframes)
-                        {
-							if (otherTLO.Type == ObjEditor.inst.currentKeyframeKind && otherTLO.Index == ObjEditor.inst.currentKeyframe)
-								//ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
-								otherTLO.timeOffset = 0f;
-							else
-								//ObjEditor.inst.selectedKeyframeOffsets.Add(otherTLO.Time - timelineObject.Time);
-								otherTLO.timeOffset = otherTLO.Time - timelineObject.Time;
-
-						}
-					}
-					ObjEditor.inst.mouseOffsetXForKeyframeDrag = timelineObject.Time - ObjEditorPatch.timeCalc();
-					ObjEditor.inst.timelineKeyframesDrag = true;
-				}
-				else
-				{
-					EditorManager.inst.DisplayNotification("Can't change time of first Keyframe", 2f, EditorManager.NotificationType.Warning, false);
-				}
-				ObjEditor.inst.SetCurrentKeyframe(timelineObject.Type, timelineObject.Index, false, false);
-			});
-			return entry;
-		}
-
-		public static EventTrigger.Entry CreateKeyframeEndDragTrigger(BeatmapObject beatmapObject, TimelineObject timelineObject)
-		{
-			EventTrigger.Entry entry = new EventTrigger.Entry();
-			entry.eventID = EventTriggerType.EndDrag;
-			entry.callback.AddListener(delegate (BaseEventData eventData)
-			{
-				ObjectEditor.inst.UpdateKeyframeOrder(beatmapObject);
-				ObjectEditor.inst.CreateKeyframes(beatmapObject);
-
-				ObjectEditor.inst.SetCurrentKeyframe(beatmapObject, timelineObject.Type, timelineObject.Index, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
-
-				ObjectEditor.inst.RenderTimelineObject(new TimelineObject(beatmapObject));
-				ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
-				ObjEditor.inst.timelineKeyframesDrag = false;
-			});
-			return entry;
-		}
-
 		#endregion
 
 		#region Events
@@ -707,12 +588,14 @@ namespace EditorManagement.Functions.Helpers
 			{
 				if (!instance.eventDrag)
 				{
-					if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-					{
-						// RTEditor.AddEvent(instance, _type, _event, true);
-						return;
-					}
-					instance.SetCurrentEvent(_type, _event);
+					//if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
+					//{
+					//	instance.AddedSelectedEvent(_type, _event);
+					//	return;
+					//}
+					//instance.SetCurrentEvent(_type, _event);
+
+					(InputDataManager.inst.editorActions.MultiSelect.IsPressed ? (Action<int, int>)instance.AddedSelectedEvent : instance.SetCurrentEvent)(_type, _event);
 				}
 			});
 			return entry;
@@ -739,16 +622,14 @@ namespace EditorManagement.Functions.Helpers
 			{
 				if (_event != 0)
 				{
-					if (instance.keyframeSelections.FindIndex(x => x.Type == _type && x.Index == _event) != -1)
+					if (RTEventEditor.inst.SelectedKeyframes.FindIndex(x => x.Type == _type && x.Index == _event) != -1)
 					{
-						instance.selectedKeyframeOffsets.Clear();
-						foreach (var keyframeSelection in instance.keyframeSelections)
-						{
-							if (keyframeSelection.Index == instance.currentEvent && keyframeSelection.Type == instance.currentEventType)
-								instance.selectedKeyframeOffsets.Add(0.0f);
-							else
-								instance.selectedKeyframeOffsets.Add(DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type][keyframeSelection.Index].eventTime - DataManager.inst.gameData.eventObjects.allEvents[instance.currentEventType][instance.currentEvent].eventTime);
-						}
+						foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+                        {
+							timelineObject.timeOffset = timelineObject.Type == instance.currentEventType && timelineObject.Index == instance.currentEvent ? 0f :
+							DataManager.inst.gameData.eventObjects.allEvents[timelineObject.Type][timelineObject.Index].eventTime -
+							DataManager.inst.gameData.eventObjects.allEvents[instance.currentEventType][instance.currentEvent].eventTime;
+                        }
 					}
 					else
 						instance.SetCurrentEvent(_type, _event);
