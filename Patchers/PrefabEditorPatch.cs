@@ -54,7 +54,7 @@ namespace EditorManagement.Patchers
         static bool StartPrefix()
         {
             Instance.StartCoroutine(RTEditor.inst.LoadPrefabs(Instance));
-            Instance.OffsetLine = Instance.OffsetLinePrefab.Duplicate(EditorManager.inst.transform.transform, "offset line");
+            Instance.OffsetLine = Instance.OffsetLinePrefab.Duplicate(EditorManager.inst.timeline.transform, "offset line");
 
             //Debug.Log($"{Instance.className}Creating prefab types...");
             //var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
