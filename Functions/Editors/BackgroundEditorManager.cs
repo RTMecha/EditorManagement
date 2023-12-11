@@ -167,7 +167,7 @@ namespace EditorManagement.Functions.Editors
 				LSHelpers.DeleteChildren(shapeOption);
 
 				int last = 0;
-				foreach (var sad in Objects.Shapes3D)
+				foreach (var sad in ShapeManager.Shapes3D)
                 {
 					if (last < sad.Type)
 						last = sad.Type;
@@ -175,7 +175,7 @@ namespace EditorManagement.Functions.Editors
 
 				for (int i = 0; i < last + 1; i++)
                 {
-					string s = Objects.GetShape3D(i, 0).name.ToLower().Replace(" ", "_");
+					string s = ShapeManager.GetShape3D(i, 0).name.ToLower().Replace(" ", "_");
 					if (ShapeUI.Dictionary.ContainsKey(s))
 					{
 						var ui = ShapeUI.Dictionary[s];
@@ -193,7 +193,7 @@ namespace EditorManagement.Functions.Editors
                     }
 
 					int lastOption = 0;
-					foreach (var sad in Objects.Shapes3D)
+					foreach (var sad in ShapeManager.Shapes3D)
                     {
 						if (sad.type == i && lastOption < sad.Option)
 							lastOption = sad.Option;
@@ -201,7 +201,7 @@ namespace EditorManagement.Functions.Editors
 
 					for (int j = 0; j < lastOption + 1; j++)
 					{
-						string so = Objects.GetShape3D(i, j).name.ToLower().Replace(" ", "_");
+						string so = ShapeManager.GetShape3D(i, j).name.ToLower().Replace(" ", "_");
 
 						if (ShapeUI.Dictionary.ContainsKey(so))
 						{
@@ -423,7 +423,7 @@ namespace EditorManagement.Functions.Editors
 				backgroundObject.reactiveScaIntensity = new Vector2(UnityEngine.Random.Range(0, 100) > 45 ? UnityEngine.Random.Range(0f, 1f) : 0f, UnityEngine.Random.Range(0, 100) > 45 ? UnityEngine.Random.Range(0f, 1f) : 0f);
 				backgroundObject.reactiveRotIntensity = UnityEngine.Random.Range(0, 100) > 45 ? UnityEngine.Random.Range(0f, 1f) : 0f;
 				backgroundObject.reactiveCol = UnityEngine.Random.Range(1, 6);
-				backgroundObject.shape = Objects.Shapes[UnityEngine.Random.Range(0, Objects.Shapes.Count - 1)];
+				backgroundObject.shape = ShapeManager.Shapes[UnityEngine.Random.Range(0, ShapeManager.Shapes.Count - 1)];
 
 				DataManager.inst.gameData.backgroundObjects.Add(backgroundObject);
 			}
