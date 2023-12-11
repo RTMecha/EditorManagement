@@ -44,7 +44,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool SaveThemePrefix(DataManager.BeatmapTheme __0)
         {
-            ThemeEditorManager.inst.SaveTheme(__0);
+            ThemeEditorManager.inst.SaveTheme((RTFunctions.Functions.Data.BeatmapTheme)__0);
             return false;
         }
 
