@@ -68,7 +68,13 @@ namespace EditorManagement.Patchers
 				Instance.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>().enabled = i < (EventsCore ? 14 : 10);
 			}
 
+			for (int i = 0; i < 9; i++)
+			{
+				__instance.previewTheme.objectColors.Add(LSColors.pink900);
+			}
+
 			var beatmapTheme = __instance.previewTheme;
+
 			__instance.previewTheme = new BeatmapTheme
 			{
 				id = beatmapTheme.id,
@@ -111,11 +117,6 @@ namespace EditorManagement.Patchers
 				});
 				Instance.EventHolders.transform.GetChild(typeTmp).GetComponent<EventTrigger>().triggers.Add(entry);
 				num++;
-			}
-
-			for (int i = 0; i < 9; i++)
-			{
-				Instance.previewTheme.objectColors.Add(LSColors.pink900);
 			}
 
 			RTEventEditor.Init(Instance);
