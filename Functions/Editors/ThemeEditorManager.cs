@@ -15,6 +15,7 @@ using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 using EditorManagement.Functions.Helpers;
 
@@ -39,6 +40,19 @@ namespace EditorManagement.Functions.Editors
 				for (int i = 10; i < 19; i++)
 				{
 					var col = themeParent.Find("object8").gameObject.Duplicate(themeParent, "object" + (i - 1).ToString(), 8 + i);
+					col.transform.Find("text").GetComponent<Text>().text = i.ToString();
+				}
+
+				var guiAccent = themeParent.Find("gui").gameObject.Duplicate(themeParent, "guiaccent", 3);
+				guiAccent.transform.Find("text").GetComponent<Text>().text = "Tail";
+				themeParent.Find("gui/text").GetComponent<Text>().text = "GUI";
+
+				var label = themeParent.GetChild(0).gameObject.Duplicate(themeParent, "label");
+				label.transform.Find("text").GetComponent<Text>().text = "Effects" + (!ModCompatibility.mods.ContainsKey("EventsCore") ? " (Requires EventsCore)" : "");
+
+				for (int i = 0; i < 18; i++)
+                {
+					var col = themeParent.Find("object8").gameObject.Duplicate(themeParent, "effect" + i.ToString());
 					col.transform.Find("text").GetComponent<Text>().text = i.ToString();
 				}
 			}
@@ -165,18 +179,19 @@ namespace EditorManagement.Functions.Editors
 			yield break;
 		}
 
+		public BeatmapTheme PreviewTheme { get => (BeatmapTheme)EventEditor.inst.previewTheme; set => EventEditor.inst.previewTheme = value; }
+
 		public void RenderThemeEditor(int __0 = -1)
 		{
 			var Instance = EventEditor.inst;
 
 			Debug.LogFormat("{0}ID: {1}", EditorPlugin.className, __0);
-			if (__0 != -1)
-				Instance.previewTheme = BeatmapTheme.DeepCopy((BeatmapTheme)DataManager.inst.GetTheme(__0), true);
-			else
-			{
-				Instance.previewTheme = new BeatmapTheme();
-				Instance.previewTheme.ClearBeatmap();
-			}
+
+			var previewTheme = __0 != -1 ? BeatmapTheme.DeepCopy((BeatmapTheme)DataManager.inst.GetTheme(__0), true) :  new BeatmapTheme();
+
+			PreviewTheme = previewTheme;
+			if (__0 == -1)
+				previewTheme.ClearBeatmap();
 
 			var theme = Instance.dialogLeft.Find("theme");
 			theme.gameObject.SetActive(true);
@@ -197,10 +212,10 @@ namespace EditorManagement.Functions.Editors
 			var update = actions.Find("update").GetComponent<Button>();
 
 			name.onValueChanged.RemoveAllListeners();
-			name.text = Instance.previewTheme.name;
+			name.text = PreviewTheme.name;
 			name.onValueChanged.AddListener(delegate (string val)
 			{
-				Instance.previewTheme.name = val;
+				PreviewTheme.name = val;
 			});
 			cancel.onClick.RemoveAllListeners();
 			cancel.onClick.AddListener(delegate ()
@@ -216,8 +231,8 @@ namespace EditorManagement.Functions.Editors
 
 			createNew.onClick.AddListener(delegate ()
 			{
-				Instance.previewTheme.id = null;
-				ThemeEditor.inst.SaveTheme(DataManager.BeatmapTheme.DeepCopy(Instance.previewTheme));
+				PreviewTheme.id = null;
+				ThemeEditor.inst.SaveTheme(BeatmapTheme.DeepCopy(PreviewTheme));
 				Instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
 				var child = Instance.dialogRight.GetChild(Instance.currentEventType);
 				Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
@@ -233,12 +248,12 @@ namespace EditorManagement.Functions.Editors
 							select x).ToList();
 				foreach (var lsfile in fileList)
 				{
-					if (int.Parse(DataManager.BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath)), false).id) == __0)
+					if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
 					{
 						FileManager.inst.DeleteFileRaw(lsfile.FullPath);
 					}
 				}
-				ThemeEditor.inst.SaveTheme(DataManager.BeatmapTheme.DeepCopy(Instance.previewTheme, true));
+				ThemeEditor.inst.SaveTheme(BeatmapTheme.DeepCopy(PreviewTheme, true));
 				Instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
 				var child = EventEditor.inst.dialogRight.GetChild(Instance.currentEventType);
 				Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
@@ -253,29 +268,21 @@ namespace EditorManagement.Functions.Editors
 			var bgDropper = themeContent.Find("bg/preview/dropper").GetComponent<Image>();
 
 			bgHex.onValueChanged.RemoveAllListeners();
-			bgHex.text = LSColors.ColorToHex(Instance.previewTheme.backgroundColor);
-			bgPreview.color = Instance.previewTheme.backgroundColor;
+			bgHex.text = LSColors.ColorToHex(PreviewTheme.backgroundColor);
+			bgPreview.color = PreviewTheme.backgroundColor;
 			bgHex.onValueChanged.AddListener(delegate (string val)
 			{
-				if (val.Length == 6)
-				{
-					bgPreview.color = LSColors.HexToColor(val);
-					Instance.previewTheme.backgroundColor = LSColors.HexToColor(val);
-				}
-				else
-				{
-					bgPreview.color = LSColors.pink500;
-					Instance.previewTheme.backgroundColor = LSColors.pink500;
-				}
+				bgPreview.color = val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
+				PreviewTheme.backgroundColor = val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
 
-				bgDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(Instance.previewTheme.backgroundColor));
+				bgDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.backgroundColor));
 				bgPreviewET.triggers.Clear();
-				bgPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, Instance.previewTheme.backgroundColor));
+				bgPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, PreviewTheme.backgroundColor));
 			});
 
-			bgDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(Instance.previewTheme.backgroundColor));
+			bgDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.backgroundColor));
 			bgPreviewET.triggers.Clear();
-			bgPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, Instance.previewTheme.backgroundColor));
+			bgPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(bgPreview, bgDropper, bgHex, PreviewTheme.backgroundColor));
 
 			var guiHex = themeContent.Find("gui/hex").GetComponent<InputField>();
 			var guiPreview = themeContent.Find("gui/preview").GetComponent<Image>();
@@ -286,35 +293,54 @@ namespace EditorManagement.Functions.Editors
 			guiHex.characterLimit = 8;
 			guiHex.characterValidation = InputField.CharacterValidation.None;
 			guiHex.contentType = InputField.ContentType.Standard;
-			guiHex.text = RTHelpers.ColorToHex(Instance.previewTheme.guiColor);
-			guiPreview.color = Instance.previewTheme.guiColor;
+			guiHex.text = RTHelpers.ColorToHex(PreviewTheme.guiColor);
+			guiPreview.color = PreviewTheme.guiColor;
 			guiHex.onValueChanged.AddListener(delegate (string val)
 			{
-				if (val.Length == 8)
-				{
-					guiPreview.color = LSColors.HexToColorAlpha(val);
-					Instance.previewTheme.guiColor = LSColors.HexToColorAlpha(val);
-				}
-				else
-				{
-					guiPreview.color = LSColors.pink500;
-					Instance.previewTheme.guiColor = LSColors.pink500;
-				}
+				guiPreview.color = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
+				PreviewTheme.guiColor = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
 
-				guiDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(Instance.previewTheme.guiColor));
+				guiDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.guiColor));
 				guiPreviewET.triggers.Clear();
-				guiPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, Instance.previewTheme.guiColor));
+				guiPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, PreviewTheme.guiColor));
 			});
 
-			guiDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(Instance.previewTheme.guiColor));
+			guiDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.guiColor));
 			guiPreviewET.triggers.Clear();
-			guiPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, Instance.previewTheme.guiColor));
+			guiPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiPreview, guiDropper, guiHex, PreviewTheme.guiColor));
+			
+			var guiaccentHex = themeContent.Find("guiaccent/hex").GetComponent<InputField>();
+			var guiaccentPreview = themeContent.Find("guiaccent/preview").GetComponent<Image>();
+			var guiaccentPreviewET = themeContent.Find("guiaccent/preview").GetComponent<EventTrigger>();
+			var guiaccentDropper = themeContent.Find("guiaccent/preview/dropper").GetComponent<Image>();
 
-			RenderColorList(themeContent, "player", 4, EventEditor.inst.previewTheme.objectColors);
+			guiaccentHex.onValueChanged.RemoveAllListeners();
+			guiaccentHex.characterLimit = 8;
+			guiaccentHex.characterValidation = InputField.CharacterValidation.None;
+			guiaccentHex.contentType = InputField.ContentType.Standard;
+			guiaccentHex.text = RTHelpers.ColorToHex(PreviewTheme.guiAccentColor);
+			guiaccentPreview.color = PreviewTheme.guiAccentColor;
+			guiaccentHex.onValueChanged.AddListener(delegate (string val)
+			{
+				guiaccentPreview.color = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
+				PreviewTheme.guiAccentColor = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
 
-			RenderColorList(themeContent, "object", 18, EventEditor.inst.previewTheme.objectColors);
+				guiaccentDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.guiAccentColor));
+				guiaccentPreviewET.triggers.Clear();
+				guiaccentPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiaccentPreview, guiaccentDropper, guiaccentHex, PreviewTheme.guiAccentColor));
+			});
 
-			RenderColorList(themeContent, "background", 9, EventEditor.inst.previewTheme.backgroundColors, false);
+			guiaccentDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.guiAccentColor));
+			guiaccentPreviewET.triggers.Clear();
+			guiaccentPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiaccentPreview, guiaccentDropper, guiaccentHex, PreviewTheme.guiAccentColor));
+
+			RenderColorList(themeContent, "player", 4, PreviewTheme.playerColors);
+
+			RenderColorList(themeContent, "object", 18, PreviewTheme.objectColors);
+
+			RenderColorList(themeContent, "background", 9, PreviewTheme.backgroundColors, false);
+
+			RenderColorList(themeContent, "effect", 18, PreviewTheme.effectColors);
 		}
 
 		public void RenderColorList(Transform themeContent, string name, int count, List<Color> colors, bool allowAlpha = true)
@@ -362,31 +388,33 @@ namespace EditorManagement.Functions.Editors
 			StartCoroutine(RTEditor.inst.LoadThemes(true));
 		}
 
-		public void SaveTheme(DataManager.BeatmapTheme _theme)
+		public void SaveTheme(BeatmapTheme _theme)
 		{
 			Debug.Log($"{EventEditor.inst.className}Saving {_theme.id} ({_theme.name}) to File System!");
 
-			var jsonnode = JSON.Parse("{}");
 			if (string.IsNullOrEmpty(_theme.id))
 			{
 				_theme.id = LSText.randomNumString(6);
 			}
 
-			var saveOpacity = RTEditor.GetEditorProperty("Saving Saves Beatmap Opacity").GetConfigEntry<bool>().Value;
+			GameData.SaveOpacityToThemes = RTEditor.GetEditorProperty("Saving Saves Beatmap Opacity").GetConfigEntry<bool>().Value;
 
-			jsonnode["id"] = _theme.id.ToString();
-			jsonnode["name"] = _theme.name;
-			jsonnode["gui"] = saveOpacity ? RTHelpers.ColorToHex(_theme.guiColor) : LSColors.ColorToHex(_theme.guiColor);
-			jsonnode["bg"] = LSColors.ColorToHex(_theme.backgroundColor);
+			//jsonnode["id"] = _theme.id.ToString();
+			//jsonnode["name"] = _theme.name;
+			//jsonnode["gui"] = saveOpacity ? RTHelpers.ColorToHex(_theme.guiColor) : LSColors.ColorToHex(_theme.guiColor);
+			//jsonnode["gui_ex"] = saveOpacity ? RTHelpers.ColorToHex(_theme.guiColor) : LSColors.ColorToHex(_theme.guiColor);
+			//jsonnode["bg"] = LSColors.ColorToHex(_theme.backgroundColor);
 
-			for (int i = 0; i < _theme.playerColors.Count; i++)
-				jsonnode["players"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.playerColors[i]) : LSColors.ColorToHex(_theme.playerColors[i]);
-			for (int i = 0; i < _theme.objectColors.Count; i++)
-				jsonnode["objs"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.objectColors[i]) : LSColors.ColorToHex(_theme.objectColors[i]);
-			for (int i = 0; i < _theme.backgroundColors.Count; i++)
-				jsonnode["bgs"][i] = LSColors.ColorToHex(_theme.backgroundColors[i]);
+			//for (int i = 0; i < _theme.playerColors.Count; i++)
+			//	jsonnode["players"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.playerColors[i]) : LSColors.ColorToHex(_theme.playerColors[i]);
+			//for (int i = 0; i < _theme.objectColors.Count; i++)
+			//	jsonnode["objs"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.objectColors[i]) : LSColors.ColorToHex(_theme.objectColors[i]);
+			//for (int i = 0; i < _theme.backgroundColors.Count; i++)
+			//	jsonnode["bgs"][i] = LSColors.ColorToHex(_theme.backgroundColors[i]);
+			//for (int i = 0; i < _theme.effectColors.Count; i++)
+			//	jsonnode["fx"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.effectColors[i]) : LSColors.ColorToHex(_theme.effectColors[i]);
 
-			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst", jsonnode.ToString());
+			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst", _theme.ToJSON().ToString());
 			EditorManager.inst.DisplayNotification($"Saved theme [{_theme.name}]!", 2f, EditorManager.NotificationType.Success);
 		}
 
