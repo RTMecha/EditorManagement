@@ -29,6 +29,7 @@ using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
 using BaseObjectSelection = ObjEditor.ObjectSelection;
 using BaseObjectKeyframeSelection = ObjEditor.KeyframeSelection;
 using EventKeyframeSelection = EventEditor.KeyframeSelection;
+using EditorManagement.Functions.Helpers;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -62,11 +63,13 @@ namespace EditorManagement.Functions.Editors
                 FirstInit();
             else
                 Load();
+
+            GenerateKeybindEditorPopupDialog();
         }
 
         void Update()
         {
-            if (!LSHelpers.IsUsingInputField() && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
+            if (!LSHelpers.IsUsingInputField() && EditorManager.inst.isEditing && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
             {
                 foreach (var keybind in keybinds)
                 {
@@ -363,6 +366,293 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        #region Dialog
+
+        public Transform content;
+        public Sprite editSprite;
+        public Transform editorDialog;
+        public Dropdown actionDropdown;
+        public RectTransform keysContent;
+
+        public GameObject keyPrefab;
+
+        public void GenerateKeybindEditorPopupDialog()
+        {
+            var qap = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog;
+            var popup = qap.gameObject.Duplicate(qap.parent, "Keybind List Popup");
+            content = popup.transform.Find("mask/content");
+
+            StartCoroutine(EditorManager.inst.GetSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_edit.png", new EditorManager.SpriteLimits(), delegate (Sprite sprite)
+            {
+                editSprite = sprite;
+            }, delegate (string onError)
+            {
+
+            }));
+
+            editorDialog.Find("title/Text").GetComponent<Text>().text = "- Keybind Editor -";
+            Destroy(editorDialog.Find("Text").gameObject);
+
+            EditorHelper.AddEditorPopup("Keybind List Popup", popup);
+
+            var dialog = EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog;
+            editorDialog = dialog.gameObject.Duplicate(dialog.parent, "KeybindEditor").transform;
+            editorDialog.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
+            ((RectTransform)editorDialog).sizeDelta = new Vector2(0f, 32f);
+
+            var data = new GameObject("data");
+            data.transform.SetParent(editorDialog);
+            data.transform.localScale = Vector3.one;
+            var dataRT = data.AddComponent<RectTransform>();
+            dataRT.sizeDelta = new Vector2(765f, 300f);
+            var dataVLG = data.AddComponent<VerticalLayoutGroup>();
+            dataVLG.childControlHeight = false;
+            dataVLG.childForceExpandHeight = false;
+            dataVLG.spacing = 4f;
+
+            var action = new GameObject("action");
+            action.transform.SetParent(dataRT);
+            action.transform.localScale = Vector3.one;
+            var actionRT = action.AddComponent<RectTransform>();
+            actionRT.sizeDelta = new Vector2(765f, 32f);
+            var actionHLG = action.AddComponent<HorizontalLayoutGroup>();
+            actionHLG.childControlWidth = false;
+            actionHLG.childForceExpandWidth = false;
+
+            var title = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/name/title").gameObject
+                .Duplicate(actionRT, "title");
+            title.GetComponent<Text>().text = "Action";
+
+            var actionDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
+                .Duplicate(actionRT, "dropdown");
+
+            ((RectTransform)actionDropdown.transform).sizeDelta = new Vector2(632f, 32f);
+
+            this.actionDropdown = actionDropdown.GetComponent<Dropdown>();
+            this.actionDropdown.onValueChanged.ClearAll();
+            this.actionDropdown.options = KeybinderMethods.Select(x => new Dropdown.OptionData(x.Method.Name)).ToList();
+            this.actionDropdown.value = 0;
+
+            var scrollRect = new GameObject("ScrollRect");
+            scrollRect.transform.SetParent(dataRT);
+            scrollRect.transform.localScale = Vector3.one;
+            var scrollRectRT = scrollRect.AddComponent<RectTransform>();
+            scrollRectRT.anchoredPosition = new Vector2(0f, 16f);
+            scrollRectRT.sizeDelta = new Vector2(400f, 250f);
+            var scrollRectSR = scrollRect.AddComponent<ScrollRect>();
+
+            var maskGO = new GameObject("Mask");
+            maskGO.transform.SetParent(scrollRectRT);
+            maskGO.transform.localScale = Vector3.one;
+            var maskRT = maskGO.AddComponent<RectTransform>();
+            maskRT.anchoredPosition = new Vector2(0f, 0f);
+            maskRT.anchorMax = new Vector2(1f, 1f);
+            maskRT.anchorMin = new Vector2(0f, 0f);
+            maskRT.sizeDelta = new Vector2(0f, 0f);
+            var maskImage = maskGO.AddComponent<Image>();
+            maskImage.color = new Color(1f, 1f, 1f, 0.04f);
+            var mask = maskGO.AddComponent<Mask>();
+
+            var keysContentGO = new GameObject("Content");
+            keysContentGO.transform.SetParent(maskRT);
+            keysContentGO.transform.localScale = Vector3.one;
+            keysContent = keysContentGO.AddComponent<RectTransform>();
+
+            keysContent.anchoredPosition = new Vector2(0f, -16f);
+            keysContent.anchorMax = new Vector2(0f, 1f);
+            keysContent.anchorMin = new Vector2(0f, 1f);
+            keysContent.pivot = new Vector2(0f, 1f);
+            keysContent.sizeDelta = new Vector2(400f, 250f);
+
+            var contentSizeFitter = keysContentGO.AddComponent<ContentSizeFitter>();
+            contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+            contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+            var contentVLG = keysContentGO.AddComponent<VerticalLayoutGroup>();
+            contentVLG.childControlHeight = false;
+            contentVLG.childForceExpandHeight = false;
+            contentVLG.spacing = 4f;
+
+            var contentLE = keysContentGO.AddComponent<LayoutElement>();
+            contentLE.layoutPriority = 10000;
+            contentLE.minWidth = 760;
+
+            scrollRectSR.content = keysContent;
+
+            // Key Prefab
+            {
+                keyPrefab = new GameObject("Key");
+                var rectTransform = keyPrefab.AddComponent<RectTransform>();
+                rectTransform.sizeDelta = new Vector2(400f, 32f);
+                var image = keyPrefab.AddComponent<Image>();
+                image.color = new Color(0.2f, 0.2f, 0.2f);
+
+                var horizontalLayoutGroup = keyPrefab.AddComponent<HorizontalLayoutGroup>();
+                horizontalLayoutGroup.childControlWidth = false;
+                horizontalLayoutGroup.childForceExpandWidth = false;
+                horizontalLayoutGroup.spacing = 4;
+
+                var keyTypeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
+                .Duplicate(rectTransform, "Key Type");
+
+                ((RectTransform)keyTypeDropdown.transform).sizeDelta = new Vector2(378f, 32f);
+
+                var keyTypeDropdownDD = keyTypeDropdown.GetComponent<Dropdown>();
+                keyTypeDropdownDD.onValueChanged.ClearAll();
+                keyTypeDropdownDD.options = Enum.GetNames(typeof(Keybind.Key.Type)).Select(x => new Dropdown.OptionData(x)).ToList();
+                keyTypeDropdownDD.value = 0;
+
+                var keyCodeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
+                .Duplicate(rectTransform, "Key Code");
+
+                ((RectTransform)keyCodeDropdown.transform).sizeDelta = new Vector2(378f, 32f);
+
+                var keyCodeDropdownDD = keyCodeDropdown.GetComponent<Dropdown>();
+                keyCodeDropdownDD.onValueChanged.ClearAll();
+                keyCodeDropdownDD.value = 0;
+                keyCodeDropdownDD.options.Clear();
+
+                var hide = keyCodeDropdown.AddComponent<HideDropdownOptions>();
+
+                var keyCodes = Enum.GetValues(typeof(KeyCode));
+                for (int i = 0; i < keyCodes.Length; i++)
+                {
+                    var str = Enum.GetName(typeof(KeyCode), i) != null ? Enum.GetName(typeof(KeyCode), i) : "Invalid Value";
+
+                    hide.DisabledOptions.Add(Enum.GetName(typeof(KeyCode), i) == null);
+
+                    keyCodeDropdownDD.options.Add(new Dropdown.OptionData(str));
+                }
+            }
+
+            EditorHelper.AddEditorDialog("Keybind Editor", editorDialog.gameObject);
+        }
+
+        public void OpenPopup()
+        {
+            EditorManager.inst.ShowDialog("Keybind List Popup");
+            RefreshKeybindPopup();
+        }
+
+        public void RefreshKeybindPopup()
+        {
+            LSHelpers.DeleteChildren(content);
+
+            var add = PrefabEditor.inst.CreatePrefab.Duplicate(content);
+            add.transform.Find("Text").GetComponent<Text>().text = "Add new Keybind";
+            var addButton = add.GetComponent<Button>();
+            addButton.onClick.ClearAll();
+            addButton.onClick.AddListener(delegate ()
+            {
+                var keybind = new Keybind(LSText.randomNumString(16), new List<Keybind.Key> { new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha0) }, 1, Settings[1]);
+                keybinds.Add(keybind);
+                RefreshKeybindPopup();
+
+                EditorManager.inst.ShowDialog("Keybind Editor");
+                RefreshKeybindEditor(keybind);
+            });
+
+            foreach (var keybind in keybinds)
+            {
+                var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, keybind.Name);
+                var button = gameObject.transform.Find("Image").gameObject.AddComponent<Button>();
+                button.onClick.AddListener(delegate ()
+                {
+                    EditorManager.inst.ShowDialog("Keybind Editor");
+                    RefreshKeybindEditor(keybind);
+                });
+
+                var ed1 = new GameObject("Edit");
+                ed1.transform.SetParent(gameObject.transform.Find("Image"));
+                ed1.transform.localScale = Vector3.one;
+
+                var rt = ed1.AddComponent<RectTransform>();
+                rt.anchoredPosition = Vector2.zero;
+                rt.sizeDelta = new Vector2(32f, 32f);
+
+                var image = ed1.AddComponent<Image>();
+                image.sprite = editSprite;
+                image.color = Color.black;
+
+                var name = keybind.Name;
+
+                if (keybind.settings != null && keybind.settings.Count > 0)
+                {
+                    name += " (";
+                    for (int i = 0; i < keybind.settings.Count; i++)
+                    {
+                        name += $"{keybind.settings.ElementAt(i).Key}: {keybind.settings.ElementAt(i).Value}";
+                        if (i != keybind.settings.Count - 1)
+                            name += ", ";
+                    }
+                    name += ")";
+                }
+
+                gameObject.transform.Find("folder-name").GetComponent<Text>().text = name;
+            }
+        }
+
+        public void RefreshKeybindEditor(Keybind keybind)
+        {
+            actionDropdown.onValueChanged.ClearAll();
+            actionDropdown.value = keybind.ActionType;
+            actionDropdown.onValueChanged.AddListener(delegate (int _val)
+            {
+                keybind.ActionType = _val;
+                var settings = Settings;
+                keybind.settings = settings[_val] == null ? new Dictionary<string, string>() : settings[_val];
+                Save();
+            });
+
+            LSHelpers.DeleteChildren(keysContent);
+
+            var add = PrefabEditor.inst.CreatePrefab.Duplicate(keysContent, "Add Key");
+            add.transform.Find("Text").GetComponent<Text>().text = "Add new Key";
+            ((RectTransform)add.transform).sizeDelta = new Vector2(760f, 32f);
+            var addButton = add.GetComponent<Button>();
+            addButton.onClick.ClearAll();
+            addButton.onClick.AddListener(delegate ()
+            {
+                var key = new Keybind.Key(Keybind.Key.Type.Down, KeyCode.None);
+                keybind.keys.Add(key);
+                RefreshKeybindEditor(keybind);
+                Save();
+            });
+
+            foreach (var key in keybind.keys)
+            {
+                var gameObject = keyPrefab.Duplicate(keysContent, "Key");
+                var type = gameObject.transform.Find("Key Type").GetComponent<Dropdown>();
+                type.value = (int)key.InteractType;
+                type.onValueChanged.AddListener(delegate (int _val)
+                {
+                    key.InteractType = (Keybind.Key.Type)_val;
+                    Save();
+                });
+
+                var code = gameObject.transform.Find("Key Code").GetComponent<Dropdown>();
+
+                //int num = 0;
+                //var keyCodes = Enum.GetValues(typeof(KeyCode));
+                //for (int i = 0; i < keyCodes.Length; i++)
+                //{
+                //    var str = Enum.GetName(typeof(KeyCode), i) != null ? Enum.GetName(typeof(KeyCode), i) : "Invalid Value";
+
+                //    if (str == key.KeyCode.ToString())
+                //        num = i;
+                //}
+
+                code.value = (int)key.KeyCode;
+                code.onValueChanged.AddListener(delegate (int _val)
+                {
+                    key.InteractType = (Keybind.Key.Type)_val;
+                    Save();
+                });
+            }
+        }
+
+        #endregion
+
         #region Methods
 
         public static List<Action<Keybind>> KeybinderMethods { get; } = new List<Action<Keybind>>
@@ -375,7 +665,7 @@ namespace EditorManagement.Functions.Editors
             CollapsePrefab, // 5
             ExpandPrefab, // 6
             SetSongTimeAutokill, // 7
-            OpenPopup, // 8
+            OpenDialog, // 8
             SaveBeatmap, // 9
             OpenBeatmapPopup, // 10
             SetLayer, // 11
@@ -479,11 +769,11 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void OpenPopup(Keybind keybind)
+        public static void OpenDialog(Keybind keybind)
         {
-            if (EditorManager.inst && keybind.settings.ContainsKey("Popup") && EditorManager.inst.EditorDialogsDictionary.ContainsKey(keybind.settings["Popup"]))
+            if (EditorManager.inst && keybind.settings.ContainsKey("Dialog") && EditorManager.inst.EditorDialogsDictionary.ContainsKey(keybind.settings["Popup"]))
             {
-                EditorManager.inst.ShowDialog(keybind.settings["Popup"]);
+                EditorManager.inst.ShowDialog(keybind.settings["Dialog"]);
             }
         }
 
@@ -827,7 +1117,7 @@ namespace EditorManagement.Functions.Editors
                     var e = (int)bm.objectType - 1;
 
                     if (e < 0)
-                        e = RTFunctions.Enums.EnumUtils.GetAll(bm.objectType).Length - 1;
+                        e = Enum.GetValues(bm.objectType.GetType()).Length - 1;
 
                     bm.objectType = (ObjectType)e;
 
@@ -1105,7 +1395,99 @@ namespace EditorManagement.Functions.Editors
 
         #region Settings
 
-
+        public List<Dictionary<string, string>> Settings => new List<Dictionary<string, string>>
+        {
+            new Dictionary<string, string>
+            {
+                { "Code", "Debug.Log($\"{EditorManagement.Functions.Editors.KeybindManager.className} This is an example! You can use the keybind variable to check any settings you may have.\");" }
+            }, // 0
+            null, // 1
+            null, // 2
+            null, // 3
+            null, // 4
+            null, // 5
+            null, // 6
+            null, // 7
+            new Dictionary<string, string>
+            {
+                { "Dialog", "Open File Popup" }
+            }, // 8
+            null, // 9
+            null, // 10
+            new Dictionary<string, string>
+            {
+                { "Layer", "0" }
+            }, // 11
+            null, // 12
+            null, // 13
+            null, // 14
+            null, // 15
+            new Dictionary<string, string>
+            {
+                { "EventType", "0" },
+                { "EventIndex", "0" },
+                { "EventValue", "0" },
+                { "EventAmount", "0" },
+            }, // 16
+            new Dictionary<string, string>
+            {
+                { "EventType", "0" },
+                { "EventIndex", "0" },
+                { "EventValue", "0" },
+                { "EventAmount", "0" },
+            }, // 17
+            new Dictionary<string, string>
+            {
+                { "EventType", "0" },
+                { "EventIndex", "0" },
+                { "EventValue", "0" },
+                { "EventAmount", "0" },
+            }, // 18
+            null, // 19
+            null, // 20
+            null, // 21
+            null, // 22
+            null, // 23
+            null, // 24
+            null, // 25
+            null, // 26
+            null, // 27
+            null, // 28
+            null, // 29
+            null, // 30
+            null, // 31
+            null, // 32
+            null, // 33
+            null, // 34
+            null, // 35
+            null, // 36
+            null, // 37
+            null, // 38
+            null, // 39
+            null, // 40
+            null, // 41
+            null, // 42
+            null, // 43
+            null, // 44
+            new Dictionary<string, string>
+            {
+                { "External", "False" },
+                { "UseID", "False" },
+                { "ID", "" },
+                { "Index", "0" }
+            }, // 45
+            null, // 46
+            null, // 47
+            new Dictionary<string, string>
+            {
+                { "Remove Prefab Instance ID", "True" }
+            }, // 48
+            new Dictionary<string, string>
+            {
+                { "Remove Prefab Instance ID", "True" }
+            }, // 49
+            null, // 50
+        };
 
         #endregion
 
@@ -1179,10 +1561,7 @@ namespace EditorManagement.Functions.Editors
                 var jn = JSON.Parse("{}");
 
                 jn["id"] = id;
-                if (ActionType >= 0 && ActionType < KeybinderMethods.Count)
-                    jn["name"] = KeybinderMethods[ActionType].Method.Name;
-                else
-                    jn["name"] = "Invalid method";
+                jn["name"] = Name;
 
                 jn["action"] = ActionType.ToString();
                 for (int i = 0; i < keys.Count; i++)
@@ -1193,7 +1572,7 @@ namespace EditorManagement.Functions.Editors
                 for (int i = 0; i < settings.Count; i++)
                 {
                     var element = settings.ElementAt(i);
-                    jn["settings"][element.Key] = element.Value;
+                    jn["settings"][i][element.Key] = element.Value;
                 }
 
                 return jn;
@@ -1231,6 +1610,8 @@ namespace EditorManagement.Functions.Editors
                     return KeybinderMethods[ActionType];
                 }
             }
+
+            public string Name => ActionType >= 0 && ActionType < KeybinderMethods.Count ? KeybinderMethods[ActionType].Method.Name : "Invalid method";
 
             public bool watchingKeybind;
 
