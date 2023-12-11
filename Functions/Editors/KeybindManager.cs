@@ -44,8 +44,6 @@ namespace EditorManagement.Functions.Editors
 
         static Scrollbar tlScrollbar;
 
-        public static KeyCode[] keyCodes = RTFunctions.Enums.EnumUtils.GetAll<KeyCode>();
-
         public int currentKey;
 
         public static void Init(EditorManager editorManager)
@@ -390,8 +388,12 @@ namespace EditorManagement.Functions.Editors
 
             }));
 
-            editorDialog.Find("title/Text").GetComponent<Text>().text = "- Keybind Editor -";
-            Destroy(editorDialog.Find("Text").gameObject);
+            var close = popup.transform.Find("Panel/x").GetComponent<Button>();
+            close.onClick.ClearAll();
+            close.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.HideDialog("Keybind List Popup");
+            });
 
             EditorHelper.AddEditorPopup("Keybind List Popup", popup);
 
@@ -399,6 +401,9 @@ namespace EditorManagement.Functions.Editors
             editorDialog = dialog.gameObject.Duplicate(dialog.parent, "KeybindEditor").transform;
             editorDialog.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
             ((RectTransform)editorDialog).sizeDelta = new Vector2(0f, 32f);
+
+            editorDialog.Find("title/Text").GetComponent<Text>().text = "- Keybind Editor -";
+            Destroy(editorDialog.Find("Text").gameObject);
 
             var data = new GameObject("data");
             data.transform.SetParent(editorDialog);
@@ -495,7 +500,7 @@ namespace EditorManagement.Functions.Editors
                 var keyTypeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
                 .Duplicate(rectTransform, "Key Type");
 
-                ((RectTransform)keyTypeDropdown.transform).sizeDelta = new Vector2(378f, 32f);
+                ((RectTransform)keyTypeDropdown.transform).sizeDelta = new Vector2(360f, 32f);
 
                 var keyTypeDropdownDD = keyTypeDropdown.GetComponent<Dropdown>();
                 keyTypeDropdownDD.onValueChanged.ClearAll();
@@ -505,7 +510,7 @@ namespace EditorManagement.Functions.Editors
                 var keyCodeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
                 .Duplicate(rectTransform, "Key Code");
 
-                ((RectTransform)keyCodeDropdown.transform).sizeDelta = new Vector2(378f, 32f);
+                ((RectTransform)keyCodeDropdown.transform).sizeDelta = new Vector2(360f, 32f);
 
                 var keyCodeDropdownDD = keyCodeDropdown.GetComponent<Dropdown>();
                 keyCodeDropdownDD.onValueChanged.ClearAll();
@@ -523,9 +528,16 @@ namespace EditorManagement.Functions.Editors
 
                     keyCodeDropdownDD.options.Add(new Dropdown.OptionData(str));
                 }
+
+                var delete = EditorManager.inst.GetDialog("Keybind List Popup").Dialog.Find("Panel/x").gameObject.Duplicate(rectTransform, "Delete");
             }
 
             EditorHelper.AddEditorDialog("Keybind Editor", editorDialog.gameObject);
+
+            EditorHelper.AddEditorDropdown("View Keybinds", "", "Edit", RTEditor.inst.SearchSprite, delegate ()
+            {
+                OpenPopup();
+            });
         }
 
         public void OpenPopup()
@@ -552,8 +564,10 @@ namespace EditorManagement.Functions.Editors
                 RefreshKeybindEditor(keybind);
             });
 
+            int num = 0;
             foreach (var keybind in keybinds)
             {
+                int index = num;
                 var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, keybind.Name);
                 var button = gameObject.transform.Find("Image").gameObject.AddComponent<Button>();
                 button.onClick.AddListener(delegate ()
@@ -569,6 +583,11 @@ namespace EditorManagement.Functions.Editors
                 var rt = ed1.AddComponent<RectTransform>();
                 rt.anchoredPosition = Vector2.zero;
                 rt.sizeDelta = new Vector2(32f, 32f);
+
+                var hover = gameObject.transform.Find("Image").gameObject.AddComponent<Components.HoverUI>();
+                hover.animatePos = false;
+                hover.animateSca = true;
+                hover.size = 1.1f;
 
                 var image = ed1.AddComponent<Image>();
                 image.sprite = editSprite;
@@ -589,6 +608,17 @@ namespace EditorManagement.Functions.Editors
                 }
 
                 gameObject.transform.Find("folder-name").GetComponent<Text>().text = name;
+
+                var delete = EditorManager.inst.GetDialog("Keybind List Popup").Dialog.Find("Panel/x").gameObject.Duplicate(gameObject.transform, "Delete").GetComponent<Button>();
+                ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
+                delete.onClick.ClearAll();
+                delete.onClick.AddListener(delegate ()
+                {
+                    keybinds.RemoveAt(index);
+                    RefreshKeybindPopup();
+                    Save();
+                });
+                num++;
             }
         }
 
@@ -619,8 +649,10 @@ namespace EditorManagement.Functions.Editors
                 Save();
             });
 
+            int num = 0;
             foreach (var key in keybind.keys)
             {
+                int index = num;
                 var gameObject = keyPrefab.Duplicate(keysContent, "Key");
                 var type = gameObject.transform.Find("Key Type").GetComponent<Dropdown>();
                 type.value = (int)key.InteractType;
@@ -632,22 +664,22 @@ namespace EditorManagement.Functions.Editors
 
                 var code = gameObject.transform.Find("Key Code").GetComponent<Dropdown>();
 
-                //int num = 0;
-                //var keyCodes = Enum.GetValues(typeof(KeyCode));
-                //for (int i = 0; i < keyCodes.Length; i++)
-                //{
-                //    var str = Enum.GetName(typeof(KeyCode), i) != null ? Enum.GetName(typeof(KeyCode), i) : "Invalid Value";
-
-                //    if (str == key.KeyCode.ToString())
-                //        num = i;
-                //}
-
                 code.value = (int)key.KeyCode;
                 code.onValueChanged.AddListener(delegate (int _val)
                 {
-                    key.InteractType = (Keybind.Key.Type)_val;
+                    key.KeyCode = (KeyCode)_val;
                     Save();
                 });
+
+                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                delete.onClick.ClearAll();
+                delete.onClick.AddListener(delegate ()
+                {
+                    keybind.keys.RemoveAt(index);
+                    RefreshKeybindEditor(keybind);
+                    Save();
+                });
+                num++;
             }
         }
 
@@ -1512,16 +1544,33 @@ namespace EditorManagement.Functions.Editors
 
         public static KeyCode WatchKeyCode()
         {
+            var keyCodes = Enum.GetNames(typeof(KeyCode));
             for (int i = 0; i < keyCodes.Length; i++)
             {
                 if (Input.GetKeyDown(keyCodes[i]))
-                    return keyCodes[i];
+                    return (KeyCode)Enum.Parse(typeof(KeyCode), keyCodes[i]);
             }
 
             return KeyCode.None;
         }
 
         #endregion
+
+        public bool KeyCodeHandler(Keybind keybind)
+        {
+            if (keybind.keys.Count > 0 && keybind.keys.All(x => Input.GetKey(x.KeyCode) && x.InteractType == Keybind.Key.Type.Pressed ||
+            Input.GetKeyDown(x.KeyCode) && x.InteractType == Keybind.Key.Type.Down ||
+            !Input.GetKey(x.KeyCode) && x.InteractType == Keybind.Key.Type.Up) && !isPressingKey)
+            {
+                isPressingKey = true;
+                return true;
+            }
+            else
+            {
+                isPressingKey = false;
+                return false;
+            }
+        }
 
         public List<Keybind> keybinds = new List<Keybind>();
 
@@ -1550,7 +1599,7 @@ namespace EditorManagement.Functions.Editors
                 for (int i = 0; i < jn["settings"].Count; i++)
                 {
                     if (!dictionary.ContainsKey(jn["settings"][i]))
-                        dictionary.Add(jn["settings"][i], jn["settings"][i][0]);
+                        dictionary.Add(jn["settings"][i]["type"], jn["settings"][i]["value"]);
                 }
 
                 return new Keybind(id, keys, actionType, dictionary);
@@ -1572,7 +1621,8 @@ namespace EditorManagement.Functions.Editors
                 for (int i = 0; i < settings.Count; i++)
                 {
                     var element = settings.ElementAt(i);
-                    jn["settings"][i][element.Key] = element.Value;
+                    jn["settings"][i]["type"] = element.Key;
+                    jn["settings"][i]["value"] = element.Value;
                 }
 
                 return jn;
@@ -1580,16 +1630,19 @@ namespace EditorManagement.Functions.Editors
 
             public void Activate()
             {
-                if (keys.All(x => Input.GetKey(x.KeyCode) && x.InteractType == Key.Type.Pressed ||
-                Input.GetKeyDown(x.KeyCode) && x.InteractType == Key.Type.Down ||
-                Input.GetKeyUp(x.KeyCode) && x.InteractType == Key.Type.Up) && !inst.isPressingKey)
-                {
-                    Debug.Log($"{EditorPlugin.className}Pressed!");
-                    inst.isPressingKey = true;
+                //if (keys.All(x => Input.GetKey(x.KeyCode) && x.InteractType == Key.Type.Pressed ||
+                //Input.GetKeyDown(x.KeyCode) && x.InteractType == Key.Type.Down ||
+                //Input.GetKeyUp(x.KeyCode) && x.InteractType == Key.Type.Up) && !inst.isPressingKey)
+                //{
+                //    Debug.Log($"{EditorPlugin.className}Pressed!");
+                //    inst.isPressingKey = true;
+                //    Action?.Invoke(this);
+                //}
+                //else
+                //    inst.isPressingKey = false;
+
+                if (inst.KeyCodeHandler(this))
                     Action?.Invoke(this);
-                }
-                else
-                    inst.isPressingKey = false;
             }
 
             public string id;
@@ -1618,6 +1671,8 @@ namespace EditorManagement.Functions.Editors
             public string DefaultCode => $"var keybind = EditorManagement.Functions.Editors.KeybindManager.inst.keybinds.Find(x => x.id == {id});{Environment.NewLine}";
 
             public List<Key> keys = new List<Key>();
+
+            public override string ToString() => Name;
 
             public class Key
             {
