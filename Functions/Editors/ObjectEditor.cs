@@ -2108,6 +2108,8 @@ namespace EditorManagement.Functions.Editors
             var shape = (Transform)ObjectUIElements["Shape"];
             var shapeSettings = (Transform)ObjectUIElements["Shape Settings"];
 
+            shape.GetComponent<GridLayoutGroup>().spacing = new Vector2(7.6f, 0f);
+
             // Initial removing
             //Debug.Log($"{ObjEditor.inst.className}Adding shapes to list for removal...");
             DestroyImmediate(shape.GetComponent<ToggleGroup>());
@@ -2115,14 +2117,13 @@ namespace EditorManagement.Functions.Editors
             //var toggles = (List<Toggle>)toggleGroup.GetType().GetField("m_Toggles", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(toggleGroup);
             //toggles.Clear();
 
-            ShapeUI.SetupSprites();
+            //ShapeUI.SetupSprites();
 
             var toDestroy = new List<GameObject>();
 
             for (int i = 0; i < shape.childCount; i++)
             {
-                if (i != 4 && i != 6)
-                    toDestroy.Add(shape.GetChild(i).gameObject);
+                toDestroy.Add(shape.GetChild(i).gameObject);
             }
 
             //Debug.Log($"{ObjEditor.inst.className}Adding shape settings to list for removal...");
@@ -2142,51 +2143,109 @@ namespace EditorManagement.Functions.Editors
             toDestroy = null;
 
             // Re-add everything
-            var list = ShapeUI.Dictionary.Values.ToList();
-            for (int i = 0; i < ShapeUI.ShapeCounts.Count; i++)
+            for (int i = 0; i < ShapeManager.inst.Shapes2D.Count; i++)
             {
+                var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
+                if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+                    image.sprite = ShapeManager.inst.Shapes2D[i][0].Icon;
+
                 if (i != 4 && i != 6)
                 {
-                    var elementBase = ShapeUI.Dictionary.First(x => x.Value.shape == i && x.Value.shapeOption == 0);
-
-                    if (!shape.Find(elementBase.Key))
+                    if (!shapeSettings.Find((i + 1).ToString()))
                     {
-                        var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
-                        if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-                            image.sprite = elementBase.Value.sprite;
-
-                        //toggleGroup.RegisterToggle(obj.GetComponent<Toggle>());
+                        shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString());
                     }
 
-                    for (int j = 0; j < ShapeUI.ShapeCounts[i]; j++)
+                    var so = shapeSettings.Find((i + 1).ToString());
+
+                    var rect = (RectTransform)so;
+                    if (!so.GetComponent<ScrollRect>())
                     {
-                        var element = ShapeUI.Dictionary.First(x => x.Value.shape == i && x.Value.shapeOption == j);
+                        var scroll = so.gameObject.AddComponent<ScrollRect>();
+                        so.gameObject.AddComponent<Mask>();
+                        var ad = so.gameObject.AddComponent<Image>();
 
-                        if (i != 4 && i != 6 && !shapeSettings.Find(element.Key))
+                        scroll.horizontal = true;
+                        scroll.vertical = false;
+                        scroll.content = rect;
+                        scroll.viewport = rect;
+                        ad.color = new Color(1f, 1f, 1f, 0.01f);
+                    }
+
+                    for (int j = 0; j < ShapeManager.inst.Shapes2D[i].Count; j++)
+                    {
+                        var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
+                        if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
+                            image1.sprite = ShapeManager.inst.Shapes2D[i][j].Icon;
+
+                        var layoutElement = opt.AddComponent<LayoutElement>();
+                        layoutElement.layoutPriority = 1;
+                        layoutElement.minWidth = 32f;
+
+                        ((RectTransform)opt.transform).sizeDelta = new Vector2(32f, 32f);
+
+                        if (!opt.GetComponent<HoverUI>())
                         {
-                            var obj = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
-                            if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-                                image.sprite = element.Value.sprite;
-
-                            var layoutElement = obj.AddComponent<LayoutElement>();
-                            layoutElement.layoutPriority = 1;
-                            layoutElement.minWidth = 32f;
-
-                            ((RectTransform)obj.transform).sizeDelta = new Vector2(32f, 32f);
-
-                            if (!obj.GetComponent<HoverUI>())
-                            {
-                                var he = obj.AddComponent<HoverUI>();
-                                he.animatePos = false;
-                                he.animateSca = true;
-                                he.size = 1.1f;
-                            }
+                            var he = opt.AddComponent<HoverUI>();
+                            he.animatePos = false;
+                            he.animateSca = true;
+                            he.size = 1.1f;
                         }
                     }
 
                     LastGameObject(shapeSettings.GetChild(i));
-                } 
+                }
             }
+
+            #region old code
+
+            //var list = ShapeUI.Dictionary.Values.ToList();
+            //for (int i = 0; i < ShapeUI.ShapeCounts.Count; i++)
+            //{
+            //    if (i != 4 && i != 6)
+            //    {
+            //        var elementBase = ShapeUI.Dictionary.First(x => x.Value.shape == i && x.Value.shapeOption == 0);
+
+            //        if (!shape.Find(elementBase.Key))
+            //        {
+            //            var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
+            //            if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+            //                image.sprite = elementBase.Value.sprite;
+
+            //            //toggleGroup.RegisterToggle(obj.GetComponent<Toggle>());
+            //        }
+
+            //        for (int j = 0; j < ShapeUI.ShapeCounts[i]; j++)
+            //        {
+            //            var element = ShapeUI.Dictionary.First(x => x.Value.shape == i && x.Value.shapeOption == j);
+
+            //            if (i != 4 && i != 6 && !shapeSettings.Find(element.Key))
+            //            {
+            //                var obj = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
+            //                if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+            //                    image.sprite = element.Value.sprite;
+
+            //                var layoutElement = obj.AddComponent<LayoutElement>();
+            //                layoutElement.layoutPriority = 1;
+            //                layoutElement.minWidth = 32f;
+
+            //                ((RectTransform)obj.transform).sizeDelta = new Vector2(32f, 32f);
+
+            //                if (!obj.GetComponent<HoverUI>())
+            //                {
+            //                    var he = obj.AddComponent<HoverUI>();
+            //                    he.animatePos = false;
+            //                    he.animateSca = true;
+            //                    he.size = 1.1f;
+            //                }
+            //            }
+            //        }
+
+            //        LastGameObject(shapeSettings.GetChild(i));
+            //    } 
+            //}
+
+            #endregion
 
             LSHelpers.SetActiveChildren(shapeSettings, false);
 
@@ -2203,6 +2262,7 @@ namespace EditorManagement.Functions.Editors
 
             if (beatmapObject.shape == 4)
             {
+                Debug.Log($"{ObjEditor.inst.className}Shape is text, so we make the size larger for better readability.");
                 shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
                 var child = shapeSettings.GetChild(4);
                 child.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
@@ -2212,10 +2272,12 @@ namespace EditorManagement.Functions.Editors
             }
             else
             {
+                Debug.Log($"{ObjEditor.inst.className}Shape is not text so we reset size.");
                 shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
                 shapeSettings.GetChild(4).GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
             }
 
+            Debug.Log($"{ObjEditor.inst.className}Set the shape option as active.");
             shapeSettings.GetChild(beatmapObject.shape).gameObject.SetActive(true);
             for (int i = 1; i <= ObjectManager.inst.objectPrefabs.Count; i++)
             {
