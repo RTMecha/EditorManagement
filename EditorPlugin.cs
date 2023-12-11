@@ -7,6 +7,7 @@ using BepInEx.Configuration;
 using HarmonyLib;
 
 using UnityEngine;
+using UnityEngine.UI;
 
 using EditorManagement.Patchers;
 using EditorManagement.Functions;
@@ -36,6 +37,7 @@ namespace EditorManagement
 
 		public static float timeOffset;
         public static float timeEditing;
+		public static int openAmount;
 
         public static int levelFilter = 0;
         public static bool levelAscend = true;
@@ -68,6 +70,8 @@ namespace EditorManagement
 
 			SetPreviewConfig();
 
+			RTFunctions.Functions.Components.SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
 			// Plugin startup logic
@@ -79,6 +83,8 @@ namespace EditorManagement
 			SetPreviewConfig();
 			if (EditorManager.inst)
             {
+				SetNotificationProperties();
+				EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
 				ObjEditor.inst.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
 			}
 		}
@@ -125,8 +131,73 @@ namespace EditorManagement
 
 		public static void SetTimelineColors()
         {
+			Debug.LogFormat("{0}Setting Timeline Cursor Colors", className);
+			{
+				Debug.LogFormat("{0}Cursor Color Handle 1", EditorPlugin.className);
+				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle", out GameObject gm) && gm.TryGetComponent(out Image image))
+				{
+					RTEditor.inst.timelineSliderHandle = image;
+					RTEditor.inst.timelineSliderHandle.color = RTEditor.GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
+				}
+				else
+				{
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+				}
 
+				Debug.LogFormat("{0}Cursor Color Ruler 1", EditorPlugin.className);
+				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image", out GameObject gm1) && gm1.TryGetComponent(out Image image1))
+				{
+					RTEditor.inst.timelineSliderRuler = image1;
+					RTEditor.inst.timelineSliderRuler.color = RTEditor.GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
+				}
+				else
+				{
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+				}
+
+				Debug.LogFormat("{0}Cursor Color Handle 2", EditorPlugin.className);
+				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image", out GameObject gm2) && gm2.TryGetComponent(out Image image2))
+				{
+					RTEditor.inst.keyframeTimelineSliderHandle = image2;
+					RTEditor.inst.keyframeTimelineSliderHandle.color = RTEditor.GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
+				}
+				else
+				{
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+				}
+
+				Debug.LogFormat("{0}Cursor Color Ruler 2", EditorPlugin.className);
+				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle", out GameObject gm3) && gm3.TryGetComponent(out Image image3))
+				{
+					RTEditor.inst.keyframeTimelineSliderRuler = image3;
+					RTEditor.inst.keyframeTimelineSliderRuler.color = RTEditor.GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
+				}
+				else
+				{
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+				}
+			}
+
+			ObjEditor.inst.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
         }
+
+		public static void SetNotificationProperties()
+		{
+			Debug.Log($"{className}Setting Notification values");
+			var notifyRT = EditorManager.inst.notification.GetComponent<RectTransform>();
+			var notifyGroup = EditorManager.inst.notification.GetComponent<VerticalLayoutGroup>();
+			notifyRT.sizeDelta = new Vector2(RTEditor.GetEditorProperty("Notification Width").GetConfigEntry<float>().Value, 632f);
+			EditorManager.inst.notification.transform.localScale =
+				new Vector3(
+					RTEditor.GetEditorProperty("Notification Size").GetConfigEntry<float>().Value,
+					RTEditor.GetEditorProperty("Notification Size").GetConfigEntry<float>().Value,
+					1f);
+
+			var direction = RTEditor.GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value;
+
+			notifyRT.anchoredPosition = new Vector2(8f, direction == Direction.Up ? 408f : 410f);
+			notifyGroup.childAlignment = direction == Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
+		}
 
 		public static void ListObjectLayers()
 		{
