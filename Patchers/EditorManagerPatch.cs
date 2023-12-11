@@ -47,48 +47,6 @@ namespace EditorManagement.Patchers
     public class EditorManagerPatch : MonoBehaviour
     {
         static EditorManager Instance { get => EditorManager.inst; set => EditorManager.inst = value; }
-        static Type Type { get; set; }
-
-        /// <summary>
-        /// Inits patches for EditorManager
-        /// </summary>
-        //public static void Init()
-        //{
-        //    Type = typeof(EditorManager);
-        //    Patcher.CreatePatch(Instance.Awake, PatchType.Prefix, (PrefixMethod<EditorManager>)AwakePrefix);
-        //    Patcher.CreatePatch(Instance.Start, PatchType.Prefix, StartPrefix);
-        //    Patcher.CreatePatch(Instance.Update, PatchType.Prefix, UpdatePrefix);
-
-        //    Patcher.CreatePatch(Instance.OpenGuides, PatchType.Prefix, OpenGuidesPrefix);
-        //    Patcher.CreatePatch(Instance.OpenSteamWorkshop, PatchType.Prefix, OpenSteamWorkshopPrefix);
-        //    Patcher.CreatePatch(Instance.OpenDiscord, PatchType.Prefix, OpenDiscordPrefix);
-        //    Patcher.CreatePatch(Instance.OpenTutorials, PatchType.Prefix, OpenTutorialsPrefix);
-        //    Patcher.CreatePatch(Instance.OpenVerifiedSongs, PatchType.Prefix, OpenVerifiedSongsPrefix);
-
-        //    Patcher.CreatePatch(AccessTools.Method(Type, "SnapToBPM"), PatchType.Prefix, AccessTools.Method(typeof(EditorManagerPatch), "SnapToBPMPrefix"));
-
-        //    Patcher.CreatePatch<int, int>(Instance.SetLayer, PatchType.Prefix, SetLayerPrefix);
-
-        //    Patcher.CreatePatch(Instance.GetLevelList, PatchType.Prefix, GetLevelListPrefix);
-
-        //    Patcher.CreatePatch(Instance.LoadBaseLevel, PatchType.Prefix, LoadBaseLevelPrefix);
-
-        //    Patcher.CreatePatch<string, string>(Instance.SetFileInfoPopupText, PatchType.Prefix, SetFileInfoPopupTextPrefix);
-
-        //    Patcher.CreatePatch(AccessTools.Method(Type, "LoadLevel"), PatchType.Prefix, AccessTools.Method(typeof(EditorManagerPatch), "LoadLevelPrefix"));
-
-        //    Patcher.CreatePatch(Instance.AutoSaveLevel, PatchType.Prefix, EditorPlugin.DontRun);
-
-        //    Patcher.CreatePatch<string, float, EditorManager.NotificationType, bool>(Instance.DisplayNotification, PatchType.Prefix, DisplayNotificationPrefix);
-
-        //    Patcher.CreatePatch(AccessTools.Method(typeof(SelectObjectInEditor), "Update"), PatchType.Prefix, (PrefixMethod)EditorPlugin.DontRun);
-
-        //    Patcher.CreatePatch(Instance.CreateNewLevel, PatchType.Prefix, delegate ()
-        //    {
-        //        RTEditor.inst.CreateNewLevel();
-        //        return false;
-        //    });
-        //}
 
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
@@ -236,7 +194,7 @@ namespace EditorManagement.Patchers
             LoadBaseLevelPrefix();
             Instance.DisplayNotification("Base Level Loaded", 2f, EditorManager.NotificationType.Info);
 
-            EditorPlugin.timeOffset = EditorPlugin.timeEditing;
+            EditorPlugin.timeOffset = Time.time;
 
             InputDataManager.inst.editorActions.Cut.ClearBindings();
             InputDataManager.inst.editorActions.Copy.ClearBindings();
@@ -401,11 +359,11 @@ namespace EditorManagement.Patchers
             if (EditorManager.inst.GUI.activeSelf == true && EditorManager.inst.isEditing == true)
             {
                 // Create Local Variables
-                if (RTEditor.timeIF && !RTEditor.timeIF.isFocused)
-                    RTEditor.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
+                if (RTEditor.inst.timeIF && !RTEditor.inst.timeIF.isFocused)
+                    RTEditor.inst.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 
-                if (RTEditor.pitchIF && !RTEditor.pitchIF.isFocused)
-                    RTEditor.pitchIF.text = ModCompatibility.sharedFunctions.ContainsKey("EventsCorePitchOffset") ?
+                if (RTEditor.inst.pitchIF && !RTEditor.inst.pitchIF.isFocused)
+                    RTEditor.inst.pitchIF.text = ModCompatibility.sharedFunctions.ContainsKey("EventsCorePitchOffset") ?
                         ((float)ModCompatibility.sharedFunctions["EventsCorePitchOffset"]).ToString() : AudioManager.inst.pitch.ToString();
 
                 if (RTEditor.inst.doggoImage)
@@ -775,16 +733,26 @@ namespace EditorManagement.Patchers
                 return false;
             }
 
+            if (RTFile.FileExists(GameManager.inst.basePath + "level-previous.lsb"))
+                File.Delete(GameManager.inst.basePath + "level-previous.lsb");
 
-            string str = "beatmaps/" + RTEditor.EditorPath + "/" + EditorManager.inst.currentLoadedLevel;
-            if (RTFile.FileExists(RTFile.ApplicationDirectory + str + "/level-previous.lsb"))
-                File.Delete(RTFile.ApplicationDirectory + str + "/level-previous.lsb");
+            if (RTFile.FileExists(GameManager.inst.basePath + "level.lsb"))
+                File.Copy(GameManager.inst.basePath + "level.lsb", GameManager.inst.basePath + "level-previous.lsb");
 
-            if (RTFile.FileExists(RTFile.ApplicationDirectory + str + "/level.lsb"))
-                File.Copy(RTFile.ApplicationDirectory + str + "/level.lsb", RTFile.ApplicationDirectory + str + "/level-previous.lsb");
-
-            DataManager.inst.SaveMetadata(GameManager.inst.basePath + "/metadata.lsb");
+            DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
             __instance.StartCoroutine(SaveData(GameManager.inst.path));
+
+            var jn = JSON.Parse(RTFile.FileExists(GameManager.inst.basePath + "editor.lse") ? FileManager.inst.LoadJSONFileRaw(GameManager.inst.basePath + "editor.lse") : "{}");
+
+            jn["timeline"]["tsc"] = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value.ToString("f2");
+            jn["timeline"]["z"] = EditorManager.inst.zoomFloat.ToString("f3");
+            jn["timeline"]["l"] = EditorManager.inst.layer.ToString();
+            jn["editor"]["t"] = EditorPlugin.timeEditing.ToString();
+            jn["editor"]["a"] = EditorPlugin.openAmount.ToString();
+            jn["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
+
+            RTFile.WriteToFile(GameManager.inst.basePath + "editor.lse", jn.ToString(3));
+
             return false;
         }
 
@@ -795,8 +763,8 @@ namespace EditorManagement.Patchers
                 EditorManager.inst.DisplayNotification("Saving Beatmap!", 1f, EditorManager.NotificationType.Warning);
                 EditorManager.inst.savingBeatmap = true;
             }
-            Task task;
-            yield return DataManager.inst.StartCoroutineAsync(RTFunctions.Functions.ProjectData.Writer.SaveData(_path, (GameData)DataManager.inst.gameData), out task);
+            //Task task;
+            yield return DataManager.inst.StartCoroutine(RTFunctions.Functions.ProjectData.Writer.SaveData(_path, (GameData)DataManager.inst.gameData));
             yield return new WaitForSeconds(0.5f);
             if (EditorManager.inst != null)
             {
