@@ -164,11 +164,22 @@ namespace EditorManagement.Patchers
 				scrollView2.localScale = Vector3.one;
 				scrollView2.name = "Object Scroll View";
 
+				var content = scrollView2.Find("Viewport/Content");
+				var contentChildren = new List<Transform>();
+				for (int i = 0; i < content.childCount; i++)
+					contentChildren.Add(content.GetChild(i));
+
+				foreach (var child in contentChildren)
+                {
+					DestroyImmediate(child.gameObject);
+                }
+
+				int num = 0;
+				while (num < 20)
+					num++;
+
 				var scrollViewRT = scrollView2.GetComponent<RectTransform>();
 				scrollViewRT.sizeDelta = new Vector2(366f, 690f);
-
-				var content = scrollView2.Find("Viewport/Content");
-				LSHelpers.DeleteChildren(content, true);
 
 				foreach (var l in listtoadd)
 				{
@@ -231,6 +242,8 @@ namespace EditorManagement.Patchers
 			shapeOptionBG.name = "shapesettings";
 			var shapeSettings = shapeOptionBG.transform;
 
+			ShapeUI.SetupSprites();
+
 			try
 			{
 				// Initial removing
@@ -251,7 +264,7 @@ namespace EditorManagement.Patchers
 				int shapeCount = -1;
 				for (int i = 0; i < list.Count; i++)
 				{
-					if (list[i].shapeOption > shapeCount + 1)
+					if (list[i].shape > shapeCount + 1)
 						shapeCount = list[i].shape + 1;
 				}
 
@@ -285,7 +298,7 @@ namespace EditorManagement.Patchers
 									obj.transform.localScale = Vector3.one;
 									obj.name = element.Key;
 									if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-										image.sprite = element.Value.Sprite;
+										image.sprite = element.Value.sprite;
 								}
 							}
 					}
