@@ -135,20 +135,21 @@ namespace EditorManagement.Functions.Editors
 
 		public static List<Color> EventLayerColors => new List<Color>
 		{
-			new Color(0.4039216f, 0.227451f, 0.4039216f, 0.5f),
-			new Color(0.2470588f, 0.3176471f, 0.2470588f, 0.5f),
-			new Color(0.1294118f, 0.5882353f, 0.1294118f, 0.5f),
-			new Color(0.01176471f, 0.6627451f, 0.01176471f, 0.5f),
-			new Color(0f, 0.7372549f, 0f, 0.5f),
-			new Color(0f, 0.5882353f, 0f, 0.5f),
-			new Color(0.2980392f, 0.6862745f, 0.2980392f, 0.5f),
-			new Color(0.4862745f, 0.7019608f, 0.4862745f, 0.5f),
-			new Color(0.6862745f, 0.7058824f, 0.6862745f, 0.5f),
-			new Color(1f, 0.7568628f, 1f, 0.5f),
-			new Color(1f, 0.5960785f, 1f, 0.5f),
-			new Color(0.7267f, 0.3796f, 0.7267f, 1f),
-			new Color(0.6980392f, 0.1411765f, 0.6980392f, 1f),
-			new Color(0.6980392f, 0.145098f, 0.6980392f, 1f),
+			new Color(0.4039216f, 0.227451f, 0.7176471f, 0.5f),
+			new Color(0.2470588f, 0.3176471f, 0.7098039f, 0.5f),
+			new Color(0.1294118f, 0.5882353f, 0.9529412f, 0.5f),
+			new Color(0.01176471f, 0.6627451f, 0.9568628f, 0.5f),
+			new Color(0f, 0.7372549f, 0.8313726f, 0.5f),
+			new Color(0f, 0.5882353f, 0.5333334f, 0.5f),
+			new Color(0.2980392f, 0.6862745f, 0.3137255f, 0.5f),
+			new Color(0.4862745f, 0.7019608f, 0.2588235f, 0.5f),
+			new Color(0.6862745f, 0.7058824f, 0.1686275f, 0.5f),
+			new Color(1f, 0.7568628f, 0.02745098f, 0.5f),
+			new Color(1f, 0.5960785f, 0f, 0.5f),
+			new Color(0.7267f, 0.3796f, 0f, 1f),
+			new Color(0.6980392f, 0.1411765f, 0.06666667f, 1f),
+			new Color(0.6980392f, 0.145098f, 0.145098f, 1f),
+			new Color(0.3921569f, 0.7098039f, 0.9647059f, 0.4980392f),
 		};
 
 		public static bool EventsCore => ModCompatibility.mods.ContainsKey("EventsCore");
@@ -267,12 +268,44 @@ namespace EditorManagement.Functions.Editors
 
         #region Selection
 
+		public IEnumerator GroupSelectKeyframes(bool _add)
+        {
+			var list = RTEditor.inst.timelineKeyframes;
+
+			if (!_add)
+				DeselectAllKeyframes();
+
+			list.Where(x => RTMath.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform)
+			.Overlaps(RTMath.RectTransformToScreenSpace(x.Image.rectTransform))).ToList().ForEach(delegate (TimelineObject x)
+			{
+				x.selected = true;
+				x.timeOffset = 0f;
+			});
+
+			RenderEventObjects();
+
+			if (SelectedKeyframes.Count > 1)
+			{
+				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
+			}
+			else if (SelectedKeyframes.Count == 1)
+			{
+				EventEditor.inst.currentEventType = SelectedKeyframes[0].Type;
+				EventEditor.inst.currentEvent = SelectedKeyframes[0].Index;
+				OpenDialog();
+			}
+
+			yield break;
+		}
+
         public void DeselectAllKeyframes()
         {
 			if (SelectedKeyframes.Count > 0)
 				foreach (var timelineObject in SelectedKeyframes)
 					timelineObject.selected = false;
         }
+
 		public void CreateNewEventObject(int _kind = 0)
 		{
 			CreateNewEventObject(EditorManager.inst.CurrentAudioPos, _kind);
@@ -310,12 +343,23 @@ namespace EditorManagement.Functions.Editors
 		{
 			float timeTmp = EditorManager.inst.GetTimelineTime(0f);
 			int num = DataManager.inst.gameData.eventObjects.allEvents[_type].FindLastIndex(x => x.eventTime <= timeTmp);
-			Debug.Log("Prior Index: " + num);
-			var eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[_type][num], true);
-			eventKeyframe.eventTime = timeTmp;
+			Debug.Log($"{EventEditor.inst.className}Prior Index: {num}");
 
-			if (_type == 2)
-				eventKeyframe.SetEventValues(new float[1]);
+			EventKeyframe eventKeyframe;
+
+			if (num < 0)
+			{
+				eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)GameData.DefaultKeyframes[_type]);
+				eventKeyframe.eventTime = 0f;
+			}
+			else
+            {
+				eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[_type][num], true);
+				eventKeyframe.eventTime = timeTmp;
+
+				if (_type == 2)
+					eventKeyframe.SetEventValues(new float[1]);
+			}
 
 			DataManager.inst.gameData.eventObjects.allEvents[_type].Add(eventKeyframe);
 
@@ -343,7 +387,7 @@ namespace EditorManagement.Functions.Editors
 				Debug.LogFormat($"{EditorPlugin.className}Add keyframe to selection -> [{type}] - [{index}]");
 				return;
 			}
-			//OpenDialog();
+			OpenDialog();
 		}
 
 		public void SetCurrentEvent(int type, int index)
@@ -1542,8 +1586,9 @@ namespace EditorManagement.Functions.Editors
 			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
 			{
 				var title = EventEditor.inst.dialogRight.GetChild(i).GetChild(0);
-				title.GetChild(0).GetComponent<Image>().color = EventTitles.ElementAt(i).Value;
-				title.GetChild(0).GetComponent<RectTransform>().sizeDelta = new Vector2(17f, 0f);
+				var image = title.GetChild(0).GetComponent<Image>();
+				image.color = EventTitles.ElementAt(i).Value;
+				image.rectTransform.sizeDelta = new Vector2(17f, 0f);
 				title.GetChild(1).GetComponent<Text>().text = EventTitles.ElementAt(i).Key;
 			}
 		}
@@ -1563,6 +1608,8 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (i < num && i >= num - EventLimit)
 						eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = EventTypes[i];
+					else
+						eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
 				}
 				else
 					eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
