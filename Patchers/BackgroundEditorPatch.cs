@@ -340,9 +340,9 @@ namespace EditorManagement.Patchers
 				xif.onValueChanged.ClearAll();
 				xif.onValueChanged.AddListener(delegate (string _val)
 				{
-					if (float.TryParse(_val, out float num))
+					if (int.TryParse(_val, out int num))
 					{
-						CurrentSelectedBG.zPosition = num;
+						CurrentSelectedBG.layer = num;
 						BackgroundManager.inst.UpdateBackgrounds();
 					}
 				});
@@ -996,7 +996,7 @@ namespace EditorManagement.Patchers
 			var bgGameObject = BackgroundManager.inst.backgroundObjects[__0];
 
 			bgGameObject.SetActive(backgroundObject.active);
-			bgGameObject.transform.localPosition = new Vector3(backgroundObject.pos.x, backgroundObject.pos.y, 32f + backgroundObject.zPosition * 10f);
+			bgGameObject.transform.localPosition = new Vector3(backgroundObject.pos.x, backgroundObject.pos.y, 32f + backgroundObject.layer * 10f);
 			bgGameObject.transform.localScale = new Vector3(backgroundObject.scale.x, backgroundObject.scale.y, 10f);
 			//bgGameObject.transform.transform.localRotation = Quaternion.Euler(new Vector3(bg == null ? 0f : bg.rotation.x, bg == null ? 0f : bg.rotation.y, backgroundObject.rot));
 			bgGameObject.transform.localRotation = Quaternion.Euler(new Vector3(backgroundObject.rotation.x, backgroundObject.rotation.y, backgroundObject.rot));
@@ -1014,7 +1014,7 @@ namespace EditorManagement.Patchers
 
 			if (backgroundObject.drawFade)
 			{
-				for (int i = 1; i < backgroundObject.depth - backgroundObject.zPosition; i++)
+				for (int i = 1; i < backgroundObject.depth - backgroundObject.layer; i++)
 				{
 					var gameObject = Instantiate(BackgroundManager.inst.backgroundFadePrefab, Vector3.zero, Quaternion.identity);
 					gameObject.name = $"{backgroundObject.name} Fade [{i}]";
