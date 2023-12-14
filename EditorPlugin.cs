@@ -196,7 +196,9 @@ namespace EditorManagement
 			var direction = RTEditor.GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value;
 
 			notifyRT.anchoredPosition = new Vector2(8f, direction == Direction.Up ? 408f : 410f);
-			notifyGroup.childAlignment = direction == Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
+			notifyGroup.childAlignment = direction != Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
+
+			RTFunctions.Functions.Components.SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 		}
 
 		public static void ListObjectLayers()
@@ -204,11 +206,17 @@ namespace EditorManagement
 			allLayers.Clear();
 			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 			{
-				if (!allLayers.Contains(beatmapObject.editorData.Layer))
+				if (!allLayers.Contains(beatmapObject.editorData.layer))
 				{
-					allLayers.Add(beatmapObject.editorData.Layer);
+					allLayers.Add(beatmapObject.editorData.layer);
 				}
 			}
+
+			foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+            {
+				if (!allLayers.Contains(prefabObject.editorData.layer))
+					allLayers.Add(prefabObject.editorData.layer);
+            }
 
 			allLayers = (from x in allLayers
 						 orderby x ascending
