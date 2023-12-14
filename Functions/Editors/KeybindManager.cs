@@ -1098,9 +1098,9 @@ namespace EditorManagement.Functions.Editors
             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
             {
                 if (timelineObject.IsBeatmapObject)
-                    timelineObject.GetData<BeatmapObject>().editorData.Layer++;
+                    timelineObject.GetData<BeatmapObject>().editorData.layer++;
                 if (timelineObject.IsPrefabObject)
-                    timelineObject.GetData<PrefabObject>().editorData.Layer++;
+                    timelineObject.GetData<PrefabObject>().editorData.layer++;
 
                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
             }
@@ -1110,10 +1110,10 @@ namespace EditorManagement.Functions.Editors
         {
             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
             {
-                if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().editorData.Layer > 0)
-                    timelineObject.GetData<BeatmapObject>().editorData.Layer--;
-                if (timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().editorData.Layer > 0)
-                    timelineObject.GetData<PrefabObject>().editorData.Layer--;
+                if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().editorData.layer > 0)
+                    timelineObject.GetData<BeatmapObject>().editorData.layer--;
+                if (timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().editorData.layer > 0)
+                    timelineObject.GetData<PrefabObject>().editorData.layer--;
 
                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
             }
@@ -1239,7 +1239,12 @@ namespace EditorManagement.Functions.Editors
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
             {
-                ObjEditor.inst.SetCurrentKeyframe(0, true);
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                {
+                    var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                    ObjectEditor.inst.UpdateKeyframeOrder(bm);
+                    ObjectEditor.inst.SetCurrentKeyframe(bm, ObjEditor.inst.currentKeyframeKind, 0, true);
+                }
             }
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
             {
@@ -1252,7 +1257,12 @@ namespace EditorManagement.Functions.Editors
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
             {
-                ObjEditor.inst.AddCurrentKeyframe(10000, true);
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                {
+                    var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                    ObjectEditor.inst.UpdateKeyframeOrder(bm);
+                    ObjectEditor.inst.SetCurrentKeyframe(bm, ObjEditor.inst.currentKeyframeKind, bm.events[ObjEditor.inst.currentKeyframeKind].Count - 1, true);
+                }
             }
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
             {
@@ -1265,7 +1275,12 @@ namespace EditorManagement.Functions.Editors
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
             {
-                ObjEditor.inst.AddCurrentKeyframe(1, true);
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                {
+                    var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                    ObjectEditor.inst.UpdateKeyframeOrder(bm);
+                    ObjectEditor.inst.SetCurrentKeyframe(bm, ObjEditor.inst.currentKeyframeKind, Mathf.Clamp(ObjEditor.inst.currentKeyframe + 1, 0, bm.events[ObjEditor.inst.currentKeyframeKind].Count - 1), true);
+                }
             }
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
             {
@@ -1282,7 +1297,12 @@ namespace EditorManagement.Functions.Editors
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
             {
-                ObjEditor.inst.AddCurrentKeyframe(-1, true);
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                {
+                    var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                    ObjectEditor.inst.UpdateKeyframeOrder(bm);
+                    ObjectEditor.inst.SetCurrentKeyframe(bm, ObjEditor.inst.currentKeyframeKind, Mathf.Clamp(ObjEditor.inst.currentKeyframe - 1, 0, bm.events[ObjEditor.inst.currentKeyframeKind].Count - 1), true);
+                }
             }
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
             {
