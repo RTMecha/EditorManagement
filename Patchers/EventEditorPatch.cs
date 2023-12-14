@@ -86,7 +86,27 @@ namespace EditorManagement.Patchers
 				playerColors = beatmapTheme.playerColors,
 				objectColors = beatmapTheme.objectColors,
 				backgroundColors = beatmapTheme.backgroundColors,
-				effectColors = beatmapTheme.objectColors,
+				effectColors = new List<Color>
+				{
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+					LSColors.pink500,
+				},
 			};
 
 			return false;
@@ -100,24 +120,24 @@ namespace EditorManagement.Patchers
 			Instance.dialogRight = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right");
 			Instance.EventLabels.SetActive(false);
 			Instance.EventHolders.SetActive(false);
-			int num = 0;
-			foreach (var list in DataManager.inst.gameData.eventObjects.allEvents)
-			{
-				int typeTmp = num;
-				var entry = new EventTrigger.Entry();
-				entry.eventID = EventTriggerType.PointerDown;
-				entry.callback.AddListener(delegate (BaseEventData eventData)
-				{
-					Debug.Log("Pointer Down on Position");
-					if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
-					{
-						Debug.Log("Right Clicked Position");
-						Instance.NewKeyframeFromTimeline(typeTmp);
-					}
-				});
-				Instance.EventHolders.transform.GetChild(typeTmp).GetComponent<EventTrigger>().triggers.Add(entry);
-				num++;
-			}
+			//int num = 0;
+			//foreach (var list in DataManager.inst.gameData.eventObjects.allEvents)
+			//{
+			//	int typeTmp = num;
+			//	var entry = new EventTrigger.Entry();
+			//	entry.eventID = EventTriggerType.PointerDown;
+			//	entry.callback.AddListener(delegate (BaseEventData eventData)
+			//	{
+			//		Debug.Log("Pointer Down on Position");
+			//		if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
+			//		{
+			//			Debug.Log("Right Clicked Position");
+			//			Instance.NewKeyframeFromTimeline(typeTmp);
+			//		}
+			//	});
+			//	Instance.EventHolders.transform.GetChild(typeTmp).GetComponent<EventTrigger>().triggers.Add(entry);
+			//	num++;
+			//}
 
 			RTEventEditor.Init(Instance);
 
