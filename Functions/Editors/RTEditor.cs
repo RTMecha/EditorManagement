@@ -104,6 +104,7 @@ namespace EditorManagement.Functions.Editors
                 doggoObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading");
                 doggoImage = doggoObject.GetComponent<Image>();
                 timelineTime = EditorManager.inst.timelineTime.GetComponent<Text>();
+                EditorPlugin.SetNotificationProperties();
             }
             catch
             {
@@ -206,7 +207,7 @@ namespace EditorManagement.Functions.Editors
 
         public GameObject replBase;
         public InputField replEditor;
-        public Text replText;
+        //public Text replText;
 
         public Transform titleBar;
 
@@ -546,6 +547,9 @@ namespace EditorManagement.Functions.Editors
             var waveSprite = Sprite.Create(waveform, new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
             TimelineImage.sprite = waveSprite;
             TimelineOverlayImage.sprite = TimelineImage.sprite;
+
+            waveSprite.Save(GameManager.inst.basePath + "waveform.png");
+
             yield break;
         }
 
@@ -1083,7 +1087,7 @@ namespace EditorManagement.Functions.Editors
             }
             if (IsTimeline)
             {
-                if (DataManager.inst.gameData.beatmapObjects.Count > 1)
+                if (DataManager.inst.gameData.beatmapObjects.Count > 1 && ObjectEditor.inst.SelectedObjectCount != DataManager.inst.gameData.beatmapObjects.Count)
                 {
                     //if (ObjectEditor.inst.SelectedObjectCount > 1)
                     {
@@ -1223,6 +1227,8 @@ namespace EditorManagement.Functions.Editors
             set => EditorManager.inst.layer = Mathf.Clamp(value, 0, int.MaxValue);
         }
 
+        int prevLayer;
+        LayerType prevLayerType;
         public LayerType layerType;
 
         public enum LayerType
@@ -1274,46 +1280,52 @@ namespace EditorManagement.Functions.Editors
                     SetLayer(_val ? LayerType.Events : LayerType.Objects);
                 });
             }
-            
-            switch (layerType)
+
+            if (prevLayer != layer || prevLayerType != layerType && layerType != LayerType.Events || layerType == LayerType.Events)
             {
-                case LayerType.Objects:
-                    {
-                        EventEditor.inst.EventLabels.SetActive(false);
-                        EventEditor.inst.EventHolders.SetActive(false);
-
-                        foreach (var timelineObject in timelineKeyframes)
-                            Destroy(timelineObject.GameObject);
-
-                        ObjectEditor.inst.RenderTimelineObjects();
-
-                        if (CheckpointEditor.inst.checkpoints.Count > 0)
+                switch (layerType)
+                {
+                    case LayerType.Objects:
                         {
-                            foreach (var obj2 in CheckpointEditor.inst.checkpoints)
-                                Destroy(obj2);
+                            EventEditor.inst.EventLabels.SetActive(false);
+                            EventEditor.inst.EventHolders.SetActive(false);
 
-                            CheckpointEditor.inst.checkpoints.Clear();
+                            foreach (var timelineObject in timelineKeyframes)
+                                Destroy(timelineObject.GameObject);
+
+                            ObjectEditor.inst.RenderTimelineObjects();
+
+                            if (CheckpointEditor.inst.checkpoints.Count > 0)
+                            {
+                                foreach (var obj2 in CheckpointEditor.inst.checkpoints)
+                                    Destroy(obj2);
+
+                                CheckpointEditor.inst.checkpoints.Clear();
+                            }
+
+                            CheckpointEditor.inst.CreateGhostCheckpoints();
+                            if (LayerToggle)
+                                LayerToggle.isOn = false;
+                            break;
                         }
+                    case LayerType.Events:
+                        {
+                            EventEditor.inst.EventLabels.SetActive(true);
+                            EventEditor.inst.EventHolders.SetActive(true);
+                            RTEventEditor.inst.CreateEventObjects();
+                            CheckpointEditor.inst.CreateCheckpoints();
 
-                        CheckpointEditor.inst.CreateGhostCheckpoints();
-                        if (LayerToggle)
-                            LayerToggle.isOn = false;
-                        break;
-                    }
-                case LayerType.Events:
-                    {
-                        EventEditor.inst.EventLabels.SetActive(true);
-                        EventEditor.inst.EventHolders.SetActive(true);
-                        RTEventEditor.inst.CreateEventObjects();
-                        CheckpointEditor.inst.CreateCheckpoints();
+                            RTEventEditor.inst.RenderLayerBins();
 
-                        RTEventEditor.inst.RenderLayerBins();
-
-                        if (LayerToggle)
-                            LayerToggle.isOn = true;
-                        break;
-                    }
+                            if (LayerToggle)
+                                LayerToggle.isOn = true;
+                            break;
+                        }
+                }
             }
+
+            prevLayerType = layerType;
+            prevLayer = layer;
 
             int tmpLayer = Layer;
             if (setHistory)
@@ -1509,14 +1521,15 @@ namespace EditorManagement.Functions.Editors
                     entry3.eventID = EventTriggerType.PointerDown;
                     entry3.callback.AddListener(delegate (BaseEventData eventData)
                     {
-                        Debug.LogFormat("{0}EventHolder: {1}\nActual Event: {2}", EditorPlugin.className, typeTmp, typeTmp + 14);
+                        var layer = Layer + 1;
+                        int max = RTEventEditor.EventLimit * layer;
+                        int min = max - RTEventEditor.EventLimit;
+
+                        Debug.Log($"{EditorPlugin.className}EventHolder: {typeTmp}\nMax: {max}\nMin: {min}\nCurrent Event: {min + typeTmp}");
                         if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
                         {
-                            var layer = Layer + 1;
-                            int num = layer * RTEventEditor.EventLimit;
-
-                            if (RTEventEditor.EventTypes.Length > typeTmp * num && DataManager.inst.gameData.eventObjects.allEvents.Count > typeTmp * num)
-                                RTEventEditor.inst.NewKeyframeFromTimeline(typeTmp * num);
+                            if (RTEventEditor.EventTypes.Length > min + typeTmp && DataManager.inst.gameData.eventObjects.allEvents.Count > min + typeTmp)
+                                RTEventEditor.inst.NewKeyframeFromTimeline(min + typeTmp);
                         }
                     });
                     et.triggers.Add(entry3);
@@ -1632,16 +1645,7 @@ namespace EditorManagement.Functions.Editors
 
             // Quit to Arcade
             {
-                var exitToArcade = Instantiate(titleBar.Find("File/File Dropdown/Quit to Main Menu").gameObject);
-                exitToArcade.name = "Quit to Arcade";
-                exitToArcade.transform.SetParent(titleBar.Find("File/File Dropdown"));
-                exitToArcade.transform.localScale = Vector3.one;
-                exitToArcade.transform.SetSiblingIndex(7);
-                exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Quit to Arcade";
-
-                var ex = exitToArcade.GetComponent<Button>();
-                ex.onClick.ClearAll();
-                ex.onClick.AddListener(delegate ()
+                EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
                 {
                     EditorManager.inst.ShowDialog("Warning Popup");
                     RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
@@ -1660,7 +1664,37 @@ namespace EditorManagement.Functions.Editors
                     {
                         EditorManager.inst.HideDialog("Warning Popup");
                     });
-                });
+                }, 7);
+
+                //var exitToArcade = Instantiate(titleBar.Find("File/File Dropdown/Quit to Main Menu").gameObject);
+                //exitToArcade.name = "Quit to Arcade";
+                //exitToArcade.transform.SetParent(titleBar.Find("File/File Dropdown"));
+                //exitToArcade.transform.localScale = Vector3.one;
+                //exitToArcade.transform.SetSiblingIndex(7);
+                //exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Quit to Arcade";
+
+                //var ex = exitToArcade.GetComponent<Button>();
+                //ex.onClick.ClearAll();
+                //ex.onClick.AddListener(delegate ()
+                //{
+                //    EditorManager.inst.ShowDialog("Warning Popup");
+                //    RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+                //    {
+                //        DG.Tweening.DOTween.Clear();
+                //        Updater.UpdateObjects(false);
+                //        DataManager.inst.gameData = null;
+                //        DataManager.inst.gameData = new DataManager.GameData();
+
+                //        ArcadeManager.inst.skippedLoad = false;
+                //        ArcadeManager.inst.forcedSkip = false;
+                //        DataManager.inst.UpdateSettingBool("IsArcade", true);
+
+                //        SceneManager.inst.LoadScene("Input Select");
+                //    }, delegate ()
+                //    {
+                //        EditorManager.inst.HideDialog("Warning Popup");
+                //    });
+                //});
             }
 
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
@@ -1676,7 +1710,7 @@ namespace EditorManagement.Functions.Editors
                 ex.onClick.ClearAll();
                 ex.onClick.AddListener(delegate ()
                 {
-                    if (ModCompatibility.mods["ExampleCompanion"].methods.ContainsKey("InitExample"))
+                    if (ModCompatibility.mods["ExampleCompanion"].Methods.ContainsKey("InitExample"))
                         ModCompatibility.mods["ExampleCompanion"].Invoke("InitExample", new object[] { });
                 });
             }
@@ -2174,25 +2208,25 @@ namespace EditorManagement.Functions.Editors
             ((Text)uiTitle["Text"]).alignment = TextAnchor.MiddleLeft;
             ((Text)uiTitle["Text"]).font = font;
 
-            var rtext = Instantiate(replEditor.textComponent.gameObject);
-            rtext.transform.SetParent(replEditor.transform);
-            rtext.transform.localScale = Vector3.one;
+            //var rtext = Instantiate(replEditor.textComponent.gameObject);
+            //rtext.transform.SetParent(replEditor.transform);
+            //rtext.transform.localScale = Vector3.one;
 
-            var rttext = rtext.GetComponent<RectTransform>();
-            rttext.anchoredPosition = new Vector2(2f, 0f);
-            rttext.sizeDelta = new Vector2(-12f, -8f);
+            //var rttext = rtext.GetComponent<RectTransform>();
+            //rttext.anchoredPosition = new Vector2(2f, 0f);
+            //rttext.sizeDelta = new Vector2(-12f, -8f);
 
             var selectUI = ((GameObject)uiTop["GameObject"]).AddComponent<SelectGUI>();
             selectUI.target = replBase.transform;
 
             //((RectTransform)replEditor.textComponent.transform).anchoredPosition = new Vector2(9999f, 9999f);
-            replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 0f);
+            replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
             //replEditor.textComponent.GetComponent<CanvasRenderer>().cull = true;
 
             replEditor.customCaretColor = true;
             replEditor.caretColor = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
 
-            replText = rtext.GetComponent<Text>();
+            //replText = rtext.GetComponent<Text>();
 
             var uiBottom = UIManager.GenerateUIImage("Panel", replBase.transform);
 
@@ -2202,11 +2236,27 @@ namespace EditorManagement.Functions.Editors
 
             var evaluator = UIManager.GenerateUIButton("Evaluate", ((GameObject)uiBottom["GameObject"]).transform);
 
+            UIManager.SetRectTransform((RectTransform)evaluator["RectTransform"], new Vector2(400f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(200f, 32f));
+
             var button = (Button)evaluator["Button"];
             button.onClick.AddListener(delegate ()
             {
                 RTCode.Evaluate(replEditor.text);
             });
+
+            try
+            {
+                var text = AssetManager.inst.TextObject.Duplicate((RectTransform)evaluator["RectTransform"], "Text");
+                ((RectTransform)text.transform).anchoredPosition = Vector2.zero;
+                ((RectTransform)text.transform).sizeDelta = new Vector2(200f, 32f);
+                var t = text.GetComponent<Text>();
+                t.alignment = TextAnchor.MiddleCenter;
+                t.text = "Evaluate";
+            }
+            catch
+            {
+
+            }
 
             replBase.SetActive(false);
 
@@ -2337,9 +2387,9 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                             {
                                 if (timelineObject.IsBeatmapObject)
-                                    timelineObject.GetData<BeatmapObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<BeatmapObject>().editorData.Layer - 1, 0, int.MaxValue);
+                                    timelineObject.GetData<BeatmapObject>().editorData.layer = Mathf.Clamp(timelineObject.GetData<BeatmapObject>().editorData.layer - 1, 0, int.MaxValue);
                                 if (timelineObject.IsPrefabObject)
-                                    timelineObject.GetData<PrefabObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<PrefabObject>().editorData.Layer - 1, 0, int.MaxValue);
+                                    timelineObject.GetData<PrefabObject>().editorData.layer = Mathf.Clamp(timelineObject.GetData<PrefabObject>().editorData.layer - 1, 0, int.MaxValue);
                             }
                         }
                     }
@@ -2356,9 +2406,9 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                             {
                                 if (timelineObject.IsBeatmapObject)
-                                    timelineObject.GetData<BeatmapObject>().editorData.Layer = Mathf.Clamp(num - 1, 0, int.MaxValue);
+                                    timelineObject.GetData<BeatmapObject>().editorData.layer = Mathf.Clamp(num - 1, 0, int.MaxValue);
                                 if (timelineObject.IsPrefabObject)
-                                    timelineObject.GetData<PrefabObject>().editorData.Layer = Mathf.Clamp(num - 1, 0, int.MaxValue);
+                                    timelineObject.GetData<PrefabObject>().editorData.layer = Mathf.Clamp(num - 1, 0, int.MaxValue);
                             }
                         }
                     }
@@ -2371,9 +2421,9 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                             {
                                 if (timelineObject.IsBeatmapObject)
-                                    timelineObject.GetData<BeatmapObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<BeatmapObject>().editorData.Layer + 1, 0, int.MaxValue);
+                                    timelineObject.GetData<BeatmapObject>().editorData.layer = Mathf.Clamp(timelineObject.GetData<BeatmapObject>().editorData.layer + 1, 0, int.MaxValue);
                                 if (timelineObject.IsPrefabObject)
-                                    timelineObject.GetData<PrefabObject>().editorData.Layer = Mathf.Clamp(timelineObject.GetData<PrefabObject>().editorData.Layer + 1, 0, int.MaxValue);
+                                    timelineObject.GetData<PrefabObject>().editorData.layer = Mathf.Clamp(timelineObject.GetData<PrefabObject>().editorData.layer + 1, 0, int.MaxValue);
                             }
                         }
                     }
@@ -3486,7 +3536,7 @@ namespace EditorManagement.Functions.Editors
                 backgroundObject.pos = new Vector2(UnityEngine.Random.Range(-48, 48), UnityEngine.Random.Range(-32, 32));
                 backgroundObject.color = UnityEngine.Random.Range(1, 6);
                 backgroundObject.layer = UnityEngine.Random.Range(0, 6);
-                backgroundObject.reactive = (UnityEngine.Random.value > 0.5f);
+                backgroundObject.reactive = UnityEngine.Random.value > 0.5f;
                 if (backgroundObject.reactive)
                 {
                     switch (UnityEngine.Random.Range(0, 4))
@@ -3504,7 +3554,7 @@ namespace EditorManagement.Functions.Editors
                     backgroundObject.reactiveScale = UnityEngine.Random.Range(0.01f, 0.04f);
                 }
 
-                backgroundObject.shape = ShapeManager.Shapes3D[UnityEngine.Random.Range(0, 23)];
+                //backgroundObject.shape = ShapeManager.inst.Shapes3D[UnityEngine.Random.Range(0, ShapeManager.inst.Shapes3D.Count - 1)][0];
 
                 gameData.backgroundObjects.Add(backgroundObject);
             }
@@ -3519,7 +3569,7 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.name = "\"Default object cameo\" -Viral Mecha";
             beatmapObject.autoKillType = AutoKillType.LastKeyframeOffset;
             beatmapObject.autoKillOffset = 4f;
-            beatmapObject.editorData.Layer = 0;
+            beatmapObject.editorData.layer = 0;
             gameData.beatmapObjects.Add(beatmapObject);
 
             return gameData;
@@ -3632,7 +3682,7 @@ namespace EditorManagement.Functions.Editors
                             "<br>O: {X: " + beatmapObject.origin.x + ", Y: " + beatmapObject.origin.y + "}" +
                             text +
                             "<br>D: " + beatmapObject.Depth +
-                            "<br>ED: {L: " + beatmapObject.editorData.Layer + ", B: " + beatmapObject.editorData.Bin + "}" +
+                            "<br>ED: {L: " + beatmapObject.editorData.layer + ", B: " + beatmapObject.editorData.Bin + "}" +
                             "<br>POS: {X: " + transform.position.x + ", Y: " + transform.position.y + "}" +
                             "<br>SCA: {X: " + transform.localScale.x + ", Y: " + transform.localScale.y + "}" +
                             "<br>ROT: " + transform.eulerAngles.z +
@@ -3673,16 +3723,15 @@ namespace EditorManagement.Functions.Editors
             replEditor.onValueChanged.ClearAll();
             replEditor.text = value;
 
-            replText.text = RTCode.ConvertREPLTest(replEditor.textComponent.text);
+            //replText.text = RTCode.ConvertREPLTest(replEditor.textComponent.text);
             replEditor.onValueChanged.AddListener(delegate (string _val)
             {
-                replText.text = RTCode.ConvertREPLTest(replEditor.textComponent.text);
+                //StartCoroutine(SetREPLEditorTextDelay(0.2f));
             });
 
             replEditor.onEndEdit.RemoveAllListeners();
             replEditor.onEndEdit.AddListener(onEndEdit);
         }
-
 
         public static List<LevelFolder<MetadataWrapper>> levelItems = new List<LevelFolder<MetadataWrapper>>();
 
@@ -4165,6 +4214,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Marker Loop Begin", 0, "Audio time gets set to this marker.")),
             new EditorProperty(EditorProperty.ValueType.Int,
                 Config.Bind("Timeline", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.")),
+            //new EditorProperty(EditorProperty.ValueType.Bool,
+            //    Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.")),
 
             #endregion
 
@@ -4424,6 +4475,24 @@ namespace EditorManagement.Functions.Editors
             
             new EditorProperty("Open Keybind Editor", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
                 delegate () { EditorManager.inst.ShowDialog("Keybind List Popup"); }, ""),
+            new EditorProperty("Remove all but first keyframes foreach object", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
+                delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        if (timelineObject.IsBeatmapObject)
+                        {
+                            var bm = timelineObject.GetData<BeatmapObject>();
+                            for (int i = 0; i < bm.events.Count; i++)
+                            {
+                                bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
+                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0]);
+                                bm.events[i].Clear();
+                                bm.events[i].Add(firstKF);
+                            }
+                        }
+                    }
+                }, ""),
 
             #endregion
 
