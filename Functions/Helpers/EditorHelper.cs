@@ -9,6 +9,8 @@ using UnityEngine.UI;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
 
+using EditorManagement.Functions.Editors;
+
 namespace EditorManagement.Functions.Helpers
 {
     public static class EditorHelper
@@ -39,12 +41,21 @@ namespace EditorManagement.Functions.Helpers
             EditorManager.inst.EditorDialogsDictionary.Add(_name, editorPropertiesDialog);
         }
 
-        public static void AddEditorDropdown(string name, string key, string dropdown, Sprite sprite, UnityEngine.Events.UnityAction unityAction)
+        public static void AddEditorDropdown(string name, string key, string dropdown, Sprite sprite, UnityEngine.Events.UnityAction unityAction, int siblingIndex = -1)
         {
             if (!GameObject.Find($"Editor Systems/Editor GUI/sizer/main/TitleBar/{dropdown}"))
                 return;
 
-            var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut").Duplicate(GameObject.Find($"Editor Systems/Editor GUI/sizer/main/TitleBar/{dropdown}/{dropdown} Dropdown").transform, name);
+            Debug.Log($"RTEditor.inst is null {!RTEditor.inst}");
+            Debug.Log($"RTEditor.inst.titleBar is null {RTEditor.inst && !RTEditor.inst.titleBar}");
+
+            Transform parent;
+            if (!RTEditor.inst || !RTEditor.inst.titleBar)
+                parent = GameObject.Find($"Editor Systems/Editor GUI/sizer/main/TitleBar/{dropdown}/{dropdown} Dropdown").transform;
+            else
+                parent = RTEditor.inst.titleBar.Find($"{dropdown}/{dropdown} Dropdown");
+
+            var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut").Duplicate(parent, name, siblingIndex < 0 ? parent.childCount : siblingIndex);
             propWin.transform.Find("Text").GetComponent<Text>().text = name;
             propWin.transform.Find("Text").GetComponent<RectTransform>().sizeDelta = new Vector2(224f, 0f);
             propWin.transform.Find("Text 1").GetComponent<Text>().text = key;
