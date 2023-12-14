@@ -289,6 +289,17 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.ShowDialog("Prefab Types Popup");
             RenderPrefabTypesPopup();
         }
+
+        public void ReorderPrefabTypes()
+        {
+            int num = 0;
+            foreach (var prefabType in DataManager.inst.PrefabTypes.Select(x => x as PrefabType))
+            {
+                prefabType.Index = num;
+                num++;
+            }
+        }
+
         public void RenderPrefabTypesPopup()
         {
             LSHelpers.DeleteChildren(prefabTypeContent);
@@ -313,6 +324,8 @@ namespace EditorManagement.Functions.Editors
                 prefabType.Icon = ((PrefabType)DataManager.inst.PrefabTypes[prefabType.Index - 1]).Icon;
 
                 DataManager.inst.PrefabTypes.Add(prefabType);
+
+                ReorderPrefabTypes();
 
                 SavePrefabTypes();
 
@@ -386,7 +399,22 @@ namespace EditorManagement.Functions.Editors
                 delete.onClick.ClearAll();
                 delete.onClick.AddListener(delegate ()
                 {
+                    var path = RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + prefabType.Name;
+
+                    if (RTFile.DirectoryExists(path))
+                    {
+                        foreach (var file in Directory.GetFiles(path))
+                        {
+                            File.Delete(file);
+                        }
+
+                        Directory.Delete(path);
+                    }
+
                     DataManager.inst.PrefabTypes.RemoveAt(index);
+
+                    ReorderPrefabTypes();
+
                     RenderPrefabTypesPopup();
                     SavePrefabTypes();
                 });
@@ -503,7 +531,7 @@ namespace EditorManagement.Functions.Editors
         {
             LSHelpers.DeleteChildren(PrefabEditor.inst.gridContent, false);
             int num = 0;
-            foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
+            foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects.Where(x => !x.fromPrefab))
             {
                 if (RTHelpers.SearchString(beatmapObject.name, PrefabEditor.inst.gridSearch.text))
                 {
@@ -560,7 +588,6 @@ namespace EditorManagement.Functions.Editors
             });
 
             TriggerHelper.IncreaseDecreaseButtons(offsetInput, t: PrefabEditor.inst.dialog.Find("data/offset"));
-            ((RectTransform)PrefabEditor.inst.dialog.Find("data/type/Show Type Editor")).sizeDelta = new Vector2(132f, 34f);
             PrefabEditor.inst.dialog.Find("data/type/Show Type Editor").GetComponent<Image>().color =
                 DataManager.inst.PrefabTypes[Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, DataManager.inst.PrefabTypes.Count - 1)].Color;
 
@@ -579,6 +606,8 @@ namespace EditorManagement.Functions.Editors
             });
 
             ReloadSelectionContent();
+
+            ((RectTransform)PrefabEditor.inst.dialog.Find("data/type/Show Type Editor")).sizeDelta = new Vector2(260f, 34f);
 
             //PrefabEditor.inst.dialog.Find("data/offset/<").GetComponent<Button>().onClick.RemoveAllListeners();
             //PrefabEditor.inst.dialog.Find("data/offset/<").GetComponent<Button>().onClick.AddListener(delegate ()
@@ -852,7 +881,7 @@ namespace EditorManagement.Functions.Editors
             {
                 var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 
-                if (!bm || bm.prefabInstanceID != "")
+                if (!bm || bm.prefabInstanceID == "")
                     return;
 
                 var editorData = bm.editorData;
@@ -863,7 +892,7 @@ namespace EditorManagement.Functions.Editors
 
                 var prefabObject = new PrefabObject(prefab.ID, startTime);
                 prefabObject.editorData.Bin = editorData.Bin;
-                prefabObject.editorData.Layer = editorData.Layer;
+                prefabObject.editorData.layer = editorData.layer;
                 var prefab2 = new Prefab(prefab.Name, prefab.Type, prefab.Offset, DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == prefabInstanceID).Select(x => (BeatmapObject)x).ToList(), new List<PrefabObject>());
 
                 prefab2.ID = prefab.ID;
@@ -897,7 +926,7 @@ namespace EditorManagement.Functions.Editors
         {
             if (ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.Data != null && ObjectEditor.inst.CurrentSelection.IsPrefabObject)
             {
-                ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.Layer = (int)_value;
+                ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.layer = (int)_value;
                 ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
             }
             else
@@ -926,7 +955,7 @@ namespace EditorManagement.Functions.Editors
                 int num = 0;
                 foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
                 {
-                    if (prefabObject.editorData.Layer == EditorManager.inst.layer && prefabObject.prefabID == ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().prefabID)
+                    if (prefabObject.editorData.layer == EditorManager.inst.layer && prefabObject.prefabID == ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().prefabID)
                     {
                         ObjectEditor.inst.RenderTimelineObject(RTEditor.inst.TimelinePrefabObjects.Find(x => x.ID == prefabObject.ID));
                         Updater.UpdatePrefab(prefabObject);
@@ -996,7 +1025,10 @@ namespace EditorManagement.Functions.Editors
             prefabObject.ID = LSText.randomString(16);
             prefabObject.prefabID = _prefab.ID;
             prefabObject.StartTime = EditorManager.inst.CurrentAudioPos;
-            prefabObject.editorData.Layer = EditorManager.inst.layer;
+            prefabObject.editorData.layer = EditorManager.inst.layer;
+
+            if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
+                RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
 
             for (int i = 0; i < prefabObject.events.Count; i++)
                 prefabObject.events[i] = new EventKeyframe(prefabObject.events[i]);
@@ -1025,7 +1057,7 @@ namespace EditorManagement.Functions.Editors
 
             if (EditorManager.inst != null)
             {
-                beatmapObjectCopy.editorData.Layer = EditorManager.inst.layer;
+                beatmapObjectCopy.editorData.layer = EditorManager.inst.layer;
                 beatmapObjectCopy.editorData.Bin = Mathf.Clamp(beatmapObjectCopy.editorData.Bin, 0, 14);
             }
 
@@ -1082,7 +1114,7 @@ namespace EditorManagement.Functions.Editors
 
                 if (EditorManager.inst != null)
                 {
-                    beatmapObjectCopy.editorData.Layer = EditorManager.inst.layer;
+                    beatmapObjectCopy.editorData.layer = EditorManager.inst.layer;
                     beatmapObjectCopy.editorData.Bin = Mathf.Clamp(beatmapObjectCopy.editorData.Bin, 0, 14);
                 }
 
