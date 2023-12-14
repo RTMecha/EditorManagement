@@ -109,49 +109,49 @@ namespace EditorManagement.Patchers
             DestroyImmediate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(4).gameObject);
 
             Debug.Log($"{Instance.className}Setting Generators...");
-            Action<string, string> labelGenerator = delegate (string name, string x)
+            Action<Transform, string, string> labelGenerator = delegate (Transform parent, string name, string x)
             {
-                var label = labelTemp.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, $"{name.ToLower()} label");
+                var label = labelTemp.Duplicate(parent, $"{name.ToLower()} label");
                 label.transform.GetChild(0).GetComponent<Text>().text = x;
                 Destroy(label.transform.GetChild(1).gameObject);
             };
 
-            Action<string, string, string> labelGenerator2 = delegate (string name, string x, string y)
+            Action<Transform, string, string, string> labelGenerator2 = delegate (Transform parent, string name, string x, string y)
             {
-                var label = labelTemp.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, $"{name.ToLower()} label");
+                var label = labelTemp.Duplicate(parent, $"{name.ToLower()} label");
                 label.transform.GetChild(0).GetComponent<Text>().text = x;
                 label.transform.GetChild(1).GetComponent<Text>().text = y;
-                Destroy(label.transform.GetChild(1).gameObject);
             };
 
             Debug.Log($"{Instance.className}Setting InputFields...");
             // Time
-            labelGenerator("time", "Time");
+            labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "time", "Time");
 
             singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "time");
 
             // Position
-            labelGenerator2("pos", "Position X Offset", "Position Y Offset");
+            labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "pos", "Position X Offset", "Position Y Offset");
 
             vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "position");
 
             // Scale
-            labelGenerator2("sca", "Scale X Offset", "Scale Y Offset");
+            labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "sca", "Scale X Offset", "Scale Y Offset");
 
             vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "scale");
 
             // Rotation
-            labelGenerator("rot", "Rotation Offset");
+            labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "rot", "Rotation Offset");
 
-            singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "rotation");
+            var rot = vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "rotation");
+            Destroy(rot.transform.GetChild(1).gameObject);
 
             // Repeat Count
-            labelGenerator("repeat count", "Repeat Count");
+            labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "repeat count", "Repeat Count");
 
             singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat count");
 
             // Repeat Offset Time
-            labelGenerator("repeat offset time", "Repeat Offset Time");
+            labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "repeat offset time", "Repeat Offset Time");
 
             singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat offset time");
 
@@ -159,7 +159,7 @@ namespace EditorManagement.Patchers
             singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft.Find("editor"), "layers", 0);
 
             // Name
-            labelGenerator("name", "Name");
+            labelGenerator(PrefabEditorManager.inst.prefabSelectorRight, "name", "Name");
 
             var prefabName = RTEditor.inst.defaultIF.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "name");
 
@@ -172,7 +172,7 @@ namespace EditorManagement.Patchers
             });
 
             // Type
-            labelGenerator("type", "Type");
+            labelGenerator(PrefabEditorManager.inst.prefabSelectorRight, "type", "Type");
 
             var type = singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "type");
 
@@ -464,7 +464,7 @@ namespace EditorManagement.Patchers
                         int num = 0;
                         foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
                         {
-                            if (prefabObject.editorData.Layer == EditorManager.inst.layer && prefabObject.prefabID == currentPrefab.prefabID)
+                            if (prefabObject.editorData.layer == EditorManager.inst.layer && prefabObject.prefabID == currentPrefab.prefabID)
                             {
                                 ObjectEditor.inst.RenderTimelineObject(new TimelineObject((PrefabObject)prefabObject));
                                 Updater.UpdatePrefab(prefabObject);
@@ -513,22 +513,23 @@ namespace EditorManagement.Patchers
 
                 //Layer
                 {
-                    int currentLayer = currentPrefab.editorData.Layer;
+                    int currentLayer = currentPrefab.editorData.layer;
 
                     prefabSelectorLeft.Find("editor/layers").GetComponentAndPerformAction(delegate (InputField inputField)
                     {
-                        inputField.NewValueChangedListener((currentPrefab.editorData.Layer + 1).ToString(), delegate (string _val)
+                        inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(currentPrefab.editorData.layer);
+                        inputField.NewValueChangedListener((currentPrefab.editorData.layer + 1).ToString(), delegate (string _val)
                         {
                             if (int.TryParse(_val, out int n))
                             {
-                                currentLayer = currentPrefab.editorData.Layer;
+                                currentLayer = currentPrefab.editorData.layer;
                                 int a = n - 1;
                                 if (a < 0)
                                 {
                                     inputField.text = "1";
                                 }
 
-                                currentPrefab.editorData.Layer = RTEditor.GetLayer(a);
+                                currentPrefab.editorData.layer = RTEditor.GetLayer(a);
                                 inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(RTEditor.GetLayer(a));
                                 ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
                             }
@@ -543,6 +544,8 @@ namespace EditorManagement.Patchers
 
                 for (int i = 0; i < 3; i++)
                 {
+                    int index = i;
+
                     string[] types = new string[]
                     {
                         "position",
@@ -569,7 +572,7 @@ namespace EditorManagement.Patchers
 
                         TriggerHelper.IncreaseDecreaseButtons(inputField);
 
-                        if (i != 2)
+                        if (index != 2)
                         {
                             prefabSelectorLeft.Find(type + iny).GetComponentAndPerformAction(delegate (InputField inputField2)
                             {
@@ -588,12 +591,12 @@ namespace EditorManagement.Patchers
                                     TriggerHelper.ScrollDeltaVector2(inputField, inputField2, 0.1f, 10f));
 
                                 TriggerHelper.AddEventTriggerParams(inputField.gameObject,
-                                    TriggerHelper.ScrollDelta(inputField, multi: i != 2),
+                                    TriggerHelper.ScrollDelta(inputField, multi: true),
                                     TriggerHelper.ScrollDeltaVector2(inputField, inputField2, 0.1f, 10f));
                             });
                         }
                         else
-                            TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 15f, 3f, multi: i != 2));
+                            TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 15f, 3f));
                     });
                 }
 
