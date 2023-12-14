@@ -341,7 +341,13 @@ namespace EditorManagement.Functions.Editors
 
 		public void NewKeyframeFromTimeline(int _type)
 		{
-			float timeTmp = EditorManager.inst.GetTimelineTime(0f);
+			if (!(DataManager.inst.gameData.eventObjects.allEvents.Count > _type))
+			{
+				EditorManager.inst.DisplayNotification("Keyframe type doesn't exist!" + (ModCompatibility.mods.ContainsKey("EventsCore") ? "" : " If you want to have more events, then feel free to add EventsCore to your mods list."), 4f, EditorManager.NotificationType.Warning);
+				return;
+			}
+
+			float timeTmp = EditorManager.inst.GetTimelineTime();
 			int num = DataManager.inst.gameData.eventObjects.allEvents[_type].FindLastIndex(x => x.eventTime <= timeTmp);
 			Debug.Log($"{EventEditor.inst.className}Prior Index: {num}");
 
@@ -538,10 +544,13 @@ namespace EditorManagement.Functions.Editors
 			var uiCopy = Instantiate(EventEditor.inst.dialogRight.Find("grain").gameObject);
 			uiCopy.transform.SetParent(eventCopies);
 
-			for (int i = 8; i < 14; i++)
-			{
-				Destroy(uiCopy.transform.GetChild(i).gameObject);
-			}
+			while (uiCopy.transform.childCount > 8)
+				DestroyImmediate(uiCopy.transform.GetChild(uiCopy.transform.childCount - 1).gameObject);
+
+			//for (int i = 8; i < 14; i++)
+			//{
+			//	DestroyImmediate(uiCopy.transform.GetChild(i).gameObject);
+			//}
 
 			uiDictionary.Add("UI Copy", uiCopy);
 
@@ -554,7 +563,7 @@ namespace EditorManagement.Functions.Editors
 			var single = Instantiate(move.GetChild(9).gameObject);
 
 			single.transform.SetParent(eventCopies);
-			Destroy(single.transform.GetChild(1).gameObject);
+			DestroyImmediate(single.transform.GetChild(1).gameObject);
 
 			uiDictionary.Add("Single", single);
 
@@ -574,7 +583,7 @@ namespace EditorManagement.Functions.Editors
 
 			// Vector4
 			{
-				var vector4 = Instantiate(move.GetChild(9).gameObject);
+				var vector4 = Instantiate(uiDictionary["Vector3"]);
 				var w = Instantiate(vector4.transform.GetChild(1));
 				w.name = "w";
 				w.transform.SetParent(vector4.transform);
@@ -582,6 +591,12 @@ namespace EditorManagement.Functions.Editors
 
 				vector4.transform.SetParent(eventCopies);
 				vector4.transform.localScale = Vector3.one;
+
+				for (int i = 0; i < vector4.transform.childCount; i++)
+                {
+					((RectTransform)vector4.transform.GetChild(i)).sizeDelta = new Vector2(85f, 32f);
+					((RectTransform)vector4.transform.GetChild(i).GetChild(0)).sizeDelta = new Vector2(40f, 32f);
+                }
 
 				uiDictionary.Add("Vector4", vector4);
 			}
@@ -598,7 +613,10 @@ namespace EditorManagement.Functions.Editors
 					Destroy(colors.transform.GetChild(i).gameObject);
                 }
 
+				var colorButton = colors.transform.GetChild(0).gameObject.Duplicate(eventCopies);
+
 				uiDictionary.Add("Colors", colors);
+				uiDictionary.Add("Color Button", colorButton);
 			}
 
             // Bool
@@ -675,19 +693,20 @@ namespace EditorManagement.Functions.Editors
 			var colors = GenerateUIElement(name, "Colors", parent, index, label);
 			var colorsObject = colors["UI"];
 
-			for (int i = 0; i < colorsObject.transform.childCount; i++)
-			{
-				GameObject toggle;
-				if (!colorsObject.transform.Find((i - 1).ToString()))
-				{
-					toggle = Instantiate(colorsObject.transform.GetChild(colorsObject.transform.childCount - 1).gameObject);
-					toggle.transform.SetParent(colorsObject.transform);
-					toggle.transform.localScale = Vector3.one;
-				}
-				else
-					toggle = colorsObject.transform.Find((i - 1).ToString()).gameObject;
+			colorsObject.GetComponent<GridLayoutGroup>().spacing = new Vector2(5f, 5f);
+			((RectTransform)colorsObject.transform).sizeDelta = new Vector2(366f, 64f);
 
-				toggles.Add(toggle.GetComponent<Toggle>());
+			LSHelpers.DeleteChildren(colorsObject.transform);
+
+			for (int i = 0; i < 19; i++)
+			{
+				GameObject toggle = uiDictionary["Color Button"].Duplicate(colorsObject.transform, (i + 1).ToString());
+
+				toggle.GetComponent<Image>().enabled = true;
+				toggle.transform.Find("Image").GetComponent<Image>().color = new Color(0.1294f, 0.1294f, 0.1294f);
+				var t = toggle.GetComponent<Toggle>();
+				t.enabled = true;
+				toggles.Add(t);
 			}
 
 			return colorsObject;
@@ -770,15 +789,10 @@ namespace EditorManagement.Functions.Editors
 				var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons);
 				var colorsBottom = SetupColorButtons("colors2", "Colors Top", gradient.transform, 12, gradientColor2Buttons);
 
-				var modeLabel = Instantiate(intensity["Label"]);
-				modeLabel.transform.SetParent(gradient.transform);
-				modeLabel.transform.localScale = Vector3.one;
-				modeLabel.transform.GetChild(0).GetComponent<Text>().text = "Mode";
+				var modeLabel = intensity["Label"].Duplicate(gradient.transform);
+                GenerateLabels(modeLabel.transform, "Mode");
 
-				var mode = Instantiate(gradient.transform.Find("curves").gameObject);
-				mode.transform.SetParent(gradient.transform);
-				mode.transform.localScale = Vector3.one;
-				mode.name = "mode";
+				var mode = gradient.transform.Find("curves").gameObject.Duplicate(gradient.transform, "mode");
 				mode.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
 				{
 					new Dropdown.OptionData("Linear"),
@@ -846,13 +860,13 @@ namespace EditorManagement.Functions.Editors
 				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Active";
 
 				var moveable = GenerateUIElement("move", "Bool", player.transform, 10, "Can Move");
-				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Moveable";
+				moveable["UI"].transform.Find("Text").GetComponent<Text>().text = "Moveable";
 
 				// I need to change Velocity to just be position.
 				//var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
-				var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Velocity", "Rotation");
+				var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
 
-				//var rotation = GenerateUIElement("rotation", "Single", player.transform, 14, "Rotation");
+				var rotation = GenerateUIElement("rotation", "Single", player.transform, 14, "Rotation");
 			}
 
 			Log($"{EventEditor.inst.className}Generating Follow Player Event");
@@ -1146,36 +1160,36 @@ namespace EditorManagement.Functions.Editors
 				case 16: // DoubleVision
 					{
 						// DoubleVision Intensity
-						SetFloatInputField(dialogTmp, "intensity", 0);
+						SetFloatInputField(dialogTmp, "intensity/x", 0);
 
 						break;
 					}
 				case 17: // ScanLines
 					{
 						// ScanLines Intensity
-						SetFloatInputField(dialogTmp, "intensity", 0);
+						SetFloatInputField(dialogTmp, "intensity/x", 0);
 
 						// ScanLines Amount
-						SetFloatInputField(dialogTmp, "amount", 1);
+						SetFloatInputField(dialogTmp, "amount/x", 1);
 
 						// ScanLines Speed
-						SetFloatInputField(dialogTmp, "speed", 2);
+						SetFloatInputField(dialogTmp, "speed/x", 2);
 						break;
 					}
 				case 18: // Blur
 					{
 						//Blur Amount
-						SetFloatInputField(dialogTmp, "intensity", 0);
+						SetFloatInputField(dialogTmp, "intensity/x", 0);
 
 						//Blur Iterations
-						SetIntInputField(dialogTmp, "iterations", 1, 1, 1, 12);
+						SetIntInputField(dialogTmp, "iterations/x", 1, 1, 1, 12);
 
 						break;
 					}
 				case 19: // Pixelize
 					{
 						//Pixelize
-						SetFloatInputField(dialogTmp, "amount", 0, 0.1f, 10f, 0f, 0.99999f);
+						SetFloatInputField(dialogTmp, "amount/x", 0, 0.1f, 10f, 0f, 0.99f);
 
 						break;
 					}
@@ -1188,7 +1202,7 @@ namespace EditorManagement.Functions.Editors
 				case 21: // Invert
 					{
 						//Invert Amount
-						SetFloatInputField(dialogTmp, "amount", 0, 0.1f, 10f, 0f, 1f);
+						SetFloatInputField(dialogTmp, "amount/x", 0, 0.1f, 10f, 0f, 1f);
 
 						break;
 					}
@@ -1204,7 +1218,7 @@ namespace EditorManagement.Functions.Editors
 						SetVector2InputField(dialogTmp, "scale", 3, 4);
 
 						// Timeline Rotation
-						SetFloatInputField(dialogTmp, "rotation", 5, 15f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/x", 5, 15f, 3f);
 
 						// Timeline Color
 						SetListColor((int)currentKeyframe.eventValues[6], 6, timelineColorButtons, GameManager.inst.LiveTheme.guiColor);
@@ -1217,13 +1231,19 @@ namespace EditorManagement.Functions.Editors
 						SetToggle(dialogTmp, "active", 0, 0, 1);
 
 						// Player Moveable
-						SetToggle(dialogTmp, "moveable", 1, 0, 1);
+						SetToggle(dialogTmp, "move", 1, 0, 1);
 
-						// Player Velocity
-						SetFloatInputField(dialogTmp, "position/x", 2, 0.1f, 10f, 0f, float.PositiveInfinity);
+						//// Player Velocity
+						//SetFloatInputField(dialogTmp, "position/x", 2);
+
+						//// Player Rotation
+						//SetFloatInputField(dialogTmp, "position/y", 3);
+
+						// Player Position
+						SetVector2InputField(dialogTmp, "position", 2, 3);
 
 						// Player Rotation
-						SetFloatInputField(dialogTmp, "position/y", 3, 15f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/x", 4, 15f, 3f);
 
 						break;
 					}
@@ -1422,7 +1442,7 @@ namespace EditorManagement.Functions.Editors
 			{
 				if (float.TryParse(val, out float num))
 				{
-					if (min != 0f && max != 0f)
+					if (min != 0f || max != 0f)
 						num = Mathf.Clamp(num, min, max);
 
 					currentKeyframe.eventValues[index] = num;
@@ -1604,16 +1624,27 @@ namespace EditorManagement.Functions.Editors
 				int t = i % EventLimit;
 				int num = layer * EventLimit;
 
-				if (i < EventTypes.Length)
-				{
-					if (i < num && i >= num - EventLimit)
+                //eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = i < EventTypes.Length ? i < num && i >= num - EventLimit ? EventTypes[i] : "??? (No event yet)" : "??? (No event yet)";
+
+                if (i < EventTypes.Length)
+                {
+                    if (i >= num - EventLimit && i < num)
+					{
+						//Debug.Log($"{EventEditor.inst.className}Event {i} exists, so we set it to {EventTypes[i]}.\n{i} >= {num} - {EventLimit} && {i} < {num}");
 						eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = EventTypes[i];
-					else
+					}
+					else if (i < num)
+					{
+						//Debug.Log($"{EventEditor.inst.className}Event {i} doesn't exist.\n{i} >= {num} - {EventLimit} && {i} < {num}");
 						eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
-				}
-				else
+					}
+                }
+                else
+                {
+					//Debug.Log($"{EventEditor.inst.className}Event {i} is greater than the EventTypes length.");
 					eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
-			}
+				}
+            }
 		}
 
 		#endregion
