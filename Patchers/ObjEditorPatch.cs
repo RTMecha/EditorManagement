@@ -918,6 +918,7 @@ namespace EditorManagement.Patchers
 				a.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()).ToList(),
 				a.Where(x => x.IsPrefabObject).Select(x => x.GetData<PrefabObject>()).ToList());
 
+			copy.description = "Take me wherever you go!";
 			Instance.beatmapObjCopy = copy;
 			Instance.hasCopiedObject = true;
 
