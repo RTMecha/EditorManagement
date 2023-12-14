@@ -23,6 +23,7 @@ using EditorManagement.Patchers;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Animation;
 using RTFunctions.Functions.Animation.Keyframe;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
@@ -60,9 +61,31 @@ namespace EditorManagement.Functions.Editors
                     mod.Methods.Add("SetCurrentObject", (Action<TimelineObject, bool>)SetCurrentObjectP);
                 if (!mod.Methods.ContainsKey("AddSelectedObject"))
                     mod.Methods.Add("AddSelectedObject", (Action<TimelineObject>)AddSelectedObject);
+
+                if (!mod.Methods.ContainsKey("RenderKeyframes"))
+                    mod.Methods.Add("RenderKeyframes", (Action<BeatmapObject>)RenderKeyframes);
+                if (!mod.Methods.ContainsKey("RenderKeyframeDialog"))
+                    mod.Methods.Add("RenderKeyframeDialog", (Action<BeatmapObject>)RenderKeyframeDialog);
+                if (!mod.Methods.ContainsKey("RenderTimelineObject"))
+                    mod.Methods.Add("RenderTimelineObjectVoid", (Action<TimelineObject>)RenderTimelineObjectVoid);
+
+                if (!mod.Methods.ContainsKey("SetCurrentKeyframe"))
+                    mod.Methods.Add("SetCurrentKeyframe", (Action<BeatmapObject, int, int, bool, bool>)SetCurrentKeyframe);
+
+                if (!mod.Methods.ContainsKey("GetTimelineObject"))
+                    mod.Methods.Add("GetTimelineObject", (TimelineObjectReturn<BeatmapObject>)GetTimelineObject);
             }
 
             timelinePosScrollbar = ObjEditor.inst.objTimelineContent.parent.parent.GetComponent<ScrollRect>().horizontalScrollbar;
+        }
+
+
+        void Update()
+        {
+            if (!ModCompatibility.sharedFunctions.ContainsKey("SelectedObjectCount"))
+                ModCompatibility.sharedFunctions.Add("SelectedObjectCount", SelectedObjectCount);
+            else
+                ModCompatibility.sharedFunctions["SelectedObjectCount"] = SelectedObjectCount;
         }
 
         public Scrollbar timelinePosScrollbar;
@@ -273,11 +296,16 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
 
+            UpdateKeyframeOrder(beatmapObject);
+
             var strs = new List<string>();
             var list = SelectedBeatmapObjectKeyframes;
             foreach (var timelineObject in list)
             {
-                strs.Add(timelineObject.GetData<EventKeyframe>().id);
+                if (timelineObject.Index != 0)
+                    strs.Add(timelineObject.GetData<EventKeyframe>().id);
+                else
+                    count--;
             }
 
             ClearKeyframes(beatmapObject);
@@ -432,6 +460,9 @@ namespace EditorManagement.Functions.Editors
             float audioTime = EditorManager.inst.CurrentAudioPos;
             Debug.Log($"{EditorPlugin.className}Placing prefab with {prefab.objects.Count} objects and {prefab.prefabObjects.Count} prefabs");
 
+            if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
+                RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
+
             //Objects
             {
                 var ids = new Dictionary<string, string>();
@@ -477,7 +508,7 @@ namespace EditorManagement.Functions.Editors
                             ++beatmapObjectCopy.editorData.Bin; // Investigate why this is here.
                     }
 
-                    beatmapObjectCopy.editorData.Layer = RTEditor.inst.Layer;
+                    beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
                     DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
 
                     var timelineObject = new TimelineObject(beatmapObjectCopy);
@@ -513,7 +544,7 @@ namespace EditorManagement.Functions.Editors
                             ++prefabObjectCopy.editorData.Bin; // Investigate why this is here.
                     }
 
-                    prefabObjectCopy.editorData.Layer = RTEditor.inst.Layer;
+                    prefabObjectCopy.editorData.layer = RTEditor.inst.Layer;
 
                     DataManager.inst.gameData.prefabObjects.Add(prefabObjectCopy);
 
@@ -883,7 +914,7 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.id = LSText.randomString(16);
             beatmapObject.autoKillType = AutoKillType.LastKeyframeOffset;
             beatmapObject.autoKillOffset = 5f;
-            beatmapObject.editorData.Layer = RTEditor.inst.Layer;
+            beatmapObject.editorData.layer = RTEditor.inst.Layer;
 
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
@@ -918,7 +949,7 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.id = LSText.randomString(16);
             beatmapObject.StartTime = _time;
 
-            beatmapObject.editorData.Layer = RTEditor.inst.Layer;
+            beatmapObject.editorData.layer = RTEditor.inst.Layer;
 
             var eventKeyframe = new EventKeyframe();
             eventKeyframe.eventTime = 0f;
@@ -1124,6 +1155,8 @@ namespace EditorManagement.Functions.Editors
         {
             if (!string.IsNullOrEmpty(beatmapObject.id))
             {
+                //UpdateKeyframeOrder(beatmapObject);
+
                 var bmTimelineObject = GetTimelineObject(beatmapObject);
 
                 if (!ObjEditor.inst.timelineKeyframesDrag)
@@ -1247,6 +1280,8 @@ namespace EditorManagement.Functions.Editors
             }
             return timelineObject;
         }
+
+        public void RenderTimelineObjectVoid(TimelineObject timelineObject) => RenderTimelineObject(timelineObject);
 
         public GameObject RenderTimelineObject(TimelineObject timelineObject)
         {
@@ -1406,6 +1441,27 @@ namespace EditorManagement.Functions.Editors
                     timelineObject.IsPrefabObject && DataManager.inst.gameData.prefabs.Find(x => timelineObject.GetData<PrefabObject>().prefabID == x.ID) != null ?
                     DataManager.inst.gameData.prefabs.Find(x => (timelineObject.Data as BasePrefabObject).prefabID == x.ID).Name : "<color=#FF0000>Null Reference Exception");
 
+                //bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
+                //bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
+
+                //if (RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value && (isBeatmapObject || isPrefab))
+                //{
+                //    var icon = new GameObject("Icon");
+                //    icon.transform.SetParent(gameObject.transform);
+                //    icon.transform.localScale = Vector3.one;
+
+                //    var iconRT = icon.AddComponent<RectTransform>();
+                //    iconRT.anchoredPosition = new Vector2(-115f, 0f);
+                //    iconRT.sizeDelta = new Vector2(18f, 18f);
+
+                //    var iconImage = icon.AddComponent<Image>();
+                //    int i =
+                //        isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
+                //        isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
+
+                //    iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
+                //}
+
                 var hoverUI = gameObject.AddComponent<HoverUI>();
                 hoverUI.animatePos = false;
                 hoverUI.animateSca = true;
@@ -1543,6 +1599,7 @@ namespace EditorManagement.Functions.Editors
             if (EditorManager.inst.hasLoadedLevel && !string.IsNullOrEmpty(beatmapObject.id))
             {
                 inst.CurrentSelection = new TimelineObject(beatmapObject);
+                inst.CurrentSelection.selected = true;
 
                 inst.RenderID(beatmapObject);
                 inst.RenderName(beatmapObject);
@@ -1568,6 +1625,9 @@ namespace EditorManagement.Functions.Editors
 
                 inst.RenderKeyframes(beatmapObject);
                 inst.RenderKeyframeDialog(beatmapObject);
+
+                if (ObjectModifiersEditor.inst)
+                    inst.StartCoroutine(ObjectModifiersEditor.inst.RenderModifiers(beatmapObject));
             }
 
             yield break;
@@ -1582,10 +1642,10 @@ namespace EditorManagement.Functions.Editors
             var idText = (Text)ObjectUIElements["ID Text"];
             idText.text = $"ID: {beatmapObject.id}";
 
-            var clickable = idText.transform.parent.gameObject.GetComponent<EditorClickable>();
+            var clickable = idText.transform.parent.gameObject.GetComponent<Clickable>();
 
             if (!clickable)
-                clickable = idText.transform.parent.gameObject.AddComponent<EditorClickable>();
+                clickable = idText.transform.parent.gameObject.AddComponent<Clickable>();
 
             clickable.onClick = delegate (PointerEventData pointerEventData)
             {
@@ -2081,7 +2141,7 @@ namespace EditorManagement.Functions.Editors
             { TriggerHelper.ScrollDelta(oyIF, multi: true), TriggerHelper.ScrollDeltaVector2(oxIF, oyIF, 0.1f, 10f) });
         }
 
-        void LastGameObject(Transform parent)
+        public void LastGameObject(Transform parent)
         {
             var gameObject = new GameObject("GameObject");
             gameObject.transform.SetParent(parent);
@@ -2196,56 +2256,6 @@ namespace EditorManagement.Functions.Editors
                     LastGameObject(shapeSettings.GetChild(i));
                 }
             }
-
-            #region old code
-
-            //var list = ShapeUI.Dictionary.Values.ToList();
-            //for (int i = 0; i < ShapeUI.ShapeCounts.Count; i++)
-            //{
-            //    if (i != 4 && i != 6)
-            //    {
-            //        var elementBase = ShapeUI.Dictionary.First(x => x.Value.shape == i && x.Value.shapeOption == 0);
-
-            //        if (!shape.Find(elementBase.Key))
-            //        {
-            //            var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
-            //            if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-            //                image.sprite = elementBase.Value.sprite;
-
-            //            //toggleGroup.RegisterToggle(obj.GetComponent<Toggle>());
-            //        }
-
-            //        for (int j = 0; j < ShapeUI.ShapeCounts[i]; j++)
-            //        {
-            //            var element = ShapeUI.Dictionary.First(x => x.Value.shape == i && x.Value.shapeOption == j);
-
-            //            if (i != 4 && i != 6 && !shapeSettings.Find(element.Key))
-            //            {
-            //                var obj = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
-            //                if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-            //                    image.sprite = element.Value.sprite;
-
-            //                var layoutElement = obj.AddComponent<LayoutElement>();
-            //                layoutElement.layoutPriority = 1;
-            //                layoutElement.minWidth = 32f;
-
-            //                ((RectTransform)obj.transform).sizeDelta = new Vector2(32f, 32f);
-
-            //                if (!obj.GetComponent<HoverUI>())
-            //                {
-            //                    var he = obj.AddComponent<HoverUI>();
-            //                    he.animatePos = false;
-            //                    he.animateSca = true;
-            //                    he.size = 1.1f;
-            //                }
-            //            }
-            //        }
-
-            //        LastGameObject(shapeSettings.GetChild(i));
-            //    } 
-            //}
-
-            #endregion
 
             LSHelpers.SetActiveChildren(shapeSettings, false);
 
@@ -2498,22 +2508,21 @@ namespace EditorManagement.Functions.Editors
             var editorLayersImage = (Image)ObjectUIElements["Layers Image"];
 
             editorLayersIF.onValueChanged.RemoveAllListeners();
-            editorLayersIF.text = (beatmapObject.editorData.Layer + 1).ToString();
-            editorLayersImage.color = RTEditor.GetLayerColor(beatmapObject.editorData.Layer);
+            editorLayersIF.text = (beatmapObject.editorData.layer + 1).ToString();
+            editorLayersImage.color = RTEditor.GetLayerColor(beatmapObject.editorData.layer);
             editorLayersIF.onValueChanged.AddListener(delegate (string _value)
             {
                 if (int.TryParse(_value, out int num))
                 {
                     num = Mathf.Clamp(num - 1, 0, int.MaxValue);
-                    beatmapObject.editorData.Layer = num;
-                    editorLayersIF.text = num.ToString();
+                    beatmapObject.editorData.layer = num;
+
+                    // Since layers have no effect on the physical object, we will only need to update the timeline object.
+                    RenderTimelineObject(new TimelineObject(beatmapObject));
+
+                    //editorLayersImage.color = RTEditor.GetLayerColor(beatmapObject.editorData.Layer);
+                    RenderLayers(beatmapObject);
                 }
-
-                // Since layers have no effect on the physical object, we will only need to update the timeline object.
-                RenderTimelineObject(new TimelineObject(beatmapObject));
-
-                editorLayersImage.color = RTEditor.GetLayerColor(beatmapObject.editorData.Layer);
-                RenderLayers(beatmapObject);
             });
 
             if (editorLayersIF.gameObject)
@@ -2663,6 +2672,7 @@ namespace EditorManagement.Functions.Editors
                                     beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                     EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
                                 }
                                 else
@@ -2676,6 +2686,7 @@ namespace EditorManagement.Functions.Editors
                                     beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                     EditorManager.inst.DisplayNotification("Pasted scale keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
                                 }
                                 else
@@ -2689,6 +2700,7 @@ namespace EditorManagement.Functions.Editors
                                     beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                     EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
                                 }
                                 else
@@ -2702,6 +2714,7 @@ namespace EditorManagement.Functions.Editors
                                     beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                     EditorManager.inst.DisplayNotification("Pasted color keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
                                 }
                                 else
@@ -3302,7 +3315,7 @@ namespace EditorManagement.Functions.Editors
 
                         if (RTEditor.ShowModifiedColors)
                         {
-                            var color = GameManager.inst.LiveTheme.GetObjColor(tmpIndex);
+                            var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
 
                             float hue = beatmapObject.Interpolate(type, 2);
                             float sat = beatmapObject.Interpolate(type, 3);
@@ -3311,15 +3324,15 @@ namespace EditorManagement.Functions.Editors
                             toggle.GetComponent<Image>().color = RTHelpers.ChangeColorHSV(color, hue, sat, val);
                         }
                         else
-                            toggle.GetComponent<Image>().color = GameManager.inst.LiveTheme.GetObjColor(tmpIndex);
+                            toggle.GetComponent<Image>().color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
 
-                        //if (!toggle.GetComponent<HoverUI>())
-                        //{
-                        //    var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
-                        //    hoverUI.animatePos = false;
-                        //    hoverUI.animateSca = true;
-                        //    hoverUI.size = 1.1f;
-                        //}
+                        if (!toggle.GetComponent<HoverUI>())
+                        {
+                            var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
+                            hoverUI.animatePos = false;
+                            hoverUI.animateSca = true;
+                            hoverUI.size = 1.1f;
+                        }
                         num6++;
 
                         if (p.Find("opacity"))
@@ -3669,14 +3682,14 @@ namespace EditorManagement.Functions.Editors
 
         public void SetLayer(BeatmapObject beatmapObject, int _layer)
         {
-            beatmapObject.editorData.Layer = _layer;
+            beatmapObject.editorData.layer = _layer;
 
             RenderTimelineObject(new TimelineObject(beatmapObject));
         }
 
         public void AddToLayer(BeatmapObject beatmapObject, int _add)
         {
-            int num = beatmapObject.editorData.Layer + _add;
+            int num = beatmapObject.editorData.layer + _add;
             SetLayer(beatmapObject, num);
         }
 
