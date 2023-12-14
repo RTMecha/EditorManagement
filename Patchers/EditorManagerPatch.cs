@@ -765,8 +765,8 @@ namespace EditorManagement.Patchers
                 EditorManager.inst.DisplayNotification("Saving Beatmap!", 1f, EditorManager.NotificationType.Warning);
                 EditorManager.inst.savingBeatmap = true;
             }
-            //Task task;
-            yield return DataManager.inst.StartCoroutine(RTFunctions.Functions.ProjectData.Writer.SaveData(_path, (GameData)DataManager.inst.gameData));
+            Task task;
+            yield return DataManager.inst.StartCoroutineAsync(RTFunctions.Functions.ProjectData.Writer.SaveData(_path, (GameData)DataManager.inst.gameData), out task);
             yield return new WaitForSeconds(0.5f);
             if (EditorManager.inst != null)
             {
