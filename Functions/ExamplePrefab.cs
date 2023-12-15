@@ -145,7 +145,8 @@ namespace EditorManagement.Functions
 							GenerateTemplatePrefabs("P_Example Right Hand Y", ObjectType.Empty, Vector2.zero, AutoKillType.LastKeyframeOffset, 5f, 0, 13, new Vector2(0f, -7f), Vector2.one, 0f, 6, "✿)¾$w7µ□9I1▣òÃ☱☳", "¾D!v▣|ZRdZ▥jx*t6", 0, 0, 2.313999f, "111"),
 						},
 						Offset = -2.31f,
-						Type = 5
+						Type = 5,
+						description = "Use me for anything!"
 					};
 				return example;
 			}
