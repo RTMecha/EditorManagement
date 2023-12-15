@@ -1134,6 +1134,9 @@ namespace EditorManagement.Functions.Editors
                 RTEditor.inst.layerType = RTEditor.LayerType.Objects;
                 RTEditor.inst.SetLayer(timelineObject.Layer);
             }
+
+            if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().RTObject)
+                timelineObject.GetData<BeatmapObject>().RTObject.GenerateDraggers();
         }
 
         public void SetCurrentBeatmapObject(int index) => inst.SetCurrentObject(RTEditor.inst.TimelineBeatmapObjects[index]);
