@@ -196,8 +196,6 @@ namespace EditorManagement.Patchers
             LoadBaseLevelPrefix();
             Instance.DisplayNotification("Base Level Loaded", 2f, EditorManager.NotificationType.Info);
 
-            EditorPlugin.timeOffset = Time.time;
-
             InputDataManager.inst.editorActions.Cut.ClearBindings();
             InputDataManager.inst.editorActions.Copy.ClearBindings();
             InputDataManager.inst.editorActions.Paste.ClearBindings();
@@ -386,8 +384,6 @@ namespace EditorManagement.Patchers
             {
                 EditorPlugin.ListObjectLayers();
             }
-
-            EditorPlugin.timeEditing = EditorPlugin.timeOffset + Time.time;
 
             Instance.prevAudioTime = AudioManager.inst.CurrentAudioSource.time;
             return false;
@@ -744,16 +740,7 @@ namespace EditorManagement.Patchers
             DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
             __instance.StartCoroutine(SaveData(GameManager.inst.path));
 
-            var jn = JSON.Parse(RTFile.FileExists(GameManager.inst.basePath + "editor.lse") ? FileManager.inst.LoadJSONFileRaw(GameManager.inst.basePath + "editor.lse") : "{}");
-
-            jn["timeline"]["tsc"] = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value.ToString("f2");
-            jn["timeline"]["z"] = EditorManager.inst.zoomFloat.ToString("f3");
-            jn["timeline"]["l"] = EditorManager.inst.layer.ToString();
-            jn["editor"]["t"] = EditorPlugin.timeEditing.ToString();
-            jn["editor"]["a"] = EditorPlugin.openAmount.ToString();
-            jn["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
-
-            RTFile.WriteToFile(GameManager.inst.basePath + "editor.lse", jn.ToString(3));
+            RTEditor.inst.SaveSettings();
 
             return false;
         }

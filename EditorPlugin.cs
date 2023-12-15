@@ -14,6 +14,7 @@ using EditorManagement.Functions;
 using EditorManagement.Functions.Editors;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
@@ -34,13 +35,6 @@ namespace EditorManagement
         readonly Harmony harmony = new Harmony("EditorManagement");
 
 		public static List<int> allLayers = new List<int>();
-
-		public static float timeOffset;
-        public static float timeEditing;
-		public static int openAmount;
-
-        public static int levelFilter = 0;
-        public static bool levelAscend = true;
 
         void Awake()
         {
@@ -70,7 +64,7 @@ namespace EditorManagement
 
 			SetPreviewConfig();
 
-			RTFunctions.Functions.Components.SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+            SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
@@ -93,27 +87,28 @@ namespace EditorManagement
 		{
 			try
 			{
-				if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
-					ModCompatibility.sharedFunctions.Add("HighlightColor", RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value);
-				else
-					ModCompatibility.sharedFunctions["HighlightColor"] = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
-				if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
-					ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value);
-				else
-					ModCompatibility.sharedFunctions["HighlightDoubleColor"] = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
-				if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
-					ModCompatibility.sharedFunctions.Add("CanHightlightObjects", RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value);
-				else
-					ModCompatibility.sharedFunctions["CanHightlightObjects"] = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
+				//if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
+				//	ModCompatibility.sharedFunctions.Add("HighlightColor", RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value);
+				//else
+				//	ModCompatibility.sharedFunctions["HighlightColor"] = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
+				//if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
+				//	ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value);
+				//else
+				//	ModCompatibility.sharedFunctions["HighlightDoubleColor"] = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
+				//if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
+				//	ModCompatibility.sharedFunctions.Add("CanHightlightObjects", RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value);
+				//else
+				//	ModCompatibility.sharedFunctions["CanHightlightObjects"] = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
 
-				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
-					ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value);
-				else
-					ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
-				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
-					ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value);
-				else
-					ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
+				//if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
+				//	ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value);
+				//else
+				//	ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
+				//if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
+				//	ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value);
+				//else
+				//	ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
+
 				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowEmpties"))
 					ModCompatibility.sharedFunctions.Add("ShowEmpties", RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value);
 				else
@@ -122,6 +117,17 @@ namespace EditorManagement
 					ModCompatibility.sharedFunctions.Add("ShowDamagable", RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value);
 				else
 					ModCompatibility.sharedFunctions["ShowDamagable"] = RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value;
+
+                RTObject.Enabled = RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value;
+				RTObject.HighlightColor = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
+				RTObject.HighlightDoubleColor = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
+				RTObject.HighlightObjects = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
+				RTObject.ShowObjectsOnlyOnLayer = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
+				RTObject.LayerOpacity = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
+
+				RTRotator.RotatorRadius = RTEditor.GetEditorProperty("Object Dragger Rotator Radius").GetConfigEntry<float>().Value;
+                RTScaler.ScalerOffset = RTEditor.GetEditorProperty("Object Dragger Scaler Offset").GetConfigEntry<float>().Value;
+                RTScaler.ScalerScale = RTEditor.GetEditorProperty("Object Dragger Scaler Scale").GetConfigEntry<float>().Value;
 			}
 			catch (Exception ex)
 			{
@@ -133,7 +139,7 @@ namespace EditorManagement
         {
 			Debug.LogFormat("{0}Setting Timeline Cursor Colors", className);
 			{
-				Debug.LogFormat("{0}Cursor Color Handle 1", EditorPlugin.className);
+				Debug.LogFormat("{0}Cursor Color Handle 1", className);
 				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle", out GameObject gm) && gm.TryGetComponent(out Image image))
 				{
 					RTEditor.inst.timelineSliderHandle = image;
@@ -141,10 +147,10 @@ namespace EditorManagement
 				}
 				else
 				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
 				}
 
-				Debug.LogFormat("{0}Cursor Color Ruler 1", EditorPlugin.className);
+				Debug.LogFormat("{0}Cursor Color Ruler 1", className);
 				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image", out GameObject gm1) && gm1.TryGetComponent(out Image image1))
 				{
 					RTEditor.inst.timelineSliderRuler = image1;
@@ -152,10 +158,10 @@ namespace EditorManagement
 				}
 				else
 				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
 				}
 
-				Debug.LogFormat("{0}Cursor Color Handle 2", EditorPlugin.className);
+				Debug.LogFormat("{0}Cursor Color Handle 2", className);
 				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image", out GameObject gm2) && gm2.TryGetComponent(out Image image2))
 				{
 					RTEditor.inst.keyframeTimelineSliderHandle = image2;
@@ -163,10 +169,10 @@ namespace EditorManagement
 				}
 				else
 				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
 				}
 
-				Debug.LogFormat("{0}Cursor Color Ruler 2", EditorPlugin.className);
+				Debug.LogFormat("{0}Cursor Color Ruler 2", className);
 				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle", out GameObject gm3) && gm3.TryGetComponent(out Image image3))
 				{
 					RTEditor.inst.keyframeTimelineSliderRuler = image3;
@@ -174,7 +180,7 @@ namespace EditorManagement
 				}
 				else
 				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", EditorPlugin.className);
+					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
 				}
 			}
 
@@ -198,7 +204,7 @@ namespace EditorManagement
 			notifyRT.anchoredPosition = new Vector2(8f, direction == Direction.Up ? 408f : 410f);
 			notifyGroup.childAlignment = direction != Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
 
-			RTFunctions.Functions.Components.SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+            SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 		}
 
 		public static void ListObjectLayers()
