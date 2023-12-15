@@ -242,87 +242,85 @@ namespace EditorManagement.Patchers
 			shapeOptionBG.name = "shapesettings";
 			var shapeSettings = shapeOptionBG.transform;
 
-			ShapeUI.SetupSprites();
+			//try
+			//{
+			//	// Initial removing
+			//	for (int i = 0; i < shapeSettings.childCount; i++)
+			//	{
+			//		for (int j = 1; j < shapeSettings.GetChild(i).childCount - 1; i++)
+			//		{
+			//			if (i != 4 && i != 6)
+			//			{
+			//				Destroy(shapeSettings.GetChild(i).GetChild(j).gameObject);
+			//			}
+			//		}
+			//	}
 
-			try
-			{
-				// Initial removing
-				for (int i = 0; i < shapeSettings.childCount; i++)
-				{
-					for (int j = 1; j < shapeSettings.GetChild(i).childCount - 1; i++)
-					{
-						if (i != 4 && i != 6)
-						{
-							Destroy(shapeSettings.GetChild(i).GetChild(j).gameObject);
-						}
-					}
-				}
+			//	// Readd everything
+			//	var list = ShapeUI.Dictionary.Values.ToList();
 
-				// Readd everything
-				var list = ShapeUI.Dictionary.Values.ToList();
+			//	int shapeCount = -1;
+			//	for (int i = 0; i < list.Count; i++)
+			//	{
+			//		if (list[i].shape > shapeCount + 1)
+			//			shapeCount = list[i].shape + 1;
+			//	}
 
-				int shapeCount = -1;
-				for (int i = 0; i < list.Count; i++)
-				{
-					if (list[i].shape > shapeCount + 1)
-						shapeCount = list[i].shape + 1;
-				}
+			//	if (shapeCount > 0)
+			//		for (int i = 0; i < shapeCount; i++)
+			//		{
+			//			if (shapeBG.transform.childCount < i)
+			//			{
+			//				var icon = Instantiate(shapeBG.transform.GetChild(shapeBG.transform.childCount - 1).gameObject);
+			//				icon.transform.SetParent(shapeBG.transform);
+			//				icon.transform.localScale = Vector3.one;
+			//				icon.name = (i + 1).ToString();
+			//			}
 
-				if (shapeCount > 0)
-					for (int i = 0; i < shapeCount; i++)
-					{
-						if (shapeBG.transform.childCount < i)
-						{
-							var icon = Instantiate(shapeBG.transform.GetChild(shapeBG.transform.childCount - 1).gameObject);
-							icon.transform.SetParent(shapeBG.transform);
-							icon.transform.localScale = Vector3.one;
-							icon.name = (i + 1).ToString();
-						}
+			//			int shapeOptionCount = -1;
+			//			for (int j = 0; j < list.Count; j++)
+			//			{
+			//				if (list[j].shapeOption > shapeOptionCount + 1)
+			//					shapeOptionCount = list[j].shapeOption + 1;
+			//			}
 
-						int shapeOptionCount = -1;
-						for (int j = 0; j < list.Count; j++)
-						{
-							if (list[j].shapeOption > shapeOptionCount + 1)
-								shapeOptionCount = list[j].shapeOption + 1;
-						}
+			//			if (shapeOptionCount > 0)
+			//				for (int j = 0; j < shapeOptionCount; j++)
+			//				{
+			//					var element = ShapeUI.Dictionary.ElementAt(i);
+			//					if (!shapeSettings.Find(element.Key))
+			//					{
+			//						var obj = Instantiate(shapeSettings.GetChild(0).GetChild(0).gameObject);
+			//						obj.transform.SetParent(shapeSettings.GetChild(i));
+			//						obj.transform.SetSiblingIndex(i);
+			//						obj.transform.localScale = Vector3.one;
+			//						obj.name = element.Key;
+			//						if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+			//							image.sprite = element.Value.sprite;
+			//					}
+			//				}
+			//		}
 
-						if (shapeOptionCount > 0)
-							for (int j = 0; j < shapeOptionCount; j++)
-							{
-								var element = ShapeUI.Dictionary.ElementAt(i);
-								if (!shapeSettings.Find(element.Key))
-								{
-									var obj = Instantiate(shapeSettings.GetChild(0).GetChild(0).gameObject);
-									obj.transform.SetParent(shapeSettings.GetChild(i));
-									obj.transform.SetSiblingIndex(i);
-									obj.transform.localScale = Vector3.one;
-									obj.name = element.Key;
-									if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-										image.sprite = element.Value.sprite;
-								}
-							}
-					}
+			//	DestroyImmediate(shapeBG.transform.GetChild(6).gameObject);
+			//	DestroyImmediate(shapeBG.transform.GetChild(4).gameObject);
 
-				DestroyImmediate(shapeBG.transform.GetChild(6).gameObject);
-				DestroyImmediate(shapeBG.transform.GetChild(4).gameObject);
+			//	for (int i = 0; i < shapeBG.transform.childCount; i++)
+			//	{
+			//		shapeBG.transform.GetChild(i).gameObject.name = (i + 1).ToString();
+			//	}
 
-				for (int i = 0; i < shapeBG.transform.childCount; i++)
-				{
-					shapeBG.transform.GetChild(i).gameObject.name = (i + 1).ToString();
-				}
+			//	DestroyImmediate(shapeOptionBG.transform.GetChild(6).gameObject);
+			//	DestroyImmediate(shapeOptionBG.transform.GetChild(4).gameObject);
 
-				DestroyImmediate(shapeOptionBG.transform.GetChild(6).gameObject);
-				DestroyImmediate(shapeOptionBG.transform.GetChild(4).gameObject);
+			//	for (int i = 0; i < shapeOptionBG.transform.childCount; i++)
+			//	{
+			//		shapeOptionBG.transform.GetChild(i).gameObject.name = (i + 1).ToString();
+			//	}
+			//}
+			//catch (Exception ex)
+			//{
 
-				for (int i = 0; i < shapeOptionBG.transform.childCount; i++)
-				{
-					shapeOptionBG.transform.GetChild(i).gameObject.name = (i + 1).ToString();
-				}
-			}
-			catch (Exception ex)
-			{
-
-			}
+			//}
 
 			// Depth
 			{
