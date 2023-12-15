@@ -83,7 +83,7 @@ namespace EditorManagement.Functions
 
             foreach (var beatmapObject in prefab.objects)
             {
-                float num3 = beatmapObject.StartTime + beatmapObject.GetObjectLifeLength(0f, true, true);
+                float num3 = beatmapObject.StartTime + beatmapObject.GetObjectLifeLength(0f, false, true);
                 num3 -= time;
                 if (length < num3)
                     length = num3;
