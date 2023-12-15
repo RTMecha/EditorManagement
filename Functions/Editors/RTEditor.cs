@@ -58,6 +58,8 @@ namespace EditorManagement.Functions.Editors
         {
             inst = this;
 
+            timeOffset = Time.time;
+
             SetupNotificationValues();
             SetupTimelineBar();
             SetupTimelineTriggers();
@@ -114,6 +116,8 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
+            timeEditing = timeOffset - Time.time + savedTimeEditng;
+
             foreach (var timelineObject in timelineObjects)
             {
                 if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
@@ -203,7 +207,7 @@ namespace EditorManagement.Functions.Editors
 
         public GameObject defaultIF;
 
-        public string objectSearchTerm;
+        public string objectSearchTerm = "";
 
         public GameObject replBase;
         public InputField replEditor;
@@ -231,6 +235,79 @@ namespace EditorManagement.Functions.Editors
                 if (!searchSprite)
                     searchSprite = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite;
                 return searchSprite;
+            }
+        }
+
+        #endregion
+
+        #region Settings
+
+        public float timeOffset;
+        public float timeEditing;
+        public float savedTimeEditng;
+        public int openAmount;
+
+        public int levelFilter = 0;
+        public bool levelAscend = true;
+
+        public void SaveSettings()
+        {
+            var jn = JSON.Parse(RTFile.FileExists(GameManager.inst.basePath + "editor.lse") ? FileManager.inst.LoadJSONFileRaw(GameManager.inst.basePath + "editor.lse") : "{}");
+
+            jn["timeline"]["tsc"] = EditorManager.inst.timelineScrollRectBar.value.ToString("f2");
+            jn["timeline"]["z"] = EditorManager.inst.zoomFloat.ToString("f3");
+            jn["timeline"]["l"] = EditorManager.inst.layer.ToString();
+            jn["editor"]["t"] = timeEditing.ToString();
+            jn["editor"]["a"] = openAmount.ToString();
+            jn["sort"]["f"] = levelFilter.ToString();
+            jn["sort"]["a"] = levelAscend.ToString();
+            jn["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
+            jn["misc"]["t"] = AudioManager.inst.CurrentAudioSource.time;
+
+            RTFile.WriteToFile(GameManager.inst.basePath + "editor.lse", jn.ToString(3));
+        }
+
+        public void LoadSettings()
+        {
+            if (!RTFile.FileExists(GameManager.inst.basePath + "editor.lse"))
+            {
+                savedTimeEditng = 0f;
+                timeOffset = Time.time;
+                return;
+            }
+
+            var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(GameManager.inst.basePath + "editor.lse"));
+
+            if (jn["timeline"] != null)
+            {
+                if (jn["timeline"]["tsc"] != null)
+                    EditorManager.inst.timelineScrollRectBar.value = jn["timeline"]["tsc"].AsFloat;
+                if (jn["timeline"]["z"] != null)
+                    EditorManager.inst.zoomSlider.value = jn["timeline"]["z"].AsFloat;
+                if (jn["timeline"]["l"] != null)
+                    SetLayer(jn["timeline"]["l"].AsInt, false);
+            }
+
+            if (jn["editor"] != null)
+            {
+                savedTimeEditng = jn["editor"]["t"].AsFloat;
+                openAmount = jn["editor"]["a"].AsInt + 1;
+            }
+
+            if (jn["sort"] != null)
+            {
+                levelFilter = jn["sort"]["f"].AsInt;
+                levelAscend = jn["sort"]["a"].AsBool;
+            }
+
+            if (jn["misc"] != null)
+            {
+                if (jn["misc"]["sn"] != null)
+                    SettingEditor.inst.SnapActive = jn["misc"]["sn"].AsBool;
+                if (jn["misc"]["t"] != null && LevelLoadsSavedTime)
+                    AudioManager.inst.SetMusicTime(jn["misc"]["t"].AsFloat);
+
+                SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
             }
         }
 
@@ -798,9 +875,6 @@ namespace EditorManagement.Functions.Editors
         #endregion
 
         #region Paths
-
-        public int levelFilter;
-        public bool levelAscend;
 
         public static string EditorSettingsPath => $"{RTFile.ApplicationDirectory}settings/editor.lss";
 
@@ -2046,7 +2120,9 @@ namespace EditorManagement.Functions.Editors
                 objectSearchTerm = _value;
                 RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
                 {
-                    ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
+                    var timelineObject = ObjectEditor.inst.GetTimelineObject(beatmapObject);
+
+                    ObjectEditor.inst.SetCurrentObject(timelineObject, true);
                 });
             });
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
@@ -2962,8 +3038,8 @@ namespace EditorManagement.Functions.Editors
 
         public bool autoSaving = false;
 
-        public static bool LevelLoadsSavedTime => true;
-        public static bool LevelPausesOnStart => true;
+        public static bool LevelLoadsSavedTime => GetEditorProperty("Level Loads Last Time").GetConfigEntry<bool>().Value;
+        public static bool LevelPausesOnStart => GetEditorProperty("Level Pauses on Start").GetConfigEntry<bool>().Value;
 
         public static IEnumerator GetFileList(string path, string fileType = null, Action<List<FileManager.LSFile>> files = null)
         {
@@ -2983,10 +3059,10 @@ namespace EditorManagement.Functions.Editors
                 {
                     list.Add(EditorManager.inst.StartCoroutine(EditorManager.inst.GetAlbumSprite(folder.name, delegate (Sprite cover)
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(DataManager.inst.ParseMetadata(metadataStr, false), folder.name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
                     }, delegate
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(DataManager.inst.ParseMetadata(metadataStr, false), folder.name, SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, SteamWorkshop.inst.defaultSteamImageSprite));
                     })));
                 }
                 else
@@ -3091,7 +3167,9 @@ namespace EditorManagement.Functions.Editors
             fileInfo.text = "Parsing Level Data for [" + withoutList + "]";
             if (!string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
             {
-                dataManager.ParseMetadata(rawMetadataJSON);
+                //dataManager.ParseMetadata(rawMetadataJSON);
+                dataManager.metaData = Metadata.Parse(JSON.Parse(rawMetadataJSON));
+
                 if (DataManager.inst.metaData.beatmap.game_version != "4.1.16")
                     rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
                 //dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
@@ -3210,51 +3288,13 @@ namespace EditorManagement.Functions.Editors
             TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
 
             {
-                if (LevelLoadsSavedTime)
-                {
-                    AudioManager.inst.CurrentAudioSource.time = DataManager.inst.gameData.beatmapData.editorData.timelinePos;
-                }
+                LoadSettings();
+
                 if (LevelPausesOnStart)
                 {
                     AudioManager.inst.CurrentAudioSource.Pause();
                     __instance.UpdatePlayButton();
                 }
-
-                //if (RTFile.FileExists(RTFile.ApplicationDirectory + text + "/editor.lse"))
-                //{
-                //    string rawProfileJSON = FileManager.inst.LoadJSONFile(text + "/editor.lse");
-
-                //    var jn = JSON.Parse(rawProfileJSON);
-
-                //    if (jn["timeline"]["z"] != null)
-                //        EditorManager.inst.zoomSlider.value = jn["timeline"]["z"].AsFloat;
-
-                //    if (jn["timeline"]["tsc"] != null)
-                //        EditorManager.inst.timelineScrollRectBar.value = jn["timeline"]["tsc"].AsFloat;
-
-                //    if (jn["timeline"]["l"] != null)
-                //        SetLayer(jn["timeline"]["l"].AsInt);
-
-                //    if (jn["timeline"]["lt"] != null)
-                //        SetLayer((LayerType)jn["timeline"]["lt"].AsInt);
-
-                //    if (jn["editor"]["t"] != null)
-                //        EditorPlugin.timeEdit = jn["editor"]["t"].AsFloat;
-
-                //    if (jn["editor"]["a"] != null)
-                //        EditorPlugin.openAmount = jn["editor"]["a"].AsInt;
-
-                //    EditorPlugin.openAmount += 1;
-
-                //    if (jn["misc"]["sn"] != null)
-                //        SettingEditor.inst.SnapActive = jn["misc"]["sn"].AsBool;
-
-                //    SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
-                //}
-                //else
-                //{
-                //    EditorPlugin.timeEdit = 0f;
-                //}
             }
 
             if (ModCompatibility.sharedFunctions.ContainsKey("EditorOnLoadLevel"))
@@ -3421,7 +3461,7 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.autosaves.RemoveAt(0);
             }
 
-            EditorManager.inst.StartCoroutine(RTFunctions.Functions.ProjectData.Writer.SaveData(autosavePath, (GameData)DataManager.inst.gameData));
+            EditorManager.inst.StartCoroutine(ProjectData.Writer.SaveData(autosavePath, (GameData)DataManager.inst.gameData));
 
             autoSaving = true;
         }
@@ -3756,9 +3796,9 @@ namespace EditorManagement.Functions.Editors
             #region Sorting
 
             var ien = EditorManager.inst.loadedLevels.AsEnumerable();
-            if (!EditorPlugin.levelAscend)
+            if (!levelAscend)
             {
-                switch (EditorPlugin.levelFilter)
+                switch (levelFilter)
                 {
                     case 0:
                         {
@@ -3804,7 +3844,7 @@ namespace EditorManagement.Functions.Editors
             }
             else
             {
-                switch (EditorPlugin.levelFilter)
+                switch (levelFilter)
                 {
                     case 0:
                         {
@@ -4512,6 +4552,14 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Preview", "Object Highlight Amount", new Color(0.1f, 0.1f, 0.1f), "If an object is hovered, it adds this amount of color to the hovered object.")),
             new EditorProperty(EditorProperty.ValueType.Color,
                 Config.Bind("Preview", "Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Preview", "Object Dragger Enabled", true, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+            new EditorProperty(EditorProperty.ValueType.Float,
+                Config.Bind("Preview", "Object Dragger Rotator Radius", 22f, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+            new EditorProperty(EditorProperty.ValueType.Float,
+                Config.Bind("Preview", "Object Dragger Scaler Offset", 6f, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+            new EditorProperty(EditorProperty.ValueType.Float,
+                Config.Bind("Preview", "Object Dragger Scaler Scale", 1.6f, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
 
             #endregion
         };
