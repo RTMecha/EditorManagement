@@ -740,6 +740,7 @@ namespace EditorManagement.Functions.Editors
             Paste, // 48
             Duplicate, // 49
             Delete, // 50
+            ToggleObjectDragger, // 51
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1129,7 +1130,7 @@ namespace EditorManagement.Functions.Editors
 
                     bm.objectType++;
 
-                    if ((int)bm.objectType > RTFunctions.Enums.EnumUtils.GetAll(bm.objectType).Length)
+                    if ((int)bm.objectType > Enum.GetNames(typeof(ObjectType)).Length)
                         bm.objectType = 0;
 
                     Updater.UpdateProcessor(bm);
@@ -1441,6 +1442,16 @@ namespace EditorManagement.Functions.Editors
             {
                 EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
             }
+        }
+
+        public static void ToggleObjectDragger(Keybind keybind)
+        {
+            RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value = !RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value;
+        }
+
+        public static void DuplicateKeyframe(Keybind keybind)
+        {
+
         }
 
         #endregion
