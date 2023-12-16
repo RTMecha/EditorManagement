@@ -69,6 +69,7 @@ namespace EditorManagement.Functions.Editors
         void Awake()
         {
             inst = this;
+
         }
 
         void Start()

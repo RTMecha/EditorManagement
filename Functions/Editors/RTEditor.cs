@@ -72,11 +72,12 @@ namespace EditorManagement.Functions.Editors
             CreateWarningPopup();
             CreateREPLEditor();
             CreateMultiObjectEditor();
+            CreatePropertiesWindow();
 
             if (!RTFile.FileExists(EditorSettingsPath))
-                CreatePaths();
+                CreateGlobalSettings();
             else
-                LoadPaths();
+                LoadGlobalSettings();
 
             // Player Editor
             {
@@ -101,12 +102,32 @@ namespace EditorManagement.Functions.Editors
 
             //timelineKeyframes.Cast<TimelineObject<BaseEventKeyframe>>().ToList();
 
+            mousePicker = new GameObject("picker");
+            mousePicker.transform.SetParent(EditorManager.inst.GetDialog("Parent Selector").Dialog.parent.parent);
+            mousePicker.transform.localScale = Vector3.one;
+            mousePicker.layer = 5;
+            mousePickerRT = mousePicker.AddComponent<RectTransform>();
+
+            var img = new GameObject("image");
+            img.transform.SetParent(mousePicker.transform);
+            img.transform.localScale = Vector3.one;
+            img.layer = 5;
+
+            var imgRT = img.AddComponent<RectTransform>();
+            imgRT.anchoredPosition = new Vector2(-930f, -520f);
+            imgRT.sizeDelta = new Vector2(32f, 32f);
+
+            var image = img.AddComponent<Image>();
+
+            UIManager.GetImage(image, RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_dropper.png");
+
             try
             {
                 doggoObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading");
                 doggoImage = doggoObject.GetComponent<Image>();
                 timelineTime = EditorManager.inst.timelineTime.GetComponent<Text>();
                 EditorPlugin.SetNotificationProperties();
+                EditorPlugin.SetTimelineColors();
             }
             catch
             {
@@ -116,7 +137,7 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
-            timeEditing = timeOffset - Time.time + savedTimeEditng;
+            timeEditing = Time.time - timeOffset + savedTimeEditng;
 
             foreach (var timelineObject in timelineObjects)
             {
@@ -154,6 +175,39 @@ namespace EditorManagement.Functions.Editors
                     timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
                 }
             }
+
+
+            if (Input.GetMouseButtonDown(1))
+                parentPickerEnabled = false;
+
+            if (mousePicker != null)
+                mousePicker.SetActive(parentPickerEnabled);
+
+            if (mousePicker != null && mousePickerRT != null && parentPickerEnabled)
+            {
+                float num = (float)Screen.width / 1920f;
+                num = 1f / num;
+                float x = mousePickerRT.sizeDelta.x;
+                float y = mousePickerRT.sizeDelta.y;
+                Vector3 zero = Vector3.zero;
+                mousePickerRT.anchoredPosition = (Input.mousePosition + zero) * num;
+            }
+
+            if (selectingKey && keyToSet != null && keyToSet.GetType() == typeof(ConfigEntry<KeyCode>))
+            {
+                var configEntry = (ConfigEntry<KeyCode>)keyToSet;
+
+                for (int i = 0; i < 345; i++)
+                {
+                    if (Input.GetKeyDown((KeyCode)i))
+                    {
+                        configEntry.Value = (KeyCode)i;
+                        selectingKey = false;
+
+                        onKeySet?.Invoke();
+                    }
+                }
+            }
         }
 
         public static void Nullify()
@@ -174,8 +228,12 @@ namespace EditorManagement.Functions.Editors
         public static bool BPMSnapKeyframes => GetEditorProperty("BPM Snaps Keyframes").GetConfigEntry<bool>().Value;
 
         public bool ienumRunning;
-        public bool parentPickerEnabled;
-        public BaseBeatmapObject objectToParent;
+        public bool parentPickerEnabled = false;
+
+        public GameObject mousePicker;
+        RectTransform mousePickerRT;
+
+        public BeatmapObject objectToParent;
 
         public InputField layersIF;
         Image layersImage;
@@ -237,6 +295,14 @@ namespace EditorManagement.Functions.Editors
                 return searchSprite;
             }
         }
+
+        public string propertiesSearch;
+
+        public static EditorProperty.EditorPropCategory currentCategory = EditorProperty.EditorPropCategory.General;
+
+        public bool selectingKey = false;
+        public object keyToSet;
+        public Action onKeySet;
 
         #endregion
 
@@ -309,6 +375,9 @@ namespace EditorManagement.Functions.Editors
 
                 SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
             }
+
+            prevLayer = EditorManager.inst.layer;
+            prevLayerType = layerType;
         }
 
         #endregion
@@ -938,7 +1007,7 @@ namespace EditorManagement.Functions.Editors
         public static string prefabListPath = "beatmaps/prefabs";
         public static string prefabListSlash = "beatmaps/prefabs/";
 
-        public static void CreatePaths()
+        public static void CreateGlobalSettings()
         {
             if (!RTFile.FileExists(EditorSettingsPath))
             {
@@ -953,11 +1022,21 @@ namespace EditorManagement.Functions.Editors
                 PrefabPath = "prefabs";
                 jn["paths"]["prefabs"] = PrefabPath;
 
+                for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
+                {
+                    jn["marker_colors"][i] = LSColors.ColorToHex(MarkerEditor.inst.markerColors[i]);
+                }
+
+                for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
+                {
+                    jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
+                }
+
                 RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
             }
         }
 
-        public static void LoadPaths()
+        public static void LoadGlobalSettings()
         {
             if (!RTFile.FileExists(EditorSettingsPath))
                 return;
@@ -970,15 +1049,61 @@ namespace EditorManagement.Functions.Editors
                 ThemePath = jn["paths"]["themes"];
             if (!string.IsNullOrEmpty(jn["paths"]["prefabs"]))
                 PrefabPath = jn["paths"]["prefabs"];
+
+            if (jn["marker_colors"] != null)
+            {
+                MarkerEditor.inst.markerColors.Clear();
+                for (int i = 0; i < jn["marker_colors"].Count; i++)
+                {
+                    MarkerEditor.inst.markerColors.Add(LSColors.HexToColor(jn["marker_colors"][i]));
+                }
+            }
+            else
+            {
+                for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
+                {
+                    jn["marker_colors"][i] = LSColors.ColorToHex(MarkerEditor.inst.markerColors[i]);
+                }
+
+                RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
+            }
+
+            if (jn["layer_colors"] != null)
+            {
+                EditorManager.inst.layerColors.Clear();
+                for (int i = 0; i < jn["layer_colors"].Count; i++)
+                {
+                    EditorManager.inst.layerColors.Add(LSColors.HexToColor(jn["layer_colors"][i]));
+                }
+            }
+            else
+            {
+                for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
+                {
+                    jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
+                }
+
+                RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
+            }
         }
 
-        public static void SavePaths()
+        public static void SaveGlobalSettings()
         {
             var jn = JSON.Parse(RTFile.ReadFromFile(EditorSettingsPath));
 
             jn["paths"]["editor"] = EditorPath;
             jn["paths"]["themes"] = ThemePath;
             jn["paths"]["prefabs"] = PrefabPath;
+
+            for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
+            {
+                jn["marker_colors"][i] = LSColors.ColorToHex(MarkerEditor.inst.markerColors[i]);
+            }
+
+            for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
+            {
+                jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
+            }
 
             RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
         }
@@ -1884,8 +2009,8 @@ namespace EditorManagement.Functions.Editors
             if (toggle.gameObject)
                 TooltipHelper.AddTooltip(toggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
 
-            CreatePaths();
-            LoadPaths();
+            CreateGlobalSettings();
+            LoadGlobalSettings();
 
             // EditorPath
             {
@@ -1913,7 +2038,7 @@ namespace EditorManagement.Functions.Editors
                 editorPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     EditorPath = _val;
-                    SavePaths();
+                    SaveGlobalSettings();
                 });
 
                 var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
@@ -1977,7 +2102,7 @@ namespace EditorManagement.Functions.Editors
                 themePathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     ThemePath = _val;
-                    SavePaths();
+                    SaveGlobalSettings();
                 });
 
                 var themePathReloader = GameObject.Find("TimelineBar/GameObject/play").Duplicate(themePathSpacer.transform, "reload themes");
@@ -2039,7 +2164,7 @@ namespace EditorManagement.Functions.Editors
                 levelListIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
-                    SavePaths();
+                    SaveGlobalSettings();
                 });
 
                 var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
@@ -2118,12 +2243,11 @@ namespace EditorManagement.Functions.Editors
             searchBar.onValueChanged.AddListener(delegate (string _value)
             {
                 objectSearchTerm = _value;
-                RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
-                {
-                    var timelineObject = ObjectEditor.inst.GetTimelineObject(beatmapObject);
-
-                    ObjectEditor.inst.SetCurrentObject(timelineObject, true);
-                });
+                //RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                //{
+                //    ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(beatmapObject), Input.GetKey(KeyCode.LeftControl));
+                //});
+                RefreshObjectSearch(x => ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(x), Input.GetKey(KeyCode.LeftControl)));
             });
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
 
@@ -2153,10 +2277,7 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorDropdown("Search Objects", "", "Edit", SearchSprite, delegate ()
             {
                 EditorManager.inst.ShowDialog("Object Search Popup");
-                RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
-                {
-                    ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
-                });
+                RefreshObjectSearch(x => ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(x), Input.GetKey(KeyCode.LeftControl)));
             });
 
             EditorHelper.AddEditorPopup("Object Search Popup", objectSearch);
@@ -2800,6 +2921,7 @@ namespace EditorManagement.Functions.Editors
                 syncLayout.transform.localScale = Vector3.one;
 
                 var multiSyncRT = syncLayout.AddComponent<RectTransform>();
+                multiSyncRT.sizeDelta = new Vector2(390f, 160f);
                 var multiSyncGLG = syncLayout.AddComponent<GridLayoutGroup>();
                 multiSyncGLG.spacing = new Vector2(4f, 4f);
                 multiSyncGLG.cellSize = new Vector2(61.6f, 49f);
@@ -2817,6 +2939,7 @@ namespace EditorManagement.Functions.Editors
                                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2833,6 +2956,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().name = beatmapObject.name;
                                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2850,6 +2974,7 @@ namespace EditorManagement.Functions.Editors
                                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ObjectType");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2867,6 +2992,7 @@ namespace EditorManagement.Functions.Editors
                                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "AutoKill");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2884,6 +3010,7 @@ namespace EditorManagement.Functions.Editors
                                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "AutoKill");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2900,6 +3027,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().parent = beatmapObject.parent;
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Parent");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2916,6 +3044,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().parentType = beatmapObject.parentType;
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentType");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2932,6 +3061,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().parentOffsets = beatmapObject.parentOffsets.Clone();
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentOffset");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2948,6 +3078,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().origin = beatmapObject.origin;
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Origin");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2965,6 +3096,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().shapeOption = beatmapObject.shapeOption;
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Shape");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2981,6 +3113,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().text = beatmapObject.text;
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Text");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -2997,6 +3130,7 @@ namespace EditorManagement.Functions.Editors
                                 timelineObject.GetData<BeatmapObject>().Depth = beatmapObject.Depth;
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Depth");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -3015,6 +3149,7 @@ namespace EditorManagement.Functions.Editors
 
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Keyframes");
                             }
+                            EditorManager.inst.HideDialog("Object Search Popup");
                         });
                     });
                 }
@@ -3022,6 +3157,600 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
             EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
+        }
+
+        public void CreatePropertiesWindow()
+        {
+            GameObject editorProperties = Instantiate(EditorManager.inst.GetDialog("Object Selector").Dialog.gameObject);
+            editorProperties.name = "Editor Properties Popup";
+            editorProperties.layer = 5;
+            editorProperties.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform);
+            editorProperties.transform.localScale = Vector3.one;
+            editorProperties.transform.localPosition = Vector3.zero;
+
+            var eSelect = editorProperties.AddComponent<SelectGUI>();
+            eSelect.target = editorProperties.transform;
+            eSelect.ogPos = editorProperties.transform.position;
+
+            Text textFont = GameObject.Find("TitleBar/File/Text").GetComponent<Text>();
+            var prefabTMP = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/prefab");
+
+            //Set Text and stuff
+            {
+                var searchField = editorProperties.transform.Find("search-box").GetChild(0).GetComponent<InputField>();
+                searchField.onValueChanged.RemoveAllListeners();
+                searchField.onValueChanged.AddListener(delegate (string _val)
+                {
+                    propertiesSearch = _val;
+                    RenderPropertiesWindow();
+                });
+                searchField.placeholder.GetComponent<Text>().text = "Search for property...";
+                editorProperties.transform.Find("Panel/Text").GetComponent<Text>().text = "Editor Properties";
+            }
+
+            //Sort Layout
+            {
+                editorProperties.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(750f, 32f);
+                editorProperties.GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 450f);
+                editorProperties.transform.Find("Panel").GetComponent<RectTransform>().sizeDelta = new Vector2(782f, 32f);
+                editorProperties.transform.Find("search-box").GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 32f);
+                editorProperties.transform.Find("search-box").localPosition = new Vector3(0f, 195f, 0f);
+                editorProperties.transform.Find("crumbs").GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 32f);
+                editorProperties.transform.Find("crumbs").localPosition = new Vector3(0f, 225f, 0f);
+                editorProperties.transform.Find("crumbs").GetComponent<HorizontalLayoutGroup>().spacing = 5.5f;
+            }
+
+            //Categories
+            {
+                Action<string, Color, EditorProperty.EditorPropCategory> categoryTabGenerator = delegate (string name, Color color, EditorProperty.EditorPropCategory editorPropCategory)
+                {
+                    var gameObject = Instantiate(prefabTMP);
+                    gameObject.name = name;
+                    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                    gameObject.layer = 5;
+                    var rectTransform = (RectTransform)gameObject.transform;
+                    var image = gameObject.GetComponent<Image>();
+                    var button = gameObject.GetComponent<Button>();
+
+                    var hoverUI = gameObject.AddComponent<HoverUI>();
+                    hoverUI.ogPos = gameObject.transform.localPosition;
+                    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                    hoverUI.size = 1f;
+                    hoverUI.animatePos = true;
+                    hoverUI.animateSca = false;
+
+                    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                    image.color = color;
+                    //categoryColors.Add(LSColors.HexToColor("FFE7E7"));
+
+                    ColorBlock cb2 = button.colors;
+                    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                    button.colors = cb2;
+
+                    var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                    hoverTooltip.tooltipLangauges.Clear();
+                    hoverTooltip.tooltipLangauges.Add(TooltipHelper.NewTooltip("Click on this to switch category.", ""));
+
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        currentCategory = editorPropCategory;
+                        RenderPropertiesWindow();
+                    });
+
+                    var textGameObject = gameObject.transform.GetChild(0).gameObject;
+                    textGameObject.transform.SetParent(gameObject.transform);
+                    textGameObject.layer = 5;
+                    var textRectTransform = textGameObject.GetComponent<RectTransform>();
+                    var textText = textGameObject.GetComponent<Text>();
+
+                    textRectTransform.anchoredPosition = Vector2.zero;
+                    textText.text = name;
+                    textText.alignment = TextAnchor.MiddleCenter;
+                    textText.color = LSColors.ContrastColor(color);
+                    textText.font = textFont.font;
+                    textText.fontSize = 20;
+
+                    var clickable = gameObject.AddComponent<Clickable>();
+                    clickable.onEnter = delegate (PointerEventData pointerEventData)
+                    {
+                        var animation = new AnimationManager.Animation($"{name} Hover");
+                        var id = animation.id;
+
+                        animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
+                        {
+                            new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
+                            {
+                                new ColorKeyframe(0f, color, Ease.Linear),
+                                new ColorKeyframe(0.2f, Color.white, Ease.SineOut),
+                            }, delegate (Color x)
+                            {
+                                image.color = x;
+                                textText.color = LSColors.ContrastColor(x);
+                            }),
+                        };
+
+                        AnimationManager.inst.RemoveName($"{name} Exit");
+                        AnimationManager.inst.Play(animation);
+                    };
+                    clickable.onExit = delegate (PointerEventData pointerEventData)
+                    {
+                        var animation = new AnimationManager.Animation($"{name} Exit");
+                        var id = animation.id;
+
+                        animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
+                        {
+                            new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
+                            {
+                                new ColorKeyframe(0f, Color.white, Ease.Linear),
+                                new ColorKeyframe(0.2f, color, Ease.SineIn),
+                            }, delegate (Color x)
+                            {
+                                image.color = x;
+                                textText.color = LSColors.ContrastColor(x);
+                            }),
+                        };
+
+                        AnimationManager.inst.RemoveName($"{name} Hover");
+                        AnimationManager.inst.Play(animation);
+                    };
+                };
+
+                categoryTabGenerator("General", LSColors.HexToColor("FFE7E7"), EditorProperty.EditorPropCategory.General);
+                categoryTabGenerator("Timeline", LSColors.HexToColor("C0ACE1"), EditorProperty.EditorPropCategory.Timeline);
+                categoryTabGenerator("Data", LSColors.HexToColor("F17BB8"), EditorProperty.EditorPropCategory.Data);
+                categoryTabGenerator("Editor GUI", LSColors.HexToColor("2F426D"), EditorProperty.EditorPropCategory.EditorGUI);
+                categoryTabGenerator("Functions", LSColors.HexToColor("4076DF"), EditorProperty.EditorPropCategory.Functions);
+                categoryTabGenerator("Fields", LSColors.HexToColor("6CCBCF"), EditorProperty.EditorPropCategory.Fields);
+                categoryTabGenerator("Preview", LSColors.HexToColor("1B1B1C"), EditorProperty.EditorPropCategory.Preview);
+
+                ////General
+                //{
+                //    var gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "general";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    var rectTransform = (RectTransform)gameObject.transform;
+                //    var image = gameObject.GetComponent<Image>();
+                //    var button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("FFE7E7");
+                //    //categoryColors.Add(LSColors.HexToColor("FFE7E7"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(TooltipHelper.NewTooltip("General Editor Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.General;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    var textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    var textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    var textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "General";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+
+                ////Timeline
+                //{
+                //    var gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "timeline";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+                //    Image image = gameObject.GetComponent<Image>();
+                //    Button button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("C0ACE1");
+                //    //categoryColors.Add(LSColors.HexToColor("C0ACE1"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Timeline Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.Timeline;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    Text textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "Timeline";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+
+                ////Data
+                //{
+                //    GameObject gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "saving";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+                //    Image image = gameObject.GetComponent<Image>();
+                //    Button button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("F17BB8");
+                //    //categoryColors.Add(LSColors.HexToColor("F17BB8"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Data Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.Data;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    textGameObject.GetComponent<CanvasRenderer>();
+                //    Text textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "Data";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+
+                ////Editor GUI
+                //{
+                //    GameObject gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "editorgui";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+                //    Image image = gameObject.GetComponent<Image>();
+                //    Button button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("2F426D");
+                //    //categoryColors.Add(LSColors.HexToColor("2F426D"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("GUI Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.EditorGUI;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    Text textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "Editor GUI";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+
+                ////Functions
+                //{
+                //    GameObject gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "functions";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+                //    Image image = gameObject.GetComponent<Image>();
+                //    Button button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("4076DF");
+                //    //categoryColors.Add(LSColors.HexToColor("4076DF"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Functions Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.Functions;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    Text textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "Functions";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+
+                ////Fields
+                //{
+                //    GameObject gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "fields";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+                //    Image image = gameObject.GetComponent<Image>();
+                //    Button button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("6CCBCF");
+                //    //categoryColors.Add(LSColors.HexToColor("6CCBCF"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Fields Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.Fields;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    Text textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "Fields";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+
+                ////Preview
+                //{
+                //    GameObject gameObject = Instantiate(prefabTMP);
+                //    gameObject.name = "preview";
+                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                //    gameObject.layer = 5;
+                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
+                //    Image image = gameObject.GetComponent<Image>();
+                //    Button button = gameObject.GetComponent<Button>();
+
+                //    var hoverUI = gameObject.AddComponent<HoverUI>();
+                //    hoverUI.ogPos = gameObject.transform.localPosition;
+                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
+                //    hoverUI.size = 1f;
+                //    hoverUI.animatePos = true;
+                //    hoverUI.animateSca = false;
+
+                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
+                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
+
+                //    image.color = LSColors.HexToColor("1B1B1C");
+                //    //categoryColors.Add(LSColors.HexToColor("1B1B1C"));
+
+                //    ColorBlock cb2 = button.colors;
+                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
+                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
+                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
+                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
+                //    button.colors = cb2;
+
+                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+
+                //    hoverTooltip.tooltipLangauges.Clear();
+                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Preview Settings", ""));
+
+                //    button.onClick.ClearAll();
+                //    button.onClick.AddListener(delegate ()
+                //    {
+                //        currentCategory = EditorProperty.EditorPropCategory.Preview;
+                //        RenderPropertiesWindow();
+                //    });
+
+                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
+                //    textGameObject.transform.SetParent(gameObject.transform);
+                //    textGameObject.layer = 5;
+                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
+                //    Text textText = textGameObject.GetComponent<Text>();
+
+                //    textRectTransform.anchoredPosition = Vector2.zero;
+                //    textText.text = "Preview";
+                //    textText.alignment = TextAnchor.MiddleCenter;
+                //    textText.color = new Color(0.95f, 0.95f, 0.95f, 1f);
+                //    textText.font = textFont.font;
+                //    textText.fontSize = 20;
+                //}
+            }
+
+            EditorHelper.AddEditorDropdown("Preferences", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_preferences-white.png"), delegate ()
+            {
+                OpenPropertiesWindow();
+            });
+
+            //var propWin = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut"));
+            //propWin.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform);
+            //propWin.transform.localScale = Vector3.one;
+            //propWin.name = "Preferences";
+            //propWin.transform.Find("Text").GetComponent<Text>().text = "Preferences";
+            //propWin.transform.Find("Text 1").GetComponent<Text>().text = "F10";
+
+            //var propWinButton = propWin.GetComponent<Button>();
+            //propWinButton.onClick.ClearAll();
+            //propWinButton.onClick.AddListener(delegate ()
+            //{
+            //    OpenPropertiesWindow();
+            //});
+
+            //propWin.SetActive(true);
+
+
+            //string jpgFileLocation = "BepInEx/plugins/Assets/editor_gui_preferences-white.png";
+
+            //if (RTFile.FileExists(jpgFileLocation))
+            //{
+            //    Image spriteReloader = propWin.transform.Find("Image").GetComponent<Image>();
+
+            //    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(RTFile.ApplicationDirectory + jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+            //    {
+            //        spriteReloader.sprite = cover;
+            //    }, delegate (string errorFile)
+            //    {
+            //        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+            //    }));
+            //}
+
+            editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.RemoveAllListeners();
+            editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.AddListener(delegate ()
+            {
+                ClosePropertiesWindow();
+            });
+
+            //Add Editor Properties Popup to EditorDialogsDictionary
+            {
+                EditorHelper.AddEditorPopup("Editor Properties Popup", editorProperties);
+            }
         }
 
         #endregion
@@ -3654,13 +4383,14 @@ namespace EditorManagement.Functions.Editors
                 var regex = new Regex(@"\[([0-9])\]");
                 var match = regex.Match(objectSearchTerm);
 
-                if (!beatmapObject.fromPrefab && string.IsNullOrEmpty(objectSearchTerm) || beatmapObject.name.ToLower().Contains(objectSearchTerm.ToLower()) || match.Success && int.Parse(match.Groups[1].ToString()) < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == int.Parse(match.Groups[1].ToString()))
+                if (string.IsNullOrEmpty(objectSearchTerm) || beatmapObject.name.ToLower().Contains(objectSearchTerm.ToLower()) || match.Success && int.Parse(match.Groups[1].ToString()) < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == int.Parse(match.Groups[1].ToString()))
                 {
                     string nm = $"[{(list.IndexOf(beatmapObject) + 1).ToString("0000")}/{list.Count.ToString("0000")} - {beatmapObject.id}] : {beatmapObject.name}";
                     var buttonPrefab = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, nm);
                     buttonPrefab.transform.GetChild(0).GetComponent<Text>().text = nm;
 
                     var b = buttonPrefab.GetComponent<Button>();
+                    b.interactable = !beatmapObject.fromPrefab;
                     b.onClick.RemoveAllListeners();
                     b.onClick.AddListener(delegate ()
                     {
@@ -4135,6 +4865,759 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public void OpenPropertiesWindow(bool _toggle = false)
+        {
+            if (EditorManager.inst)
+            {
+                if (!EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.gameObject.activeSelf)
+                {
+                    EditorManager.inst.ShowDialog("Editor Properties Popup");
+                    RenderPropertiesWindow();
+                }
+                else if (_toggle)
+                {
+                    EditorManager.inst.HideDialog("Editor Properties Popup");
+                }
+            }
+        }
+
+        public void ClosePropertiesWindow() => EditorManager.inst.HideDialog("Editor Properties Popup");
+
+        public List<Color> categoryColors = new List<Color>
+        {
+            LSColors.HexToColor("FFE7E7"),
+            LSColors.HexToColor("C0ACE1"),
+            LSColors.HexToColor("F17BB8"),
+            LSColors.HexToColor("2F426D"),
+            LSColors.HexToColor("4076DF"),
+            LSColors.HexToColor("6CCBCF"),
+            LSColors.HexToColor("1B1B1C")
+
+        };
+
+        public void RenderPropertiesWindow()
+        {
+            var editorDialog = EditorManager.inst.GetDialog("Editor Properties Popup").Dialog;
+            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+            var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
+            var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
+            var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+            var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
+            var stringInput = defaultIF;
+
+            LSHelpers.DeleteChildren(editorDialog.Find("mask/content"));
+
+            foreach (var prop in EditorProperties)
+            {
+                if (currentCategory == prop.propCategory && (string.IsNullOrEmpty(propertiesSearch) || prop.name.ToLower().Contains(propertiesSearch.ToLower())))
+                {
+                    switch (prop.valueType)
+                    {
+                        case EditorProperty.ValueType.Bool:
+                            {
+                                var bar = Instantiate(singleInput);
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
+
+                                LSHelpers.DeleteChildren(bar.transform);
+                                bar.transform.SetParent(editorDialog.Find("mask/content"));
+                                bar.transform.localScale = Vector3.one;
+                                bar.name = "input [BOOL]";
+
+                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(bar.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(688f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                bar.GetComponent<Image>().enabled = true;
+                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                GameObject x = Instantiate(boolInput);
+                                x.transform.SetParent(bar.transform);
+                                x.transform.localScale = Vector3.one;
+
+                                Toggle xt = x.GetComponent<Toggle>();
+                                xt.onValueChanged.RemoveAllListeners();
+                                xt.isOn = (bool)prop.configEntry.BoxedValue;
+                                xt.onValueChanged.AddListener(delegate (bool _val)
+                                {
+                                    prop.configEntry.BoxedValue = _val;
+                                });
+                                break;
+                            }
+                        case EditorProperty.ValueType.Int:
+                            {
+                                GameObject x = Instantiate(singleInput);
+                                x.transform.SetParent(editorDialog.Find("mask/content"));
+                                x.name = "input [INT]";
+
+                                Destroy(x.GetComponent<EventInfo>());
+                                Destroy(x.GetComponent<EventTrigger>());
+                                Destroy(x.GetComponent<InputField>());
+
+                                x.transform.localScale = Vector3.one;
+                                x.transform.GetChild(0).localScale = Vector3.one;
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(x.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                x.GetComponent<Image>().enabled = true;
+                                x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var input = x.transform.Find("input");
+
+                                var xif = input.gameObject.AddComponent<InputField>();
+                                xif.onValueChanged.RemoveAllListeners();
+                                xif.textComponent = input.Find("Text").GetComponent<Text>();
+                                xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                                xif.characterValidation = InputField.CharacterValidation.Integer;
+                                xif.text = prop.configEntry.BoxedValue.ToString();
+                                xif.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    prop.configEntry.BoxedValue = int.Parse(_val);
+                                });
+
+                                if (prop.configEntry.Description.AcceptableValues != null)
+                                {
+                                    int min = int.MinValue;
+                                    int max = int.MaxValue;
+                                    min = (int)prop.configEntry.Description.AcceptableValues.Clamp(min);
+                                    max = (int)prop.configEntry.Description.AcceptableValues.Clamp(max);
+
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif, 1, min, max) });
+
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, 1, min, max, x.transform);
+                                }
+                                else
+                                {
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif) });
+
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, t: x.transform);
+                                }
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.Float:
+                            {
+                                GameObject x = Instantiate(singleInput);
+                                x.transform.SetParent(editorDialog.Find("mask/content"));
+                                x.name = "input [FLOAT]";
+
+                                Destroy(x.GetComponent<EventInfo>());
+                                Destroy(x.GetComponent<EventTrigger>());
+                                Destroy(x.GetComponent<InputField>());
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(x.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                x.transform.localScale = Vector3.one;
+                                x.transform.GetChild(0).localScale = Vector3.one;
+
+                                x.GetComponent<Image>().enabled = true;
+                                x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var input = x.transform.Find("input");
+
+                                var xif = input.gameObject.AddComponent<InputField>();
+                                xif.onValueChanged.RemoveAllListeners();
+                                xif.textComponent = input.Find("Text").GetComponent<Text>();
+                                xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                                xif.characterValidation = InputField.CharacterValidation.None;
+                                xif.text = prop.configEntry.BoxedValue.ToString();
+                                xif.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    prop.configEntry.BoxedValue = float.Parse(_val);
+                                });
+
+                                if (prop.configEntry.Description.AcceptableValues != null)
+                                {
+                                    float min = float.MinValue;
+                                    float max = float.MaxValue;
+                                    min = (float)prop.configEntry.Description.AcceptableValues.Clamp(min);
+                                    max = (float)prop.configEntry.Description.AcceptableValues.Clamp(max);
+
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif, 0.1f, 10f, min, max, false) });
+
+                                    TriggerHelper.IncreaseDecreaseButtons(xif, 1f, 10f, min, max, x.transform);
+                                }
+                                else
+                                {
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
+
+                                    TriggerHelper.IncreaseDecreaseButtons(xif, t: x.transform);
+                                }
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.IntSlider:
+                            {
+                                GameObject x = Instantiate(sliderFullInput);
+                                x.transform.SetParent(editorDialog.Find("mask/content"));
+                                x.name = "input [INTSLIDER]";
+
+                                var title = x.transform.Find("title");
+
+                                var l = title.GetComponent<Text>();
+                                l.font = FontManager.inst.Inconsolata;
+                                l.text = prop.name;
+
+                                var titleRT = title.GetComponent<RectTransform>();
+                                titleRT.sizeDelta = new Vector2(220f, 32f);
+                                titleRT.anchoredPosition = new Vector2(122f, -16f);
+
+                                var image = x.AddComponent<Image>();
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                x.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
+                                var xsli = x.transform.Find("slider").GetComponent<Slider>();
+                                xsli.onValueChanged.RemoveAllListeners();
+
+                                xsli.value = (int)prop.configEntry.BoxedValue * 10;
+
+                                xsli.maxValue = 100f;
+                                xsli.minValue = -100f;
+
+                                var xif = x.transform.Find("input").GetComponent<InputField>();
+                                xif.onValueChanged.RemoveAllListeners();
+                                xif.characterValidation = InputField.CharacterValidation.Integer;
+                                xif.text = prop.configEntry.BoxedValue.ToString();
+
+                                xif.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (LSHelpers.IsUsingInputField())
+                                    {
+                                        prop.configEntry.BoxedValue = float.Parse(_val);
+                                        xsli.value = int.Parse(_val);
+                                    }
+                                });
+
+                                xsli.onValueChanged.AddListener(delegate (float _val)
+                                {
+                                    if (!LSHelpers.IsUsingInputField())
+                                    {
+                                        prop.configEntry.BoxedValue = _val;
+                                        xif.text = _val.ToString();
+                                    }
+                                });
+
+                                if (prop.configEntry.Description.AcceptableValues != null)
+                                {
+                                    int min = int.MinValue;
+                                    int max = int.MaxValue;
+                                    min = (int)prop.configEntry.Description.AcceptableValues.Clamp(min);
+                                    max = (int)prop.configEntry.Description.AcceptableValues.Clamp(max);
+
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif, 1, min, max, false) });
+
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, 1, min, max, x.transform);
+                                }
+                                else
+                                {
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif) });
+
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, t: x.transform);
+                                }
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.FloatSlider:
+                            {
+                                GameObject x = Instantiate(sliderFullInput);
+                                x.transform.SetParent(editorDialog.Find("mask/content"));
+                                x.transform.localScale = Vector3.one;
+                                x.name = "input [FLOATSLIDER]";
+
+                                var title = x.transform.Find("title");
+
+                                var l = title.GetComponent<Text>();
+                                l.font = FontManager.inst.Inconsolata;
+                                l.text = prop.name;
+
+                                x.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = false;
+
+                                var titleRT = title.GetComponent<RectTransform>();
+                                titleRT.sizeDelta = new Vector2(220f, 32f);
+                                titleRT.anchoredPosition = new Vector2(122f, -16f);
+
+                                var image = x.AddComponent<Image>();
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                x.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
+                                var xsli = x.transform.Find("slider").GetComponent<Slider>();
+                                xsli.onValueChanged.RemoveAllListeners();
+
+                                xsli.value = (float)prop.configEntry.BoxedValue * 10;
+
+                                xsli.maxValue = 100f;
+                                xsli.minValue = -100f;
+
+                                var xif = x.transform.Find("input").GetComponent<InputField>();
+                                xif.onValueChanged.RemoveAllListeners();
+                                xif.characterValidation = InputField.CharacterValidation.None;
+                                xif.text = prop.configEntry.BoxedValue.ToString();
+
+                                xif.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (LSHelpers.IsUsingInputField())
+                                    {
+                                        prop.configEntry.BoxedValue = float.Parse(_val);
+                                        int v = int.Parse(_val) * 10;
+                                        xsli.value = v;
+                                    }
+                                });
+
+                                xsli.onValueChanged.AddListener(delegate (float _val)
+                                {
+                                    if (!LSHelpers.IsUsingInputField())
+                                    {
+                                        int v = (int)_val * 10;
+                                        float v2 = v / 100f;
+                                        prop.configEntry.BoxedValue = v2;
+                                        xif.text = v2.ToString();
+                                    }
+                                });
+
+                                if (prop.configEntry.Description.AcceptableValues != null)
+                                {
+                                    float min = float.MinValue;
+                                    float max = float.MaxValue;
+                                    min = (float)prop.configEntry.Description.AcceptableValues.Clamp(min);
+                                    max = (float)prop.configEntry.Description.AcceptableValues.Clamp(max);
+
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif, 0.1f, 10f, min, max, false) });
+
+                                    TriggerHelper.IncreaseDecreaseButtons(xif, 1f, 10f, min, max, x.transform);
+                                }
+                                else
+                                {
+                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
+
+                                    TriggerHelper.IncreaseDecreaseButtons(xif, t: x.transform);
+                                }
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.String:
+                            {
+                                var bar = Instantiate(singleInput);
+
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<InputFieldSwapper>());
+
+                                LSHelpers.DeleteChildren(bar.transform);
+                                bar.transform.SetParent(editorDialog.Find("mask/content"));
+                                bar.transform.localScale = Vector3.one;
+                                bar.name = "input [STRING]";
+
+                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(bar.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                bar.GetComponent<Image>().enabled = true;
+                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                GameObject x = Instantiate(stringInput);
+                                x.transform.SetParent(bar.transform);
+                                x.transform.localScale = Vector3.one;
+                                Destroy(x.GetComponent<HoverTooltip>());
+
+                                x.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 32f);
+
+                                var xif = x.GetComponent<InputField>();
+                                xif.onValueChanged.RemoveAllListeners();
+                                xif.characterValidation = InputField.CharacterValidation.None;
+                                xif.characterLimit = 0;
+                                xif.text = prop.configEntry.BoxedValue.ToString();
+                                xif.textComponent.fontSize = 18;
+                                xif.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    prop.configEntry.BoxedValue = _val;
+                                });
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.Vector2:
+                            {
+                                var bar = Instantiate(singleInput);
+
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<InputFieldSwapper>());
+
+                                LSHelpers.DeleteChildren(bar.transform);
+                                bar.transform.SetParent(editorDialog.Find("mask/content"));
+                                bar.transform.localScale = Vector3.one;
+                                bar.name = "input [VECTOR2]";
+
+                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(bar.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                bar.GetComponent<Image>().enabled = true;
+                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                GameObject vector2 = Instantiate(vector2Input);
+                                vector2.transform.SetParent(bar.transform);
+                                vector2.transform.localScale = Vector3.one;
+
+                                Vector2 vtmp = (Vector2)prop.configEntry.BoxedValue;
+
+                                Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
+                                vector2.transform.Find("x").localScale = Vector3.one;
+                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
+                                var vxif = vector2.transform.Find("x").GetComponent<InputField>();
+                                {
+                                    vxif.onValueChanged.RemoveAllListeners();
+
+                                    vxif.text = vtmp.x.ToString();
+
+                                    vxif.onValueChanged.AddListener(delegate (string _val)
+                                    {
+                                        vtmp = new Vector2(float.Parse(_val), vtmp.y);
+                                        prop.configEntry.BoxedValue = vtmp;
+                                    });
+                                }
+
+                                Destroy(vector2.transform.Find("y").GetComponent<EventInfo>());
+                                vector2.transform.Find("y").localScale = Vector3.one;
+                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
+                                var vyif = vector2.transform.Find("y").GetComponent<InputField>();
+                                {
+                                    vyif.onValueChanged.RemoveAllListeners();
+
+                                    vyif.text = vtmp.y.ToString();
+
+                                    vyif.onValueChanged.AddListener(delegate (string _val)
+                                    {
+                                        vtmp = new Vector2(vtmp.x, float.Parse(_val));
+                                        prop.configEntry.BoxedValue = vtmp;
+                                    });
+                                }
+
+                                TriggerHelper.AddEventTrigger(vxif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(vxif) });
+                                TriggerHelper.AddEventTrigger(vyif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(vyif) });
+
+                                TriggerHelper.IncreaseDecreaseButtons(vxif);
+                                TriggerHelper.IncreaseDecreaseButtons(vyif);
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.Vector3:
+                            {
+                                Debug.Log("lol");
+                                break;
+                            }
+                        case EditorProperty.ValueType.Enum:
+                            {
+                                bool isKeyCode = prop.configEntry.GetType() == typeof(ConfigEntry<KeyCode>);
+
+                                var bar = Instantiate(singleInput);
+
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<InputFieldSwapper>());
+
+                                LSHelpers.DeleteChildren(bar.transform);
+                                bar.transform.SetParent(editorDialog.Find("mask/content"));
+                                bar.transform.localScale = Vector3.one;
+                                bar.name = "input [ENUM]";
+
+                                TooltipHelper.AddTooltip(bar, prop.name, prop.description + " (You may see some Invalid Values, don't worry nothing's wrong.)", new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(bar.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(isKeyCode ? 482 : 522f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                bar.GetComponent<Image>().enabled = true;
+                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                if (isKeyCode)
+                                {
+                                    var gameObject = new GameObject("selector");
+                                    gameObject.transform.SetParent(bar.transform);
+                                    gameObject.transform.localScale = Vector3.one;
+                                    var rectTransform = gameObject.AddComponent<RectTransform>();
+                                    gameObject.AddComponent<CanvasRenderer>();
+
+                                    rectTransform.sizeDelta = new Vector2(32f, 32f);
+
+                                    var image = gameObject.AddComponent<Image>();
+
+                                    var button = gameObject.AddComponent<Button>();
+                                    button.onClick.AddListener(delegate ()
+                                    {
+                                        selectingKey = true;
+                                        keyToSet = prop.configEntry;
+
+                                        onKeySet = RenderPropertiesWindow;
+                                    });
+                                }
+
+                                GameObject x = Instantiate(dropdownInput);
+                                x.transform.SetParent(bar.transform);
+                                x.transform.localScale = Vector3.one;
+
+                                RectTransform xRT = x.GetComponent<RectTransform>();
+                                //xRT.anchoredPosition = ConfigEntries.OpenFileDropdownPosition.Value;
+
+                                Destroy(x.GetComponent<HoverTooltip>());
+                                Destroy(x.GetComponent<HideDropdownOptions>());
+
+                                var hide = x.AddComponent<HideDropdownOptions>();
+
+                                Dropdown dropdown = x.GetComponent<Dropdown>();
+                                dropdown.options.Clear();
+                                dropdown.onValueChanged.RemoveAllListeners();
+                                Type type = prop.configEntry.SettingType;
+
+                                var enums = Enum.GetValues(prop.configEntry.SettingType);
+                                for (int i = 0; i < enums.Length; i++)
+                                {
+                                    var str = "Invalid Value";
+                                    if (Enum.GetName(prop.configEntry.SettingType, i) != null)
+                                    {
+                                        hide.DisabledOptions.Add(false);
+                                        str = Enum.GetName(prop.configEntry.SettingType, i);
+                                    }
+                                    else
+                                    {
+                                        hide.DisabledOptions.Add(true);
+                                    }
+
+                                    dropdown.options.Add(new Dropdown.OptionData(str));
+                                }
+
+                                dropdown.onValueChanged.AddListener(delegate (int _val)
+                                {
+                                    prop.configEntry.BoxedValue = _val;
+                                });
+
+                                dropdown.value = (int)prop.configEntry.BoxedValue;
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.Color:
+                            {
+                                var bar = Instantiate(singleInput);
+
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<InputFieldSwapper>());
+
+                                LSHelpers.DeleteChildren(bar.transform);
+                                bar.transform.SetParent(editorDialog.Find("mask/content"));
+                                bar.transform.localScale = Vector3.one;
+                                bar.name = "input [COLOR]";
+
+                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(bar.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(314f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                bar.GetComponent<Image>().enabled = true;
+                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                                var bar2 = Instantiate(singleInput);
+                                Destroy(bar2.GetComponent<InputField>());
+                                Destroy(bar2.GetComponent<EventInfo>());
+                                LSHelpers.DeleteChildren(bar2.transform);
+                                bar2.transform.SetParent(bar.transform);
+                                bar2.transform.localScale = Vector3.one;
+                                bar2.name = "color";
+                                bar2.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+
+                                var bar2Color = bar2.GetComponent<Image>();
+                                bar2Color.enabled = true;
+                                bar2Color.color = (Color)prop.configEntry.BoxedValue;
+
+                                Image image2 = null;
+
+                                if (EventEditor.inst.dialogLeft.TryFind("theme/theme/viewport/content/gui/preview/dropper", out Transform dropper))
+                                {
+                                    var drop = Instantiate(dropper.gameObject);
+                                    drop.transform.SetParent(bar2.transform);
+                                    drop.transform.localScale = Vector3.one;
+                                    drop.name = "dropper";
+
+                                    var dropRT = drop.GetComponent<RectTransform>();
+                                    dropRT.sizeDelta = new Vector2(32f, 32f);
+                                    dropRT.anchoredPosition = Vector2.zero;
+
+                                    if (drop.TryGetComponent(out Image image))
+                                    {
+                                        image2 = image;
+                                        image.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
+                                    }
+                                }
+
+                                GameObject x = Instantiate(stringInput);
+                                x.transform.SetParent(bar.transform);
+                                x.transform.localScale = Vector3.one;
+                                Destroy(x.GetComponent<HoverTooltip>());
+
+                                x.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 32f);
+
+                                var xif = x.GetComponent<InputField>();
+                                xif.onValueChanged.RemoveAllListeners();
+                                xif.characterValidation = InputField.CharacterValidation.None;
+                                xif.characterLimit = 8;
+                                xif.text = RTHelpers.ColorToHex((Color)prop.configEntry.BoxedValue);
+                                xif.textComponent.fontSize = 18;
+                                xif.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    string v = _val;
+                                    if (v.Length == 6)
+                                        v += "FF";
+
+                                    if (v.Length == 8)
+                                    {
+                                        prop.configEntry.BoxedValue = LSColors.HexToColorAlpha(v);
+                                        bar2Color.color = (Color)prop.configEntry.BoxedValue;
+                                        if (image2 != null)
+                                        {
+                                            image2.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
+                                        }
+
+                                        TriggerHelper.AddEventTrigger(bar2, new List<EventTrigger.Entry> { TriggerHelper.CreatePreviewClickTrigger(bar2Color, image2, xif, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup") });
+                                    }
+                                });
+
+                                TriggerHelper.AddEventTrigger(bar2, new List<EventTrigger.Entry> { TriggerHelper.CreatePreviewClickTrigger(bar2Color, image2, xif, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup") });
+
+                                break;
+                            }
+                        case EditorProperty.ValueType.Function:
+                            {
+                                var x = Instantiate(singleInput);
+                                x.transform.SetParent(editorDialog.Find("mask/content"));
+                                x.name = "input [FUNCTION]";
+
+                                Destroy(x.GetComponent<EventInfo>());
+                                Destroy(x.GetComponent<EventTrigger>());
+                                DestroyImmediate(x.GetComponent<InputField>());
+
+                                x.transform.localScale = Vector3.one;
+                                x.transform.GetChild(0).localScale = Vector3.one;
+
+                                var l = Instantiate(label);
+                                l.transform.SetParent(x.transform);
+                                l.transform.SetAsFirstSibling();
+                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
+                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+
+                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                                {
+                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                }
+
+                                var image = x.GetComponent<Image>();
+                                image.enabled = true;
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                                try
+                                {
+                                    if (!string.IsNullOrEmpty(prop.description))
+                                        TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+                                }
+                                catch (Exception ex)
+                                {
+                                    Debug.LogError(ex);
+                                }
+
+                                Destroy(x.transform.Find("input").gameObject);
+                                Destroy(x.transform.Find("<").gameObject);
+                                Destroy(x.transform.Find(">").gameObject);
+
+                                var button = x.AddComponent<Button>();
+                                button.onClick.AddListener(delegate ()
+                                {
+                                    prop.action();
+                                });
+
+                                break;
+                            }
+                    }
+                }
+            }
+        }
+
         #endregion
 
         #region Misc Functions
@@ -4201,10 +5684,6 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("General", "BPM Snap Divisions", 4f, "How many times the snap is divided into. Can be good for songs that don't do 4 divisions.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Round To Nearest", true, "If numbers should be rounded up to 3 decimal points (for example, 0.43321245 into 0.433).")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("General", "Preferences Open Key", KeyCode.F10, "The key to press to open the Editor Properties / Preferences window.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("General", "Player Editor Open Key", KeyCode.F6, "The key to press to open the Player Editor window.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
@@ -4385,7 +5864,7 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Editor GUI", "Prefab Internal Type Horizontal Wrap", HorizontalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
             new EditorProperty(EditorProperty.ValueType.Enum,
                 Config.Bind("Editor GUI", "Prefab Internal Type Vertical Wrap", VerticalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
+            new EditorProperty(EditorProperty.ValueType.IntSlider,
                 Config.Bind("Editor GUI", "Prefab Internal Type Font Size", 20, new ConfigDescription("Size of the text font.", FontSizeLimit))),
 
             // Prefab External
@@ -4429,7 +5908,7 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Editor GUI", "Prefab External Type Horizontal Wrap", HorizontalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
             new EditorProperty(EditorProperty.ValueType.Enum,
                 Config.Bind("Editor GUI", "Prefab External Type Vertical Wrap", VerticalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
+            new EditorProperty(EditorProperty.ValueType.IntSlider,
                 Config.Bind("Editor GUI", "Prefab External Type Font Size", 20, new ConfigDescription("Size of the text font.", FontSizeLimit))),
 
             #endregion
@@ -4439,82 +5918,85 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Fields", "Show Modified Colors", true, "Keyframe colors show any modifications done (such as hue, saturation and value).")),
             new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Fields", "Theme Template Name", "New Theme", "Name of the template theme.")),
+                Config.Bind("Fields", "Theme Template Name", "New Theme", "Name of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template GUI", LSColors.white, "GUI Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template GUI", LSColors.white, "GUI Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template GUI Accent", LSColors.white, "GUI Accent Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template GUI Accent", LSColors.white, "GUI Accent Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG", LSColors.gray900, "BG Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG", LSColors.gray900, "BG Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 1", LSColors.HexToColor("E57373"), "Player 1 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template Player 1", LSColors.HexToColor("E57373"), "Player 1 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 2", LSColors.HexToColor("64B5F6"), "Player 2 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template Player 2", LSColors.HexToColor("64B5F6"), "Player 2 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 3", LSColors.HexToColor("81C784"), "Player 3 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template Player 3", LSColors.HexToColor("81C784"), "Player 3 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 4", LSColors.HexToColor("FFB74D"), "Player 4 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template Player 4", LSColors.HexToColor("FFB74D"), "Player 4 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 1", LSColors.gray100, "OBJ 1 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 1", LSColors.gray100, "OBJ 1 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 2", LSColors.gray200, "OBJ 2 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 2", LSColors.gray200, "OBJ 2 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 3", LSColors.gray300, "OBJ 3 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 3", LSColors.gray300, "OBJ 3 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 4", LSColors.gray400, "OBJ 4 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 4", LSColors.gray400, "OBJ 4 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 5", LSColors.gray500, "OBJ 5 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 5", LSColors.gray500, "OBJ 5 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 6", LSColors.gray600, "OBJ 6 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 6", LSColors.gray600, "OBJ 6 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 7", LSColors.gray700, "OBJ 7 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 7", LSColors.gray700, "OBJ 7 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 8", LSColors.gray800, "OBJ 8 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 8", LSColors.gray800, "OBJ 8 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 9", LSColors.gray900, "OBJ 9 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 9", LSColors.gray900, "OBJ 9 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 10", LSColors.gray100, "OBJ 10 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 10", LSColors.gray100, "OBJ 10 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 11", LSColors.gray200, "OBJ 11 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 11", LSColors.gray200, "OBJ 11 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 12", LSColors.gray300, "OBJ 12 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 12", LSColors.gray300, "OBJ 12 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 13", LSColors.gray400, "OBJ 13 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 13", LSColors.gray400, "OBJ 13 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 14", LSColors.gray500, "OBJ 14 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 14", LSColors.gray500, "OBJ 14 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 15", LSColors.gray600, "OBJ 15 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 15", LSColors.gray600, "OBJ 15 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 16", LSColors.gray700, "OBJ 16 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 16", LSColors.gray700, "OBJ 16 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 17", LSColors.gray800, "OBJ 17 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 17", LSColors.gray800, "OBJ 17 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 18", LSColors.gray900, "OBJ 18 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template OBJ 18", LSColors.gray900, "OBJ 18 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 1", LSColors.pink100, "BG 1 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 1", LSColors.pink100, "BG 1 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 2", LSColors.pink200, "BG 2 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 2", LSColors.pink200, "BG 2 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 3", LSColors.pink300, "BG 3 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 3", LSColors.pink300, "BG 3 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 4", LSColors.pink400, "BG 4 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 4", LSColors.pink400, "BG 4 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 5", LSColors.pink500, "BG 5 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 5", LSColors.pink500, "BG 5 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 6", LSColors.pink600, "BG 6 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 6", LSColors.pink600, "BG 6 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 7", LSColors.pink700, "BG 7 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 7", LSColors.pink700, "BG 7 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 8", LSColors.pink800, "BG 8 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 8", LSColors.pink800, "BG 8 Color of the template theme. (WIP)")),
             new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 9", LSColors.pink900, "BG 9 Color of the template theme.")),
+                Config.Bind("Fields", "Theme Template BG 9", LSColors.pink900, "BG 9 Color of the template theme. (WIP)")),
 
             #endregion
 
             #region Functions
             
             new EditorProperty("Open Keybind Editor", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
-                delegate () { EditorManager.inst.ShowDialog("Keybind List Popup"); }, ""),
+                delegate ()
+                {
+                    KeybindManager.inst.OpenPopup();
+                }, "Opens Keybind list"),
             new EditorProperty("Remove all but first keyframes foreach object", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
                 delegate ()
                 {
@@ -4532,7 +6014,7 @@ namespace EditorManagement.Functions.Editors
                             }
                         }
                     }
-                }, ""),
+                }, "Removes every keyframe but the first keyframe foreach selected object."),
 
             #endregion
 

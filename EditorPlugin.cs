@@ -80,6 +80,13 @@ namespace EditorManagement
 				SetNotificationProperties();
 				EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
 				ObjEditor.inst.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
+
+				if (RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().Value)
+                {
+					RTEditor.inst.StartCoroutine(RTEditor.inst.AssignTimelineTexture());
+                }
+
+				SetTimelineColors();
 			}
 		}
 

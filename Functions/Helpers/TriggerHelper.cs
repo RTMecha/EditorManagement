@@ -44,6 +44,7 @@ namespace EditorManagement.Functions.Helpers
 				et.triggers.Add(entry);
 		}
 
+		public static bool FloatNearZero(float f, float range = 0.01f) => f < range && f > -range;
 
 		public static EventTrigger.Entry ScrollDelta(InputField _if, float amount = 0.1f, float mutliply = 10f, float min = 0f, float max = 0f, bool multi = false)
 		{
@@ -68,7 +69,7 @@ namespace EditorManagement.Functions.Helpers
 						if (pointerEventData.scrollDelta.y > 0f)
 							result += holdingAlt ? amount / mutliply : holdingCtrl ? amount * mutliply : amount;
 
-						if (min != 0f && max != 0f)
+						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
 
 						_if.text = result.ToString("f2");
@@ -269,7 +270,7 @@ namespace EditorManagement.Functions.Helpers
 				{
 					result -= Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount;
 
-					if (min != 0f && max != 0f)
+					if (min != 0f || max != 0f)
 						result = Mathf.Clamp(result, min, max);
 
 					_if.text = result.ToString();
@@ -283,7 +284,7 @@ namespace EditorManagement.Functions.Helpers
 				{
 					result -= Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount;
 
-					if (min != 0f && max != 0f)
+					if (min != 0f || max != 0f)
 						result = Mathf.Clamp(result, min, max);
 
 					_if.text = result.ToString();
@@ -299,7 +300,7 @@ namespace EditorManagement.Functions.Helpers
 					{
 						result -= (Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount) * 10f;
 
-						if (min != 0f && max != 0f)
+						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
 
 						_if.text = result.ToString();
@@ -316,7 +317,7 @@ namespace EditorManagement.Functions.Helpers
 					{
 						result += (Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount) * 10f;
 
-						if (min != 0f && max != 0f)
+						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
 
 						_if.text = result.ToString();
@@ -548,6 +549,7 @@ namespace EditorManagement.Functions.Helpers
 			entry.eventID = EventTriggerType.PointerUp;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
+				var pointerEventData = (PointerEventData)eventData;
 				if (!ObjEditor.inst.beatmapObjectsDrag)
 				{
 					//if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
@@ -559,18 +561,64 @@ namespace EditorManagement.Functions.Helpers
 					//	ObjEditor.inst.SetCurrentObj(_obj);
 					//}
 
-					if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-						ObjectEditor.inst.AddSelectedObject(timelineObject);
-					else
-						ObjectEditor.inst.SetCurrentObject(timelineObject);
+					if (!RTEditor.inst.parentPickerEnabled)
+					{
+						if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
+							ObjectEditor.inst.AddSelectedObject(timelineObject);
+						else
+							ObjectEditor.inst.SetCurrentObject(timelineObject);
 
-					//foreach (ObjectSelection obj in ObjEditor.inst.selectedObjects)
-					//{
-					//	ObjEditor.inst.RenderTimelineObject(obj);
-					//}
+						float timelineTime = EditorManager.inst.GetTimelineTime(0f);
+						ObjEditor.inst.mouseOffsetXForDrag = timelineObject.Time - timelineTime;
+					}
+					else if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
+					{
+						var dictionary = new Dictionary<string, bool>();
 
-					float timelineTime = EditorManager.inst.GetTimelineTime(0f);
-					ObjEditor.inst.mouseOffsetXForDrag = timelineObject.Time - timelineTime;
+						foreach (var obj in DataManager.inst.gameData.beatmapObjects)
+						{
+							bool flag = true;
+							if (!string.IsNullOrEmpty(obj.parent))
+							{
+								string parentID = ObjectEditor.inst.CurrentSelection.ID;
+								while (!string.IsNullOrEmpty(parentID))
+								{
+									if (parentID == obj.parent)
+									{
+										flag = false;
+										break;
+									}
+									int num2 = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
+									if (num2 != -1)
+									{
+										parentID = DataManager.inst.gameData.beatmapObjects[num2].id;
+									}
+									else
+									{
+										parentID = null;
+									}
+								}
+							}
+							if (!dictionary.ContainsKey(obj.id))
+								dictionary.Add(obj.id, flag);
+						}
+
+						if (dictionary.ContainsKey(ObjectEditor.inst.CurrentSelection.ID))
+							dictionary[ObjectEditor.inst.CurrentSelection.ID] = false;
+
+						if (dictionary.ContainsKey(timelineObject.ID) && dictionary[timelineObject.ID])
+						{
+							ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().parent = timelineObject.ID;
+							Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+
+							RTEditor.inst.parentPickerEnabled = false;
+							RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
+						}
+						else
+						{
+							EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
+						}
+					}
 				}
 			});
 			return entry;

@@ -527,6 +527,36 @@ namespace EditorManagement.Patchers
 			Destroy(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
 			Destroy(ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(1).gameObject);
 
+            // Parent Settings
+            {
+				var array = new string[]
+				{
+					"pos",
+					"sca",
+					"rot",
+				};
+				for (int i = 0; i < 3; i++)
+				{
+					var parent = ObjEditor.inst.ObjectView.transform.Find("parent_more").GetChild(i + 1);
+
+                    if (parent.Find("<<"))
+                        Destroy(parent.Find("<<").gameObject);
+
+                    if (parent.Find("<"))
+                        Destroy(parent.Find("<").gameObject);
+
+                    if (parent.Find(">"))
+                        Destroy(parent.Find(">").gameObject);
+
+                    if (parent.Find(">>"))
+                        Destroy(parent.Find(">>").gameObject);
+
+                    var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array}_add");
+					var parallax = parent.GetChild(3).gameObject.Duplicate(parent, $"{array}_parallax");
+				}
+
+			}
+
 			// Make Shape list scrollable, for any more shapes I decide to add.
 			{
 				var shape = ObjEditor.inst.ObjectView.transform.Find("shape");
@@ -604,8 +634,8 @@ namespace EditorManagement.Patchers
 				{
 					int binOffset = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25) * EditorManager.inst.ScreenScaleInverse / 20)) + __instance.mouseOffsetYForDrag;
 
-					if (!ObjectEditor.inst.CurrentSelection.Locked)
-						ObjectEditor.inst.CurrentSelection.Bin = Mathf.Clamp(binOffset, 0, 14);
+					//if (!ObjectEditor.inst.CurrentSelection.Locked)
+					//	ObjectEditor.inst.CurrentSelection.Bin = Mathf.Clamp(binOffset, 0, 14);
 
 					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
@@ -622,10 +652,8 @@ namespace EditorManagement.Patchers
 					float timeOffset = Mathf.Round(Mathf.Clamp(EditorManager.inst.GetTimelineTime() + __instance.mouseOffsetXForDrag,
 						0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f;
 
-					if (!ObjectEditor.inst.CurrentSelection.Locked)
-						ObjectEditor.inst.CurrentSelection.Time = timeOffset;
-
-					ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
+					//if (!ObjectEditor.inst.CurrentSelection.Locked)
+					//	ObjectEditor.inst.CurrentSelection.Time = timeOffset;
 
 					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
@@ -635,90 +663,12 @@ namespace EditorManagement.Patchers
 							timelineObject.Time = timeCalc;
 
 						ObjectEditor.inst.RenderTimelineObject(timelineObject);
+
+						if (timelineObject.IsBeatmapObject)
+							Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
 					}
 				}
             }
-
-            #region Old Code
-
-            //if (ObjectEditor.inst.SelectedObjectCount > 1 && __instance.beatmapObjectsDrag)
-            //{
-            //	if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-            //	{
-            //		int binOffset = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25.0) * EditorManager.inst.ScreenScaleInverse / 20.0)) + __instance.mouseOffsetYForDrag;
-
-            //		foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-            //		{
-            //			int calc = Mathf.Clamp(binOffset + timelineObject.binOffset, 0, 14);
-
-            //			if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>() && !timelineObject.GetData<BeatmapObject>().editorData.locked)
-            //				timelineObject.GetData<BeatmapObject>().editorData.Bin = calc;
-            //			if (timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>() && !timelineObject.GetData<PrefabObject>().editorData.locked)
-            //				timelineObject.GetData<PrefabObject>().editorData.Bin = calc;
-
-            //			ObjectEditor.inst.RenderTimelineObject(timelineObject);
-            //		}
-            //	}
-            //	else
-            //	{
-            //		float num3 = Mathf.Round(Mathf.Clamp(EditorManager.inst.GetTimelineTime() + __instance.mouseOffsetXForDrag,
-            //			0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f;
-
-            //		if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject && !ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.locked)
-            //			ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime = num3;
-            //		else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject && ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>() && !ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.locked)
-            //			ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().StartTime = num3;
-            //		if (ObjectEditor.inst.CurrentSelection)
-            //			ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
-
-            //		foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-            //		{
-            //			float calc = Mathf.Clamp(num3 + timelineObject.timeOffset, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
-
-            //			if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>() && !timelineObject.GetData<BeatmapObject>().editorData.locked)
-            //				timelineObject.GetData<BeatmapObject>().StartTime = calc;
-            //			if (timelineObject.IsPrefabObject && timelineObject.GetData<BeatmapObject>() && !timelineObject.GetData<BeatmapObject>().editorData.locked)
-            //				timelineObject.GetData<PrefabObject>().StartTime = calc;
-
-            //			ObjectEditor.inst.RenderTimelineObject(timelineObject);
-            //		}
-            //	}
-            //}
-            //else if (__instance.beatmapObjectsDrag)
-            //{
-            //	if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-            //	{
-            //		int num = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25.0) * EditorManager.inst.ScreenScaleInverse / 20.0));
-            //		num = Mathf.Clamp(num, 0, 14);
-
-            //		if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject &&
-            //			ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>() &&
-            //			!ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.locked)
-            //			ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.Bin = num;
-            //		else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject &&
-            //			ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>() &&
-            //			!ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.locked)
-            //			ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.Bin = num;
-            //	}
-            //	else
-            //	{
-            //		float num = Mathf.Round(EditorManager.inst.GetTimelineTime(__instance.mouseOffsetXForDrag) * 1000f) / 1000f;
-            //		num = Mathf.Clamp(num, 0.0f, AudioManager.inst.CurrentAudioSource.clip.length);
-
-            //		if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject &&
-            //			ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>() &&
-            //			!ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().editorData.locked)
-            //			ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime = num;
-            //		else if (ObjectEditor.inst.CurrentSelection &&
-            //			ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>() &&
-            //			!ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().editorData.locked)
-            //			ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>().StartTime = num;
-            //	}
-
-            //	ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
-            //}
-
-            #endregion
 
             if (__instance.timelineKeyframesDrag && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
 			{
