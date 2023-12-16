@@ -3779,24 +3779,44 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator LoadLevels()
         {
             EditorManager.inst.loadedLevels.Clear();
-            var folderList = FileManager.inst.GetFolderList(editorListPath);
+            //var folderList = FileManager.inst.GetFolderList(editorListPath);
+
             var list = new List<Coroutine>();
-            foreach (var folder in folderList)
+            foreach (var file in Directory.GetDirectories(RTFile.ApplicationDirectory + editorListPath))
             {
-                var metadataStr = FileManager.inst.LoadJSONFileRaw(folder.fullPath + "/metadata.lsb");
+                var path = file.Replace("\\", "/");
+                var name = Path.GetFileName(path);
+                var metadataStr = FileManager.inst.LoadJSONFileRaw(file + "/metadata.lsb");
                 if (metadataStr != null)
                 {
-                    list.Add(EditorManager.inst.StartCoroutine(EditorManager.inst.GetAlbumSprite(folder.name, delegate (Sprite cover)
+                    list.Add(EditorManager.inst.StartCoroutine(EditorManager.inst.GetAlbumSprite(name, delegate (Sprite cover)
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
                     }, delegate
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), name, SteamWorkshop.inst.defaultSteamImageSprite));
                     })));
                 }
                 else
-                    Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{folder.name}]!");
+                    Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{name}]!");
             }
+
+            //foreach (var folder in folderList)
+            //{
+            //    var metadataStr = FileManager.inst.LoadJSONFileRaw(folder.fullPath + "/metadata.lsb");
+            //    if (metadataStr != null)
+            //    {
+            //        list.Add(EditorManager.inst.StartCoroutine(EditorManager.inst.GetAlbumSprite(folder.name, delegate (Sprite cover)
+            //        {
+            //            EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
+            //        }, delegate
+            //        {
+            //            EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, SteamWorkshop.inst.defaultSteamImageSprite));
+            //        })));
+            //    }
+            //    else
+            //        Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{folder.name}]!");
+            //}
 
             if (list.Count >= 1)
                 yield return EditorManager.inst.StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate
@@ -4114,16 +4134,25 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator LoadPrefabs(PrefabEditor __instance)
         {
-            yield return inst.StartCoroutine(GetFileList(prefabListPath, "lsp", delegate (List<FileManager.LSFile> folders)
+            foreach (var file in Directory.GetDirectories(RTFile.ApplicationDirectory + prefabListPath))
             {
-                foreach (var lsFile in folders)
-                {
-                    var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsFile.FullPath));
+                var jn = JSON.Parse(RTFile.ReadFromFile(file));
 
-                    __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
-                    __instance.LoadedPrefabsFiles.Add(lsFile.FullPath);
-                }
-            }));
+                __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
+                __instance.LoadedPrefabsFiles.Add(file);
+            }
+            yield break;
+
+            //yield return inst.StartCoroutine(GetFileList(prefabListPath, "lsp", delegate (List<FileManager.LSFile> folders)
+            //{
+            //    foreach (var lsFile in folders)
+            //    {
+            //        var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsFile.FullPath));
+
+            //        __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
+            //        __instance.LoadedPrefabsFiles.Add(lsFile.FullPath);
+            //    }
+            //}));
         }
 
         public IEnumerator UpdatePrefabs()
