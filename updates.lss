@@ -1,0 +1,9 @@
+Heavy optimizations for the editor, including instant selecting / deleting.
+New keybind editor system.
+Changed the Prefab Creator, adding a PrefabType editor popup and an object selection list.
+Added metadata tags.
+Fixed up Object Dragging.
+Updating objects via keyframes or any other specific value is now more optimized.
+Cleaned up the Settings window and added customizing Layer / Marker color lists.
+Added ColorGrading Gamma editing.
+Added Copy & Paste keyframe data, which will copy the current keyframe and allow it to be pasted to any keyframe of the same type. If it is not the same type then it will not paste that data, instead it'll either paste nothing or paste the copied data of that type.
