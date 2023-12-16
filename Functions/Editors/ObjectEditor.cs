@@ -898,7 +898,12 @@ namespace EditorManagement.Functions.Editors
             list.Add(new List<BaseEventKeyframe>());
             list.Add(new List<BaseEventKeyframe>());
             list.Add(new List<BaseEventKeyframe>());
-            list[0].Add(new EventKeyframe(0f, new float[3], new float[0], 0));
+            list[0].Add(new EventKeyframe(0f, new float[3]
+                {
+                    0f,
+                    0f,
+                    0f,
+                }, new float[0], 0));
             list[1].Add(new EventKeyframe(0f, new float[]
             {
                 1f,
@@ -1164,20 +1169,20 @@ namespace EditorManagement.Functions.Editors
 
                 if (!ObjEditor.inst.timelineKeyframesDrag)
                 {
-                    //Debug.Log($"{ObjEditor.inst.className}Setting Current Keyframe: {_kind}, {_keyframe}");
+                    Debug.Log($"{ObjEditor.inst.className}Setting Current Keyframe: {_kind}, {_keyframe}");
                     if (_shift)
                     {
                         var kf = RTEditor.inst.timelineBeatmapObjectKeyframes.Find(x => x.Type == _kind && x.Index == _keyframe);
                         if (kf && kf.selected)
                         {
-                            //Debug.Log($"{ObjEditor.inst.className}Keyframe exists and is selected, so removing and deselecting.");
+                            Debug.Log($"{ObjEditor.inst.className}Keyframe exists and is selected, so removing and deselecting.");
                             kf.timeOffset = 0f;
                             kf.selected = false;
                             bmTimelineObject.InternalSelections.Remove(kf);
                         }
                         else if (kf)
                         {
-                            //Debug.Log($"{ObjEditor.inst.className}Keyframe exists, so removing and deselecting.");
+                            Debug.Log($"{ObjEditor.inst.className}Keyframe exists, so removing and deselecting.");
                             kf.timeOffset = 0f;
                             kf.selected = true;
                             bmTimelineObject.InternalSelections.Add(kf);
@@ -1186,7 +1191,7 @@ namespace EditorManagement.Functions.Editors
                         }
                         else
                         {
-                            //Debug.Log($"{ObjEditor.inst.className}Keyframe doesn't exist, so we add it.");
+                            Debug.Log($"{ObjEditor.inst.className}Keyframe doesn't exist, so we add it.");
                             var timelineObject = new TimelineObject((EventKeyframe)beatmapObject.events[_kind][_keyframe]);
                             timelineObject.timeOffset = 0f;
                             timelineObject.selected = true;
@@ -1204,14 +1209,14 @@ namespace EditorManagement.Functions.Editors
                         var kf = RTEditor.inst.timelineBeatmapObjectKeyframes.Find(x => x.Type == _kind && x.Index == _keyframe);
                         if (kf)
                         {
-                            //Debug.Log($"{ObjEditor.inst.className}Keyframe exists, so we select it.");
+                            Debug.Log($"{ObjEditor.inst.className}Keyframe exists, so we select it.");
                             kf.timeOffset = 0f;
                             kf.selected = true;
                             bmTimelineObject.InternalSelections.Add(kf);
                         }
                         else
                         {
-                            //Debug.Log($"{ObjEditor.inst.className}Keyframe doesn't exist, so we add it and select it.");
+                            Debug.Log($"{ObjEditor.inst.className}Keyframe doesn't exist, so we add it and select it.");
                             var timelineObject = new TimelineObject((EventKeyframe)beatmapObject.events[_kind][_keyframe]);
                             timelineObject.timeOffset = 0f;
                             timelineObject.selected = true;
@@ -1545,7 +1550,7 @@ namespace EditorManagement.Functions.Editors
                     objectUIElements.Add("Start Time >>", tfv.Find("time/>>").GetComponent<Button>());
 
                     objectUIElements.Add("Autokill TOD DD", tfv.Find("autokill/tod-dropdown").GetComponent<Dropdown>());
-                    objectUIElements.Add("Autokill TOD IF", tfv.Find("autokill/tod-value").GetComponent<Dropdown>());
+                    objectUIElements.Add("Autokill TOD IF", tfv.Find("autokill/tod-value").GetComponent<InputField>());
                     objectUIElements.Add("Autokill TOD Value", tfv.Find("autokill/tod-value"));
                     objectUIElements.Add("Autokill TOD Set", tfv.Find("autokill/|"));
                     objectUIElements.Add("Autokill TOD Set B", tfv.Find("autokill/|").GetComponent<Button>());
@@ -1565,11 +1570,7 @@ namespace EditorManagement.Functions.Editors
                     objectUIElements.Add("Parent Offset 3", tfv.Find("parent_more/rot_row"));
 
                     objectUIElements.Add("Origin X IF", tfv.Find("origin/x").GetComponent<InputField>());
-                    objectUIElements.Add("Origin X <", tfv.Find("origin/x/<").GetComponent<InputField>());
-                    objectUIElements.Add("Origin X >", tfv.Find("origin/x/>").GetComponent<InputField>());
                     objectUIElements.Add("Origin Y IF", tfv.Find("origin/y").GetComponent<InputField>());
-                    objectUIElements.Add("Origin Y <", tfv.Find("origin/y/<").GetComponent<InputField>());
-                    objectUIElements.Add("Origin Y >", tfv.Find("origin/y/>").GetComponent<InputField>());
 
                     objectUIElements.Add("Shape", tfv.Find("shape"));
                     objectUIElements.Add("Shape Settings", tfv.Find("shapesettings"));
@@ -1865,6 +1866,7 @@ namespace EditorManagement.Functions.Editors
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
                     Updater.UpdateProcessor(beatmapObject, "Autokill");
+                RenderAutokill(beatmapObject);
 
             });
 
@@ -2011,10 +2013,9 @@ namespace EditorManagement.Functions.Editors
                     parent != "PLAYER_PARENT" &&
                     RTEditor.inst.timelineObjects.TryFind(x => x.ID == parent, out TimelineObject timelineObject))
                         SetCurrentObject(timelineObject);
-                    else
+                    else if (parent == "CAMERA_PARENT")
                     {
-                        EditorManager.inst.SetLayer(5);
-                        RTEditor.inst.layerType = RTEditor.LayerType.Events;
+                        RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
                         EventEditor.inst.SetCurrentEvent(0, RTExtensions.ClosestEventKeyframe(0));
                     }
                 });
@@ -2029,18 +2030,18 @@ namespace EditorManagement.Functions.Editors
 
                 for (int i = 0; i < 3; i++)
                 {
-                    var _p = (Transform)ObjectUIElements[$"Parent Offset{i + 1}"];
+                    var _p = (Transform)ObjectUIElements[$"Parent Offset {i + 1}"];
 
                     var parentOffset = beatmapObject.getParentOffset(i);
 
-                    var iTmp = i;
+                    var index = i;
 
                     var tog = _p.GetChild(2).GetComponent<Toggle>();
                     tog.onValueChanged.RemoveAllListeners();
                     tog.isOn = beatmapObject.GetParentType(i);
                     tog.onValueChanged.AddListener(delegate (bool _value)
                     {
-                        beatmapObject.SetParentType(iTmp, _value);
+                        beatmapObject.SetParentType(index, _value);
 
                         // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
                         if (UpdateObjects)
@@ -2054,7 +2055,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         if (float.TryParse(_value, out float num))
                         {
-                            beatmapObject.SetParentOffset(iTmp, num);
+                            beatmapObject.SetParentOffset(index, num);
 
                             // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
                             if (UpdateObjects)
@@ -2062,16 +2063,48 @@ namespace EditorManagement.Functions.Editors
                         }
                     });
 
-                    if (!_p.GetComponent<EventTrigger>())
+                    TriggerHelper.AddEventTrigger(pif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pif) });
+
+                    //if (_p.transform.Find("<<"))
+                    //    Destroy(_p.transform.Find("<<"));
+
+                    //if (_p.transform.Find("<"))
+                    //    Destroy(_p.transform.Find("<"));
+
+                    //if (_p.transform.Find(">"))
+                    //    Destroy(_p.transform.Find(">"));
+
+                    //if (_p.transform.Find(">>"))
+                    //    Destroy(_p.transform.Find(">>"));
+
+                    //TriggerHelper.IncreaseDecreaseButtons(pif, t: _p.transform);
+
+                    var additive = _p.GetChild(4).GetComponent<Toggle>();
+                    additive.onValueChanged.ClearAll();
+                    additive.isOn = beatmapObject.parentAdditive[i] == '1';
+                    additive.onValueChanged.AddListener(delegate (bool _val)
                     {
-                        _p.gameObject.AddComponent<EventTrigger>();
-                    }
+                        beatmapObject.SetParentAdditive(index, _val);
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject);
+                    });
 
-                    var pet = _p.GetComponent<EventTrigger>();
-                    pet.triggers.Clear();
-                    pet.triggers.Add(TriggerHelper.ScrollDelta(pif, 0.1f, 10f));
+                    var parallax = _p.GetChild(5).GetComponent<InputField>();
+                    parallax.onValueChanged.RemoveAllListeners();
+                    parallax.text = beatmapObject.parallaxSettings[index].ToString();
+                    parallax.onValueChanged.AddListener(delegate (string _value)
+                    {
+                        if (float.TryParse(_value, out float num))
+                        {
+                            beatmapObject.parallaxSettings[index] = num;
 
-                    TriggerHelper.IncreaseDecreaseButtons(pif, 0.1f, 10f);
+                            // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject);
+                        }
+                    });
+
+                    TriggerHelper.AddEventTrigger(parallax.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(parallax) });
                 }
             }
             else
@@ -2929,7 +2962,7 @@ namespace EditorManagement.Functions.Editors
                     var kf = RTEditor.inst.timelineBeatmapObjectKeyframes.Find(x => x.Type == i && x.Index == j);
                     if (!kf || !kf.GameObject)
                     {
-                        Debug.Log($"{ObjEditor.inst.className}Keyframe doesn't exist, so we create it. ({i}, {j})");
+                        //Debug.Log($"{ObjEditor.inst.className}Keyframe doesn't exist, so we create it. ({i}, {j})");
                         CreateKeyframe(beatmapObject, i, j);
                     }
                     else

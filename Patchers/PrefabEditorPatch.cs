@@ -553,15 +553,17 @@ namespace EditorManagement.Patchers
                         "rotation"
                     };
 
-                    string type = types[i];
+                    string type = types[index];
                     string inx = "/x";
                     string iny = "/y";
 
-                    var currentKeyframe = currentPrefab.events[i];
+                    var currentKeyframe = currentPrefab.events[index];
 
                     prefabSelectorLeft.Find(type + inx).GetComponentAndPerformAction(delegate (InputField inputField)
                     {
-                        inputField.NewValueChangedListener(currentKeyframe.eventValues[0].ToString(), delegate (string _val)
+                        inputField.onValueChanged.ClearAll();
+                        inputField.text = currentKeyframe.eventValues[0].ToString();
+                        inputField.onValueChanged.AddListener(delegate (string _val)
                         {
                             if (float.TryParse(_val, out float num))
                             {
@@ -576,7 +578,9 @@ namespace EditorManagement.Patchers
                         {
                             prefabSelectorLeft.Find(type + iny).GetComponentAndPerformAction(delegate (InputField inputField2)
                             {
-                                inputField2.NewValueChangedListener(currentKeyframe.eventValues[1].ToString(), delegate (string _val)
+                                inputField2.onValueChanged.ClearAll();
+                                inputField2.text = currentKeyframe.eventValues[1].ToString();
+                                inputField2.onValueChanged.AddListener(delegate (string _val)
                                 {
                                     if (float.TryParse(_val, out float num))
                                     {

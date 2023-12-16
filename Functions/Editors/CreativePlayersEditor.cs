@@ -219,7 +219,7 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        ModCompatibility.ClearPlayerModels();
+                        //ModCompatibility.ClearPlayerModels();
 
                         var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
 
