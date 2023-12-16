@@ -13,8 +13,9 @@ using UnityEngine.EventSystems;
 using HarmonyLib;
 using LSFunctions;
 
+using EditorManagement.Functions;
 using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Tools;
+using EditorManagement.Functions.Helpers;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
@@ -60,7 +61,15 @@ namespace EditorManagement.Functions.Editors
 
         public static bool debug = false;
 
-        private void Awake()
+        public static void Init()
+        {
+            var editorSystems = EditorManager.inst.transform.parent;
+            var gameObject = new GameObject("PlayerEditorManager");
+            gameObject.transform.SetParent(editorSystems);
+            gameObject.AddComponent<CreativePlayersEditor>();
+        }
+
+        void Awake()
         {
             if (!GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
             {
@@ -130,7 +139,7 @@ namespace EditorManagement.Functions.Editors
                     b1.transform.localScale = Vector3.one;
                     b1.name = "index";
 
-                    Destroy(b1.GetComponent<InputFieldHelper>());
+                    Destroy(b1.GetComponent<InputFieldSwapper>());
                     Destroy(b1.GetComponent<EventInfo>());
 
                     var b1RT = b1.GetComponent<RectTransform>();
@@ -210,15 +219,13 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        ModCompatibility.ClearPlayerModels();
+                        //ModCompatibility.ClearPlayerModels();
 
                         var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
-                        var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
 
-                        if (c != null)
-                        {
-                            playerPlugin.GetType().GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
-                        }
+                        playerPlugin.GetType().GetMethod("StartLoadingModels").Invoke(playerPlugin, new object[] { });
+
+                        playerPlugin.GetType().GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
 
                         inst.StartCoroutine(RenderDialog());
                     });
@@ -292,7 +299,7 @@ namespace EditorManagement.Functions.Editors
 
                 scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 512f);
 
-                Triggers.AddEditorDialog("Player Editor", editorDialogObject);
+                EditorHelper.AddEditorDialog("Player Editor", editorDialogObject);
 
                 objectDialog = Instantiate(EditorManager.inst.GetDialog("Background Editor").Dialog.gameObject);
                 objectDialogTF = objectDialog.transform;
@@ -819,7 +826,7 @@ namespace EditorManagement.Functions.Editors
 
                 Text timelineZoomText2 = timelineZoom.transform.GetChild(1).gameObject.GetComponent<Text>();
 
-                timelineZoomText2.text = ConfigEntries.OpenPlayerEditor.Value.ToString();
+                timelineZoomText2.text = RTEditor.GetEditorProperty("Player Editor Open Key").GetConfigEntry<KeyCode>().Value.ToString();
                 timelineZoomText2.fontSize = 20;
 
                 timelineZoomRT.anchoredPosition = new Vector2(-26f, 0f);
@@ -850,13 +857,13 @@ namespace EditorManagement.Functions.Editors
 
                 #endregion
 
-                Triggers.AddEditorDialog("Player Object Editor", objectDialog);
+                EditorHelper.AddEditorDialog("Player Object Editor", objectDialog);
             }
         }
 
-        private void Update()
+        void Update()
         {
-            if (Input.GetKeyDown(ConfigEntries.OpenPlayerEditor.Value))
+            if (Input.GetKeyDown(RTEditor.GetEditorProperty("Player Editor Open Key").GetConfigEntry<KeyCode>().Value))
             {
                 OpenDialog();
             }
@@ -926,11 +933,11 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(x, y, 0.1f, 10f) });
-                    Triggers.AddEventTrigger(y.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(y, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(x, y, 0.1f, 10f) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
+                    TriggerHelper.AddEventTrigger(y.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(y, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f);
-                    Triggers.IncreaseDecreaseButtons(y, 1f, 10f);
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f);
+                    TriggerHelper.IncreaseDecreaseButtons(y, 1f, 10f);
                 }
 
                 //Scale
@@ -958,11 +965,11 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(x, y, 0.1f, 10f) });
-                    Triggers.AddEventTrigger(y.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(y, 0.1f, 10f, true), Triggers.ScrollDeltaVector2(x, y, 0.1f, 10f) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
+                    TriggerHelper.AddEventTrigger(y.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(y, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f);
-                    Triggers.IncreaseDecreaseButtons(y, 1f, 10f);
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f);
+                    TriggerHelper.IncreaseDecreaseButtons(y, 1f, 10f);
                 }
 
                 //Rotation
@@ -979,9 +986,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 15f, 3f) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 15f, 3f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 15f, 3f);
+                    TriggerHelper.IncreaseDecreaseButtons(x, 15f, 3f);
                 }
 
                 //Depth
@@ -998,9 +1005,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f);
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f);
                 }
 
                 //Color
@@ -1069,9 +1076,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, false, new List<float> { 0f, 1f }) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 1f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f, null, new List<float> { 0f, 1f });
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0f, 1f);
                 }
 
                 //Parent
@@ -1105,9 +1112,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, false, new List<float> { 0.001f, 1f }) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f, null, new List<float> { 0.001f, 1f });
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0.001f, 1f);
                 }
 
                 //Parent Sca Offset
@@ -1127,9 +1134,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, false, new List<float> { 0.001f, 1f }) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f, null, new List<float> { 0.001f, 1f });
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0.001f, 1f);
                 }
 
                 //Parent Sca Active
@@ -1163,9 +1170,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, false, new List<float> { 0.001f, 1f }) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f, null, new List<float> { 0.001f, 1f });
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0.001f, 1f);
                 }
 
                 //Parent Rot Active
@@ -1255,9 +1262,9 @@ namespace EditorManagement.Functions.Editors
                         updatePlayers();
                     });
 
-                    Triggers.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDelta(x, 0.1f, 10f, false, new List<float> { 0f, 100f }) });
+                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 100f) });
 
-                    Triggers.IncreaseDecreaseButtons(x, 1f, 10f, null, new List<float> { 0f, 100f });
+                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0f, 100f);
                 }
 
                 //Visibility Not
@@ -1371,7 +1378,7 @@ namespace EditorManagement.Functions.Editors
 
                     dup.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 0f);
 
-                    Triggers.AddTooltip(dup, "Duplicate Object", "Creates a complete copy of this object.");
+                    TooltipHelper.AddTooltip(dup, "Duplicate Object", "Creates a complete copy of this object.");
 
                     var dupButton = dup.GetComponent<Button>();
                     var cb = dupButton.colors;
@@ -1509,8 +1516,8 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
 
-                Triggers.AddEventTrigger(playerModelIndexIF.gameObject, new List<EventTrigger.Entry> { Triggers.ScrollDeltaInt(playerModelIndexIF, 1, false, new List<int> { 0, 3 }) });
-                Triggers.IncreaseDecreaseButtonsInt(playerModelIndexIF, 1, null, new List<int> { 0, 3 });
+                TriggerHelper.AddEventTrigger(playerModelIndexIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(playerModelIndexIF, 1, 0, 3) });
+                TriggerHelper.IncreaseDecreaseButtonsInt(playerModelIndexIF, 1, 0, 3);
 
                 #region UI Elements
 
@@ -1553,7 +1560,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [STRING]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -1622,7 +1629,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [INT]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -1664,9 +1671,9 @@ namespace EditorManagement.Functions.Editors
 
                                 var et = vector2.transform.Find("x").GetComponent<EventTrigger>();
                                 et.triggers.Clear();
-                                et.triggers.Add(Triggers.ScrollDeltaInt(vxif, 1, false, new List<int> { 1, 100 }));
+                                et.triggers.Add(TriggerHelper.ScrollDeltaInt(vxif, 1,  1, 100));
 
-                                Triggers.IncreaseDecreaseButtonsInt(vxif, 1);
+                                TriggerHelper.IncreaseDecreaseButtonsInt(vxif, 1);
 
                                 Destroy(vector2.transform.Find("y").gameObject);
                             }
@@ -1689,7 +1696,7 @@ namespace EditorManagement.Functions.Editors
                                     bar.transform.localScale = Vector3.one;
                                     bar.name = "input [ENUM]";
 
-                                    Triggers.AddTooltip(bar, key, "");
+                                    TooltipHelper.AddTooltip(bar, key, "");
 
                                     var l = Instantiate(label);
                                     l.transform.SetParent(bar.transform);
@@ -1724,17 +1731,17 @@ namespace EditorManagement.Functions.Editors
 
                                     var hide = x.AddComponent<HideDropdownOptions>();
                                     hide.DisabledOptions = new List<bool>
-                                {
-                                    false,
-                                    false,
-                                    false,
-                                    false,
-                                    true,
-                                    false,
-                                    true,
-                                    false,
-                                    false,
-                                };
+                                    {
+                                        false,
+                                        false,
+                                        false,
+                                        false,
+                                        true,
+                                        false,
+                                        true,
+                                        false,
+                                        false,
+                                    };
 
                                     dropdown.value = ((Vector2Int)objects.Value).x;
 
@@ -1763,7 +1770,7 @@ namespace EditorManagement.Functions.Editors
                                     bar.transform.localScale = Vector3.one;
                                     bar.name = "input [ENUM]";
 
-                                    Triggers.AddTooltip(bar, key, "");
+                                    TooltipHelper.AddTooltip(bar, key, "");
 
                                     var l = Instantiate(label);
                                     l.transform.SetParent(bar.transform);
@@ -1823,7 +1830,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [VECTOR2]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -1882,16 +1889,16 @@ namespace EditorManagement.Functions.Editors
 
                                 var etX = vector2.transform.Find("x").GetComponent<EventTrigger>();
                                 etX.triggers.Clear();
-                                etX.triggers.Add(Triggers.ScrollDelta(vxif, 0.1f, 10f, true));
-                                etX.triggers.Add(Triggers.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
+                                etX.triggers.Add(TriggerHelper.ScrollDelta(vxif, multi: true));
+                                etX.triggers.Add(TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
 
                                 var etY = vector2.transform.Find("y").GetComponent<EventTrigger>();
                                 etY.triggers.Clear();
-                                etY.triggers.Add(Triggers.ScrollDelta(vyif, 0.1f, 10f, true));
-                                etY.triggers.Add(Triggers.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
+                                etY.triggers.Add(TriggerHelper.ScrollDelta(vyif, multi: true));
+                                etY.triggers.Add(TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
 
-                                Triggers.IncreaseDecreaseButtons(vxif, 1f, 10f);
-                                Triggers.IncreaseDecreaseButtons(vyif, 1f, 10f);
+                                TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
+                                TriggerHelper.IncreaseDecreaseButtons(vyif, 1f);
                             }
 
                             //Single
@@ -1919,7 +1926,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [FLOAT]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -1961,9 +1968,9 @@ namespace EditorManagement.Functions.Editors
 
                                 var etX = vector2.transform.Find("x").GetComponent<EventTrigger>();
                                 etX.triggers.Clear();
-                                etX.triggers.Add(Triggers.ScrollDelta(vxif, 0.1f, 10f, false));
+                                etX.triggers.Add(TriggerHelper.ScrollDelta(vxif));
 
-                                Triggers.IncreaseDecreaseButtons(vxif, 1f, 10f);
+                                TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
 
                                 Destroy(vector2.transform.Find("y").gameObject);
                             }
@@ -1984,7 +1991,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [ENUM]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2016,10 +2023,10 @@ namespace EditorManagement.Functions.Editors
                                 dropdown.onValueChanged.RemoveAllListeners();
 
                                 dropdown.options = new List<Dropdown.OptionData>
-                            {
-                                new Dropdown.OptionData("Legacy"),
-                                new Dropdown.OptionData("Dev+")
-                            };
+                                {
+                                    new Dropdown.OptionData("Legacy"),
+                                    new Dropdown.OptionData("Dev+")
+                                };
 
                                 dropdown.value = (int)objects.Value;
 
@@ -2046,7 +2053,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [ENUM]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2078,12 +2085,12 @@ namespace EditorManagement.Functions.Editors
                                 dropdown.onValueChanged.RemoveAllListeners();
 
                                 dropdown.options = new List<Dropdown.OptionData>
-                            {
-                                new Dropdown.OptionData("Face Direction"),
-                                new Dropdown.OptionData("None"),
-                                new Dropdown.OptionData("Flip X"),
-                                new Dropdown.OptionData("Flip Y")
-                            };
+                                {
+                                    new Dropdown.OptionData("Face Direction"),
+                                    new Dropdown.OptionData("None"),
+                                    new Dropdown.OptionData("Flip X"),
+                                    new Dropdown.OptionData("Flip Y")
+                                };
 
                                 dropdown.value = (int)objects.Value;
 
@@ -2110,7 +2117,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [ENUM]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2174,7 +2181,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [ENUM]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2205,9 +2212,9 @@ namespace EditorManagement.Functions.Editors
                                 dropdown.options.Clear();
                                 dropdown.onValueChanged.RemoveAllListeners();
 
-                                foreach (var anim in DataManager.inst.AnimationList)
+                                foreach (var anim in EditorManager.inst.CurveOptions)
                                 {
-                                    dropdown.options.Add(new Dropdown.OptionData(anim.Name));
+                                    dropdown.options.Add(new Dropdown.OptionData(anim.name, anim.icon));
                                 }
 
                                 dropdown.value = (int)objects.Value;
@@ -2235,7 +2242,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.name = "input [COLOR]";
                                 bar.GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 116f);
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2285,7 +2292,7 @@ namespace EditorManagement.Functions.Editors
                                     if (i == 23)
                                     {
                                         x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[playerModelIndex];
-                                        Triggers.AddTooltip(x.transform.Find(strr).gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
+                                        TooltipHelper.AddTooltip(x.transform.Find(strr).gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
                                     }
                                     if (i == 24)
                                     {
@@ -2297,7 +2304,7 @@ namespace EditorManagement.Functions.Editors
                                         }
 
                                         x.transform.Find(strr).GetComponent<Image>().color = col;
-                                        Triggers.AddTooltip(x.transform.Find(strr).gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
+                                        TooltipHelper.AddTooltip(x.transform.Find(strr).gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
                                     }
                                 }
 
@@ -2318,7 +2325,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [BOOL]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2354,7 +2361,7 @@ namespace EditorManagement.Functions.Editors
                             {
                                 var bar = Instantiate(singleInput);
                                 DestroyImmediate(bar.GetComponent<InputField>());
-                                DestroyImmediate(bar.GetComponent<InputFieldHelper>());
+                                DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
                                 Destroy(bar.GetComponent<EventInfo>());
                                 if (bar.GetComponent<EventTrigger>())
                                     Destroy(bar.GetComponent<EventTrigger>());
@@ -2364,7 +2371,7 @@ namespace EditorManagement.Functions.Editors
                                 bar.transform.localScale = Vector3.one;
                                 bar.name = "input [BUTTON]";
 
-                                Triggers.AddTooltip(bar, key, "");
+                                TooltipHelper.AddTooltip(bar, key, "");
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
@@ -2409,7 +2416,7 @@ namespace EditorManagement.Functions.Editors
                     bar.transform.localScale = Vector3.one;
                     bar.name = "input [STRING]";
 
-                    Triggers.AddTooltip(bar, "Default player models cannot be edited.", "");
+                    TooltipHelper.AddTooltip(bar, "Default player models cannot be edited.", "");
 
                     var l = Instantiate(label);
                     l.transform.SetParent(bar.transform);

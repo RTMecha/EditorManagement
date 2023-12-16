@@ -12,6 +12,7 @@
 		Up,
 		Down
 	}
+
 	public enum Easings
 	{
 		Linear,
@@ -38,12 +39,7 @@
 		OutExpo,
 		InOutExpo
 	}
-	public enum Constraint
-	{
-		Flexible,
-		FixedColumnCount,
-		FixedRowCount
-	}
+
 	public enum PrefabDialog
 	{
 		Internal,

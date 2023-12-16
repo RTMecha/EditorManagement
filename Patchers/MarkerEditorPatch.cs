@@ -1,56 +1,53 @@
 ﻿using System;
-using System.Reflection;
-using System.Reflection.Emit;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
+using HarmonyLib;
+
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using HarmonyLib;
 
 using LSFunctions;
 
-using EditorManagement.Functions.Editors;
-using EditorManagement.Functions.Components;
-using EditorManagement.Functions;
-using EditorManagement.Functions.Tools;
-
 using RTFunctions.Functions;
+using RTFunctions.Functions.Managers;
+
+using EditorManagement.Functions.Components;
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Helpers;
 
 namespace EditorManagement.Patchers
 {
-	[HarmonyPatch(typeof(MarkerEditor))]
-	public class MarkerEditorPatch : MonoBehaviour
-    {
+    [HarmonyPatch(typeof(MarkerEditor))]
+    public class MarkerEditorPatch : MonoBehaviour
+	{
+		static MarkerEditor Instance { get => MarkerEditor.inst; set => MarkerEditor.inst = value; }
+
 		[HarmonyPatch("Awake")]
 		[HarmonyPostfix]
-		private static void AwakePostfix()
+		static void AwakePostfix()
 		{
-			EditorPlugin.SetNewMarkerColors();
+			var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/MarkerDialog/data/left").transform;
 
-			Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/MarkerDialog/data/left").transform;
-			Text textFont = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/MarkerDialog/data/left/label/text").GetComponent<Text>();
-
-			GameObject indexparent = new GameObject("index");
+			var indexparent = new GameObject("index");
 			indexparent.transform.parent = transform;
-			RectTransform rtindexpr = indexparent.AddComponent<RectTransform>();
+			var rtindexpr = indexparent.AddComponent<RectTransform>();
 			rtindexpr.anchoredPosition = new Vector2(0f, -80f);
-			LayoutElement leindexpr = indexparent.AddComponent<LayoutElement>();
+			var leindexpr = indexparent.AddComponent<LayoutElement>();
 
 			leindexpr.ignoreLayout = true;
 
-			GameObject index = new GameObject("text");
+			var index = new GameObject("text");
 			index.transform.parent = indexparent.transform;
-			RectTransform rtindex = index.AddComponent<RectTransform>();
+			var rtindex = index.AddComponent<RectTransform>();
 			index.AddComponent<CanvasRenderer>();
-			Text ttindex = index.AddComponent<Text>();
+			var ttindex = index.AddComponent<Text>();
 
 			rtindex.anchoredPosition = new Vector2(-135f, 2f);
 
-			ttindex.text = "Index: " + MarkerEditor.inst.currentMarker.ToString();
-			ttindex.font = textFont.font;
+			ttindex.text = "Index: " + Instance.currentMarker.ToString();
+			ttindex.font = FontManager.inst.Inconsolata;
 			ttindex.color = new Color(0.9f, 0.9f, 0.9f);
 			ttindex.alignment = TextAnchor.MiddleLeft;
 			ttindex.fontSize = 24;
@@ -61,28 +58,20 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		private static void UpdatePostfix()
 		{
-			if (ConfigEntries.MarkerLoop.Value == true && DataManager.inst.gameData.beatmapData.markers.Count > 0)
+			if (RTEditor.GetEditorProperty("Marker Loop Active").GetConfigEntry<bool>().Value && DataManager.inst.gameData.beatmapData.markers.Count > 0)
 			{
-				int markerEnd = ConfigEntries.MarkerEndIndex.Value;
-				int markerStart = ConfigEntries.MarkerStartIndex.Value;
-				if (ConfigEntries.MarkerEndIndex.Value < 0)
-				{
-					markerEnd = 0;
-				}
-				if (ConfigEntries.MarkerEndIndex.Value > DataManager.inst.gameData.beatmapData.markers.Count - 1)
-				{
-					markerEnd = DataManager.inst.gameData.beatmapData.markers.Count - 1;
+				int markerStart = RTEditor.GetEditorProperty("Marker Loop Begin").GetConfigEntry<int>().Value;
+				int markerEnd = RTEditor.GetEditorProperty("Marker Loop End").GetConfigEntry<int>().Value;
 
-				}
-				if (ConfigEntries.MarkerStartIndex.Value < 0)
-				{
+				if (markerStart < 0)
 					markerStart = 0;
-				}
-				if (ConfigEntries.MarkerStartIndex.Value > DataManager.inst.gameData.beatmapData.markers.Count - 1)
-				{
+				if (markerStart > DataManager.inst.gameData.beatmapData.markers.Count - 1)
 					markerStart = DataManager.inst.gameData.beatmapData.markers.Count - 1;
 
-				}
+				if (markerEnd < 0)
+					markerEnd = 0;
+				if (markerEnd > DataManager.inst.gameData.beatmapData.markers.Count - 1)
+					markerEnd = DataManager.inst.gameData.beatmapData.markers.Count - 1;
 
 				if (AudioManager.inst.CurrentAudioSource.time > DataManager.inst.gameData.beatmapData.markers[markerEnd].time)
 				{
@@ -93,60 +82,43 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("OpenDialog")]
 		[HarmonyPostfix]
-		private static void OpenDialogPostfix(MarkerEditor __instance, int __0)
+		static void OpenDialogPostfix(MarkerEditor __instance, int __0)
 		{
-			EditorPlugin.SetNewMarkerColors();
 			GameObject.Find("EditorDialogs/MarkerDialog/data/left/color").GetComponent<GridLayoutGroup>().spacing = new Vector2(8f, 8f);
-			GameObject.Find("EditorDialogs/MarkerDialog/data/left/index/text").GetComponent<Text>().text = "Index: " + MarkerEditor.inst.currentMarker.ToString();
+			GameObject.Find("EditorDialogs/MarkerDialog/data/left/index/text").GetComponent<Text>().text = "Index: " + Instance.currentMarker.ToString();
 
 			var regex = new System.Text.RegularExpressions.Regex(@"setLayer\((.*?)\)");
 			var match = regex.Match(DataManager.inst.gameData.beatmapData.markers[__0].desc);
 			if (match.Success)
 			{
-				if (match.Groups[1].ToString().ToLower() == "events" || match.Groups[1].ToString().ToLower() == "check" || match.Groups[1].ToString().ToLower() == "event/check")
-				{
-					RTEditor.SetLayer(5);
-				}
-				else
-				{
-					if (int.Parse(match.Groups[1].ToString()) > 0)
-					{
-						if (int.Parse(match.Groups[1].ToString()) < 6)
-						{
-							RTEditor.SetLayer(int.Parse(match.Groups[1].ToString()) - 1);
-						}
-						else
-						{
-							RTEditor.SetLayer(int.Parse(match.Groups[1].ToString()));
-						}
-					}
-					else
-					{
-						RTEditor.SetLayer(0);
-					}
-				}
+				var matchGroup = match.Groups[1].ToString();
+				if (matchGroup.ToLower() == "events" || matchGroup.ToLower() == "check" || matchGroup.ToLower() == "event/check")
+					RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
+				else if (int.TryParse(matchGroup, out int layer))
+					RTEditor.inst.SetLayer(Mathf.Clamp(layer, 0, int.MaxValue));
 			}
 		}
 
 		[HarmonyPatch("RenderMarker")]
 		[HarmonyPrefix]
-		private static bool RenderMarkersPostfix(int __0)
-        {
-			if (__0 >= 0 && MarkerEditor.inst.markers.Count > __0)
+		static bool RenderMarkersPostfix(int __0)
+		{
+			if (__0 >= 0 && Instance.markers.Count > __0)
 			{
-				DataManager.GameData.BeatmapData.Marker marker = DataManager.inst.gameData.beatmapData.markers[__0];
+				var marker = DataManager.inst.gameData.beatmapData.markers[__0];
 				float time = marker.time;
-				GameObject markerObject = MarkerEditor.inst.markers[__0];
-				Color markerColor = MarkerEditor.inst.markerColors[Mathf.Clamp(marker.color, 0, MarkerEditor.inst.markerColors.Count() - 1)];
+				var markerObject = Instance.markers[__0];
+				var markerColor = Instance.markerColors[Mathf.Clamp(marker.color, 0, Instance.markerColors.Count - 1)];
 
-				if (markerObject.GetComponent<HoverTooltip>())
+				var hoverTooltip = markerObject.GetComponent<HoverTooltip>();
+				if (hoverTooltip)
 				{
-					markerObject.GetComponent<HoverTooltip>().tooltipLangauges.Clear();
-					markerObject.GetComponent<HoverTooltip>().tooltipLangauges.Add(Triggers.NewTooltip("<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>()));
+					hoverTooltip.tooltipLangauges.Clear();
+					hoverTooltip.tooltipLangauges.Add(TooltipHelper.NewTooltip("<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>()));
 				}
 
-				markerObject.GetComponent<RectTransform>().sizeDelta = new Vector2(12f, 12f);
-				markerObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(time * EditorManager.inst.Zoom - 6f, -12f);
+				((RectTransform)markerObject.transform).sizeDelta = new Vector2(12f, 12f);
+				((RectTransform)markerObject.transform).anchoredPosition = new Vector2(time * EditorManager.inst.Zoom - 6f, -12f);
 				markerObject.GetComponent<Image>().color = markerColor;
 				markerObject.GetComponentInChildren<Text>().text = marker.name;
 				markerObject.SetActive(true);
@@ -156,12 +128,12 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("UpdateMarkerList")]
 		[HarmonyPrefix]
-		private static bool UpdateMarkerList(MarkerEditor __instance)
+		static bool UpdateMarkerList(MarkerEditor __instance)
 		{
-			Transform parent = __instance.right.Find("markers/list");
+			var parent = __instance.right.Find("markers/list");
 			LSHelpers.DeleteChildren(parent);
 
-			GameObject eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+			var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
 
 			//if (DataManager.inst.gameData.beatmapData.markers.Count > 0)
 			//{
@@ -174,7 +146,7 @@ namespace EditorManagement.Patchers
 			//}
 
 			//Delete Markers
-            {
+			{
 				GameObject sortMarkers = Instantiate(eventButton);
 				sortMarkers.transform.SetParent(parent);
 				sortMarkers.name = "delete markers";
@@ -187,7 +159,7 @@ namespace EditorManagement.Patchers
 				sortButton.onClick.AddListener(delegate ()
 				{
 					EditorManager.inst.ShowDialog("Warning Popup");
-					RTEditor.RefreshWarningPopup("Are you sure you want to delete ALL markers? (This is irreversible!)", delegate ()
+					RTEditor.inst.RefreshWarningPopup("Are you sure you want to delete ALL markers? (This is irreversible!)", delegate ()
 					{
 						EditorManager.inst.DisplayNotification("Deleted " + (DataManager.inst.gameData.beatmapData.markers.Count - 1).ToString() + " markers!", 2f, EditorManager.NotificationType.Success);
 						DataManager.inst.gameData.beatmapData.markers.Clear();
@@ -210,16 +182,16 @@ namespace EditorManagement.Patchers
 				{
 					var tt = sortMarkers.GetComponent<HoverTooltip>();
 					tt.tooltipLangauges.Clear();
-					tt.tooltipLangauges.Add(Triggers.NewTooltip("Delete all markers.", "Clicking this will delete every marker in the level.", new List<string>()));
+					tt.tooltipLangauges.Add(TooltipHelper.NewTooltip("Delete all markers.", "Clicking this will delete every marker in the level.", new List<string>()));
 				}
 			}
 
 			int num = 0;
-			foreach (DataManager.GameData.BeatmapData.Marker marker in DataManager.inst.gameData.beatmapData.markers)
+			foreach (var marker in DataManager.inst.gameData.beatmapData.markers)
 			{
 				if (marker.name.ToLower().Contains(__instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(__instance.sortedName.ToLower()) || string.IsNullOrEmpty(__instance.sortedName))
 				{
-					GameObject gameObject = Instantiate(__instance.markerButtonPrefab, Vector3.zero, Quaternion.identity);
+					var gameObject = Instantiate(__instance.markerButtonPrefab, Vector3.zero, Quaternion.identity);
 					gameObject.name = marker.name + "_marker";
 					gameObject.transform.SetParent(parent);
 					gameObject.transform.localScale = Vector3.one;
@@ -235,8 +207,8 @@ namespace EditorManagement.Patchers
 						__instance.SetCurrentMarker(markerIndexTmp, true);
 					});
 
-					Color markerColor = MarkerEditor.inst.markerColors[Mathf.Clamp(marker.color, 0, MarkerEditor.inst.markerColors.Count() - 1)];
-					Triggers.AddTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
+					var markerColor = MarkerEditor.inst.markerColors[Mathf.Clamp(marker.color, 0, MarkerEditor.inst.markerColors.Count() - 1)];
+					TooltipHelper.AddTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
 				}
 				num++;
 			}

@@ -1,458 +1,440 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+
+using HarmonyLib;
 
 using UnityEngine;
 using UnityEngine.UI;
 
-using HarmonyLib;
-
-using EditorManagement.Functions.Editors;
+using LSFunctions;
 
 using RTFunctions.Functions;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Functions.Optimization.Objects;
+
+using EditorManagement.Functions.Editors;
+using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.IO;
+using EditorManagement.Functions.Helpers;
 
 namespace EditorManagement.Patchers
 {
     [HarmonyPatch(typeof(SettingEditor))]
-    public class SettingEditorPatch : MonoBehaviour
+    public class SettingEditorPatch
     {
-		[HarmonyPatch("Awake")]
-		[HarmonyPostfix]
-		static void SettingAwakePatch()
-		{
-			//Main Variables
-			Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
-			Text textFont = GameObject.Find("TitleBar/File/Text").GetComponent<Text>();
-
-
-			transform.Find("snap/bpm/slider").gameObject.GetComponent<Slider>().maxValue = 999f;
-			transform.Find("snap/bpm/slider").gameObject.GetComponent<Slider>().minValue = 0f;
-
-			//Object Count
-			GameObject count = new GameObject("object count");
-			count.transform.parent = transform;
-			RectTransform countRect = count.AddComponent<RectTransform>();
-			Text countTXT = count.AddComponent<Text>();
-			LayoutElement countLE = count.AddComponent<LayoutElement>();
-
-			countRect.anchoredPosition = new Vector2(-300f, 164f);
-			countTXT.font = textFont.font;
-			countTXT.text = "Object Count";
-			countTXT.fontSize = 32;
-			countTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			countTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			countLE.ignoreLayout = true;
-
-			//Event Count
-			GameObject eventCount = new GameObject("event count");
-			eventCount.transform.parent = transform;
-			RectTransform eventCountRect = eventCount.AddComponent<RectTransform>();
-			Text eventCountTXT = eventCount.AddComponent<Text>();
-			LayoutElement eventCountLE = eventCount.AddComponent<LayoutElement>();
-
-			eventCountRect.anchoredPosition = new Vector2(-300f, 134f);
-			eventCountTXT.font = textFont.font;
-			eventCountTXT.text = "Event Count";
-			eventCountTXT.fontSize = 32;
-			eventCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			eventCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			eventCountLE.ignoreLayout = true;
-
-			//Theme count
-			GameObject themeCount = new GameObject("theme count");
-			themeCount.transform.parent = transform;
-			RectTransform themeCountRect = themeCount.AddComponent<RectTransform>();
-			Text themeCountTXT = themeCount.AddComponent<Text>();
-			LayoutElement themeCountLE = themeCount.AddComponent<LayoutElement>();
-
-			themeCountRect.anchoredPosition = new Vector2(-300f, 104f);
-			themeCountTXT.font = textFont.font;
-			themeCountTXT.text = "Theme Count";
-			themeCountTXT.fontSize = 32;
-			themeCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			themeCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			themeCountLE.ignoreLayout = true;
-
-			//Prefab External count
-			GameObject prefabEXCount = new GameObject("prefabex count");
-			prefabEXCount.transform.parent = transform;
-			RectTransform prefabEXCountRect = prefabEXCount.AddComponent<RectTransform>();
-			Text prefabEXCountTXT = prefabEXCount.AddComponent<Text>();
-			LayoutElement prefabEXCountLE = prefabEXCount.AddComponent<LayoutElement>();
-
-			prefabEXCountRect.anchoredPosition = new Vector2(-300f, 74f);
-			prefabEXCountTXT.font = textFont.font;
-			prefabEXCountTXT.text = "Prefab External Count";
-			prefabEXCountTXT.fontSize = 32;
-			prefabEXCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			prefabEXCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			prefabEXCountLE.ignoreLayout = true;
-
-			//Prefab Internal count
-			GameObject prefabINCount = new GameObject("prefabin count");
-			prefabINCount.transform.parent = transform;
-			RectTransform prefabINCountRect = prefabINCount.AddComponent<RectTransform>();
-			Text prefabINCountTXT = prefabINCount.AddComponent<Text>();
-			LayoutElement prefabINCountLE = prefabINCount.AddComponent<LayoutElement>();
-
-			prefabINCountRect.anchoredPosition = new Vector2(-300f, 44f);
-			prefabINCountTXT.font = textFont.font;
-			prefabINCountTXT.text = "Prefab External Count";
-			prefabINCountTXT.fontSize = 32;
-			prefabINCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			prefabINCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			prefabINCountLE.ignoreLayout = true;
-
-			//No Autokill count
-			GameObject noAutokillCount = new GameObject("noautokill count");
-			noAutokillCount.transform.parent = transform;
-			RectTransform noAutokillCountRect = noAutokillCount.AddComponent<RectTransform>();
-			Text noAutokillCountTXT = noAutokillCount.AddComponent<Text>();
-			LayoutElement noAutokillCountLE = noAutokillCount.AddComponent<LayoutElement>();
-
-			noAutokillCountRect.anchoredPosition = new Vector2(-300f, 14f);
-			noAutokillCountTXT.font = textFont.font;
-			noAutokillCountTXT.text = "No Autokill Count";
-			noAutokillCountTXT.fontSize = 32;
-			noAutokillCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			noAutokillCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			noAutokillCountLE.ignoreLayout = true;
-
-			//Autokill Offset count
-			GameObject offsetCount = new GameObject("offset count");
-			offsetCount.transform.parent = transform;
-			RectTransform offsetCountRect = offsetCount.AddComponent<RectTransform>();
-			Text offsetCountTXT = offsetCount.AddComponent<Text>();
-			LayoutElement offsetCountLE = offsetCount.AddComponent<LayoutElement>();
-
-			offsetCountRect.anchoredPosition = new Vector2(-300f, -16f);
-			offsetCountTXT.font = textFont.font;
-			offsetCountTXT.text = "Autokill Offset Count";
-			offsetCountTXT.fontSize = 32;
-			offsetCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			offsetCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			offsetCountLE.ignoreLayout = true;
-
-			//Text count
-			GameObject textCount = new GameObject("text count");
-			textCount.transform.parent = transform;
-			RectTransform textCountRect = textCount.AddComponent<RectTransform>();
-			Text textCountTXT = textCount.AddComponent<Text>();
-			LayoutElement textCountLE = textCount.AddComponent<LayoutElement>();
-
-			textCountRect.anchoredPosition = new Vector2(-300f, -46f);
-			textCountTXT.font = textFont.font;
-			textCountTXT.text = "Text Object Count";
-			textCountTXT.fontSize = 32;
-			textCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			textCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			textCountLE.ignoreLayout = true;
-
-			//Text Total count
-			GameObject textLengthCount = new GameObject("texttotal count");
-			textLengthCount.transform.parent = transform;
-			RectTransform textLengthCountRect = textLengthCount.AddComponent<RectTransform>();
-			Text textLengthCountTXT = textLengthCount.AddComponent<Text>();
-			LayoutElement textLengthCountLE = textLengthCount.AddComponent<LayoutElement>();
-
-			textLengthCountRect.anchoredPosition = new Vector2(-300f, -76f);
-			textLengthCountTXT.font = textFont.font;
-			textLengthCountTXT.text = "Text Total Count";
-			textLengthCountTXT.fontSize = 32;
-			textLengthCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			textLengthCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			textLengthCountLE.ignoreLayout = true;
-
-			//Layer count
-			GameObject layerCount = new GameObject("layer count");
-			layerCount.transform.parent = transform;
-			RectTransform layerCountRect = layerCount.AddComponent<RectTransform>();
-			Text layerCountTXT = layerCount.AddComponent<Text>();
-			LayoutElement layerCountLE = layerCount.AddComponent<LayoutElement>();
-
-			layerCountRect.anchoredPosition = new Vector2(-300f, -106f);
-			layerCountTXT.font = textFont.font;
-			layerCountTXT.text = "Object Layer Count";
-			layerCountTXT.fontSize = 32;
-			layerCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			layerCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			layerCountLE.ignoreLayout = true;
-
-			//Marker count
-			GameObject markerCount = new GameObject("marker count");
-			markerCount.transform.parent = transform;
-			RectTransform markerCountRect = markerCount.AddComponent<RectTransform>();
-			Text markerCountTXT = markerCount.AddComponent<Text>();
-			LayoutElement markerCountLE = markerCount.AddComponent<LayoutElement>();
-
-			markerCountRect.anchoredPosition = new Vector2(-300f, -136f);
-			markerCountTXT.font = textFont.font;
-			markerCountTXT.text = "Marker Count";
-			markerCountTXT.fontSize = 32;
-			markerCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			markerCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			markerCountLE.ignoreLayout = true;
-
-			//Time count
-			GameObject timeCount = new GameObject("time count");
-			timeCount.transform.parent = transform;
-			RectTransform timeCountRect = timeCount.AddComponent<RectTransform>();
-			Text timeCountTXT = timeCount.AddComponent<Text>();
-			LayoutElement timeCountLE = timeCount.AddComponent<LayoutElement>();
-
-			timeCountRect.anchoredPosition = new Vector2(-300f, -226f);
-			timeCountTXT.font = textFont.font;
-			timeCountTXT.text = "Time Count";
-			timeCountTXT.fontSize = 32;
-			timeCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			timeCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			timeCountLE.ignoreLayout = true;
-
-			//Range count
-			GameObject rangeCount = new GameObject("range count");
-			rangeCount.transform.parent = transform;
-			RectTransform rangeCountRect = rangeCount.AddComponent<RectTransform>();
-			Text rangeCountTXT = rangeCount.AddComponent<Text>();
-			LayoutElement rangeCountLE = rangeCount.AddComponent<LayoutElement>();
-
-			rangeCountRect.anchoredPosition = new Vector2(-300f, -166f);
-			rangeCountTXT.font = textFont.font;
-			rangeCountTXT.text = "Range Count";
-			rangeCountTXT.fontSize = 32;
-			rangeCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			rangeCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			rangeCountLE.ignoreLayout = true;
-
-			//OnScreen count
-			GameObject onScreenCount = new GameObject("onscreen count");
-			onScreenCount.transform.parent = transform;
-			RectTransform onScreenCountRect = onScreenCount.AddComponent<RectTransform>();
-			Text onScreenCountTXT = onScreenCount.AddComponent<Text>();
-			LayoutElement onScreenCountLE = onScreenCount.AddComponent<LayoutElement>();
-
-			onScreenCountRect.anchoredPosition = new Vector2(-300f, -196f);
-			onScreenCountTXT.font = textFont.font;
-			onScreenCountTXT.text = "OnScreen Count";
-			onScreenCountTXT.fontSize = 32;
-			onScreenCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			onScreenCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			onScreenCountLE.ignoreLayout = true;
-
-			//SongPercent count
-			GameObject songPercentCount = new GameObject("songpercent count");
-			songPercentCount.transform.parent = transform;
-			RectTransform songPercentCountRect = songPercentCount.AddComponent<RectTransform>();
-			Text songPercentCountTXT = songPercentCount.AddComponent<Text>();
-			LayoutElement songPercentCountLE = songPercentCount.AddComponent<LayoutElement>();
-
-			songPercentCountRect.anchoredPosition = new Vector2(-300f, -256f);
-			songPercentCountTXT.font = textFont.font;
-			songPercentCountTXT.text = "SongPercent Count";
-			songPercentCountTXT.fontSize = 32;
-			songPercentCountTXT.horizontalOverflow = HorizontalWrapMode.Overflow;
-			songPercentCountTXT.verticalOverflow = VerticalWrapMode.Overflow;
-
-			songPercentCountLE.ignoreLayout = true;
-
-			//Doggo
-			GameObject loadingDoggo = new GameObject("loading doggo");
-			loadingDoggo.transform.parent = transform;
-			RectTransform loadingDoggoRect = loadingDoggo.AddComponent<RectTransform>();
-			loadingDoggo.AddComponent<CanvasRenderer>();
-			Image loadingDoggoImage = loadingDoggo.AddComponent<Image>();
-			LayoutElement loadingDoggoLE = loadingDoggo.AddComponent<LayoutElement>();
-
-			loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
-			float sizeRandom = 64f * UnityEngine.Random.Range(0.5f, 1f);
-			loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
-
-			loadingDoggoLE.ignoreLayout = true;
-		}
-
-		[HarmonyPatch("Update")]
-		[HarmonyPostfix]
-		static void SettingUpdatePatch()
-		{
-			if (EditorManager.inst.isEditing == true && EditorManager.inst.hasLoadedLevel && EditorManager.inst != null)
-			{
-				if (GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog") && GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").activeSelf == true)
-				{
-					//Create Local Variables
-					Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
-					int eventnum = 0;
-					int autokillnum = 0;
-					int offsetnum = 0;
-					int textnum = 0;
-					int texttotalnum = 0;
-					int layernum = 0;
-					int onscreennum = 0;
-
-					int posnum = 0;
-					float camPosX = 1.775f * EventManager.inst.cam.orthographicSize + EventManager.inst.cam.transform.position.x;
-					float camPosY = 1f * EventManager.inst.cam.orthographicSize + EventManager.inst.cam.transform.position.y;
-
-					if (DataManager.inst.gameData.beatmapObjects.Count > 0 && DataManager.inst.gameData.eventObjects.allEvents.Count > 0 && EditorManager.inst.hasLoadedLevel)
-					{
-						var ae = new DataManager.GameData.EventObjects();
-
-						foreach (var keyframes in ae.allEvents)
-						{
-							eventnum = keyframes.Count;
-						}
-
-						eventnum += EventEditor.inst.eventObjects[0].Count + EventEditor.inst.eventObjects[1].Count + EventEditor.inst.eventObjects[2].Count + EventEditor.inst.eventObjects[3].Count + EventEditor.inst.eventObjects[4].Count + EventEditor.inst.eventObjects[5].Count + EventEditor.inst.eventObjects[6].Count + EventEditor.inst.eventObjects[7].Count + EventEditor.inst.eventObjects[8].Count + EventEditor.inst.eventObjects[9].Count;
-
-						foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
-						{
-							if (beatmapObject.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill)
-							{
-								autokillnum += 1;
-							}
-
-							if (beatmapObject.autoKillOffset >= AudioManager.inst.CurrentAudioSource.clip.length)
-							{
-								offsetnum += 1;
-							}
-
-							if (beatmapObject.shape == 4)
-							{
-								textnum += 1;
-							}
-
-							if (beatmapObject.editorData.Layer == EditorManager.inst.layer)
-							{
-								layernum += 1;
-							}
-
-							if (beatmapObject.TimeWithinLifespan())
-							{
-								onscreennum += 1;
-							}
-
-							//foreach (var keyframe in beatmapObject.events[0])
-							//{
-							//	if (keyframe.eventValues[0] > camPosX || keyframe.eventValues[0] < -camPosX || keyframe.eventValues[1] > camPosY || keyframe.eventValues[1] < -camPosY)
-							//	{
-							//		posnum += 1;
-							//	}
-							//}
-
-							if (Updater.TryGetObject(beatmapObject, out LevelObject levelObject) && levelObject.visualObject.GameObject && levelObject.visualObject.GameObject.TryGetComponent(out MeshFilter meshFilter))
-							{
-								{
-									var lossyScale = Vector3.one;
-									var position = levelObject.visualObject.GameObject.transform.position;
-
-									foreach (var chain in levelObject.transformChain)
-									{
-										var chvector = chain.transform.localScale;
-										lossyScale = new Vector3(lossyScale.x * chvector.x, lossyScale.y * chvector.y, 1f);
-									}
-
-									var array = new Vector3[meshFilter.mesh.vertices.Length];
-									for (int i = 0; i < array.Length; i++)
-									{
-										var a = meshFilter.mesh.vertices[i];
-										array[i] = new Vector3(a.x * lossyScale.x, a.y * lossyScale.y, 0f) + position;
-									}
-
-									if (array.All(x => x.x > camPosX || x.y > camPosY || x.x < -camPosX || x.y < -camPosY))
-									{
-										posnum += 1;
-									}
-								}
-							}
-
-							texttotalnum += beatmapObject.text.Length;
-						}
-
-						int songPercent = (int)(AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length * 100);
-
-						string timeString = RTEditor.secondsToTime(EditorPlugin.itsTheTime);
-
-						transform.Find("object count").GetComponent<Text>().text = "Object Count: [ " + DataManager.inst.gameData.beatmapObjects.Count.ToString() + " ]";
-						transform.Find("event count").GetComponent<Text>().text = "Event Count: [ " + eventnum.ToString() + " ]";
-						transform.Find("theme count").GetComponent<Text>().text = "Theme Count: [ " + DataManager.inst.CustomBeatmapThemes.Count.ToString() + " ]";
-						transform.Find("prefabex count").GetComponent<Text>().text = "Prefab External Count: [ " + PrefabEditor.inst.LoadedPrefabs.Count.ToString() + " ]";
-						transform.Find("prefabin count").GetComponent<Text>().text = "Prefab Internal Count: [ " + DataManager.inst.gameData.prefabs.Count.ToString() + " ]";
-						transform.Find("noautokill count").GetComponent<Text>().text = "No Autokill Count: [ " + autokillnum.ToString() + " ]";
-						transform.Find("offset count").GetComponent<Text>().text = "KFOffsets > Song Length Count: [ " + offsetnum.ToString() + " ]";
-						transform.Find("text count").GetComponent<Text>().text = "Text Object Count: [ " + textnum.ToString() + " ]";
-						transform.Find("texttotal count").GetComponent<Text>().text = "Text Symbol Total Count: [ " + texttotalnum.ToString() + " ]";
-						transform.Find("layer count").GetComponent<Text>().text = "Objects in Current Layer Count: [ " + layernum.ToString() + " ]";
-						transform.Find("marker count").GetComponent<Text>().text = "Markers Count: [ " + DataManager.inst.gameData.beatmapData.markers.Count.ToString() + " ]";
-						transform.Find("time count").GetComponent<Text>().text = "Time in Editor: [ " + timeString + " ]";
-						transform.Find("range count").GetComponent<Text>().text = "Objects Outside Camera Count: [ " + posnum.ToString() + " ]";
-						transform.Find("onscreen count").GetComponent<Text>().text = "Objects Alive Count: [ " + onscreennum.ToString() + " ]";
-						transform.Find("songpercent count").GetComponent<Text>().text = "Song progress: [ " + songPercent.ToString() + "% ]";
-						transform.Find("loading doggo").GetComponent<Image>().sprite = EditorManager.inst.loadingImage.sprite;
-						if (EditorManager.inst.loading)
-						{
-							EditorPlugin.timeEdit = 0f;
-						}
-					}
-				}
-			}
-		}
-
-		[HarmonyPatch("Render")]
-		[HarmonyPostfix]
-		static void SettingRenderPatch()
-		{
-			EditorManager.inst.CancelInvoke("LoadingIconUpdate");
-			EditorManager.inst.InvokeRepeating("LoadingIconUpdate", 0f, UnityEngine.Random.Range(0.01f, 0.4f));
-
-			Transform transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
-			RectTransform loadingDoggoRect = transform.Find("loading doggo").GetComponent<RectTransform>();
-
-			loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
-			float sizeRandom = 64 * Random.Range(0.5f, 1f);
-			loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
-
-			transform.Find("snap/bpm/slider").GetComponent<Slider>().onValueChanged.RemoveAllListeners();
-			transform.Find("snap/bpm/slider").GetComponent<Slider>().onValueChanged.AddListener(delegate (float _val)
-			{
-				DataManager.inst.metaData.song.BPM = _val;
-				SettingEditor.inst.SnapBPM = _val;
-				transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
-			});
-			transform.Find("snap/bpm/input").GetComponent<InputField>().onValueChanged.RemoveAllListeners();
-			transform.Find("snap/bpm/input").GetComponent<InputField>().onValueChanged.AddListener(delegate (string _val)
-			{
-				DataManager.inst.metaData.song.BPM = float.Parse(_val);
-				SettingEditor.inst.SnapBPM = float.Parse(_val);
-				transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
-			});
-			transform.Find("snap/bpm/<").GetComponent<Button>().onClick.RemoveAllListeners();
-			transform.Find("snap/bpm/<").GetComponent<Button>().onClick.AddListener(delegate ()
-			{
-				DataManager.inst.metaData.song.BPM -= 1f;
-				SettingEditor.inst.SnapBPM -= 1f;
-				transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
-				transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
-			});
-			transform.Find("snap/bpm/>").GetComponent<Button>().onClick.RemoveAllListeners();
-			transform.Find("snap/bpm/>").GetComponent<Button>().onClick.AddListener(delegate ()
-			{
-				DataManager.inst.metaData.song.BPM += 1f;
-				SettingEditor.inst.SnapBPM += 1f;
-				transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
-				transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
-			});
-		}
-	}
+        static SettingEditor Instance { get => SettingEditor.inst; set => SettingEditor.inst = value; }
+
+        static Dictionary<string, Text> info = new Dictionary<string, Text>();
+        static Image doggo;
+
+        static Transform markerColorsContent;
+        static Transform layerColorsContent;
+
+        static GameObject colorPrefab;
+
+        [HarmonyPatch("Awake")]
+        [HarmonyPostfix]
+        static void AwakePostfix()
+        {
+            //var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
+            var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
+
+            var slider = transform.Find("snap/bpm/slider").gameObject.GetComponent<Slider>();
+            slider.maxValue = 999f;
+            slider.minValue = 0f;
+
+            try
+            {
+                var title1 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+                title1.transform.Find("title").GetComponent<Text>().text = "Editor Information";
+            }
+            catch
+            {
+
+            }
+
+            info.Clear();
+            var scrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").gameObject.Duplicate(transform, "Scroll View");
+            scrollView.transform.AsRT().sizeDelta = new Vector2(765f, 120f);
+            LSHelpers.DeleteChildren(scrollView.transform.Find("Viewport/Content"));
+
+            string[] array = new string[]
+            {
+                "Object Count",
+                "Event Count",
+                "Theme Count",
+                "Prefab External Count",
+                "Prefab Internal Count",
+                "Prefab Objects Count",
+                "No Autokill Count",
+                "Keyframe Offsets > Song Length Count",
+                "Text Object Count",
+                "Text Symbol Total Count",
+                "Objects in Current Layer Count",
+                "Markers Count",
+                "Objects Alive Count",
+                "Time in Editor",
+                "Song Progress",
+            };
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                var baseInfo = new GameObject("Info");
+                baseInfo.transform.SetParent(scrollView.transform.Find("Viewport/Content"));
+                baseInfo.transform.localScale = Vector3.one;
+                var iRT = baseInfo.AddComponent<RectTransform>();
+                iRT.sizeDelta = new Vector2(750f, 32f);
+                var iImage = baseInfo.AddComponent<Image>();
+
+                iImage.color = new Color(1f, 1f, 1f, 0.12f);
+
+                var iHLG = baseInfo.AddComponent<HorizontalLayoutGroup>();
+
+                var title = new GameObject("Title");
+                title.transform.SetParent(iRT);
+                title.transform.localScale = Vector3.one;
+                title.AddComponent<RectTransform>();
+
+                var titleText = title.AddComponent<Text>();
+                titleText.font = FontManager.inst.Inconsolata;
+                titleText.fontSize = 19;
+                titleText.alignment = TextAnchor.MiddleLeft;
+                titleText.text = "  " + array[i];
+
+                var infoGO = new GameObject("Title");
+                infoGO.transform.SetParent(iRT);
+                infoGO.transform.localScale = Vector3.one;
+                infoGO.AddComponent<RectTransform>();
+
+                var infoText = infoGO.AddComponent<Text>();
+                infoText.font = FontManager.inst.Inconsolata;
+                infoText.fontSize = 19;
+                infoText.alignment = TextAnchor.MiddleRight;
+                infoText.text = "[ 0 ]";
+
+                info.Add(array[i], infoText);
+            }
+
+            //Doggo
+            var loadingDoggo = new GameObject("loading doggo");
+            loadingDoggo.transform.parent = transform;
+            var loadingDoggoRect = loadingDoggo.AddComponent<RectTransform>();
+            loadingDoggo.AddComponent<CanvasRenderer>();
+            doggo = loadingDoggo.AddComponent<Image>();
+            var loadingDoggoLE = loadingDoggo.AddComponent<LayoutElement>();
+
+            loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
+            float sizeRandom = 64f * UnityEngine.Random.Range(0.5f, 1f);
+            loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
+
+            loadingDoggoLE.ignoreLayout = true;
+
+            try
+            {
+                var title2 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+                title2.transform.Find("title").GetComponent<Text>().text = "Marker Colors";
+            }
+            catch
+            {
+
+            }
+
+            // Marker Colors
+            {
+                var markersScrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").gameObject.Duplicate(transform, "Scroll View");
+                markersScrollView.transform.AsRT().sizeDelta = new Vector2(765f, 120f);
+                LSHelpers.DeleteChildren(markersScrollView.transform.Find("Viewport/Content"));
+
+                markerColorsContent = markersScrollView.transform.Find("Viewport/Content");
+            }
+
+            try
+            {
+                var title3 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+                title3.transform.Find("title").GetComponent<Text>().text = "Layer Colors";
+            }
+            catch
+            {
+
+            }
+
+            // Layer Colors
+            {
+                var layersScrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").gameObject.Duplicate(transform, "Scroll View");
+                layersScrollView.transform.AsRT().sizeDelta = new Vector2(765f, 120f);
+                LSHelpers.DeleteChildren(layersScrollView.transform.Find("Viewport/Content"));
+
+                layerColorsContent = layersScrollView.transform.Find("Viewport/Content");
+            }
+
+            Instance.StartCoroutine(Wait());
+        }
+
+        static IEnumerator Wait()
+        {
+            yield return new WaitForSeconds(0.4f);
+
+            colorPrefab = new GameObject("Color");
+            var tagPrefabRT = colorPrefab.AddComponent<RectTransform>();
+            var tagPrefabImage = colorPrefab.AddComponent<Image>();
+            tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);
+            var tagPrefabLayout = colorPrefab.AddComponent<HorizontalLayoutGroup>();
+            tagPrefabLayout.childControlWidth = false;
+            tagPrefabLayout.childForceExpandWidth = false;
+
+            var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
+            ((RectTransform)input.transform).sizeDelta = new Vector2(136f, 32f);
+            var text = input.transform.Find("Text").GetComponent<Text>();
+            text.alignment = TextAnchor.MiddleLeft;
+            text.fontSize = 17;
+
+            var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
+            ((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
+        }
+
+        [HarmonyPatch("Update")]
+        [HarmonyPostfix]
+        static void UpdatePostfix()
+        {
+            if (EditorManager.inst && EditorManager.inst.isEditing && EditorManager.inst.hasLoadedLevel)
+            {
+                var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
+
+                if (info.ContainsKey("Object Count") && info["Object Count"])
+                {
+                    info["Object Count"].text = $"[ {DataManager.inst.gameData.beatmapObjects.Where(x => !x.fromPrefab).Count()} ]  ";
+                }
+                if (info.ContainsKey("Event Count") && info["Event Count"])
+                {
+                    int num = 0;
+                    for (int i = 0; i < DataManager.inst.gameData.eventObjects.allEvents.Count; i++)
+                        num += DataManager.inst.gameData.eventObjects.allEvents[i].Count;
+
+                    info["Event Count"].text = $"[ {num} ]  ";
+                }
+                if (info.ContainsKey("Theme Count") && info["Theme Count"])
+                {
+                    info["Theme Count"].text = $"[ {DataManager.inst.AllThemes.Count} ]  ";
+                }
+                if (info.ContainsKey("Prefab External Count") && info["Prefab External Count"])
+                {
+                    info["Prefab External Count"].text = $"[ {PrefabEditor.inst.LoadedPrefabs.Count} ]  ";
+                }
+                if (info.ContainsKey("Prefab Internal Count") && info["Prefab Internal Count"])
+                {
+                    info["Prefab Internal Count"].text = $"[ {DataManager.inst.gameData.prefabs.Count} ]  ";
+                }
+                if (info.ContainsKey("Prefab Objects Count") && info["Prefab Objects Count"])
+                {
+                    info["Prefab Objects Count"].text = $"[ {DataManager.inst.gameData.prefabObjects.Count} ]  ";
+                }
+                if (info.ContainsKey("No Autokill Count") && info["No Autokill Count"])
+                {
+                    info["No Autokill Count"].text = $"[ {DataManager.inst.gameData.beatmapObjects.Where(x => x.autoKillType == DataManager.GameData.BeatmapObject.AutoKillType.OldStyleNoAutokill).Count()} ]  ";
+                }
+                if (info.ContainsKey("Keyframe Offsets > Song Length Count") && info["Keyframe Offsets > Song Length Count"])
+                {
+                    info["Keyframe Offsets > Song Length Count"].text = $"[ {DataManager.inst.gameData.beatmapObjects.Where(x => x.autoKillOffset > AudioManager.inst.CurrentAudioSource.clip.length).Count()} ]  ";
+                }
+                if (info.ContainsKey("Text Object Count") && info["Text Object Count"])
+                {
+                    info["Text Object Count"].text = $"[ {DataManager.inst.gameData.beatmapObjects.Where(x => x.shape == 4 && x.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty).Count()} ]  ";
+                }
+                if (info.ContainsKey("Text Symbol Total Count") && info["Text Symbol Total Count"])
+                {
+                    int num = 0;
+                    foreach (var bm in DataManager.inst.gameData.beatmapObjects.Where(x => x.shape == 4 && x.objectType != DataManager.GameData.BeatmapObject.ObjectType.Empty))
+                    {
+                        num += bm.text.Length;
+                    }
+
+                    info["Text Symbol Total Count"].text = $"[ {num} ]  ";
+                }
+                if (info.ContainsKey("Objects in Current Layer Count") && info["Objects in Current Layer Count"])
+                {
+                    info["Objects in Current Layer Count"].text = $"[ {DataManager.inst.gameData.beatmapObjects.Where(x => x.editorData.layer == EditorManager.inst.layer).Count()} ]  ";
+                }
+                if (info.ContainsKey("Markers Count") && info["Markers Count"])
+                {
+                    info["Markers Count"].text = $"[ {DataManager.inst.gameData.beatmapData.markers.Count} ]  ";
+                }
+                if (info.ContainsKey("Objects Alive Count") && info["Objects Alive Count"])
+                {
+                    info["Objects Alive Count"].text = $"[ {DataManager.inst.gameData.beatmapObjects.Where(x => x.TimeWithinLifespan()).Count()} ]  ";
+                }
+                if (info.ContainsKey("Time in Editor") && info["Time in Editor"])
+                {
+                    info["Time in Editor"].text = $"[ {FontManager.TextTranslater.SecondsToTime(RTEditor.inst.timeEditing)} ]  ";
+                }
+                if (info.ContainsKey("Song Progress") && info["Song Progress"])
+                {
+                    info["Song Progress"].text = $"[ {FontManager.TextTranslater.Percentage(AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.clip.length)} ]  ";
+                }
+                if (doggo)
+                    doggo.sprite = EditorManager.inst.loadingImage.sprite;
+            }
+        }
+
+        [HarmonyPatch("Render")]
+        [HarmonyPrefix]
+        static bool RenderPrefix()
+        {
+            EditorManager.inst.CancelInvoke("LoadingIconUpdate");
+            EditorManager.inst.InvokeRepeating("LoadingIconUpdate", 0f, UnityEngine.Random.Range(0.01f, 0.4f));
+
+            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            EditorManager.inst.ShowDialog("Settings Editor");
+
+            var transform = EditorManager.inst.GetDialog("Settings Editor").Dialog;
+            var loadingDoggoRect = transform.Find("loading doggo").GetComponent<RectTransform>();
+
+            loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
+            float sizeRandom = 64 * UnityEngine.Random.Range(0.5f, 1f);
+            loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
+
+            var slider = transform.Find("snap/bpm/slider").GetComponent<Slider>();
+            var input = transform.Find("snap/bpm/input").GetComponent<InputField>();
+            slider.onValueChanged.RemoveAllListeners();
+            slider.onValueChanged.AddListener(delegate (float _val)
+            {
+                DataManager.inst.metaData.song.BPM = _val;
+                SettingEditor.inst.SnapBPM = _val;
+                input.text = SettingEditor.inst.SnapBPM.ToString();
+            });
+            input.onValueChanged.RemoveAllListeners();
+            input.onValueChanged.AddListener(delegate (string _val)
+            {
+                DataManager.inst.metaData.song.BPM = float.Parse(_val);
+                SettingEditor.inst.SnapBPM = float.Parse(_val);
+                slider.value = SettingEditor.inst.SnapBPM;
+            });
+
+            TriggerHelper.IncreaseDecreaseButtons(input, t: transform.Find("snap/bpm"));
+
+            //transform.Find("snap/bpm/<").GetComponent<Button>().onClick.RemoveAllListeners();
+            //transform.Find("snap/bpm/<").GetComponent<Button>().onClick.AddListener(delegate ()
+            //{
+            //    DataManager.inst.metaData.song.BPM -= 1f;
+            //    SettingEditor.inst.SnapBPM -= 1f;
+            //    transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
+            //    transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
+            //});
+            //transform.Find("snap/bpm/>").GetComponent<Button>().onClick.RemoveAllListeners();
+            //transform.Find("snap/bpm/>").GetComponent<Button>().onClick.AddListener(delegate ()
+            //{
+            //    DataManager.inst.metaData.song.BPM += 1f;
+            //    SettingEditor.inst.SnapBPM += 1f;
+            //    transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
+            //    transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
+            //});
+
+            try
+            {
+                RenderMarkerColors();
+                RenderLayerColors();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex);
+            }
+
+            return false;
+        }
+
+        public static void RenderMarkerColors()
+        {
+            LSHelpers.DeleteChildren(markerColorsContent);
+
+            var add = PrefabEditor.inst.CreatePrefab.Duplicate(markerColorsContent, "Add");
+
+            ((RectTransform)add.transform).sizeDelta = new Vector2(402f, 32f);
+            add.transform.Find("Text").GetComponent<Text>().text = "Add Marker Color";
+            var addButton = add.GetComponent<Button>();
+            addButton.onClick.ClearAll();
+            addButton.onClick.AddListener(delegate ()
+            {
+                MarkerEditor.inst.markerColors.Add(LSColors.pink500);
+                RTEditor.SaveGlobalSettings();
+                RenderMarkerColors();
+            });
+
+            int num = 0;
+            foreach (var markerColor in MarkerEditor.inst.markerColors)
+            {
+                int index = num;
+
+                var gameObject = colorPrefab.Duplicate(markerColorsContent, "Color");
+                gameObject.transform.AsRT().sizeDelta = new Vector2(402f, 32f);
+                var image = gameObject.GetComponent<Image>();
+                image.color = markerColor;
+
+                var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                input.onValueChanged.ClearAll();
+                input.text = LSColors.ColorToHex(markerColor);
+                input.onValueChanged.AddListener(delegate (string _val)
+                {
+                    MarkerEditor.inst.markerColors[index] = _val.Length == 6 ? LSColors.HexToColor(_val) : LSColors.pink500;
+                    image.color = MarkerEditor.inst.markerColors[index];
+                });
+
+                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                delete.onClick.ClearAll();
+                delete.onClick.AddListener(delegate ()
+                {
+                    MarkerEditor.inst.markerColors.RemoveAt(index);
+                    RenderMarkerColors();
+                });
+
+                num++;
+            }
+        }
+
+        public static void RenderLayerColors()
+        {
+            LSHelpers.DeleteChildren(layerColorsContent);
+
+            var add = PrefabEditor.inst.CreatePrefab.Duplicate(layerColorsContent, "Add");
+
+            ((RectTransform)add.transform).sizeDelta = new Vector2(402f, 32f);
+            add.transform.Find("Text").GetComponent<Text>().text = "Add Layer Color";
+            var addButton = add.GetComponent<Button>();
+            addButton.onClick.ClearAll();
+            addButton.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.layerColors.Add(LSColors.pink500);
+                RTEditor.SaveGlobalSettings();
+                RenderLayerColors();
+            });
+
+            int num = 0;
+            foreach (var layerColor in EditorManager.inst.layerColors)
+            {
+                int index = num;
+
+                var gameObject = colorPrefab.Duplicate(layerColorsContent, "Color");
+                gameObject.transform.AsRT().sizeDelta = new Vector2(402f, 32f);
+                var image = gameObject.GetComponent<Image>();
+                image.color = layerColor;
+
+                var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                input.onValueChanged.ClearAll();
+                input.text = LSColors.ColorToHex(layerColor);
+                input.onValueChanged.AddListener(delegate (string _val)
+                {
+                    EditorManager.inst.layerColors[index] = _val.Length == 6 ? LSColors.HexToColor(_val) : LSColors.pink500;
+                    image.color = EditorManager.inst.layerColors[index];
+                });
+
+                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                delete.onClick.ClearAll();
+                delete.onClick.AddListener(delegate ()
+                {
+                    EditorManager.inst.layerColors.RemoveAt(index);
+                    RenderLayerColors();
+                });
+
+                num++;
+            }
+        }
+    }
 }
