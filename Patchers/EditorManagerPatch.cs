@@ -25,6 +25,7 @@ using RTFunctions.Patchers;
 
 using EditorManagement.Functions;
 using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Helpers;
 
 using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using EventKeyframe = DataManager.GameData.EventKeyframe;
@@ -154,6 +155,12 @@ namespace EditorManagement.Patchers
                 timelineET.triggers.Add(entry2);
             }
 
+            if (Updater.levelProcessor)
+            {
+                Updater.levelProcessor.Dispose();
+                Updater.levelProcessor = null;
+            }
+
             RTEditor.Init(__instance);
             KeybindManager.Init(__instance);
 
@@ -168,9 +175,11 @@ namespace EditorManagement.Patchers
         static bool StartPrefix()
         {
             Instance.GetLevelList();
+            DiscordController.inst.OnStateChange("");
+            DiscordController.inst.OnArtChange("pa_logo_white");
             DiscordController.inst.OnIconChange("editor");
             DiscordController.inst.OnDetailsChange("In Editor");
-            DiscordController.inst.OnStateChange("");
+
             Instance.SetDialogStatus("Timeline", true, true);
             InputDataManager.inst.players.Clear();
             InputDataManager.inst.players.Add(new InputDataManager.CustomPlayer(true, 0, null));
