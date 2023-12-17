@@ -66,7 +66,7 @@ namespace EditorManagement.Functions.Editors
                     mod.Methods.Add("RenderKeyframes", (Action<BeatmapObject>)RenderKeyframes);
                 if (!mod.Methods.ContainsKey("RenderKeyframeDialog"))
                     mod.Methods.Add("RenderKeyframeDialog", (Action<BeatmapObject>)RenderKeyframeDialog);
-                if (!mod.Methods.ContainsKey("RenderTimelineObject"))
+                if (!mod.Methods.ContainsKey("RenderTimelineObjectVoid"))
                     mod.Methods.Add("RenderTimelineObjectVoid", (Action<TimelineObject>)RenderTimelineObjectVoid);
 
                 if (!mod.Methods.ContainsKey("SetCurrentKeyframe"))
