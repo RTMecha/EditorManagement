@@ -1896,6 +1896,34 @@ namespace EditorManagement.Functions.Editors
                 //});
             }
 
+            try
+            {
+                EditorHelper.AddEditorDropdown("Switch to Arcade Mode", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_right_small.png"), delegate ()
+                {
+                    if (EditorManager.inst.hasLoadedLevel)
+                    {
+                        LevelManager.OnLevelEnd = delegate ()
+                        {
+                            DG.Tweening.DOTween.Clear();
+                            DataManager.inst.gameData = null;
+                            DataManager.inst.gameData = new GameData();
+                            Updater.OnLevelEnd();
+                            SceneManager.inst.LoadScene("Editor");
+                        };
+                        LevelManager.Load(GameManager.inst.basePath + "level.lsb", false);
+                    }
+                    else
+                    {
+                        EditorManager.inst.DisplayNotification("Load a level before switching to Arcade Mode!", 2f, EditorManager.NotificationType.Error);
+                    }
+
+                }, 7);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex);
+            }
+
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
             {
                 var exitToArcade = Instantiate(titleBar.Find("File/File Dropdown/Quit to Main Menu").gameObject);
@@ -3924,7 +3952,7 @@ namespace EditorManagement.Functions.Editors
                 //dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
                 //StartCoroutine(Parser.ParseBeatmap(rawJSON, true));
 
-                dataManager.gameData = GameData.Parse(JSON.Parse(rawJSON));
+                dataManager.gameData = GameData.Parse(JSON.Parse(rawJSON), false);
 
                 if (dataManager.metaData.beatmap.workshop_id == -1)
                     dataManager.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
@@ -3991,6 +4019,11 @@ namespace EditorManagement.Functions.Editors
 
             fileInfo.text = "Updating states for [" + withoutList + "]";
             DiscordController.inst.OnStateChange("Editing: " + DataManager.inst.metaData.song.title);
+            DiscordController.inst.OnArtChange("pa_logo_white");
+            DiscordController.inst.OnIconChange("editor");
+            DiscordController.inst.OnDetailsChange("In Editor");
+            DiscordRpc.UpdatePresence(DiscordController.inst.presence);
+
             objectManager.updateObjects();
             EventEditor.inst.CreateEventObjects();
             BackgroundManager.inst.UpdateBackgrounds();
@@ -4134,7 +4167,7 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator LoadPrefabs(PrefabEditor __instance)
         {
-            foreach (var file in Directory.GetDirectories(RTFile.ApplicationDirectory + prefabListPath))
+            foreach (var file in Directory.GetFiles(RTFile.ApplicationDirectory + prefabListPath, "*.lsp", SearchOption.TopDirectoryOnly))
             {
                 var jn = JSON.Parse(RTFile.ReadFromFile(file));
 
