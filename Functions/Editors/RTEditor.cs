@@ -52,6 +52,7 @@ namespace EditorManagement.Functions.Editors
     {
         public static RTEditor inst;
 
+        public float timeInEditorOffset;
         public static void Init(EditorManager editorManager) => editorManager?.gameObject?.AddComponent<RTEditor>();
 
         void Awake()
@@ -59,6 +60,7 @@ namespace EditorManagement.Functions.Editors
             inst = this;
 
             timeOffset = Time.time;
+            timeInEditorOffset = Time.time;
 
             SetupNotificationValues();
             SetupTimelineBar();
@@ -67,6 +69,14 @@ namespace EditorManagement.Functions.Editors
             SetupCreateObjects();
             SetupDropdowns();
             SetupDoggo();
+            try
+            {
+                SetupFileBrowser();
+            }
+            catch (Exception ex)
+            {
+                Debug.Log(ex);
+            }
             SetupPaths();
             CreateObjectSearch();
             CreateWarningPopup();
@@ -210,17 +220,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void Nullify()
-        {
-            if (inst)
-            {
-                inst.objectToParent = null;
-            }
-        }
-
         #region Variables
-
-        //public string LookingAtDialog { get; set; }
 
         public static bool RoundToNearest => GetEditorProperty("Round To Nearest").GetConfigEntry<bool>().Value;
         public static bool ShowModifiedColors => GetEditorProperty("Show Modified Colors").GetConfigEntry<bool>().Value;
@@ -1226,7 +1226,7 @@ namespace EditorManagement.Functions.Editors
             }
             if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Event)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Event))
             {
-                EventEditor.inst.PasteEvents();
+                RTEventEditor.inst.PasteEvents();
                 EditorManager.inst.DisplayNotification("Pasted Event Object", 1f, EditorManager.NotificationType.Success);
             }
             if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object))
@@ -1450,6 +1450,7 @@ namespace EditorManagement.Functions.Editors
         public void SetLayer(LayerType layerType)
         {
             this.layerType = layerType;
+            Layer = 0;
             SetLayer(Layer);
         }
 
@@ -1842,87 +1843,53 @@ namespace EditorManagement.Functions.Editors
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/name/input").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/Popups/New File Popup/Browser Popup").SetActive(true);
 
-            // Quit to Arcade
+            EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
             {
-                EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
+                EditorManager.inst.ShowDialog("Warning Popup");
+                RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
                 {
-                    EditorManager.inst.ShowDialog("Warning Popup");
-                    RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+                    DG.Tweening.DOTween.Clear();
+                    Updater.UpdateObjects(false);
+                    DataManager.inst.gameData = null;
+                    DataManager.inst.gameData = new DataManager.GameData();
+
+                    ArcadeManager.inst.skippedLoad = false;
+                    ArcadeManager.inst.forcedSkip = false;
+                    DataManager.inst.UpdateSettingBool("IsArcade", true);
+
+                    SceneManager.inst.LoadScene("Input Select");
+                }, delegate ()
+                {
+                    EditorManager.inst.HideDialog("Warning Popup");
+                });
+            }, 7);
+
+            EditorHelper.AddEditorDropdown("Switch to Arcade Mode", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_right_small.png"), delegate ()
+            {
+                if (EditorManager.inst.hasLoadedLevel)
+                {
+                    LevelManager.OnLevelEnd = delegate ()
                     {
                         DG.Tweening.DOTween.Clear();
-                        Updater.UpdateObjects(false);
                         DataManager.inst.gameData = null;
-                        DataManager.inst.gameData = new DataManager.GameData();
-
-                        ArcadeManager.inst.skippedLoad = false;
-                        ArcadeManager.inst.forcedSkip = false;
-                        DataManager.inst.UpdateSettingBool("IsArcade", true);
-
-                        SceneManager.inst.LoadScene("Input Select");
-                    }, delegate ()
-                    {
-                        EditorManager.inst.HideDialog("Warning Popup");
-                    });
-                }, 7);
-
-                //var exitToArcade = Instantiate(titleBar.Find("File/File Dropdown/Quit to Main Menu").gameObject);
-                //exitToArcade.name = "Quit to Arcade";
-                //exitToArcade.transform.SetParent(titleBar.Find("File/File Dropdown"));
-                //exitToArcade.transform.localScale = Vector3.one;
-                //exitToArcade.transform.SetSiblingIndex(7);
-                //exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Quit to Arcade";
-
-                //var ex = exitToArcade.GetComponent<Button>();
-                //ex.onClick.ClearAll();
-                //ex.onClick.AddListener(delegate ()
-                //{
-                //    EditorManager.inst.ShowDialog("Warning Popup");
-                //    RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
-                //    {
-                //        DG.Tweening.DOTween.Clear();
-                //        Updater.UpdateObjects(false);
-                //        DataManager.inst.gameData = null;
-                //        DataManager.inst.gameData = new DataManager.GameData();
-
-                //        ArcadeManager.inst.skippedLoad = false;
-                //        ArcadeManager.inst.forcedSkip = false;
-                //        DataManager.inst.UpdateSettingBool("IsArcade", true);
-
-                //        SceneManager.inst.LoadScene("Input Select");
-                //    }, delegate ()
-                //    {
-                //        EditorManager.inst.HideDialog("Warning Popup");
-                //    });
-                //});
-            }
-
-            try
-            {
-                EditorHelper.AddEditorDropdown("Switch to Arcade Mode", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_right_small.png"), delegate ()
+                        DataManager.inst.gameData = new GameData();
+                        Updater.OnLevelEnd();
+                        SceneManager.inst.LoadScene("Editor");
+                    };
+                    LevelManager.Load(GameManager.inst.basePath + "level.lsb", false);
+                }
+                else
                 {
-                    if (EditorManager.inst.hasLoadedLevel)
-                    {
-                        LevelManager.OnLevelEnd = delegate ()
-                        {
-                            DG.Tweening.DOTween.Clear();
-                            DataManager.inst.gameData = null;
-                            DataManager.inst.gameData = new GameData();
-                            Updater.OnLevelEnd();
-                            SceneManager.inst.LoadScene("Editor");
-                        };
-                        LevelManager.Load(GameManager.inst.basePath + "level.lsb", false);
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Load a level before switching to Arcade Mode!", 2f, EditorManager.NotificationType.Error);
-                    }
+                    EditorManager.inst.DisplayNotification("Load a level before switching to Arcade Mode!", 2f, EditorManager.NotificationType.Error);
+                }
 
-                }, 7);
-            }
-            catch (Exception ex)
+            }, 7);
+            
+            EditorHelper.AddEditorDropdown("Open Level Browser", "", "File", titleBar.Find("File/File Dropdown/Open/Image").GetComponent<Image>().sprite, delegate ()
             {
-                Debug.Log(ex);
-            }
+                EditorManager.inst.ShowDialog("Browser Popup");
+                RefreshFileBrowserLevels();
+            }, 3);
 
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
             {
@@ -2243,6 +2210,39 @@ namespace EditorManagement.Functions.Editors
 
                 ModCompatibility.sharedFunctions["EditorOnLoadLevel"] = action;
             }
+        }
+
+        public void SetupFileBrowser()
+        {
+            var fileBrowser = EditorManager.inst.GetDialog("New File Popup").Dialog.Find("Browser Popup").gameObject.Duplicate(EditorManager.inst.GetDialog("New File Popup").Dialog.parent, "Browser Popup");
+            fileBrowser.gameObject.SetActive(false);
+            fileBrowser.transform.localPosition = Vector3.zero;
+            ((RectTransform)fileBrowser.transform).anchoredPosition = Vector3.zero;
+            ((RectTransform)fileBrowser.transform).anchorMax = new Vector2(0.5f, 0.5f);
+            ((RectTransform)fileBrowser.transform).anchorMin = new Vector2(0.5f, 0.5f);
+            ((RectTransform)fileBrowser.transform).pivot = new Vector2(0.5f, 0.5f);
+            var close = fileBrowser.transform.Find("Panel/x").GetComponent<Button>();
+            close.onClick.ClearAll();
+            close.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.HideDialog("Browser Popup");
+            });
+            fileBrowser.transform.Find("GameObject").gameObject.SetActive(false);
+
+            var selectGUI = fileBrowser.AddComponent<SelectGUI>();
+            selectGUI.target = fileBrowser.transform;
+
+            var rtfb = fileBrowser.AddComponent<RTFileBrowser>();
+            var fileBrowserBase = fileBrowser.GetComponent<FileBrowserTest>();
+            rtfb.viewport = fileBrowserBase.viewport;
+            rtfb.backPrefab = fileBrowserBase.backPrefab;
+            rtfb.folderPrefab = fileBrowserBase.folderPrefab;
+            rtfb.folderBar = fileBrowserBase.folderBar;
+            rtfb.oggFileInput = fileBrowserBase.oggFileInput;
+            rtfb.filePrefab = fileBrowserBase.filePrefab;
+            Destroy(fileBrowserBase);
+
+            EditorHelper.AddEditorPopup("Browser Popup", fileBrowser);
         }
 
         public void CreateObjectSearch()
@@ -3815,9 +3815,10 @@ namespace EditorManagement.Functions.Editors
                 var path = file.Replace("\\", "/");
                 var name = Path.GetFileName(path);
                 var metadataStr = FileManager.inst.LoadJSONFileRaw(file + "/metadata.lsb");
+
                 if (metadataStr != null)
                 {
-                    list.Add(EditorManager.inst.StartCoroutine(EditorManager.inst.GetAlbumSprite(name, delegate (Sprite cover)
+                    list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
                     {
                         EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
                     }, delegate
@@ -3828,23 +3829,6 @@ namespace EditorManagement.Functions.Editors
                 else
                     Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{name}]!");
             }
-
-            //foreach (var folder in folderList)
-            //{
-            //    var metadataStr = FileManager.inst.LoadJSONFileRaw(folder.fullPath + "/metadata.lsb");
-            //    if (metadataStr != null)
-            //    {
-            //        list.Add(EditorManager.inst.StartCoroutine(EditorManager.inst.GetAlbumSprite(folder.name, delegate (Sprite cover)
-            //        {
-            //            EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
-            //        }, delegate
-            //        {
-            //            EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), folder.name, SteamWorkshop.inst.defaultSteamImageSprite));
-            //        })));
-            //    }
-            //    else
-            //        Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{folder.name}]!");
-            //}
 
             if (list.Count >= 1)
                 yield return EditorManager.inst.StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate
@@ -3857,19 +3841,17 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public IEnumerator LoadLevel(EditorManager __instance, string _levelName) => LoadLevel(_levelName);
-
-        public IEnumerator LoadLevel(string _levelName)
+        public IEnumerator LoadLevel(string fullPath)
         {
-            var __instance = EditorManager.inst;
+            var editorManager = EditorManager.inst;
             var objectManager = ObjectManager.inst;
             var objEditor = ObjEditor.inst;
             var gameManager = GameManager.inst;
             var dataManager = DataManager.inst;
 
-            __instance.loading = true;
+            editorManager.loading = true;
 
-            string code = $"{_levelName}/EditorLoad.cs";
+            string code = $"{fullPath}/EditorLoad.cs";
             if (RTFile.FileExists(code))
             {
                 yield return StartCoroutine(RTCode.IEvaluate(RTFile.ReadFromFile(code)));
@@ -3880,77 +3862,59 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateObjects(false);
 
-            __instance.InvokeRepeating("LoadingIconUpdate", 0f, 0.05f);
+            editorManager.InvokeRepeating("LoadingIconUpdate", 0f, 0.05f);
 
-            var withoutFullPath = _levelName.Replace(RTFile.ApplicationDirectory, "");
-            var withoutList = withoutFullPath.Replace(editorListSlash, "");
+            var name = Path.GetFileName(fullPath);
 
-            __instance.currentLoadedLevel = withoutList;
-            __instance.SetPitch(1f);
-            
-            __instance.timelineScrollbar.GetComponent<Scrollbar>().value = 0f;
+            editorManager.currentLoadedLevel = name;
+            editorManager.SetPitch(1f);
+
+            editorManager.timelineScrollbar.GetComponent<Scrollbar>().value = 0f;
             gameManager.gameState = GameManager.State.Loading;
             string rawJSON = null;
             string rawMetadataJSON = null;
             AudioClip song = null;
 
-            __instance.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
-            __instance.ShowDialog("File Info Popup");
+            editorManager.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
+            editorManager.ShowDialog("File Info Popup");
 
-            var fileInfo = __instance.GetDialog("File Info Popup").Dialog.transform.Find("text").GetComponent<Text>();
+            var fileInfo = editorManager.GetDialog("File Info Popup").Dialog.transform.Find("text").GetComponent<Text>();
 
-            fileInfo.text = "Loading Level Data for [" + withoutList + "]";
+            fileInfo.text = $"Loading Level Data for [ {name} ]";
 
-            Debug.LogFormat("{0}Loading {1}...", EditorPlugin.className, _levelName);
-            rawJSON = FileManager.inst.LoadJSONFileRaw(_levelName + "/level.lsb");
-            rawMetadataJSON = FileManager.inst.LoadJSONFileRaw(_levelName + "/metadata.lsb");
+            Debug.LogFormat("{0}Loading {1}...", EditorPlugin.className, fullPath);
+            rawJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/level.lsb");
+            rawMetadataJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/metadata.lsb");
 
             if (string.IsNullOrEmpty(rawMetadataJSON))
             {
-                dataManager.SaveMetadata(_levelName + "/metadata.lsb");
+                dataManager.SaveMetadata(fullPath + "/metadata.lsb");
             }
 
-            gameManager.path = _levelName + "/level.lsb";
-            gameManager.basePath = _levelName + "/";
-            gameManager.levelName = withoutList;
-            fileInfo.text = "Loading Level Music for [" + withoutList + "]\n\nIf this is taking more than a minute or two check if the .ogg file is corrupt.";
+            gameManager.path = fullPath + "/level.lsb";
+            gameManager.basePath = fullPath + "/";
+            gameManager.levelName = name;
+            fileInfo.text = $"Loading Level Music for [ {name} ]\n\nIf this is taking more than a minute or two check if the .ogg file is corrupt.";
 
-            Debug.LogFormat("{0}Loading audio for {1}...", EditorPlugin.className, _levelName);
-            if (RTFile.FileExists(_levelName + "/level.ogg"))
+            Debug.LogFormat("{0}Loading audio for {1}...", EditorPlugin.className, fullPath);
+            if (RTFile.FileExists(fullPath + "/level.ogg"))
             {
-                yield return StartCoroutine(FileManager.inst.LoadMusicFile(withoutFullPath + "/level.ogg", delegate (AudioClip _song)
-                {
-                    _song.name = withoutList;
-                    if (_song)
-                    {
-                        song = _song;
-                    }
-                }));
+                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.ogg", AudioType.OGGVORBIS, x => song = x));
             }
-            else if (RTFile.FileExists(_levelName + "/level.wav"))
+            else if (RTFile.FileExists(fullPath + "/level.wav"))
             {
-                yield return StartCoroutine(FileManager.inst.LoadMusicFile(withoutFullPath + "/level.wav", delegate (AudioClip _song)
-                {
-                    _song.name = withoutList;
-                    if (_song)
-                    {
-                        song = _song;
-                    }
-                }));
+                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.wav", AudioType.WAV, x => song = x));
             }
 
-            Debug.LogFormat("{0}Parsing level data for {1}...", EditorPlugin.className, _levelName);
+            Debug.LogFormat("{0}Parsing level data for {1}...", EditorPlugin.className, fullPath);
             gameManager.gameState = GameManager.State.Parsing;
-            fileInfo.text = "Parsing Level Data for [" + withoutList + "]";
+            fileInfo.text = $"Parsing Level Data for [ {name} ]";
             if (!string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
             {
-                //dataManager.ParseMetadata(rawMetadataJSON);
                 dataManager.metaData = Metadata.Parse(JSON.Parse(rawMetadataJSON));
 
                 if (DataManager.inst.metaData.beatmap.game_version != "4.1.16")
                     rawJSON = dataManager.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
-                //dataManager.gameData.eventObjects = new DataManager.GameData.EventObjects();
-                //StartCoroutine(Parser.ParseBeatmap(rawJSON, true));
 
                 dataManager.gameData = GameData.Parse(JSON.Parse(rawJSON), false);
 
@@ -3958,21 +3922,16 @@ namespace EditorManagement.Functions.Editors
                     dataManager.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
             }
 
-            if (GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
+            if (ModCompatibility.CreativePlayersInstalled)
             {
-                var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
-                var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
-
-                if (c != null)
-                {
-                    playerPlugin.GetType().GetMethod("LoadIndexes").Invoke(playerPlugin, new object[] { });
-                    playerPlugin.GetType().GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
-                }
+                PlayerManager.LoadGlobalModels?.Invoke();
+                PlayerManager.LoadIndexes?.Invoke();
+                PlayerManager.RespawnPlayers();
             }
 
-            fileInfo.text = "Loading Themes for [" + withoutList + "]";
-            Debug.LogFormat("{0}Loading themes for {1}...", EditorPlugin.className, _levelName);
-            yield return inst.StartCoroutine(LoadThemes());
+            fileInfo.text = $"Loading Themes for [ {name} ]";
+            Debug.LogFormat("{0}Loading themes for {1}...", EditorPlugin.className, fullPath);
+            yield return StartCoroutine(LoadThemes());
             float delayTheme = 0f;
             while (themesLoading)
             {
@@ -3982,13 +3941,13 @@ namespace EditorManagement.Functions.Editors
 
             Debug.LogFormat("{0}Music is null: ", EditorPlugin.className, song == null);
 
-            fileInfo.text = "Playing Music for [" + withoutList + "]\n\nIf it doesn't, then something went wrong!";
+            fileInfo.text = $"Playing Music for [ {name} ]\n\nIf it doesn't, then something went wrong!";
             AudioManager.inst.PlayMusic(null, song, true, 0f, true);
-            inst.StartCoroutine((IEnumerator)AccessTools.Method(typeof(EditorManager), "SpawnPlayersWithDelay").Invoke(EditorManager.inst, new object[] { 0.2f }));
+            StartCoroutine(EditorManager.inst.SpawnPlayersWithDelay(0.2f));
             if (GenerateWaveform)
             {
-                fileInfo.text = "Assigning Waveform Textures for [" + withoutList + "]";
-                Debug.LogFormat("{0}Assigning timeline textures for {1}...", EditorPlugin.className, _levelName);
+                fileInfo.text = $"Assigning Waveform Textures for [ {name} ]";
+                Debug.LogFormat("{0}Assigning timeline textures for {1}...", EditorPlugin.className, fullPath);
                 var image = EditorManager.inst.timeline.GetComponent<Image>();
                 yield return AssignTimelineTexture();
                 float delay = 0f;
@@ -4000,24 +3959,24 @@ namespace EditorManagement.Functions.Editors
             }
             else
             {
-                fileInfo.text = "Skipping Waveform Textures for [" + withoutList + "]";
-                Debug.LogFormat("{0}Skipping Waveform Textures for {1}...", EditorPlugin.className, _levelName);
+                fileInfo.text = $"Skipping Waveform Textures for [ {name} ]";
+                Debug.LogFormat("{0}Skipping Waveform Textures for {1}...", EditorPlugin.className, fullPath);
                 EditorManager.inst.timeline.GetComponent<Image>().sprite = null;
                 EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = null;
             }
 
-            fileInfo.text = "Updating Timeline for [" + withoutList + "]";
-            Debug.LogFormat("{0}Updating editor for {1}...", EditorPlugin.className, _levelName);
+            fileInfo.text = $"Updating Timeline for [ {name} ]";
+            Debug.LogFormat("{0}Updating editor for {1}...", EditorPlugin.className, fullPath);
             AccessTools.Method(typeof(EditorManager), "UpdateTimelineSizes").Invoke(EditorManager.inst, new object[] { });
             gameManager.UpdateTimeline();
-            __instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            editorManager.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
             MetadataEditor.inst.Render();
             if (layerType == LayerType.Events)
                 CheckpointEditor.inst.CreateCheckpoints();
             else
                 CheckpointEditor.inst.CreateGhostCheckpoints();
 
-            fileInfo.text = "Updating states for [" + withoutList + "]";
+            fileInfo.text = $"Updating states for [ {name} ]";
             DiscordController.inst.OnStateChange("Editing: " + DataManager.inst.metaData.song.title);
             DiscordController.inst.OnArtChange("pa_logo_white");
             DiscordController.inst.OnIconChange("editor");
@@ -4031,7 +3990,7 @@ namespace EditorManagement.Functions.Editors
             MarkerEditor.inst.CreateMarkers();
             EventManager.inst.updateEvents();
 
-            fileInfo.text = "Setting first object of [" + withoutList + "]";
+            fileInfo.text = $"Setting first object of [ {name} ]";
             ObjectEditor.inst.CreateTimelineObjects();
             ObjectEditor.inst.RenderTimelineObjects();
             ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
@@ -4041,15 +4000,15 @@ namespace EditorManagement.Functions.Editors
             CheckpointEditor.inst.SetCurrentCheckpoint(0);
 
             fileInfo.text = "Done!";
-            __instance.HideDialog("File Info Popup");
-            __instance.CancelInvoke("LoadingIconUpdate");
+            editorManager.HideDialog("File Info Popup");
+            editorManager.CancelInvoke("LoadingIconUpdate");
 
             gameManager.ResetCheckpoints(true);
             gameManager.gameState = GameManager.State.Playing;
 
-            __instance.DisplayNotification(withoutList + " Level Loaded", 2f, EditorManager.NotificationType.Success, false);
-            __instance.UpdatePlayButton();
-            __instance.hasLoadedLevel = true;
+            editorManager.DisplayNotification(name + " Level Loaded", 2f, EditorManager.NotificationType.Success, false);
+            editorManager.UpdatePlayButton();
+            editorManager.hasLoadedLevel = true;
 
             if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
                 Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
@@ -4057,11 +4016,11 @@ namespace EditorManagement.Functions.Editors
             string[] files = Directory.GetFiles(GameManager.inst.basePath + "autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
             files.ToList().Sort();
 
-            __instance.autosaves.Clear();
+            editorManager.autosaves.Clear();
 
             foreach (var file in files)
             {
-                __instance.autosaves.Add(file);
+                editorManager.autosaves.Add(file);
             }
 
             SetAutosave();
@@ -4069,20 +4028,18 @@ namespace EditorManagement.Functions.Editors
 
             TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
 
-            {
-                LoadSettings();
+            LoadSettings();
 
-                if (LevelPausesOnStart)
-                {
-                    AudioManager.inst.CurrentAudioSource.Pause();
-                    __instance.UpdatePlayButton();
-                }
+            if (LevelPausesOnStart)
+            {
+                AudioManager.inst.CurrentAudioSource.Pause();
+                editorManager.UpdatePlayButton();
             }
 
             if (ModCompatibility.sharedFunctions.ContainsKey("EditorOnLoadLevel"))
                 ((Action)ModCompatibility.sharedFunctions["EditorOnLoadLevel"])();
 
-            __instance.loading = false;
+            editorManager.loading = false;
 
             yield break;
         }
@@ -4198,29 +4155,33 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        // Implement new ToJSON
         public void SetAutosave()
         {
             EditorManager.inst.CancelInvoke("AutoSaveLevel");
             CancelInvoke("AutoSaveLevel");
-            timeSinceAutosaved = Time.time;
             InvokeRepeating("AutoSaveLevel", AutoSaveLoopTime, AutoSaveLoopTime);
+
+            //var t = Time.time - timeInEditorOffset;
+            //if (t % AutoSaveLoopTime - 0.1f > AutoSaveLoopTime - 0.1f && !autoSaving)
+            //    AutoSaveLevel();
         }
 
         public void AutoSaveLevel()
         {
-            if (timeSinceAutosaved - Time.time < 0.5f || EditorManager.inst.loading)
+            if (EditorManager.inst.loading)
                 return;
+
+            autoSaving = true;
 
             if (!EditorManager.inst.hasLoadedLevel)
             {
-                EditorManager.inst.DisplayNotification("Beatmap can't autosave until you load a level.", 3f, EditorManager.NotificationType.Error, false);
+                EditorManager.inst.DisplayNotification("Beatmap can't autosave until you load a level.", 3f, EditorManager.NotificationType.Error);
                 return;
             }
 
             if (EditorManager.inst.savingBeatmap)
             {
-                EditorManager.inst.DisplayNotification("Already attempting to save the beatmap!", 2f, EditorManager.NotificationType.Error, false);
+                EditorManager.inst.DisplayNotification("Already attempting to save the beatmap!", 2f, EditorManager.NotificationType.Error);
                 return;
             }
 
@@ -4239,7 +4200,7 @@ namespace EditorManagement.Functions.Editors
             if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
                 Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
 
-            EditorManager.inst.DisplayNotification("Autosaving backup!", 2f, EditorManager.NotificationType.Warning, false);
+            EditorManager.inst.DisplayNotification("Autosaving backup!", 2f, EditorManager.NotificationType.Warning);
 
             EditorManager.inst.autosaves.Add(autosavePath);
 
@@ -4254,7 +4215,9 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.StartCoroutine(ProjectData.Writer.SaveData(autosavePath, (GameData)DataManager.inst.gameData));
 
-            autoSaving = true;
+            EditorManager.inst.DisplayNotification("Autosaved backup!", 2f, EditorManager.NotificationType.Success);
+
+            autoSaving = false;
         }
 
         public static int AutoSaveLimit => GetEditorProperty("Autosave Limit").GetConfigEntry<int>().Value;
@@ -4314,7 +4277,7 @@ namespace EditorManagement.Functions.Editors
             dataManager.metaData = metaData;
 
             dataManager.SaveMetadata(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/metadata.lsb");
-            StartCoroutine(LoadLevel(__instance, RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName));
+            StartCoroutine(LoadLevel(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName));
             __instance.HideDialog("New File Popup");
         }
 
@@ -4404,6 +4367,13 @@ namespace EditorManagement.Functions.Editors
             gameData.beatmapObjects.Add(beatmapObject);
 
             return gameData;
+        }
+
+        public IEnumerator GetAlbumSprite(string fullpath, Action<Sprite> callback, Action<string> onError)
+        {
+            string path = fullpath + "/level.jpg";
+            yield return StartCoroutine(EditorManager.inst.GetSprite(path, new EditorManager.SpriteLimits(), callback, onError));
+            yield break;
         }
 
         #endregion
@@ -4587,101 +4557,57 @@ namespace EditorManagement.Functions.Editors
 
             #region Sorting
 
-            var ien = EditorManager.inst.loadedLevels.AsEnumerable();
-            if (!levelAscend)
+            switch (levelFilter)
             {
-                switch (levelFilter)
-                {
-                    case 0:
-                        {
-                            ien = ien.OrderByDescending(x => x.albumArt != EditorManager.inst.AlbumArt);
-                            break;
-                        }
-                    case 1:
-                        {
-                            ien = ien.OrderByDescending(x => x.metadata.artist.Name);
-                            break;
-                        }
-                    case 2:
-                        {
-                            ien = ien.OrderByDescending(x => x.metadata.creator.steam_name);
-                            break;
-                        }
-                    case 3:
-                        {
-                            ien = ien.OrderByDescending(x => x.folder);
-                            break;
-                        }
-                    case 4:
-                        {
-                            ien = ien.OrderByDescending(x => x.metadata.song.title);
-                            break;
-                        }
-                    case 5:
-                        {
-                            ien = ien.OrderByDescending(x => x.metadata.song.difficulty);
-                            break;
-                        }
-                    case 6:
-                        {
-                            ien = ien.OrderByDescending(x => x.metadata.beatmap.date_edited);
-                            break;
-                        }
-                    case 7:
-                        {
-                            ien = ien.OrderByDescending(x => ((Metadata)x.metadata).LevelBeatmap.date_created);
-                            break;
-                        }
-                }
+                case 0:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.albumArt != SteamWorkshop.inst.defaultSteamImageSprite) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.albumArt != SteamWorkshop.inst.defaultSteamImageSprite)).ToList();
+                        break;
+                    }
+                case 1:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.metadata.artist.Name) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.metadata.artist.Name)).ToList();
+                        break;
+                    }
+                case 2:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.metadata.creator.steam_name) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.metadata.creator.steam_name)).ToList();
+                        break;
+                    }
+                case 3:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.folder) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.folder)).ToList();
+                        break;
+                    }
+                case 4:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.metadata.song.title) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.metadata.song.title)).ToList();
+                        break;
+                    }
+                case 5:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.metadata.song.difficulty) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.metadata.song.difficulty)).ToList();
+                        break;
+                    }
+                case 6:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => x.metadata.beatmap.date_edited) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => x.metadata.beatmap.date_edited)).ToList();
+                        break;
+                    }
+                case 7:
+                    {
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => ((Metadata)x.metadata).LevelBeatmap.date_created) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => ((Metadata)x.metadata).LevelBeatmap.date_created)).ToList();
+                        break;
+                    }
             }
-            else
-            {
-                switch (levelFilter)
-                {
-                    case 0:
-                        {
-                            ien = ien.OrderBy(x => x.albumArt != EditorManager.inst.AlbumArt);
-                            break;
-                        }
-                    case 1:
-                        {
-                            ien = ien.OrderBy(x => x.metadata.artist.Name);
-                            break;
-                        }
-                    case 2:
-                        {
-                            ien = ien.OrderBy(x => x.metadata.creator.steam_name);
-                            break;
-                        }
-                    case 3:
-                        {
-                            ien = ien.OrderBy(x => x.folder);
-                            break;
-                        }
-                    case 4:
-                        {
-                            ien = ien.OrderBy(x => x.metadata.song.title);
-                            break;
-                        }
-                    case 5:
-                        {
-                            ien = ien.OrderBy(x => x.metadata.song.difficulty);
-                            break;
-                        }
-                    case 6:
-                        {
-                            ien = ien.OrderBy(x => x.metadata.beatmap.date_edited);
-                            break;
-                        }
-                    case 7:
-                        {
-                            ien = ien.OrderBy(x => ((Metadata)x.metadata).LevelBeatmap.date_created);
-                            break;
-                        }
-                }
-            }
-
-            EditorManager.inst.loadedLevels = ien.ToList();
 
             #endregion
 
@@ -4709,9 +4635,10 @@ namespace EditorManagement.Functions.Editors
                     "expert+",
                     "master",
                     "animation",
+                    "Unknown difficulty",
                 };
 
-                difficultyName = difficultyNames[metadata.song.difficulty];
+                difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
                 if (RTFile.FileExists(RTFile.ApplicationDirectory + editorListSlash + metadataWrapper.folder + "/level.ogg") ||
                     RTFile.FileExists(RTFile.ApplicationDirectory + editorListSlash + metadataWrapper.folder + "/level.wav"))
@@ -5677,6 +5604,14 @@ namespace EditorManagement.Functions.Editors
                             }
                     }
                 }
+            }
+        }
+
+        public void RefreshFileBrowserLevels()
+        {
+            if (RTFileBrowser.inst)
+            {
+                RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory, ".lsb", "level",  x => StartCoroutine(LoadLevel(x.Replace("\\", "/").Replace("/level.lsb", ""))));
             }
         }
 
