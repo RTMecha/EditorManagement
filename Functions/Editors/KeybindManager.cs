@@ -329,6 +329,13 @@ namespace EditorManagement.Functions.Editors
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Delete),
             }, 50));
+            
+            // ToggleZenMode
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftAlt),
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Z),
+            }, 52));
 
             // Custom Code
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
@@ -741,6 +748,7 @@ namespace EditorManagement.Functions.Editors
             Duplicate, // 49
             Delete, // 50
             ToggleObjectDragger, // 51
+            ToggleZenMode, // 52
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1449,9 +1457,10 @@ namespace EditorManagement.Functions.Editors
             RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value = !RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value;
         }
 
-        public static void DuplicateKeyframe(Keybind keybind)
+        public static void ToggleZenMode(Keybind keybind)
         {
-
+            DataManager.inst.UpdateSettingEnum("ArcadeDifficulty", DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1) == 0 ? 1 : 0);
+            EditorManager.inst.DisplayNotification($"Set Zen Mode {(DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1) == 0 ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
         }
 
         #endregion
