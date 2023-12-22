@@ -1140,8 +1140,8 @@ namespace EditorManagement.Functions.Editors
                 RTEditor.inst.SetLayer(timelineObject.Layer);
             }
 
-            if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().RTObject)
-                timelineObject.GetData<BeatmapObject>().RTObject.GenerateDraggers();
+            if (timelineObject.IsBeatmapObject)
+                timelineObject.GetData<BeatmapObject>().RTObject?.GenerateDraggers();
         }
 
         public void SetCurrentBeatmapObject(int index) => inst.SetCurrentObject(RTEditor.inst.TimelineBeatmapObjects[index]);
@@ -1163,8 +1163,6 @@ namespace EditorManagement.Functions.Editors
         {
             if (!string.IsNullOrEmpty(beatmapObject.id))
             {
-                //UpdateKeyframeOrder(beatmapObject);
-
                 var bmTimelineObject = GetTimelineObject(beatmapObject);
 
                 if (!ObjEditor.inst.timelineKeyframesDrag)
@@ -1246,8 +1244,9 @@ namespace EditorManagement.Functions.Editors
                 }
 
                 RenderKeyframes(beatmapObject);
-                //StartCoroutine(RefreshObjectGUI(beatmapObject));
                 RenderKeyframeDialog(beatmapObject);
+
+                bmTimelineObject.InternalSelections = SelectedBeatmapObjectKeyframes.Clone();
             }
         }
 
@@ -1255,6 +1254,10 @@ namespace EditorManagement.Functions.Editors
         {
             var eventKeyframe = EventKeyframe.DeepCopy(_keyframe);
             eventKeyframe.eventTime = _time;
+
+            if (eventKeyframe.relative)
+                for (int i = 0; i < eventKeyframe.eventValues.Length; i++)
+                    eventKeyframe.eventValues[i] = 0f;
 
             beatmapObject.events[_kind].Add(eventKeyframe);
 
@@ -1276,11 +1279,18 @@ namespace EditorManagement.Functions.Editors
             RTEditor.inst.timelineObjects.Clear();
         }
 
+        /// <summary>
+        /// Finds the timeline object with the associated BeatmapObject ID.
+        /// </summary>
+        /// <param name="beatmapObject"></param>
+        /// <returns>Returns either the related TimelineObject or a new TimelineObject if one doesn't exist for whatever reason.</returns>
         public TimelineObject GetTimelineObject(BeatmapObject beatmapObject)
         {
             TimelineObject timelineObject;
             if (RTEditor.inst.timelineObjects.Has(x => x.IsBeatmapObject && x.ID == beatmapObject.id))
                 timelineObject = RTEditor.inst.timelineObjects.Find(x => x.IsBeatmapObject && x.ID == beatmapObject.id);
+            else if (CurrentSelection.IsBeatmapObject && CurrentSelection.ID == beatmapObject.id)
+                timelineObject = CurrentSelection;
             else
             {
                 Debug.Log($"{ObjEditor.inst.className}Something went wrong and the object apparently didn't exist before.");
