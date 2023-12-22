@@ -41,11 +41,7 @@ namespace EditorManagement.Functions.Editors
     public class RTEventEditor : MonoBehaviour
 	{
 		public static RTEventEditor inst;
-
-		// TODO
-		// -Gradient Intensity and Rotation need to have the same parent so the Gradient Mode won't go offscreen lol
-		// -Make sure all GUI elements are consistent so the singular method works
-
+		
 		#region Variables
 
 		public List<TimelineObject> SelectedKeyframes => RTEditor.inst.timelineKeyframes.FindAll(x => x.selected);
@@ -237,7 +233,9 @@ namespace EditorManagement.Functions.Editors
 				int index = keyframeSelection2.Index;
 				var eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[type][index]);
 				eventKeyframe.eventTime -= num;
-				copiedEventKeyframes.Add(new TimelineObject(eventKeyframe));
+				var timelineObject = new TimelineObject(eventKeyframe);
+				timelineObject.Type = type;
+				copiedEventKeyframes.Add(timelineObject);
 			}
 		}
 
@@ -1587,11 +1585,11 @@ namespace EditorManagement.Functions.Editors
 
 			ClearEventObjects();
 
-			foreach (var list in DataManager.inst.gameData.eventObjects.allEvents)
+			for (int i = 0; i < AllEvents.Count; i++)
             {
-				list.OrderBy(x => x.eventTime);
-            }
-
+				DataManager.inst.gameData.eventObjects.allEvents[i] = DataManager.inst.gameData.eventObjects.allEvents[i].OrderBy(x => x.eventTime).ToList();
+			}
+			
 			CreateEventObjects();
 
 			foreach (var timelineObject in RTEditor.inst.timelineKeyframes)
