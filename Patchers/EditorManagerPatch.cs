@@ -19,6 +19,7 @@ using CielaSpike;
 
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Data;
+using RTFunctions.Functions.Data.Player;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
 using RTFunctions.Patchers;
@@ -26,19 +27,6 @@ using RTFunctions.Patchers;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
-
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
-using EventKeyframe = DataManager.GameData.EventKeyframe;
-using Prefab = DataManager.GameData.Prefab;
-using PrefabObject = DataManager.GameData.PrefabObject;
-using BackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
-using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
-using ObjectKeyframeSelection = ObjEditor.KeyframeSelection;
-using EventKeyframeSelection = EventEditor.KeyframeSelection;
 
 using DGEase = DG.Tweening.Ease;
 
@@ -181,8 +169,10 @@ namespace EditorManagement.Patchers
             DiscordController.inst.OnDetailsChange("In Editor");
 
             Instance.SetDialogStatus("Timeline", true, true);
+
             InputDataManager.inst.players.Clear();
-            InputDataManager.inst.players.Add(new InputDataManager.CustomPlayer(true, 0, null));
+            InputDataManager.inst.players.Add(new CustomPlayer(true, 0, null));
+
             Instance.GUI.SetActive(false);
             Instance.canEdit = DataManager.inst.GetSettingBool("CanEdit", false);
             if (Instance.canEdit)
@@ -212,6 +202,7 @@ namespace EditorManagement.Patchers
             InputDataManager.inst.editorActions.Delete.ClearBindings();
             InputDataManager.inst.editorActions.Undo.ClearBindings();
             InputDataManager.inst.editorActions.Redo.ClearBindings();
+            InputDataManager.inst.editorActions.CreateMarker.ClearBindings();
 
             EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(true);
 
@@ -225,60 +216,18 @@ namespace EditorManagement.Patchers
             Instance.ScreenScale = Screen.width / 1920f;
             Instance.ScreenScaleInverse = 1f / Instance.ScreenScale;
 
-            //if (Instance.showHelp)
-            //{
-            //float num = (float)Screen.width / 1920f;
-            //num = 1f / num;
-            //float x = Instance.mouseTooltip.GetComponent<RectTransform>().sizeDelta.x;
-            //float y = Instance.mouseTooltip.GetComponent<RectTransform>().sizeDelta.y;
-            //Vector3 zero = Vector3.zero;
-            //if ((Input.mousePosition.x + x + 32f) * num >= 1920f)
-            //{
-            //	zero.x -= x;
-            //}
-            //if ((Input.mousePosition.y + y + 32f) * num >= 1080f)
-            //{
-            //	zero.y -= y;
-            //}
-            //Instance.mouseTooltip.GetComponent<RectTransform>().anchoredPosition = (Input.mousePosition + zero) * num;
-            //}
-
             if (GameManager.inst.gameState == GameManager.State.Playing)
             {
                 if (Instance.canEdit)
                 {
-                    if (InputDataManager.inst.editorActions.ToggleEditor.WasPressed && !Instance.IsUsingInputField())
+                    if (InputDataManager.inst.editorActions.ToggleEditor.WasPressed && !Instance.IsUsingInputField() || Input.GetKeyDown(KeyCode.Escape) && !Instance.isEditing)
                         Instance.ToggleEditor();
-
-                    foreach (var customPlayer in InputDataManager.inst.players)
-                    {
-                        if (customPlayer.player && customPlayer.player.Actions.Pause.WasPressed && !Instance.isEditing)
-                        {
-                            Instance.isEditing = true;
-                        }
-                    }
 
                     if (Instance.isEditing)
                     {
                         if (!Instance.IsUsingInputField())
                         {
-                            // Probably replace this with new KeybindManager system
-
                             Instance.handleViewShortcuts();
-                            //if (InputDataManager.inst.editorActions.OpenLevel.WasPressed)
-                            //    Instance.OpenBeatmapPopup();
-                            //if (InputDataManager.inst.editorActions.SaveLevel.WasPressed)
-                            //    Instance.SaveBeatmap();
-                            //if (InputDataManager.inst.editorActions.Cut.WasPressed)
-                            //    Instance.Cut();
-                            //if (InputDataManager.inst.editorActions.Copy.WasPressed)
-                            //    Instance.Copy();
-                            //if (InputDataManager.inst.editorActions.Duplicate.WasPressed)
-                            //    Instance.Duplicate();
-                            //if (InputDataManager.inst.editorActions.Paste.WasPressed)
-                            //    Instance.Paste();
-                            //if (InputDataManager.inst.editorActions.Delete.WasPressed)
-                            //    Instance.Delete();
                         }
                     }
                     if (!Instance.firstOpened)
@@ -367,7 +316,6 @@ namespace EditorManagement.Patchers
 
             if (EditorManager.inst.GUI.activeSelf == true && EditorManager.inst.isEditing == true)
             {
-                // Create Local Variables
                 if (RTEditor.inst.timeIF && !RTEditor.inst.timeIF.isFocused)
                     RTEditor.inst.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 
@@ -489,9 +437,9 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("LoadLevel")]
         [HarmonyPrefix]
-        static bool LoadLevelPrefix(EditorManager __instance, ref IEnumerator __result, string __0)
+        static bool LoadLevelPrefix(ref IEnumerator __result, string __0)
         {
-            __result = RTEditor.inst.LoadLevel(__instance, $"{RTFile.ApplicationDirectory}{RTEditor.editorListSlash}{__0}");
+            __result = RTEditor.inst.LoadLevel($"{RTFile.ApplicationDirectory}{RTEditor.editorListSlash}{__0}");
             return false;
         }
 
@@ -731,12 +679,12 @@ namespace EditorManagement.Patchers
         {
             if (!__instance.hasLoadedLevel)
             {
-                __instance.DisplayNotification("Beatmap Can't be saved till you load a level.", 5f, EditorManager.NotificationType.Error);
+                __instance.DisplayNotification("Beatmap can't be saved until you load a level.", 5f, EditorManager.NotificationType.Error);
                 return false;
             }
             if (__instance.savingBeatmap)
             {
-                __instance.DisplayNotification("Already attempting to save beatmap already, please wait!", 2f, EditorManager.NotificationType.Error);
+                __instance.DisplayNotification("Attempting to save beatmap already, please wait!", 2f, EditorManager.NotificationType.Error);
                 return false;
             }
 
@@ -748,6 +696,7 @@ namespace EditorManagement.Patchers
 
             DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
             __instance.StartCoroutine(SaveData(GameManager.inst.path));
+            PlayerManager.SaveLocalModels?.Invoke();
 
             RTEditor.inst.SaveSettings();
 
