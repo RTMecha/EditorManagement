@@ -363,6 +363,8 @@ namespace EditorManagement.Functions.Editors
                 inputField.text = prefabType.Name;
                 inputField.onValueChanged.AddListener(delegate (string _val)
                 {
+                    string oldName = DataManager.inst.PrefabTypes[index].Name;
+
                     string name = _val;
                     int n = 0;
                     while (DataManager.inst.PrefabTypes.Has(x => x.Name == name))
@@ -372,6 +374,11 @@ namespace EditorManagement.Functions.Editors
                     }
 
                     DataManager.inst.PrefabTypes[index].Name = name;
+
+                    if (RTFile.FileExists(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName))
+                    {
+                        File.Delete(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName);
+                    }
                 });
                 inputField.onEndEdit.ClearAll();
                 inputField.onEndEdit.AddListener(delegate (string _val)
