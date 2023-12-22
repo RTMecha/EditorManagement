@@ -25,9 +25,7 @@ namespace EditorManagement.Functions.Editors
 {
     public class CreativePlayersEditor : MonoBehaviour
     {
-        public static Type playerPlugin;
         public static CreativePlayersEditor inst;
-        public static Type playerExtensions;
 
         public static GameObject editorDialogObject;
         public static Transform editorDialogTransform;
@@ -71,16 +69,15 @@ namespace EditorManagement.Functions.Editors
 
         void Awake()
         {
-            if (!GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin"))
+            if (!ModCompatibility.CreativePlayersInstalled)
             {
                 Destroy(gameObject);
             }
             else
             {
-                playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin").GetType();
                 inst = this;
 
-                editorFont = GameObject.Find("TitleBar/File/Text").GetComponent<Text>().font;
+                editorFont = FontManager.inst.Inconsolata;
 
                 editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
                 editorDialogTransform = editorDialogObject.transform;
@@ -109,8 +106,6 @@ namespace EditorManagement.Functions.Editors
                 var stringInput = GameObject.Find("TimelineBar/GameObject/Time Input");
                 var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
                 var colorsInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color");
-
-                playerExtensions = AccessTools.TypeByName("CreativePlayers.Functions.PlayerExtensions");
 
                 //Dropdown
                 {
@@ -170,7 +165,7 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        playerPlugin.GetMethod("SavePlayerModels").Invoke(playerPlugin, new object[] { });
+                        PlayerManager.SaveGlobalModels?.Invoke();
                     });
                 }
 
@@ -192,11 +187,10 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.AddListener(delegate ()
                     {
                         var num = playerModelDropdown.options.Count;
-                        playerPlugin.GetMethod("CreateNewPlayerModel").Invoke(playerPlugin, new object[] { });
 
-                        playerExtensions.GetMethod("SetPlayerModelIndex").Invoke(playerExtensions, new object[] { 0, num });
-
-                        playerPlugin.GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
+                        PlayerManager.CreateNewPlayerModel?.Invoke();
+                        PlayerManager.SetPlayerModel?.Invoke(playerModelIndex, PlayerManager.PlayerModelsIndex[num]);
+                        PlayerManager.RespawnPlayers();
 
                         inst.StartCoroutine(RenderDialog());
                     });
@@ -219,13 +213,9 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        //ModCompatibility.ClearPlayerModels();
-
-                        var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
-
-                        playerPlugin.GetType().GetMethod("StartLoadingModels").Invoke(playerPlugin, new object[] { });
-
-                        playerPlugin.GetType().GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
+                        PlayerManager.ClearPlayerModels?.Invoke();
+                        PlayerManager.LoadGlobalModels?.Invoke();
+                        PlayerManager.RespawnPlayers();
 
                         inst.StartCoroutine(RenderDialog());
                     });
@@ -249,15 +239,7 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        var playerPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("PlayerPlugin");
-                        var c = playerPlugin.GetType().GetField("className").GetValue(playerPlugin);
-
-                        if (c != null)
-                        {
-                            var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
-                            playerPlugin.GetType().GetMethod("DuplicatePlayerModel").Invoke(playerPlugin, new object[] { currentIndex });
-                        }
-
+                        EditorManager.inst.DisplayNotification("no func", 2f, EditorManager.NotificationType.Error);
                         inst.StartCoroutine(RenderDialog());
                     });
                 }
@@ -728,7 +710,7 @@ namespace EditorManagement.Functions.Editors
                         if (x.GetComponent<HoverTooltip>())
                             Destroy(x.GetComponent<HoverTooltip>());
 
-                        for (int i = 19; i < 26; i++)
+                        for (int i = 19; i < 27; i++)
                         {
                             var colorButton = Instantiate(x.transform.GetChild(0).gameObject);
                             colorButton.name = i.ToString();
@@ -813,47 +795,52 @@ namespace EditorManagement.Functions.Editors
 
                 #region Dropdown
 
-                GameObject timelineZoom = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Grid View");
-                timelineZoom.SetActive(true);
-                RectTransform timelineZoomRT = timelineZoom.transform.GetChild(2).gameObject.GetComponent<RectTransform>();
-
-                Text timelineZoomText1 = timelineZoom.transform.GetChild(0).gameObject.GetComponent<Text>();
-                RectTransform timelineZoomTextRT1 = timelineZoom.transform.GetChild(0).gameObject.GetComponent<RectTransform>();
-
-                timelineZoomText1.text = "Player Editor";
-                timelineZoomText1.fontSize = 20;
-                timelineZoomTextRT1.sizeDelta = new Vector2(170, 0);
-
-                Text timelineZoomText2 = timelineZoom.transform.GetChild(1).gameObject.GetComponent<Text>();
-
-                timelineZoomText2.text = RTEditor.GetEditorProperty("Player Editor Open Key").GetConfigEntry<KeyCode>().Value.ToString();
-                timelineZoomText2.fontSize = 20;
-
-                timelineZoomRT.anchoredPosition = new Vector2(-26f, 0f);
-                timelineZoomRT.sizeDelta = new Vector2(22, 0);
-                timelineZoom.gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+                EditorHelper.AddEditorDropdown("Player Editor", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png"), delegate ()
                 {
                     OpenDialog();
                 });
 
-                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png";
+                //GameObject timelineZoom = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Grid View");
+                //timelineZoom.SetActive(true);
+                //RectTransform timelineZoomRT = timelineZoom.transform.GetChild(2).gameObject.GetComponent<RectTransform>();
 
-                if (RTFile.FileExists("BepInEx/plugins/Assets/editor_gui_player.png"))
-                {
-                    Image spriteReloader = timelineZoom.transform.Find("Image").GetComponent<Image>();
+                //Text timelineZoomText1 = timelineZoom.transform.GetChild(0).gameObject.GetComponent<Text>();
+                //RectTransform timelineZoomTextRT1 = timelineZoom.transform.GetChild(0).gameObject.GetComponent<RectTransform>();
 
-                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-                    {
-                        spriteReloader.sprite = cover;
-                    }, delegate (string errorFile)
-                    {
-                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-                    }));
-                }
-                else
-                {
-                    Debug.LogErrorFormat("{0}Missing editor_gui_player.png!", EditorPlugin.className);
-                }
+                //timelineZoomText1.text = "Player Editor";
+                //timelineZoomText1.fontSize = 20;
+                //timelineZoomTextRT1.sizeDelta = new Vector2(170, 0);
+
+                //Text timelineZoomText2 = timelineZoom.transform.GetChild(1).gameObject.GetComponent<Text>();
+
+                //timelineZoomText2.text = RTEditor.GetEditorProperty("Player Editor Open Key").GetConfigEntry<KeyCode>().Value.ToString();
+                //timelineZoomText2.fontSize = 20;
+
+                //timelineZoomRT.anchoredPosition = new Vector2(-26f, 0f);
+                //timelineZoomRT.sizeDelta = new Vector2(22, 0);
+                //timelineZoom.gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+                //{
+                //    OpenDialog();
+                //});
+
+                //string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png";
+
+                //if (RTFile.FileExists("BepInEx/plugins/Assets/editor_gui_player.png"))
+                //{
+                //    Image spriteReloader = timelineZoom.transform.Find("Image").GetComponent<Image>();
+
+                //    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+                //    {
+                //        spriteReloader.sprite = cover;
+                //    }, delegate (string errorFile)
+                //    {
+                //        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+                //    }));
+                //}
+                //else
+                //{
+                //    Debug.LogErrorFormat("{0}Missing editor_gui_player.png!", EditorPlugin.className);
+                //}
 
                 #endregion
 
@@ -863,23 +850,9 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
-            if (Input.GetKeyDown(RTEditor.GetEditorProperty("Player Editor Open Key").GetConfigEntry<KeyCode>().Value))
-            {
-                OpenDialog();
-            }
-
             if ((Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)) && Input.GetKeyDown(KeyCode.D))
             {
                 DuplicateCustomObject();
-            }
-
-            if (Input.GetKeyDown(KeyCode.F5) && debug)
-            {
-                var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
-                if (inspector != null)
-                {
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { objectDialog, null });
-                }
             }
         }
 
@@ -923,14 +896,14 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Position"] = new Vector2(float.Parse(_val), float.Parse(y.text));
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     y.onValueChanged.AddListener(delegate (string _val)
                     {
                         currentObject["Position"] = new Vector2(float.Parse(x.text), float.Parse(_val));
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
@@ -955,14 +928,14 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Scale"] = new Vector2(float.Parse(_val), float.Parse(y.text));
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     y.onValueChanged.AddListener(delegate (string _val)
                     {
                         currentObject["Scale"] = new Vector2(float.Parse(x.text), float.Parse(_val));
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
@@ -983,7 +956,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Rotation"] = float.Parse(_val);
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 15f, 3f) });
@@ -1002,7 +975,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Depth"] = float.Parse(_val);
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f) });
@@ -1014,7 +987,7 @@ namespace EditorManagement.Functions.Editors
                 {
                     var x = content.Find("color/color");
 
-                    for (int i = 0; i < 23; i++)
+                    for (int i = 0; i < 26; i++)
                     {
                         var strr = (i + 1).ToString();
                         if (i < 4)
@@ -1036,7 +1009,11 @@ namespace EditorManagement.Functions.Editors
                         }
                         if (i == 24)
                         {
-                            x.transform.Find(strr).GetComponent<Image>().color = Color.white;
+                            x.transform.Find(strr).GetComponent<Image>().color = LSColors.HexToColor(currentObject.ContainsKey("Custom Color") ? (string)currentObject["Custom Color"] : "FFFFFF");
+                        }
+                        if (i == 25)
+                        {
+                            x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.guiAccentColor;
                         }
                     }
 
@@ -1054,7 +1031,7 @@ namespace EditorManagement.Functions.Editors
                         {
                             currentObject["Custom Color"] = _val;
 
-                            updatePlayers();
+                            UpdatePlayers();
                         }
                     });
                 }
@@ -1073,7 +1050,7 @@ namespace EditorManagement.Functions.Editors
 
                         currentObject["Opacity"] = num;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 1f) });
@@ -1091,7 +1068,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Parent"] = _val;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
                 }
 
@@ -1109,7 +1086,7 @@ namespace EditorManagement.Functions.Editors
 
                         currentObject["Parent Position Offset"] = num;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
@@ -1131,7 +1108,7 @@ namespace EditorManagement.Functions.Editors
 
                         currentObject["Parent Scale Offset"] = num;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
@@ -1149,7 +1126,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Parent Scale Active"] = _val;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
                 }
 
@@ -1167,7 +1144,7 @@ namespace EditorManagement.Functions.Editors
 
                         currentObject["Parent Rotation Offset"] = num;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
@@ -1185,7 +1162,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Parent Rotation Active"] = _val;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
                 }
 
@@ -1216,7 +1193,7 @@ namespace EditorManagement.Functions.Editors
 
                             RenderCustomDialog(_dictionary);
 
-                            updatePlayers();
+                            UpdatePlayers();
                         });
 
                         shapeOption.onValueChanged.AddListener(delegate (int _val)
@@ -1225,7 +1202,7 @@ namespace EditorManagement.Functions.Editors
 
                             RenderCustomDialog(_dictionary);
 
-                            updatePlayers();
+                            UpdatePlayers();
                         });
                     }
                 }
@@ -1242,7 +1219,7 @@ namespace EditorManagement.Functions.Editors
                         currentObject["Visibility Value"] = 0f;
 
                         RenderCustomDialog(_dictionary);
-                        updatePlayers();
+                        UpdatePlayers();
                     });
                 }
 
@@ -1259,7 +1236,7 @@ namespace EditorManagement.Functions.Editors
 
                         currentObject["Visibility Value"] = num;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 100f) });
@@ -1277,7 +1254,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         currentObject["Visibility Not"] = _val;
 
-                        updatePlayers();
+                        UpdatePlayers();
                     });
                 }
             }
@@ -1295,28 +1272,18 @@ namespace EditorManagement.Functions.Editors
             {
                 Debug.LogFormat("{0}Trying to create new object", EditorPlugin.className);
 
-                playerExtensions.GetMethod("AddCustomObject").Invoke(playerExtensions, new object[] { playerModelIndex });
+                PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].CreateCustomObject();
 
-                var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
-                object currentModel = null;
+                var obj = PlayerManager.PlayerModels;
+                var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
+                var currentModel = obj[currentIndex];
 
-                for (int i = 0; i < obj.GetCount(); i++)
-                {
-                    var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
-
-                    if ((string)values["Base ID"] == currentIndex)
-                    {
-                        currentModel = obj.GetItem(i);
-                    }
-                }
-
-                var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
+                var dict = currentModel.values;
                 var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
 
                 currentID = customObjects.ElementAt(customObjects.Count - 1).Key;
 
-                updatePlayers();
+                UpdatePlayers();
                 RenderCustomObjects(dict);
                 RenderCustomDialog(dict);
             });
@@ -1388,29 +1355,18 @@ namespace EditorManagement.Functions.Editors
                     dupButton.onClick.ClearAll();
                     dupButton.onClick.AddListener(delegate ()
                     {
-                        playerExtensions.GetMethod("DuplicateCustomObject").Invoke(playerExtensions, new object[] { tmpID, playerModelIndex });
+                        PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].DuplicateObject(tmpID);
 
-                        var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                        var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
-                        object currentModel = null;
+                        var obj = PlayerManager.PlayerModels;
+                        var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
+                        var currentModel = obj[currentIndex];
 
-                        for (int i = 0; i < obj.GetCount(); i++)
-                        {
-                            var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
+                        var dict = currentModel.values;
+                        var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
 
-                            if ((string)values["Base ID"] == currentIndex)
-                            {
-                                currentModel = obj.GetItem(i);
-                            }
-                        }
+                        currentID = customObjects.Count > 0 ? customObjects.ElementAt(customObjects.Count - 1).Key : "";
 
-                        var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
-
-                        var custom = (Dictionary<string, object>)dict["Custom Objects"];
-                        if (custom.Count > 0)
-                            currentID = custom.ElementAt(custom.Count - 1).Key;
-
-                        updatePlayers();
+                        UpdatePlayers();
                         RenderCustomObjects(dict);
                         RenderCustomDialog(dict);
                     });
@@ -1431,25 +1387,18 @@ namespace EditorManagement.Functions.Editors
                     deleteButton.onClick.ClearAll();
                     deleteButton.onClick.AddListener(delegate ()
                     {
-                        playerExtensions.GetMethod("RemoveCustomObject").Invoke(playerExtensions, new object[] { tmpID, playerModelIndex });
+                        PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].RemoveCustomObject(tmpID);
 
-                        var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                        var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
-                        object currentModel = null;
+                        var obj = PlayerManager.PlayerModels;
+                        var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
+                        var currentModel = obj[currentIndex];
 
-                        for (int i = 0; i < obj.GetCount(); i++)
-                        {
-                            var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
+                        var dict = currentModel.values;
+                        var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
 
-                            if ((string)values["Base ID"] == currentIndex)
-                            {
-                                currentModel = obj.GetItem(i);
-                            }
-                        }
+                        currentID = customObjects.Count > 0 ? customObjects.ElementAt(customObjects.Count - 1).Key : "";
 
-                        var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
-
-                        updatePlayers();
+                        UpdatePlayers();
                         RenderCustomObjects(dict);
                         RenderCustomDialog(dict);
                     });
@@ -1474,34 +1423,23 @@ namespace EditorManagement.Functions.Editors
         {
             playerModelDropdown.options.Clear();
 
-            if (playerExtensions != null)
             {
-                var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-                var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
-                object currentModel = null;
+                var obj = PlayerManager.PlayerModels;
+                var currentIndex = PlayerManager.GetPlayerModelIndex(playerModelIndex);
+                var currentModel = PlayerManager.PlayerModels[currentIndex];
+
+                int c = PlayerManager.GetPlayerModelInt(currentModel);
 
                 playerModelDropdown.onValueChanged.RemoveAllListeners();
-
-                for (int i = 0; i < obj.GetCount(); i++)
-                {
-                    var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
-                    playerModelDropdown.options.Add(new Dropdown.OptionData((string)values["Base Name"]));
-
-                    if ((string)values["Base ID"] == currentIndex)
-                    {
-                        currentModel = obj.GetItem(i);
-                    }
-                }
-
-                int c = (int)playerExtensions.GetMethod("GetPlayerModelInt").Invoke(playerExtensions, new object[] { currentModel });
+                playerModelDropdown.options = obj.Values.Select(x => new Dropdown.OptionData((string)x.values["Base Name"])).ToList();
                 playerModelDropdown.value = c;
                 playerModelDropdown.onValueChanged.AddListener(delegate (int _val)
                 {
                     Debug.LogFormat("{0}Setting Player 1's model index to {1}", EditorPlugin.className, _val);
-                    playerExtensions.GetMethod("SetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex, _val });
+                    PlayerManager.SetPlayerModelIndex(playerModelIndex, _val);
                     inst.StartCoroutine(RenderDialog());
 
-                    playerPlugin.GetMethod("StartRespawnPlayers").Invoke(playerPlugin, new object[] { });
+                    PlayerManager.RespawnPlayers();
                 });
 
                 playerModelIndexIF.onValueChanged.ClearAll();
@@ -1521,7 +1459,7 @@ namespace EditorManagement.Functions.Editors
 
                 #region UI Elements
 
-                var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(2).gameObject;
+                var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
                 var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
                 var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
                 var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
@@ -1534,12 +1472,12 @@ namespace EditorManagement.Functions.Editors
 
                 LSHelpers.DeleteChildren(editorDialogContent.Find("Viewport/Content"));
 
-                var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
+                var dict = currentModel.values;
                 var id = (string)dict["Base ID"];
 
                 if (id != "0" && id != "1")
                 {
-                    foreach (var objects in (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))
+                    foreach (var objects in dict)
                     {
                         var key = objects.Key;
 
@@ -1551,9 +1489,7 @@ namespace EditorManagement.Functions.Editors
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
                                 Destroy(bar.GetComponent<EventInfo>());
-
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -1595,16 +1531,16 @@ namespace EditorManagement.Functions.Editors
                                 xif.onValueChanged.AddListener(delegate (string _val)
                                 {
                                     if (!(key.Contains("Color") && key.Contains("Custom")))
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
+                                        dict[key] = _val;
                                     else
                                     {
                                         if (_val.Length == 6 || _val.Length == 8)
                                         {
-                                            ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
+                                            dict[key] = _val;
                                         }
                                         else
                                         {
-                                            ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = LSColors.ColorToHex(LSColors.pink500);
+                                            dict[key] = LSColors.ColorToHex(LSColors.pink500);
                                         }
                                     }
                                 });
@@ -1621,8 +1557,7 @@ namespace EditorManagement.Functions.Editors
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
                                 Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -1664,18 +1599,16 @@ namespace EditorManagement.Functions.Editors
                                     vxif.onValueChanged.AddListener(delegate (string _val)
                                     {
                                         vtmp = int.Parse(_val);
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = vtmp;
-                                        updatePlayers();
+                                        dict[key] = vtmp;
+                                        UpdatePlayers();
                                     });
                                 }
 
-                                var et = vector2.transform.Find("x").GetComponent<EventTrigger>();
-                                et.triggers.Clear();
-                                et.triggers.Add(TriggerHelper.ScrollDeltaInt(vxif, 1,  1, 100));
+                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDeltaInt(vxif, 1, 1, 100));
 
                                 TriggerHelper.IncreaseDecreaseButtonsInt(vxif, 1);
 
-                                Destroy(vector2.transform.Find("y").gameObject);
+                                DestroyImmediate(vector2.transform.Find("y").gameObject);
                             }
 
                             //Shape Dropdowns
@@ -1684,12 +1617,9 @@ namespace EditorManagement.Functions.Editors
                                 //Shape
                                 {
                                     var bar = Instantiate(singleInput);
-                                    if (bar.GetComponent<InputField>())
-                                        Destroy(bar.GetComponent<InputField>());
-                                    if (bar.GetComponent<EventInfo>())
-                                        Destroy(bar.GetComponent<EventInfo>());
-                                    if (bar.GetComponent<EventTrigger>())
-                                        Destroy(bar.GetComponent<EventTrigger>());
+                                    Destroy(bar.GetComponent<InputField>());
+                                    Destroy(bar.GetComponent<EventInfo>());
+                                    Destroy(bar.GetComponent<EventTrigger>());
 
                                     LSHelpers.DeleteChildren(bar.transform);
                                     bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -1749,21 +1679,18 @@ namespace EditorManagement.Functions.Editors
 
                                     dropdown.onValueChanged.AddListener(delegate (int _val)
                                     {
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = new Vector2Int(_val, 0);
+                                        dict[key] = new Vector2Int(_val, 0);
                                         inst.StartCoroutine(RenderDialog());
-                                        updatePlayers();
+                                        UpdatePlayers();
                                     });
                                 }
 
                                 //Shape Option
                                 {
                                     var bar = Instantiate(singleInput);
-                                    if (bar.GetComponent<InputField>())
-                                        Destroy(bar.GetComponent<InputField>());
-                                    if (bar.GetComponent<EventInfo>())
-                                        Destroy(bar.GetComponent<EventInfo>());
-                                    if (bar.GetComponent<EventTrigger>())
-                                        Destroy(bar.GetComponent<EventTrigger>());
+                                    Destroy(bar.GetComponent<InputField>());
+                                    Destroy(bar.GetComponent<EventInfo>());
+                                    Destroy(bar.GetComponent<EventTrigger>());
 
                                     LSHelpers.DeleteChildren(bar.transform);
                                     bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -1810,8 +1737,8 @@ namespace EditorManagement.Functions.Editors
 
                                     dropdown.onValueChanged.AddListener(delegate (int _val)
                                     {
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = new Vector2Int(v.x, _val);
-                                        updatePlayers();
+                                        dict[key] = new Vector2Int(v.x, _val);
+                                        UpdatePlayers();
                                     });
                                 }
                             }
@@ -1822,8 +1749,7 @@ namespace EditorManagement.Functions.Editors
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
                                 Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -1865,8 +1791,8 @@ namespace EditorManagement.Functions.Editors
                                     vxif.onValueChanged.AddListener(delegate (string _val)
                                     {
                                         vtmp = new Vector2(float.Parse(_val), vtmp.y);
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = vtmp;
-                                        updatePlayers();
+                                        dict[key] = vtmp;
+                                        UpdatePlayers();
                                     });
                                 }
 
@@ -1882,20 +1808,13 @@ namespace EditorManagement.Functions.Editors
                                     vyif.onValueChanged.AddListener(delegate (string _val)
                                     {
                                         vtmp = new Vector2(vtmp.x, float.Parse(_val));
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = vtmp;
-                                        updatePlayers();
+                                        dict[key] = vtmp;
+                                        UpdatePlayers();
                                     });
                                 }
 
-                                var etX = vector2.transform.Find("x").GetComponent<EventTrigger>();
-                                etX.triggers.Clear();
-                                etX.triggers.Add(TriggerHelper.ScrollDelta(vxif, multi: true));
-                                etX.triggers.Add(TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
-
-                                var etY = vector2.transform.Find("y").GetComponent<EventTrigger>();
-                                etY.triggers.Clear();
-                                etY.triggers.Add(TriggerHelper.ScrollDelta(vyif, multi: true));
-                                etY.triggers.Add(TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
+                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDelta(vxif, multi: true), TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
+                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("y").gameObject, TriggerHelper.ScrollDelta(vyif, multi: true), TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
 
                                 TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
                                 TriggerHelper.IncreaseDecreaseButtons(vyif, 1f);
@@ -1918,8 +1837,7 @@ namespace EditorManagement.Functions.Editors
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
                                 Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -1961,14 +1879,12 @@ namespace EditorManagement.Functions.Editors
                                     vxif.onValueChanged.AddListener(delegate (string _val)
                                     {
                                         vtmp = float.Parse(_val);
-                                        ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = vtmp;
-                                        updatePlayers();
+                                        dict[key] = vtmp;
+                                        UpdatePlayers();
                                     });
                                 }
 
-                                var etX = vector2.transform.Find("x").GetComponent<EventTrigger>();
-                                etX.triggers.Clear();
-                                etX.triggers.Add(TriggerHelper.ScrollDelta(vxif));
+                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDelta(vxif));
 
                                 TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
 
@@ -1979,12 +1895,9 @@ namespace EditorManagement.Functions.Editors
                             if (key == "Tail Base Mode")
                             {
                                 var bar = Instantiate(singleInput);
-                                if (bar.GetComponent<InputField>())
-                                    Destroy(bar.GetComponent<InputField>());
-                                if (bar.GetComponent<EventInfo>())
-                                    Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -2032,8 +1945,8 @@ namespace EditorManagement.Functions.Editors
 
                                 dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
-                                    ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
-                                    updatePlayers();
+                                    dict[key] = _val;
+                                    UpdatePlayers();
                                 });
                             }
 
@@ -2041,12 +1954,9 @@ namespace EditorManagement.Functions.Editors
                             if (key == "Base Rotate Mode")
                             {
                                 var bar = Instantiate(singleInput);
-                                if (bar.GetComponent<InputField>())
-                                    Destroy(bar.GetComponent<InputField>());
-                                if (bar.GetComponent<EventInfo>())
-                                    Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -2096,8 +2006,8 @@ namespace EditorManagement.Functions.Editors
 
                                 dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
-                                    ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
-                                    updatePlayers();
+                                    dict[key] = _val;
+                                    UpdatePlayers();
                                 });
                             }
                             
@@ -2105,12 +2015,9 @@ namespace EditorManagement.Functions.Editors
                             if (key == "GUI Health Mode")
                             {
                                 var bar = Instantiate(singleInput);
-                                if (bar.GetComponent<InputField>())
-                                    Destroy(bar.GetComponent<InputField>());
-                                if (bar.GetComponent<EventInfo>())
-                                    Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -2160,8 +2067,8 @@ namespace EditorManagement.Functions.Editors
 
                                 dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
-                                    ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
-                                    updatePlayers();
+                                    dict[key] = _val;
+                                    UpdatePlayers();
                                 });
                             }
 
@@ -2169,12 +2076,9 @@ namespace EditorManagement.Functions.Editors
                             if (key.Contains("Easing"))
                             {
                                 var bar = Instantiate(singleInput);
-                                if (bar.GetComponent<InputField>())
-                                    Destroy(bar.GetComponent<InputField>());
-                                if (bar.GetComponent<EventInfo>())
-                                    Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<InputField>());
+                                Destroy(bar.GetComponent<EventInfo>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -2221,8 +2125,8 @@ namespace EditorManagement.Functions.Editors
 
                                 dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
-                                    ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
-                                    updatePlayers();
+                                    dict[key] = _val;
+                                    UpdatePlayers();
                                 });
                             }
 
@@ -2232,9 +2136,7 @@ namespace EditorManagement.Functions.Editors
                                 var bar = Instantiate(singleInput);
                                 Destroy(bar.GetComponent<InputField>());
                                 Destroy(bar.GetComponent<EventInfo>());
-
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -2262,8 +2164,7 @@ namespace EditorManagement.Functions.Editors
                                 GameObject x = Instantiate(colorsInput);
                                 x.transform.SetParent(bar.transform);
                                 x.transform.localScale = Vector3.one;
-                                if (x.GetComponent<HoverTooltip>())
-                                    Destroy(x.GetComponent<HoverTooltip>());
+                                Destroy(x.GetComponent<HoverTooltip>());
 
                                 for (int i = 19; i < 26; i++)
                                 {
@@ -2278,20 +2179,20 @@ namespace EditorManagement.Functions.Editors
                                     var strr = (i + 1).ToString();
                                     if (i < 4)
                                     {
-                                        x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[i];
+                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.playerColors[i];
                                     }
                                     if (i == 4)
                                     {
-                                        x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.guiColor;
+                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.guiColor;
                                     }
                                     if (i > 4 && i < 23)
                                     {
                                         int num = i - 5;
-                                        x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.objectColors[num];
+                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.objectColors[num];
                                     }
                                     if (i == 23)
                                     {
-                                        x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.playerColors[playerModelIndex];
+                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.playerColors[playerModelIndex];
                                         TooltipHelper.AddTooltip(x.transform.Find(strr).gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
                                     }
                                     if (i == 24)
@@ -2300,15 +2201,19 @@ namespace EditorManagement.Functions.Editors
 
                                         if (dict.ContainsKey(key.Replace("Color", "Custom Color")))
                                         {
-                                            col = LSColors.HexToColor((string)((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key.Replace("Color", "Custom Color")]);
+                                            col = LSColors.HexToColor((string)dict[key.Replace("Color", "Custom Color")]);
                                         }
 
                                         x.transform.Find(strr).GetComponent<Image>().color = col;
                                         TooltipHelper.AddTooltip(x.transform.Find(strr).gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
                                     }
+                                    if (i == 25)
+                                    {
+                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.guiAccentColor;
+                                    }
                                 }
 
-                                UpdateColorButtons(x.transform, key, (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel));
+                                UpdateColorButtons(x.transform, key, dict);
                             }
 
                             //Bool
@@ -2351,8 +2256,8 @@ namespace EditorManagement.Functions.Editors
                                 xt.isOn = (bool)objects.Value;
                                 xt.onValueChanged.AddListener(delegate (bool _val)
                                 {
-                                    ((Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel))[key] = _val;
-                                    updatePlayers();
+                                    dict[key] = _val;
+                                    UpdatePlayers();
                                 });
                             }
 
@@ -2363,8 +2268,7 @@ namespace EditorManagement.Functions.Editors
                                 DestroyImmediate(bar.GetComponent<InputField>());
                                 DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
                                 Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
+                                Destroy(bar.GetComponent<EventTrigger>());
 
                                 LSHelpers.DeleteChildren(bar.transform);
                                 bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
@@ -2440,13 +2344,9 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public static void updatePlayers()
+        public static void UpdatePlayers()
         {
-            for (int i = 0; i < InputDataManager.inst.players.Count; i++)
-            {
-                var rtPlayer = GameManager.inst.players.transform.Find(string.Format("Player {0}", i + 1)).gameObject.GetComponentByName("RTPlayer");
-                rtPlayer.GetType().GetMethod("updatePlayer", BindingFlags.Public | BindingFlags.Instance).Invoke(rtPlayer, new object[] { });
-            }
+            PlayerManager.UpdatePlayers();
         }
 
         public static void UpdateColorButtons(Transform _tf, string _type, Dictionary<string, object> _dictionary)
@@ -2458,14 +2358,7 @@ namespace EditorManagement.Functions.Editors
                 var toggle = _tf.GetChild(i).GetComponent<Toggle>();
 
                 toggle.onValueChanged.RemoveAllListeners();
-                if (i == n)
-                {
-                    toggle.isOn = true;
-                }
-                else
-                {
-                    toggle.isOn = false;
-                }
+                toggle.isOn = i == n;
                 int tmpIndex = i;
                 toggle.onValueChanged.AddListener(delegate (bool _val)
                 {
@@ -2483,20 +2376,13 @@ namespace EditorManagement.Functions.Editors
 
                 var toggle = _tf.GetChild(i).GetComponent<Toggle>();
 
-                toggle.onValueChanged.RemoveAllListeners();
-                if (i == n)
-                {
-                    toggle.isOn = true;
-                }
-                else
-                {
-                    toggle.isOn = false;
-                }
+                toggle.onValueChanged.ClearAll();
+                toggle.isOn = i == n;
                 int tmpIndex = i;
                 toggle.onValueChanged.AddListener(delegate (bool _val)
                 {
                     _dictionary[_type] = tmpIndex;
-                    updatePlayers();
+                    UpdatePlayers();
 
                     UpdateCustomColorButtons(_tf, _type, _dictionary);
                 });
@@ -2508,29 +2394,18 @@ namespace EditorManagement.Functions.Editors
             if (string.IsNullOrEmpty(currentID) || EditorManager.inst.ActiveDialogs.Find(x => x.Dialog.name == "PlayerObjectEditorDialog") == null)
                 return;
 
-            playerExtensions.GetMethod("DuplicateCustomObject").Invoke(playerExtensions, new object[] { currentID, playerModelIndex });
+            PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].DuplicateObject(currentID);
 
-            var obj = playerExtensions.GetMethod("GetPlayerModels").Invoke(playerExtensions, new object[] { });
-            var currentIndex = (string)playerExtensions.GetMethod("GetPlayerModelIndex").Invoke(playerExtensions, new object[] { playerModelIndex });
-            object currentModel = null;
+            var obj = PlayerManager.PlayerModels;
+            var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
+            var currentModel = obj[currentIndex];
 
-            for (int i = 0; i < obj.GetCount(); i++)
-            {
-                var values = (Dictionary<string, object>)obj.GetItem(i).GetType().GetField("values").GetValue(obj.GetItem(i));
+            var dict = currentModel.values;
+            var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
 
-                if ((string)values["Base ID"] == currentIndex)
-                {
-                    currentModel = obj.GetItem(i);
-                }
-            }
+            currentID = customObjects.Count > 0 ? customObjects.ElementAt(customObjects.Count - 1).Key : "";
 
-            var dict = (Dictionary<string, object>)currentModel.GetType().GetField("values").GetValue(currentModel);
-
-            var custom = (Dictionary<string, object>)dict["Custom Objects"];
-            if (custom.Count > 0)
-                currentID = custom.ElementAt(custom.Count - 1).Key;
-
-            updatePlayers();
+            UpdatePlayers();
             RenderCustomObjects(dict);
             RenderCustomDialog(dict);
         }
@@ -2538,8 +2413,6 @@ namespace EditorManagement.Functions.Editors
         public static List<Dropdown.OptionData> GetShapes()
         {
             var list = new List<Dropdown.OptionData>();
-
-            bool customShapes = ObjectManager.inst.objectPrefabs.Count > 7;
 
             list.Add(new Dropdown.OptionData("Square"));
             list.Add(new Dropdown.OptionData("Circle"));
@@ -2558,8 +2431,6 @@ namespace EditorManagement.Functions.Editors
         {
             var list = new List<Dropdown.OptionData>();
 
-            bool customShapes = ObjectManager.inst.objectPrefabs.Count > 7;
-
             switch (_shape)
             {
                 case 0:
@@ -2567,12 +2438,9 @@ namespace EditorManagement.Functions.Editors
                         list.Add(new Dropdown.OptionData("Square"));
                         list.Add(new Dropdown.OptionData("Square Outline"));
                         list.Add(new Dropdown.OptionData("Square Outline Thin"));
-                        if (customShapes)
-                        {
-                            list.Add(new Dropdown.OptionData("Diamond"));
-                            list.Add(new Dropdown.OptionData("Diamond Outline"));
-                            list.Add(new Dropdown.OptionData("Diamond Outline Thin"));
-                        }
+                        list.Add(new Dropdown.OptionData("Diamond"));
+                        list.Add(new Dropdown.OptionData("Diamond Outline"));
+                        list.Add(new Dropdown.OptionData("Diamond Outline Thin"));
                         break;
                     }
                 case 1:
@@ -2586,16 +2454,13 @@ namespace EditorManagement.Functions.Editors
                         list.Add(new Dropdown.OptionData("Quarter Circle Outline"));
                         list.Add(new Dropdown.OptionData("Eighth Circle"));
                         list.Add(new Dropdown.OptionData("Eighth Circle Outline"));
-                        if (customShapes)
-                        {
-                            list.Add(new Dropdown.OptionData("Circle Outline Thinner"));
-                            list.Add(new Dropdown.OptionData("Semi-Circle Outline Thin"));
-                            list.Add(new Dropdown.OptionData("Semi-Circle Outline Thinner"));
-                            list.Add(new Dropdown.OptionData("Quarter Circle Outline Thin"));
-                            list.Add(new Dropdown.OptionData("Quarter Circle Outline Thinner"));
-                            list.Add(new Dropdown.OptionData("Eighth Circle Outline Thin"));
-                            list.Add(new Dropdown.OptionData("Eighth Circle Outline Thinner"));
-                        }
+                        list.Add(new Dropdown.OptionData("Circle Outline Thinner"));
+                        list.Add(new Dropdown.OptionData("Semi-Circle Outline Thin"));
+                        list.Add(new Dropdown.OptionData("Semi-Circle Outline Thinner"));
+                        list.Add(new Dropdown.OptionData("Quarter Circle Outline Thin"));
+                        list.Add(new Dropdown.OptionData("Quarter Circle Outline Thinner"));
+                        list.Add(new Dropdown.OptionData("Eighth Circle Outline Thin"));
+                        list.Add(new Dropdown.OptionData("Eighth Circle Outline Thinner"));
                         break;
                     }
                 case 2:
@@ -2604,16 +2469,14 @@ namespace EditorManagement.Functions.Editors
                         list.Add(new Dropdown.OptionData("Triangle Outline"));
                         list.Add(new Dropdown.OptionData("Right Triangle"));
                         list.Add(new Dropdown.OptionData("Right Triangle Outline"));
-                        if (customShapes)
-                            list.Add(new Dropdown.OptionData("Triangle Outline Thin"));
+                        list.Add(new Dropdown.OptionData("Triangle Outline Thin"));
                         break;
                     }
                 case 3:
                     {
                         list.Add(new Dropdown.OptionData("Full Arrow"));
                         list.Add(new Dropdown.OptionData("Top Arrow"));
-                        if (customShapes)
-                            list.Add(new Dropdown.OptionData("Chevron Arrow"));
+                        list.Add(new Dropdown.OptionData("Chevron Arrow"));
                         break;
                     }
                 case 4:
