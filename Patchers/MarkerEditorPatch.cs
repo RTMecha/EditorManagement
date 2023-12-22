@@ -56,7 +56,7 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("Update")]
 		[HarmonyPostfix]
-		private static void UpdatePostfix()
+		static void UpdatePostfix()
 		{
 			if (RTEditor.GetEditorProperty("Marker Loop Active").GetConfigEntry<bool>().Value && DataManager.inst.gameData.beatmapData.markers.Count > 0)
 			{
@@ -128,9 +128,9 @@ namespace EditorManagement.Patchers
 
 		[HarmonyPatch("UpdateMarkerList")]
 		[HarmonyPrefix]
-		static bool UpdateMarkerList(MarkerEditor __instance)
+		static bool UpdateMarkerList()
 		{
-			var parent = __instance.right.Find("markers/list");
+			var parent = Instance.right.Find("markers/list");
 			LSHelpers.DeleteChildren(parent);
 
 			var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
@@ -147,7 +147,7 @@ namespace EditorManagement.Patchers
 
 			//Delete Markers
 			{
-				GameObject sortMarkers = Instantiate(eventButton);
+				var sortMarkers = Instantiate(eventButton);
 				sortMarkers.transform.SetParent(parent);
 				sortMarkers.name = "delete markers";
 
@@ -189,22 +189,19 @@ namespace EditorManagement.Patchers
 			int num = 0;
 			foreach (var marker in DataManager.inst.gameData.beatmapData.markers)
 			{
-				if (marker.name.ToLower().Contains(__instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(__instance.sortedName.ToLower()) || string.IsNullOrEmpty(__instance.sortedName))
+				if (marker.name.ToLower().Contains(Instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(Instance.sortedName.ToLower()) || string.IsNullOrEmpty(Instance.sortedName))
 				{
-					var gameObject = Instantiate(__instance.markerButtonPrefab, Vector3.zero, Quaternion.identity);
-					gameObject.name = marker.name + "_marker";
-					gameObject.transform.SetParent(parent);
-					gameObject.transform.localScale = Vector3.one;
-					Text component = gameObject.transform.Find("name").GetComponent<Text>();
-					Text component2 = gameObject.transform.Find("pos").GetComponent<Text>();
-					Graphic component3 = gameObject.transform.Find("color").GetComponent<Image>();
-					component.text = marker.name;
-					component2.text = string.Format("{0:0}:{1:00}.{2:000}", Mathf.Floor(marker.time / 60f), Mathf.Floor(marker.time % 60f), Mathf.Floor(marker.time * 1000f % 1000f));
-					component3.color = __instance.markerColors[marker.color];
+					var gameObject = Instance.markerButtonPrefab.Duplicate(parent, marker.name + "_marker");
+					var name = gameObject.transform.Find("name").GetComponent<Text>();
+					var pos = gameObject.transform.Find("pos").GetComponent<Text>();
+					var image = gameObject.transform.Find("color").GetComponent<Image>();
+					name.text = marker.name;
+					pos.text = string.Format("{0:0}:{1:00}.{2:000}", Mathf.Floor(marker.time / 60f), Mathf.Floor(marker.time % 60f), Mathf.Floor(marker.time * 1000f % 1000f));
+					image.color = Instance.markerColors[marker.color];
 					int markerIndexTmp = num;
 					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						__instance.SetCurrentMarker(markerIndexTmp, true);
+						Instance.SetCurrentMarker(markerIndexTmp, true);
 					});
 
 					var markerColor = MarkerEditor.inst.markerColors[Mathf.Clamp(marker.color, 0, MarkerEditor.inst.markerColors.Count() - 1)];
@@ -212,6 +209,38 @@ namespace EditorManagement.Patchers
 				}
 				num++;
 			}
+			return false;
+		}
+
+		[HarmonyPatch("CreateNewMarker", new Type[] { })]
+        [HarmonyPrefix]
+        static bool CreateNewMarkerPrefix()
+        {
+			Instance.CreateNewMarker(EditorManager.inst.CurrentAudioPos);
+			return false;
+        }
+
+		[HarmonyPatch("CreateNewMarker", new Type[] { typeof(float) })]
+		[HarmonyPrefix]
+		static bool CreateNewMarkerPrefix(float __0)
+		{
+			int index;
+			if (DataManager.inst.gameData.beatmapData.markers.Has(x => __0 > x.time - 0.01f && __0 < x.time + 0.01f))
+			{
+				var marker = new DataManager.GameData.BeatmapData.Marker();
+				marker.time = __0;
+				marker.name = "";
+				DataManager.inst.gameData.beatmapData.markers.Add(marker);
+				index = DataManager.inst.gameData.beatmapData.markers.Count - 1;
+			}
+			else
+            {
+				index = DataManager.inst.gameData.beatmapData.markers.FindIndex(x => __0 > x.time - 0.01f && __0 < x.time + 0.01f);
+			}
+
+			Instance.CreateMarkers();
+			Instance.SetCurrentMarker(index);
+			Instance.UpdateMarkerList();
 			return false;
 		}
 	}
