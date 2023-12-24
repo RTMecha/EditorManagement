@@ -206,6 +206,9 @@ namespace EditorManagement.Patchers
 
             EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(true);
 
+            //Set Editor Zoom cap
+            EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
+
             return false;
         }
 
@@ -742,33 +745,37 @@ namespace EditorManagement.Patchers
         static bool OpenBeatmapPopupPrefix(EditorManager __instance)
         {
             Debug.LogFormat("{0}Open Beatmap Popup", EditorPlugin.className);
-            InputField component = __instance.GetDialog("Open File Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
+            var component = __instance.GetDialog("Open File Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
             if (__instance.openFileSearch == null)
                 __instance.openFileSearch = "";
 
             component.text = __instance.openFileSearch;
-            __instance.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
+            __instance.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
             __instance.RenderOpenBeatmapPopup();
             __instance.ShowDialog("Open File Popup");
 
-            //Create Local Variables
-            GameObject openLevel = __instance.GetDialog("Open File Popup").Dialog.gameObject;
-            Transform openTLevel = openLevel.transform;
-            RectTransform openRTLevel = openLevel.GetComponent<RectTransform>();
-            GridLayoutGroup openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
+            try
+            {
+                //Create Local Variables
+                var openLevel = __instance.GetDialog("Open File Popup").Dialog.gameObject;
+                var openTLevel = openLevel.transform;
+                var openRTLevel = openLevel.GetComponent<RectTransform>();
+                var openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
 
-            //Set Editor Zoom cap
-            EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<Vector2>().Value;
+                //Set Open File Popup RectTransform
+                openRTLevel.anchoredPosition = RTEditor.GetEditorProperty("Open Level Position").GetConfigEntry<Vector2>().Value;
+                openRTLevel.sizeDelta = RTEditor.GetEditorProperty("Open Level Scale").GetConfigEntry<Vector2>().Value;
 
-            //Set Open File Popup RectTransform
-            openRTLevel.anchoredPosition = RTEditor.GetEditorProperty("Open Level Position").GetConfigEntry<Vector2>().Value;
-            openRTLevel.sizeDelta = RTEditor.GetEditorProperty("Open Level Scale").GetConfigEntry<Vector2>().Value;
-
-            //Set Open FIle Popup content GridLayoutGroup
-            openGridLVL.cellSize = RTEditor.GetEditorProperty("Open Level Cell Size").GetConfigEntry<Vector2>().Value;
-            openGridLVL.constraint = RTEditor.GetEditorProperty("Open Level Cell Constraint Type").GetConfigEntry<GridLayoutGroup.Constraint>().Value;
-            openGridLVL.constraintCount = RTEditor.GetEditorProperty("Open Level Cell Constraint Count").GetConfigEntry<int>().Value;
-            openGridLVL.spacing = RTEditor.GetEditorProperty("Open Level Cell Spacing").GetConfigEntry<Vector2>().Value;
+                //Set Open FIle Popup content GridLayoutGroup
+                openGridLVL.cellSize = RTEditor.GetEditorProperty("Open Level Cell Size").GetConfigEntry<Vector2>().Value;
+                openGridLVL.constraint = RTEditor.GetEditorProperty("Open Level Cell Constraint Type").GetConfigEntry<GridLayoutGroup.Constraint>().Value;
+                openGridLVL.constraintCount = RTEditor.GetEditorProperty("Open Level Cell Constraint Count").GetConfigEntry<int>().Value;
+                openGridLVL.spacing = RTEditor.GetEditorProperty("Open Level Cell Spacing").GetConfigEntry<Vector2>().Value;
+            }
+            catch (Exception ex)
+            {
+                Debug.Log($"OpenBeatmapPopup {ex}");
+            }
 
             return false;
         }
@@ -778,8 +785,12 @@ namespace EditorManagement.Patchers
         static bool AssignWaveformTexturesPatch() => false;
 
         [HarmonyPatch("RenderOpenBeatmapPopup")]
-        [HarmonyPostfix]
-        static void RenderOpenBeatmapPopupPrefix() => RTEditor.inst.RefreshLevelList();
+        [HarmonyPrefix]
+        static bool RenderOpenBeatmapPopupPrefix()
+        {
+            RTEditor.inst.StartCoroutine(RTEditor.inst.RefreshLevelList());
+            return false;
+        }
 
         [HarmonyPatch("RenderParentSearchList")]
         [HarmonyPrefix]
