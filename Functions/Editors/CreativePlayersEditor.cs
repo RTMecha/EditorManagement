@@ -213,7 +213,6 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        PlayerManager.ClearPlayerModels?.Invoke();
                         PlayerManager.LoadGlobalModels?.Invoke();
                         PlayerManager.RespawnPlayers();
 
