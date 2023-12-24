@@ -131,18 +131,11 @@ namespace EditorManagement.Functions.Editors
 
             UIManager.GetImage(image, RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_dropper.png");
 
-            try
-            {
-                doggoObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading");
-                doggoImage = doggoObject.GetComponent<Image>();
-                timelineTime = EditorManager.inst.timelineTime.GetComponent<Text>();
-                EditorPlugin.SetNotificationProperties();
-                EditorPlugin.SetTimelineColors();
-            }
-            catch
-            {
-
-            }
+            doggoObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading");
+            doggoImage = doggoObject.GetComponent<Image>();
+            timelineTime = EditorManager.inst.timelineTime.GetComponent<Text>();
+            EditorPlugin.SetNotificationProperties();
+            EditorPlugin.SetTimelineColors();
         }
 
         void Update()
@@ -190,8 +183,7 @@ namespace EditorManagement.Functions.Editors
             if (Input.GetMouseButtonDown(1))
                 parentPickerEnabled = false;
 
-            if (mousePicker != null)
-                mousePicker.SetActive(parentPickerEnabled);
+            mousePicker?.SetActive(parentPickerEnabled);
 
             if (mousePicker != null && mousePickerRT != null && parentPickerEnabled)
             {
@@ -203,20 +195,29 @@ namespace EditorManagement.Functions.Editors
                 mousePickerRT.anchoredPosition = (Input.mousePosition + zero) * num;
             }
 
-            if (selectingKey && keyToSet != null && keyToSet.GetType() == typeof(ConfigEntry<KeyCode>))
+            if (selectingKey)
             {
-                var configEntry = (ConfigEntry<KeyCode>)keyToSet;
+                var key = KeybindManager.WatchKeyCode();
 
-                for (int i = 0; i < 345; i++)
+                if (key != KeyCode.None)
                 {
-                    if (Input.GetKeyDown((KeyCode)i))
-                    {
-                        configEntry.Value = (KeyCode)i;
-                        selectingKey = false;
+                    selectingKey = false;
 
-                        onKeySet?.Invoke();
-                    }
+                    setKey?.Invoke(key);
+                    onKeySet?.Invoke();
                 }
+
+
+                //for (int i = 0; i < 345; i++)
+                //{
+                //    if (Input.GetKeyDown((KeyCode)i))
+                //    {
+                //        selectingKey = false;
+
+                //        setKey?.Invoke((KeyCode)i);
+                //        onKeySet?.Invoke();
+                //    }
+                //}
             }
         }
 
@@ -301,8 +302,8 @@ namespace EditorManagement.Functions.Editors
         public static EditorProperty.EditorPropCategory currentCategory = EditorProperty.EditorPropCategory.General;
 
         public bool selectingKey = false;
-        public object keyToSet;
         public Action onKeySet;
+        public Action<KeyCode> setKey;
 
         #endregion
 
@@ -677,35 +678,37 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator AssignTimelineTexture()
         {
-            //int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
-            int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
-            Texture2D waveform = null;
+            if (!RTFile.FileExists(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png"))
+            {
+                int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
+                Texture2D waveform = null;
 
-            if (WaveformMode == WaveformType.Legacy)
-                yield return inst.StartCoroutine(Legacy(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
-            if (WaveformMode == WaveformType.Beta)
-                yield return inst.StartCoroutine(Beta(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
-            if (WaveformMode == WaveformType.BetaFast)
-                yield return inst.StartCoroutine(BetaFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
-            if (WaveformMode == WaveformType.LegacyFast)
-                yield return inst.StartCoroutine(LegacyFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (WaveformMode == WaveformType.Legacy)
+                    yield return StartCoroutine(Legacy(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (WaveformMode == WaveformType.Beta)
+                    yield return StartCoroutine(Beta(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (WaveformMode == WaveformType.BetaFast)
+                    yield return StartCoroutine(BetaFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (WaveformMode == WaveformType.LegacyFast)
+                    yield return StartCoroutine(LegacyFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
 
-            var waveSprite = Sprite.Create(waveform, new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
-            TimelineImage.sprite = waveSprite;
-            TimelineOverlayImage.sprite = TimelineImage.sprite;
+                var waveSprite = Sprite.Create(waveform, new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
+                TimelineImage.sprite = waveSprite;
+                TimelineOverlayImage.sprite = TimelineImage.sprite;
+            }
+            else
+            {
+                var waveSprite = SpriteManager.LoadSprite(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
+                TimelineImage.sprite = waveSprite;
+                TimelineOverlayImage.sprite = TimelineImage.sprite;
+            }
 
-            waveSprite.Save(GameManager.inst.basePath + "waveform.png");
+            TimelineImage.sprite.Save(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
 
             yield break;
         }
 
-        public static object SetColor(Color[] array, int num, Color color)
-        {
-            array[num] = color;
-            return null;
-        }
-
-        public static IEnumerator Beta(AudioClip clip, int textureWidth, int textureHeight, Color background, Color waveform, Action<Texture2D> action)
+        public IEnumerator Beta(AudioClip clip, int textureWidth, int textureHeight, Color background, Color waveform, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Beta Waveform", EditorPlugin.className);
             var sw = new System.Diagnostics.Stopwatch();
@@ -715,9 +718,7 @@ namespace EditorManagement.Functions.Editors
             Color[] array = new Color[texture2D.width * texture2D.height];
             for (int i = 0; i < array.Length; i++)
             {
-                //array[i] = background;
-
-                yield return SetColor(array, i, background);
+                array[i] = background;
             }
             Debug.LogFormat("{0}Generating Beta Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             texture2D.SetPixels(array);
@@ -754,7 +755,7 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public static IEnumerator Legacy(AudioClip clip, int textureWidth, int textureHeight, Color background, Color _top, Color _bottom, Action<Texture2D> action)
+        public IEnumerator Legacy(AudioClip clip, int textureWidth, int textureHeight, Color background, Color _top, Color _bottom, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Legacy Waveform", EditorPlugin.className);
             var sw = new System.Diagnostics.Stopwatch();
@@ -846,7 +847,7 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public static IEnumerator BetaFast(AudioClip audio, float saturation, int width, int height, Color background, Color col, Action<Texture2D> action)
+        public IEnumerator BetaFast(AudioClip audio, float saturation, int width, int height, Color background, Color col, Action<Texture2D> action)
         {
             Texture2D tex = new Texture2D(width, height, WaveformFormat, false);
             float[] samples = new float[audio.samples * audio.channels];
@@ -882,12 +883,13 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public static IEnumerator LegacyFast(AudioClip audio, float saturation, int width, int height, Color background, Color colTop, Color colBot, Action<Texture2D> action)
+        public IEnumerator LegacyFast(AudioClip audio, float saturation, int width, int height, Color background, Color colTop, Color colBot, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Legacy Waveform (Fast)", EditorPlugin.className);
             var sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             Texture2D tex = new Texture2D(width, height, WaveformFormat, false);
+            
             float[] samples = new float[audio.samples * audio.channels];
             float[] waveform = new float[width];
             audio.GetData(samples, 0);
@@ -912,14 +914,8 @@ namespace EditorManagement.Functions.Editors
                 for (int y = 0; y <= waveform[x] * ((float)height * .75f); y++)
                 {
                     tex.SetPixel(x, height - y, colTop);
-                    if (tex.GetPixel(x, y) == colTop)
-                    {
-                        tex.SetPixel(x, y, MixColors(new List<Color> { colTop, colBot }));
-                    }
-                    else
-                    {
-                        tex.SetPixel(x, y, colBot);
-                    }
+
+                    tex.SetPixel(x, y, tex.GetPixel(x, y) == colTop ? MixColors(new List<Color> { colTop, colBot }) : colBot);
                 }
             }
             tex.Apply();
@@ -2007,7 +2003,7 @@ namespace EditorManagement.Functions.Editors
             CreateGlobalSettings();
             LoadGlobalSettings();
 
-            // EditorPath
+            // Editor Path
             {
                 var editorPathGO = GameObject.Find("TimelineBar/GameObject/Time Input")
                     .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "editor path");
@@ -2035,6 +2031,28 @@ namespace EditorManagement.Functions.Editors
                     EditorPath = _val;
                     SaveGlobalSettings();
                 });
+
+                var clickable = editorPathGO.AddComponent<Clickable>();
+                clickable.onDown = delegate (PointerEventData pointerEventData)
+                {
+                    if (pointerEventData.button == PointerEventData.InputButton.Right)
+                    {
+                        EditorManager.inst.ShowDialog("Browser Popup");
+                        RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), onSelectFolder: delegate (string _val)
+                        {
+                            if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
+                            {
+                                editorPathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
+                                EditorManager.inst.DisplayNotification($"Set Editor path to {EditorPath}!", 2f, EditorManager.NotificationType.Success);
+                                EditorManager.inst.HideDialog("Browser Popup");
+                            }
+                            else
+                            {
+                                EditorManager.inst.DisplayNotification($"Path does not contain the proper directory.", 2f, EditorManager.NotificationType.Warning);
+                            }
+                        });
+                    }
+                };
 
                 var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
                     .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "reload");
@@ -2072,7 +2090,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            //ThemePath
+            // Theme Path
             {
                 var themePathSpacer = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme").GetChild(2).gameObject
                     .Duplicate(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme"), "themepathers", 8);
@@ -2099,6 +2117,28 @@ namespace EditorManagement.Functions.Editors
                     ThemePath = _val;
                     SaveGlobalSettings();
                 });
+
+                var clickable = themePathGO.AddComponent<Clickable>();
+                clickable.onDown = delegate (PointerEventData pointerEventData)
+                {
+                    if (pointerEventData.button == PointerEventData.InputButton.Right)
+                    {
+                        EditorManager.inst.ShowDialog("Browser Popup");
+                        RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), onSelectFolder: delegate (string _val)
+                        {
+                            if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
+                            {
+                                themePathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
+                                EditorManager.inst.DisplayNotification($"Set Theme path to {ThemePath}!", 2f, EditorManager.NotificationType.Success);
+                                EditorManager.inst.HideDialog("Browser Popup");
+                            }
+                            else
+                            {
+                                EditorManager.inst.DisplayNotification($"Path does not contain the proper directory.", 2f, EditorManager.NotificationType.Warning);
+                            }
+                        });
+                    }
+                };
 
                 var themePathReloader = GameObject.Find("TimelineBar/GameObject/play").Duplicate(themePathSpacer.transform, "reload themes");
                 ((RectTransform)themePathReloader.transform).anchoredPosition = new Vector2(310f, 35f);
@@ -2136,7 +2176,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            //PrefabPath
+            // Prefab Path
             {
                 var prefabPathGO = timeIF.gameObject.Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "prefabs path");
 
@@ -2151,16 +2191,38 @@ namespace EditorManagement.Functions.Editors
 
                 levelListTip.tooltipLangauges.Add(llTip);
 
-                InputField levelListIF = prefabPathGO.GetComponent<InputField>();
-                levelListIF.characterValidation = InputField.CharacterValidation.None;
-                levelListIF.text = PrefabPath;
+                var prefabPathIF = prefabPathGO.GetComponent<InputField>();
+                prefabPathIF.characterValidation = InputField.CharacterValidation.None;
+                prefabPathIF.text = PrefabPath;
 
-                levelListIF.onValueChanged.RemoveAllListeners();
-                levelListIF.onValueChanged.AddListener(delegate (string _val)
+                prefabPathIF.onValueChanged.RemoveAllListeners();
+                prefabPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
                     SaveGlobalSettings();
                 });
+
+                var clickable = prefabPathGO.AddComponent<Clickable>();
+                clickable.onDown = delegate (PointerEventData pointerEventData)
+                {
+                    if (pointerEventData.button == PointerEventData.InputButton.Right)
+                    {
+                        EditorManager.inst.ShowDialog("Browser Popup");
+                        RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), onSelectFolder: delegate (string _val)
+                        {
+                            if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
+                            {
+                                prefabPathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
+                                EditorManager.inst.DisplayNotification($"Set Prefab path to {PrefabPath}!", 2f, EditorManager.NotificationType.Success);
+                                EditorManager.inst.HideDialog("Browser Popup");
+                            }
+                            else
+                            {
+                                EditorManager.inst.DisplayNotification($"Path does not contain the proper directory.", 2f, EditorManager.NotificationType.Warning);
+                            }
+                        });
+                    }
+                };
 
                 var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
                     .Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "reload prefabs");
@@ -3820,10 +3882,10 @@ namespace EditorManagement.Functions.Editors
                 {
                     list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), name, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), path, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
                     }, delegate
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), name, SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), path, SteamWorkshop.inst.defaultSteamImageSprite));
                     })));
                 }
                 else
@@ -4537,7 +4599,7 @@ namespace EditorManagement.Functions.Editors
 
         public static List<LevelFolder<MetadataWrapper>> levelItems = new List<LevelFolder<MetadataWrapper>>();
 
-        public void RefreshLevelList()
+        public IEnumerator RefreshLevelList()
         {
             levelItems.Clear();
 
@@ -4611,7 +4673,7 @@ namespace EditorManagement.Functions.Editors
 
             #endregion
 
-            var transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask").Find("content");
+            var transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask/content");
             var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
 
             LSHelpers.DeleteChildren(transform);
@@ -4619,7 +4681,7 @@ namespace EditorManagement.Functions.Editors
             foreach (var metadataWrapper in EditorManager.inst.loadedLevels)
             {
                 var metadata = metadataWrapper.metadata;
-                string name = metadataWrapper.folder;
+                string folder = metadataWrapper.folder;
 
                 if (metadata == null)
                     continue;
@@ -4640,30 +4702,27 @@ namespace EditorManagement.Functions.Editors
 
                 difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
-                if (RTFile.FileExists(RTFile.ApplicationDirectory + editorListSlash + metadataWrapper.folder + "/level.ogg") ||
-                    RTFile.FileExists(RTFile.ApplicationDirectory + editorListSlash + metadataWrapper.folder + "/level.wav"))
+                if (RTFile.FileExists(folder + "/level.ogg") ||
+                    RTFile.FileExists(folder + "/level.wav"))
                 {
-                    if (RTHelpers.SearchString(name, EditorManager.inst.openFileSearch) ||
+                    if (RTHelpers.SearchString(Path.GetFileName(folder), EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.song.title, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.artist.Name, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.creator.steam_name, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.song.description, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(difficultyName, EditorManager.inst.openFileSearch))
                     {
-                        var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{metadataWrapper.folder}]");
+                        var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(folder)}]");
 
                         var hoverUI = gameObject.AddComponent<HoverUI>();
                         hoverUI.size = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
                         hoverUI.animatePos = false;
                         hoverUI.animateSca = true;
-                        var htt = gameObject.AddComponent<HoverTooltip>();
-
-                        var levelTip = new HoverTooltip.Tooltip();
 
                         var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                         text.text = string.Format(GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value,
-                            LSText.ClampString(metadataWrapper.folder, foldClamp),
+                            LSText.ClampString(Path.GetFileName(folder), foldClamp),
                             LSText.ClampString(metadata.song.title, songClamp),
                             LSText.ClampString(metadata.artist.Name, artiClamp),
                             LSText.ClampString(metadata.creator.steam_name, creaClamp),
@@ -4676,6 +4735,10 @@ namespace EditorManagement.Functions.Editors
                         //text.color = ConfigEntries.OpenFileTextColor.Value;
                         text.fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
 
+                        var htt = gameObject.AddComponent<HoverTooltip>();
+
+                        var levelTip = new HoverTooltip.Tooltip();
+
                         var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
                             DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
 
@@ -4685,27 +4748,8 @@ namespace EditorManagement.Functions.Editors
 
                         gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
                         {
-                            inst.StartCoroutine(EditorManager.inst.LoadLevel(name));
+                            StartCoroutine(LoadLevel(folder));
                             EditorManager.inst.HideDialog("Open File Popup");
-
-                            //if (RTEditor.CompareLastSaved())
-                            //{
-                            //	EditorManager.inst.ShowDialog("Warning Popup");
-                            //	RTEditor.RefreshWarningPopup("You haven't saved! Are you sure you want to exit the level before saving?", delegate ()
-                            //	{
-                            //		RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
-                            //		EditorManager.inst.HideDialog("Open File Popup");
-                            //		EditorManager.inst.HideDialog("Warning Popup");
-                            //	}, delegate ()
-                            //	{
-                            //		EditorManager.inst.HideDialog("Warning Popup");
-                            //	});
-                            //}
-                            //else
-                            //{
-                            //	RTEditor.inst.StartCoroutine(RTEditor.LoadLevel(EditorManager.inst, name));
-                            //	EditorManager.inst.HideDialog("Open File Popup");
-                            //}
                         });
 
                         var icon = new GameObject("icon");
@@ -4721,7 +4765,7 @@ namespace EditorManagement.Functions.Editors
 
                         iconImage.sprite = metadataWrapper.albumArt;
 
-                        //Close
+                        // Close
                         if (GetEditorProperty("Open Level Show Delete Button").GetConfigEntry<bool>().Value)
                         {
                             var delete = close.gameObject.Duplicate(gameObject.transform, "delete");
@@ -4756,6 +4800,8 @@ namespace EditorManagement.Functions.Editors
             if (ModCompatibility.sharedFunctions.ContainsKey("EditorLevelFolders"))
                 ModCompatibility.sharedFunctions["EditorLevelFolders"] = levelItems;
             else ModCompatibility.sharedFunctions.Add("EditorLevelFolders", levelItems);
+
+            yield break;
         }
 
         public void RefreshParentSearch(EditorManager __instance, BeatmapObject beatmapObject)
@@ -5403,7 +5449,10 @@ namespace EditorManagement.Functions.Editors
                                     button.onClick.AddListener(delegate ()
                                     {
                                         selectingKey = true;
-                                        keyToSet = prop.configEntry;
+                                        setKey = delegate (KeyCode key)
+                                        {
+                                            prop.configEntry.BoxedValue = key;
+                                        };
 
                                         onKeySet = RenderPropertiesWindow;
                                     });
@@ -5597,7 +5646,7 @@ namespace EditorManagement.Functions.Editors
                                 var button = x.AddComponent<Button>();
                                 button.onClick.AddListener(delegate ()
                                 {
-                                    prop.action();
+                                    prop.action?.Invoke();
                                 });
 
                                 break;
