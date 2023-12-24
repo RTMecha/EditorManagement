@@ -749,6 +749,7 @@ namespace EditorManagement.Functions.Editors
             Delete, // 50
             ToggleObjectDragger, // 51
             ToggleZenMode, // 52
+            CycleGameDifficulty, // 53
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1172,14 +1173,14 @@ namespace EditorManagement.Functions.Editors
         {
             if (DataManager.inst.gameData.beatmapData.markers.Count > 0)
             {
-                var list = (from x in DataManager.inst.gameData.beatmapData.markers
+                DataManager.inst.gameData.beatmapData.markers = (from x in DataManager.inst.gameData.beatmapData.markers
                                                                  orderby x.time
                                                                  select x).ToList();
 
-                var currentMarker = list.FindIndex(x => x.time > AudioManager.inst.CurrentAudioSource.time + 0.005f);
+                var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindIndex(x => x.time > AudioManager.inst.CurrentAudioSource.time + 0.005f);
 
                 if (currentMarker >= 0)
-                    SetCurrentMarker(Mathf.Clamp(currentMarker, 0, list.Count - 1), true, RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
+                    SetCurrentMarker(Mathf.Clamp(currentMarker, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
             }
         }
         
@@ -1187,14 +1188,14 @@ namespace EditorManagement.Functions.Editors
         {
             if (DataManager.inst.gameData.beatmapData.markers.Count > 0)
             {
-                var list = (from x in DataManager.inst.gameData.beatmapData.markers
+                DataManager.inst.gameData.beatmapData.markers = (from x in DataManager.inst.gameData.beatmapData.markers
                                                                  orderby x.time
                                                                  select x).ToList();
 
-                var currentMarker = list.FindIndex(x => x.time > AudioManager.inst.CurrentAudioSource.time + 0.005f);
+                var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindIndex(x => x.time > AudioManager.inst.CurrentAudioSource.time + 0.005f);
 
                 if (currentMarker - 2 >= 0)
-                    SetCurrentMarker(Mathf.Clamp(currentMarker - 2, 0, list.Count - 1), true, RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
+                    SetCurrentMarker(Mathf.Clamp(currentMarker - 2, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
             }
         }
 
@@ -1461,6 +1462,27 @@ namespace EditorManagement.Functions.Editors
         {
             DataManager.inst.UpdateSettingEnum("ArcadeDifficulty", DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1) == 0 ? 1 : 0);
             EditorManager.inst.DisplayNotification($"Set Zen Mode {(DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1) == 0 ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
+            SaveManager.inst.UpdateSettingsFile(false);
+        }
+
+        public static void CycleGameDifficulty(Keybind keybind)
+        {
+            var num = DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1);
+            num++;
+            if (num > 3)
+                num = 0;
+            DataManager.inst.UpdateSettingEnum("ArcadeDifficulty", num);
+
+            string[] modes = new string[]
+            {
+                "Zen",
+                "Normal",
+                "1Life",
+                "1Hit",
+            };
+
+            EditorManager.inst.DisplayNotification($"Set Game Difficulty to {modes[num]}!", 2f, EditorManager.NotificationType.Success);
+            SaveManager.inst.UpdateSettingsFile(false);
         }
 
         #endregion
