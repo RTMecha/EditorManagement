@@ -225,7 +225,7 @@ namespace EditorManagement.Patchers
 		static bool CreateNewMarkerPrefix(float __0)
 		{
 			int index;
-			if (DataManager.inst.gameData.beatmapData.markers.Has(x => __0 > x.time - 0.01f && __0 < x.time + 0.01f))
+			if (!DataManager.inst.gameData.beatmapData.markers.Has(x => __0 > x.time - 0.01f && __0 < x.time + 0.01f))
 			{
 				var marker = new DataManager.GameData.BeatmapData.Marker();
 				marker.time = __0;
