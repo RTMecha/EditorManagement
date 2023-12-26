@@ -443,6 +443,53 @@ namespace EditorManagement.Functions.Editors
 
         #region Prefabs
 
+        public BeatmapObject Expand(BeatmapObject beatmapObject, Dictionary<string, string> ids, Dictionary<string, string> prefabInstances, float audioTime,
+            BasePrefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false)
+        {
+            var beatmapObjectCopy = BeatmapObject.DeepCopy((BeatmapObject)beatmapObject, false);
+
+            if (ids.ContainsKey(beatmapObject.id))
+                beatmapObjectCopy.id = ids[beatmapObject.id];
+
+            if (ids.ContainsKey(beatmapObject.parent))
+                beatmapObjectCopy.parent = ids[beatmapObject.parent];
+            else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
+                beatmapObjectCopy.parent = "";
+
+            beatmapObjectCopy.prefabID = beatmapObject.prefabID;
+            if (regen) // < Probably need to add another setting to have this separate an object from being a prefab or generate a new one
+            {
+                //beatmapObjectCopy.prefabInstanceID = dictionary2[orig.prefabInstanceID];
+                beatmapObjectCopy.prefabID = "";
+                beatmapObjectCopy.prefabInstanceID = "";
+            }
+            else
+            {
+                beatmapObjectCopy.prefabInstanceID = beatmapObject.prefabInstanceID;
+            }
+
+            beatmapObjectCopy.fromPrefab = false;
+
+            {
+                beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
+                if (offset != 0.0)
+                    ++beatmapObjectCopy.editorData.Bin; // Investigate why this is here.
+            }
+
+            beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
+            //DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
+
+            var timelineObject = new TimelineObject(beatmapObjectCopy);
+            RenderTimelineObject(timelineObject);
+
+            if (select)
+                AddSelectedObject(timelineObject);
+
+            Updater.UpdateProcessor(beatmapObject);
+
+            return beatmapObjectCopy;
+        }
+
         /// <summary>
         /// Expands a prefab into the level.
         /// </summary>
@@ -474,6 +521,8 @@ namespace EditorManagement.Functions.Editors
                 foreach (var beatmapObject in prefab.objects)
                     if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !prefabInstances.ContainsKey(beatmapObject.prefabInstanceID))
                         prefabInstances.Add(beatmapObject.prefabInstanceID, LSText.randomString(16));
+
+                //DataManager.inst.gameData.beatmapObjects.AddRange(prefab.objects.Where(x => Expand((BeatmapObject)x, ids, prefabInstances, audioTime, prefab, select, offset, undone, regen)).ToList());
 
                 foreach (var beatmapObject in prefab.objects)
                 {
@@ -592,7 +641,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Create New Objects
 
-        public static bool SetToCenterCam => true;
+        public static bool SetToCenterCam => RTEditor.GetEditorProperty("Create Objects at Camera Center").GetConfigEntry<bool>().Value;
 
         public void CreateNewNormalObject(bool _select = true, bool setHistory = true)
         {
@@ -893,11 +942,13 @@ namespace EditorManagement.Functions.Editors
                 return null;
             }
 
-            var list = new List<List<BaseEventKeyframe>>();
-            list.Add(new List<BaseEventKeyframe>());
-            list.Add(new List<BaseEventKeyframe>());
-            list.Add(new List<BaseEventKeyframe>());
-            list.Add(new List<BaseEventKeyframe>());
+            var list = new List<List<BaseEventKeyframe>>
+            {
+                new List<BaseEventKeyframe>(),
+                new List<BaseEventKeyframe>(),
+                new List<BaseEventKeyframe>(),
+                new List<BaseEventKeyframe>()
+            };
             list[0].Add(new EventKeyframe(0f, new float[3]
                 {
                     0f,
@@ -1402,6 +1453,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(gameObject.transform.Find("icons"));
                         @lock.name = "lock";
+                        ((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
                     }
                     else if (!locked && gameObject.transform.Find("icons/lock") != null)
                         Destroy(gameObject.transform.Find("icons/lock").gameObject);
@@ -1410,10 +1462,10 @@ namespace EditorManagement.Functions.Editors
                     {
                         var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(gameObject.transform.Find("icons"));
                         dots.name = "dots";
+                        ((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
                     }
                     else if (!collapsed && gameObject.transform.Find("icons/dots") != null)
                         Destroy(gameObject.transform.Find("icons/dots").gameObject);
-
 
                     float zoom = EditorManager.inst.Zoom;
 

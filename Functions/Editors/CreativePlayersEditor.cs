@@ -318,17 +318,18 @@ namespace EditorManagement.Functions.Editors
                     var toggle = left.GetChild(1).GetChild(0).gameObject;
                     toggle.transform.SetParent(null);
 
-                    var objtodel = new List<GameObject>();
-
-                    objtodel.Add(left.GetChild(2).gameObject);
-                    objtodel.Add(left.GetChild(3).gameObject);
-                    objtodel.Add(left.GetChild(8).gameObject);
-                    objtodel.Add(left.GetChild(9).gameObject);
-                    objtodel.Add(left.GetChild(12).gameObject);
-                    objtodel.Add(left.GetChild(13).gameObject);
-                    objtodel.Add(left.GetChild(14).gameObject);
-                    objtodel.Add(left.GetChild(15).gameObject);
-                    objtodel.Add(left.GetChild(16).gameObject);
+                    var objtodel = new List<GameObject>
+                    {
+                        left.GetChild(2).gameObject,
+                        left.GetChild(3).gameObject,
+                        left.GetChild(8).gameObject,
+                        left.GetChild(9).gameObject,
+                        left.GetChild(12).gameObject,
+                        left.GetChild(13).gameObject,
+                        left.GetChild(14).gameObject,
+                        left.GetChild(15).gameObject,
+                        left.GetChild(16).gameObject
+                    };
 
                     foreach (var del in objtodel)
                         DestroyImmediate(del);
@@ -2411,17 +2412,18 @@ namespace EditorManagement.Functions.Editors
 
         public static List<Dropdown.OptionData> GetShapes()
         {
-            var list = new List<Dropdown.OptionData>();
-
-            list.Add(new Dropdown.OptionData("Square"));
-            list.Add(new Dropdown.OptionData("Circle"));
-            list.Add(new Dropdown.OptionData("Triangle"));
-            list.Add(new Dropdown.OptionData("Arrow"));
-            list.Add(new Dropdown.OptionData("Text (Cannot use)"));
-            list.Add(new Dropdown.OptionData("Hexagon"));
-            list.Add(new Dropdown.OptionData("Image (Cannot use)"));
-            list.Add(new Dropdown.OptionData("Pentagon"));
-            list.Add(new Dropdown.OptionData("Misc"));
+            var list = new List<Dropdown.OptionData>
+            {
+                new Dropdown.OptionData("Square"),
+                new Dropdown.OptionData("Circle"),
+                new Dropdown.OptionData("Triangle"),
+                new Dropdown.OptionData("Arrow"),
+                new Dropdown.OptionData("Text (Cannot use)"),
+                new Dropdown.OptionData("Hexagon"),
+                new Dropdown.OptionData("Image (Cannot use)"),
+                new Dropdown.OptionData("Pentagon"),
+                new Dropdown.OptionData("Misc")
+            };
 
             return list;
         }

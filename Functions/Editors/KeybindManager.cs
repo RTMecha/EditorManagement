@@ -529,7 +529,7 @@ namespace EditorManagement.Functions.Editors
                 var keyCodes = Enum.GetValues(typeof(KeyCode));
                 for (int i = 0; i < keyCodes.Length; i++)
                 {
-                    var str = Enum.GetName(typeof(KeyCode), i) != null ? Enum.GetName(typeof(KeyCode), i) : "Invalid Value";
+                    var str = Enum.GetName(typeof(KeyCode), i) ?? "Invalid Value";
 
                     hide.DisabledOptions.Add(Enum.GetName(typeof(KeyCode), i) == null);
 
@@ -637,7 +637,7 @@ namespace EditorManagement.Functions.Editors
             {
                 keybind.ActionType = _val;
                 var settings = Settings;
-                keybind.settings = settings[_val] == null ? new Dictionary<string, string>() : settings[_val];
+                keybind.settings = settings[_val] ?? new Dictionary<string, string>();
                 Save();
             });
 
@@ -1643,7 +1643,7 @@ namespace EditorManagement.Functions.Editors
                 this.id = id;
                 this.keys = keys;
                 ActionType = actionType;
-                this.settings = settings == null ? new Dictionary<string, string>() : settings;
+                this.settings = settings ?? new Dictionary<string, string>();
             }
 
             public static Keybind Parse(JSONNode jn)
