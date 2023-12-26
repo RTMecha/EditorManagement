@@ -78,6 +78,7 @@ namespace EditorManagement.Functions.Editors
                 Debug.Log(ex);
             }
             SetupPaths();
+            SetupTimelinePreview();
             CreateObjectSearch();
             CreateWarningPopup();
             CreateREPLEditor();
@@ -219,6 +220,31 @@ namespace EditorManagement.Functions.Editors
                 //    }
                 //}
             }
+
+            if (GameManager.inst.timeline && timelinePreview)
+                timelinePreview.gameObject.SetActive(GameManager.inst.timeline.activeSelf);
+
+            if (GameManager.inst.gameState == GameManager.State.Playing && timelinePreview && AudioManager.inst.CurrentAudioSource.clip != null && GameManager.inst.timeline && GameManager.inst.timeline.activeSelf)
+            {
+                float num = AudioManager.inst.CurrentAudioSource.time * 400f / AudioManager.inst.CurrentAudioSource.clip.length;
+                if (timelinePosition)
+                {
+                    timelinePosition.anchoredPosition = new Vector2(num, 0f);
+                }
+
+                timelinePreview.localPosition = GameManager.inst.timeline.transform.localPosition;
+                timelinePreview.localScale = GameManager.inst.timeline.transform.localScale;
+                timelinePreview.localRotation = GameManager.inst.timeline.transform.localRotation;
+
+                // Very unoptimized but this is the only way I can do it rn unless I do an image checkpoint storage thing
+                var timelinePreviewImages = timelinePreview.GetComponentsInChildren<Image>();
+                var timelineImages = GameManager.inst.timeline.GetComponentsInChildren<Image>();
+                for (int i = 0; i < timelinePreviewImages.Length; i++)
+                {
+                    if (i < timelineImages.Length)
+                        timelinePreviewImages[i].color = timelineImages[i].color;
+                }
+            }
         }
 
         #region Variables
@@ -304,6 +330,9 @@ namespace EditorManagement.Functions.Editors
         public bool selectingKey = false;
         public Action onKeySet;
         public Action<KeyCode> setKey;
+
+        public Transform timelinePreview;
+        public RectTransform timelinePosition;
 
         #endregion
 
@@ -1242,7 +1271,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void PasteObject(float _offsetTime = 0f, bool _regen = true)
+        public void PasteObject(float _offsetTime = 0f, bool _regen = true)
         {
             if (!ObjEditor.inst.hasCopiedObject || ObjEditor.inst.beatmapObjCopy == null || (ObjEditor.inst.beatmapObjCopy.prefabObjects.Count <= 0 && ObjEditor.inst.beatmapObjCopy.objects.Count <= 0))
             {
@@ -1264,7 +1293,7 @@ namespace EditorManagement.Functions.Editors
                 ObjEditor.inst.hasCopiedObject = true;
             }
 
-            inst.StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(pr == null ? ObjEditor.inst.beatmapObjCopy : pr, true, _offsetTime, false, _regen));
+            StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(pr ?? ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
         }
 
         public void Delete()
@@ -2305,6 +2334,47 @@ namespace EditorManagement.Functions.Editors
             Destroy(fileBrowserBase);
 
             EditorHelper.AddEditorPopup("Browser Popup", fileBrowser);
+        }
+
+        public void SetupTimelinePreview()
+        {
+            try
+            {
+                GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(false);
+                var gui = GameManager.inst.playerGUI.Duplicate(EditorManager.inst.dialogs.parent);
+                GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(true);
+
+                Destroy(gui.transform.Find("Health").gameObject);
+                Destroy(gui.transform.Find("Interface").gameObject);
+
+                gui.transform.localPosition = new Vector3(-382.5f, 184.05f, 0f);
+                gui.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+
+                gui.SetActive(true);
+                timelinePreview = gui.transform.Find("Timeline");
+                timelinePosition = timelinePreview.Find("Base/position").GetComponent<RectTransform>();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex);
+            }
+        }
+
+        public void UpdateTimeline()
+        {
+            if (timelinePreview && AudioManager.inst.CurrentAudioSource.clip != null && DataManager.inst.gameData.beatmapData != null)
+            {
+                LSHelpers.DeleteChildren(timelinePreview.Find("elements"), true);
+                foreach (var checkpoint in DataManager.inst.gameData.beatmapData.checkpoints)
+                {
+                    if (checkpoint.time > 0.5f)
+                    {
+                        var gameObject = GameManager.inst.checkpointPrefab.Duplicate(timelinePreview.Find("elements"), $"Checkpoint [{checkpoint.name}] - [{checkpoint.time}]");
+                        float num = checkpoint.time * 400f / AudioManager.inst.CurrentAudioSource.clip.length;
+                        gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(num, 0f);
+                    }
+                }
+            }
         }
 
         public void CreateObjectSearch()
@@ -5736,6 +5806,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("General", "Paste Offset", false, "When enabled objects that are pasted will be pasted at an offset based on the distance between the audio time and the copied object. Otherwise, the objects will be pasted at the earliest objects start time.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Bring To Selection", false, "When an object is selected (whether it be a regular object, a marker, etc), it will move the layer and audio time to that object.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Create Objects at Camera Center", true, "When an object is created, its position will be set to that of the camera's.")),
 
             #endregion
 
