@@ -759,13 +759,14 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator CreatePrefabButton(Prefab _p, int _num, PrefabDialog _d, bool _toggle = false)
         {
-            var gameObject = Instantiate(PrefabEditor.inst.AddPrefab, Vector3.zero, Quaternion.identity);
+            bool isExternal = _d == PrefabDialog.External;
+            var gameObject = PrefabEditor.inst.AddPrefab.Duplicate(isExternal ? PrefabEditor.inst.externalContent : PrefabEditor.inst.internalContent);
             var tf = gameObject.transform;
 
-            var hover = gameObject.AddComponent<HoverUI>();
-            hover.animateSca = true;
-            hover.animatePos = false;
-            hover.size = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
+            //var hover = gameObject.AddComponent<HoverUI>();
+            //hover.animateSca = true;
+            //hover.animatePos = false;
+            //hover.size = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
 
             var name = tf.Find("name").GetComponent<Text>();
             var typeName = tf.Find("type-name").GetComponent<Text>();
@@ -789,42 +790,37 @@ namespace EditorManagement.Functions.Editors
             addPrefabObject.onClick.RemoveAllListeners();
             delete.onClick.RemoveAllListeners();
 
-            bool isExternal = _d == PrefabDialog.External;
+            // Gonna have to remove these customizations for now until I put the Configs back into their own static class.
+            //name.horizontalOverflow = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
 
-            name.horizontalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            //name.verticalOverflow = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
 
-            name.verticalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            //name.fontSize = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
 
-            name.fontSize = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
+            //typeName.horizontalOverflow = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
 
-            typeName.horizontalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            //typeName.verticalOverflow = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
 
-            typeName.verticalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            //typeName.fontSize = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
 
-            typeName.fontSize = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
-
-
-            deleteRT.anchoredPosition = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
-            deleteRT.sizeDelta = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
-            gameObject.transform.SetParent(isExternal ? PrefabEditor.inst.externalContent : PrefabEditor.inst.internalContent);
-
-            tf.localScale = Vector3.one;
+            //deleteRT.anchoredPosition = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
+            //deleteRT.sizeDelta = isExternal ?
+            //    RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
+            //    RTEditor.GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
 
             if (!isExternal)
             {
@@ -845,7 +841,7 @@ namespace EditorManagement.Functions.Editors
                     if (!_toggle)
                     {
                         AddPrefabObjectToLevel(_p);
-                        EditorManager.inst.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
+                        EditorManager.inst.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
                         return;
                     }
                     UpdateCurrentPrefab(_p);

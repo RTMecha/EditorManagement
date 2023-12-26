@@ -464,7 +464,6 @@ namespace EditorManagement.Functions.Helpers
 				{
 					EditorManager.inst.DisplayNotification("Can't change time of first Keyframe", 2f, EditorManager.NotificationType.Warning, false);
 				}
-				ObjEditor.inst.SetCurrentKeyframe(timelineObject.Type, timelineObject.Index, false, false);
 			});
 			return entry;
 		}
@@ -622,6 +621,55 @@ namespace EditorManagement.Functions.Helpers
 				}
 			});
 			return entry;
+		}
+
+		public static void SetParent(TimelineObject timelineObject)
+		{
+			var dictionary = new Dictionary<string, bool>();
+
+			foreach (var obj in DataManager.inst.gameData.beatmapObjects)
+			{
+				bool flag = true;
+				if (!string.IsNullOrEmpty(obj.parent))
+				{
+					string parentID = ObjectEditor.inst.CurrentSelection.ID;
+					while (!string.IsNullOrEmpty(parentID))
+					{
+						if (parentID == obj.parent)
+						{
+							flag = false;
+							break;
+						}
+						int num2 = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
+						if (num2 != -1)
+						{
+							parentID = DataManager.inst.gameData.beatmapObjects[num2].id;
+						}
+						else
+						{
+							parentID = null;
+						}
+					}
+				}
+				if (!dictionary.ContainsKey(obj.id))
+					dictionary.Add(obj.id, flag);
+			}
+
+			if (dictionary.ContainsKey(ObjectEditor.inst.CurrentSelection.ID))
+				dictionary[ObjectEditor.inst.CurrentSelection.ID] = false;
+
+			if (dictionary.ContainsKey(timelineObject.ID) && dictionary[timelineObject.ID])
+			{
+				ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().parent = timelineObject.ID;
+				Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+
+				RTEditor.inst.parentPickerEnabled = false;
+				RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
+			}
+			else
+			{
+				EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
+			}
 		}
 
 		#endregion

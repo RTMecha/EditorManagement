@@ -43,17 +43,10 @@ namespace EditorManagement.Functions.Helpers
 
         public static void AddEditorDropdown(string name, string key, string dropdown, Sprite sprite, UnityEngine.Events.UnityAction unityAction, int siblingIndex = -1)
         {
-            if (!GameObject.Find($"Editor Systems/Editor GUI/sizer/main/TitleBar/{dropdown}"))
+            if (!RTEditor.inst.titleBar.Find($"{dropdown}"))
                 return;
 
-            Debug.Log($"RTEditor.inst is null {!RTEditor.inst}");
-            Debug.Log($"RTEditor.inst.titleBar is null {RTEditor.inst && !RTEditor.inst.titleBar}");
-
-            Transform parent;
-            if (!RTEditor.inst || !RTEditor.inst.titleBar)
-                parent = GameObject.Find($"Editor Systems/Editor GUI/sizer/main/TitleBar/{dropdown}/{dropdown} Dropdown").transform;
-            else
-                parent = RTEditor.inst.titleBar.Find($"{dropdown}/{dropdown} Dropdown");
+            var parent = RTEditor.inst.titleBar.Find($"{dropdown}/{dropdown} Dropdown");
 
             var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut").Duplicate(parent, name, siblingIndex < 0 ? parent.childCount : siblingIndex);
             propWin.transform.Find("Text").GetComponent<Text>().text = name;
