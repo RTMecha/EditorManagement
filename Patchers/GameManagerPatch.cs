@@ -11,8 +11,7 @@ namespace EditorManagement.Patchers
         [HarmonyPostfix]
         static void UpdateTimelinePostfix()
         {
-            if (RTEditor.inst)
-                RTEditor.inst.UpdateTimeline();
+            RTEditor.inst?.UpdateTimeline();
         }
     }
 }
