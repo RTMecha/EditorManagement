@@ -441,20 +441,12 @@ namespace EditorManagement.Functions.Helpers
 					ObjEditor.inst.currentKeyframeKind = timelineObject.Type;
 					ObjEditor.inst.currentKeyframe = timelineObject.Index;
 
-					var list = ObjectEditor.inst.SelectedBeatmapObjectKeyframes;
+					var list = beatmapObject.timelineObject.InternalSelections;
 					if (list.FindIndex(x => x.Type == timelineObject.Type && x.Index == timelineObject.Index) != -1)
 					{
-						//ObjEditor.inst.selectedKeyframeOffsets.Clear();
-
-						foreach (var otherTLO in ObjectEditor.inst.SelectedBeatmapObjectKeyframes)
+						foreach (var otherTLO in beatmapObject.timelineObject.InternalSelections)
 						{
-							if (otherTLO.Type == ObjEditor.inst.currentKeyframeKind && otherTLO.Index == ObjEditor.inst.currentKeyframe)
-								//ObjEditor.inst.selectedKeyframeOffsets.Add(0f);
-								otherTLO.timeOffset = 0f;
-							else
-								//ObjEditor.inst.selectedKeyframeOffsets.Add(otherTLO.Time - timelineObject.Time);
-								otherTLO.timeOffset = otherTLO.Time - timelineObject.Time;
-
+							otherTLO.timeOffset = otherTLO.Type == ObjEditor.inst.currentKeyframeKind && otherTLO.Index == ObjEditor.inst.currentKeyframe ? 0f : otherTLO.Time - timelineObject.Time;
 						}
 					}
 					ObjEditor.inst.mouseOffsetXForKeyframeDrag = timelineObject.Time - ObjEditorPatch.timeCalc();
@@ -475,11 +467,8 @@ namespace EditorManagement.Functions.Helpers
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
 				ObjectEditor.inst.UpdateKeyframeOrder(beatmapObject);
-				ObjectEditor.inst.CreateKeyframes(beatmapObject);
 
-				ObjectEditor.inst.SetCurrentKeyframe(beatmapObject, timelineObject.Type, timelineObject.Index, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
-
-				ObjectEditor.inst.RenderTimelineObject(new TimelineObject(beatmapObject));
+				ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.GetTimelineObject(beatmapObject));
 				ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
 				ObjEditor.inst.timelineKeyframesDrag = false;
 			});

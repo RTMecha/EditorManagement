@@ -659,19 +659,22 @@ namespace EditorManagement.Patchers
 						ObjectEditor.inst.RenderTimelineObject(timelineObject);
 
 						if (timelineObject.IsBeatmapObject)
+						{
 							Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+							ObjectEditor.inst.RenderStartTime(timelineObject.GetData<BeatmapObject>());
+						}
 					}
 				}
             }
 
             if (__instance.timelineKeyframesDrag && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
 			{
-				foreach (var timelineObject in ObjectEditor.inst.SelectedBeatmapObjectKeyframes)
+				var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+				foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected))
 				{
 					if (timelineObject.Index != 0)
 					{
-						var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
-
 						float timeOffset = timeCalc() + timelineObject.timeOffset + __instance.mouseOffsetXForKeyframeDrag;
 						//float num6 = timeCalc() + ObjEditor.inst.selectedKeyframeOffsets[ObjectEditor.inst.SelectedBeatmapObjectKeyframes.IndexOf(timelineObject)] + ObjEditor.inst.mouseOffsetXForKeyframeDrag;
 						timeOffset = Mathf.Clamp(timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
@@ -690,30 +693,9 @@ namespace EditorManagement.Patchers
 
 						Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
-						//if (SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes)
-						//{
-						//	float st = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().StartTime;
-						//	float kf = calc;
+						ObjectEditor.inst.RenderKeyframe(beatmapObject, timelineObject);
 
-						//	float allt = st - RTEditor.SnapToBPM(st + kf);
-						//	ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime = -allt;
-
-						//	float num7 = posCalc(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime);
-						//	if (num7 < 0f)
-						//		num7 = 0f;
-
-						//	((RectTransform)timelineObject.GameObject.transform).anchoredPosition = new Vector2(num7, 0f);
-						//}
-						//else
-						//{
-						//	ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime = calc;
-
-						//	float num7 = posCalc(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().events[timelineObject.Type][timelineObject.Index].eventTime);
-						//	if (num7 < 0f)
-						//		num7 = 0f;
-
-						//	((RectTransform)timelineObject.GameObject.transform).anchoredPosition = new Vector2(num7, 0f);
-						//}
+						ObjectEditor.inst.RenderKeyframeDialog(beatmapObject);
 					}
 				}
 

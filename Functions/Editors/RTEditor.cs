@@ -160,15 +160,16 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            foreach (var timelineObject in timelineBeatmapObjectKeyframes)
-            {
-                if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
+            if (ObjectEditor.inst && ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.IsBeatmapObject && ObjectEditor.inst.CurrentSelection.InternalSelections.Count > 0)
+                foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections)
                 {
-                    timelineObject.GameObject.SetActive(true);
+                    if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
+                    {
+                        timelineObject.GameObject.SetActive(true);
 
-                    timelineObject.Image.color = timelineObject.selected ? ObjEditor.inst.SelectedColor : ObjEditor.inst.NormalColor;
+                        timelineObject.Image.color = timelineObject.selected ? ObjEditor.inst.SelectedColor : ObjEditor.inst.NormalColor;
+                    }
                 }
-            }
 
             foreach (var timelineObject in timelineKeyframes)
             {
@@ -675,9 +676,7 @@ namespace EditorManagement.Functions.Editors
 
         public List<TimelineObject> timelineObjects = new List<TimelineObject>();
         public List<TimelineObject> timelineKeyframes = new List<TimelineObject>();
-        public List<TimelineObject> timelineBeatmapObjectKeyframes = new List<TimelineObject>();
-
-        //public Dictionary<string, TimelineObject> TimelineObjectsDictionary => timelineObjects.ToDictionary(x => x.ID, x => x);
+        //public List<TimelineObject> timelineBeatmapObjectKeyframes = new List<TimelineObject>();
 
         public List<TimelineObject> TimelineBeatmapObjects => timelineObjects.Where(x => x.IsBeatmapObject).ToList();
         public List<TimelineObject> TimelinePrefabObjects => timelineObjects.Where(x => x.IsPrefabObject).ToList();
@@ -1303,7 +1302,6 @@ namespace EditorManagement.Functions.Editors
                 if (ObjEditor.inst.currentKeyframe != 0)
                 {
                     inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
-                    //EditorManager.inst.DisplayNotification("Deleted Beatmap Object Keyframe.", 1f, EditorManager.NotificationType.Success);
                 }
                 else
                     EditorManager.inst.DisplayNotification("Can't Delete First Keyframe.", 1f, EditorManager.NotificationType.Error);
@@ -1313,65 +1311,38 @@ namespace EditorManagement.Functions.Editors
             {
                 if (DataManager.inst.gameData.beatmapObjects.Count > 1 && ObjectEditor.inst.SelectedObjectCount != DataManager.inst.gameData.beatmapObjects.Count)
                 {
-                    //if (ObjectEditor.inst.SelectedObjectCount > 1)
+                    var list = new List<TimelineObject>();
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        list.Add(timelineObject);
+
+                    EditorManager.inst.ClearDialogs(EditorManager.EditorDialog.DialogType.Object, EditorManager.EditorDialog.DialogType.Prefab);
+
+                    float startTime = 0f;
+
+                    List<float> startTimeList = new List<float>();
+                    foreach (var bm in list)
+                        startTimeList.Add(bm.Time);
+
+                    startTimeList = (from x in startTimeList
+                                     orderby x ascending
+                                     select x).ToList();
+
+                    startTime = startTimeList[0];
+
+                    var prefab = new Prefab("deleted objects", 0, startTime,
+                        list.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()).ToList(),
+                        list.Where(x => x.IsPrefabObject).Select(x => x.GetData<PrefabObject>()).ToList());
+
+                    EditorManager.inst.history.Add(new History.Command("Delete Objects", delegate ()
                     {
-                        var list = new List<TimelineObject>();
-                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                            list.Add(timelineObject);
+                        Delete();
+                    }, delegate ()
+                    {
+                        ObjectEditor.inst.DeselectAllObjects();
+                        StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true));
+                    }));
 
-                        EditorManager.inst.ClearDialogs(EditorManager.EditorDialog.DialogType.Object, EditorManager.EditorDialog.DialogType.Prefab);
-
-                        float startTime = 0f;
-
-                        List<float> startTimeList = new List<float>();
-                        foreach (var bm in list)
-                            startTimeList.Add(bm.Time);
-
-                        startTimeList = (from x in startTimeList
-                                         orderby x ascending
-                                         select x).ToList();
-
-                        startTime = startTimeList[0];
-
-                        var prefab = new Prefab("deleted objects", 0, startTime,
-                            list.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()).ToList(),
-                            list.Where(x => x.IsPrefabObject).Select(x => x.GetData<PrefabObject>()).ToList());
-
-                        EditorManager.inst.history.Add(new History.Command("Delete Objects", delegate ()
-                        {
-                            Delete();
-                        }, delegate ()
-                        {
-                            ObjectEditor.inst.DeselectAllObjects();
-                            StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true));
-                        }));
-
-                        StartCoroutine(ObjectEditor.inst.DeleteObjects());
-                    }
-                    //else
-                    //{
-                    //    Debug.LogFormat("{0}Deleting single object...", EditorPlugin.className);
-                    //    float startTime = ObjectEditor.inst.CurrentSelection.Time;
-
-                    //    Debug.LogFormat("{0}Assigning prefab for undo...", EditorPlugin.className);
-                    //    var prefab = new Prefab("deleted object", 0, startTime, ObjectEditor.inst.SelectedObjects.Select(x => x.GetData<BeatmapObject>()).ToList(), ObjectEditor.inst.SelectedObjects.Select(x => x.GetData<PrefabObject>()).ToList());
-
-                    //    Debug.LogFormat("{0}Setting history...", EditorPlugin.className);
-                    //    EditorManager.inst.history.Add(new History.Command("Delete Object", delegate ()
-                    //    {
-                    //        Delete();
-                    //    }, delegate ()
-                    //    {
-                    //        ObjectEditor.inst.DeselectAllObjects();
-                    //        inst.StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true));
-                    //    }), false);
-
-                    //    Debug.LogFormat("{0}Finally deleting object...", EditorPlugin.className);
-                    //    StartCoroutine(ObjectEditor.inst.DeleteObject(ObjectEditor.inst.CurrentSelection));
-
-                    //    EditorManager.inst.DisplayNotification("Deleted Beatmap Object!", 1f, EditorManager.NotificationType.Success);
-                    //    Debug.LogFormat("{0}Done!", EditorPlugin.className);
-                    //}
+                    StartCoroutine(ObjectEditor.inst.DeleteObjects());
                 }
                 else
                     EditorManager.inst.DisplayNotification("Can't Delete Only Beatmap Object", 1f, EditorManager.NotificationType.Error);
@@ -2338,26 +2309,20 @@ namespace EditorManagement.Functions.Editors
 
         public void SetupTimelinePreview()
         {
-            try
-            {
-                GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(false);
-                var gui = GameManager.inst.playerGUI.Duplicate(EditorManager.inst.dialogs.parent);
-                GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(true);
+            GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(false);
+            var gui = GameManager.inst.playerGUI.Duplicate(EditorManager.inst.dialogs.parent);
+            GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(true);
+            gui.transform.SetSiblingIndex(0);
 
-                Destroy(gui.transform.Find("Health").gameObject);
-                Destroy(gui.transform.Find("Interface").gameObject);
+            Destroy(gui.transform.Find("Health").gameObject);
+            Destroy(gui.transform.Find("Interface").gameObject);
 
-                gui.transform.localPosition = new Vector3(-382.5f, 184.05f, 0f);
-                gui.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
+            gui.transform.localPosition = new Vector3(-382.5f, 184.05f, 0f);
+            gui.transform.localScale = new Vector3(0.9f, 0.9f, 1f);
 
-                gui.SetActive(true);
-                timelinePreview = gui.transform.Find("Timeline");
-                timelinePosition = timelinePreview.Find("Base/position").GetComponent<RectTransform>();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError(ex);
-            }
+            gui.SetActive(true);
+            timelinePreview = gui.transform.Find("Timeline");
+            timelinePosition = timelinePreview.Find("Base/position").GetComponent<RectTransform>();
         }
 
         public void UpdateTimeline()
@@ -5851,8 +5816,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Marker Loop Begin", 0, "Audio time gets set to this marker.")),
             new EditorProperty(EditorProperty.ValueType.Int,
                 Config.Bind("Timeline", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.")),
-            //new EditorProperty(EditorProperty.ValueType.Bool,
-            //    Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.")),
 
             #endregion
 
