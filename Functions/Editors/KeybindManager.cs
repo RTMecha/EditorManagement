@@ -1440,18 +1440,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void Delete(Keybind keybind)
-        {
-            if (!RTEditor.inst.ienumRunning)
-            {
-                EditorManager.inst.DisplayNotification("Performing task, please wait...", 1f, EditorManager.NotificationType.Success);
-                RTEditor.inst.Delete();
-            }
-            else
-            {
-                EditorManager.inst.DisplayNotification("Wait until current task is complete!", 1f, EditorManager.NotificationType.Warning);
-            }
-        }
+        public static void Delete(Keybind keybind) => RTEditor.inst.Delete();
 
         public static void ToggleObjectDragger(Keybind keybind)
         {
