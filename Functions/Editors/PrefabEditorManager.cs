@@ -776,9 +776,12 @@ namespace EditorManagement.Functions.Editors
             var delete = tf.Find("delete").GetComponent<Button>();
 
             name.text = _p.Name;
-            _p.Type = Mathf.Clamp(_p.Type, 0, DataManager.inst.PrefabTypes.Count - 1);
-            typeName.text = DataManager.inst.PrefabTypes[_p.Type].Name;
-            color.color = DataManager.inst.PrefabTypes[_p.Type].Color;
+            //_p.Type = Mathf.Clamp(_p.Type, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+            var prefabType = _p.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[_p.Type] : PrefabType.InvalidType;
+
+            typeName.text = prefabType.Name;
+            color.color = prefabType.Color;
 
             TooltipHelper.AddTooltip(gameObject, 
                 "<#" + LSColors.ColorToHex(color.color) + ">" + _p.Name + "</color>",
@@ -1014,7 +1017,7 @@ namespace EditorManagement.Functions.Editors
         public void ImportPrefabIntoLevel(BasePrefab _prefab)
         {
             Debug.Log($"{PrefabEditor.inst.className}Adding Prefab: [{_prefab.Name}]");
-            var tmpPrefab = Prefab.DeepCopy((Prefab)_prefab, true);
+            var tmpPrefab = Prefab.DeepCopy((Prefab)_prefab);
             int num = DataManager.inst.gameData.prefabs.FindAll(x => Regex.Replace(x.Name, "( +\\[\\d+])", string.Empty) == tmpPrefab.Name).Count();
             if (num > 0)
                 tmpPrefab.Name = $"{tmpPrefab.Name} [{num}]";
