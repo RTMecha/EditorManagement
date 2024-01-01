@@ -217,7 +217,7 @@ namespace EditorManagement.Functions.Editors
 				var propWin = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut"));
 				propWin.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown").transform);
 				propWin.transform.localScale = Vector3.one;
-				propWin.transform.SetSiblingIndex(3);
+				propWin.transform.SetSiblingIndex(4);
 				propWin.name = "Level Combiner";
 				propWin.transform.Find("Text").GetComponent<Text>().text = "Level Combiner";
 				propWin.transform.Find("Text").GetComponent<RectTransform>().sizeDelta = new Vector2(224f, 0f);
