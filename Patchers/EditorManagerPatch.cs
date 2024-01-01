@@ -17,6 +17,7 @@ using SimpleJSON;
 using Crosstales.FB;
 using CielaSpike;
 
+using RTFunctions.Functions;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Data.Player;
@@ -243,26 +244,12 @@ namespace EditorManagement.Patchers
 
                             // If the NullReference is in this area, then it's somewhere below.
 
-                            Debug.Log($"{Instance.className}First opened: Create Timeline Objects");
-                            ObjectEditor.inst.CreateTimelineObjects();
-                            Debug.Log($"{Instance.className}First opened: Create Event Objects");
                             RTEventEditor.inst.CreateEventObjects();
-                            Debug.Log($"{Instance.className}First opened: Create Ghost Checkpoints");
                             CheckpointEditor.inst.CreateGhostCheckpoints();
-                            Debug.Log($"{Instance.className}First opened: Update Timeline");
                             GameManager.inst.UpdateTimeline();
-                            if (RTEditor.inst.TimelineBeatmapObjects.Count > 0)
-                            {
-                                Debug.Log($"{Instance.className}First opened: Set Current Object");
-                                ObjectEditor.inst.SetCurrentObject(RTEditor.inst.TimelineBeatmapObjects[0], openDialog: false);
-                            }
-                            Debug.Log($"{Instance.className}First opened: Set Current Checkpoint");
                             CheckpointEditor.inst.SetCurrentCheckpoint(0);
-                            Debug.Log($"{Instance.className}First opened: Toggle Playing Song");
                             Instance.TogglePlayingSong();
-                            Debug.Log($"{Instance.className}First opened: Clear Dialogs");
                             Instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-                            Debug.Log($"{Instance.className}First opened: Open Beatmap / New Level Popup");
                             if (Instance.loadedLevels.Count > 0)
                                 Instance.OpenBeatmapPopup();
                             else
