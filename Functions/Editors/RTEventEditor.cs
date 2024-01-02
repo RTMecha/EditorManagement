@@ -494,6 +494,8 @@ namespace EditorManagement.Functions.Editors
 			if (limit == RTEditor.inst.Layer)
 			{
 				((RectTransform)kf.GameObject.transform).anchoredPosition = new Vector2(eventTime * EditorManager.inst.Zoom - baseUnit / 2, 0.0f);
+				// Fixes the keyframes being off center.
+				((RectTransform)kf.GameObject.transform).pivot = new Vector2(0f, 1f);
 
 				kf.Image.sprite =
 					RTEditor.GetKeyframeIcon(eventKeyframe.curveType,
