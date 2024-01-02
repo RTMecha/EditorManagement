@@ -475,6 +475,20 @@ namespace EditorManagement.Functions.Helpers
 			return entry;
 		}
 
+		public static EventTrigger.Entry CreateKeyframeSelectTrigger(BeatmapObject beatmapObject, TimelineObject timelineObject)
+        {
+			var entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.PointerDown;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				if ((eventData as PointerEventData).button == PointerEventData.InputButton.Middle)
+                {
+					AudioManager.inst.SetMusicTime(beatmapObject.StartTime + timelineObject.Time);
+                }
+			});
+			return entry;
+        }
+
 		#endregion
 
 		#region Objects
@@ -496,7 +510,7 @@ namespace EditorManagement.Functions.Helpers
 				timelineObject.timeOffset = 0f;
 				timelineObject.binOffset = 0;
 
-				float timelineTime = EditorManager.inst.GetTimelineTime(0f);
+				float timelineTime = EditorManager.inst.GetTimelineTime();
 				int num = 14 - Mathf.RoundToInt((Input.mousePosition.y - 25f) * EditorManager.inst.ScreenScaleInverse / 20f);
 				ObjEditor.inst.mouseOffsetXForDrag = timelineObject.Time - timelineTime;
 				ObjEditor.inst.mouseOffsetYForDrag = bin - num;
@@ -665,23 +679,14 @@ namespace EditorManagement.Functions.Helpers
 
 		#region Events
 
-		public static EventTrigger.Entry CreateEventObjectTrigger(EventEditor instance, int _type, int _event)
+		public static EventTrigger.Entry CreateEventObjectTrigger(EventEditor instance, int type, int index)
 		{
 			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.PointerClick;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				if (!instance.eventDrag)
-				{
-					//if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-					//{
-					//	instance.AddedSelectedEvent(_type, _event);
-					//	return;
-					//}
-					//instance.SetCurrentEvent(_type, _event);
-
-					(InputDataManager.inst.editorActions.MultiSelect.IsPressed ? (Action<int, int>)instance.AddedSelectedEvent : instance.SetCurrentEvent)(_type, _event);
-				}
+				if (!instance.eventDrag && (eventData as PointerEventData).button != PointerEventData.InputButton.Middle)
+					(InputDataManager.inst.editorActions.MultiSelect.IsPressed ? (Action<int, int>)instance.AddedSelectedEvent : instance.SetCurrentEvent)(type, index);
 			});
 			return entry;
 		}
@@ -699,27 +704,27 @@ namespace EditorManagement.Functions.Helpers
 			return eventEndDragTrigger;
 		}
 
-		public static EventTrigger.Entry CreateEventStartDragTrigger(EventEditor instance, int _type, int _event)
+		public static EventTrigger.Entry CreateEventStartDragTrigger(EventEditor instance, int type, int index)
 		{
 			var startDragTrigger = new EventTrigger.Entry();
 			startDragTrigger.eventID = EventTriggerType.BeginDrag;
 			startDragTrigger.callback.AddListener(eventData =>
 			{
-				if (_event != 0)
+				if (index != 0)
 				{
-					if (RTEventEditor.inst.SelectedKeyframes.FindIndex(x => x.Type == _type && x.Index == _event) != -1)
+					if (RTEventEditor.inst.SelectedKeyframes.FindIndex(x => x.Type == type && x.Index == index) != -1)
 					{
 						foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
                         {
-							timelineObject.timeOffset = timelineObject.Type == instance.currentEventType && timelineObject.Index == instance.currentEvent ? 0f :
-							DataManager.inst.gameData.eventObjects.allEvents[timelineObject.Type][timelineObject.Index].eventTime -
-							DataManager.inst.gameData.eventObjects.allEvents[instance.currentEventType][instance.currentEvent].eventTime;
+							timelineObject.timeOffset = timelineObject.Type == type && timelineObject.Index == index ? 0f :
+							timelineObject.Time - DataManager.inst.gameData.eventObjects.allEvents[type][index].eventTime;
                         }
 					}
 					else
-						instance.SetCurrentEvent(_type, _event);
+						instance.SetCurrentEvent(type, index);
+
 					float timelineTime = EditorManager.inst.GetTimelineTime();
-					instance.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[_type][_event].eventTime - timelineTime;
+					instance.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[type][index].eventTime - timelineTime;
 					instance.eventDrag = true;
 				}
 				else
@@ -728,6 +733,19 @@ namespace EditorManagement.Functions.Helpers
 			return startDragTrigger;
 		}
 
+		public static EventTrigger.Entry CreateEventSelectTrigger(TimelineObject timelineObject)
+		{
+			var entry = new EventTrigger.Entry();
+			entry.eventID = EventTriggerType.PointerDown;
+			entry.callback.AddListener(delegate (BaseEventData eventData)
+			{
+				if ((eventData as PointerEventData).button == PointerEventData.InputButton.Middle)
+				{
+					AudioManager.inst.SetMusicTime(timelineObject.Time);
+				}
+			});
+			return entry;
+		}
 
 		#endregion
 
