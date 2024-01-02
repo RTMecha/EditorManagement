@@ -4101,11 +4101,7 @@ namespace EditorManagement.Functions.Editors
                 CheckpointEditor.inst.CreateGhostCheckpoints();
 
             fileInfo.text = $"Updating states for [ {name} ]";
-            DiscordController.inst.OnStateChange("Editing: " + DataManager.inst.metaData.song.title);
-            DiscordController.inst.OnArtChange("pa_logo_white");
-            DiscordController.inst.OnIconChange("editor");
-            DiscordController.inst.OnDetailsChange("In Editor");
-            DiscordRpc.UpdatePresence(DiscordController.inst.presence);
+            RTFunctions.FunctionsPlugin.UpdateDiscordStatus($"Editing: {DataManager.inst.metaData.song.title}", "In Editor", "editor");
 
             objectManager.updateObjects();
             EventEditor.inst.CreateEventObjects();
