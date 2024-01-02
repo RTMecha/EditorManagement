@@ -180,7 +180,10 @@ namespace EditorManagement.Functions.Editors
 
                     timelineObject.GameObject.SetActive(isCurrentLayer);
 
-                    timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
+                    var color = EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
+                    color.a = 1f;
+
+                    timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : color;
                 }
             }
 
@@ -694,6 +697,9 @@ namespace EditorManagement.Functions.Editors
                 timelineObjects.RemoveAt(a);
             }
         }
+
+        public static Sprite GetKeyframeIcon(DataManager.LSAnimation a, DataManager.LSAnimation b)
+            => ObjEditor.inst.KeyframeSprites[a.Name.Contains("Out") && b.Name.Contains("In") ? 3 : a.Name.Contains("Out") ? 2 : b.Name.Contains("In") ? 1 : 0];
 
         #endregion
 
@@ -3356,9 +3362,7 @@ namespace EditorManagement.Functions.Editors
             {
                 Action<string, Color, EditorProperty.EditorPropCategory> categoryTabGenerator = delegate (string name, Color color, EditorProperty.EditorPropCategory editorPropCategory)
                 {
-                    var gameObject = Instantiate(prefabTMP);
-                    gameObject.name = name;
-                    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
+                    var gameObject = prefabTMP.Duplicate(editorProperties.transform.Find("crumbs"), name);
                     gameObject.layer = 5;
                     var rectTransform = (RectTransform)gameObject.transform;
                     var image = gameObject.GetComponent<Image>();
@@ -4248,6 +4252,9 @@ namespace EditorManagement.Functions.Editors
             {
                 var jn = JSON.Parse(RTFile.ReadFromFile(file));
 
+                var prefab = Prefab.Parse(jn);
+                prefab.objects.ForEach(x => x.prefabID = "");
+                prefab.objects.ForEach(x => x.prefabInstanceID = "");
                 __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
                 __instance.LoadedPrefabsFiles.Add(file);
             }

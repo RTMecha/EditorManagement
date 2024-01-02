@@ -157,7 +157,7 @@ namespace EditorManagement.Patchers
                 {
 					if (timelineObject.Index != 0)
                     {
-						float num = EditorManager.inst.GetTimelineTime() + timelineObject.timeOffset + Instance.mouseOffsetXForDrag;
+						float num = EditorManager.inst.GetTimelineTime() + Instance.mouseOffsetXForDrag + timelineObject.timeOffset;
 						num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 						if (SettingEditor.inst.SnapActive)
 							num = EditorManager.inst.SnapToBPM(num);
@@ -167,8 +167,8 @@ namespace EditorManagement.Patchers
 
 				if (preNumber != EditorManager.inst.GetTimelineTime())
 				{
-					Instance.RenderEventObjects();
-					Instance.RenderEventsDialog();
+					RTEventEditor.inst.RenderEventObjects();
+					RTEventEditor.inst.RenderEventsDialog();
 					preNumber = EditorManager.inst.GetTimelineTime();
 				}
 			}
@@ -246,14 +246,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool OpenDialogPrefix()
 		{
-			EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-			EditorManager.inst.SetDialogStatus("Event Editor", true);
-			Debug.Log($"{Instance.className}Opening Event Editor Dialog: {Instance.dialogRight.GetChild(Instance.currentEventType).name}");
-			LSHelpers.SetActiveChildren(Instance.dialogRight, false);
-			Instance.dialogRight.GetChild(Instance.currentEventType).gameObject.SetActive(true);
-
-			Instance.RenderEventsDialog();
-			Instance.RenderEventObjects();
+			RTEventEditor.inst.OpenDialog();
 			return false;
 		}
 

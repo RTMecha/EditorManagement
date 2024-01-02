@@ -281,19 +281,7 @@ namespace EditorManagement.Functions.Editors
 			});
 
 			RenderEventObjects();
-
-			if (SelectedKeyframes.Count > 1)
-			{
-				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
-			}
-			else if (SelectedKeyframes.Count == 1)
-			{
-				EventEditor.inst.currentEventType = SelectedKeyframes[0].Type;
-				EventEditor.inst.currentEvent = SelectedKeyframes[0].Index;
-				OpenDialog();
-			}
-
+			OpenDialog();
 			yield break;
 		}
 
@@ -457,7 +445,8 @@ namespace EditorManagement.Functions.Editors
 			TriggerHelper.AddEventTriggerParams(kf.GameObject,
 				TriggerHelper.CreateEventObjectTrigger(EventEditor.inst, type, index),
 				TriggerHelper.CreateEventStartDragTrigger(EventEditor.inst, type, index),
-				TriggerHelper.CreateEventEndDragTrigger());
+				TriggerHelper.CreateEventEndDragTrigger(),
+				TriggerHelper.CreateEventSelectTrigger(kf));
 
 			return kf;
 		}
@@ -505,6 +494,11 @@ namespace EditorManagement.Functions.Editors
 			if (limit == RTEditor.inst.Layer)
 			{
 				((RectTransform)kf.GameObject.transform).anchoredPosition = new Vector2(eventTime * EditorManager.inst.Zoom - baseUnit / 2, 0.0f);
+
+				kf.Image.sprite =
+					RTEditor.GetKeyframeIcon(eventKeyframe.curveType,
+					AllEvents[kf.Type].Count > kf.Index + 1 ?
+					AllEvents[kf.Type][kf.Index + 1].curveType : DataManager.inst.AnimationList[0]);
 			}
 		}
 
@@ -517,18 +511,29 @@ namespace EditorManagement.Functions.Editors
 			EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
 			EditorManager.inst.SetDialogStatus("Event Editor", true, true);
 
-			if (EventEditor.inst.dialogRight.childCount > EventEditor.inst.currentEventType)
+			if (SelectedKeyframes.Count > 1)
 			{
-				Debug.Log($"{EventEditor.inst.className}Dialog: {EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).name}");
-				LSHelpers.SetActiveChildren(EventEditor.inst.dialogRight, false);
-				EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).gameObject.SetActive(true);
-				RenderEventsDialog();
-				RenderEventObjects();
+				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
 			}
-			else
-            {
-				Debug.LogError($"{EventEditor.inst.className}Keyframe Type {EventEditor.inst.currentEventType} does not exist.");
-            }
+			else if (SelectedKeyframes.Count == 1)
+			{
+				EventEditor.inst.currentEventType = SelectedKeyframes[0].Type;
+				EventEditor.inst.currentEvent = SelectedKeyframes[0].Index;
+
+				if (EventEditor.inst.dialogRight.childCount > EventEditor.inst.currentEventType)
+				{
+					Debug.Log($"{EventEditor.inst.className}Dialog: {EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).name}");
+					LSHelpers.SetActiveChildren(EventEditor.inst.dialogRight, false);
+					EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).gameObject.SetActive(true);
+					RenderEventsDialog();
+					RenderEventObjects();
+				}
+				else
+				{
+					Debug.LogError($"{EventEditor.inst.className}Keyframe Type {EventEditor.inst.currentEventType} does not exist.");
+				}
+			}
 		}
 
 		void SetupCopies()
@@ -903,7 +908,6 @@ namespace EditorManagement.Functions.Editors
 		public void RenderEventsDialog()
 		{
 			var __instance = EventEditor.inst;
-			Debug.Log($"{__instance.className}Rendering Events Dialog");
 			var eventManager = EventManager.inst;
 			var dialogTmp = __instance.dialogRight.GetChild(__instance.currentEventType);
 			__instance.dialogLeft.Find("theme").gameObject.SetActive(false);
@@ -1424,7 +1428,6 @@ namespace EditorManagement.Functions.Editors
 		public void SetFloatInputField(Transform dialogTmp, string name, int index, float increase = 0.1f, float multiply = 10f, float min = 0f, float max = 0f, bool allowNegative = true)
 		{
 			var __instance = EventEditor.inst;
-			Debug.Log($"{__instance.className}Rendering Events Dialog");
 
 			var currentKeyframe = DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent];
 
@@ -1463,7 +1466,6 @@ namespace EditorManagement.Functions.Editors
 		public void SetIntInputField(Transform dialogTmp, string name, int index, int increase = 1, int min = 0, int max = 0, bool allowNegative = true)
 		{
 			var __instance = EventEditor.inst;
-			Debug.Log($"{__instance.className}Rendering Events Dialog");
 
 			var currentKeyframe = DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent];
 
@@ -1502,7 +1504,6 @@ namespace EditorManagement.Functions.Editors
 		public void SetVector2InputField(Transform dialogTmp, string name, int xindex, int yindex, float min = 0f, float max = 0f, bool allowNegative = true)
 		{
 			var __instance = EventEditor.inst;
-			Debug.Log($"{__instance.className}Rendering Events Dialog");
 
 			var currentKeyframe = DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent];
 

@@ -114,6 +114,7 @@ namespace EditorManagement.Functions.Editors
             {
                 EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
                 EditorManager.inst.ShowDialog("Object Editor", false);
+
                 StartCoroutine(RefreshObjectGUI(beatmapObject));
 
                 // Here we remember an object's zoom.
@@ -224,14 +225,16 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator DeleteKeyframes(BeatmapObject beatmapObject)
         {
-            int count = beatmapObject.timelineObject.InternalSelections.Count;
+            var bmTimelineObject = GetTimelineObject(beatmapObject);
+
+            var list = bmTimelineObject.InternalSelections.Where(x => x.selected).ToList();
+            int count = list.Count;
 
             EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
 
             UpdateKeyframeOrder(beatmapObject);
 
             var strs = new List<string>();
-            var list = beatmapObject.timelineObject.InternalSelections;
             foreach (var timelineObject in list)
             {
                 if (timelineObject.Index != 0)
@@ -248,10 +251,10 @@ namespace EditorManagement.Functions.Editors
             }
 
             var ti = GetTimelineObject(beatmapObject);
-            ti.InternalSelections.Clear();
+            ti.InternalSelections.RemoveAll(x => x.selected);
 
             SetCurrentKeyframe(beatmapObject, 0);
-            RenderTimelineObject(new TimelineObject(beatmapObject));
+            RenderTimelineObject(bmTimelineObject);
             Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
             RenderKeyframes(beatmapObject);
@@ -290,9 +293,11 @@ namespace EditorManagement.Functions.Editors
             UpdateKeyframeOrder(beatmapObject);
             //float num = float.PositiveInfinity;
 
-            float num = beatmapObject.timelineObject.InternalSelections.Min(x => x.Time);
+            var bmTimelineObject = GetTimelineObject(beatmapObject);
 
-            foreach (var timelineObject in beatmapObject.timelineObject.InternalSelections)
+            float num = bmTimelineObject.InternalSelections.Where(x => x.selected).Min(x => x.Time);
+
+            foreach (var timelineObject in bmTimelineObject.InternalSelections.Where(x => x.selected))
             {
                 int type = timelineObject.Type;
                 int index = timelineObject.Index;
@@ -315,26 +320,37 @@ namespace EditorManagement.Functions.Editors
                 return;
             }
 
-            foreach (var timelineObject in copiedObjectKeyframes)
-            {
-                var eventKeyframe = EventKeyframe.DeepCopy(timelineObject.GetData<EventKeyframe>());
-                Debug.Log($"Create Keyframe -> {eventKeyframe.eventTime} - {eventKeyframe.eventValues[0]}");
+            //foreach (var timelineObject in copiedObjectKeyframes)
+            //{
+            //    var eventKeyframe = EventKeyframe.DeepCopy(timelineObject.GetData<EventKeyframe>());
 
-                eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - beatmapObject.StartTime + eventKeyframe.eventTime;
-                if (eventKeyframe.eventTime <= 0f)
-                    eventKeyframe.eventTime = 0.001f;
+            //    eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - beatmapObject.StartTime + eventKeyframe.eventTime;
+            //    if (eventKeyframe.eventTime <= 0f)
+            //        eventKeyframe.eventTime = 0.001f;
 
-                beatmapObject.events[timelineObject.Type].Add(eventKeyframe);
-            }
+            //    beatmapObject.events[timelineObject.Type].Add(eventKeyframe);
+            //}
 
-            UpdateKeyframeOrder(beatmapObject);
+            for (int i = 0; i < beatmapObject.events.Count; i++)
+                beatmapObject.events[i].AddRange(copiedObjectKeyframes.Where(x => x.Type == i).Select(x => PasteKF(beatmapObject, x)));
+
             ResizeKeyframeTimeline(beatmapObject);
-            RenderKeyframes(beatmapObject);
-
+            UpdateKeyframeOrder(beatmapObject);
             RenderTimelineObject(new TimelineObject(beatmapObject));
 
             if (UpdateObjects)
                 Updater.UpdateProcessor(beatmapObject, "Keyframes");
+        }
+
+        EventKeyframe PasteKF(BeatmapObject beatmapObject, TimelineObject timelineObject)
+        {
+            var eventKeyframe = EventKeyframe.DeepCopy(timelineObject.GetData<EventKeyframe>());
+
+            eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - beatmapObject.StartTime + eventKeyframe.eventTime;
+            if (eventKeyframe.eventTime <= 0f)
+                eventKeyframe.eventTime = 0.001f;
+
+            return eventKeyframe;
         }
 
         public void PasteObject(float _offsetTime = 0f, bool _regen = true)
@@ -357,10 +373,12 @@ namespace EditorManagement.Functions.Editors
                 ObjEditor.inst.hasCopiedObject = true;
             }
 
-            if (pr == null)
-                inst.StartCoroutine(AddPrefabExpandedToLevel(ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
-            else
-                inst.StartCoroutine(AddPrefabExpandedToLevel(pr, true, _offsetTime, false, _regen));
+            StartCoroutine(AddPrefabExpandedToLevel(pr ?? ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
+
+            //if (pr == null)
+            //    inst.StartCoroutine(AddPrefabExpandedToLevel(ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
+            //else
+            //    inst.StartCoroutine(AddPrefabExpandedToLevel(pr, true, _offsetTime, false, _regen));
         }
 
         #endregion
@@ -399,12 +417,6 @@ namespace EditorManagement.Functions.Editors
 
             beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
 
-            var timelineObject = new TimelineObject(beatmapObjectCopy);
-            RenderTimelineObject(timelineObject);
-
-            if (select)
-                AddSelectedObject(timelineObject);
-
             return beatmapObjectCopy;
         }
 
@@ -440,63 +452,79 @@ namespace EditorManagement.Functions.Editors
                     if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !prefabInstances.ContainsKey(beatmapObject.prefabInstanceID))
                         prefabInstances.Add(beatmapObject.prefabInstanceID, LSText.randomString(16));
 
-                DataManager.inst.gameData.beatmapObjects.AddRange(prefab.objects.Select(x => Expand((BeatmapObject)x, ids, prefabInstances, audioTime, prefab, select, offset, undone, regen)).ToList());
+                //var list = prefab.objects.Select(x => Expand((BeatmapObject)x, ids, prefabInstances, audioTime, prefab, select, offset, undone, regen)).ToList();
 
-                foreach (var id in ids)
-                {
-                    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id.Value, out BaseBeatmapObject beatmapObject))
-                    {
-                        Updater.UpdateProcessor(beatmapObject);
-                    }
-                }
+                //DataManager.inst.gameData.beatmapObjects.AddRange(list);
 
-                //foreach (var beatmapObject in prefab.objects)
+                //yield return list.Select(x => new TimelineObject(x)).ToList().ForEachReturn(x =>
                 //{
-                //    yield return new WaitForSeconds(delay);
-                //    var beatmapObjectCopy = BeatmapObject.DeepCopy((BeatmapObject)beatmapObject, false);
-
-                //    if (ids.ContainsKey(beatmapObject.id))
-                //        beatmapObjectCopy.id = ids[beatmapObject.id];
-
-                //    if (ids.ContainsKey(beatmapObject.parent))
-                //        beatmapObjectCopy.parent = ids[beatmapObject.parent];
-                //    else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
-                //        beatmapObjectCopy.parent = "";
-
-                //    beatmapObjectCopy.prefabID = beatmapObject.prefabID;
-                //    if (regen) // < Probably need to add another setting to have this separate an object from being a prefab or generate a new one
-                //    {
-                //        //beatmapObjectCopy.prefabInstanceID = dictionary2[orig.prefabInstanceID];
-                //        beatmapObjectCopy.prefabID = "";
-                //        beatmapObjectCopy.prefabInstanceID = "";
-                //    }
-                //    else
-                //    {
-                //        beatmapObjectCopy.prefabInstanceID = beatmapObject.prefabInstanceID;
-                //    }
-
-                //    beatmapObjectCopy.fromPrefab = false;
-
-                //    {
-                //        beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
-                //        if (offset != 0.0)
-                //            ++beatmapObjectCopy.editorData.Bin; // Investigate why this is here.
-                //    }
-
-                //    beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
-                //    DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
-
-                //    var timelineObject = new TimelineObject(beatmapObjectCopy);
-                //    RenderTimelineObject(timelineObject);
+                //    RenderTimelineObject(x);
 
                 //    if (select)
-                //        AddSelectedObject(timelineObject);
+                //    {
+                //        if (list.Count > 1)
+                //        {
+                //            x.selected = true;
+                //            CurrentSelection = x;
 
-                //    Updater.UpdateProcessor(beatmapObject);
+                //            return;
+                //        }
 
-                //    delay += 0.0001f;
+                //        SetCurrentObject(x, openDialog: false);
+                //    }
+                //});
+
+                //foreach (var id in ids)
+                //{
+                //    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id.Value, out BaseBeatmapObject beatmapObject))
+                //    {
+                //        Updater.UpdateProcessor(beatmapObject);
+                //    }
                 //}
 
+                foreach (var beatmapObject in prefab.objects)
+                {
+                    yield return new WaitForSeconds(delay);
+                    var beatmapObjectCopy = BeatmapObject.DeepCopy((BeatmapObject)beatmapObject, false);
+
+                    if (ids.ContainsKey(beatmapObject.id))
+                        beatmapObjectCopy.id = ids[beatmapObject.id];
+
+                    if (ids.ContainsKey(beatmapObject.parent))
+                        beatmapObjectCopy.parent = ids[beatmapObject.parent];
+                    else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
+                        beatmapObjectCopy.parent = "";
+
+                    beatmapObjectCopy.prefabID = beatmapObject.prefabID;
+                    if (regen) // < Probably need to add another setting to have this separate an object from being a prefab or generate a new one
+                    {
+                        //beatmapObjectCopy.prefabInstanceID = dictionary2[orig.prefabInstanceID];
+                        beatmapObjectCopy.prefabID = "";
+                        beatmapObjectCopy.prefabInstanceID = "";
+                    }
+                    else
+                    {
+                        beatmapObjectCopy.prefabInstanceID = beatmapObject.prefabInstanceID;
+                    }
+
+                    beatmapObjectCopy.fromPrefab = false;
+
+                    beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
+
+                    beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
+                    DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
+
+                    var timelineObject = new TimelineObject(beatmapObjectCopy);
+
+                    timelineObject.selected = true;
+                    CurrentSelection = timelineObject;
+
+                    RenderTimelineObject(timelineObject);
+
+                    Updater.UpdateProcessor(beatmapObject);
+
+                    delay += 0.0001f;
+                }
             }
 
             //Prefabs
@@ -513,11 +541,7 @@ namespace EditorManagement.Functions.Editors
                         prefabObjectCopy.ID = prefabInstanceIDs[prefabObject.ID];
                     prefabObjectCopy.prefabID = prefabObject.prefabID;
 
-                    {
-                        prefabObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
-                        if (offset != 0.0)
-                            ++prefabObjectCopy.editorData.Bin; // Investigate why this is here.
-                    }
+                    prefabObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
 
                     prefabObjectCopy.editorData.layer = RTEditor.inst.Layer;
 
@@ -525,13 +549,12 @@ namespace EditorManagement.Functions.Editors
 
                     var timelineObject = new TimelineObject(prefabObjectCopy);
 
-                    //CreateTimelineObject(timelineObject);
+                    timelineObject.selected = true;
+                    CurrentSelection = timelineObject;
+
                     RenderTimelineObject(timelineObject);
 
                     ObjectManager.inst.AddPrefabToLevel(prefabObjectCopy);
-
-                    if (select)
-                        AddSelectedObject(timelineObject);
 
                     Updater.UpdatePrefab(prefabObject);
 
@@ -554,9 +577,14 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.DisplayNotification($"Pasted Beatmap Object{s} [ {stri} ]{reg}!", 1.5f, EditorManager.NotificationType.Success);
             }
 
-            if (select && (prefab.objects.Count > 1 || prefab.prefabObjects.Count > 1))
+            if (select)
             {
-                EditorManager.inst.ShowDialog("Multi Object Editor", false);
+                if (prefab.objects.Count > 1 || prefab.prefabObjects.Count > 1)
+                    EditorManager.inst.ShowDialog("Multi Object Editor", false);
+                else if (CurrentSelection.IsBeatmapObject)
+                    OpenDialog(CurrentSelection.GetData<BeatmapObject>());
+                else if (CurrentSelection.IsPrefabObject)
+                    PrefabEditor.inst.OpenPrefabDialog();
             }
 
             RTEditor.inst.ienumRunning = false;
@@ -1074,8 +1102,10 @@ namespace EditorManagement.Functions.Editors
             if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
                 RenderTimelineObject(timelineObject);
 
-            if (timelineObject.IsBeatmapObject)
-                ClearKeyframes(timelineObject.GetData<BeatmapObject>());
+            if (CurrentSelection.IsBeatmapObject && CurrentSelection.ID != timelineObject.ID)
+            {
+                ClearKeyframes(CurrentSelection.GetData<BeatmapObject>());
+            }
 
             DeselectAllObjects();
 
@@ -1144,7 +1174,7 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.UpdatePlayButton();
             }
 
-            RenderKeyframes(beatmapObject);
+            //RenderKeyframes(beatmapObject);
             RenderKeyframeDialog(beatmapObject);
         }
 
@@ -1186,6 +1216,14 @@ namespace EditorManagement.Functions.Editors
         {
             if (!beatmapObject.timelineObject)
                 beatmapObject.timelineObject = new TimelineObject(beatmapObject);
+
+            //if (!beatmapObject.timelineObject)
+            //{
+            //    if (RTEditor.inst.timelineObjects.Has(x => x.IsBeatmapObject && x.ID == beatmapObject.id))
+            //        beatmapObject.timelineObject = RTEditor.inst.timelineObjects.Find(x => x.IsBeatmapObject && x.ID == beatmapObject.id);
+            //    else
+            //        beatmapObject.timelineObject = new TimelineObject(beatmapObject);
+            //}
 
             return beatmapObject.timelineObject;
         }
@@ -1444,7 +1482,7 @@ namespace EditorManagement.Functions.Editors
             {
                 if (!string.IsNullOrEmpty(beatmapObject.id) && !beatmapObject.fromPrefab)
                 {
-                    CreateTimelineObject(new TimelineObject(beatmapObject));
+                    CreateTimelineObject(GetTimelineObject((BeatmapObject)beatmapObject));
                 }
             }
 
@@ -1635,8 +1673,7 @@ namespace EditorManagement.Functions.Editors
                 t.Init(name, InputFieldSwapper.Type.String);
             }
 
-            name.onValueChanged.ClearAll(
-                );
+            name.onValueChanged.ClearAll();
             name.text = beatmapObject.name;
             name.onValueChanged.AddListener(delegate (string _val)
             {
@@ -2546,6 +2583,8 @@ namespace EditorManagement.Functions.Editors
 
                 //Keyframes
                 {
+                    var kf = beatmapObject.timelineObject.InternalSelections.Where(x => x.selected).ToList()[0];
+
                     var kfdialog = ObjEditor.inst.KeyframeDialogs[ObjEditor.inst.currentKeyframeKind].transform;
                     if (beatmapObject.events[ObjEditor.inst.currentKeyframeKind].Count > 0)
                         StartCoroutine(IRenderKeyframeDialog(kfdialog, ObjEditor.inst.currentKeyframeKind, beatmapObject));
@@ -2556,7 +2595,7 @@ namespace EditorManagement.Functions.Editors
                     var timeIncreaseGreat = kfdialog.Find("time/>>").GetComponent<Button>();
                     var timeSet = kfdialog.Find("time/time").GetComponent<InputField>();
 
-                    if (ObjEditor.inst.currentKeyframe == 0)
+                    if (kf.Index == 0)
                     {
                         timeDecreaseGreat.interactable = false;
                         timeDecrease.interactable = false;
@@ -2576,7 +2615,7 @@ namespace EditorManagement.Functions.Editors
                     var superLeft = kfdialog.Find("edit/<<").GetComponent<Button>();
 
                     superLeft.onClick.RemoveAllListeners();
-                    superLeft.interactable = ObjEditor.inst.currentKeyframe != 0;
+                    superLeft.interactable = kf.Index != 0;
                     superLeft.onClick.AddListener(delegate ()
                     {
                         SetCurrentKeyframe(beatmapObject, 0, true);
@@ -2591,12 +2630,12 @@ namespace EditorManagement.Functions.Editors
                         AddCurrentKeyframe(beatmapObject, -1, true);
                     });
 
-                    string text = ObjEditor.inst.currentKeyframe.ToString();
-                    if (ObjEditor.inst.currentKeyframe == 0)
+                    string text = kf.Index.ToString();
+                    if (kf.Index == 0)
                     {
                         text = "S";
                     }
-                    else if (ObjEditor.inst.currentKeyframe == beatmapObject.events[ObjEditor.inst.currentKeyframeKind].Count - 1)
+                    else if (kf.Index == beatmapObject.events[kf.Type].Count - 1)
                     {
                         text = "E";
                     }
@@ -2606,7 +2645,7 @@ namespace EditorManagement.Functions.Editors
                     var right = kfdialog.Find("edit/>").GetComponent<Button>();
 
                     right.onClick.RemoveAllListeners();
-                    right.interactable = ObjEditor.inst.currentKeyframe < beatmapObject.events[ObjEditor.inst.currentKeyframeKind].Count - 1;
+                    right.interactable = kf.Index < beatmapObject.events[kf.Type].Count - 1;
                     right.onClick.AddListener(delegate ()
                     {
                         AddCurrentKeyframe(beatmapObject, 1, true);
@@ -2615,7 +2654,7 @@ namespace EditorManagement.Functions.Editors
                     var superRight = kfdialog.Find("edit/>>").GetComponent<Button>();
 
                     superRight.onClick.RemoveAllListeners();
-                    superRight.interactable = ObjEditor.inst.currentKeyframe < beatmapObject.events[ObjEditor.inst.currentKeyframeKind].Count - 1;
+                    superRight.interactable = kf.Index < beatmapObject.events[kf.Type].Count - 1;
                     superRight.onClick.AddListener(delegate ()
                     {
                         AddCurrentKeyframe(beatmapObject, int.MaxValue, true);
@@ -2625,19 +2664,19 @@ namespace EditorManagement.Functions.Editors
                     copy.onClick.ClearAll();
                     copy.onClick.AddListener(delegate ()
                     {
-                        switch (ObjEditor.inst.currentKeyframeKind)
+                        switch (kf.Type)
                         {
                             case 0:
-                                CopiedPositionData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]);
+                                CopiedPositionData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
                                 break;
                             case 1:
-                                CopiedScaleData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]);
+                                CopiedScaleData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
                                 break;
                             case 2:
-                                CopiedRotationData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]);
+                                CopiedRotationData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
                                 break;
                             case 3:
-                                CopiedColorData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]);
+                                CopiedColorData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
                                 break;
                         }
                         EditorManager.inst.DisplayNotification("Copied keyframe data!", 2f, EditorManager.NotificationType.Success);
@@ -2647,21 +2686,21 @@ namespace EditorManagement.Functions.Editors
                     paste.onClick.ClearAll();
                     paste.onClick.AddListener(delegate ()
                     {
-                        var kf = beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe];
-                        var time = kf.eventTime;
+                        var eventKeyframe = beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe];
+                        var time = eventKeyframe.eventTime;
 
-                        switch (ObjEditor.inst.currentKeyframeKind)
+                        switch (kf.Type)
                         {
                             case 0:
                                 if (CopiedPositionData != null)
                                 {
                                     ClearKeyframes(beatmapObject);
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventValues = CopiedPositionData.eventValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventRandomValues = CopiedPositionData.eventRandomValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].random = CopiedPositionData.random;
-                                    ((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]).relative = CopiedPositionData.relative;
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe] = EventKeyframe.DeepCopy(CopiedPositionData);
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
+                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedPositionData.eventValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedPositionData.eventRandomValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedPositionData.random;
+                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedPositionData.relative;
+                                    //beatmapObject.events[kf.Type][kf.Index] = EventKeyframe.DeepCopy(CopiedPositionData);
+                                    //beatmapObject.events[kf.Type][kf.Index].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
@@ -2674,12 +2713,12 @@ namespace EditorManagement.Functions.Editors
                                 if (CopiedScaleData != null)
                                 {
                                     ClearKeyframes(beatmapObject);
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventValues = CopiedScaleData.eventValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventRandomValues = CopiedScaleData.eventRandomValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].random = CopiedScaleData.random;
-                                    ((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]).relative = CopiedScaleData.relative;
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe] = EventKeyframe.DeepCopy(CopiedScaleData);
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
+                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedScaleData.eventValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedScaleData.eventRandomValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedScaleData.random;
+                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedScaleData.relative;
+                                    //beatmapObject.events[kf.Type][kf.Index] = EventKeyframe.DeepCopy(CopiedScaleData);
+                                    //beatmapObject.events[kf.Type][kf.Index].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
@@ -2692,12 +2731,12 @@ namespace EditorManagement.Functions.Editors
                                 if (CopiedRotationData != null)
                                 {
                                     ClearKeyframes(beatmapObject);
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventValues = CopiedRotationData.eventValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventRandomValues = CopiedRotationData.eventRandomValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].random = CopiedRotationData.random;
-                                    ((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]).relative = CopiedRotationData.relative;
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe] = EventKeyframe.DeepCopy(CopiedRotationData);
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
+                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedRotationData.eventValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedRotationData.eventRandomValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedRotationData.random;
+                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedRotationData.relative;
+                                    //beatmapObject.events[kf.Type][kf.Index] = EventKeyframe.DeepCopy(CopiedRotationData);
+                                    //beatmapObject.events[kf.Type][kf.Index].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
@@ -2710,12 +2749,12 @@ namespace EditorManagement.Functions.Editors
                                 if (CopiedColorData != null)
                                 {
                                     ClearKeyframes(beatmapObject);
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventValues = CopiedColorData.eventValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventRandomValues = CopiedColorData.eventRandomValues.Copy();
-                                    beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].random = CopiedColorData.random;
-                                    ((EventKeyframe)beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe]).relative = CopiedColorData.relative;
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe] = EventKeyframe.DeepCopy(CopiedColorData);
-                                    //beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime = time;
+                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedColorData.eventValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedColorData.eventRandomValues.Copy();
+                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedColorData.random;
+                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedColorData.relative;
+                                    //beatmapObject.events[kf.Type][kf.Index] = EventKeyframe.DeepCopy(CopiedColorData);
+                                    //beatmapObject.events[kf.Type][kf.Index].eventTime = time;
                                     RenderKeyframes(beatmapObject);
                                     RenderKeyframeDialog(beatmapObject);
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
@@ -2730,7 +2769,7 @@ namespace EditorManagement.Functions.Editors
                     var deleteKey = kfdialog.Find("edit/del").GetComponent<Button>();
 
                     deleteKey.onClick.RemoveAllListeners();
-                    deleteKey.interactable = ObjEditor.inst.currentKeyframe != 0;
+                    deleteKey.interactable = kf.Index != 0;
                     deleteKey.onClick.AddListener(delegate ()
                     {
                         StartCoroutine(DeleteKeyframes(beatmapObject));
@@ -2830,7 +2869,6 @@ namespace EditorManagement.Functions.Editors
                         AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
                         UpdateKeyframeOrder(beatmapObject);
 
-                        CreateKeyframes(beatmapObject);
                         RenderKeyframes(beatmapObject);
 
                         int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == timeTmp);
@@ -2857,8 +2895,6 @@ namespace EditorManagement.Functions.Editors
 
             foreach (var kf in timelineObject.InternalSelections)
                 Destroy(kf.GameObject);
-
-            timelineObject.InternalSelections.Clear();
         }
 
         public TimelineObject GetKeyframe(BeatmapObject beatmapObject, int type, int index)
@@ -2866,12 +2902,20 @@ namespace EditorManagement.Functions.Editors
             var bmTimelineObject = GetTimelineObject(beatmapObject);
 
             var kf = bmTimelineObject.InternalSelections.Find(x => x.Type == type && x.Index == index);
+
+            if (!kf)
+                kf = bmTimelineObject.InternalSelections.Find(x => x.ID == (beatmapObject.events[type][index] as EventKeyframe).id);
+
             if (!kf)
             {
-                kf = new TimelineObject((EventKeyframe)beatmapObject.events[type][index]);
+                kf = CreateKeyframe(beatmapObject, type, index);
                 bmTimelineObject.InternalSelections.Add(kf);
+            }
 
-                CreateKeyframes(beatmapObject);
+            if (!kf.GameObject)
+            {
+                kf.GameObject = KeyframeObject(beatmapObject, kf);
+                kf.Image = kf.GameObject.transform.GetChild(0).GetComponent<Image>();
             }
 
             return kf;
@@ -2879,8 +2923,6 @@ namespace EditorManagement.Functions.Editors
 
         public void CreateKeyframes(BeatmapObject beatmapObject)
         {
-            Debug.Log($"{ObjEditor.inst.className}Creating keyframes for {beatmapObject}");
-
             ClearKeyframes(beatmapObject);
 
             for (int i = 0; i < beatmapObject.events.Count; i++)
@@ -2889,73 +2931,90 @@ namespace EditorManagement.Functions.Editors
                 {
                     for (int j = 0; j < beatmapObject.events[i].Count; j++)
                     {
-                        CreateKeyframe(beatmapObject, i, j);
+                        if (beatmapObject.timelineObject)
+                        {
+                            var keyframe = (EventKeyframe)beatmapObject.events[i][j];
+                            var kf = beatmapObject.timelineObject.InternalSelections.Find(x => x.ID == keyframe.id);
+                            if (!kf)
+                            {
+                                kf = CreateKeyframe(beatmapObject, i, j);
+                                beatmapObject.timelineObject.InternalSelections.Add(kf);
+                            }
+
+                            if (!kf.GameObject)
+                            {
+                                kf.GameObject = KeyframeObject(beatmapObject, kf);
+                                kf.Image = kf.GameObject.transform.GetChild(0).GetComponent<Image>();
+                            }
+
+                            RenderKeyframe(beatmapObject, kf);
+                        }
                     }
                 }
             }
         }
 
-        public void CreateKeyframe(BeatmapObject beatmapObject, int type, int index)
+        public TimelineObject CreateKeyframe(BeatmapObject beatmapObject, int type, int index)
         {
-            var bmTimelineObject = GetTimelineObject(beatmapObject);
-
             var eventKeyframe = beatmapObject.events[type][index];
 
-            var kf = bmTimelineObject.InternalSelections.Find(x => x.Type == type && x.Index == index);
-
-            if (!kf)
+            var kf = new TimelineObject(eventKeyframe)
             {
-                kf = new TimelineObject(eventKeyframe);
+                Type = type,
+                Index = index
+            };
 
-                kf.Type = type;
-                kf.Index = index;
+            kf.GameObject = KeyframeObject(beatmapObject, kf);
+            kf.Image = kf.GameObject.transform.GetChild(0).GetComponent<Image>();
 
-                bmTimelineObject.InternalSelections.Add(kf);
-            }
+            return kf;
+        }
 
-            if (!kf.GameObject)
-            {
-                kf.GameObject = ObjEditor.inst.objTimelinePrefab.Duplicate(ObjEditor.inst.TimelineParents[type], $"{IntToType(type)}_{index}");
-                kf.Image = kf.GameObject.transform.GetChild(0).GetComponent<Image>();
-            }
+        public GameObject KeyframeObject(BeatmapObject beatmapObject, TimelineObject kf)
+        {
+            var gameObject = ObjEditor.inst.objTimelinePrefab.Duplicate(ObjEditor.inst.TimelineParents[kf.Type], $"{IntToType(kf.Type)}_{kf.Index}");
 
-            RenderKeyframe(beatmapObject, kf);
-
-            int tmpType = type;
-            int tmpIndex = index;
-            var button = kf.GameObject.GetComponent<Button>();
+            var button = gameObject.GetComponent<Button>();
             button.onClick.ClearAll();
             button.onClick.AddListener(delegate ()
             {
-                SetCurrentKeyframe(beatmapObject, tmpType, tmpIndex, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
+                if (!Input.GetMouseButtonDown(2))
+                    SetCurrentKeyframe(beatmapObject, kf.Type, kf.Index, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
             });
 
-            var eventTrigger = kf.GameObject.GetComponent<EventTrigger>();
-            eventTrigger.triggers.Add(TriggerHelper.CreateKeyframeStartDragTrigger(beatmapObject, kf));
-            eventTrigger.triggers.Add(TriggerHelper.CreateKeyframeEndDragTrigger(beatmapObject, kf));
+            TriggerHelper.AddEventTriggerParams(gameObject,
+                TriggerHelper.CreateKeyframeStartDragTrigger(beatmapObject, kf),
+                TriggerHelper.CreateKeyframeEndDragTrigger(beatmapObject, kf),
+                TriggerHelper.CreateKeyframeSelectTrigger(beatmapObject, kf));
+
+            return gameObject;
         }
 
         public void RenderKeyframes(BeatmapObject beatmapObject)
         {
-            var timelineObject = GetTimelineObject(beatmapObject);
             for (int i = 0; i < beatmapObject.events.Count; i++)
             {
                 for (int j = 0; j < beatmapObject.events[i].Count; j++)
                 {
-                    var kf = timelineObject.InternalSelections.Find(x => x.Type == i && x.Index == j);
-                    if (!kf || !kf.GameObject)
-                        CreateKeyframe(beatmapObject, i, j);
-                    else
-                        RenderKeyframe(beatmapObject, kf);
+                    var kf = GetKeyframe(beatmapObject, i, j);
+
+                    RenderKeyframe(beatmapObject, kf);
                 }
             }
+
+            var timelineObject = GetTimelineObject(beatmapObject);
+            if (timelineObject.InternalSelections.Count > 0 && timelineObject.InternalSelections.Where(x => x.selected).Count() == 0)
+                timelineObject.InternalSelections[0].selected = true;
         }
 
         public void RenderKeyframe(BeatmapObject beatmapObject, TimelineObject timelineObject)
         {
+            if (beatmapObject.events[timelineObject.Type].Has(x => (x as EventKeyframe).id == timelineObject.ID))
+                timelineObject.Index = beatmapObject.events[timelineObject.Type].FindIndex(x => (x as EventKeyframe).id == timelineObject.ID);
+
             var eventKeyframe = timelineObject.GetData<EventKeyframe>();
             timelineObject.Image.sprite =
-                                GetKeyframeIcon(eventKeyframe.curveType,
+                                RTEditor.GetKeyframeIcon(eventKeyframe.curveType,
                                 beatmapObject.events[timelineObject.Type].Count > timelineObject.Index + 1 ?
                                 beatmapObject.events[timelineObject.Type][timelineObject.Index + 1].curveType : DataManager.inst.AnimationList[0]);
 
@@ -2965,31 +3024,6 @@ namespace EditorManagement.Functions.Editors
             rectTransform.sizeDelta = new Vector2(14f, 25f);
             rectTransform.anchoredPosition = new Vector2(x, 0f);
         }
-
-        //public static void UpdateHighlightedKeyframe()
-        //{
-        //    int typeIndex = 0;
-        //    foreach (var list in ObjEditor.inst.timelineKeyframes)
-        //    {
-        //        int keyframeIndex = 0;
-        //        int num;
-        //        foreach (var gameObject in list)
-        //        {
-        //            var componentInChildren = gameObject.GetComponentInChildren<Image>();
-        //            var list2 = ObjEditor.inst.keyframeSelections;
-
-        //            if (list2.FindIndex(x => x.Index == keyframeIndex && x.Type == typeIndex) != -1)
-        //                componentInChildren.color = ObjEditor.inst.SelectedColor;
-        //            else
-        //                componentInChildren.color = ObjEditor.inst.NormalColor;
-
-        //            num = keyframeIndex;
-        //            keyframeIndex = num + 1;
-        //        }
-        //        num = typeIndex;
-        //        typeIndex = num + 1;
-        //    }
-        //}
 
         IEnumerator IRenderKeyframeDialog(Transform p, int type, BeatmapObject beatmapObject)
         {
@@ -3434,9 +3468,6 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public static Sprite GetKeyframeIcon(DataManager.LSAnimation a, DataManager.LSAnimation b)
-            => ObjEditor.inst.KeyframeSprites[a.Name.Contains("Out") && b.Name.Contains("In") ? 3 : a.Name.Contains("Out") ? 2 : b.Name.Contains("In") ? 1 : 0];
-
         public void UpdateKeyframeOrder(BeatmapObject beatmapObject)
         {
             //ClearKeyframes(beatmapObject);
@@ -3447,14 +3478,14 @@ namespace EditorManagement.Functions.Editors
                                             orderby x.eventTime
                                             select x).ToList();
 
-                for (int j = 0; j < beatmapObject.events[i].Count; j++)
-                {
-                    if (beatmapObject.timelineObject.InternalSelections.TryFind(x => x.Data == beatmapObject.events[i][j], out TimelineObject timelineObject))
-                    {
-                        timelineObject.Type = i;
-                        timelineObject.Index = j;
-                    }
-                }
+                //for (int j = 0; j < beatmapObject.events[i].Count; j++)
+                //{
+                //    if (beatmapObject.timelineObject.InternalSelections.TryFind(x => x.ID == (beatmapObject.events[i][j] as EventKeyframe).id, out TimelineObject timelineObject))
+                //    {
+                //        timelineObject.Type = i;
+                //        timelineObject.Index = j;
+                //    }
+                //}
             }
 
             RenderKeyframes(beatmapObject);
@@ -3505,7 +3536,7 @@ namespace EditorManagement.Functions.Editors
 
                 ResizeKeyframeTimeline(beatmapObject);
 
-                CreateKeyframes(beatmapObject);
+                RenderKeyframes(beatmapObject);
 
                 // Keyframe Time affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));

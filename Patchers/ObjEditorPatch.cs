@@ -780,7 +780,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool GetKeyframeIconPrefix(ref Sprite __result, DataManager.LSAnimation __0, DataManager.LSAnimation __1)
         {
-			__result = ObjectEditor.GetKeyframeIcon(__0, __1);
+			__result = RTEditor.GetKeyframeIcon(__0, __1);
 			return false;
         }
 
