@@ -168,6 +168,7 @@ namespace EditorManagement.Patchers
 				if (preNumber != EditorManager.inst.GetTimelineTime())
 				{
 					Instance.RenderEventObjects();
+					Instance.RenderEventsDialog();
 					preNumber = EditorManager.inst.GetTimelineTime();
 				}
 			}

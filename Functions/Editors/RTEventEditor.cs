@@ -425,15 +425,7 @@ namespace EditorManagement.Functions.Editors
         {
 			var eventEditor = EventEditor.inst;
 
-			var list = RTEditor.inst.timelineKeyframes.Clone();
-
-			foreach (var kf in RTEditor.inst.timelineKeyframes)
-			{
-				kf.selected = false;
-				Destroy(kf.GameObject);
-			}
-
-			RTEditor.inst.timelineKeyframes.Clear();
+			ClearEventObjects();
 
 			eventEditor.eventDrag = false;
 
@@ -441,42 +433,40 @@ namespace EditorManagement.Functions.Editors
 			{
 				for (int index = 0; index < AllEvents[type].Count; index++)
 				{
-					var eventKeyframe = AllEvents[type][index];
-					var gameObject = Instantiate(eventEditor.TimelinePrefab);
-					gameObject.name = "new keyframe - " + (type % EventLimit).ToString();
-					gameObject.transform.SetParent(eventEditor.EventHolders.transform.GetChild(type % EventLimit));
-					gameObject.transform.localScale = Vector3.one;
-
-					var image = gameObject.transform.GetChild(0).GetComponent<Image>();
-
-					var kf = new TimelineObject((EventKeyframe)eventKeyframe);
-					kf.Type = type;
-					kf.Index = index;
-					kf.GameObject = gameObject;
-					kf.Image = image;
-
-					if (list.Has(x => x.Type == type && x.Index == index) && lastLayer == RTEditor.inst.Layer)
-						kf.selected = list.Find(x => x.Type == type && x.Index == index).selected;
-
-					var triggers = gameObject.GetComponent<EventTrigger>().triggers;
-
-					triggers.Clear();
-					triggers.Add(TriggerHelper.CreateEventObjectTrigger(eventEditor, type, index));
-					triggers.Add(TriggerHelper.CreateEventStartDragTrigger(eventEditor, type, index));
-					triggers.Add(TriggerHelper.CreateEventEndDragTrigger());
+					var kf = CreateEventObject(type, index);
 
 					RTEditor.inst.timelineKeyframes.Add(kf);
 				}
 			}
 
-			list.Clear();
-			list = null;
-
 			lastLayer = RTEditor.inst.Layer;
 
 			RenderEventObjects();
-			EventManager.inst.updateEvents();
 		}
+
+		public TimelineObject CreateEventObject(int type, int index)
+        {
+			var eventKeyframe = AllEvents[type][index];
+
+			var kf = new TimelineObject((EventKeyframe)eventKeyframe);
+			kf.Type = type;
+			kf.Index = index;
+			kf.GameObject = EventGameObject(kf);
+			kf.Image = kf.GameObject.transform.GetChild(0).GetComponent<Image>();
+
+			TriggerHelper.AddEventTriggerParams(kf.GameObject,
+				TriggerHelper.CreateEventObjectTrigger(EventEditor.inst, type, index),
+				TriggerHelper.CreateEventStartDragTrigger(EventEditor.inst, type, index),
+				TriggerHelper.CreateEventEndDragTrigger());
+
+			return kf;
+		}
+
+		public GameObject EventGameObject(TimelineObject kf)
+        {
+			var gameObject = EventEditor.inst.TimelinePrefab.Duplicate(EventEditor.inst.EventHolders.transform.GetChild(kf.Type % EventLimit), $"keyframe - {kf.Type}");
+			return gameObject;
+        }
 
         public void RenderEventObjects()
 		{
@@ -485,26 +475,36 @@ namespace EditorManagement.Functions.Editors
 			{
 				for (int index = 0; index < AllEvents[type].Count; index++)
 				{
-					var eventKeyframe = AllEvents[type][index];
-					float eventTime = eventKeyframe.eventTime;
-					int baseUnit = EditorManager.BaseUnit;
-
 					var kf = RTEditor.inst.timelineKeyframes.Find(x => x.Type == type && x.Index == index);
 
-					if (kf)
+					if (!kf)
+						kf = RTEditor.inst.timelineKeyframes.Find(x => x.ID == (AllEvents[type][index] as EventKeyframe).id);
+
+					if (!kf)
 					{
-						int limit = type / EventLimit;
-
-						if (limit == RTEditor.inst.Layer)
-						{
-							((RectTransform)kf.GameObject.transform).anchoredPosition = new Vector2(eventTime * EditorManager.inst.Zoom - baseUnit / 2, 0.0f);
-
-							kf.GameObject.SetActive(true);
-						}
-						else
-							kf.GameObject.SetActive(false);
+						kf = CreateEventObject(type, index);
+						RTEditor.inst.timelineKeyframes.Add(kf);
 					}
+					if (!kf.GameObject)
+						kf.GameObject = EventGameObject(kf);
+					RenderTimelineObject(kf);
 				}
+			}
+		}
+
+		public void RenderTimelineObject(TimelineObject kf)
+		{
+			if (AllEvents[kf.Type].Has(x => (x as EventKeyframe).id == kf.ID))
+				kf.Index = AllEvents[kf.Type].FindIndex(x => (x as EventKeyframe).id == kf.ID);
+
+			var eventKeyframe = AllEvents[kf.Type][kf.Index];
+			float eventTime = eventKeyframe.eventTime;
+			int baseUnit = EditorManager.BaseUnit;
+			int limit = kf.Type / EventLimit;
+
+			if (limit == RTEditor.inst.Layer)
+			{
+				((RectTransform)kf.GameObject.transform).anchoredPosition = new Vector2(eventTime * EditorManager.inst.Zoom - baseUnit / 2, 0.0f);
 			}
 		}
 
@@ -1643,6 +1643,12 @@ namespace EditorManagement.Functions.Editors
 					eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
 				}
             }
+		}
+
+		public void SetEventActive(bool active)
+        {
+			EventEditor.inst.EventLabels.SetActive(active);
+			EventEditor.inst.EventHolders.SetActive(active);
 		}
 
 		#endregion
