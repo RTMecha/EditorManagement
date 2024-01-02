@@ -175,7 +175,10 @@ namespace EditorManagement.Functions.Editors
             {
                 if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
                 {
-                    timelineObject.GameObject.SetActive(true);
+                    int limit = timelineObject.Type / RTEventEditor.EventLimit;
+                    bool isCurrentLayer = limit == Layer && layerType == LayerType.Events;
+
+                    timelineObject.GameObject.SetActive(isCurrentLayer);
 
                     timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
                 }
@@ -1074,6 +1077,13 @@ namespace EditorManagement.Functions.Editors
             if (!string.IsNullOrEmpty(jn["paths"]["prefabs"]))
                 PrefabPath = jn["paths"]["prefabs"];
 
+            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
+                Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
+            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+                Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
+            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+                Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+
             if (jn["marker_colors"] != null)
             {
                 MarkerEditor.inst.markerColors.Clear();
@@ -1436,12 +1446,7 @@ namespace EditorManagement.Functions.Editors
 
         public static string GetLayerString(int _layer) => (_layer + 1).ToString();
 
-        public static Color GetLayerColor(int _layer)
-        {
-            if (_layer < EditorManager.inst.layerColors.Count)
-                return EditorManager.inst.layerColors[_layer];
-            return Color.white;
-        }
+        public static Color GetLayerColor(int _layer) => _layer < EditorManager.inst.layerColors.Count ? EditorManager.inst.layerColors[_layer] : Color.white;
 
         public void SetLayer(LayerType layerType)
         {
@@ -1477,18 +1482,14 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            if (prevLayer != layer || prevLayerType != layerType && layerType != LayerType.Events || layerType == LayerType.Events)
+            RTEventEditor.inst.SetEventActive(layerType == LayerType.Events);
+
+            if (prevLayer != layer || prevLayerType != layerType)
             {
                 switch (layerType)
                 {
                     case LayerType.Objects:
                         {
-                            EventEditor.inst.EventLabels.SetActive(false);
-                            EventEditor.inst.EventHolders.SetActive(false);
-
-                            foreach (var timelineObject in timelineKeyframes)
-                                Destroy(timelineObject.GameObject);
-
                             ObjectEditor.inst.RenderTimelineObjects();
 
                             if (CheckpointEditor.inst.checkpoints.Count > 0)
@@ -1500,21 +1501,20 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             CheckpointEditor.inst.CreateGhostCheckpoints();
-                            if (LayerToggle)
-                                LayerToggle.isOn = false;
+
+                            LayerToggle?.SetIsOn(false);
+
                             break;
                         }
                     case LayerType.Events:
                         {
-                            EventEditor.inst.EventLabels.SetActive(true);
-                            EventEditor.inst.EventHolders.SetActive(true);
-                            RTEventEditor.inst.CreateEventObjects();
+                            RTEventEditor.inst.RenderEventObjects();
                             CheckpointEditor.inst.CreateCheckpoints();
 
                             RTEventEditor.inst.RenderLayerBins();
 
-                            if (LayerToggle)
-                                LayerToggle.isOn = true;
+                            LayerToggle?.SetIsOn(true);
+
                             break;
                         }
                 }
@@ -2032,6 +2032,15 @@ namespace EditorManagement.Functions.Editors
                     SaveGlobalSettings();
                 });
 
+                editorPathIF.onEndEdit.ClearAll();
+                editorPathIF.onEndEdit.AddListener(delegate (string _val)
+                {
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
+                    {
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
+                    }
+                });
+
                 var clickable = editorPathGO.AddComponent<Clickable>();
                 clickable.onDown = delegate (PointerEventData pointerEventData)
                 {
@@ -2118,6 +2127,15 @@ namespace EditorManagement.Functions.Editors
                     SaveGlobalSettings();
                 });
 
+                themePathIF.onEndEdit.ClearAll();
+                themePathIF.onEndEdit.AddListener(delegate (string _val)
+                {
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+                    {
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
+                    }
+                });
+
                 var clickable = themePathGO.AddComponent<Clickable>();
                 clickable.onDown = delegate (PointerEventData pointerEventData)
                 {
@@ -2200,6 +2218,15 @@ namespace EditorManagement.Functions.Editors
                 {
                     PrefabPath = _val;
                     SaveGlobalSettings();
+                });
+
+                prefabPathIF.onEndEdit.ClearAll();
+                prefabPathIF.onEndEdit.AddListener(delegate (string _val)
+                {
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+                    {
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+                    }
                 });
 
                 var clickable = prefabPathGO.AddComponent<Clickable>();
