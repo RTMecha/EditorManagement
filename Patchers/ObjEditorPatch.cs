@@ -636,6 +636,10 @@ namespace EditorManagement.Patchers
 							timelineObject.Bin = binCalc;
 
 						ObjectEditor.inst.RenderTimelineObject(timelineObject);
+						if (timelineObject.IsBeatmapObject)
+                        {
+							ObjectEditor.inst.RenderBin(timelineObject.GetData<BeatmapObject>());
+                        }
 					}
 				}
 				else
@@ -654,8 +658,10 @@ namespace EditorManagement.Patchers
 
 						if (timelineObject.IsBeatmapObject)
 						{
-							Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
-							ObjectEditor.inst.RenderStartTime(timelineObject.GetData<BeatmapObject>());
+							var beatmapObject = timelineObject.GetData<BeatmapObject>();
+							Updater.UpdateProcessor(beatmapObject, "StartTime");
+							ObjectEditor.inst.RenderStartTime(beatmapObject);
+							ObjectEditor.inst.ResizeKeyframeTimeline(beatmapObject);
 						}
 					}
 				}
