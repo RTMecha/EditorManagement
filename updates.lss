@@ -1,3 +1,25 @@
+2.1.0 > Redid object keyframe generating so they should now behave as they used to.
+2.1.0 > Added a feature where clicking the mouse scrollwheel on a keyframe set the audio time to the keyframe time.
+2.1.0 > Fixed Event / Check layer rendering bugs, the layer should now work as intended.
+2.1.0 > Fixed some issues with deleting objects.
+2.1.0 > Pasting and expanding prefabs should now be a little bit faster.
+2.1.0 > Added another inspect button for those who use UnityExplorer.
+2.1.0 > Event / Check layer keyframes now have their sprites render at the correct offset, meaning they're can now look like they're properly aligned with the audio time.
+They also now use the object keyframe sprites method, meaning they will use the appropriate "in/out/inout" easing sprite.
+2.1.0 > Added a Game Timeline preview so you can finally see what animations you're doing to it while in-editor.
+2.1.0 > Prefab Type icons now render with the collapse / lock icons for objects that are connected to a prefab and for prefab objects. This can be disabled in Editor Properties / Preferences
+2.1.0 > Fixed a ton of rendering bugs when dragging an object / keyframe around the timelines.
+2.1.0 > Added Save & Use to ThemeEditor, allowing you to immediately set the current keyframe's theme value to the theme you updated.
+2.1.0 > Object Keyframe timeline position and zoom now get remembered properly between objects.
+2.1.0 > Fixed a bug with object's prefab IDs not being set to empty when creating a prefab, resulting in a case where updating one prefab updates another.
+2.1.0 > Fixed the issue where Event / Check keyframes being dragged would immediately snap their time to an incorrect offset.
+-
+2.0.2 > Added ToggleZenMode and CycleGameDifficulty to keybinds.
+2.0.2 > Added file browsing.
+2.0.2 > Added folder browsing for Editor, Prefab and Theme path.
+2.0.2 > Clicking marker button no longer creates a marker when the cursor time is within a 0.1 second range, instead it selects that marker.
+2.0.2 > Implemented CreativePlayers and RTFunctions Player update, though there's bound to be issues.
+-
 2.0.1 > Added Switch to Arcade Mode button, using the new level loading system.
 2.0.1 > Fix for Discord Rich Presence not being set correctly
 2.0.1 > Fixed an error that caused the editor to break on reload. The editor should now be able to reload as many times as you need.
@@ -10,4 +32,6 @@
 2.0.0 > Updating objects via keyframes or any other specific value is now more optimized.
 2.0.0 > Cleaned up the Settings window and added customizing Layer / Marker color lists.
 2.0.0 > Added ColorGrading Gamma editing.
-2.0.0 > Added Copy & Paste keyframe data, which will copy the current keyframe and allow it to be pasted to any keyframe of the same type. If it is not the same type then it will not paste that data, instead it'll either paste nothing or paste the copied data of that type.
+2.0.0 > Added Copy & Paste keyframe data, which will copy the current keyframe and allow it to be pasted to any keyframe of the same type.
+If it is not the same type then it will not paste that data, instead it'll either paste nothing or paste the copied data of that type.
+2.0.0 > Added a config for creating objects at the screen center.
