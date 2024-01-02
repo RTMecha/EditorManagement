@@ -33,7 +33,8 @@ namespace EditorManagement.Functions.Editors
         {
 			inst = this;
 
-			var themeParent = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/left/theme/theme/viewport/content");
+			var dialog = EditorManager.inst.GetDialog("Event Editor").Dialog;
+			var themeParent = dialog.Find("data/left/theme/theme/viewport/content");
 			Debug.Log($"{EditorPlugin.className}ThemeParent: {themeParent == null}");
             try
 			{
@@ -54,6 +55,23 @@ namespace EditorManagement.Functions.Editors
                 {
 					var col = themeParent.Find("object8").gameObject.Duplicate(themeParent, "effect" + i.ToString());
 					col.transform.Find("text").GetComponent<Text>().text = i.ToString();
+				}
+
+				var actions = dialog.Find("data/left/theme/actions");
+				var createNew = actions.Find("create-new");
+				createNew.AsRT().sizeDelta = new Vector2(100f, 32f);
+				createNew.GetChild(0).gameObject.GetComponent<Text>().fontSize = 18;
+				var update = actions.Find("update");
+				update.AsRT().sizeDelta = new Vector2(70f, 32f);
+				update.GetChild(0).gameObject.GetComponent<Text>().fontSize = 18;
+				var cancel = actions.Find("cancel");
+				cancel.AsRT().sizeDelta = new Vector2(70f, 32f);
+				cancel.GetChild(0).gameObject.GetComponent<Text>().fontSize = 18;
+
+                // Save & Use
+                {
+					var saveUse = createNew.gameObject.Duplicate(actions, "save-use", 1);
+					saveUse.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Save & Use";
 				}
 			}
             catch (Exception ex)
@@ -210,6 +228,7 @@ namespace EditorManagement.Functions.Editors
 			var cancel = actions.Find("cancel").GetComponent<Button>();
 			var createNew = actions.Find("create-new").GetComponent<Button>();
 			var update = actions.Find("update").GetComponent<Button>();
+			var saveUse = actions.Find("save-use").GetComponent<Button>();
 
 			name.onValueChanged.RemoveAllListeners();
 			name.text = PreviewTheme.name;
@@ -260,6 +279,43 @@ namespace EditorManagement.Functions.Editors
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
+			});
+
+			saveUse.onClick.ClearAll();
+			saveUse.onClick.AddListener(delegate ()
+			{
+				BeatmapTheme beatmapTheme;
+				if (__0 < DataManager.inst.BeatmapThemes.Count)
+				{
+					PreviewTheme.id = null;
+					beatmapTheme = BeatmapTheme.DeepCopy(PreviewTheme);
+				}
+				else
+				{
+					var fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
+					fileList = (from x in fileList
+								orderby x.Name.ToLower()
+								select x).ToList();
+					foreach (var lsfile in fileList)
+					{
+						if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
+						{
+							FileManager.inst.DeleteFileRaw(lsfile.FullPath);
+						}
+					}
+					beatmapTheme = BeatmapTheme.DeepCopy(PreviewTheme, true);
+				}
+
+				ThemeEditor.inst.SaveTheme(beatmapTheme);
+				Instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				var child = Instance.dialogRight.GetChild(Instance.currentEventType);
+				Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				Instance.RenderThemePreview(child);
+				Instance.showTheme = false;
+				theme.gameObject.SetActive(false);
+
+				if (int.TryParse(beatmapTheme.id, out int id))
+					DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = id;
 			});
 
 			var bgHex = themeContent.Find("bg/hex").GetComponent<InputField>();
