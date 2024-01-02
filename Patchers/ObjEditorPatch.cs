@@ -628,9 +628,6 @@ namespace EditorManagement.Patchers
 				{
 					int binOffset = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25) * EditorManager.inst.ScreenScaleInverse / 20)) + __instance.mouseOffsetYForDrag;
 
-					//if (!ObjectEditor.inst.CurrentSelection.Locked)
-					//	ObjectEditor.inst.CurrentSelection.Bin = Mathf.Clamp(binOffset, 0, 14);
-
 					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
 						int binCalc = Mathf.Clamp(binOffset + timelineObject.binOffset, 0, 14);
@@ -645,9 +642,6 @@ namespace EditorManagement.Patchers
                 {
 					float timeOffset = Mathf.Round(Mathf.Clamp(EditorManager.inst.GetTimelineTime() + __instance.mouseOffsetXForDrag,
 						0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f;
-
-					//if (!ObjectEditor.inst.CurrentSelection.Locked)
-					//	ObjectEditor.inst.CurrentSelection.Time = timeOffset;
 
 					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
@@ -676,11 +670,12 @@ namespace EditorManagement.Patchers
 					if (timelineObject.Index != 0)
 					{
 						float timeOffset = timeCalc() + timelineObject.timeOffset + __instance.mouseOffsetXForKeyframeDrag;
-						//float num6 = timeCalc() + ObjEditor.inst.selectedKeyframeOffsets[ObjectEditor.inst.SelectedBeatmapObjectKeyframes.IndexOf(timelineObject)] + ObjEditor.inst.mouseOffsetXForKeyframeDrag;
-						timeOffset = Mathf.Clamp(timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
-						timeOffset = Mathf.Round(timeOffset * 1000f) / 1000f;
+						//timeOffset = Mathf.Clamp(timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+						//timeOffset = Mathf.Round(timeOffset * 1000f) / 1000f;
 
-						float calc = Mathf.Clamp(timeOffset, 0f, beatmapObject.GetObjectLifeLength(__instance.ObjectLengthOffset));
+						//float calc = Mathf.Clamp(timeOffset, 0f, beatmapObject.GetObjectLifeLength(__instance.ObjectLengthOffset));
+
+						float calc = Mathf.Clamp(Mathf.Round(Mathf.Clamp(timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f, 0f, beatmapObject.GetObjectLifeLength(__instance.ObjectLengthOffset));
 
 						float st = beatmapObject.StartTime;
 
