@@ -468,6 +468,8 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.DisplayNotification($"Saving Prefab to System [{prefab.Name}]!", 2f, EditorManager.NotificationType.Warning);
             Debug.Log($"{PrefabEditor.inst.className}Saving Prefab to File System!");
 
+            prefab.objects.ForEach(x => x.prefabID = "");
+            prefab.objects.ForEach(x => x.prefabInstanceID = "");
             PrefabEditor.inst.LoadedPrefabs.Add(prefab);
             PrefabEditor.inst.LoadedPrefabsFiles.Add($"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp");
 
@@ -1048,27 +1050,27 @@ namespace EditorManagement.Functions.Editors
             ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
         }
 
-        BeatmapObject Expand(BeatmapObject beatmapObject, PrefabObject prefabObject, Prefab prefab, string id, Dictionary<string, string> ids)
+        public BeatmapObject Expand(BeatmapObject beatmapObject, Dictionary<string, string> ids, float audioTime,
+            BasePrefab prefab, BasePrefabObject prefabObject)
         {
             var beatmapObjectCopy = BeatmapObject.DeepCopy(beatmapObject, false);
+
             if (ids.ContainsKey(beatmapObject.id))
                 beatmapObjectCopy.id = ids[beatmapObject.id];
 
-            beatmapObjectCopy.parent = ids.ContainsKey(beatmapObject.parent) ? ids[beatmapObject.parent] :
-                DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1 ? "" : beatmapObjectCopy.parent;
+            if (ids.ContainsKey(beatmapObject.parent))
+                beatmapObjectCopy.parent = ids[beatmapObject.parent];
+            else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
+                beatmapObjectCopy.parent = "";
 
-            beatmapObjectCopy.active = false;
-            beatmapObjectCopy.fromPrefab = false;
-            beatmapObjectCopy.prefabID = prefab.ID;
             beatmapObjectCopy.StartTime += prefabObject.StartTime + prefab.Offset;
 
-            if (EditorManager.inst != null)
-            {
-                beatmapObjectCopy.editorData.layer = EditorManager.inst.layer;
-                beatmapObjectCopy.editorData.Bin = Mathf.Clamp(beatmapObjectCopy.editorData.Bin, 0, 14);
-            }
+            beatmapObjectCopy.prefabID = prefab.ID;
+            beatmapObjectCopy.prefabInstanceID = prefabObject.ID;
 
-            beatmapObjectCopy.prefabInstanceID = id;
+            beatmapObjectCopy.fromPrefab = false;
+
+            beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
 
             return beatmapObjectCopy;
         }
@@ -1078,16 +1080,56 @@ namespace EditorManagement.Functions.Editors
             RTEditor.inst.ienumRunning = true;
 
             float delay = 0f;
+            float audioTime = EditorManager.inst.CurrentAudioPos;
 
-            string id = prefabObject.ID;
+            //string id = prefabObject.ID;
             var prefab = (Prefab)DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
-            var ids = new Dictionary<string, string>();
 
-            foreach (var beatmapObject in prefab.objects)
-            {
-                string str = LSText.randomString(16);
-                ids.Add(beatmapObject.id, str);
-            }
+            var ids = prefab.objects.ToDictionary(x => x.id, x => LSText.randomString(16));
+
+            //var list = prefab.objects.Select(x => Expand((BeatmapObject)x, ids, audioTime, prefab, prefabObject)).ToList();
+
+            //DataManager.inst.gameData.beatmapObjects.AddRange(list);
+
+            //yield return list.Select(x => new TimelineObject(x)).ToList().ForEachReturn(x =>
+            //{
+            //    ObjectEditor.inst.RenderTimelineObject(x);
+
+            //    if (list.Count > 1)
+            //    {
+            //        x.selected = true;
+            //        ObjectEditor.inst.CurrentSelection = x;
+
+            //        return;
+            //    }
+
+            //    ObjectEditor.inst.SetCurrentObject(x, openDialog: false);
+            //});
+
+            //yield return ids.Values.ToList().ForEachReturn(id =>
+            //{
+            //    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id, out BaseBeatmapObject beatmapObject))
+            //    {
+            //        Updater.UpdateProcessor(beatmapObject);
+            //    }
+            //});
+
+            //foreach (var id in ids)
+            //{
+            //    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id.Value, out BaseBeatmapObject beatmapObject))
+            //    {
+            //        Updater.UpdateProcessor(beatmapObject);
+            //    }
+            //}
+
+
+            //var ids = new Dictionary<string, string>();
+
+            //foreach (var beatmapObject in prefab.objects)
+            //{
+            //    string str = LSText.randomString(16);
+            //    ids.Add(beatmapObject.id, str);
+            //}
 
             //var list = new List<BeatmapObject>(prefab.objects.Select(x => Expand((BeatmapObject)x, prefabObject, prefab, id, ids)));
 
@@ -1125,19 +1167,25 @@ namespace EditorManagement.Functions.Editors
                     beatmapObjectCopy.editorData.Bin = Mathf.Clamp(beatmapObjectCopy.editorData.Bin, 0, 14);
                 }
 
-                beatmapObjectCopy.prefabInstanceID = id;
+                beatmapObjectCopy.prefabInstanceID = prefabObject.ID;
                 DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
 
                 if (ObjectEditor.inst != null)
                 {
-                    var objectSelection = new TimelineObject(beatmapObjectCopy);
-                    ObjectEditor.inst.AddSelectedObject(objectSelection);
+                    var timelineObject = new TimelineObject(beatmapObjectCopy);
+                    timelineObject.selected = true;
+                    ObjectEditor.inst.CurrentSelection = timelineObject;
 
-                    ObjectEditor.inst.RenderTimelineObject(objectSelection);
+                    ObjectEditor.inst.RenderTimelineObject(timelineObject);
                 }
                 Updater.UpdateProcessor(beatmapObjectCopy);
 
                 delay += 0.0001f;
+            }
+
+            if (prefab.objects.Count > 1 || prefab.prefabObjects.Count > 1)
+            {
+                EditorManager.inst.ShowDialog("Multi Object Editor", false);
             }
 
             EditorManager.inst.DisplayNotification("Expanded Prefab Object [" + prefabObject + "].", 1f, EditorManager.NotificationType.Success, false);
