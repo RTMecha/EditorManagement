@@ -77,15 +77,6 @@ namespace EditorManagement.Functions.Editors
             editorDialogSpacer = editorDialogTransform.GetChild(1);
             editorDialogSpacer.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 12f);
 
-            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(2).gameObject;
-            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-            var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
-            var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
-            var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
-            var stringInput = GameObject.Find("TimelineBar/GameObject/Time Input");
-            var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
-            var colorsInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color");
-
             editorDialogText = editorDialogTransform.GetChild(2);
 
             editorDialogText.SetSiblingIndex(1);
@@ -115,7 +106,7 @@ namespace EditorManagement.Functions.Editors
             searchField.onValueChanged.AddListener(delegate (string _val)
             {
                 searchTerm = _val;
-                inst.StartCoroutine(RenderDialog());
+                StartCoroutine(RenderDialog());
             });
 
             search.transform.GetChild(0).Find("Placeholder").GetComponent<Text>().text = "Search for level...";
@@ -212,45 +203,10 @@ namespace EditorManagement.Functions.Editors
 			}
 
 			// Dropdown
+			EditorHelper.AddEditorDropdown("Level Combiner", "", "File", RTFunctions.Functions.Managers.SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_combine_t.png"), delegate ()
 			{
-
-				var propWin = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut"));
-				propWin.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/File/File Dropdown").transform);
-				propWin.transform.localScale = Vector3.one;
-				propWin.transform.SetSiblingIndex(4);
-				propWin.name = "Level Combiner";
-				propWin.transform.Find("Text").GetComponent<Text>().text = "Level Combiner";
-				propWin.transform.Find("Text").GetComponent<RectTransform>().sizeDelta = new Vector2(224f, 0f);
-				propWin.transform.Find("Text 1").GetComponent<Text>().text = "";
-
-				TooltipHelper.AddTooltip(propWin, "Open Level Combiner", "Here you can combine two levels together, allowing for collaborations to be better organized.");
-
-				var propWinButton = propWin.GetComponent<Button>();
-				propWinButton.onClick.ClearAll();
-				propWinButton.onClick.AddListener(delegate ()
-				{
-					OpenDialog();
-				});
-
-				string jpgFileLocation = "BepInEx/plugins/Assets/editor_gui_combine_t.png";
-
-				if (RTFile.FileExists(jpgFileLocation))
-				{
-					Image spriteReloader = propWin.transform.Find("Image").GetComponent<Image>();
-
-					EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(RTFile.ApplicationDirectory + jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-					{
-						spriteReloader.sprite = cover;
-					}, delegate (string errorFile)
-					{
-						spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-					}));
-				}
-
-				propWin.SetActive(true);
-
-				propWin.transform.Find("Image").GetComponent<Image>().sprite = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent/parent/image").GetComponent<Image>().sprite;
-			}
+				OpenDialog();
+			}, 4);
 		}
 
         void Update()
@@ -258,24 +214,15 @@ namespace EditorManagement.Functions.Editors
 
         }
 
-        public static void OpenDialog()
+        public void OpenDialog()
         {
-            if (inst == null)
-                return;
-
             Debug.LogFormat("{0}Attempting to open Level Combiner!", EditorPlugin.className);
             EditorManager.inst.ShowDialog("Level Combiner");
-            inst.StartCoroutine(inst.RenderDialog());
+            StartCoroutine(RenderDialog());
         }
 
         public IEnumerator RenderDialog()
         {
-			var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
-			//foreach (object obj in transform)
-			//{
-			//	Destroy(((Transform)obj).gameObject);
-			//}
-
 			#region Clamping
 
 			var olfnm = RTEditor.GetEditorProperty("Open Level Folder Name Max").GetConfigEntry<int>();
@@ -320,10 +267,9 @@ namespace EditorManagement.Functions.Editors
 
 				difficultyName = difficultyNames[metadata.song.difficulty];
 
-				if (RTFile.FileExists(RTEditor.editorListSlash + metadataWrapper.folder + "/level.ogg"))
+				if (RTFile.FileExists(metadataWrapper.folder + "/level.lsb"))
 				{
-					if (((first == null || first.folder != metadataWrapper.folder) && (second == null || second.folder != metadataWrapper.folder)) && (searchTerm == null
-						|| !(searchTerm != "")
+					if (((first == null || first.folder != metadataWrapper.folder) && (second == null || second.folder != metadataWrapper.folder)) && (string.IsNullOrEmpty(searchTerm)
 						|| name.ToLower().Contains(searchTerm.ToLower())
 						|| metadata.song.title.ToLower().Contains(searchTerm.ToLower())
 						|| metadata.artist.Name.ToLower().Contains(searchTerm.ToLower())
@@ -344,7 +290,7 @@ namespace EditorManagement.Functions.Editors
                                 second = metadataWrapper;
                             }
 
-                            inst.StartCoroutine(RenderDialog());
+                            StartCoroutine(RenderDialog());
                         });
                     }
 					else if (first != null && first.folder == metadataWrapper.folder || second != null && second.folder == metadataWrapper.folder)
@@ -362,7 +308,7 @@ namespace EditorManagement.Functions.Editors
                                 second = null;
                             }
 
-                            inst.StartCoroutine(RenderDialog());
+                            StartCoroutine(RenderDialog());
                         });
                     }
 				}
@@ -427,8 +373,10 @@ namespace EditorManagement.Functions.Editors
 			icon.AddComponent<CanvasRenderer>();
 			var iconImage = icon.AddComponent<Image>();
 
-			iconRT.anchoredPosition = RTEditor.GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
-			iconRT.sizeDelta = RTEditor.GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+			//iconRT.anchoredPosition = RTEditor.GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
+			//iconRT.sizeDelta = RTEditor.GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+			iconRT.anchoredPosition = new Vector2(-360f, 0f);
+			iconRT.sizeDelta = new Vector2(26f, 26f);
 
 			iconImage.sprite = metadataWrapper.albumArt;
 		}
