@@ -268,7 +268,7 @@ namespace EditorManagement.Patchers
                 }
                 if (info.ContainsKey("Song Progress") && info["Song Progress"])
                 {
-                    info["Song Progress"].text = $"[ {FontManager.TextTranslater.Percentage(AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.clip.length)} ]  ";
+                    info["Song Progress"].text = $"[ {FontManager.TextTranslater.Percentage(AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.clip.length)}% ]  ";
                 }
                 if (doggo)
                     doggo.sprite = EditorManager.inst.loadingImage.sprite;
