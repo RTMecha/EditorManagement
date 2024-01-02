@@ -77,6 +77,17 @@ namespace EditorManagement.Functions.Editors
             }
 
             timelinePosScrollbar = ObjEditor.inst.objTimelineContent.parent.parent.GetComponent<ScrollRect>().horizontalScrollbar;
+            timelinePosScrollbar.onValueChanged.AddListener(delegate (float _val)
+            {
+                if (CurrentSelection.IsBeatmapObject)
+                    CurrentSelection.TimelinePosition = _val;
+            });
+
+            ObjEditor.inst.zoomSlider.onValueChanged.AddListener(delegate (float _val)
+            {
+                if (CurrentSelection.IsBeatmapObject)
+                    CurrentSelection.Zoom = _val;
+            });
         }
 
 
@@ -117,8 +128,7 @@ namespace EditorManagement.Functions.Editors
 
                 StartCoroutine(RefreshObjectGUI(beatmapObject));
 
-                // Here we remember an object's zoom.
-                CurrentSelection.Zoom = ObjEditor.inst.zoomFloat;
+                // Here we remember an object's zoom and timeline position.
                 ObjEditor.inst.Zoom = CurrentSelection.Zoom;
 
                 timelinePosScrollbar.value = CurrentSelection.TimelinePosition;
@@ -1753,6 +1763,8 @@ namespace EditorManagement.Functions.Editors
                 {
                     beatmapObject.StartTime = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 
+                    ResizeKeyframeTimeline(beatmapObject);
+
                     // StartTime affects both physical object and timeline object.
                     RenderTimelineObject(new TimelineObject(beatmapObject));
                     if (UpdateObjects)
@@ -1771,6 +1783,8 @@ namespace EditorManagement.Functions.Editors
                 moveTime = Mathf.Clamp(moveTime, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
                 timeIF.text = moveTime.ToString();
 
+                ResizeKeyframeTimeline(beatmapObject);
+
                 // StartTime affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
@@ -1787,6 +1801,8 @@ namespace EditorManagement.Functions.Editors
                 moveTime = Mathf.Clamp(moveTime, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
                 timeIF.text = moveTime.ToString();
 
+                ResizeKeyframeTimeline(beatmapObject);
+
                 // StartTime affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
@@ -1799,6 +1815,8 @@ namespace EditorManagement.Functions.Editors
             setStartToTime.onClick.AddListener(delegate ()
             {
                 timeIF.text = EditorManager.inst.CurrentAudioPos.ToString();
+
+                ResizeKeyframeTimeline(beatmapObject);
 
                 // StartTime affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
@@ -1815,6 +1833,8 @@ namespace EditorManagement.Functions.Editors
                 moveTime = Mathf.Clamp(moveTime, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
                 timeIF.text = moveTime.ToString();
 
+                ResizeKeyframeTimeline(beatmapObject);
+
                 // StartTime affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
@@ -1829,6 +1849,8 @@ namespace EditorManagement.Functions.Editors
                 float moveTime = beatmapObject.StartTime + 1f;
                 moveTime = Mathf.Clamp(moveTime, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
                 timeIF.text = moveTime.ToString();
+
+                ResizeKeyframeTimeline(beatmapObject);
 
                 // StartTime affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
@@ -2493,6 +2515,7 @@ namespace EditorManagement.Functions.Editors
                 var tfv = ObjEditor.inst.ObjectView.transform;
 
                 var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
+
                 if (inspector != null && !tfv.Find("inspect"))
                 {
                     var label = tfv.ChildList().First(x => x.name == "label").gameObject.Duplicate(tfv);
@@ -2500,24 +2523,46 @@ namespace EditorManagement.Functions.Editors
                     label.transform.SetSiblingIndex(index);
 
                     Destroy(label.transform.GetChild(1).gameObject);
-                    label.transform.GetChild(0).GetComponent<Text>().text = "UE Inspect GameObject";
+                    label.transform.GetChild(0).GetComponent<Text>().text = "Unity Explorer";
 
                     var inspect = tfv.Find("applyprefab").gameObject.Duplicate(tfv);
                     inspect.SetActive(true);
                     inspect.transform.SetSiblingIndex(index + 1);
-                    inspect.name = "inspect";
+                    inspect.name = "inspectbeatmapobject";
 
-                    inspect.transform.GetChild(0).GetComponent<Text>().text = "Inspect";
+                    inspect.transform.GetChild(0).GetComponent<Text>().text = "Inspect BeatmapObject";
+
+                    var inspectGameObject = tfv.Find("applyprefab").gameObject.Duplicate(tfv);
+                    inspectGameObject.SetActive(true);
+                    inspectGameObject.transform.SetSiblingIndex(index + 2);
+                    inspectGameObject.name = "inspect";
+
+                    inspectGameObject.transform.GetChild(0).GetComponent<Text>().text = "Inspect GameObject";
                 }
-
+                
                 if (tfv.Find("inspect"))
                 {
-                    var deleteButton = tfv.Find("inspect").GetComponent<Button>();
+                    bool active = beatmapObject.objectType != ObjectType.Empty || !RTFunctions.FunctionsPlugin.LDM.Value || beatmapObject.LDM;
+                    tfv.Find("inspect").gameObject.SetActive(active);
+                    if (active)
+                    {
+                        var deleteButton = tfv.Find("inspect").GetComponent<Button>();
+                        deleteButton.onClick.ClearAll();
+                        deleteButton.onClick.AddListener(delegate ()
+                        {
+                            if (Updater.TryGetObject(beatmapObject, out RTFunctions.Functions.Optimization.Objects.LevelObject levelObject))
+                                inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { levelObject, null });
+                        });
+                    }
+                }
+
+                if (tfv.Find("inspectbeatmapobject"))
+                {
+                    var deleteButton = tfv.Find("inspectbeatmapobject").GetComponent<Button>();
                     deleteButton.onClick.ClearAll();
                     deleteButton.onClick.AddListener(delegate ()
                     {
-                        if (beatmapObject.TryGetGameObject(out GameObject gameObject))
-                            inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { gameObject, null });
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { beatmapObject, null });
                     });
                 }
             }
