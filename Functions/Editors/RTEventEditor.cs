@@ -53,8 +53,7 @@ namespace EditorManagement.Functions.Editors
 		// Timeline will only ever have up to 15 "bins" and since the 15th bin is the checkpoints, we only need the first 14 bins.
 		public const int EventLimit = 14;
 
-		// Will implement this as an Editor Property later.
-		public static bool ResetRotation => true;
+		public static bool ResetRotation => RTEditor.GetEditorProperty("Rotation Event Keyframe Resets").GetConfigEntry<bool>().Value;
 
 		public List<Toggle> vignetteColorButtons = new List<Toggle>();
 		public List<Toggle> bloomColorButtons = new List<Toggle>();
@@ -142,10 +141,10 @@ namespace EditorManagement.Functions.Editors
 			new Color(0.6862745f, 0.7058824f, 0.1686275f, 0.5f),
 			new Color(1f, 0.7568628f, 0.02745098f, 0.5f),
 			new Color(1f, 0.5960785f, 0f, 0.5f),
-			new Color(0.7267f, 0.3796f, 0f, 1f),
-			new Color(0.6980392f, 0.1411765f, 0.06666667f, 1f),
-			new Color(0.6980392f, 0.145098f, 0.145098f, 1f),
-			new Color(0.3921569f, 0.7098039f, 0.9647059f, 0.4980392f),
+			new Color(0.7267f, 0.3796f, 0f, 0.5f),
+			new Color(0.6980392f, 0.1411765f, 0.06666667f, 0.5f),
+			new Color(0.6980392f, 0.145098f, 0.145098f, 0.5f),
+			new Color(0.3921569f, 0.7098039f, 0.9647059f, 0.5f),
 		};
 
 		public static bool EventsCore => ModCompatibility.mods.ContainsKey("EventsCore");
@@ -249,10 +248,9 @@ namespace EditorManagement.Functions.Editors
 			foreach (var keyframeSelection in copiedEventKeyframes)
 			{
 				var eventKeyframe = EventKeyframe.DeepCopy(keyframeSelection.GetData<EventKeyframe>());
-				//Debug.LogFormat($"Create Keyframe at {eventKeyframe.eventTime} - {eventKeyframe.eventValues[0]}");
 				eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos + eventKeyframe.eventTime;
 				if (SettingEditor.inst.SnapActive)
-					eventKeyframe.eventTime = EditorManager.inst.SnapToBPM(eventKeyframe.eventTime);
+					eventKeyframe.eventTime = RTEditor.SnapToBPM(eventKeyframe.eventTime);
 
 				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type].Add(eventKeyframe);
 			}
@@ -312,6 +310,11 @@ namespace EditorManagement.Functions.Editors
 				{ eventTime = AudioManager.inst.CurrentAudioSource.time, eventValues = new float[9] };
 			}
 
+
+			if (SettingEditor.inst.SnapActive)
+				__0 = RTEditor.SnapToBPM(__0);
+
+
 			eventKeyframe.eventTime = __0;
 			if (__1 == 2 && ResetRotation)
 				eventKeyframe.SetEventValues(new float[1]);
@@ -334,6 +337,10 @@ namespace EditorManagement.Functions.Editors
 			}
 
 			float timeTmp = EditorManager.inst.GetTimelineTime();
+
+			if (SettingEditor.inst.SnapActive)
+				timeTmp = RTEditor.SnapToBPM(timeTmp);
+
 			int num = DataManager.inst.gameData.eventObjects.allEvents[_type].FindLastIndex(x => x.eventTime <= timeTmp);
 			Debug.Log($"{EventEditor.inst.className}Prior Index: {num}");
 
@@ -349,9 +356,9 @@ namespace EditorManagement.Functions.Editors
 				eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[_type][num], true);
 				eventKeyframe.eventTime = timeTmp;
 
-				if (_type == 2)
-					eventKeyframe.SetEventValues(new float[1]);
-			}
+                if (_type == 2 && ResetRotation)
+                    eventKeyframe.SetEventValues(new float[1]);
+            }
 
 			DataManager.inst.gameData.eventObjects.allEvents[_type].Add(eventKeyframe);
 
@@ -962,7 +969,7 @@ namespace EditorManagement.Functions.Editors
 					}
 				case 2: // Rotate
 					{
-						SetFloatInputField(dialogTmp, "rotation/x", 0, 5f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/x", 0, 15f, 3f);
 						break;
 					}
 				case 3: // Shake
