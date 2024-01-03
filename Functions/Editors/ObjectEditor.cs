@@ -241,9 +241,9 @@ namespace EditorManagement.Functions.Editors
             var bmTimelineObject = GetTimelineObject(beatmapObject);
 
             var list = bmTimelineObject.InternalSelections.Where(x => x.selected).ToList();
-            int count = list.Count;
+            int count = list.Where(x => x.Index != 0).Count();
 
-            EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
+            EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 0.2f, EditorManager.NotificationType.Success);
 
             UpdateKeyframeOrder(beatmapObject);
 
@@ -252,11 +252,7 @@ namespace EditorManagement.Functions.Editors
             {
                 if (timelineObject.Index != 0)
                     strs.Add(timelineObject.GetData<EventKeyframe>().id);
-                else
-                    count--;
             }
-
-            ClearKeyframes(beatmapObject);
 
             for (int i = 0; i < beatmapObject.events.Count; i++)
             {
@@ -264,14 +260,15 @@ namespace EditorManagement.Functions.Editors
             }
 
             var ti = GetTimelineObject(beatmapObject);
+            ti.InternalSelections.Where(x => x.selected).ToList().ForEach(x => Destroy(x.GameObject));
             ti.InternalSelections.RemoveAll(x => x.selected);
 
-            SetCurrentKeyframe(beatmapObject, 0);
             RenderTimelineObject(bmTimelineObject);
             Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
             RenderKeyframes(beatmapObject);
 
+            SetCurrentKeyframe(beatmapObject, 0);
             ResizeKeyframeTimeline(beatmapObject);
 
             EditorManager.inst.DisplayNotification("Deleted Object Keyframes [ " + count + " ]", 1f, EditorManager.NotificationType.Success);
