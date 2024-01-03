@@ -144,6 +144,7 @@ namespace EditorManagement.Functions.Editors
         {
             var list = SelectedObjects;
             int count = SelectedObjectCount;
+            int min = list.Min(x => x.Index) - 1;
 
             EditorManager.inst.DisplayNotification($"Deleting Beatmap Objects [ {count} ]", 1f, EditorManager.NotificationType.Success);
 
@@ -162,15 +163,17 @@ namespace EditorManagement.Functions.Editors
                             .Where(c => c.prefabInstanceID == x.ID)
                         .Select(c => c.id)));
 
+            DataManager.inst.gameData.beatmapObjects.Where(x => beatmapObjectIDs.Contains(x.id)).ToList().ForEach(x => Updater.UpdateProcessor(x, reinsert: false));
+            DataManager.inst.gameData.beatmapObjects.Where(x => prefabObjectIDs.Contains(x.prefabInstanceID)).ToList().ForEach(x => Updater.UpdateProcessor(x, reinsert: false));
+
             DataManager.inst.gameData.beatmapObjects.RemoveAll(x => beatmapObjectIDs.Contains(x.id));
+            DataManager.inst.gameData.beatmapObjects.RemoveAll(x => prefabObjectIDs.Contains(x.prefabInstanceID));
             DataManager.inst.gameData.prefabObjects.RemoveAll(x => prefabObjectIDs.Contains(x.ID));
 
             RTEditor.inst.timelineObjects.Where(x => beatmapObjectIDs.Contains(x.ID) || prefabObjectIDs.Contains(x.ID)).ToList().ForEach(x => Destroy(x.GameObject));
             RTEditor.inst.timelineObjects.RemoveAll(x => beatmapObjectIDs.Contains(x.ID) || prefabObjectIDs.Contains(x.ID));
 
-            SetCurrentObject(RTEditor.inst.timelineObjects[0]);
-
-            Updater.RemoveObjects(beatmapObjectIDs);
+            SetCurrentObject(RTEditor.inst.timelineObjects[Mathf.Clamp(min, 0, RTEditor.inst.timelineObjects.Count - 1)]);
 
             EditorManager.inst.DisplayNotification($"Deleted Beatmap Objects [ {count} ]", 1f, EditorManager.NotificationType.Success);
             yield break;
@@ -520,6 +523,8 @@ namespace EditorManagement.Functions.Editors
                     beatmapObjectCopy.fromPrefab = false;
 
                     beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
+                    if (offset != 0.0)
+                        ++beatmapObjectCopy.editorData.Bin;
 
                     beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
                     DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
@@ -552,6 +557,8 @@ namespace EditorManagement.Functions.Editors
                     prefabObjectCopy.prefabID = prefabObject.prefabID;
 
                     prefabObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
+                    if (offset != 0.0)
+                        ++prefabObjectCopy.editorData.Bin;
 
                     prefabObjectCopy.editorData.layer = RTEditor.inst.Layer;
 
