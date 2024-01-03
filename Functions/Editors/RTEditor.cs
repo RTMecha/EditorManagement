@@ -4509,7 +4509,8 @@ namespace EditorManagement.Functions.Editors
 
         public void RefreshObjectSearch(Action<BeatmapObject> onSelect, bool clearParent = false)
         {
-            var content = EditorManager.inst.GetDialog("Object Search Popup").Dialog.Find("mask/content");
+            var dialog = EditorManager.inst.GetDialog("Object Search Popup").Dialog;
+            var content = dialog.Find("mask/content");
 
             if (clearParent)
             {
@@ -4533,6 +4534,14 @@ namespace EditorManagement.Functions.Editors
                 image.color = Color.red;
                 image.sprite = x;
             }
+
+            var searchBar = dialog.Find("search-box/search").GetComponent<InputField>();
+            searchBar.onValueChanged.ClearAll();
+            searchBar.onValueChanged.AddListener(delegate (string _value)
+            {
+                objectSearchTerm = _value;
+                RefreshObjectSearch(onSelect, clearParent);
+            });
 
             LSHelpers.DeleteChildren(content);
 
@@ -5803,6 +5812,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("General", "Bring To Selection", false, "When an object is selected (whether it be a regular object, a marker, etc), it will move the layer and audio time to that object.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Create Objects at Camera Center", true, "When an object is created, its position will be set to that of the camera's.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
 
             #endregion
 
@@ -6221,12 +6232,7 @@ namespace EditorManagement.Functions.Editors
             public string description;
             public Action action;
 
-            public ConfigEntry<T> GetConfigEntry<T>()
-            {
-                if (configEntry is ConfigEntry<T>)
-                    return (ConfigEntry<T>)configEntry;
-                return null;
-            }
+            public ConfigEntry<T> GetConfigEntry<T>() => configEntry is ConfigEntry<T> ? (ConfigEntry<T>)configEntry : null;
 
             public List<EditorPropCategory> PropCategories => new List<EditorPropCategory>()
             {
