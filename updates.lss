@@ -1,3 +1,6 @@
+2.1.2 > Some fixes and changes to ObjectModifiers editor, including adding ones I forgot to add.
+2.1.2 > Fixed keyframe deletion renderin bug that caused every keyframe to disappear.
+-
 2.1.1 > Fixed a bug with deleting objects causing error log spam.
 2.1.1 > Added the rest of the ObjectModifier UI elements.
 2.1.1 > Added a config for reseting Event / Check rotate keyframe value and added Snap BPM to some other keyframe stuff like pasting.
