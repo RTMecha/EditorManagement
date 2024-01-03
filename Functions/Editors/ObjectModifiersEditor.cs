@@ -3138,6 +3138,7 @@ namespace EditorManagement.Functions.Editors
                     if (modifier.type == BeatmapObject.Modifier.Type.Trigger)
                     {
                         var not = booleanBar.Duplicate(layout, "Not");
+                        not.transform.Find("Text").GetComponent<Text>().text = "Not";
 
                         var notToggle = not.transform.Find("Toggle").GetComponent<Toggle>();
                         notToggle.onValueChanged.ClearAll();
@@ -3148,10 +3149,6 @@ namespace EditorManagement.Functions.Editors
                             modifier.active = false;
                         });
                     }
-
-                    //if (cmd == "setPitch" || cmd == "addPitch" || cmd == "setMusicTime" || cmd == "pitchEquals" || cmd == "pitchLesserEquals"
-                    //|| cmd == "pitchGreaterEquals" || cmd == "pitchLesser" || cmd == "pitchGreater" || cmd == "playerDistanceLesser"
-                    //|| cmd == "playerDistanceGreater" || cmd == "blackHole" || cmd.Contains("setAlpha"))
 
                     var cmd = modifier.commands[0];
                     switch (cmd)
@@ -3409,41 +3406,93 @@ namespace EditorManagement.Functions.Editors
                                     modifier.commands[2] = _val;
                                     modifier.active = false;
                                 });
-                                
-                                var startColor = numberInput.Duplicate(layout, "StartColor");
-                                startColor.transform.Find("Text").GetComponent<Text>().text = "StartColor";
 
-                                var startColorIF = startColor.transform.Find("Input").GetComponent<InputField>();
-                                startColorIF.onValueChanged.ClearAll();
-                                startColorIF.textComponent.alignment = TextAnchor.MiddleCenter;
-                                startColorIF.text = Mathf.Clamp(Parser.TryParse(modifier.commands[3], 0), 0, RTHelpers.BeatmapTheme.objectColors.Count - 1).ToString();
-                                startColorIF.onValueChanged.AddListener(delegate (string _val)
-                                {
-                                    if (int.TryParse(_val, out int result))
-                                    {
-                                        result = Mathf.Clamp(result, 0, RTHelpers.BeatmapTheme.objectColors.Count - 1);
-                                        modifier.commands[3] = result.ToString();
-                                        modifier.active = false;
-                                    }
-                                });
-                                
-                                var endColor = numberInput.Duplicate(layout, "EndColor");
-                                endColor.transform.Find("Text").GetComponent<Text>().text = "EndColor";
+                                //var startColor = numberInput.Duplicate(layout, "StartColor");
+                                //startColor.transform.Find("Text").GetComponent<Text>().text = "StartColor";
 
-                                var endColorIF = endColor.transform.Find("Input").GetComponent<InputField>();
-                                endColorIF.onValueChanged.ClearAll();
-                                endColorIF.textComponent.alignment = TextAnchor.MiddleCenter;
-                                endColorIF.text = Mathf.Clamp(Parser.TryParse(modifier.commands[5], 0), 0, RTHelpers.BeatmapTheme.objectColors.Count - 1).ToString();
-                                endColorIF.onValueChanged.AddListener(delegate (string _val)
+                                //var startColorIF = startColor.transform.Find("Input").GetComponent<InputField>();
+                                //startColorIF.onValueChanged.ClearAll();
+                                //startColorIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                //startColorIF.text = Mathf.Clamp(Parser.TryParse(modifier.commands[3], 0), 0, RTHelpers.BeatmapTheme.objectColors.Count - 1).ToString();
+                                //startColorIF.onValueChanged.AddListener(delegate (string _val)
+                                //{
+                                //    if (int.TryParse(_val, out int result))
+                                //    {
+                                //        result = Mathf.Clamp(result, 0, RTHelpers.BeatmapTheme.objectColors.Count - 1);
+                                //        modifier.commands[3] = result.ToString();
+                                //        modifier.active = false;
+                                //    }
+                                //});
+
+
+                                var startColorBase = numberInput.Duplicate(layout, "StartColor");
+
+                                startColorBase.transform.Find("Text").GetComponent<Text>().text = "StartColor";
+
+                                Destroy(startColorBase.transform.Find("Input").gameObject);
+                                Destroy(startColorBase.transform.Find(">").gameObject);
+                                Destroy(startColorBase.transform.Find("<").gameObject);
+
+                                var startColors = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color"));
+                                startColors.transform.SetParent(startColorBase.transform);
+                                startColors.transform.localScale = Vector3.one;
+                                startColors.name = "color";
+
+                                if (startColors.TryGetComponent(out GridLayoutGroup scglg))
                                 {
-                                    if (int.TryParse(_val, out int result))
-                                    {
-                                        result = Mathf.Clamp(result, 0, RTHelpers.BeatmapTheme.objectColors.Count - 1);
-                                        modifier.commands[5] = result.ToString();
-                                        modifier.active = false;
-                                    }
-                                });
-                                
+                                    scglg.cellSize = new Vector2(16f, 16f);
+                                    scglg.spacing = new Vector2(4.66f, 2.5f);
+                                }
+                                if (startColors.TryGetComponent(out RectTransform scrt))
+                                {
+                                    scrt.sizeDelta = new Vector2(183f, 32f);
+                                }
+
+                                SetObjectColors(startColors.GetComponentsInChildren<Toggle>(), 3, Parser.TryParse(modifier.commands[3], 0), modifier);
+
+                                //var endColor = numberInput.Duplicate(layout, "EndColor");
+                                //endColor.transform.Find("Text").GetComponent<Text>().text = "EndColor";
+
+                                //var endColorIF = endColor.transform.Find("Input").GetComponent<InputField>();
+                                //endColorIF.onValueChanged.ClearAll();
+                                //endColorIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                //endColorIF.text = Mathf.Clamp(Parser.TryParse(modifier.commands[5], 0), 0, RTHelpers.BeatmapTheme.objectColors.Count - 1).ToString();
+                                //endColorIF.onValueChanged.AddListener(delegate (string _val)
+                                //{
+                                //    if (int.TryParse(_val, out int result))
+                                //    {
+                                //        result = Mathf.Clamp(result, 0, RTHelpers.BeatmapTheme.objectColors.Count - 1);
+                                //        modifier.commands[5] = result.ToString();
+                                //        modifier.active = false;
+                                //    }
+                                //});
+
+
+                                var endColorBase = numberInput.Duplicate(layout, "EndColor");
+
+                                endColorBase.transform.Find("Text").GetComponent<Text>().text = "EndColor";
+
+                                Destroy(endColorBase.transform.Find("Input").gameObject);
+                                Destroy(endColorBase.transform.Find(">").gameObject);
+                                Destroy(endColorBase.transform.Find("<").gameObject);
+
+                                var endColors = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color"));
+                                endColors.transform.SetParent(endColorBase.transform);
+                                endColors.transform.localScale = Vector3.one;
+                                endColors.name = "color";
+
+                                if (endColors.TryGetComponent(out GridLayoutGroup ecglg))
+                                {
+                                    ecglg.cellSize = new Vector2(16f, 16f);
+                                    ecglg.spacing = new Vector2(4.66f, 2.5f);
+                                }
+                                if (endColors.TryGetComponent(out RectTransform ecrt))
+                                {
+                                    ecrt.sizeDelta = new Vector2(183f, 32f);
+                                }
+
+                                SetObjectColors(endColors.GetComponentsInChildren<Toggle>(), 5, Parser.TryParse(modifier.commands[5], 0), modifier);
+
                                 var startOpacity = numberInput.Duplicate(layout, "StartOpacity");
                                 startOpacity.transform.Find("Text").GetComponent<Text>().text = "StartOpacity";
 
@@ -3654,6 +3703,7 @@ namespace EditorManagement.Functions.Editors
                         case "reactiveSca":
                         case "reactiveRot":
                         case "reactiveCol":
+                        case "reactiveColLerp":
                             {
                                 var single = numberInput.Duplicate(layout, "Value");
                                 single.transform.Find("Text").GetComponent<Text>().text = "Total Multiply";
@@ -3677,7 +3727,7 @@ namespace EditorManagement.Functions.Editors
                                 if (cmd == "reactivePos" || cmd == "reactiveSca")
                                 {
                                     var samplesX = numberInput.Duplicate(layout, "Value");
-                                    samplesX.transform.Find("Text").GetComponent<Text>().text = "Total Multiply";
+                                    samplesX.transform.Find("Text").GetComponent<Text>().text = "Sample X";
 
                                     var samplesXIF = samplesX.transform.Find("Input").GetComponent<InputField>();
                                     samplesXIF.onValueChanged.ClearAll();
@@ -3693,7 +3743,7 @@ namespace EditorManagement.Functions.Editors
                                     });
 
                                     var samplesY = numberInput.Duplicate(layout, "Value");
-                                    samplesY.transform.Find("Text").GetComponent<Text>().text = "Total Multiply";
+                                    samplesY.transform.Find("Text").GetComponent<Text>().text = "Sample Y";
 
                                     var samplesYIF = samplesY.transform.Find("Input").GetComponent<InputField>();
                                     samplesYIF.onValueChanged.ClearAll();
@@ -3761,7 +3811,7 @@ namespace EditorManagement.Functions.Editors
                                 else
                                 {
                                     var samplesX = numberInput.Duplicate(layout, "Value");
-                                    samplesX.transform.Find("Text").GetComponent<Text>().text = "Total Multiply";
+                                    samplesX.transform.Find("Text").GetComponent<Text>().text = "Sample";
 
                                     var samplesXIF = samplesX.transform.Find("Input").GetComponent<InputField>();
                                     samplesXIF.onValueChanged.ClearAll();
@@ -3776,7 +3826,10 @@ namespace EditorManagement.Functions.Editors
                                         }
                                     });
 
-                                    if (cmd == "reactiveCol")
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(samplesXIF, t: samplesX.transform);
+                                    TriggerHelper.AddEventTriggerParams(samplesX, TriggerHelper.ScrollDeltaInt(samplesXIF));
+
+                                    if (cmd == "reactiveCol" || cmd == "reactiveColLerp")
                                     {
                                         var w = numberInput.Duplicate(layout, "Color");
 
@@ -3794,7 +3847,7 @@ namespace EditorManagement.Functions.Editors
                                         if (color.TryGetComponent(out GridLayoutGroup glg))
                                         {
                                             glg.cellSize = new Vector2(16f, 16f);
-                                            glg.spacing = new Vector2(4.66f, 4.66f);
+                                            glg.spacing = new Vector2(4.66f, 2.5f);
                                         }
                                         if (color.TryGetComponent(out RectTransform rt))
                                         {
@@ -3952,7 +4005,7 @@ namespace EditorManagement.Functions.Editors
                                 if (color.TryGetComponent(out GridLayoutGroup glg))
                                 {
                                     glg.cellSize = new Vector2(16f, 16f);
-                                    glg.spacing = new Vector2(4.66f, 4.66f);
+                                    glg.spacing = new Vector2(4.66f, 2.5f);
                                 }
                                 if (color.TryGetComponent(out RectTransform rt))
                                 {
@@ -4172,6 +4225,127 @@ namespace EditorManagement.Functions.Editors
 
                                 break;
                             }
+                        case "playerMove":
+                        case "playerMoveAll":
+                        case "playerMoveX":
+                        case "playerMoveXAll":
+                        case "playerMoveY":
+                        case "playerMoveYAll":
+                        case "playerRotate":
+                        case "playerRotateAll":
+                            {
+                                string[] vector = new string[2];
+
+                                bool isBothAxis = cmd == "playerMove" || cmd == "playerMoveAll";
+                                if (isBothAxis)
+                                {
+                                    vector = modifier.value.Split(new char[] { ',' });
+                                }
+
+                                var xPosition = numberInput.Duplicate(layout, "X");
+                                xPosition.transform.Find("Text").GetComponent<Text>().text = cmd.Contains("X") || isBothAxis || cmd.Contains("Rotate") ? "X" : "Y";
+
+                                var xPositionIF = xPosition.transform.Find("Input").GetComponent<InputField>();
+                                xPositionIF.onValueChanged.ClearAll();
+                                xPositionIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                xPositionIF.text = Parser.TryParse(isBothAxis ? vector[0] : modifier.value, 0.5f).ToString();
+                                xPositionIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float result))
+                                    {
+                                        modifier.value = isBothAxis ? $"{result},{layout.transform.Find("Y/Input").GetComponent<InputField>().text}" : result.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                if (isBothAxis)
+                                {
+                                    var yPosition = numberInput.Duplicate(layout, "Y");
+                                    yPosition.transform.Find("Text").GetComponent<Text>().text = "Y";
+
+                                    var yPositionIF = yPosition.transform.Find("Input").GetComponent<InputField>();
+                                    yPositionIF.onValueChanged.ClearAll();
+                                    yPositionIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                    yPositionIF.text = Parser.TryParse(isBothAxis ? vector[0] : modifier.value, 0.5f).ToString();
+                                    yPositionIF.onValueChanged.AddListener(delegate (string _val)
+                                    {
+                                        if (float.TryParse(_val, out float result))
+                                        {
+                                            modifier.value = $"{layout.transform.Find("X/Input").GetComponent<InputField>().text},{result}";
+                                            modifier.active = false;
+                                        }
+                                    });
+
+                                    TriggerHelper.IncreaseDecreaseButtons(yPositionIF, t: yPosition.transform);
+                                    TriggerHelper.AddEventTriggerParams(yPosition,
+                                        TriggerHelper.ScrollDelta(yPositionIF),
+                                        TriggerHelper.ScrollDeltaVector2(xPositionIF, yPositionIF, 0.1f, 10f));
+
+                                }
+                                else
+                                {
+                                    TriggerHelper.IncreaseDecreaseButtons(xPositionIF, t: xPosition.transform);
+                                    TriggerHelper.AddEventTrigger(xPosition, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xPositionIF) });
+                                }
+
+                                var single = numberInput.Duplicate(layout, "Duration");
+                                single.transform.Find("Text").GetComponent<Text>().text = "Duration";
+
+                                var inputField = single.transform.Find("Input").GetComponent<InputField>();
+                                inputField.onValueChanged.ClearAll();
+                                inputField.textComponent.alignment = TextAnchor.MiddleCenter;
+                                inputField.text = Parser.TryParse(modifier.commands[1], 1f).ToString();
+                                inputField.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float result))
+                                    {
+                                        modifier.commands[1] = Mathf.Clamp(result, 0f, 9999f).ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(inputField, t: single.transform);
+                                TriggerHelper.AddEventTrigger(single, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
+
+                                var dd = dropdownBar.Duplicate(layout, "Key");
+                                dd.transform.Find("Text").GetComponent<Text>().text = "Value";
+
+                                Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                                Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+                                var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                                d.onValueChanged.RemoveAllListeners();
+                                d.options.Clear();
+
+                                foreach (var curveOption in EditorManager.inst.CurveOptions)
+                                {
+                                    d.options.Add(new Dropdown.OptionData(curveOption.name, curveOption.icon));
+                                }
+
+                                d.value = Parser.TryParse(modifier.commands[2], 0);
+
+                                d.onValueChanged.AddListener(delegate (int _val)
+                                {
+                                    modifier.commands[2] = Mathf.Clamp(_val, 0, EditorManager.inst.CurveOptions.Count - 1).ToString();
+                                });
+
+                                if (modifier.commands.Count < 4)
+                                    modifier.commands.Add("False");
+
+                                var global = booleanBar.Duplicate(layout, "Relative");
+                                global.transform.Find("Text").GetComponent<Text>().text = "Relative";
+
+                                var globalToggle = global.transform.Find("Toggle").GetComponent<Toggle>();
+                                globalToggle.onValueChanged.ClearAll();
+                                globalToggle.isOn = Parser.TryParse(modifier.commands[3], false);
+                                globalToggle.onValueChanged.AddListener(delegate (bool _val)
+                                {
+                                    modifier.commands[3] = _val.ToString();
+                                    modifier.active = false;
+                                });
+
+                                break;
+                            }
                     }
 
                     /* List of modifiers that have no values:
@@ -4199,25 +4373,6 @@ namespace EditorManagement.Functions.Editors
                      * - updateObjects
                      * - requireSignal
                      */
-
-                    //if (modifier.commands[0] == "setPitch")
-                    //{
-                    //    var single = numberInput.Duplicate(layout, "Pitch");
-                    //    single.transform.Find("Text").GetComponent<Text>().text = "Value";
-
-                    //    var inputField = single.transform.Find("Input").GetComponent<InputField>();
-                    //    inputField.onValueChanged.ClearAll();
-                    //    inputField.textComponent.alignment = TextAnchor.MiddleCenter;
-                    //    inputField.text = modifier.value;
-                    //    inputField.onValueChanged.AddListener(delegate (string _val)
-                    //    {
-                    //        modifier.value = _val;
-                    //        modifier.active = false;
-                    //    });
-
-                    //    TriggerHelper.IncreaseDecreaseButtons(inputField, t: single.transform);
-                    //    TriggerHelper.AddEventTrigger(single, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
-                    //}
 
                     num++;
                 }
