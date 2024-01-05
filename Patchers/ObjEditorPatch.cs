@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
+using BepInEx.Configuration;
 using HarmonyLib;
 
 using UnityEngine;
@@ -21,8 +22,10 @@ using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
 
 using RTFunctions.Functions;
-using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Animation;
+using RTFunctions.Functions.Animation.Keyframe;
 using RTFunctions.Functions.Data;
+using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
 using RTFunctions.Patchers;
@@ -372,17 +375,60 @@ namespace EditorManagement.Patchers
 
 			// Position Z
 			{
-				var positionBase = ObjEditor.inst.KeyframeDialogs[0].transform.Find("position").gameObject;
+				// Original Sizes are 125.3943
+				var positionBase = ObjEditor.inst.KeyframeDialogs[0].transform.Find("position");
 
-				var posZ = Instantiate(positionBase.transform.Find("x"));
-				posZ.transform.SetParent(positionBase.transform);
-				posZ.transform.localScale = Vector3.one;
-				posZ.name = "z";
+				var posZ = positionBase.Find("x").gameObject.Duplicate(positionBase, "z");
 
-				positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 64f);
+				//positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 64f);
 				DestroyImmediate(positionBase.GetComponent<HorizontalLayoutGroup>());
-				var grp = positionBase.AddComponent<GridLayoutGroup>();
-				grp.cellSize = new Vector2(183f, 40f);
+				var grp = positionBase.gameObject.AddComponent<GridLayoutGroup>();
+				//grp.cellSize = new Vector2(183f, 40f);
+
+				DestroyImmediate(ObjEditor.inst.KeyframeDialogs[0].transform.Find("position/x/input").GetComponent<LayoutElement>());
+				DestroyImmediate(ObjEditor.inst.KeyframeDialogs[0].transform.Find("position/y/input").GetComponent<LayoutElement>());
+				DestroyImmediate(ObjEditor.inst.KeyframeDialogs[0].transform.Find("position/z/input").GetComponent<LayoutElement>());
+
+				var xLayout = positionBase.Find("x/input").GetComponent<LayoutElement>();
+				var yLayout = positionBase.Find("y/input").GetComponent<LayoutElement>();
+				var zLayout = positionBase.Find("z/input").GetComponent<LayoutElement>();
+
+				xLayout.preferredWidth = -1;
+				yLayout.preferredWidth = -1;
+				zLayout.preferredWidth = -1;
+
+				//xLayout.minWidth = 65f;
+				//yLayout.minWidth = 65f;
+				//zLayout.minWidth = 65f;
+
+				var labels = ObjEditor.inst.KeyframeDialogs[0].transform.GetChild(8);
+				var posZLabel = labels.GetChild(1).gameObject.Duplicate(labels, "text");
+				posZLabel.GetComponent<Text>().text = "Position Z";
+
+				//positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 32f);
+				//grp.cellSize = new Vector2(122f, 40f);
+				EditorPlugin.AdjustPositionInputsChanged = delegate ()
+				{
+					bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value;
+					positionBase.AsRT().sizeDelta = new Vector2(553f, adjusted ? 32f : 64f);
+					grp.cellSize = new Vector2(adjusted ? 122f : 183f, 40f);
+
+					var minWidth = adjusted ? 65f : 125.3943f;
+					xLayout.minWidth = minWidth;
+					yLayout.minWidth = minWidth;
+					zLayout.minWidth = minWidth;
+					posZLabel.gameObject.SetActive(adjusted);
+				};
+
+				bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value;
+				positionBase.AsRT().sizeDelta = new Vector2(553f, adjusted ? 32f : 64f);
+				grp.cellSize = new Vector2(adjusted ? 122f : 183f, 40f);
+
+				var minWidth = adjusted ? 65f : 125.3943f;
+				xLayout.minWidth = minWidth;
+				yLayout.minWidth = minWidth;
+				zLayout.minWidth = minWidth;
+				posZLabel.gameObject.SetActive(adjusted);
 			}
 
 			// Layers
@@ -518,11 +564,133 @@ namespace EditorManagement.Patchers
 				}
 			}
 
-			Destroy(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
-			Destroy(ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(1).gameObject);
-
-            // Parent Settings
+            // Homing Buttons
             {
+				var position = ObjEditor.inst.KeyframeDialogs[0].transform;
+				var randomPosition = position.transform.Find("random");
+				randomPosition.Find("interval-input/x").gameObject.SetActive(false);
+				var homingStaticPosition = randomPosition.Find("none").gameObject.Duplicate(randomPosition, "homing-static", 4);
+
+				if (RTFile.FileExists(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui__s_homing.png"))
+					homingStaticPosition.transform.Find("Image").GetComponent<Image>().sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui__s_homing.png");
+
+				var homingDynamicPosition = randomPosition.Find("none").gameObject.Duplicate(randomPosition, "homing-dynamic", 5);
+
+				if (RTFile.FileExists(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_d_homing.png"))
+					homingDynamicPosition.transform.Find("Image").GetComponent<Image>().sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_d_homing.png");
+
+				var rotation = ObjEditor.inst.KeyframeDialogs[2].transform;
+				var randomRotation = rotation.Find("random");
+				randomRotation.Find("interval-input/x").gameObject.SetActive(false);
+				var homingStaticRotation = randomRotation.Find("none").gameObject.Duplicate(randomRotation, "homing-static", 3);
+
+				if (RTFile.FileExists(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui__s_homing.png"))
+					homingStaticRotation.transform.Find("Image").GetComponent<Image>().sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui__s_homing.png");
+
+				var homingDynamicRotation = randomRotation.Find("none").gameObject.Duplicate(randomRotation, "homing-dynamic", 4);
+
+				if (RTFile.FileExists(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_d_homing.png"))
+					homingDynamicRotation.transform.Find("Image").GetComponent<Image>().sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_d_homing.png");
+
+				var color = ObjEditor.inst.KeyframeDialogs[3].transform;
+				var randomColorRangeLabel = position.Find("r_position_label").gameObject.Duplicate(color, "r_color_label");
+				randomColorRangeLabel.transform.GetChild(0).GetComponent<Text>().text = "Minimum Range";
+				randomColorRangeLabel.transform.GetChild(1).GetComponent<Text>().text = "Maximum Range";
+				var randomColorRange = position.Find("r_position").gameObject.Duplicate(color, "r_color");
+
+				var randomColorTargetLabel = position.GetChild(3).gameObject.Duplicate(color, "r_color_target_label");
+				randomColorTargetLabel.transform.GetChild(0).GetComponent<Text>().text = "Color Target";
+
+				var randomColorTarget = color.Find("color").gameObject.Duplicate(color, "r_color_target");
+				randomColorTarget.transform.AsRT().sizeDelta = new Vector2(366f, 64f);
+
+				var randomColorLabel = position.Find("r_label").gameObject.Duplicate(color, "r_label");
+				var randomColor = randomPosition.gameObject.Duplicate(color, "random");
+
+                //int num = randomColor.transform.childCount;
+                //while (num > 4)
+                //{
+                //    Destroy(randomColor.transform.GetChild(1).gameObject);
+                //    num = randomColor.transform.childCount;
+                //}
+
+                Destroy(randomColor.transform.Find("normal").gameObject);
+                Destroy(randomColor.transform.Find("toggle").gameObject);
+                Destroy(randomColor.transform.Find("scale").gameObject);
+                Destroy(randomColor.transform.Find("homing-static").gameObject);
+
+				var rAxis = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
+					.Duplicate(position, "r_axis", 14);
+				var rAxisDD = rAxis.GetComponent<Dropdown>();
+				rAxisDD.options.Clear();
+				rAxisDD.options = new List<Dropdown.OptionData>
+				{
+					new Dropdown.OptionData("Both"),
+					new Dropdown.OptionData("X Only"),
+					new Dropdown.OptionData("Y Only"),
+				};
+
+				//var scroll = color.gameObject.AddComponent<ScrollRect>();
+				//scroll.content = (RectTransform)color;
+				//scroll.viewport = (RectTransform)color;
+				//scroll.horizontal = false;
+			}
+
+			DestroyImmediate(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
+			DestroyImmediate(ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(1).gameObject);
+
+			// Shift Dialogs
+			{
+				ObjEditor.inst.KeyframeDialogs[0].transform.GetChild(2).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[0].transform.GetChild(7).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[1].transform.GetChild(2).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[1].transform.GetChild(7).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(2).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(7).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(2).gameObject.SetActive(false);
+				ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(7).gameObject.SetActive(false);
+
+				DestroyImmediate(GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right").GetComponent<VerticalLayoutGroup>());
+
+				var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
+				var toggle = di.GetChild(13).gameObject.Duplicate(ObjEditor.inst.KeyframeDialogs[3].transform, "shift", 16);
+				var text = toggle.transform.GetChild(1).GetComponent<Text>();
+				toggle.transform.GetChild(1).GetComponent<Text>().text = "Shift Dialog Down";
+				toggle.GetComponentAndPerformAction(delegate (Toggle shift)
+				{
+					shift.onValueChanged.ClearAll();
+					shift.isOn = false;
+					shift.onValueChanged.AddListener(delegate (bool _val)
+					{
+						ObjectEditor.inst.colorShifted = _val;
+						text.text = _val ? "Shift Dialog Up" : "Shift Dialog Down";
+						var animation = new AnimationManager.Animation("shift color UI");
+						animation.floatAnimations = new List<AnimationManager.Animation.AnimationObject<float>>
+						{
+							new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+							{
+								new FloatKeyframe(0f, _val ? 0f : 115f, Ease.Linear),
+								new FloatKeyframe(0.3f, _val ? 115f : 0f, Ease.CircOut),
+								new FloatKeyframe(0.32f, _val ? 115f : 0f, Ease.Linear),
+							}, delegate (float x)
+							{
+								ObjEditor.inst.KeyframeDialogs[3].transform.AsRT().anchoredPosition = new Vector2(0f, x);
+							}),
+						};
+
+						animation.onComplete = delegate ()
+						{
+							ObjEditor.inst.KeyframeDialogs[3].transform.AsRT().anchoredPosition = new Vector2(0f, _val ? 115f : 0f);
+							AnimationManager.inst.RemoveID(animation.id);
+						};
+
+						AnimationManager.inst.Play(animation);
+					});
+				});
+			}
+
+			// Parent Settings
+			{
 				var array = new string[]
 				{
 					"pos",
