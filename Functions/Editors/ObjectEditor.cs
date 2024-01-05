@@ -540,7 +540,7 @@ namespace EditorManagement.Functions.Editors
 
                     RenderTimelineObject(timelineObject);
 
-                    Updater.UpdateProcessor(beatmapObject);
+                    Updater.UpdateProcessor(beatmapObjectCopy);
 
                     delay += 0.0001f;
                 }
@@ -577,7 +577,7 @@ namespace EditorManagement.Functions.Editors
 
                     ObjectManager.inst.AddPrefabToLevel(prefabObjectCopy);
 
-                    Updater.UpdatePrefab(prefabObject);
+                    Updater.UpdatePrefab(prefabObjectCopy);
 
                     delay += 0.0001f;
                 }
