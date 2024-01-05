@@ -2672,10 +2672,10 @@ namespace EditorManagement.Functions.Editors
             labelL.SetParent(null);
             Destroy(parent.Find("label depth").gameObject);
 
-            Action<string, int, string, bool, UnityAction, UnityAction, UnityAction> action
-                = delegate (string name, int siblingIndex, string placeHolder, bool doMiddle, UnityAction leftButton, UnityAction middleButton, UnityAction rightButton)
+            Action<string, string, bool, UnityAction, UnityAction, UnityAction> action
+                = delegate (string name, string placeHolder, bool doMiddle, UnityAction leftButton, UnityAction middleButton, UnityAction rightButton)
             {
-                var gameObject = zoom.Duplicate(parent, name, siblingIndex);
+                var gameObject = zoom.Duplicate(parent, name);
                 gameObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = placeHolder;
 
                 ((RectTransform)gameObject.transform).sizeDelta = new Vector2(428f, 32f);
@@ -2733,7 +2733,7 @@ namespace EditorManagement.Functions.Editors
             {
                 labelGenerator("Set Group Layer");
 
-                action("layer", 1, "Enter layer...", true, delegate ()
+                action("layer", "Enter layer...", true, delegate ()
                 {
                     if (parent.Find("layer") && parent.Find("layer").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
@@ -2789,7 +2789,7 @@ namespace EditorManagement.Functions.Editors
             {
                 labelGenerator("Set Group Depth");
 
-                action("depth", parent.childCount - 1, "Enter depth...", true, delegate ()
+                action("depth", "Enter depth...", true, delegate ()
                 {
                     if (parent.Find("depth") && parent.Find("depth").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
@@ -2838,7 +2838,7 @@ namespace EditorManagement.Functions.Editors
             {
                 labelGenerator("Set Song Time");
 
-                action("time", parent.childCount - 1, "Enter time...", true, delegate ()
+                action("time", "Enter time...", true, delegate ()
                 {
                     if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
@@ -5891,6 +5891,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Editor GUI", "Notification Direction", Direction.Down, "Direction the notifications popup from.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Notifications Display", true, "If the notifications should display. Does not include the help box.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Editor GUI", "Adjust Position Inputs", true, "If position keyframe input fields should be adjusted so they're in a proper row rather than having Z Axis below X Axis without a label. Drawback with doing this is it makes the fields smaller than normal.")),
             new EditorProperty(EditorProperty.ValueType.Vector2,
                 Config.Bind("Editor GUI", "Open Level Position", Vector2.zero, "The position of the Open Level popup.")),
             new EditorProperty(EditorProperty.ValueType.Vector2,
