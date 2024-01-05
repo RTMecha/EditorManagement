@@ -1,3 +1,10 @@
+2.1.3 > Added Homing keyframe to Position, Rotation and Color UI (there's no scale because Idk how I would do it). it can be found as one of the random buttons. "Random Interval" is used for the delay of Dynamic Homing.
+2.1.3 > Fixed an issue with pasting objects not clearing keyframes.
+2.1.3 > Fixed keyframe dialog render bug that caused it to render the previously selected keyframe sometimes, even if that keyframe doesn't exist in the object.
+2.1.3 > Position keyframe input layout can now be adjusted via config / preferences.
+2.1.3 > Forgot to add variableOther modifiers to the ObjectModifiers editor so it wouldn't properly generate the UI for it. It's there now.
+2.1.3 > Fixed Multi Object Editor being ordered incorrectly.
+-
 2.1.2 > Some fixes and changes to ObjectModifiers editor, including adding ones I forgot to add.
 2.1.2 > Fixed keyframe deletion renderin bug that caused every keyframe to disappear.
 -
