@@ -3546,6 +3546,11 @@ namespace EditorManagement.Functions.Editors
                         case "variableGreaterEquals":
                         case "variableLesser":
                         case "variableGreater":
+                        case "variableOtherEquals":
+                        case "variableOtherLesserEquals":
+                        case "variableOtherGreaterEquals":
+                        case "variableOtherLesser":
+                        case "variableOtherGreater":
                             {
                                 var single = numberInput.Duplicate(layout, "Value");
                                 single.transform.Find("Text").GetComponent<Text>().text = "Value";
