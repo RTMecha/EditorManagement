@@ -568,7 +568,7 @@ namespace EditorManagement.Patchers
                             if (float.TryParse(_val, out float num))
                             {
                                 currentKeyframe.eventValues[0] = num;
-                                Updater.UpdatePrefab(currentPrefab);
+                                Updater.UpdatePrefab(currentPrefab, "offset");
                             }
                         });
 
@@ -585,7 +585,7 @@ namespace EditorManagement.Patchers
                                     if (float.TryParse(_val, out float num))
                                     {
                                         currentKeyframe.eventValues[1] = num;
-                                        Updater.UpdatePrefab(currentPrefab);
+                                        Updater.UpdatePrefab(currentPrefab, "offset");
                                     }
                                 });
 
