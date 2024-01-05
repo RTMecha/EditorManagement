@@ -4911,20 +4911,6 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            if (string.IsNullOrEmpty(__instance.parentSearch) || "player".Contains(__instance.parentSearch.ToLower()))
-            {
-                var cam = __instance.folderButtonPrefab.Duplicate(transform, "Player");
-                cam.transform.localScale = Vector3.one;
-                cam.transform.GetChild(0).GetComponent<Text>().text = "Nearest Player";
-                cam.GetComponent<Button>().onClick.AddListener(delegate ()
-                {
-                    beatmapObject.parent = "PLAYER_PARENT";
-                    Updater.UpdateProcessor(beatmapObject);
-                    EditorManager.inst.HideDialog("Parent Selector");
-                    StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
-                });
-            }
-
             foreach (var obj in DataManager.inst.gameData.beatmapObjects)
             {
                 if (!obj.fromPrefab)
