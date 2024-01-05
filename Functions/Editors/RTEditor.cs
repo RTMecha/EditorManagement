@@ -62,6 +62,33 @@ namespace EditorManagement.Functions.Editors
             timeOffset = Time.time;
             timeInEditorOffset = Time.time;
 
+            try
+            {
+                PrefabWatcher = new FileSystemWatcher
+                {
+                    Path = RTFile.ApplicationDirectory + prefabListPath,
+                    Filter = "*.lsp"
+                };
+                PrefabWatcher.Changed += OnPrefabPathChanged;
+                PrefabWatcher.Created += OnPrefabPathChanged;
+                PrefabWatcher.Deleted += OnPrefabPathChanged;
+                PrefabWatcher.EnableRaisingEvents = true;
+
+                ThemeWatcher = new FileSystemWatcher
+                {
+                    Path = RTFile.ApplicationDirectory + themeListPath,
+                    Filter = "*.lst"
+                };
+                ThemeWatcher.Changed += OnThemePathChanged;
+                ThemeWatcher.Created += OnThemePathChanged;
+                ThemeWatcher.Deleted += OnThemePathChanged;
+                ThemeWatcher.EnableRaisingEvents = true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex);
+            }
+
             SetupNotificationValues();
             SetupTimelineBar();
             SetupTimelineTriggers();
@@ -1040,7 +1067,7 @@ namespace EditorManagement.Functions.Editors
         public static string prefabListPath = "beatmaps/prefabs";
         public static string prefabListSlash = "beatmaps/prefabs/";
 
-        public static void CreateGlobalSettings()
+        public void CreateGlobalSettings()
         {
             if (!RTFile.FileExists(EditorSettingsPath))
             {
@@ -1069,7 +1096,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void LoadGlobalSettings()
+        public void LoadGlobalSettings()
         {
             if (!RTFile.FileExists(EditorSettingsPath))
                 return;
@@ -1089,6 +1116,8 @@ namespace EditorManagement.Functions.Editors
                 Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
             if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
                 Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+
+            SetWatcherPaths();
 
             if (jn["marker_colors"] != null)
             {
@@ -1127,13 +1156,15 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void SaveGlobalSettings()
+        public void SaveGlobalSettings()
         {
             var jn = JSON.Parse(RTFile.ReadFromFile(EditorSettingsPath));
 
             jn["paths"]["editor"] = EditorPath;
             jn["paths"]["themes"] = ThemePath;
             jn["paths"]["prefabs"] = PrefabPath;
+
+            SetWatcherPaths();
 
             for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
             {
@@ -1147,6 +1178,38 @@ namespace EditorManagement.Functions.Editors
 
             RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
         }
+
+        public void SetWatcherPaths()
+        {
+            PrefabWatcher.EnableRaisingEvents = false;
+            PrefabWatcher.Path = RTFile.ApplicationDirectory + prefabListPath;
+            PrefabWatcher.EnableRaisingEvents = true;
+            ThemeWatcher.EnableRaisingEvents = false;
+            ThemeWatcher.Path = RTFile.ApplicationDirectory + themeListPath;
+            ThemeWatcher.EnableRaisingEvents = true;
+        }
+
+        public void OnPrefabPathChanged(object sender, FileSystemEventArgs e)
+        {
+            if (inst && WatchPrefabFiles)
+            {
+                StartCoroutine(UpdatePrefabs());
+            }
+        }
+
+        public void OnThemePathChanged(object sender, FileSystemEventArgs e)
+        {
+            if (inst && WatchThemeFiles)
+            {
+                StartCoroutine(LoadThemes());
+            }
+        }
+
+        public static bool WatchPrefabFiles { get; set; } = GetEditorProperty("Update Prefab List on Files Changed").GetConfigEntry<bool>().Value;
+        public static bool WatchThemeFiles { get; set; } = GetEditorProperty("Update Theme List on Files Changed").GetConfigEntry<bool>().Value;
+
+        public FileSystemWatcher PrefabWatcher { get; set; }
+        public FileSystemWatcher ThemeWatcher { get; set; }
 
         #endregion
 
@@ -5860,6 +5923,10 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Saving Saves Beatmap Opacity", true, "Turn this off if you don't want themes to break in unmodded PA.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Data", "Update Prefab List on Files Changed", true, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Data", "Update Theme List on Files Changed", true, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
 
             #endregion
 

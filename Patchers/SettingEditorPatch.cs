@@ -354,7 +354,7 @@ namespace EditorManagement.Patchers
             addButton.onClick.AddListener(delegate ()
             {
                 MarkerEditor.inst.markerColors.Add(LSColors.pink500);
-                RTEditor.SaveGlobalSettings();
+                RTEditor.inst.SaveGlobalSettings();
                 RenderMarkerColors();
             });
 
@@ -402,7 +402,7 @@ namespace EditorManagement.Patchers
             addButton.onClick.AddListener(delegate ()
             {
                 EditorManager.inst.layerColors.Add(LSColors.pink500);
-                RTEditor.SaveGlobalSettings();
+                RTEditor.inst.SaveGlobalSettings();
                 RenderLayerColors();
             });
 
