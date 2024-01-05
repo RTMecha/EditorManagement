@@ -20,7 +20,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.1")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.3")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -65,6 +65,8 @@ namespace EditorManagement
 			Logger.LogInfo($"Plugin EditorManagement is loaded!");
         }
 
+		public static Action AdjustPositionInputsChanged { get; set; }
+
         void UpdateEditorManagementConfigs(object sender, SettingChangedEventArgs e)
 		{
 			SetPreviewConfig();
@@ -80,6 +82,7 @@ namespace EditorManagement
                 }
 
 				SetTimelineColors();
+				AdjustPositionInputsChanged?.Invoke();
 			}
 		}
 
