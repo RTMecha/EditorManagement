@@ -1,52 +1,53 @@
-2.1.3 > Added Homing keyframe to Position, Rotation and Color UI (there's no scale because Idk how I would do it). it can be found as one of the random buttons. "Random Interval" is used for the delay of Dynamic Homing.
-2.1.3 > Fixed an issue with pasting objects not clearing keyframes.
-2.1.3 > Fixed keyframe dialog render bug that caused it to render the previously selected keyframe sometimes, even if that keyframe doesn't exist in the object.
-2.1.3 > Position keyframe input layout can now be adjusted via config / preferences.
-2.1.3 > Forgot to add variableOther modifiers to the ObjectModifiers editor so it wouldn't properly generate the UI for it. It's there now.
-2.1.3 > Fixed Multi Object Editor being ordered incorrectly.
--
-2.1.2 > Some fixes and changes to ObjectModifiers editor, including adding ones I forgot to add.
-2.1.2 > Fixed keyframe deletion renderin bug that caused every keyframe to disappear.
--
-2.1.1 > Fixed a bug with deleting objects causing error log spam.
-2.1.1 > Added the rest of the ObjectModifier UI elements.
-2.1.1 > Added a config for reseting Event / Check rotate keyframe value and added Snap BPM to some other keyframe stuff like pasting.
-2.1.1 > Fixed a bug with Object Search that caused it to reset to selecting object when you search for an object.
--
-2.1.0 > Redid object keyframe generating so they should now behave as they used to.
-2.1.0 > Added a feature where clicking the mouse scrollwheel on a keyframe set the audio time to the keyframe time.
-2.1.0 > Fixed Event / Check layer rendering bugs, the layer should now work as intended.
-2.1.0 > Fixed some issues with deleting objects.
-2.1.0 > Pasting and expanding prefabs should now be a little bit faster.
-2.1.0 > Added another inspect button for those who use UnityExplorer.
-2.1.0 > Event / Check layer keyframes now have their sprites render at the correct offset, meaning they're can now look like they're properly aligned with the audio time.
+2.1.3 > [Jan 5, 2024]
+- Added Homing keyframe to Position, Rotation and Color UI (there's no scale because Idk how I would do it). it can be found as one of the random buttons. "Random Interval" is used for the delay of Dynamic Homing.
+- Fixed an issue with pasting objects not clearing keyframes.
+- Fixed keyframe dialog render bug that caused it to render the previously selected keyframe sometimes, even if that keyframe doesn't exist in the object.
+- Position keyframe input layout can now be adjusted via config / preferences.
+- Forgot to add variableOther modifiers to the ObjectModifiers editor so it wouldn't properly generate the UI for it. It's there now.
+- Fixed Multi Object Editor being ordered incorrectly.
+2.1.2 > [Jan 3, 2024]
+- Some fixes and changes to ObjectModifiers editor, including adding ones I forgot to add.
+- Fixed keyframe deletion renderin bug that caused every keyframe to disappear.
+2.1.1 > [Jan 3, 2024]
+- Fixed a bug with deleting objects causing error log spam.
+- Added the rest of the ObjectModifier UI elements.
+- Added a config for reseting Event / Check rotate keyframe value and added Snap BPM to some other keyframe stuff like pasting.
+- Fixed a bug with Object Search that caused it to reset to selecting object when you search for an object.
+2.1.0 > [Jan 3, 2024]
+- Redid object keyframe generating so they should now behave as they used to.
+- Added a feature where clicking the mouse scrollwheel on a keyframe set the audio time to the keyframe time.
+- Fixed Event / Check layer rendering bugs, the layer should now work as intended.
+- Fixed some issues with deleting objects.
+- Pasting and expanding prefabs should now be a little bit faster.
+- Added another inspect button for those who use UnityExplorer.
+- Event / Check layer keyframes now have their sprites render at the correct offset, meaning they're can now look like they're properly aligned with the audio time.
 They also now use the object keyframe sprites method, meaning they will use the appropriate "in/out/inout" easing sprite.
-2.1.0 > Added a Game Timeline preview so you can finally see what animations you're doing to it while in-editor.
-2.1.0 > Prefab Type icons now render with the collapse / lock icons for objects that are connected to a prefab and for prefab objects. This can be disabled in Editor Properties / Preferences
-2.1.0 > Fixed a ton of rendering bugs when dragging an object / keyframe around the timelines.
-2.1.0 > Added Save & Use to ThemeEditor, allowing you to immediately set the current keyframe's theme value to the theme you updated.
-2.1.0 > Object Keyframe timeline position and zoom now get remembered properly between objects.
-2.1.0 > Fixed a bug with object's prefab IDs not being set to empty when creating a prefab, resulting in a case where updating one prefab updates another.
-2.1.0 > Fixed the issue where Event / Check keyframes being dragged would immediately snap their time to an incorrect offset.
--
-2.0.2 > Added ToggleZenMode and CycleGameDifficulty to keybinds.
-2.0.2 > Added file browsing.
-2.0.2 > Added folder browsing for Editor, Prefab and Theme path.
-2.0.2 > Clicking marker button no longer creates a marker when the cursor time is within a 0.1 second range, instead it selects that marker.
-2.0.2 > Implemented CreativePlayers and RTFunctions Player update, though there's bound to be issues.
--
-2.0.1 > Added Switch to Arcade Mode button, using the new level loading system.
-2.0.1 > Fix for Discord Rich Presence not being set correctly
-2.0.1 > Fixed an error that caused the editor to break on reload. The editor should now be able to reload as many times as you need.
--
-2.0.0 > Heavy optimizations for the editor, including instant selecting / deleting.
-2.0.0 > New keybind editor system.
-2.0.0 > Changed the Prefab Creator, adding a PrefabType editor popup and an object selection list.
-2.0.0 > Added metadata tags.
-2.0.0 > Fixed up Object Dragging.
-2.0.0 > Updating objects via keyframes or any other specific value is now more optimized.
-2.0.0 > Cleaned up the Settings window and added customizing Layer / Marker color lists.
-2.0.0 > Added ColorGrading Gamma editing.
-2.0.0 > Added Copy & Paste keyframe data, which will copy the current keyframe and allow it to be pasted to any keyframe of the same type.
+- Added a Game Timeline preview so you can finally see what animations you're doing to it while in-editor.
+- Prefab Type icons now render with the collapse / lock icons for objects that are connected to a prefab and for prefab objects. This can be disabled in Editor Properties / Preferences
+- Fixed a ton of rendering bugs when dragging an object / keyframe around the timelines.
+- Added Save & Use to ThemeEditor, allowing you to immediately set the current keyframe's theme value to the theme you updated.
+- Object Keyframe timeline position and zoom now get remembered properly between objects.
+- Fixed a bug with object's prefab IDs not being set to empty when creating a prefab, resulting in a case where updating one prefab updates another.
+- Fixed the issue where Event / Check keyframes being dragged would immediately snap their time to an incorrect offset.
+2.0.2 > [Dec 26, 2023]
+- Added ToggleZenMode and CycleGameDifficulty to keybinds.
+- Added file browsing.
+- Added folder browsing for Editor, Prefab and Theme path.
+- Clicking marker button no longer creates a marker when the cursor time is within a 0.1 second range, instead it selects that marker.
+- Implemented CreativePlayers and RTFunctions Player update, though there's bound to be issues.
+2.0.1 > [Dec 18, 2023]
+- Added Switch to Arcade Mode button, using the new level loading system.
+- Fix for Discord Rich Presence not being set correctly
+- Fixed an error that caused the editor to break on reload. The editor should now be able to reload as many times as you need.
+2.0.0 > [Dec 16, 2023]
+- Heavy optimizations for the editor, including instant selecting / deleting.
+- New keybind editor system.
+- Changed the Prefab Creator, adding a PrefabType editor popup and an object selection list.
+- Added metadata tags.
+- Fixed up Object Dragging.
+- Updating objects via keyframes or any other specific value is now more optimized.
+- Cleaned up the Settings window and added customizing Layer / Marker color lists.
+- Added ColorGrading Gamma editing.
+- Added Copy & Paste keyframe data, which will copy the current keyframe and allow it to be pasted to any keyframe of the same type.
 If it is not the same type then it will not paste that data, instead it'll either paste nothing or paste the copied data of that type.
-2.0.0 > Added a config for creating objects at the screen center.
+- Added a config for creating objects at the screen center.
