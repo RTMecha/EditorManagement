@@ -1,3 +1,7 @@
+2.1.4 > [Jan 5, 2024]
+- Fix for pasting not updating the proper objects and prefab objects, instead updating the originals.
+- Use optimized Prefab Object pos / sca / rot offset updating.
+- Fixed bug where expanding prefabs does not open the proper dialog.
 2.1.3 > [Jan 5, 2024]
 - Added Homing keyframe to Position, Rotation and Color UI (there's no scale because Idk how I would do it). it can be found as one of the random buttons. "Random Interval" is used for the delay of Dynamic Homing.
 - Fixed an issue with pasting objects not clearing keyframes.
