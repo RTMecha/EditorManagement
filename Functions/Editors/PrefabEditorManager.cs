@@ -1009,8 +1009,15 @@ namespace EditorManagement.Functions.Editors
 
                 ObjectEditor.inst.RenderTimelineObjects();
 
-                foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == id))
-                    ObjectEditor.inst.AddSelectedObject(new TimelineObject((BeatmapObject)beatmapObject));
+                //foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == id))
+                //    ObjectEditor.inst.AddSelectedObject(new TimelineObject((BeatmapObject)beatmapObject));
+
+                if (prefabObject.Prefab.objects.Count > 1 || prefabObject.Prefab.prefabObjects.Count > 1)
+                    EditorManager.inst.ShowDialog("Multi Object Editor", false);
+                else if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                    ObjectEditor.inst.OpenDialog(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+                else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject)
+                    PrefabEditor.inst.OpenPrefabDialog();
             }
             else
                 EditorManager.inst.DisplayNotification("Can't expand non-prefab!", 2f, EditorManager.NotificationType.Error);
