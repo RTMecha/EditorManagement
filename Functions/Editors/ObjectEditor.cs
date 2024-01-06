@@ -1103,15 +1103,12 @@ namespace EditorManagement.Functions.Editors
 
         public void AddSelectedObject(TimelineObject timelineObject)
         {
-            if (SelectedObjectCount > 1)
+            if (SelectedObjectCount + 1 > 1)
             {
                 timelineObject.selected = true;
-                CurrentSelection = timelineObject;
 
                 EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
                 EditorManager.inst.ShowDialog("Multi Object Editor", false);
-                if (timelineObject.IsBeatmapObject)
-                    SetCurrentKeyframe(timelineObject.GetData<BeatmapObject>(), 0, 0, false, false);
 
                 RenderTimelineObject(timelineObject);
                 return;
