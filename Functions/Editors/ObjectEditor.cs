@@ -2027,8 +2027,6 @@ namespace EditorManagement.Functions.Editors
                 }
                 else if (parent == "CAMERA_PARENT")
                     parentTextText.text = "[CAMERA]";
-                else if (parent == "PLAYER_PARENT")
-                    parentTextText.text = "[NEAREST PLAYER]";
 
                 parentText.interactable = true;
                 parentText.onClick.RemoveAllListeners();
@@ -2036,7 +2034,6 @@ namespace EditorManagement.Functions.Editors
                 {
                     if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null &&
                     parent != "CAMERA_PARENT" &&
-                    parent != "PLAYER_PARENT" &&
                     RTEditor.inst.timelineObjects.TryFind(x => x.ID == parent, out TimelineObject timelineObject))
                         SetCurrentObject(timelineObject);
                     else if (parent == "CAMERA_PARENT")
@@ -2071,7 +2068,7 @@ namespace EditorManagement.Functions.Editors
 
                         // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
                         if (UpdateObjects)
-                            Updater.UpdateProcessor(beatmapObject, "Parent Offset");
+                            Updater.UpdateProcessor(beatmapObject, "Parent Type");
                     });
 
                     var pif = _p.GetChild(3).GetComponent<InputField>();
