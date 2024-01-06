@@ -1,4 +1,6 @@
-2.1.5 > [Jan 5, 2024]
+2.1.6 > [Jan 6, 2024]
+- Quick fix for text objects not adding default modifiers.
+2.1.5 > [Jan 6, 2024]
 - Removed old ObjectModifiers editor code and added some stuff I forgot to add. Also added setText and setTextOther to UI.
 - Added Prefab and Theme File Watchers. When either folders are updated, the connected internal list updates automatically.
 2.1.4 > [Jan 5, 2024]
