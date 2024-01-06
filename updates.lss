@@ -1,3 +1,6 @@
+2.1.7 > [Jan 6, 2024]
+- Fixed Multi Selection (regular, not drag select).
+- Added EventsCore Reset Offsets, to fix the event offsets carrying over between levels.
 2.1.6 > [Jan 6, 2024]
 - Quick fix for text objects not adding default modifiers.
 2.1.5 > [Jan 6, 2024]
