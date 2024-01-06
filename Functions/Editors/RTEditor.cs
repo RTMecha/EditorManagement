@@ -4177,6 +4177,11 @@ namespace EditorManagement.Functions.Editors
             MarkerEditor.inst.CreateMarkers();
             EventManager.inst.updateEvents();
 
+            if (ModCompatibility.sharedFunctions.ContainsKey("EventsCoreResetOffsets"))
+            {
+                ((Action)ModCompatibility.sharedFunctions["EventsCoreResetOffsets"])?.Invoke();
+            }
+
             fileInfo.text = $"Setting first object of [ {name} ]";
             ObjectEditor.inst.CreateTimelineObjects();
             ObjectEditor.inst.RenderTimelineObjects();
@@ -4813,6 +4818,19 @@ namespace EditorManagement.Functions.Editors
             var transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask/content");
             var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
 
+
+            var horizontalOverflow = GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var verticalOverflow = GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            //text.color = ConfigEntries.OpenFileTextColor.Value;
+            var fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
+            var format = GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
+            var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+
+            var iconPosition = GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
+            var iconScale = GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+
+            var showDeleteButton = GetEditorProperty("Open Level Show Delete Button").GetConfigEntry<bool>().Value;
+
             LSHelpers.DeleteChildren(transform);
 
             foreach (var metadataWrapper in EditorManager.inst.loadedLevels)
@@ -4852,13 +4870,13 @@ namespace EditorManagement.Functions.Editors
                         var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(folder)}]");
 
                         var hoverUI = gameObject.AddComponent<HoverUI>();
-                        hoverUI.size = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+                        hoverUI.size = buttonHoverSize;
                         hoverUI.animatePos = false;
                         hoverUI.animateSca = true;
 
                         var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-                        text.text = string.Format(GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value,
+                        text.text = string.Format(format,
                             LSText.ClampString(Path.GetFileName(folder), foldClamp),
                             LSText.ClampString(metadata.song.title, songClamp),
                             LSText.ClampString(metadata.artist.Name, artiClamp),
@@ -4867,10 +4885,10 @@ namespace EditorManagement.Functions.Editors
                             LSText.ClampString(metadata.song.description, descClamp),
                             LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
 
-                        text.horizontalOverflow = GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-                        text.verticalOverflow = GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+                        text.horizontalOverflow = horizontalOverflow;
+                        text.verticalOverflow = verticalOverflow;
                         //text.color = ConfigEntries.OpenFileTextColor.Value;
-                        text.fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
+                        text.fontSize = fontSize;
 
                         var htt = gameObject.AddComponent<HoverTooltip>();
 
@@ -4897,13 +4915,13 @@ namespace EditorManagement.Functions.Editors
                         icon.AddComponent<CanvasRenderer>();
                         var iconImage = icon.AddComponent<Image>();
 
-                        iconRT.anchoredPosition = GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
-                        iconRT.sizeDelta = GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+                        iconRT.anchoredPosition = iconPosition;
+                        iconRT.sizeDelta = iconScale;
 
                         iconImage.sprite = metadataWrapper.albumArt;
 
                         // Close
-                        if (GetEditorProperty("Open Level Show Delete Button").GetConfigEntry<bool>().Value)
+                        if (showDeleteButton)
                         {
                             var delete = close.gameObject.Duplicate(gameObject.transform, "delete");
 
