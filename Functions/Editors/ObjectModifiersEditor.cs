@@ -1754,7 +1754,7 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        if (beatmapObject.shape != 4 && defaultModifiers[tmpIndex].commands[0] != "setText" || defaultModifiers[tmpIndex].commands[0] == "setText")
+                        if (beatmapObject.shape == 4 && defaultModifiers[tmpIndex].commands[0] == "setText" || defaultModifiers[tmpIndex].commands[0] != "setText")
                         {
                             var modifier = BeatmapObject.Modifier.DeepCopy(defaultModifiers[tmpIndex]);
                             modifier.modifierObject = beatmapObject;
