@@ -282,7 +282,7 @@ namespace EditorManagement.Functions.Helpers
 			{
 				if (float.TryParse(_if.text, out float result))
 				{
-					result -= Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount;
+					result += Input.GetKey(KeyCode.LeftAlt) ? _amount / _divide : Input.GetKey(KeyCode.LeftControl) ? _amount * _divide : _amount;
 
 					if (min != 0f || max != 0f)
 						result = Mathf.Clamp(result, min, max);
