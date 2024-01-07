@@ -1,3 +1,5 @@
+2.1.9 > [Jan 8, 2024]
+- Clean up random keyframe rendering.
 2.1.8 > [Jan 7, 2024]
 - Added Transform values keybind to keybind actions and added not pressed.
 - Rendering timeline objects is now way faster than before.
