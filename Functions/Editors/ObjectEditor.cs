@@ -3216,11 +3216,6 @@ namespace EditorManagement.Functions.Editors
                             {
                                 float x = keyframe.eventValues[current];
 
-                                //if (type != 2)
-                                //    x -= 1f;
-                                //else
-                                //    x -= 15f;
-
                                 x -= type != 2 ? 1f : 15f;
 
                                 posIF.text = x.ToString();
@@ -3230,11 +3225,6 @@ namespace EditorManagement.Functions.Editors
                             posRight.onClick.AddListener(delegate ()
                             {
                                 float x = keyframe.eventValues[current];
-
-                                //if (type != 2)
-                                //    x += 1f;
-                                //else
-                                //    x += 15f;
 
                                 x += type != 2 ? 1f : 15f;
 
@@ -3249,7 +3239,7 @@ namespace EditorManagement.Functions.Editors
 
                     if (p.Find("r_axis") && p.Find("r_axis").gameObject.TryGetComponent(out Dropdown rAxis))
                     {
-                        rAxis.gameObject.SetActive(random == 4 || random == 5);
+                        rAxis.gameObject.SetActive(random == 5 || random == 6);
                         rAxis.onValueChanged.ClearAll();
                         rAxis.value = Mathf.Clamp((int)keyframe.eventRandomValues[3], 0, 3);
                         rAxis.onValueChanged.AddListener(delegate (int _val)
@@ -3259,106 +3249,73 @@ namespace EditorManagement.Functions.Editors
                         });
                     }
 
-                    if (type != 2)
+                    Action<int> action = delegate (int randomType)
                     {
-                        for (int n = 0; n <= (type == 0 ? 5 : 3); n++)
+                        if (type != 2 && p.Find("r_axis"))
+                            p.Find("r_axis").gameObject.SetActive(randomType == 5 || randomType == 6);
+
+                        p.GetChild(10).gameObject.SetActive(randomType != 0 && randomType != 5);
+                        p.GetChild(11).gameObject.SetActive(randomType != 0 && randomType != 5);
+                        p.GetChild(10).GetChild(0).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Min" : randomType == 6 ? "Minimum Range" : "Random X";
+                        p.GetChild(10).GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
+                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Max" : randomType == 6 ? "Maximum Range" : "Random Y";
+                        p.Find("random/interval-input").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
+                        p.Find("r_label/interval").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
+
+                        if (p.Find("relative-label"))
                         {
-                            //int buttonTmp = n;
-                            int buttonTmp = ((n >= 2) ? (n + 1) : n);
-                            Debug.Log(buttonTmp);
-                            var child = p.Find("random").GetChild(n).GetComponent<Toggle>();
-                            child.onValueChanged.ClearAll();
-                            child.isOn = random == buttonTmp;
-                            child.onValueChanged.AddListener(delegate (bool _value)
+                            p.Find("relative-label").GetChild(0).GetComponent<Text>().text =
+                                randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
+                            p.Find("relative").GetChild(1).GetComponent<Text>().text =
+                                randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
+                        }
+
+                        randomValue.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
+
+                        randomValue.GetChild(0).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
+                        randomValue.GetChild(1).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
+
+                        if (randomType != 0 && randomType != 3 && randomType != 5)
+                        {
+                            p.Find("r_label/interval").GetComponent<Text>().text = randomType == 6 ? "Speed" : "Random Interval";
+                        }
+                    };
+
+                    for (int n = 0; n <= (type == 0 ? 5 : type == 2 ? 4 : 3); n++)
+                    {
+                        int buttonTmp = (n >= 2 && (type != 2 || n < 3)) ? (n + 1) : (n > 2 && type == 2) ? n + 2 : n;
+                        var child = p.Find("random").GetChild(n).GetComponent<Toggle>();
+                        child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
+                        {
+                            if (_val)
                             {
-                                if (_value)
-                                {
-                                    keyframe.random = buttonTmp;
+                                keyframe.random = buttonTmp;
 
-                                    if (p.Find("r_axis"))
-                                        p.Find("r_axis").gameObject.SetActive(buttonTmp == 5 || buttonTmp == 6);
+                                action?.Invoke(buttonTmp);
 
-                                    p.GetChild(10).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
-                                    p.GetChild(11).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
-                                    p.GetChild(10).GetChild(0).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Min" : buttonTmp == 6 ? "Minimum Range" : "Random X";
-                                    if (p.GetChild(10).childCount > 1)
-                                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Max" : buttonTmp == 6 ? "Maximum Range" : "Random Y";
-                                    p.Find("random/interval-input").gameObject.SetActive(buttonTmp != 0 && buttonTmp != 3);
-                                    p.Find("r_label/interval").gameObject.SetActive(buttonTmp != 0 && buttonTmp != 3);
+                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-                            if (!child.GetComponent<HoverUI>())
-                            {
-                                var hoverUI = child.gameObject.AddComponent<HoverUI>();
-                                hoverUI.animatePos = false;
-                                hoverUI.animateSca = true;
-                                hoverUI.size = 1.1f;
                             }
+                        });
+                        if (!child.GetComponent<HoverUI>())
+                        {
+                            var hoverUI = child.gameObject.AddComponent<HoverUI>();
+                            hoverUI.animatePos = false;
+                            hoverUI.animateSca = true;
+                            hoverUI.size = 1.1f;
                         }
                     }
-                    else
-                    {
-                        for (int n = 0; n <= 4; n++)
-                        {
-                            //Debug.Log($"{EditorPlugin.className}Refresh Object GUI: Keyframe Random Toggle [{n}]");
-                            int buttonTmp = (n >= 2) ? (n + 1) : n;
-                            var child = p.GetChild(13).GetChild(n).GetComponent<Toggle>();
-                            child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
-                            {
-                                if (_val)
-                                {
-                                    keyframe.random = buttonTmp;
-                                    p.GetChild(10).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
-                                    p.GetChild(11).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
-                                    p.GetChild(10).GetChild(0).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Min" : "Random X";
-                                    if (p.GetChild(10).childCount > 1)
-                                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Max" : "Random Y";
-                                    p.Find("random/interval-input").gameObject.SetActive(buttonTmp != 0 && buttonTmp != 3);
-                                    p.Find("r_label/interval").gameObject.SetActive(buttonTmp != 0 && buttonTmp != 3);
 
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-                            if (!child.GetComponent<HoverUI>())
-                            {
-                                var hoverUI = child.gameObject.AddComponent<HoverUI>();
-                                hoverUI.animatePos = false;
-                                hoverUI.animateSca = true;
-                                hoverUI.size = 1.1f;
-                            }
-                        }
-                    }
+                    action?.Invoke(random);
 
                     float num = 0f;
                     if (keyframe.eventRandomValues.Length > 2)
                         num = keyframe.eventRandomValues[2];
 
-                    p.GetChild(10).gameObject.SetActive(random != 0);
-                    p.GetChild(10).GetChild(0).GetComponent<Text>().text = (random == 4) ? "Random Scale Min" : "Random X";
-                    if (p.GetChild(10).childCount > 1 && p.GetChild(10).GetChild(1) != null && p.GetChild(10).GetChild(1).GetComponent<Text>())
-                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (random == 4) ? "Random Scale Max" : "Random Y";
-
-                    randomValue.gameObject.SetActive(random != 0);
-                    bool active = random != 0 && random != 3;
-                    p.Find("r_label/interval").gameObject.SetActive(active);
-
                     var randomInterval = p.Find("random/interval-input");
-                    var randomIntervalButton = randomInterval.Find("x").GetComponent<Button>();
                     var randomIntervalIF = randomInterval.GetComponent<InputField>();
-
-                    p.Find("random/interval-input").gameObject.SetActive(active);
-                    randomIntervalButton.onClick.RemoveAllListeners();
-                    randomIntervalButton.onClick.AddListener(delegate ()
-                    {
-                        randomIntervalIF.text = "0";
-                    });
-
                     randomIntervalIF.NewValueChangedListener(num.ToString(), delegate (string _val)
                     {
                         if (float.TryParse(_val, out float num))
@@ -3380,14 +3337,13 @@ namespace EditorManagement.Functions.Editors
                         ifh.Init(randomIntervalIF, InputFieldSwapper.Type.Num);
                     }
 
-                    TriggerHelper.AddEventTrigger(randomInterval.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(randomIntervalIF, 0.1f, 10f) });
+                    TriggerHelper.AddEventTrigger(randomInterval.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(randomIntervalIF, max: random == 6 ? 1f : 0f) });
 
                     for (int kf = 0; kf < keyframe.eventRandomValues.Count() - 1; kf++)
                     {
                         if (kf < randomValue.childCount && randomValue.GetChild(kf))
                         {
                             int index = kf;
-                            //Debug.Log($"{EditorPlugin.className}Refresh Object GUI: Keyframe Random KF [{(kf + 1)}/{keyframe.eventRandomValues.Count()}]");
                             var randomValueX = randomValue.GetChild(index).GetComponent<InputField>();
 
                             randomValueX.NewValueChangedListener(keyframe.eventRandomValues[index].ToString(), delegate (string _val)
@@ -3404,30 +3360,15 @@ namespace EditorManagement.Functions.Editors
 
                             TriggerHelper.IncreaseDecreaseButtons(randomValueX, 0.1f, 10f);
 
-                            if (type != 2)
-                            {
-                                if (!randomValue.GetChild(index).GetComponent<InputFieldSwapper>())
-                                {
-                                    var ifh = randomValue.GetChild(index).gameObject.AddComponent<InputFieldSwapper>();
-                                    ifh.Init(randomValueX, InputFieldSwapper.Type.Num);
-                                }
+                            TriggerHelper.AddEventTriggerParams(randomValue.GetChild(index).gameObject,
+                                TriggerHelper.ScrollDelta(randomValueX, type == 2 && random != 6 ? 15f : 0.1f, type == 2 && random != 6 ? 3f : 10f, multi: true),
+                                TriggerHelper.ScrollDeltaVector2(index == 0 ? randomValueX : randomValue.GetChild(0).GetComponent<InputField>(),
+                                index == 0 ? randomValue.GetChild(1).GetComponent<InputField>() : randomValueX, type == 2 && random != 6 ? 15f : 0.1f, type == 2 && random != 6 ? 3f : 10f));
 
-                                var randET = randomValue.GetChild(index).GetComponent<EventTrigger>();
-                                randET.triggers.Clear();
-                                randET.triggers.Add(TriggerHelper.ScrollDelta(randomValueX, multi: true));
-                                randET.triggers.Add(TriggerHelper.ScrollDeltaVector2(randomValue.GetChild(0).GetComponent<InputField>(), randomValue.GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
-                            }
-                            else
+                            if (!randomValue.GetChild(index).GetComponent<InputFieldSwapper>())
                             {
-                                if (!randomValue.GetComponent<InputFieldSwapper>())
-                                {
-                                    var ifh = randomValue.gameObject.AddComponent<InputFieldSwapper>();
-                                    ifh.Init(randomValueX, InputFieldSwapper.Type.Num);
-                                }
-
-                                var randET = randomValue.GetComponent<EventTrigger>();
-                                randET.triggers.Clear();
-                                randET.triggers.Add(TriggerHelper.ScrollDelta(randomValueX, 15f, 3f));
+                                var ifh = randomValue.GetChild(index).gameObject.AddComponent<InputFieldSwapper>();
+                                ifh.Init(randomValueX, InputFieldSwapper.Type.Num);
                             }
                         }
                     }
@@ -3668,6 +3609,7 @@ namespace EditorManagement.Functions.Editors
                     if (p.Find("random"))
                     {
                         p.Find("r_label/interval").gameObject.SetActive(keyframe.random != 0);
+                        p.Find("r_label/interval").GetComponent<Text>().text = keyframe.random == 6 ? "Speed" : "Random Interval";
                         var rand = p.Find("random");
                         var none = rand.Find("none").GetComponent<Toggle>();
                         var homingDynamic = rand.Find("homing-dynamic").GetComponent<Toggle>();
@@ -3713,12 +3655,11 @@ namespace EditorManagement.Functions.Editors
                             });
 
                             TriggerHelper.AddEventTriggerParams(intervalInput.gameObject,
-                                TriggerHelper.ScrollDelta(intervalInput, 0.01f));
+                                TriggerHelper.ScrollDelta(intervalInput, 0.01f, max: keyframe.random == 6 ? 1f : 0f));
                         }
 
                     }
                 }
-                //Debug.LogFormat("{0}Refresh Object GUI: Keyframes done", EditorPlugin.className);
             }
 
             yield break;

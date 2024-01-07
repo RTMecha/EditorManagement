@@ -562,7 +562,7 @@ namespace EditorManagement.Patchers
 					if (i != 3)
 					{
 						var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
-						var toggleLabel = di.GetChild(12).gameObject.Duplicate(parent, "label");
+						var toggleLabel = di.GetChild(12).gameObject.Duplicate(parent, "relative-label");
 						toggleLabel.transform.GetChild(0).GetComponent<Text>().text = "Value Additive";
 						var toggle = di.GetChild(13).gameObject.Duplicate(parent, "relative");
 						toggle.transform.GetChild(1).GetComponent<Text>().text = "Relative";
@@ -608,6 +608,17 @@ namespace EditorManagement.Patchers
 
 				if (RTFile.FileExists(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_d_homing.png"))
 					homingDynamicRotation.transform.Find("Image").GetComponent<Image>().sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_d_homing.png");
+
+				var rRotation = rotation.Find("r_rotation");
+				var rRotationX = rRotation.Find("x");
+
+				var rRotationY = rRotationX.gameObject.Duplicate(rRotation, "y");
+
+				var rRotationLabel = rotation.Find("r_rotation_label");
+				var l = rRotationLabel.GetChild(0);
+				var max = l.gameObject.Duplicate(rRotationLabel, "text");
+
+				Destroy(rRotation.GetComponent<EventTrigger>());
 
 				var color = ObjEditor.inst.KeyframeDialogs[3].transform;
 				var randomColorRangeLabel = position.Find("r_position_label").gameObject.Duplicate(color, "r_color_label");
