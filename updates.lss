@@ -1,3 +1,10 @@
+2.1.8 > [Jan 7, 2024]
+- Added Transform values keybind to keybind actions and added not pressed.
+- Rendering timeline objects is now way faster than before.
+- Removing a modifier from an object will now update the object, in case there's any components the object now has.
+- Dragging Prefab Objects around is now faster.
+- Any dropdowns that had "Invalid Value" now don't show them, making the dropdown list much cleaner.
+- Added lock and collapse toggles to Prefab Object Dialog.
 2.1.7 > [Jan 6, 2024]
 - Fixed Multi Selection (regular, not drag select).
 - Added EventsCore Reset Offsets, to fix the event offsets carrying over between levels.
