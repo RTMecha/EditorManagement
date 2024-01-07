@@ -333,6 +333,7 @@ namespace EditorManagement.Functions.Editors
                     delete.onClick.AddListener(delegate ()
                     {
                         beatmapObject.modifiers.RemoveAt(index);
+                        Updater.UpdateProcessor(beatmapObject);
                         StartCoroutine(RenderModifiers(beatmapObject));
                     });
 
@@ -859,16 +860,22 @@ namespace EditorManagement.Functions.Editors
                                 dd.transform.Find("Text").GetComponent<Text>().text = "Value";
 
                                 Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
-                                Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
 
+                                var hide = dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>();
+                                hide.DisabledOptions.Clear();
                                 var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
                                 d.onValueChanged.RemoveAllListeners();
                                 d.options.Clear();
 
-                                string[] keyCodes = Enum.GetNames(typeof(KeyCode));
+                                var keyCodes = Enum.GetValues(typeof(KeyCode));
+
                                 for (int i = 0; i < keyCodes.Length; i++)
                                 {
-                                    d.options.Add(new Dropdown.OptionData(((KeyCode)i).ToString()));
+                                    var str = Enum.GetName(typeof(KeyCode), i) ?? "Invalid Value";
+
+                                    hide.DisabledOptions.Add(string.IsNullOrEmpty(Enum.GetName(typeof(KeyCode), i)));
+
+                                    d.options.Add(new Dropdown.OptionData(str));
                                 }
 
                                 d.value = Parser.TryParse(modifier.value, 0);
