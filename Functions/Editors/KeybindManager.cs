@@ -6,12 +6,15 @@ using System.Threading.Tasks;
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 using SimpleJSON;
 using LSFunctions;
 
-using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Components;
+using EditorManagement.Functions.Helpers;
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
@@ -26,10 +29,10 @@ using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
 using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
 using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
 
+using SelectionType = ObjEditor.ObjectSelection.SelectionType;
 using BaseObjectSelection = ObjEditor.ObjectSelection;
 using BaseObjectKeyframeSelection = ObjEditor.KeyframeSelection;
 using EventKeyframeSelection = EventEditor.KeyframeSelection;
-using EditorManagement.Functions.Helpers;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -79,6 +82,44 @@ namespace EditorManagement.Functions.Editors
                         if (watch != KeyCode.None)
                             keybind.keys[Mathf.Clamp(currentKey, 0, keybind.keys.Count - 1)].KeyCode = watch;
                     }
+                }
+            }
+
+            if (Input.GetMouseButtonDown(0))
+            {
+                dragging = false;
+            }
+            
+            if (Input.GetMouseButtonDown(1) && selectedKeyframe && originalValues != null)
+            {
+                dragging = false;
+                selectedKeyframe.eventValues = originalValues.Copy();
+                if (selectionType == SelectionType.Object)
+                {
+                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                    ObjectEditor.inst.RenderKeyframeDialog(beatmapObject);
+                }
+                if (selectionType == SelectionType.Prefab)
+                {
+                    Updater.UpdatePrefab(prefabObject, "Offset");
+                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
+                }
+            }
+
+            UpdateValues();
+        }
+
+        public void FixedUpdate()
+        {
+            if (dragging)
+            {
+                if (selectionType == SelectionType.Object)
+                {
+                    ObjectEditor.inst.RenderKeyframeDialog(beatmapObject);
+                }
+                if (selectionType == SelectionType.Prefab)
+                {
+                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
                 }
             }
         }
@@ -276,13 +317,7 @@ namespace EditorManagement.Functions.Editors
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Slash),
-            }, 45, new Dictionary<string, string>
-            {
-                { "External", "False" },
-                { "UseID", "True" },
-                { "ID", "" },
-                { "Index", "0" },
-            }));
+            }, 57));
             
             // Cut
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
@@ -337,6 +372,25 @@ namespace EditorManagement.Functions.Editors
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Z),
             }, 52));
 
+            // TransformPosition
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.G)
+            }, 54));
+            
+            // TransformScale
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Y)
+            }, 55));
+            
+            // TransformRotation
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.R),
+                new Keybind.Key(Keybind.Key.Type.NotPressed, KeyCode.LeftControl),
+            }, 56));
+
             // Custom Code
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -378,8 +432,12 @@ namespace EditorManagement.Functions.Editors
         public Transform editorDialog;
         public Dropdown actionDropdown;
         public RectTransform keysContent;
+        public RectTransform settingsContent;
 
         public GameObject keyPrefab;
+        public GameObject settingsPrefab;
+
+        public string searchTerm = "";
 
         public void GenerateKeybindEditorPopupDialog()
         {
@@ -394,6 +452,14 @@ namespace EditorManagement.Functions.Editors
             {
 
             }));
+
+            var search = popup.transform.Find("search-box/search").GetComponent<InputField>();
+            search.onValueChanged.ClearAll();
+            search.onValueChanged.AddListener(delegate (string _val)
+            {
+                searchTerm = _val;
+                RefreshKeybindPopup();
+            });
 
             var close = popup.transform.Find("Panel/x").GetComponent<Button>();
             close.onClick.ClearAll();
@@ -445,28 +511,30 @@ namespace EditorManagement.Functions.Editors
             this.actionDropdown.options = KeybinderMethods.Select(x => new Dropdown.OptionData(x.Method.Name)).ToList();
             this.actionDropdown.value = 0;
 
-            var scrollRect = new GameObject("ScrollRect");
-            scrollRect.transform.SetParent(dataRT);
-            scrollRect.transform.localScale = Vector3.one;
-            var scrollRectRT = scrollRect.AddComponent<RectTransform>();
-            scrollRectRT.anchoredPosition = new Vector2(0f, 16f);
-            scrollRectRT.sizeDelta = new Vector2(400f, 250f);
-            var scrollRectSR = scrollRect.AddComponent<ScrollRect>();
+            // Keys list
+            var keysScrollRect = new GameObject("ScrollRect");
+            keysScrollRect.transform.SetParent(dataRT);
+            keysScrollRect.transform.localScale = Vector3.one;
+            var keysScrollRectRT = keysScrollRect.AddComponent<RectTransform>();
+            keysScrollRectRT.anchoredPosition = new Vector2(0f, 16f);
+            keysScrollRectRT.sizeDelta = new Vector2(400f, 250f);
+            var keysScrollRectSR = keysScrollRect.AddComponent<ScrollRect>();
+            keysScrollRectSR.horizontal = false;
 
-            var maskGO = new GameObject("Mask");
-            maskGO.transform.SetParent(scrollRectRT);
-            maskGO.transform.localScale = Vector3.one;
-            var maskRT = maskGO.AddComponent<RectTransform>();
-            maskRT.anchoredPosition = new Vector2(0f, 0f);
-            maskRT.anchorMax = new Vector2(1f, 1f);
-            maskRT.anchorMin = new Vector2(0f, 0f);
-            maskRT.sizeDelta = new Vector2(0f, 0f);
-            var maskImage = maskGO.AddComponent<Image>();
-            maskImage.color = new Color(1f, 1f, 1f, 0.04f);
-            var mask = maskGO.AddComponent<Mask>();
+            var keysMaskGO = new GameObject("Mask");
+            keysMaskGO.transform.SetParent(keysScrollRectRT);
+            keysMaskGO.transform.localScale = Vector3.one;
+            var keysMaskRT = keysMaskGO.AddComponent<RectTransform>();
+            keysMaskRT.anchoredPosition = new Vector2(0f, 0f);
+            keysMaskRT.anchorMax = new Vector2(1f, 1f);
+            keysMaskRT.anchorMin = new Vector2(0f, 0f);
+            keysMaskRT.sizeDelta = new Vector2(0f, 0f);
+            var keysMaskImage = keysMaskGO.AddComponent<Image>();
+            keysMaskImage.color = new Color(1f, 1f, 1f, 0.04f);
+            keysMaskGO.AddComponent<Mask>();
 
             var keysContentGO = new GameObject("Content");
-            keysContentGO.transform.SetParent(maskRT);
+            keysContentGO.transform.SetParent(keysMaskRT);
             keysContentGO.transform.localScale = Vector3.one;
             keysContent = keysContentGO.AddComponent<RectTransform>();
 
@@ -476,20 +544,67 @@ namespace EditorManagement.Functions.Editors
             keysContent.pivot = new Vector2(0f, 1f);
             keysContent.sizeDelta = new Vector2(400f, 250f);
 
-            var contentSizeFitter = keysContentGO.AddComponent<ContentSizeFitter>();
-            contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.MinSize;
-            contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.MinSize;
+            var keysContentCSF = keysContentGO.AddComponent<ContentSizeFitter>();
+            keysContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+            keysContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
 
-            var contentVLG = keysContentGO.AddComponent<VerticalLayoutGroup>();
-            contentVLG.childControlHeight = false;
-            contentVLG.childForceExpandHeight = false;
-            contentVLG.spacing = 4f;
+            var keysContentVLG = keysContentGO.AddComponent<VerticalLayoutGroup>();
+            keysContentVLG.childControlHeight = false;
+            keysContentVLG.childForceExpandHeight = false;
+            keysContentVLG.spacing = 4f;
 
-            var contentLE = keysContentGO.AddComponent<LayoutElement>();
-            contentLE.layoutPriority = 10000;
-            contentLE.minWidth = 760;
+            var keysContentLE = keysContentGO.AddComponent<LayoutElement>();
+            keysContentLE.layoutPriority = 10000;
+            keysContentLE.minWidth = 760;
 
-            scrollRectSR.content = keysContent;
+            keysScrollRectSR.content = keysContent;
+
+            // Settings list
+            var settingsScrollRect = new GameObject("ScrollRect Settings");
+            settingsScrollRect.transform.SetParent(dataRT);
+            settingsScrollRect.transform.localScale = Vector3.one;
+            var settingsScrollRectRT = settingsScrollRect.AddComponent<RectTransform>();
+            settingsScrollRectRT.anchoredPosition = new Vector2(0f, 16f);
+            settingsScrollRectRT.sizeDelta = new Vector2(400f, 250f);
+            var settingsScrollRectSR = settingsScrollRect.AddComponent<ScrollRect>();
+
+            var settingsMaskGO = new GameObject("Mask");
+            settingsMaskGO.transform.SetParent(settingsScrollRectRT);
+            settingsMaskGO.transform.localScale = Vector3.one;
+            var settingsMaskRT = settingsMaskGO.AddComponent<RectTransform>();
+            settingsMaskRT.anchoredPosition = new Vector2(0f, 0f);
+            settingsMaskRT.anchorMax = new Vector2(1f, 1f);
+            settingsMaskRT.anchorMin = new Vector2(0f, 0f);
+            settingsMaskRT.sizeDelta = new Vector2(0f, 0f);
+            var settingsMaskImage = settingsMaskGO.AddComponent<Image>();
+            settingsMaskImage.color = new Color(1f, 1f, 1f, 0.04f);
+            settingsMaskGO.AddComponent<Mask>();
+
+            var settingsContentGO = new GameObject("Content");
+            settingsContentGO.transform.SetParent(settingsMaskRT);
+            settingsContentGO.transform.localScale = Vector3.one;
+            settingsContent = settingsContentGO.AddComponent<RectTransform>();
+
+            settingsContent.anchoredPosition = new Vector2(0f, -16f);
+            settingsContent.anchorMax = new Vector2(0f, 1f);
+            settingsContent.anchorMin = new Vector2(0f, 1f);
+            settingsContent.pivot = new Vector2(0f, 1f);
+            settingsContent.sizeDelta = new Vector2(400f, 250f);
+
+            var settingsContentCSF = settingsContentGO.AddComponent<ContentSizeFitter>();
+            settingsContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+            settingsContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+            var settingsContentVLG = settingsContentGO.AddComponent<VerticalLayoutGroup>();
+            settingsContentVLG.childControlHeight = false;
+            settingsContentVLG.childForceExpandHeight = false;
+            settingsContentVLG.spacing = 4f;
+
+            var settingsContentLE = settingsContentGO.AddComponent<LayoutElement>();
+            settingsContentLE.layoutPriority = 10000;
+            settingsContentLE.minWidth = 760;
+
+            settingsScrollRectSR.content = settingsContent;
 
             // Key Prefab
             {
@@ -524,14 +639,14 @@ namespace EditorManagement.Functions.Editors
                 keyCodeDropdownDD.value = 0;
                 keyCodeDropdownDD.options.Clear();
 
-                var hide = keyCodeDropdown.AddComponent<HideDropdownOptions>();
-
+                var hide = keyCodeDropdown.GetComponent<HideDropdownOptions>();
+                hide.DisabledOptions.Clear();
                 var keyCodes = Enum.GetValues(typeof(KeyCode));
                 for (int i = 0; i < keyCodes.Length; i++)
                 {
                     var str = Enum.GetName(typeof(KeyCode), i) ?? "Invalid Value";
 
-                    hide.DisabledOptions.Add(Enum.GetName(typeof(KeyCode), i) == null);
+                    hide.DisabledOptions.Add(string.IsNullOrEmpty(Enum.GetName(typeof(KeyCode), i)));
 
                     keyCodeDropdownDD.options.Add(new Dropdown.OptionData(str));
                 }
@@ -575,56 +690,73 @@ namespace EditorManagement.Functions.Editors
             foreach (var keybind in keybinds)
             {
                 int index = num;
-                var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, keybind.Name);
-                var button = gameObject.transform.Find("Image").gameObject.AddComponent<Button>();
-                button.onClick.AddListener(delegate ()
+
+                if (string.IsNullOrEmpty(searchTerm) || keybind.Name.Contains(searchTerm))
                 {
-                    EditorManager.inst.ShowDialog("Keybind Editor");
-                    RefreshKeybindEditor(keybind);
-                });
-
-                var ed1 = new GameObject("Edit");
-                ed1.transform.SetParent(gameObject.transform.Find("Image"));
-                ed1.transform.localScale = Vector3.one;
-
-                var rt = ed1.AddComponent<RectTransform>();
-                rt.anchoredPosition = Vector2.zero;
-                rt.sizeDelta = new Vector2(32f, 32f);
-
-                var hover = gameObject.transform.Find("Image").gameObject.AddComponent<Components.HoverUI>();
-                hover.animatePos = false;
-                hover.animateSca = true;
-                hover.size = 1.1f;
-
-                var image = ed1.AddComponent<Image>();
-                image.sprite = editSprite;
-                image.color = Color.black;
-
-                var name = keybind.Name;
-
-                if (keybind.settings != null && keybind.settings.Count > 0)
-                {
-                    name += " (";
-                    for (int i = 0; i < keybind.settings.Count; i++)
+                    var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, keybind.Name);
+                    var button = gameObject.transform.Find("Image").gameObject.AddComponent<Button>();
+                    button.onClick.AddListener(delegate ()
                     {
-                        name += $"{keybind.settings.ElementAt(i).Key}: {keybind.settings.ElementAt(i).Value}";
-                        if (i != keybind.settings.Count - 1)
-                            name += ", ";
+                        EditorManager.inst.ShowDialog("Keybind Editor");
+                        RefreshKeybindEditor(keybind);
+                    });
+
+                    var ed1 = new GameObject("Edit");
+                    ed1.transform.SetParent(gameObject.transform.Find("Image"));
+                    ed1.transform.localScale = Vector3.one;
+
+                    var rt = ed1.AddComponent<RectTransform>();
+                    rt.anchoredPosition = Vector2.zero;
+                    rt.sizeDelta = new Vector2(32f, 32f);
+
+                    var hover = gameObject.transform.Find("Image").gameObject.AddComponent<Components.HoverUI>();
+                    hover.animatePos = false;
+                    hover.animateSca = true;
+                    hover.size = 1.1f;
+
+                    var image = ed1.AddComponent<Image>();
+                    image.sprite = editSprite;
+                    image.color = Color.black;
+
+                    var name = keybind.Name;
+
+                    if (keybind.keys != null && keybind.keys.Count > 0)
+                    {
+                        name += " [";
+                        for (int i = 0; i < keybind.keys.Count; i++)
+                        {
+                            name += $"{keybind.keys[i].InteractType}: {keybind.keys[i].KeyCode}";
+                            if (i != keybind.keys.Count - 1)
+                                name += ", ";
+                        }
+                        name += "]";
                     }
-                    name += ")";
+
+                    if (keybind.settings != null && keybind.settings.Count > 0)
+                    {
+                        name += " (";
+                        for (int i = 0; i < keybind.settings.Count; i++)
+                        {
+                            name += $"{keybind.settings.ElementAt(i).Key}: {keybind.settings.ElementAt(i).Value}";
+                            if (i != keybind.settings.Count - 1)
+                                name += ", ";
+                        }
+                        name += ")";
+                    }
+
+                    gameObject.transform.Find("folder-name").GetComponent<Text>().text = name;
+
+                    var delete = EditorManager.inst.GetDialog("Keybind List Popup").Dialog.Find("Panel/x").gameObject.Duplicate(gameObject.transform, "Delete").GetComponent<Button>();
+                    ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
+                    delete.onClick.ClearAll();
+                    delete.onClick.AddListener(delegate ()
+                    {
+                        keybinds.RemoveAt(index);
+                        RefreshKeybindPopup();
+                        Save();
+                    });
                 }
 
-                gameObject.transform.Find("folder-name").GetComponent<Text>().text = name;
-
-                var delete = EditorManager.inst.GetDialog("Keybind List Popup").Dialog.Find("Panel/x").gameObject.Duplicate(gameObject.transform, "Delete").GetComponent<Button>();
-                ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
-                delete.onClick.ClearAll();
-                delete.onClick.AddListener(delegate ()
-                {
-                    keybinds.RemoveAt(index);
-                    RefreshKeybindPopup();
-                    Save();
-                });
                 num++;
             }
         }
@@ -638,6 +770,7 @@ namespace EditorManagement.Functions.Editors
                 keybind.ActionType = _val;
                 var settings = Settings;
                 keybind.settings = settings[_val] ?? new Dictionary<string, string>();
+                RefreshKeybindPopup();
                 Save();
             });
 
@@ -653,6 +786,7 @@ namespace EditorManagement.Functions.Editors
                 var key = new Keybind.Key(Keybind.Key.Type.Down, KeyCode.None);
                 keybind.keys.Add(key);
                 RefreshKeybindEditor(keybind);
+                RefreshKeybindPopup();
                 Save();
             });
 
@@ -666,6 +800,7 @@ namespace EditorManagement.Functions.Editors
                 type.onValueChanged.AddListener(delegate (int _val)
                 {
                     key.InteractType = (Keybind.Key.Type)_val;
+                    RefreshKeybindPopup();
                     Save();
                 });
 
@@ -675,6 +810,7 @@ namespace EditorManagement.Functions.Editors
                 code.onValueChanged.AddListener(delegate (int _val)
                 {
                     key.KeyCode = (KeyCode)_val;
+                    RefreshKeybindPopup();
                     Save();
                 });
 
@@ -684,8 +820,223 @@ namespace EditorManagement.Functions.Editors
                 {
                     keybind.keys.RemoveAt(index);
                     RefreshKeybindEditor(keybind);
+                    RefreshKeybindPopup();
                     Save();
                 });
+                num++;
+            }
+
+            LSHelpers.DeleteChildren(settingsContent);
+
+            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+            var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
+            var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
+            var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+            var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
+            var stringInput = RTEditor.inst.defaultIF;
+
+            num = 0;
+            foreach (var setting in keybind.settings)
+            {
+                int index = num;
+
+                var key = setting.Key;
+                switch (key.ToLower())
+                {
+                    case "external":
+                    case "useid":
+                    case "remove prefab instance id":
+                        {
+                            var bar = Instantiate(singleInput);
+                            Destroy(bar.GetComponent<InputField>());
+                            Destroy(bar.GetComponent<EventInfo>());
+                            Destroy(bar.GetComponent<EventTrigger>());
+
+                            LSHelpers.DeleteChildren(bar.transform);
+                            bar.transform.SetParent(settingsContent);
+                            bar.transform.localScale = Vector3.one;
+                            bar.name = "input [BOOL]";
+
+                            TooltipHelper.AddTooltip(bar, setting.Key, "");
+
+                            var l = label.Duplicate(bar.transform, "", 0);
+                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(688f, 20f);
+
+                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                            {
+                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                            }
+
+                            bar.GetComponent<Image>().enabled = true;
+                            bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                            GameObject x = Instantiate(boolInput);
+                            x.transform.SetParent(bar.transform);
+                            x.transform.localScale = Vector3.one;
+
+                            Toggle xt = x.GetComponent<Toggle>();
+                            xt.onValueChanged.RemoveAllListeners();
+                            xt.isOn = Parser.TryParse(setting.Value, false);
+                            xt.onValueChanged.AddListener(delegate (bool _val)
+                            {
+                                keybind.settings[setting.Key] = _val.ToString();
+                            });
+
+                            break;
+                        }
+                    case "dialog":
+                    case "id":
+                    case "code":
+                        {
+                            var bar = Instantiate(singleInput);
+
+                            Destroy(bar.GetComponent<EventInfo>());
+                            Destroy(bar.GetComponent<EventTrigger>());
+                            Destroy(bar.GetComponent<InputField>());
+                            Destroy(bar.GetComponent<InputFieldSwapper>());
+
+                            LSHelpers.DeleteChildren(bar.transform);
+                            bar.transform.SetParent(settingsContent);
+                            bar.transform.localScale = Vector3.one;
+                            bar.name = "input [STRING]";
+
+                            TooltipHelper.AddTooltip(bar, setting.Key, "");
+
+                            var l = label.Duplicate(bar.transform, "", 0);
+                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
+
+                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                            {
+                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                            }
+
+                            bar.GetComponent<Image>().enabled = true;
+                            bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                            GameObject x = Instantiate(stringInput);
+                            x.transform.SetParent(bar.transform);
+                            x.transform.localScale = Vector3.one;
+                            Destroy(x.GetComponent<HoverTooltip>());
+
+                            x.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 32f);
+
+                            var xif = x.GetComponent<InputField>();
+                            xif.onValueChanged.RemoveAllListeners();
+                            xif.characterValidation = InputField.CharacterValidation.None;
+                            xif.characterLimit = 0;
+                            xif.text = setting.Value;
+                            xif.textComponent.fontSize = 18;
+                            xif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                keybind.settings[setting.Key] = _val;
+                            });
+
+                            break;
+                        }
+                    case "eventtype":
+                    case "eventindex":
+                    case "eventvalue":
+                    case "layer":
+                    case "index":
+                        {
+                            GameObject x = singleInput.Duplicate(settingsContent, "input [INT]");
+
+                            Destroy(x.GetComponent<EventInfo>());
+                            Destroy(x.GetComponent<EventTrigger>());
+                            Destroy(x.GetComponent<InputField>());
+
+                            x.transform.localScale = Vector3.one;
+                            x.transform.GetChild(0).localScale = Vector3.one;
+
+                            var l = label.Duplicate(x.transform, "", 0);
+                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+
+                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                            {
+                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                            }
+
+                            x.GetComponent<Image>().enabled = true;
+                            x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                            TooltipHelper.AddTooltip(x, setting.Key, "");
+
+                            var input = x.transform.Find("input");
+
+                            var xif = input.gameObject.AddComponent<InputField>();
+                            xif.onValueChanged.RemoveAllListeners();
+                            xif.textComponent = input.Find("Text").GetComponent<Text>();
+                            xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                            xif.characterValidation = InputField.CharacterValidation.Integer;
+                            xif.text = Parser.TryParse(setting.Value, 0).ToString();
+                            xif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (int.TryParse(_val, out int result) && keybind.settings.ContainsKey(setting.Key))
+                                {
+                                    keybind.settings[setting.Key] = result.ToString();
+                                }
+                            });
+
+                            TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif) });
+
+                            TriggerHelper.IncreaseDecreaseButtonsInt(xif, t: x.transform);
+
+                            break;
+                        }
+                    case "eventamount":
+                        {
+                            GameObject x = singleInput.Duplicate(settingsContent, "input [FLOAT]");
+
+                            Destroy(x.GetComponent<EventInfo>());
+                            Destroy(x.GetComponent<EventTrigger>());
+                            Destroy(x.GetComponent<InputField>());
+
+                            x.transform.localScale = Vector3.one;
+                            x.transform.GetChild(0).localScale = Vector3.one;
+
+                            var l = label.Duplicate(x.transform, "", 0);
+                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+
+                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                            {
+                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                            }
+
+                            x.GetComponent<Image>().enabled = true;
+                            x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+
+                            TooltipHelper.AddTooltip(x, setting.Key, "");
+
+                            var input = x.transform.Find("input");
+
+                            var xif = input.gameObject.AddComponent<InputField>();
+                            xif.onValueChanged.RemoveAllListeners();
+                            xif.textComponent = input.Find("Text").GetComponent<Text>();
+                            xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                            xif.characterValidation = InputField.CharacterValidation.Integer;
+                            xif.text = Parser.TryParse(setting.Value, 0f).ToString();
+                            xif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float result) && keybind.settings.ContainsKey(setting.Key))
+                                {
+                                    keybind.settings[setting.Key] = result.ToString();
+                                }
+                            });
+
+                            TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
+
+                            TriggerHelper.IncreaseDecreaseButtons(xif, t: x.transform);
+
+                            break;
+                        }
+                }
+
+
                 num++;
             }
         }
@@ -750,6 +1101,10 @@ namespace EditorManagement.Functions.Editors
             ToggleObjectDragger, // 51
             ToggleZenMode, // 52
             CycleGameDifficulty, // 53
+            TransformPosition, //54
+            TransformScale, //55
+            TransformRotation, //56
+            SpawnSelectedQuickPrefab, //57
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1474,6 +1829,29 @@ namespace EditorManagement.Functions.Editors
             SaveManager.inst.UpdateSettingsFile(false);
         }
 
+        public static void TransformPosition(Keybind keybind)
+        {
+            inst.SetValues(0);
+        }
+        
+        public static void TransformScale(Keybind keybind)
+        {
+            inst.SetValues(1);
+        }
+        
+        public static void TransformRotation(Keybind keybind)
+        {
+            inst.SetValues(2);
+        }
+
+        public static void SpawnSelectedQuickPrefab(Keybind keybind)
+        {
+            if (PrefabEditor.inst.currentPrefab != null)
+                PrefabEditor.inst.AddPrefabObjectToLevel(PrefabEditor.inst.currentPrefab);
+            else
+                EditorManager.inst.DisplayNotification("No selected quick prefab!", 1f, EditorManager.NotificationType.Error);
+        }
+
         #endregion
 
         #region Settings
@@ -1570,6 +1948,13 @@ namespace EditorManagement.Functions.Editors
                 { "Remove Prefab Instance ID", "True" }
             }, // 49
             null, // 50
+            null, // 51
+            null, // 52
+            null, // 53
+            null, // 54
+            null, // 55
+            null, // 56
+            null, // 57
         };
 
         #endregion
@@ -1605,13 +1990,191 @@ namespace EditorManagement.Functions.Editors
             return KeyCode.None;
         }
 
+        public void SetValues(int type)
+        {
+            if (ObjectEditor.inst.SelectedObjectCount > 1)
+            {
+                EditorManager.inst.DisplayNotification("Cannot shift multiple objects around currently.", 2f, EditorManager.NotificationType.Error);
+                return;
+            }
+
+            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+            {
+                selectionType = SelectionType.Object;
+                beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                SetCurrentKeyframe(type);
+            }
+            if (ObjectEditor.inst.CurrentSelection.IsPrefabObject)
+            {
+                selectionType = SelectionType.Prefab;
+                prefabObject = ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>();
+                selectedKeyframe = (EventKeyframe)prefabObject.events[type];
+                originalValues = selectedKeyframe.eventValues.Copy();
+            }
+
+            setKeyframeValues = false;
+
+            firstDirection = RTObject.Axis.Static;
+
+            currentType = type;
+
+            dragging = true;
+        }
+
+        public void UpdateValues()
+        {
+            var vector = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 0f);
+            var vector2 = Camera.main.ScreenToWorldPoint(vector) * (currentType == 1 ? 0.2f : currentType == 2 ? 2f : 1f);
+            var vector3 = currentType != 1 ? new Vector3((int)vector2.x, (int)vector2.y, 0f) :
+                new Vector3(RTMath.RoundToNearestDecimal(vector2.x, 1), RTMath.RoundToNearestDecimal(vector2.y, 1), 0f);
+
+            if (dragging)
+            {
+                switch (currentType)
+                {
+                    case 0:
+                        {
+                            if (!setKeyframeValues)
+                            {
+                                setKeyframeValues = true;
+                                dragKeyframeValues = new Vector2(selectedKeyframe.eventValues[0], selectedKeyframe.eventValues[1]);
+                                dragOffset = Input.GetKey(KeyCode.LeftShift) ? vector3 : vector2;
+                            }
+
+                            var finalVector = Input.GetKey(KeyCode.LeftShift) ? vector3 : vector2;
+
+                            if (Input.GetKey(KeyCode.LeftControl) && firstDirection == RTObject.Axis.Static)
+                            {
+                                if (dragOffset.x > finalVector.x)
+                                    firstDirection = RTObject.Axis.PosX;
+
+                                if (dragOffset.x < finalVector.x)
+                                    firstDirection = RTObject.Axis.NegX;
+
+                                if (dragOffset.y > finalVector.y)
+                                    firstDirection = RTObject.Axis.PosY;
+
+                                if (dragOffset.y < finalVector.y)
+                                    firstDirection = RTObject.Axis.NegY;
+                            }
+
+                            if (firstDirection == RTObject.Axis.Static || firstDirection == RTObject.Axis.PosX || firstDirection == RTObject.Axis.NegX)
+                                selectedKeyframe.eventValues[0] = dragKeyframeValues.x - dragOffset.x + (Input.GetKey(KeyCode.LeftShift) ? vector3.x : vector2.x);
+                            if (firstDirection == RTObject.Axis.Static || firstDirection == RTObject.Axis.PosY || firstDirection == RTObject.Axis.NegY)
+                                selectedKeyframe.eventValues[1] = dragKeyframeValues.y - dragOffset.y + (Input.GetKey(KeyCode.LeftShift) ? vector3.y : vector2.y);
+
+                            break;
+                        }
+                    case 1:
+                        {
+
+                            if (!setKeyframeValues)
+                            {
+                                setKeyframeValues = true;
+                                dragKeyframeValues = new Vector2(selectedKeyframe.eventValues[0], selectedKeyframe.eventValues[1]);
+                                dragOffset = Input.GetKey(KeyCode.LeftShift) ? vector3 : vector2;
+                            }
+
+                            var finalVector = Input.GetKey(KeyCode.LeftShift) ? vector3 : vector2;
+
+                            if (Input.GetKey(KeyCode.LeftControl))
+                            {
+                                float total = Vector2.Distance(dragOffset, finalVector);
+
+                                selectedKeyframe.eventValues[0] = dragKeyframeValues.x + total;
+                                selectedKeyframe.eventValues[1] = dragKeyframeValues.y + total;
+                            }
+                            else
+                            {
+                                selectedKeyframe.eventValues[0] = dragKeyframeValues.x - (dragOffset.x + finalVector.x);
+                                selectedKeyframe.eventValues[1] = dragKeyframeValues.y - (dragOffset.y + finalVector.y);
+                            }
+
+                            break;
+                        }
+                    case 2:
+                        {
+                            var position = selectionType == SelectionType.Prefab ? new Vector3(prefabObject.events[0].eventValues[0], prefabObject.events[0].eventValues[1], 0f) : beatmapObject.levelObject?.visualObject?.GameObject.transform.position ??
+                                new Vector3(beatmapObject.events[0].FindLast(x => x.eventTime < AudioManager.inst.CurrentAudioSource.time).eventValues[0], beatmapObject.events[0].FindLast(x => x.eventTime < AudioManager.inst.CurrentAudioSource.time).eventValues[1], 0f);
+
+                            if (!setKeyframeValues)
+                            {
+                                setKeyframeValues = true;
+                                dragKeyframeValuesFloat = selectedKeyframe.eventValues[0];
+                                dragOffsetFloat = Input.GetKey(KeyCode.LeftShift) ? RTMath.roundToNearest(-RTMath.VectorAngle(position, vector2), 15f) : -RTMath.VectorAngle(transform.position, vector2);
+                            }
+
+                            selectedKeyframe.eventValues[0] =
+                                Input.GetKey(KeyCode.LeftShift) ? RTMath.roundToNearest(dragKeyframeValuesFloat - dragOffsetFloat + -RTMath.VectorAngle(position, vector2), 15f) :
+                                dragKeyframeValuesFloat - dragOffsetFloat + -RTMath.VectorAngle(position, vector2);
+
+                            break;
+                        }
+                }
+
+                if (selectionType == SelectionType.Object)
+                {
+                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                }
+                if (selectionType == SelectionType.Prefab)
+                {
+                    Updater.UpdatePrefab(prefabObject, "Offset");
+                }
+            }
+        }
+
+        public void SetCurrentKeyframe(int type)
+        {
+            var timeOffset = AudioManager.inst.CurrentAudioSource.time - beatmapObject.StartTime;
+            int nextIndex = beatmapObject.events[type].FindIndex(x => x.eventTime >= timeOffset);
+            if (nextIndex < 0)
+                nextIndex = beatmapObject.events[type].Count - 1;
+
+            int index;
+            if (beatmapObject.events[type].Has(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f))
+            {
+                selectedKeyframe = (EventKeyframe)beatmapObject.events[type].Find(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f);
+                index = beatmapObject.events[type].FindIndex(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f);
+                AudioManager.inst.CurrentAudioSource.time = selectedKeyframe.eventTime + beatmapObject.StartTime;
+            }
+            else
+            {
+                selectedKeyframe = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[type][nextIndex]);
+                selectedKeyframe.eventTime = timeOffset;
+                index = beatmapObject.events[type].Count;
+                beatmapObject.events[type].Add(selectedKeyframe);
+            }
+            originalValues = selectedKeyframe.eventValues.Copy();
+
+            ObjectEditor.inst.RenderKeyframes(beatmapObject);
+            ObjectEditor.inst.SetCurrentKeyframe(beatmapObject, type, index, false, false);
+        }
+
+        public int currentType;
+
+        public bool dragging;
+
+        public BeatmapObject beatmapObject;
+        public PrefabObject prefabObject;
+
+        public bool setKeyframeValues;
+        public Vector2 dragKeyframeValues;
+        public EventKeyframe selectedKeyframe;
+        public float[] originalValues;
+        public Vector2 dragOffset;
+        float dragOffsetFloat;
+        float dragKeyframeValuesFloat;
+        public RTObject.Axis firstDirection = RTObject.Axis.Static;
+
+        public SelectionType selectionType;
+
         #endregion
 
         public bool KeyCodeHandler(Keybind keybind)
         {
             if (keybind.keys.Count > 0 && keybind.keys.All(x => Input.GetKey(x.KeyCode) && x.InteractType == Keybind.Key.Type.Pressed ||
             Input.GetKeyDown(x.KeyCode) && x.InteractType == Keybind.Key.Type.Down ||
-            !Input.GetKey(x.KeyCode) && x.InteractType == Keybind.Key.Type.Up) && !isPressingKey)
+            !Input.GetKey(x.KeyCode) && x.InteractType == Keybind.Key.Type.Up || !Input.GetKey(x.KeyCode) && x.InteractType == Keybind.Key.Type.NotPressed) && !isPressingKey)
             {
                 isPressingKey = true;
                 return true;
@@ -1737,7 +2300,8 @@ namespace EditorManagement.Functions.Editors
                 {
                     Down,
                     Pressed,
-                    Up
+                    Up,
+                    NotPressed
                 }
 
                 public Type InteractType { get; set; }
