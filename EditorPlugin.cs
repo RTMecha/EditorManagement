@@ -9,6 +9,7 @@ using HarmonyLib;
 
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 using EditorManagement.Patchers;
 using EditorManagement.Functions;
@@ -21,7 +22,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.7")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.8")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -59,6 +60,7 @@ namespace EditorManagement
 			SetPreviewConfig();
 
             SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
@@ -84,6 +86,8 @@ namespace EditorManagement
 
 				SetTimelineColors();
 				AdjustPositionInputsChanged?.Invoke();
+
+				ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 			}
 		}
 
@@ -255,5 +259,47 @@ namespace EditorManagement
 		}
 
 		public static bool DontRun() => false;
-    }
+	}
+
+
+	[HarmonyPatch(typeof(Dropdown))]
+	public class DropdownPatch
+	{
+		[HarmonyPatch("Show")]
+		[HarmonyPostfix]
+		static void ShowPostfix(Dropdown __instance)
+		{
+			if (__instance.gameObject && __instance.transform && __instance.gameObject.TryGetComponent(out HideDropdownOptions hideDropdownOptions))
+			{
+				var content = __instance.transform.Find("Dropdown List/Viewport/Content");
+				Debug.Log(content);
+				for (int i = 0; i < hideDropdownOptions.DisabledOptions.Count; i++)
+				{
+					if (hideDropdownOptions.remove && hideDropdownOptions.DisabledOptions[i])
+					{
+						if (content.childCount > i + 1)
+							content.GetChild(i + 1).gameObject.SetActive(false);
+					}
+					else
+					{
+						if (content.childCount > i + 1)
+							content.GetChild(i + 1).GetComponent<Toggle>().interactable = !hideDropdownOptions.DisabledOptions[i];
+					}
+					if (content.childCount > i + 1)
+						content.GetChild(i + 1).AsRT().sizeDelta = new Vector2(0f, 32f);
+				}
+			}
+		}
+	}
+
+	[HarmonyPatch(typeof(HideDropdownOptions))]
+	public class HideDropdownOptionsPatch
+	{
+		[HarmonyPatch("OnPointerClick")]
+		[HarmonyPrefix]
+		static bool OnPointerClickPrefix(HideDropdownOptions __instance, PointerEventData __0)
+		{
+			return false;
+		}
+	}
 }

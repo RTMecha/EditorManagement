@@ -212,7 +212,24 @@ namespace EditorManagement.Patchers
 
 			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
 
-			Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").GetComponent<HideDropdownOptions>());
+            try
+            {
+                var todDropdown = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+				var hide = todDropdown.GetComponent<HideDropdownOptions>();
+				hide.DisabledOptions[0] = false;
+				hide.remove = true;
+				var template = todDropdown.transform.Find("Template/Viewport/Content").gameObject;
+				var vlg = template.AddComponent<VerticalLayoutGroup>();
+				vlg.childControlHeight = false;
+                vlg.childForceExpandHeight = false;
+
+				var csf = template.AddComponent<ContentSizeFitter>();
+				csf.verticalFit = ContentSizeFitter.FitMode.MinSize;
+			}
+            catch (Exception ex)
+            {
+				Debug.LogError(ex);
+            }
 
 			GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name").GetComponent<InputField>().characterLimit = 0;
 
@@ -831,6 +848,13 @@ namespace EditorManagement.Patchers
 							ObjectEditor.inst.RenderStartTime(beatmapObject);
 							ObjectEditor.inst.ResizeKeyframeTimeline(beatmapObject);
 						}
+
+						if (timelineObject.IsPrefabObject)
+                        {
+							var prefabObject = timelineObject.GetData<PrefabObject>();
+							PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
+							Updater.UpdatePrefab(prefabObject, "Start Time");
+                        }
 					}
 				}
             }

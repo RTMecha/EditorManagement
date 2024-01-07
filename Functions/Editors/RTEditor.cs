@@ -5607,9 +5607,9 @@ namespace EditorManagement.Functions.Editors
                                 //xRT.anchoredPosition = ConfigEntries.OpenFileDropdownPosition.Value;
 
                                 Destroy(x.GetComponent<HoverTooltip>());
-                                Destroy(x.GetComponent<HideDropdownOptions>());
 
-                                var hide = x.AddComponent<HideDropdownOptions>();
+                                var hide = x.GetComponent<HideDropdownOptions>();
+                                hide.DisabledOptions.Clear();
 
                                 Dropdown dropdown = x.GetComponent<Dropdown>();
                                 dropdown.options.Clear();
