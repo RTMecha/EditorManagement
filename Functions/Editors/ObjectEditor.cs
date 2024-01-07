@@ -121,6 +121,8 @@ namespace EditorManagement.Functions.Editors
 
         public bool colorShifted;
 
+        public static bool RenderPrefabTypeIcon { get; set; }
+
         public void OpenDialog(BeatmapObject beatmapObject)
         {
             if (CurrentSelection.IsBeatmapObject)
@@ -1332,86 +1334,103 @@ namespace EditorManagement.Functions.Editors
 
                     gameObject.GetComponentInChildren<TextMeshProUGUI>().text = (!string.IsNullOrEmpty(name)) ? string.Format("<mark=#000000aa>{0}</mark>", name) : nullName;
 
-                    if (locked && !gameObject.transform.Find("icons/lock"))
-                    {
-                        var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(gameObject.transform.Find("icons"));
-                        @lock.name = "lock";
-                        ((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
-                    }
-                    else if (locked && gameObject.transform.Find("icons/lock"))
-                    {
-                        var @lock = gameObject.transform.Find("icons/lock").AsRT();
-                        @lock.localScale = Vector2.one;
-                        @lock.anchoredPosition = Vector2.zero;
-                    }
-                    else if (!locked && gameObject.transform.Find("icons/lock"))
-                        Destroy(gameObject.transform.Find("icons/lock").gameObject);
+                    //if (locked && !gameObject.transform.Find("icons/lock"))
+                    //{
+                    //    var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(gameObject.transform.Find("icons"));
+                    //    @lock.name = "lock";
+                    //    ((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
+                    //}
+                    //else if (locked && gameObject.transform.Find("icons/lock"))
+                    //{
+                    //    var @lock = gameObject.transform.Find("icons/lock").AsRT();
+                    //    @lock.localScale = Vector2.one;
+                    //    @lock.anchoredPosition = Vector2.zero;
+                    //}
+                    //else if (!locked && gameObject.transform.Find("icons/lock"))
+                    //    Destroy(gameObject.transform.Find("icons/lock").gameObject);
 
-                    if (collapsed && !gameObject.transform.Find("icons/dots"))
-                    {
-                        var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(gameObject.transform.Find("icons"));
-                        dots.name = "dots";
-                        ((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
-                    }
-                    else if (collapsed && gameObject.transform.Find("icons/dots"))
-                    {
-                        var dots = gameObject.transform.Find("icons/dots").AsRT();
-                        dots.localScale = Vector2.one;
-                        dots.anchoredPosition = Vector2.zero;
-                    }
-                    else if (!collapsed && gameObject.transform.Find("icons/dots"))
-                        Destroy(gameObject.transform.Find("icons/dots").gameObject);
+                    //if (collapsed && !gameObject.transform.Find("icons/dots"))
+                    //{
+                    //    var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(gameObject.transform.Find("icons"));
+                    //    dots.name = "dots";
+                    //    ((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
+                    //}
+                    //else if (collapsed && gameObject.transform.Find("icons/dots"))
+                    //{
+                    //    var dots = gameObject.transform.Find("icons/dots").AsRT();
+                    //    dots.localScale = Vector2.one;
+                    //    dots.anchoredPosition = Vector2.zero;
+                    //}
+                    //else if (!collapsed && gameObject.transform.Find("icons/dots"))
+                    //    Destroy(gameObject.transform.Find("icons/dots").gameObject);
 
                     bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
                     bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
 
-                    if (RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value && (isBeatmapObject || isPrefab) && !gameObject.transform.Find("icons/type"))
+                    if (gameObject.transform.Find("icons/lock"))
+                        gameObject.transform.Find("icons/lock").gameObject.SetActive(locked);
+                    if (gameObject.transform.Find("icons/dots"))
+                        gameObject.transform.Find("icons/dots").gameObject.SetActive(collapsed);
+                    if (gameObject.transform.Find("icons/type"))
+                        gameObject.transform.Find("icons/type").gameObject.SetActive(RenderPrefabTypeIcon && (isBeatmapObject || isPrefab));
+
+                    if (RenderPrefabTypeIcon && (isBeatmapObject || isPrefab))
                     {
-                        if (!gameObject.transform.Find("icons").GetComponent<HorizontalLayoutGroup>())
-                        {
-                            var hlg = gameObject.transform.Find("icons").gameObject.AddComponent<HorizontalLayoutGroup>();
-                            hlg.childControlWidth = false;
-                            hlg.childForceExpandWidth = false;
-                            hlg.spacing = -4f;
-                            hlg.childAlignment = TextAnchor.UpperRight;
-
-                            if (gameObject.transform.Find("icons/lock"))
-                            {
-                                gameObject.transform.Find("icons/lock").AsRT().sizeDelta = new Vector2(20f, 20f);
-                            }
-
-                            if (gameObject.transform.Find("icons/dots"))
-                            {
-                                gameObject.transform.Find("icons/dots").AsRT().sizeDelta = new Vector2(32f, 20f);
-                            }
-                        }
-
-                        var b = new GameObject("type");
-                        b.transform.SetParent(gameObject.transform.Find("icons"));
-                        b.transform.localScale = Vector3.one;
-
-                        var bRT = b.AddComponent<RectTransform>();
-                        bRT.sizeDelta = new Vector2(20f, 20f);
-
-                        var bImage = b.AddComponent<Image>();
-                        bImage.color = new Color(0f, 0f, 0f, 0.45f);
-
-                        var icon = new GameObject("type");
-                        icon.transform.SetParent(b.transform);
-                        icon.transform.localScale = Vector3.one;
-
-                        var iconRT = icon.AddComponent<RectTransform>();
-                        iconRT.anchoredPosition = Vector2.zero;
-                        //iconRT.anchoredPosition = new Vector2(-115f, 0f);
-                        iconRT.sizeDelta = new Vector2(20f, 20f);
-
-                        var iconImage = icon.AddComponent<Image>();
+                        var iconImage = gameObject.transform.Find("icons/type/type").GetComponent<Image>();
                         int i =
                             isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
                             isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
 
                         iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
                     }
+
+                    //if (RenderPrefabTypeIcon && (isBeatmapObject || isPrefab) && !gameObject.transform.Find("icons/type"))
+                    //{
+                    //    if (!gameObject.transform.Find("icons").GetComponent<HorizontalLayoutGroup>())
+                    //    {
+                    //        var hlg = gameObject.transform.Find("icons").gameObject.AddComponent<HorizontalLayoutGroup>();
+                    //        hlg.childControlWidth = false;
+                    //        hlg.childForceExpandWidth = false;
+                    //        hlg.spacing = -4f;
+                    //        hlg.childAlignment = TextAnchor.UpperRight;
+
+                    //        if (gameObject.transform.Find("icons/lock"))
+                    //        {
+                    //            gameObject.transform.Find("icons/lock").AsRT().sizeDelta = new Vector2(20f, 20f);
+                    //        }
+
+                    //        if (gameObject.transform.Find("icons/dots"))
+                    //        {
+                    //            gameObject.transform.Find("icons/dots").AsRT().sizeDelta = new Vector2(32f, 20f);
+                    //        }
+                    //    }
+
+                    //    var b = new GameObject("type");
+                    //    b.transform.SetParent(gameObject.transform.Find("icons"));
+                    //    b.transform.localScale = Vector3.one;
+
+                    //    var bRT = b.AddComponent<RectTransform>();
+                    //    bRT.sizeDelta = new Vector2(20f, 20f);
+
+                    //    var bImage = b.AddComponent<Image>();
+                    //    bImage.color = new Color(0f, 0f, 0f, 0.45f);
+
+                    //    var icon = new GameObject("type");
+                    //    icon.transform.SetParent(b.transform);
+                    //    icon.transform.localScale = Vector3.one;
+
+                    //    var iconRT = icon.AddComponent<RectTransform>();
+                    //    iconRT.anchoredPosition = Vector2.zero;
+                    //    //iconRT.anchoredPosition = new Vector2(-115f, 0f);
+                    //    iconRT.sizeDelta = new Vector2(20f, 20f);
+
+                    //    var iconImage = icon.AddComponent<Image>();
+                    //    int i =
+                    //        isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
+                    //        isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
+
+                    //    iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
+                    //}
 
                     float zoom = EditorManager.inst.Zoom;
 
@@ -1453,26 +1472,75 @@ namespace EditorManagement.Functions.Editors
                     timelineObject.IsPrefabObject && DataManager.inst.gameData.prefabs.Find(x => timelineObject.GetData<PrefabObject>().prefabID == x.ID) != null ?
                     DataManager.inst.gameData.prefabs.Find(x => (timelineObject.Data as BasePrefabObject).prefabID == x.ID).Name : "<color=#FF0000>Null Reference Exception");
 
-                //bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
-                //bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
+                {
+                    bool locked = timelineObject.IsBeatmapObject ? timelineObject.GetData<BeatmapObject>().editorData.locked : timelineObject.IsPrefabObject ? timelineObject.GetData<PrefabObject>().editorData.locked : false;
+                    bool collapsed = timelineObject.IsBeatmapObject ? timelineObject.GetData<BeatmapObject>().editorData.collapse : timelineObject.IsPrefabObject ? timelineObject.GetData<PrefabObject>().editorData.collapse : false;
 
-                //if (RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value && (isBeatmapObject || isPrefab))
-                //{
-                //    var icon = new GameObject("Icon");
-                //    icon.transform.SetParent(gameObject.transform);
-                //    icon.transform.localScale = Vector3.one;
+                    if (!gameObject.transform.Find("icons/lock"))
+                    {
+                        var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(gameObject.transform.Find("icons"));
+                        @lock.name = "lock";
+                        ((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
+                    }
 
-                //    var iconRT = icon.AddComponent<RectTransform>();
-                //    iconRT.anchoredPosition = new Vector2(-115f, 0f);
-                //    iconRT.sizeDelta = new Vector2(18f, 18f);
+                    if (!gameObject.transform.Find("icons/dots"))
+                    {
+                        var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(gameObject.transform.Find("icons"));
+                        dots.name = "dots";
+                        ((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
+                    }
 
-                //    var iconImage = icon.AddComponent<Image>();
-                //    int i =
-                //        isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
-                //        isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
+                    if (!gameObject.transform.Find("icons").GetComponent<HorizontalLayoutGroup>())
+                    {
+                        var hlg = gameObject.transform.Find("icons").gameObject.AddComponent<HorizontalLayoutGroup>();
+                        hlg.childControlWidth = false;
+                        hlg.childForceExpandWidth = false;
+                        hlg.spacing = -4f;
+                        hlg.childAlignment = TextAnchor.UpperRight;
 
-                //    iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
-                //}
+                        if (gameObject.transform.Find("icons/lock"))
+                        {
+                            gameObject.transform.Find("icons/lock").AsRT().sizeDelta = new Vector2(20f, 20f);
+                        }
+
+                        if (gameObject.transform.Find("icons/dots"))
+                        {
+                            gameObject.transform.Find("icons/dots").AsRT().sizeDelta = new Vector2(32f, 20f);
+                        }
+                    }
+
+                    bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
+                    bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
+
+                    if (!gameObject.transform.Find("icons/type"))
+                    {
+                        var b = new GameObject("type");
+                        b.transform.SetParent(gameObject.transform.Find("icons"));
+                        b.transform.localScale = Vector3.one;
+
+                        var bRT = b.AddComponent<RectTransform>();
+                        bRT.sizeDelta = new Vector2(20f, 20f);
+
+                        var bImage = b.AddComponent<Image>();
+                        bImage.color = new Color(0f, 0f, 0f, 0.45f);
+
+                        var icon = new GameObject("type");
+                        icon.transform.SetParent(b.transform);
+                        icon.transform.localScale = Vector3.one;
+
+                        var iconRT = icon.AddComponent<RectTransform>();
+                        iconRT.anchoredPosition = Vector2.zero;
+                        //iconRT.anchoredPosition = new Vector2(-115f, 0f);
+                        iconRT.sizeDelta = new Vector2(20f, 20f);
+
+                        var iconImage = icon.AddComponent<Image>();
+                        //int i =
+                        //    isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
+                        //    isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
+
+                        //iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
+                    }
+                }
 
                 var hoverUI = gameObject.AddComponent<HoverUI>();
                 hoverUI.animatePos = false;
@@ -1889,6 +1957,7 @@ namespace EditorManagement.Functions.Editors
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
                     Updater.UpdateProcessor(beatmapObject, "Autokill");
+                ResizeKeyframeTimeline(beatmapObject);
                 RenderAutokill(beatmapObject);
 
             });
@@ -1925,6 +1994,7 @@ namespace EditorManagement.Functions.Editors
                     RenderTimelineObject(new TimelineObject(beatmapObject));
                     if (UpdateObjects)
                         Updater.UpdateProcessor(beatmapObject, "Autokill");
+                    ResizeKeyframeTimeline(beatmapObject);
                 });
 
                 akset.gameObject.SetActive(true);
@@ -1946,6 +2016,7 @@ namespace EditorManagement.Functions.Editors
                     RenderTimelineObject(new TimelineObject(beatmapObject));
                     if (UpdateObjects)
                         Updater.UpdateProcessor(beatmapObject, "Autokill");
+                    ResizeKeyframeTimeline(beatmapObject);
                 });
 
                 // Add Scrolling for easy changing of values.
@@ -2328,7 +2399,7 @@ namespace EditorManagement.Functions.Editors
 
             if (beatmapObject.shape == 4)
             {
-                Debug.Log($"{ObjEditor.inst.className}Shape is text, so we make the size larger for better readability.");
+                //Debug.Log($"{ObjEditor.inst.className}Shape is text, so we make the size larger for better readability.");
                 shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
                 var child = shapeSettings.GetChild(4);
                 child.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
@@ -2338,12 +2409,12 @@ namespace EditorManagement.Functions.Editors
             }
             else
             {
-                Debug.Log($"{ObjEditor.inst.className}Shape is not text so we reset size.");
+                //Debug.Log($"{ObjEditor.inst.className}Shape is not text so we reset size.");
                 shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
                 shapeSettings.GetChild(4).GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
             }
 
-            Debug.Log($"{ObjEditor.inst.className}Set the shape option as active.");
+            //Debug.Log($"{ObjEditor.inst.className}Set the shape option as active.");
             shapeSettings.GetChild(beatmapObject.shape).gameObject.SetActive(true);
             for (int i = 1; i <= ObjectManager.inst.objectPrefabs.Count; i++)
             {
@@ -3192,8 +3263,10 @@ namespace EditorManagement.Functions.Editors
                     {
                         for (int n = 0; n <= (type == 0 ? 5 : 3); n++)
                         {
-                            int buttonTmp = n;
-                            var child = p.GetChild(13).GetChild(n).GetComponent<Toggle>();
+                            //int buttonTmp = n;
+                            int buttonTmp = ((n >= 2) ? (n + 1) : n);
+                            Debug.Log(buttonTmp);
+                            var child = p.Find("random").GetChild(n).GetComponent<Toggle>();
                             child.onValueChanged.ClearAll();
                             child.isOn = random == buttonTmp;
                             child.onValueChanged.AddListener(delegate (bool _value)
@@ -3203,13 +3276,13 @@ namespace EditorManagement.Functions.Editors
                                     keyframe.random = buttonTmp;
 
                                     if (p.Find("r_axis"))
-                                        p.Find("r_axis").gameObject.SetActive(buttonTmp == 4 || buttonTmp == 5);
+                                        p.Find("r_axis").gameObject.SetActive(buttonTmp == 5 || buttonTmp == 6);
 
-                                    p.GetChild(10).gameObject.SetActive(buttonTmp != 0);
-                                    p.GetChild(11).gameObject.SetActive(buttonTmp != 0);
-                                    p.GetChild(10).GetChild(0).GetComponent<Text>().text = (buttonTmp == 3) ? "Random Scale Min" : buttonTmp == 5 ? "Minimum Range" : "Random X";
+                                    p.GetChild(10).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
+                                    p.GetChild(11).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
+                                    p.GetChild(10).GetChild(0).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Min" : buttonTmp == 6 ? "Minimum Range" : "Random X";
                                     if (p.GetChild(10).childCount > 1)
-                                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (buttonTmp == 3) ? "Random Scale Max" : buttonTmp == 5 ? "Maximum Range" : "Random Y";
+                                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Max" : buttonTmp == 6 ? "Maximum Range" : "Random Y";
                                     p.Find("random/interval-input").gameObject.SetActive(buttonTmp != 0 && buttonTmp != 3);
                                     p.Find("r_label/interval").gameObject.SetActive(buttonTmp != 0 && buttonTmp != 3);
 
@@ -3239,8 +3312,8 @@ namespace EditorManagement.Functions.Editors
                                 if (_val)
                                 {
                                     keyframe.random = buttonTmp;
-                                    p.GetChild(10).gameObject.SetActive(buttonTmp != 0);
-                                    p.GetChild(11).gameObject.SetActive(buttonTmp != 0);
+                                    p.GetChild(10).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
+                                    p.GetChild(11).gameObject.SetActive(buttonTmp != 0 && buttonTmp != 5);
                                     p.GetChild(10).GetChild(0).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Min" : "Random X";
                                     if (p.GetChild(10).childCount > 1)
                                         p.GetChild(10).GetChild(1).GetComponent<Text>().text = (buttonTmp == 4) ? "Random Scale Max" : "Random Y";
