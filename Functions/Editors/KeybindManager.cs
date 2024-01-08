@@ -90,7 +90,7 @@ namespace EditorManagement.Functions.Editors
                 dragging = false;
             }
             
-            if (Input.GetMouseButtonDown(1) && selectedKeyframe && originalValues != null)
+            if (Input.GetMouseButtonDown(1) && selectedKeyframe && originalValues != null && dragging)
             {
                 dragging = false;
                 selectedKeyframe.eventValues = originalValues.Copy();
