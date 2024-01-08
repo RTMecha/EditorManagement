@@ -1,3 +1,5 @@
+2.1.10 > [Jan 8, 2024]
+- Fix right clicking while Transform keys are not active causing the rendering to bug out.
 2.1.9 > [Jan 8, 2024]
 - Clean up random keyframe rendering.
 2.1.8 > [Jan 7, 2024]
