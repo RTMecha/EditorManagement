@@ -536,7 +536,6 @@ namespace EditorManagement.Functions.Editors
             PrefabEditor.inst.ReloadInternalPrefabsInPopup();
         }
 
-        // Reimplement this in either EditorManagement 2.0.0 or 2.1.0
         public void ReloadSelectionContent()
         {
             LSHelpers.DeleteChildren(PrefabEditor.inst.gridContent, false);
@@ -1234,7 +1233,7 @@ namespace EditorManagement.Functions.Editors
             string str = _d == PrefabDialog.External ?
                 string.IsNullOrEmpty(PrefabEditor.inst.externalSearchStr) ? "" : PrefabEditor.inst.externalSearchStr.ToLower() :
                 string.IsNullOrEmpty(PrefabEditor.inst.internalSearchStr) ? "" : PrefabEditor.inst.internalSearchStr.ToLower();
-            return _p.Name.ToLower().Contains(str) || DataManager.inst.PrefabTypes[_p.Type].Name.ToLower().Contains(str) || string.IsNullOrEmpty(str);
+            return string.IsNullOrEmpty(str) || _p.Name.ToLower().Contains(str) || DataManager.inst.PrefabTypes[_p.Type].Name.ToLower().Contains(str);
         }
 
         public void CollapseCurrentPrefab()
@@ -1436,76 +1435,37 @@ namespace EditorManagement.Functions.Editors
             return beatmapObjectCopy;
         }
 
+        public IEnumerable<BeatmapObject> ExpandBeatmapObjects(Dictionary<string, string> ids, float audioTime, BasePrefab prefab, BasePrefabObject prefabObject)
+        {
+            foreach (var beatmapObject in prefab.objects)
+            {
+                yield return Expand((BeatmapObject)beatmapObject, ids, audioTime, prefab, prefabObject);
+            }
+        }
+
         public IEnumerator AddExpandedPrefabToLevel(PrefabObject prefabObject)
         {
             RTEditor.inst.ienumRunning = true;
-
             float delay = 0f;
             float audioTime = EditorManager.inst.CurrentAudioPos;
 
-            //string id = prefabObject.ID;
             var prefab = (Prefab)DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
 
             var ids = prefab.objects.ToDictionary(x => x.id, x => LSText.randomString(16));
 
-            //var list = prefab.objects.Select(x => Expand((BeatmapObject)x, ids, audioTime, prefab, prefabObject)).ToList();
+            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
 
-            //DataManager.inst.gameData.beatmapObjects.AddRange(list);
+            //var beatmapObjects = ExpandBeatmapObjects(ids, audioTime, prefab, prefabObject);
+            //DataManager.inst.gameData.beatmapObjects.AddRange(beatmapObjects);
 
-            //yield return list.Select(x => new TimelineObject(x)).ToList().ForEachReturn(x =>
+            //foreach (var beatmapObject in beatmapObjects)
             //{
-            //    ObjectEditor.inst.RenderTimelineObject(x);
-
-            //    if (list.Count > 1)
-            //    {
-            //        x.selected = true;
-            //        ObjectEditor.inst.CurrentSelection = x;
-
-            //        return;
-            //    }
-
-            //    ObjectEditor.inst.SetCurrentObject(x, openDialog: false);
-            //});
-
-            //yield return ids.Values.ToList().ForEachReturn(id =>
-            //{
-            //    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id, out BaseBeatmapObject beatmapObject))
-            //    {
-            //        Updater.UpdateProcessor(beatmapObject);
-            //    }
-            //});
-
-            //foreach (var id in ids)
-            //{
-            //    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id.Value, out BaseBeatmapObject beatmapObject))
-            //    {
-            //        Updater.UpdateProcessor(beatmapObject);
-            //    }
+            //    Updater.UpdateProcessor(beatmapObject);
             //}
 
+            //yield return StartCoroutine(ObjectEditor.inst.ToTimelineObjects(beatmapObjects, true));
 
-            //var ids = new Dictionary<string, string>();
-
-            //foreach (var beatmapObject in prefab.objects)
-            //{
-            //    string str = LSText.randomString(16);
-            //    ids.Add(beatmapObject.id, str);
-            //}
-
-            //var list = new List<BeatmapObject>(prefab.objects.Select(x => Expand((BeatmapObject)x, prefabObject, prefab, id, ids)));
-
-            //DataManager.inst.gameData.beatmapObjects.AddRange(list);
-            //foreach (var beatmapObject in list)
-            //{
-            //    var timelineObject = new TimelineObject(beatmapObject);
-            //    timelineObject.selected = true;
-            //    RTEditor.inst.timelineObjects.Add(timelineObject);
-            //}
-
-            //ObjectEditor.inst.CreateTimelineObjects();
-
-            //Updater.UpdateObjects();
-
+            var expandedObjects = new List<BeatmapObject>();
             foreach (var beatmapObject in prefab.objects)
             {
                 yield return new WaitForSeconds(delay);
@@ -1524,12 +1484,13 @@ namespace EditorManagement.Functions.Editors
 
                 if (EditorManager.inst != null)
                 {
-                    beatmapObjectCopy.editorData.layer = EditorManager.inst.layer;
+                    beatmapObjectCopy.editorData.layer = prefabObject.editorData.layer;
                     beatmapObjectCopy.editorData.Bin = Mathf.Clamp(beatmapObjectCopy.editorData.Bin, 0, 14);
                 }
 
                 beatmapObjectCopy.prefabInstanceID = prefabObject.ID;
                 DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
+                expandedObjects.Add(beatmapObjectCopy);
 
                 if (ObjectEditor.inst != null)
                 {
@@ -1539,10 +1500,17 @@ namespace EditorManagement.Functions.Editors
 
                     ObjectEditor.inst.RenderTimelineObject(timelineObject);
                 }
-                Updater.UpdateProcessor(beatmapObjectCopy);
 
                 delay += 0.0001f;
             }
+
+            foreach (var beatmapObject in expandedObjects)
+            {
+                Updater.UpdateProcessor(beatmapObject);
+            }
+
+            expandedObjects.Clear();
+            expandedObjects = null;
 
             if (prefab.objects.Count > 1 || prefab.prefabObjects.Count > 1)
                 EditorManager.inst.ShowDialog("Multi Object Editor", false);
