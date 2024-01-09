@@ -1225,21 +1225,25 @@ namespace EditorManagement.Functions.Editors
             RenderKeyframeDialog(beatmapObject);
         }
 
-        public int AddEvent(BeatmapObject beatmapObject, float _time, int _kind, EventKeyframe _keyframe, bool openDialog)
+        public int AddEvent(BeatmapObject beatmapObject, float time, int type, EventKeyframe _keyframe, bool openDialog)
         {
             var eventKeyframe = EventKeyframe.DeepCopy(_keyframe);
-            eventKeyframe.eventTime = _time;
+            var t = SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes ? -(beatmapObject.StartTime - RTEditor.SnapToBPM(beatmapObject.StartTime + time)) : time;
+            eventKeyframe.eventTime = t;
 
             if (eventKeyframe.relative)
                 for (int i = 0; i < eventKeyframe.eventValues.Length; i++)
                     eventKeyframe.eventValues[i] = 0f;
 
-            beatmapObject.events[_kind].Add(eventKeyframe);
+            beatmapObject.events[type].Add(eventKeyframe);
 
             RenderTimelineObject(new TimelineObject(beatmapObject));
             if (openDialog)
+            {
+                ResizeKeyframeTimeline(beatmapObject);
                 RenderKeyframeDialog(beatmapObject);
-            return beatmapObject.events[_kind].FindIndex(x => x.eventTime == _time);
+            }
+            return beatmapObject.events[type].FindIndex(x => x.eventTime == t);
         }
 
         #endregion
