@@ -176,6 +176,7 @@ namespace EditorManagement.Functions.Editors
             try
             {
                 prefabTypePrefab = new GameObject("Prefab Type");
+                prefabTypePrefab.transform.localScale = Vector3.one;
                 var rectTransform = prefabTypePrefab.AddComponent<RectTransform>();
                 rectTransform.sizeDelta = new Vector2(400f, 32f);
                 var image = prefabTypePrefab.AddComponent<Image>();
@@ -187,6 +188,7 @@ namespace EditorManagement.Functions.Editors
                 horizontalLayoutGroup.spacing = 4;
 
                 var toggleType = prefabTypeTogglePrefab.Duplicate(rectTransform, "Toggle");
+                toggleType.transform.localScale = Vector3.one;
                 var toggleTypeRT = (RectTransform)toggleType.transform;
                 toggleTypeRT.sizeDelta = new Vector2(32f, 32f);
                 Destroy(toggleTypeRT.Find("text").gameObject);
@@ -197,6 +199,7 @@ namespace EditorManagement.Functions.Editors
                 toggleTog.group = null;
 
                 var icon = new GameObject("Icon");
+                icon.transform.localScale = Vector3.one;
                 icon.transform.SetParent(toggleTypeRT);
                 icon.transform.localScale = Vector3.one;
                 var iconRT = icon.AddComponent<RectTransform>();
@@ -212,6 +215,7 @@ namespace EditorManagement.Functions.Editors
                 //spacerRT.sizeDelta = new Vector2(32f, 32f);
 
                 var nameGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Name");
+                nameGO.transform.localScale = Vector3.one;
                 var nameRT = nameGO.GetComponent<RectTransform>();
                 nameRT.sizeDelta = new Vector2(163f, 32f);
 
@@ -222,6 +226,7 @@ namespace EditorManagement.Functions.Editors
                 nameTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
 
                 var colorGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Color");
+                colorGO.transform.localScale = Vector3.one;
                 var colorRT = colorGO.GetComponent<RectTransform>();
                 colorRT.sizeDelta = new Vector2(163f, 32f);
 
@@ -232,6 +237,7 @@ namespace EditorManagement.Functions.Editors
                 colorTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
 
                 var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(rectTransform, "Delete");
+                delete.transform.localScale = Vector3.one;
                 ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
             }
             catch (Exception ex)
@@ -579,22 +585,33 @@ namespace EditorManagement.Functions.Editors
             var offsetSlider = PrefabEditor.inst.dialog.Find("data/offset/slider").GetComponent<Slider>();
             var offsetInput = PrefabEditor.inst.dialog.Find("data/offset/input").GetComponent<InputField>();
 
+            bool setting = false;
             offsetSlider.onValueChanged.RemoveAllListeners();
             offsetSlider.onValueChanged.AddListener(delegate (float _value)
             {
-                PrefabEditor.inst.NewPrefabOffset = Mathf.Round(_value * 100f) / 100f;
-                offsetInput.text = PrefabEditor.inst.NewPrefabOffset.ToString();
+                if (!setting)
+                {
+                    setting = true;
+                    PrefabEditor.inst.NewPrefabOffset = Mathf.Round(_value * 100f) / 100f;
+                    offsetInput.text = PrefabEditor.inst.NewPrefabOffset.ToString();
+                }
+                setting = false;
             });
 
             offsetInput.onValueChanged.RemoveAllListeners();
+            offsetInput.characterLimit = 0;
             offsetInput.onValueChanged.AddListener(delegate (string _value)
             {
-                if (float.TryParse(_value, out float num))
+                if (!setting && float.TryParse(_value, out float num))
                 {
+                    setting = true;
                     PrefabEditor.inst.NewPrefabOffset = num;
-                    offsetSlider.value = PrefabEditor.inst.NewPrefabOffset;
+                    offsetSlider.value = num;
                 }
+                setting = false;
             });
+
+            TriggerHelper.AddEventTriggerParams(offsetInput.gameObject, TriggerHelper.ScrollDelta(offsetInput));
 
             TriggerHelper.IncreaseDecreaseButtons(offsetInput, t: PrefabEditor.inst.dialog.Find("data/offset"));
             PrefabEditor.inst.dialog.Find("data/type/Show Type Editor").GetComponent<Image>().color =

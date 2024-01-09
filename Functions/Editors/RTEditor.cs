@@ -2739,6 +2739,7 @@ namespace EditorManagement.Functions.Editors
                 = delegate (string name, string placeHolder, bool doMiddle, UnityAction leftButton, UnityAction middleButton, UnityAction rightButton)
             {
                 var gameObject = zoom.Duplicate(parent, name);
+                gameObject.transform.localScale = Vector3.one;
                 gameObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = placeHolder;
 
                 ((RectTransform)gameObject.transform).sizeDelta = new Vector2(428f, 32f);
@@ -2775,12 +2776,14 @@ namespace EditorManagement.Functions.Editors
             Action<string> labelGenerator = delegate (string name)
             {
                 var label = labelL.gameObject.Duplicate(parent, "label");
+                label.transform.localScale = Vector3.one;
                 label.transform.GetChild(0).gameObject.GetComponent<Text>().text = name;
             };
 
             Action<string, string, Transform, UnityAction> buttonGenerator = delegate (string name, string text, Transform parent, UnityAction unityAction)
             {
                 var gameObject = eventButton.Duplicate(parent, name);
+                gameObject.transform.localScale = Vector3.one;
 
                 ((RectTransform)gameObject.transform).sizeDelta = new Vector2(404f, 32f);
 
@@ -2967,6 +2970,7 @@ namespace EditorManagement.Functions.Editors
                 labelGenerator("Set Name");
 
                 var multiNameSet = zoom.Duplicate(parent, "name");
+                multiNameSet.transform.localScale = Vector3.one;
 
                 multiNameSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
 
@@ -4051,6 +4055,11 @@ namespace EditorManagement.Functions.Editors
             layerType = LayerType.Objects;
             SetLayer(0);
 
+            for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
+            {
+                LSHelpers.DeleteChildren(ObjEditor.inst.TimelineParents[i]);
+            }
+
             Updater.UpdateObjects(false);
 
             editorManager.InvokeRepeating("LoadingIconUpdate", 0f, 0.05f);
@@ -4158,7 +4167,7 @@ namespace EditorManagement.Functions.Editors
 
             fileInfo.text = $"Updating Timeline for [ {name} ]";
             Debug.LogFormat("{0}Updating editor for {1}...", EditorPlugin.className, fullPath);
-            AccessTools.Method(typeof(EditorManager), "UpdateTimelineSizes").Invoke(EditorManager.inst, new object[] { });
+            editorManager.UpdateTimelineSizes();
             gameManager.UpdateTimeline();
             editorManager.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
             MetadataEditor.inst.Render();
@@ -4216,7 +4225,6 @@ namespace EditorManagement.Functions.Editors
             }
 
             SetAutosave();
-
 
             TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
 
