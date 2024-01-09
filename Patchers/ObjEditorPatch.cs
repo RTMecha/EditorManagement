@@ -58,16 +58,26 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool SetMainTimelineZoom(float __0, bool __1 = true)
 		{
+			var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 			if (__1)
 			{
-				ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
-				ObjectEditor.inst.RenderKeyframes(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+				ObjectEditor.inst.ResizeKeyframeTimeline(beatmapObject);
+				ObjectEditor.inst.RenderKeyframes(beatmapObject);
 			}
 			float f = ObjEditor.inst.objTimelineSlider.value;
 			if (AudioManager.inst.CurrentAudioSource.clip != null)
-				f = AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length;
+            {
+				float time = -beatmapObject.StartTime + AudioManager.inst.CurrentAudioSource.time;
+				float objectLifeLength = beatmapObject.GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset);
+
+				f = time / objectLifeLength;
+			}
+
+			if (ObjectEditor.inst.timelinePosScrollbar)
+				ObjectEditor.inst.timelinePosScrollbar.value = f;
 
 			Instance.StartCoroutine(Instance.UpdateTimelineScrollRect(0f, f));
+
 			return false;
 		}
 
