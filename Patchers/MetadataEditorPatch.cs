@@ -196,6 +196,7 @@ namespace EditorManagement.Patchers
             {
 				int index = num;
 				var gameObject = difficultyToggle.Duplicate(toggles, difficulty.name.ToLower());
+				gameObject.transform.localScale = Vector3.one;
 
 				((RectTransform)gameObject.transform).sizeDelta = new Vector2(69f, 32f);
 
