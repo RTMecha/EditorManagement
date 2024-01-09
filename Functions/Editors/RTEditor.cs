@@ -410,10 +410,10 @@ namespace EditorManagement.Functions.Editors
 
             if (jn["timeline"] != null)
             {
-                if (jn["timeline"]["tsc"] != null)
-                    EditorManager.inst.timelineScrollRectBar.value = jn["timeline"]["tsc"].AsFloat;
                 if (jn["timeline"]["z"] != null)
                     EditorManager.inst.zoomSlider.value = jn["timeline"]["z"].AsFloat;
+                if (jn["timeline"]["tsc"] != null)
+                    EditorManager.inst.timelineScrollRectBar.value = jn["timeline"]["tsc"].AsFloat;
                 if (jn["timeline"]["l"] != null)
                     SetLayer(jn["timeline"]["l"].AsInt, false);
             }
@@ -5156,6 +5156,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
                                 l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
                                 l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
 
@@ -5268,6 +5269,7 @@ namespace EditorManagement.Functions.Editors
                             {
                                 GameObject x = Instantiate(sliderFullInput);
                                 x.transform.SetParent(editorDialog.Find("mask/content"));
+                                x.transform.localScale = Vector3.one;
                                 x.name = "input [INTSLIDER]";
 
                                 var title = x.transform.Find("title");
@@ -5766,6 +5768,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
+                                l.transform.localScale = Vector3.one;
                                 l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
                                 l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
 
@@ -5781,7 +5784,7 @@ namespace EditorManagement.Functions.Editors
                                 try
                                 {
                                     if (!string.IsNullOrEmpty(prop.description))
-                                        TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+                                        TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { "Function" });
                                 }
                                 catch (Exception ex)
                                 {
@@ -6210,6 +6213,11 @@ namespace EditorManagement.Functions.Editors
                         if (timelineObject.IsBeatmapObject)
                         {
                             var bm = timelineObject.GetData<BeatmapObject>();
+                            foreach (var tkf in timelineObject.InternalSelections)
+                            {
+                                Destroy(tkf.GameObject);
+                            }
+                            timelineObject.InternalSelections.Clear();
                             for (int i = 0; i < bm.events.Count; i++)
                             {
                                 bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
@@ -6217,6 +6225,13 @@ namespace EditorManagement.Functions.Editors
                                 bm.events[i].Clear();
                                 bm.events[i].Add(firstKF);
                             }
+                            if (ObjectEditor.inst.SelectedObjects.Count == 1)
+                            {
+                                ObjectEditor.inst.ResizeKeyframeTimeline(bm);
+                                ObjectEditor.inst.RenderKeyframes(bm);
+                            }
+
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         }
                     }
                 }, "Removes every keyframe but the first keyframe foreach selected object."),
