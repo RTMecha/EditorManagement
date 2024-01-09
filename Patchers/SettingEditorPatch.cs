@@ -75,6 +75,9 @@ namespace EditorManagement.Patchers
                 "Objects Alive Count",
                 "Time in Editor",
                 "Song Progress",
+                "Camera Position",
+                "Camera Zoom",
+                "Camera Rotation",
             };
 
             for (int i = 0; i < array.Length; i++)
@@ -183,6 +186,7 @@ namespace EditorManagement.Patchers
             tagPrefabLayout.childForceExpandWidth = false;
 
             var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
+            input.transform.localScale = Vector3.one;
             ((RectTransform)input.transform).sizeDelta = new Vector2(136f, 32f);
             var text = input.transform.Find("Text").GetComponent<Text>();
             text.alignment = TextAnchor.MiddleLeft;
@@ -270,6 +274,16 @@ namespace EditorManagement.Patchers
                 {
                     info["Song Progress"].text = $"[ {FontManager.TextTranslater.Percentage(AudioManager.inst.CurrentAudioSource.time, AudioManager.inst.CurrentAudioSource.clip.length)}% ]  ";
                 }
+
+                if (info.ContainsKey("Camera Position") && info["Camera Position"])
+                    info["Camera Position"].text = $"[ X: {Camera.main.transform.position.x}, Y: {Camera.main.transform.position.y} ]  ";
+                
+                if (info.ContainsKey("Camera Zoom") && info["Camera Zoom"])
+                    info["Camera Zoom"].text = $"[ {Camera.main.orthographicSize} ]  ";
+                
+                if (info.ContainsKey("Camera Rotation") && info["Camera Rotation"])
+                    info["Camera Rotation"].text = $"[ {Camera.main.transform.rotation.eulerAngles.z} ]  ";
+
                 if (doggo)
                     doggo.sprite = EditorManager.inst.loadingImage.sprite;
             }
@@ -292,9 +306,18 @@ namespace EditorManagement.Patchers
             float sizeRandom = 64 * UnityEngine.Random.Range(0.5f, 1f);
             loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
 
+            var toggle = transform.Find("snap/toggle/toggle").GetComponent<Toggle>();
+            toggle.onValueChanged.RemoveAllListeners();
+            toggle.isOn = SettingEditor.inst.SnapActive;
+            toggle.onValueChanged.AddListener(delegate (bool _val)
+            {
+                SettingEditor.inst.SnapActive = _val;
+            });
+
             var slider = transform.Find("snap/bpm/slider").GetComponent<Slider>();
             var input = transform.Find("snap/bpm/input").GetComponent<InputField>();
             slider.onValueChanged.RemoveAllListeners();
+            slider.value = SettingEditor.inst.SnapBPM;
             slider.onValueChanged.AddListener(delegate (float _val)
             {
                 DataManager.inst.metaData.song.BPM = _val;
@@ -302,6 +325,7 @@ namespace EditorManagement.Patchers
                 input.text = SettingEditor.inst.SnapBPM.ToString();
             });
             input.onValueChanged.RemoveAllListeners();
+            input.text = SettingEditor.inst.SnapBPM.ToString();
             input.onValueChanged.AddListener(delegate (string _val)
             {
                 DataManager.inst.metaData.song.BPM = float.Parse(_val);
@@ -310,6 +334,8 @@ namespace EditorManagement.Patchers
             });
 
             TriggerHelper.IncreaseDecreaseButtons(input, t: transform.Find("snap/bpm"));
+            TriggerHelper.AddEventTriggerParams(input.gameObject,
+                TriggerHelper.ScrollDelta(input, 1f));
 
             //transform.Find("snap/bpm/<").GetComponent<Button>().onClick.RemoveAllListeners();
             //transform.Find("snap/bpm/<").GetComponent<Button>().onClick.AddListener(delegate ()
