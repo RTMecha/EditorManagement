@@ -12,6 +12,7 @@ using UnityEngine.Events;
 using LSFunctions;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 

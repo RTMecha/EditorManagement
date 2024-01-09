@@ -709,7 +709,7 @@ namespace EditorManagement.Functions.Editors
                     rt.anchoredPosition = Vector2.zero;
                     rt.sizeDelta = new Vector2(32f, 32f);
 
-                    var hover = gameObject.transform.Find("Image").gameObject.AddComponent<Components.HoverUI>();
+                    var hover = gameObject.transform.Find("Image").gameObject.AddComponent<HoverUI>();
                     hover.animatePos = false;
                     hover.animateSca = true;
                     hover.size = 1.1f;

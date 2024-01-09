@@ -11,6 +11,7 @@ using UnityEngine.UI;
 using LSFunctions;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Managers;
 
 using EditorManagement.Functions.Components;

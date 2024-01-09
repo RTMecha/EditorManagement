@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 using LSFunctions;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;

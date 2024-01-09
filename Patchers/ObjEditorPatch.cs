@@ -24,6 +24,7 @@ using EditorManagement.Functions.Helpers;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Animation;
 using RTFunctions.Functions.Animation.Keyframe;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
@@ -760,6 +761,54 @@ namespace EditorManagement.Patchers
 				scroll.content = rect;
 				scroll.viewport = rect;
 				image.color = new Color(1f, 1f, 1f, 0.01f);
+			}
+
+            // Timeline Object adjustments
+            {
+				var gameObject = ObjEditor.inst.timelineObjectPrefab;
+				var icons = gameObject.transform.Find("icons");
+
+				var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(icons);
+				@lock.name = "lock";
+				((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
+
+				var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(icons);
+				dots.name = "dots";
+				((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
+
+				var hlg = icons.gameObject.AddComponent<HorizontalLayoutGroup>();
+				hlg.childControlWidth = false;
+				hlg.childForceExpandWidth = false;
+				hlg.spacing = -4f;
+				hlg.childAlignment = TextAnchor.UpperRight;
+
+				((RectTransform)@lock.transform).sizeDelta = new Vector2(20f, 20f);
+
+				((RectTransform)dots.transform).sizeDelta = new Vector2(32f, 20f);
+
+				var b = new GameObject("type");
+				b.transform.SetParent(icons);
+				b.transform.localScale = Vector3.one;
+
+				var bRT = b.AddComponent<RectTransform>();
+				bRT.sizeDelta = new Vector2(20f, 20f);
+
+				var bImage = b.AddComponent<Image>();
+				bImage.color = new Color(0f, 0f, 0f, 0.45f);
+
+				var icon = new GameObject("type");
+				icon.transform.SetParent(b.transform);
+				icon.transform.localScale = Vector3.one;
+
+				var iconRT = icon.AddComponent<RectTransform>();
+				iconRT.anchoredPosition = Vector2.zero;
+				iconRT.sizeDelta = new Vector2(20f, 20f);
+
+				var iconImage = icon.AddComponent<Image>();
+
+				var hoverUI = gameObject.AddComponent<HoverUI>();
+				hoverUI.animatePos = false;
+				hoverUI.animateSca = true;
 			}
 
 			ObjectEditor.Init(__instance);
