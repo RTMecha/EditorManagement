@@ -55,6 +55,7 @@ namespace EditorManagement.Patchers
         {
             Instance.StartCoroutine(RTEditor.inst.LoadPrefabs(Instance));
             Instance.OffsetLine = Instance.OffsetLinePrefab.Duplicate(EditorManager.inst.timeline.transform, "offset line");
+            Instance.OffsetLine.transform.AsRT().pivot = Vector2.one;
 
             //Debug.Log($"{Instance.className}Creating prefab types...");
             //var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
@@ -284,7 +285,7 @@ namespace EditorManagement.Patchers
             //{
             //    Instance.AddPrefabObjectToLevel(Instance.currentPrefab);
             //}
-            if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab) && EditorManager.inst.currentDialog.Name == "Prefab Editor")
+            if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab))
             {
                 float num;
                 if (ObjectEditor.inst.SelectedObjects.Count <= 0)
