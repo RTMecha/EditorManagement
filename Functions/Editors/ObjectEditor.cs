@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Linq;
 using System.IO;
+using System.Threading.Tasks;
 
 using HarmonyLib;
 
@@ -15,6 +16,7 @@ using SimpleJSON;
 using Crosstales.FB;
 using TMPro;
 using LSFunctions;
+using CielaSpike;
 
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
@@ -122,6 +124,8 @@ namespace EditorManagement.Functions.Editors
         public bool colorShifted;
 
         public static bool RenderPrefabTypeIcon { get; set; }
+
+        public static float TimelineObjectHoverSize { get; set; }
 
         public void OpenDialog(BeatmapObject beatmapObject)
         {
@@ -434,6 +438,38 @@ namespace EditorManagement.Functions.Editors
             return beatmapObjectCopy;
         }
 
+        public IEnumerable<BeatmapObject> PasteBeatmapObjects(BasePrefab prefab, Dictionary<string, string> ids, Dictionary<string, string> prefabInstances, float audioTime,
+            bool select = false, float offset = 0f, bool undone = false, bool regen = false)
+        {
+            foreach (var beatmapObject in prefab.objects)
+            {
+                yield return Expand((BeatmapObject)beatmapObject, ids, prefabInstances, audioTime, prefab, select, offset, undone, regen);
+            }
+        }
+
+        public IEnumerator ToTimelineObjects(IEnumerable<BeatmapObject> beatmapObjects, bool select)
+        {
+            float delay = 0f;
+            int count = beatmapObjects.Count();
+            var timelineObjects = beatmapObjects.Select(x => new TimelineObject(x));
+            foreach (var timelineObject in timelineObjects)
+            {
+                yield return new WaitForSeconds(delay);
+                RenderTimelineObject(timelineObject);
+                if (select)
+                {
+                    if (count > 1)
+                    {
+                        timelineObject.selected = true;
+                        CurrentSelection = timelineObject;
+                    }
+                    else
+                        SetCurrentObject(timelineObject, openDialog: false);
+                }
+                delay += 0.0001f;
+            }
+        }
+
         /// <summary>
         /// Expands a prefab into the level.
         /// </summary>
@@ -459,48 +495,28 @@ namespace EditorManagement.Functions.Editors
                 ClearKeyframes(CurrentSelection.GetData<BeatmapObject>());
             }
 
+            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+
             //Objects
             {
                 var ids = prefab.objects.ToDictionary(x => x.id, x => LSText.randomString(16));
-
-                //foreach (var beatmapObject in prefab.objects)
-                //    ids.Add(beatmapObject.id, LSText.randomString(16));
 
                 var prefabInstances = new Dictionary<string, string>();
                 foreach (var beatmapObject in prefab.objects)
                     if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !prefabInstances.ContainsKey(beatmapObject.prefabInstanceID))
                         prefabInstances.Add(beatmapObject.prefabInstanceID, LSText.randomString(16));
 
-                //var list = prefab.objects.Select(x => Expand((BeatmapObject)x, ids, prefabInstances, audioTime, prefab, select, offset, undone, regen)).ToList();
+                //var beatmapObjects = PasteBeatmapObjects(prefab, ids, prefabInstances, audioTime, select, offset, undone, regen);
+                //DataManager.inst.gameData.beatmapObjects.AddRange(beatmapObjects);
 
-                //DataManager.inst.gameData.beatmapObjects.AddRange(list);
-
-                //yield return list.Select(x => new TimelineObject(x)).ToList().ForEachReturn(x =>
+                //foreach (var beatmapObject in beatmapObjects)
                 //{
-                //    RenderTimelineObject(x);
-
-                //    if (select)
-                //    {
-                //        if (list.Count > 1)
-                //        {
-                //            x.selected = true;
-                //            CurrentSelection = x;
-
-                //            return;
-                //        }
-
-                //        SetCurrentObject(x, openDialog: false);
-                //    }
-                //});
-
-                //foreach (var id in ids)
-                //{
-                //    if (DataManager.inst.gameData.beatmapObjects.TryFind(x => x.id == id.Value, out BaseBeatmapObject beatmapObject))
-                //    {
-                //        Updater.UpdateProcessor(beatmapObject);
-                //    }
+                //    Updater.UpdateProcessor(beatmapObject);
                 //}
 
+                //yield return StartCoroutine(ToTimelineObjects(beatmapObjects, select));
+
+                var pastedObjects = new List<BeatmapObject>();
                 foreach (var beatmapObject in prefab.objects)
                 {
                     yield return new WaitForSeconds(delay);
@@ -534,6 +550,7 @@ namespace EditorManagement.Functions.Editors
 
                     beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
                     DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
+                    pastedObjects.Add(beatmapObjectCopy);
 
                     var timelineObject = new TimelineObject(beatmapObjectCopy);
 
@@ -542,10 +559,16 @@ namespace EditorManagement.Functions.Editors
 
                     RenderTimelineObject(timelineObject);
 
-                    Updater.UpdateProcessor(beatmapObjectCopy);
-
                     delay += 0.0001f;
                 }
+
+                foreach (var beatmapObject in pastedObjects)
+                {
+                    Updater.UpdateProcessor(beatmapObject);
+                }
+
+                pastedObjects.Clear();
+                pastedObjects = null;
             }
 
             //Prefabs
@@ -1258,191 +1281,109 @@ namespace EditorManagement.Functions.Editors
         {
             GameObject gameObject = null;
 
-            if (!string.IsNullOrEmpty(timelineObject.ID))
+            if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
+                RTEditor.inst.timelineObjects.Add(timelineObject);
+            else
+                timelineObject = RTEditor.inst.timelineObjects.Find(x => x.ID == timelineObject.ID);
+
+            gameObject = !timelineObject.GameObject ? CreateTimelineObject(timelineObject) : timelineObject.GameObject;
+
+            if (RTEditor.inst.Layer == timelineObject.Layer)
             {
-                if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
-                    RTEditor.inst.timelineObjects.Add(timelineObject);
-                else
-                    timelineObject = RTEditor.inst.timelineObjects.Find(x => x.ID == timelineObject.ID);
+                bool locked = false;
+                bool collapsed = false;
+                int bin = 0;
+                string name = "object name";
+                float startTime = 0f;
+                float offset = 0f;
 
-                if (!timelineObject.GameObject)
-                    gameObject = CreateTimelineObject(timelineObject);
-                else
-                    gameObject = timelineObject.GameObject;
+                string nullName = "";
 
-                if (RTEditor.inst.Layer == timelineObject.Layer)
+                var image =  timelineObject.Image;
+
+                var color = ObjEditor.inst.NormalColor;
+
+                if (timelineObject.IsBeatmapObject)
                 {
-                    bool locked = false;
-                    bool collapsed = false;
-                    int bin = 0;
-                    string name = "object name";
-                    float startTime = 0f;
-                    float offset = 0f;
+                    var beatmapObject = timelineObject.GetData<BeatmapObject>();
+                    beatmapObject.timelineObject = timelineObject;
 
-                    string nullName = "";
+                    locked = beatmapObject.editorData.locked;
+                    collapsed = beatmapObject.editorData.collapse;
+                    bin = beatmapObject.editorData.Bin;
+                    name = beatmapObject.name;
+                    startTime = beatmapObject.StartTime;
+                    offset = beatmapObject.GetObjectLifeLength(_takeCollapseIntoConsideration: true);
 
-                    var image = gameObject.GetComponent<Image>();
+                    image.type = GetObjectTypePattern(beatmapObject.objectType);
+                    image.sprite = GetObjectTypeSprite(beatmapObject.objectType);
 
-                    var color = ObjEditor.inst.NormalColor;
-
-                    if (timelineObject.IsBeatmapObject)
+                    if (!string.IsNullOrEmpty(beatmapObject.prefabID))
                     {
-                        var beatmapObject = timelineObject.Data as BeatmapObject;
-                        beatmapObject.timelineObject = timelineObject;
-
-                        locked = beatmapObject.editorData.locked;
-                        collapsed = beatmapObject.editorData.collapse;
-                        bin = beatmapObject.editorData.Bin;
-                        name = beatmapObject.name;
-                        startTime = beatmapObject.StartTime;
-                        offset = beatmapObject.GetObjectLifeLength(_takeCollapseIntoConsideration: true);
-
-                        image.type = GetObjectTypePattern(beatmapObject.objectType);
-                        image.sprite = GetObjectTypeSprite(beatmapObject.objectType);
-
-                        if (!string.IsNullOrEmpty(beatmapObject.prefabID))
+                        if (DataManager.inst.gameData.prefabs.FindIndex(x => x.ID == beatmapObject.prefabID) != -1)
+                            color = DataManager.inst.PrefabTypes[DataManager.inst.gameData.prefabs.Find(x => x.ID == beatmapObject.prefabID).Type].Color;
+                        else
                         {
-                            if (DataManager.inst.gameData.prefabs.FindIndex(x => x.ID == beatmapObject.prefabID) != -1)
-                                color = DataManager.inst.PrefabTypes[DataManager.inst.gameData.prefabs.Find(x => x.ID == beatmapObject.prefabID).Type].Color;
-                            else
-                            {
-                                beatmapObject.prefabID = null;
-                                beatmapObject.prefabInstanceID = null;
-                            }
+                            beatmapObject.prefabID = null;
+                            beatmapObject.prefabInstanceID = null;
                         }
                     }
-
-                    if (timelineObject.IsPrefabObject)
-                    {
-                        var prefabObject = timelineObject.Data as BasePrefabObject;
-                        var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
-
-                        locked = prefabObject.editorData.locked;
-                        collapsed = prefabObject.editorData.collapse;
-                        bin = prefabObject.editorData.Bin;
-                        name = prefab.Name;
-                        startTime = prefabObject.StartTime + prefab.Offset;
-                        offset = prefab.GetPrefabLifeLength(timelineObject.Data as BasePrefabObject, true);
-                        image.type = Image.Type.Simple;
-                        image.sprite = null;
-
-                        var prefabType = prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
-
-                        color = prefabType.Color;
-                        nullName = prefabType.Name;
-                    }
-
-                    gameObject.GetComponentInChildren<TextMeshProUGUI>().text = (!string.IsNullOrEmpty(name)) ? string.Format("<mark=#000000aa>{0}</mark>", name) : nullName;
-
-                    //if (locked && !gameObject.transform.Find("icons/lock"))
-                    //{
-                    //    var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(gameObject.transform.Find("icons"));
-                    //    @lock.name = "lock";
-                    //    ((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
-                    //}
-                    //else if (locked && gameObject.transform.Find("icons/lock"))
-                    //{
-                    //    var @lock = gameObject.transform.Find("icons/lock").AsRT();
-                    //    @lock.localScale = Vector2.one;
-                    //    @lock.anchoredPosition = Vector2.zero;
-                    //}
-                    //else if (!locked && gameObject.transform.Find("icons/lock"))
-                    //    Destroy(gameObject.transform.Find("icons/lock").gameObject);
-
-                    //if (collapsed && !gameObject.transform.Find("icons/dots"))
-                    //{
-                    //    var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(gameObject.transform.Find("icons"));
-                    //    dots.name = "dots";
-                    //    ((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
-                    //}
-                    //else if (collapsed && gameObject.transform.Find("icons/dots"))
-                    //{
-                    //    var dots = gameObject.transform.Find("icons/dots").AsRT();
-                    //    dots.localScale = Vector2.one;
-                    //    dots.anchoredPosition = Vector2.zero;
-                    //}
-                    //else if (!collapsed && gameObject.transform.Find("icons/dots"))
-                    //    Destroy(gameObject.transform.Find("icons/dots").gameObject);
-
-                    bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
-                    bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
-
-                    if (gameObject.transform.Find("icons/lock"))
-                        gameObject.transform.Find("icons/lock").gameObject.SetActive(locked);
-                    if (gameObject.transform.Find("icons/dots"))
-                        gameObject.transform.Find("icons/dots").gameObject.SetActive(collapsed);
-                    if (gameObject.transform.Find("icons/type"))
-                        gameObject.transform.Find("icons/type").gameObject.SetActive(RenderPrefabTypeIcon && (isBeatmapObject || isPrefab));
-
-                    if (RenderPrefabTypeIcon && (isBeatmapObject || isPrefab))
-                    {
-                        var iconImage = gameObject.transform.Find("icons/type/type").GetComponent<Image>();
-                        int i =
-                            isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
-                            isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
-
-                        iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
-                    }
-
-                    //if (RenderPrefabTypeIcon && (isBeatmapObject || isPrefab) && !gameObject.transform.Find("icons/type"))
-                    //{
-                    //    if (!gameObject.transform.Find("icons").GetComponent<HorizontalLayoutGroup>())
-                    //    {
-                    //        var hlg = gameObject.transform.Find("icons").gameObject.AddComponent<HorizontalLayoutGroup>();
-                    //        hlg.childControlWidth = false;
-                    //        hlg.childForceExpandWidth = false;
-                    //        hlg.spacing = -4f;
-                    //        hlg.childAlignment = TextAnchor.UpperRight;
-
-                    //        if (gameObject.transform.Find("icons/lock"))
-                    //        {
-                    //            gameObject.transform.Find("icons/lock").AsRT().sizeDelta = new Vector2(20f, 20f);
-                    //        }
-
-                    //        if (gameObject.transform.Find("icons/dots"))
-                    //        {
-                    //            gameObject.transform.Find("icons/dots").AsRT().sizeDelta = new Vector2(32f, 20f);
-                    //        }
-                    //    }
-
-                    //    var b = new GameObject("type");
-                    //    b.transform.SetParent(gameObject.transform.Find("icons"));
-                    //    b.transform.localScale = Vector3.one;
-
-                    //    var bRT = b.AddComponent<RectTransform>();
-                    //    bRT.sizeDelta = new Vector2(20f, 20f);
-
-                    //    var bImage = b.AddComponent<Image>();
-                    //    bImage.color = new Color(0f, 0f, 0f, 0.45f);
-
-                    //    var icon = new GameObject("type");
-                    //    icon.transform.SetParent(b.transform);
-                    //    icon.transform.localScale = Vector3.one;
-
-                    //    var iconRT = icon.AddComponent<RectTransform>();
-                    //    iconRT.anchoredPosition = Vector2.zero;
-                    //    //iconRT.anchoredPosition = new Vector2(-115f, 0f);
-                    //    iconRT.sizeDelta = new Vector2(20f, 20f);
-
-                    //    var iconImage = icon.AddComponent<Image>();
-                    //    int i =
-                    //        isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
-                    //        isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
-
-                    //    iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
-                    //}
-
-                    float zoom = EditorManager.inst.Zoom;
-
-                    offset = offset <= 0.4f ? 0.4f * zoom : offset * zoom;
-
-                    var rectTransform = (RectTransform)gameObject.transform;
-                    rectTransform.sizeDelta = new Vector2(offset, 20f);
-                    rectTransform.anchoredPosition = new Vector2(startTime * EditorManager.inst.Zoom, (-20 * Mathf.Clamp(bin, 0, 14)));
-
-                    gameObject.GetComponentInChildren<TextMeshProUGUI>().color = LSColors.white;
-                    gameObject.SetActive(true);
                 }
+
+                if (timelineObject.IsPrefabObject)
+                {
+                    var prefabObject = timelineObject.GetData<PrefabObject>();
+                    var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
+
+                    locked = prefabObject.editorData.locked;
+                    collapsed = prefabObject.editorData.collapse;
+                    bin = prefabObject.editorData.Bin;
+                    name = prefab.Name;
+                    startTime = prefabObject.StartTime + prefab.Offset;
+                    offset = prefab.GetPrefabLifeLength(prefabObject, true);
+                    image.type = Image.Type.Simple;
+                    image.sprite = null;
+
+                    var prefabType = prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
+
+                    color = prefabType.Color;
+                    nullName = prefabType.Name;
+                }
+
+                if (timelineObject.Text)
+                {
+                    var textMeshNoob = timelineObject.Text;
+                    textMeshNoob.text = (!string.IsNullOrEmpty(name)) ? string.Format("<mark=#000000aa>{0}</mark>", name) : nullName;
+                    textMeshNoob.color = LSColors.white;
+                }
+
+                bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
+                bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
+
+                gameObject.transform.Find("icons/lock").gameObject.SetActive(locked);
+                gameObject.transform.Find("icons/dots").gameObject.SetActive(collapsed);
+                gameObject.transform.Find("icons/type").gameObject.SetActive(RenderPrefabTypeIcon && (isBeatmapObject || isPrefab));
+
+                if (RenderPrefabTypeIcon && (isBeatmapObject || isPrefab))
+                {
+                    var iconImage = gameObject.transform.Find("icons/type/type").GetComponent<Image>();
+                    int i =
+                        isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
+                        isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
+
+                    iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
+                }
+
+                float zoom = EditorManager.inst.Zoom;
+
+                offset = offset <= 0.4f ? 0.4f * zoom : offset * zoom;
+
+                var rectTransform = (RectTransform)gameObject.transform;
+                rectTransform.sizeDelta = new Vector2(offset, 20f);
+                rectTransform.anchoredPosition = new Vector2(startTime * EditorManager.inst.Zoom, (-20 * Mathf.Clamp(bin, 0, 14)));
+                if (timelineObject.Hover)
+                    timelineObject.Hover.size = TimelineObjectHoverSize;
+                gameObject.SetActive(true);
             }
 
             return gameObject;
@@ -1458,105 +1399,25 @@ namespace EditorManagement.Functions.Editors
         {
             GameObject gameObject = null;
 
-            if (!string.IsNullOrEmpty(timelineObject.ID))
-            {
-                if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
-                    RTEditor.inst.timelineObjects.Add(timelineObject);
-                else
-                    timelineObject = RTEditor.inst.timelineObjects.Find(x => x.ID == timelineObject.ID);
+            if (!RTEditor.inst.timelineObjects.Has(x => x.ID == timelineObject.ID))
+                RTEditor.inst.timelineObjects.Add(timelineObject);
+            else
+                timelineObject = RTEditor.inst.timelineObjects.Find(x => x.ID == timelineObject.ID);
 
-                DestroyImmediate(timelineObject.GameObject);
+            if (timelineObject.GameObject)
+                Destroy(timelineObject.GameObject);
 
-                gameObject = ObjEditor.inst.timelineObjectPrefab.Duplicate(EditorManager.inst.timeline.transform,
-                    timelineObject.IsBeatmapObject ? timelineObject.GetData<BeatmapObject>().name :
-                    timelineObject.IsPrefabObject && DataManager.inst.gameData.prefabs.Find(x => timelineObject.GetData<PrefabObject>().prefabID == x.ID) != null ?
-                    DataManager.inst.gameData.prefabs.Find(x => (timelineObject.Data as BasePrefabObject).prefabID == x.ID).Name : "<color=#FF0000>Null Reference Exception");
+            gameObject = ObjEditor.inst.timelineObjectPrefab.Duplicate(EditorManager.inst.timeline.transform, "timeline object");
 
-                {
-                    bool locked = timelineObject.IsBeatmapObject ? timelineObject.GetData<BeatmapObject>().editorData.locked : timelineObject.IsPrefabObject ? timelineObject.GetData<PrefabObject>().editorData.locked : false;
-                    bool collapsed = timelineObject.IsBeatmapObject ? timelineObject.GetData<BeatmapObject>().editorData.collapse : timelineObject.IsPrefabObject ? timelineObject.GetData<PrefabObject>().editorData.collapse : false;
+            timelineObject.Hover = gameObject.GetComponent<HoverUI>();
+            timelineObject.GameObject = gameObject;
+            timelineObject.Image = gameObject.GetComponent<Image>();
+            timelineObject.Text = gameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
 
-                    if (!gameObject.transform.Find("icons/lock"))
-                    {
-                        var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(gameObject.transform.Find("icons"));
-                        @lock.name = "lock";
-                        ((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
-                    }
-
-                    if (!gameObject.transform.Find("icons/dots"))
-                    {
-                        var dots = ObjEditor.inst.timelineObjectPrefabDots.Duplicate(gameObject.transform.Find("icons"));
-                        dots.name = "dots";
-                        ((RectTransform)dots.transform).anchoredPosition = Vector3.zero;
-                    }
-
-                    if (!gameObject.transform.Find("icons").GetComponent<HorizontalLayoutGroup>())
-                    {
-                        var hlg = gameObject.transform.Find("icons").gameObject.AddComponent<HorizontalLayoutGroup>();
-                        hlg.childControlWidth = false;
-                        hlg.childForceExpandWidth = false;
-                        hlg.spacing = -4f;
-                        hlg.childAlignment = TextAnchor.UpperRight;
-
-                        if (gameObject.transform.Find("icons/lock"))
-                        {
-                            gameObject.transform.Find("icons/lock").AsRT().sizeDelta = new Vector2(20f, 20f);
-                        }
-
-                        if (gameObject.transform.Find("icons/dots"))
-                        {
-                            gameObject.transform.Find("icons/dots").AsRT().sizeDelta = new Vector2(32f, 20f);
-                        }
-                    }
-
-                    bool isBeatmapObject = timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) && DataManager.inst.gameData.prefabs.Has(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID);
-                    bool isPrefab = timelineObject.IsPrefabObject && timelineObject.GetData<PrefabObject>().GetPrefab() != null;
-
-                    if (!gameObject.transform.Find("icons/type"))
-                    {
-                        var b = new GameObject("type");
-                        b.transform.SetParent(gameObject.transform.Find("icons"));
-                        b.transform.localScale = Vector3.one;
-
-                        var bRT = b.AddComponent<RectTransform>();
-                        bRT.sizeDelta = new Vector2(20f, 20f);
-
-                        var bImage = b.AddComponent<Image>();
-                        bImage.color = new Color(0f, 0f, 0f, 0.45f);
-
-                        var icon = new GameObject("type");
-                        icon.transform.SetParent(b.transform);
-                        icon.transform.localScale = Vector3.one;
-
-                        var iconRT = icon.AddComponent<RectTransform>();
-                        iconRT.anchoredPosition = Vector2.zero;
-                        //iconRT.anchoredPosition = new Vector2(-115f, 0f);
-                        iconRT.sizeDelta = new Vector2(20f, 20f);
-
-                        var iconImage = icon.AddComponent<Image>();
-                        //int i =
-                        //    isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
-                        //    isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
-
-                        //iconImage.sprite = ((PrefabType)DataManager.inst.PrefabTypes[i]).Icon;
-                    }
-                }
-
-                var hoverUI = gameObject.AddComponent<HoverUI>();
-                hoverUI.animatePos = false;
-                hoverUI.animateSca = true;
-                hoverUI.size = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
-
-                timelineObject.GameObject = gameObject;
-                timelineObject.Image = gameObject.GetComponent<Image>();
-
-                TriggerHelper.AddEventTrigger(gameObject, new List<EventTrigger.Entry>
-                {
-                    TriggerHelper.CreateBeatmapObjectTrigger(timelineObject),
-                    TriggerHelper.CreateBeatmapObjectStartDragTrigger(timelineObject),
-                    TriggerHelper.CreateBeatmapObjectEndDragTrigger(timelineObject)
-                });
-            }
+            TriggerHelper.AddEventTriggerParams(gameObject,
+                TriggerHelper.CreateBeatmapObjectTrigger(timelineObject),
+                TriggerHelper.CreateBeatmapObjectStartDragTrigger(timelineObject),
+                TriggerHelper.CreateBeatmapObjectEndDragTrigger(timelineObject));
 
             return gameObject;
         }
@@ -3456,9 +3317,9 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[2] = n;
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject);
-                                //Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                //if (UpdateObjects)
+                                //    Updater.UpdateProcessor(beatmapObject);
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
 
@@ -3480,9 +3341,9 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[3] = n;
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject);
-                                //Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                //if (UpdateObjects)
+                                //    Updater.UpdateProcessor(beatmapObject);
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
 
@@ -3502,9 +3363,9 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[4] = n;
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject);
-                                //Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                //if (UpdateObjects)
+                                //    Updater.UpdateProcessor(beatmapObject);
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
 
@@ -3533,7 +3394,8 @@ namespace EditorManagement.Functions.Editors
                                 if (float.TryParse(_val, out float n))
                                 {
                                     keyframe.eventRandomValues[0] = n;
-                                    Updater.UpdateProcessor(beatmapObject);
+                                    //Updater.UpdateProcessor(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3544,7 +3406,8 @@ namespace EditorManagement.Functions.Editors
                                 if (float.TryParse(_val, out float n))
                                 {
                                     keyframe.eventRandomValues[1] = n;
-                                    Updater.UpdateProcessor(beatmapObject);
+                                    //Updater.UpdateProcessor(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3621,7 +3484,8 @@ namespace EditorManagement.Functions.Editors
                             if (_val)
                             {
                                 keyframe.random = 0;
-                                Updater.UpdateProcessor(beatmapObject);
+                                //Updater.UpdateProcessor(beatmapObject);
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 RenderKeyframeDialog(beatmapObject);
                             }
                         });
@@ -3633,7 +3497,8 @@ namespace EditorManagement.Functions.Editors
                             if (_val)
                             {
                                 keyframe.random = 5;
-                                Updater.UpdateProcessor(beatmapObject);
+                                //Updater.UpdateProcessor(beatmapObject);
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 RenderKeyframeDialog(beatmapObject);
                             }
                         });
@@ -3650,7 +3515,8 @@ namespace EditorManagement.Functions.Editors
                                 if (float.TryParse(_val, out float n))
                                 {
                                     keyframe.eventRandomValues[2] = n;
-                                    Updater.UpdateProcessor(beatmapObject);
+                                    //Updater.UpdateProcessor(beatmapObject);
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3846,9 +3712,9 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.events[3][ObjEditor.inst.currentKeyframe].eventValues[index] = (float)value;
 
             // Since keyframe color has no affect on the timeline object, we will only need to update the physical object.
-            if (UpdateObjects)
-                Updater.UpdateProcessor(beatmapObject);
-            //Updater.UpdateProcessor(beatmapObject, "Keyframes");
+            //if (UpdateObjects)
+            //    Updater.UpdateProcessor(beatmapObject);
+            Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
             int num = 0;
             foreach (var toggle in ObjEditor.inst.colorButtons)
@@ -3871,9 +3737,9 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.events[3][ObjEditor.inst.currentKeyframe].eventRandomValues[index] = (float)value;
 
             // Since keyframe color has no affect on the timeline object, we will only need to update the physical object.
-            if (UpdateObjects)
-                Updater.UpdateProcessor(beatmapObject);
-            //Updater.UpdateProcessor(beatmapObject, "Keyframes");
+            //if (UpdateObjects)
+            //    Updater.UpdateProcessor(beatmapObject);
+            Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
             int num = 0;
             foreach (var toggle in toggles)
