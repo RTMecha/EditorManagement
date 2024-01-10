@@ -22,7 +22,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.11")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.12")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -91,6 +91,10 @@ namespace EditorManagement
 				ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 				ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
 				ObjEditor.inst.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
+				if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
+                {
+					RTEventEditor.inst.RenderLayerBins();
+				}
 			}
 		}
 
