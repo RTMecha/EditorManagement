@@ -1621,8 +1621,11 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
+		public static string NoEventLabel => "??? (No event yet)";
+
 		public void RenderLayerBins()
         {
+			var renderLeft = RTEditor.GetEditorProperty("Event Labels Render Left").GetConfigEntry<bool>().Value;
 			var eventLabels = EventEditor.inst.EventLabels;
 
 			var layer = RTEditor.inst.Layer + 1;
@@ -1632,27 +1635,20 @@ namespace EditorManagement.Functions.Editors
 				int t = i % EventLimit;
 				int num = layer * EventLimit;
 
-                //eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = i < EventTypes.Length ? i < num && i >= num - EventLimit ? EventTypes[i] : "??? (No event yet)" : "??? (No event yet)";
+				var text = eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>();
 
-                if (i < EventTypes.Length)
+				if (i < EventTypes.Length)
                 {
                     if (i >= num - EventLimit && i < num)
-					{
-						//Debug.Log($"{EventEditor.inst.className}Event {i} exists, so we set it to {EventTypes[i]}.\n{i} >= {num} - {EventLimit} && {i} < {num}");
-						eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = EventTypes[i];
-					}
-					else if (i < num)
-					{
-						//Debug.Log($"{EventEditor.inst.className}Event {i} doesn't exist.\n{i} >= {num} - {EventLimit} && {i} < {num}");
-						eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
-					}
+						text.text = EventTypes[i];
+                    else if (i < num)
+						text.text = NoEventLabel;
                 }
                 else
-                {
-					//Debug.Log($"{EventEditor.inst.className}Event {i} is greater than the EventTypes length.");
-					eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>().text = "??? (No event yet)";
-				}
-            }
+					text.text = NoEventLabel;
+
+				text.alignment = renderLeft ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight;
+			}
 		}
 
 		public void SetEventActive(bool active)
