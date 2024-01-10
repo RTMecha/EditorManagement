@@ -1634,6 +1634,10 @@ namespace EditorManagement.Functions.Editors
 
                 timeObj.transform.SetAsFirstSibling();
                 timeObj.SetActive(true);
+                ((Text)timeIF.placeholder).text = "Set layer...";
+                ((Text)timeIF.placeholder).alignment = TextAnchor.MiddleCenter;
+                ((Text)timeIF.placeholder).fontSize = 16;
+                ((Text)timeIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
                 timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
                 timeIF.characterValidation = InputField.CharacterValidation.Decimal;
 
@@ -1666,6 +1670,10 @@ namespace EditorManagement.Functions.Editors
 
                 layersIF.characterValidation = InputField.CharacterValidation.None;
                 layersIF.contentType = InputField.ContentType.Standard;
+                ((Text)layersIF.placeholder).text = "Set layer...";
+                ((Text)layersIF.placeholder).alignment = TextAnchor.MiddleCenter;
+                ((Text)layersIF.placeholder).fontSize = 16;
+                ((Text)layersIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
                 layersIF.onValueChanged.RemoveAllListeners();
                 layersIF.onValueChanged.AddListener(delegate (string _value)
                 {
@@ -1689,6 +1697,10 @@ namespace EditorManagement.Functions.Editors
                 pitchObj.transform.localScale = Vector3.one;
 
                 pitchIF = pitchObj.GetComponent<InputField>();
+                ((Text)pitchIF.placeholder).text = "Pitch";
+                ((Text)pitchIF.placeholder).alignment = TextAnchor.MiddleCenter;
+                ((Text)pitchIF.placeholder).fontSize = 16;
+                ((Text)pitchIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
                 pitchIF.onValueChanged.RemoveAllListeners();
                 pitchIF.onValueChanged.AddListener(delegate (string _val)
                 {
@@ -5883,6 +5895,10 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("Timeline", "Keyframe End Length Offset", 2f, "Sets the amount of space you have after the last keyframe in an object.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Timeline", "Event Labels Render Left", false, "If the Event Layer labels should render on the left side or not.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Timeline", "Waveform Generate", true, "Allows the timeline waveform to generate. (Waveform might not show on some devices and will increase level load times)")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Timeline", "Waveform Re-render", false, "If the timeline waveform should update when a value is changed.")),
@@ -5902,8 +5918,6 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Marker Loop Begin", 0, "Audio time gets set to this marker.")),
             new EditorProperty(EditorProperty.ValueType.Int,
                 Config.Bind("Timeline", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.")),
 
             #endregion
 
