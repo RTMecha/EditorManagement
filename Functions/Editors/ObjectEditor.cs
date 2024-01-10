@@ -354,6 +354,7 @@ namespace EditorManagement.Functions.Editors
 
             ResizeKeyframeTimeline(beatmapObject);
             UpdateKeyframeOrder(beatmapObject);
+            RenderKeyframes(beatmapObject);
             RenderTimelineObject(new TimelineObject(beatmapObject));
 
             if (UpdateObjects)
@@ -1174,7 +1175,7 @@ namespace EditorManagement.Functions.Editors
                 RTEditor.inst.SetLayer(timelineObject.Layer);
             }
 
-            if (timelineObject.IsBeatmapObject)
+            if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().RTObject)
                 timelineObject.GetData<BeatmapObject>().RTObject?.GenerateDraggers();
         }
 
@@ -1225,7 +1226,7 @@ namespace EditorManagement.Functions.Editors
             RenderKeyframeDialog(beatmapObject);
         }
 
-        public int AddEvent(BeatmapObject beatmapObject, float time, int type, EventKeyframe _keyframe, bool openDialog)
+        public EventKeyframe AddEvent(BeatmapObject beatmapObject, float time, int type, EventKeyframe _keyframe, bool openDialog)
         {
             var eventKeyframe = EventKeyframe.DeepCopy(_keyframe);
             var t = SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes ? -(beatmapObject.StartTime - RTEditor.SnapToBPM(beatmapObject.StartTime + time)) : time;
@@ -1243,7 +1244,7 @@ namespace EditorManagement.Functions.Editors
                 ResizeKeyframeTimeline(beatmapObject);
                 RenderKeyframeDialog(beatmapObject);
             }
-            return beatmapObject.events[type].FindIndex(x => x.eventTime == t);
+            return eventKeyframe;
         }
 
         #endregion
@@ -2781,7 +2782,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Keyframe Handlers
 
-        public static bool AllowTimeExactlyAtStart => true;
+        public static bool AllowTimeExactlyAtStart => false;
         public void ResizeKeyframeTimeline(BeatmapObject beatmapObject)
         {
             // ObjEditor.inst.ObjectLengthOffset is the offset from the last keyframe. Could allow for more timeline space.
@@ -2799,7 +2800,7 @@ namespace EditorManagement.Functions.Editors
 
             var gameObject = ObjEditor.inst.KeyframeEndPrefab.Duplicate(ObjEditor.inst.objTimelineGrid, "end keyframe");
 
-            var rectTransform = gameObject.GetComponent<RectTransform>();
+            var rectTransform = gameObject.transform.AsRT();
             rectTransform.sizeDelta = new Vector2(4f, 122f);
             rectTransform.anchoredPosition = new Vector2(beatmapObject.GetObjectLifeLength() * ObjEditor.inst.Zoom * 14f, 0f);
 
@@ -2825,12 +2826,15 @@ namespace EditorManagement.Functions.Editors
                         float timeTmp = ObjEditorPatch.timeCalc();
 
                         int index = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime <= timeTmp);
-                        AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
+                        var eventKeyfame = AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
                         UpdateKeyframeOrder(beatmapObject);
 
                         RenderKeyframes(beatmapObject);
 
-                        int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == timeTmp);
+                        int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == eventKeyfame.eventTime);
+                        if (keyframe < 0)
+                            keyframe = 0;
+
                         SetCurrentKeyframe(beatmapObject, tmpIndex, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
                         ResizeKeyframeTimeline(beatmapObject);
 
