@@ -171,6 +171,7 @@ namespace EditorManagement.Patchers
             labelGenerator(PrefabEditorManager.inst.prefabSelectorRight, "name", "Name");
 
             var prefabName = RTEditor.inst.defaultIF.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "name");
+            prefabName.transform.localScale = Vector3.one;
 
             prefabName.GetComponentAndPerformAction(delegate (InputField inputField)
             {
@@ -198,7 +199,9 @@ namespace EditorManagement.Patchers
             label.transform.SetParent(PrefabEditorManager.inst.prefabSelectorRight);
             label.transform.localScale = Vector3.one;
             label.name = "save prefab label";
-            label.transform.GetChild(0).GetComponent<Text>().text = "Apply all changes to external prefabs";
+            var applyToAllText = label.transform.GetChild(0).GetComponent<Text>();
+            applyToAllText.fontSize = 19;
+            applyToAllText.text = "Apply all changes to external prefabs";
 
             var savePrefab = Instantiate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(1).gameObject);
             savePrefab.transform.SetParent(PrefabEditorManager.inst.prefabSelectorRight);

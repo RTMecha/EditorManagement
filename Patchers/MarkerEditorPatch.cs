@@ -148,9 +148,7 @@ namespace EditorManagement.Patchers
 
 			//Delete Markers
 			{
-				var sortMarkers = Instantiate(eventButton);
-				sortMarkers.transform.SetParent(parent);
-				sortMarkers.name = "delete markers";
+				var sortMarkers = eventButton.Duplicate(parent, "delete markers");
 
 				sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Delete Markers";
 				sortMarkers.GetComponent<Image>().color = new Color(1f, 0.131f, 0.231f, 1f);
