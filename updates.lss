@@ -1,3 +1,15 @@
+2.1.12 > [Jan 11, 2024]
+- Fixed some UI issues.
+- Fixed null reference exception caused by an empty object being selected.
+- Added Keyframe End Length Offset, allowing you to have more space to create keyframes.
+- Fixed creating keyframe select bug.
+- Fixed pasting keyframes bug.
+- Prefab Offset line is now properly centered.
+- Fix some stuff to do with rendering and creating checkpoints.
+- Fix a ton of UI scale issues (the return of the UI scale bug :TFMoai: though should be fixed now)
+- Added Camera info to Setting Editor info
+- Timeline scroll should now properly be remembered...
+- Added a config for rendering Event Labels on the left rather than the right.
 2.1.11 > [Jan 10, 2024]
 - Fixed Prefab search error.
 - Optimized and fixed a few bugs with Timeline Waveform generation.
