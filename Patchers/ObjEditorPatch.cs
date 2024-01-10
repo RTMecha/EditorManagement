@@ -403,15 +403,12 @@ namespace EditorManagement.Patchers
 
 			// Position Z
 			{
-				// Original Sizes are 125.3943
 				var positionBase = ObjEditor.inst.KeyframeDialogs[0].transform.Find("position");
 
 				var posZ = positionBase.Find("x").gameObject.Duplicate(positionBase, "z");
 
-				//positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 64f);
 				DestroyImmediate(positionBase.GetComponent<HorizontalLayoutGroup>());
 				var grp = positionBase.gameObject.AddComponent<GridLayoutGroup>();
-				//grp.cellSize = new Vector2(183f, 40f);
 
 				DestroyImmediate(ObjEditor.inst.KeyframeDialogs[0].transform.Find("position/x/input").GetComponent<LayoutElement>());
 				DestroyImmediate(ObjEditor.inst.KeyframeDialogs[0].transform.Find("position/y/input").GetComponent<LayoutElement>());
@@ -425,16 +422,10 @@ namespace EditorManagement.Patchers
 				yLayout.preferredWidth = -1;
 				zLayout.preferredWidth = -1;
 
-				//xLayout.minWidth = 65f;
-				//yLayout.minWidth = 65f;
-				//zLayout.minWidth = 65f;
-
 				var labels = ObjEditor.inst.KeyframeDialogs[0].transform.GetChild(8);
 				var posZLabel = labels.GetChild(1).gameObject.Duplicate(labels, "text");
 				posZLabel.GetComponent<Text>().text = "Position Z";
 
-				//positionBase.GetComponent<RectTransform>().sizeDelta = new Vector2(553f, 32f);
-				//grp.cellSize = new Vector2(122f, 40f);
 				EditorPlugin.AdjustPositionInputsChanged = delegate ()
 				{
 					bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value;
@@ -446,6 +437,8 @@ namespace EditorManagement.Patchers
 					yLayout.minWidth = minWidth;
 					zLayout.minWidth = minWidth;
 					posZLabel.gameObject.SetActive(adjusted);
+					positionBase.gameObject.SetActive(false);
+					positionBase.gameObject.SetActive(true);
 				};
 
 				bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value;
