@@ -1,3 +1,6 @@
+2.1.11 > [Jan 10, 2024]
+- Fixed Prefab search error.
+- Optimized and fixed a few bugs with Timeline Waveform generation.
 2.1.10 > [Jan 8, 2024]
 - Fix right clicking while Transform keys are not active causing the rendering to bug out.
 2.1.9 > [Jan 8, 2024]
