@@ -90,6 +90,7 @@ namespace EditorManagement
 
 				ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 				ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
+				ObjEditor.inst.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
 			}
 		}
 
