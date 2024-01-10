@@ -659,7 +659,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -692,7 +692,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -725,7 +725,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -760,7 +760,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -793,7 +793,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -825,7 +825,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -857,7 +857,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -889,7 +889,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -921,7 +921,7 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            ObjEditor.inst.OpenDialog();
+            OpenDialog(bm);
 
             if (setHistory)
             {
@@ -1551,6 +1551,11 @@ namespace EditorManagement.Functions.Editors
                 inst.CurrentSelection = inst.GetTimelineObject(beatmapObject);
                 inst.CurrentSelection.selected = true;
 
+                if (RTHelpers.AprilFools)
+                {
+                    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 10f);
+                }
+
                 inst.RenderID(beatmapObject);
                 inst.RenderName(beatmapObject);
                 inst.RenderObjectType(beatmapObject);
@@ -1578,6 +1583,12 @@ namespace EditorManagement.Functions.Editors
 
                 if (ObjectModifiersEditor.inst)
                     inst.StartCoroutine(ObjectModifiersEditor.inst.RenderModifiers(beatmapObject));
+
+                // April Fools!
+                if (RTHelpers.AprilFools)
+                {
+                    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 180f);
+                }
             }
 
             yield break;
@@ -1668,7 +1679,7 @@ namespace EditorManagement.Functions.Editors
             objType.onValueChanged.AddListener(delegate (int _val)
             {
                 beatmapObject.objectType = (ObjectType)_val;
-
+                RenderGameObjectInspector(beatmapObject);
                 // ObjectType affects both physical object and timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
@@ -2483,23 +2494,20 @@ namespace EditorManagement.Functions.Editors
                     inspectGameObject.transform.SetSiblingIndex(index + 2);
                     inspectGameObject.name = "inspect";
 
-                    inspectGameObject.transform.GetChild(0).GetComponent<Text>().text = "Inspect GameObject";
+                    inspectGameObject.transform.GetChild(0).GetComponent<Text>().text = "Inspect LevelObject";
                 }
                 
                 if (tfv.Find("inspect"))
                 {
-                    bool active = beatmapObject.objectType != ObjectType.Empty || !RTFunctions.FunctionsPlugin.LDM.Value || beatmapObject.LDM;
+                    bool active = Updater.TryGetObject(beatmapObject, out RTFunctions.Functions.Optimization.Objects.LevelObject levelObject);
                     tfv.Find("inspect").gameObject.SetActive(active);
+                    var deleteButton = tfv.Find("inspect").GetComponent<Button>();
+                    deleteButton.onClick.ClearAll();
                     if (active)
-                    {
-                        var deleteButton = tfv.Find("inspect").GetComponent<Button>();
-                        deleteButton.onClick.ClearAll();
                         deleteButton.onClick.AddListener(delegate ()
                         {
-                            if (Updater.TryGetObject(beatmapObject, out RTFunctions.Functions.Optimization.Objects.LevelObject levelObject))
-                                inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { levelObject, null });
+                            inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { levelObject, null });
                         });
-                    }
                 }
 
                 if (tfv.Find("inspectbeatmapobject"))
