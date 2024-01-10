@@ -747,6 +747,11 @@ namespace EditorManagement.Patchers
 
                     var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array}_add");
 					var parallax = parent.GetChild(3).gameObject.Duplicate(parent, $"{array}_parallax");
+
+					if (parent.Find("text"))
+                    {
+						parent.Find("text").GetComponent<Text>().fontSize = 19;
+					}
 				}
 
 			}
@@ -813,6 +818,8 @@ namespace EditorManagement.Patchers
 				hoverUI.animatePos = false;
 				hoverUI.animateSca = true;
 			}
+
+			__instance.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
 
 			ObjectEditor.Init(__instance);
 
@@ -1120,8 +1127,8 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool AddEventPrefix(ref int __result, float __0, int __1, BaseEventKeyframe __2)
 		{
-			if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
-				__result = ObjectEditor.inst.AddEvent(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1, (EventKeyframe)__2, true);
+			//if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+			//	__result = ObjectEditor.inst.AddEvent(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>(), __0, __1, (EventKeyframe)__2, true);
 			return false;
         }
 

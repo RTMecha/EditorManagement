@@ -138,8 +138,6 @@ namespace EditorManagement.Functions.Editors
                 gameObject.AddComponent<LevelCombiner>();
             }
 
-            //timelineKeyframes.Cast<TimelineObject<BaseEventKeyframe>>().ToList();
-
             mousePicker = new GameObject("picker");
             mousePicker.transform.SetParent(EditorManager.inst.GetDialog("Parent Selector").Dialog.parent.parent);
             mousePicker.transform.localScale = Vector3.one;
@@ -2408,7 +2406,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         var gameObject = GameManager.inst.checkpointPrefab.Duplicate(timelinePreview.Find("elements"), $"Checkpoint [{checkpoint.name}] - [{checkpoint.time}]");
                         float num = checkpoint.time * 400f / AudioManager.inst.CurrentAudioSource.clip.length;
-                        gameObject.GetComponent<RectTransform>().anchoredPosition = new Vector2(num, 0f);
+                        gameObject.transform.AsRT().anchoredPosition = new Vector2(num, 0f);
                     }
                 }
             }
@@ -5882,6 +5880,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Main Zoom Amount", 0.05f, "Sets the zoom in & out amount for the main timeline.")),
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("Timeline", "Keyframe Zoom Amount", 0.05f, "Sets the zoom in & out amount for the keyframe timeline.")),
+            new EditorProperty(EditorProperty.ValueType.Float,
+                Config.Bind("Timeline", "Keyframe End Length Offset", 2f, "Sets the amount of space you have after the last keyframe in an object.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Timeline", "Waveform Generate", true, "Allows the timeline waveform to generate. (Waveform might not show on some devices and will increase level load times)")),
             new EditorProperty(EditorProperty.ValueType.Bool,
