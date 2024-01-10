@@ -732,7 +732,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Timeline Textures
 
-        public static bool GenerateWaveform => true;
+        public static bool GenerateWaveform => GetEditorProperty("Waveform Generate").GetConfigEntry<bool>().Value;
 
         public static WaveformType WaveformMode => GetEditorProperty("Waveform Mode").GetConfigEntry<WaveformType>().Value;
         public static Color WaveformBGColor => GetEditorProperty("Waveform BG Color").GetConfigEntry<Color>().Value;
@@ -748,13 +748,16 @@ namespace EditorManagement.Functions.Editors
                 Texture2D waveform = null;
 
                 if (WaveformMode == WaveformType.Legacy)
-                    yield return StartCoroutine(Legacy(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                    StartCoroutine(Legacy(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
                 if (WaveformMode == WaveformType.Beta)
-                    yield return StartCoroutine(Beta(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                    StartCoroutine(Beta(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
                 if (WaveformMode == WaveformType.BetaFast)
-                    yield return StartCoroutine(BetaFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                    StartCoroutine(BetaFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
                 if (WaveformMode == WaveformType.LegacyFast)
-                    yield return StartCoroutine(LegacyFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                    StartCoroutine(LegacyFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
+
+                while (waveform == null)
+                    yield return null;
 
                 var waveSprite = Sprite.Create(waveform, new Rect(0f, 0f, (float)num, 300f), new Vector2(0.5f, 0.5f), 100f);
                 TimelineImage.sprite = waveSprite;
@@ -775,8 +778,6 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator Beta(AudioClip clip, int textureWidth, int textureHeight, Color background, Color waveform, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Beta Waveform", EditorPlugin.className);
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
             int num = 100;
             Texture2D texture2D = new Texture2D(textureWidth, textureHeight, WaveformFormat, false);
             Color[] array = new Color[texture2D.width * texture2D.height];
@@ -784,7 +785,6 @@ namespace EditorManagement.Functions.Editors
             {
                 array[i] = background;
             }
-            Debug.LogFormat("{0}Generating Beta Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             texture2D.SetPixels(array);
             num = clip.frequency / num;
             float[] array2 = new float[clip.samples * clip.channels];
@@ -799,7 +799,6 @@ namespace EditorManagement.Functions.Editors
                 }
                 array3[j] /= (float)num;
             }
-            Debug.LogFormat("{0}Generating Beta Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             for (int l = 0; l < array3.Length - 1; l++)
             {
                 int num2 = 0;
@@ -809,21 +808,16 @@ namespace EditorManagement.Functions.Editors
                     num2++;
                 }
             }
-            Debug.LogFormat("{0}Generating Beta Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             texture2D.wrapMode = TextureWrapMode.Clamp;
             texture2D.filterMode = FilterMode.Point;
             texture2D.Apply();
             action(texture2D);
-            Debug.LogFormat("{0}Generating Beta Waveform at {1}", EditorPlugin.className, sw.Elapsed);
-            sw.Stop();
             yield break;
         }
 
         public IEnumerator Legacy(AudioClip clip, int textureWidth, int textureHeight, Color background, Color _top, Color _bottom, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Legacy Waveform", EditorPlugin.className);
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
             int num = 160;
             num = clip.frequency / num;
             Texture2D texture2D = new Texture2D(textureWidth, textureHeight, WaveformFormat, false);
@@ -832,7 +826,6 @@ namespace EditorManagement.Functions.Editors
             {
                 array[i] = background;
             }
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             texture2D.SetPixels(array);
             float[] array3 = new float[clip.samples];
             float[] array4 = new float[clip.samples];
@@ -848,7 +841,6 @@ namespace EditorManagement.Functions.Editors
                 array3 = array5;
                 array4 = array5;
             }
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             float[] array6 = new float[array3.Length / num];
             for (int j = 0; j < array6.Length; j++)
             {
@@ -860,7 +852,6 @@ namespace EditorManagement.Functions.Editors
                 array6[j] /= (float)num;
                 array6[j] *= 0.85f;
             }
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             for (int l = 0; l < array6.Length - 1; l++)
             {
                 int num2 = 0;
@@ -870,7 +861,6 @@ namespace EditorManagement.Functions.Editors
                     num2++;
                 }
             }
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             array6 = new float[array4.Length / num];
             for (int m = 0; m < array6.Length; m++)
             {
@@ -882,7 +872,6 @@ namespace EditorManagement.Functions.Editors
                 array6[m] /= (float)num;
                 array6[m] *= 0.85f;
             }
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             for (int num3 = 0; num3 < array6.Length - 1; num3++)
             {
                 int num4 = 0;
@@ -890,29 +879,20 @@ namespace EditorManagement.Functions.Editors
                 {
                     int x = textureWidth * num3 / array6.Length;
                     int y = (int)array4[num3 * num + num4] - num4;
-                    if (texture2D.GetPixel(x, y) == _top)
-                    {
-                        texture2D.SetPixel(x, y, MixColors(new List<Color> { _top, _bottom }));
-                    }
-                    else
-                    {
-                        texture2D.SetPixel(x, y, _bottom);
-                    }
+                    texture2D.SetPixel(x, y, texture2D.GetPixel(x, y) == _top ? MixColors(new List<Color> { _top, _bottom }) : _bottom);
                     num4++;
                 }
             }
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
             texture2D.wrapMode = TextureWrapMode.Clamp;
             texture2D.filterMode = FilterMode.Point;
             texture2D.Apply();
             action(texture2D);
-            Debug.LogFormat("{0}Generating Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
-            sw.Stop();
             yield break;
         }
 
         public IEnumerator BetaFast(AudioClip audio, float saturation, int width, int height, Color background, Color col, Action<Texture2D> action)
         {
+            Debug.LogFormat("{0}Generating Beta Waveform (Fast)", EditorPlugin.className);
             Texture2D tex = new Texture2D(width, height, WaveformFormat, false);
             float[] samples = new float[audio.samples * audio.channels];
             float[] waveform = new float[width];
@@ -950,8 +930,6 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator LegacyFast(AudioClip audio, float saturation, int width, int height, Color background, Color colTop, Color colBot, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Legacy Waveform (Fast)", EditorPlugin.className);
-            var sw = new System.Diagnostics.Stopwatch();
-            sw.Start();
             Texture2D tex = new Texture2D(width, height, WaveformFormat, false);
             
             float[] samples = new float[audio.samples * audio.channels];
@@ -985,8 +963,6 @@ namespace EditorManagement.Functions.Editors
             tex.Apply();
 
             action(tex);
-            Debug.LogFormat("{0}Generated Legacy Waveform at {1}", EditorPlugin.className, sw.Elapsed);
-            sw.Stop();
             yield break;
         }
 
@@ -4148,21 +4124,14 @@ namespace EditorManagement.Functions.Editors
             {
                 fileInfo.text = $"Assigning Waveform Textures for [ {name} ]";
                 Debug.LogFormat("{0}Assigning timeline textures for {1}...", EditorPlugin.className, fullPath);
-                var image = EditorManager.inst.timeline.GetComponent<Image>();
                 yield return AssignTimelineTexture();
-                float delay = 0f;
-                while (image.sprite == null)
-                {
-                    yield return new WaitForSeconds(delay);
-                    delay += 0.0001f;
-                }
             }
             else
             {
                 fileInfo.text = $"Skipping Waveform Textures for [ {name} ]";
                 Debug.LogFormat("{0}Skipping Waveform Textures for {1}...", EditorPlugin.className, fullPath);
-                EditorManager.inst.timeline.GetComponent<Image>().sprite = null;
-                EditorManager.inst.timelineWaveformOverlay.GetComponent<Image>().sprite = null;
+                TimelineImage.sprite = null;
+                TimelineOverlayImage.sprite = null;
             }
 
             fileInfo.text = $"Updating Timeline for [ {name} ]";
@@ -5919,8 +5888,6 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Waveform Re-render", false, "If the timeline waveform should update when a value is changed.")),
             new EditorProperty(EditorProperty.ValueType.Enum,
                 Config.Bind("Timeline", "Waveform Mode", WaveformType.Legacy, "The mode of the timeline waveform.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Waveform BG Color", Color.clear, "Color of the background for the waveform.")),
             new EditorProperty(EditorProperty.ValueType.Color,
                 Config.Bind("Timeline", "Waveform BG Color", Color.clear, "Color of the background for the waveform.")),
             new EditorProperty(EditorProperty.ValueType.Color,
