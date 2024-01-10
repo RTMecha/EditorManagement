@@ -73,12 +73,18 @@ namespace EditorManagement.Patchers
 				f = time / objectLifeLength;
 			}
 
-			if (ObjectEditor.inst.timelinePosScrollbar)
-				ObjectEditor.inst.timelinePosScrollbar.value = f;
-
-			Instance.StartCoroutine(Instance.UpdateTimelineScrollRect(0f, f));
+			Instance.StartCoroutine(UpdateTimelineScrollRect(0f, f));
 
 			return false;
+		}
+
+		public static IEnumerator UpdateTimelineScrollRect(float _delay, float _val)
+		{
+			yield return new WaitForSeconds(_delay);
+			if (ObjectEditor.inst.timelinePosScrollbar)
+				ObjectEditor.inst.timelinePosScrollbar.value = _val;
+
+			yield break;
 		}
 
 		[HarmonyPatch("SetCurrentObj")]
