@@ -17,6 +17,7 @@ using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
 
 namespace EditorManagement.Functions.Editors
@@ -73,12 +74,80 @@ namespace EditorManagement.Functions.Editors
 					var saveUse = createNew.gameObject.Duplicate(actions, "save-use", 1);
 					saveUse.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Save & Use";
 				}
+
+				StartCoroutine(Wait());
 			}
             catch (Exception ex)
             {
 				Debug.LogError($"{EditorPlugin.className}{ex}");
             }
 		}
+
+		public static int ThemePreviewColorCount => 4;
+		public static int ThemePoolCount => 400;
+		public IEnumerator Wait()
+        {
+			while (!EventEditor.inst || !EventEditor.inst.dialogRight)
+				yield return null;
+
+			// Theme Panel adjustments for optimization
+			{
+				var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
+				var parent = dialogTmp.Find("themes/viewport/content");
+				LSHelpers.DeleteChildren(parent);
+
+				var cr = Instantiate(EventEditor.inst.ThemeAdd);
+				cr.name = "Create New";
+				var tf = cr.transform;
+				tf.SetParent(parent);
+				cr.SetActive(true);
+				tf.localScale = Vector2.one;
+				cr.GetComponent<Button>().onClick.AddListener(delegate ()
+				{
+					RenderThemeEditor();
+				});
+
+				for (int i = 0; i < ThemePoolCount; i++)
+                {
+					GenerateThemePanel(parent);
+				}
+			}
+		}
+
+		public ThemePanel GenerateThemePanel(Transform parent)
+		{
+			var gameObject = EventEditor.inst.ThemePanel.Duplicate(parent);
+
+			var image = gameObject.transform.Find("image");
+
+			image.GetComponent<Image>().enabled = false;
+
+			var themePanel = gameObject.AddComponent<ThemePanel>();
+			themePanel.UseButton = image.GetComponent<Button>();
+			themePanel.EditButton = gameObject.transform.Find("edit").GetComponent<Button>();
+			themePanel.DeleteButton = gameObject.transform.Find("delete").GetComponent<Button>();
+			themePanel.Name = gameObject.transform.Find("text").GetComponent<Text>();
+
+			var hlg = image.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+			for (int i = 0; i < ThemePreviewColorCount; i++)
+			{
+				var col = new GameObject($"Col{i + 1}");
+				col.transform.SetParent(image);
+				col.transform.localScale = Vector3.one;
+
+				col.AddComponent<RectTransform>();
+				themePanel.Colors.Add(col.AddComponent<Image>());
+			}
+
+			themePanel.SetActive(false);
+
+			ThemePanels.Add(themePanel);
+
+			return themePanel;
+		}
+
+		public List<ThemePanel> ThemePanels { get; set; } = new List<ThemePanel>();
 
 		public void RenderThemeContent(Transform __0, string __1)
 		{
@@ -107,94 +176,99 @@ namespace EditorManagement.Functions.Editors
 			RTEditor.inst.StartCoroutine(RenderThemeList(__0, __1));
 		}
 
-		public IEnumerator RenderThemeList(Transform __0, string __1)
+		public IEnumerator RenderThemeList(Transform content, string search)
 		{
 			var eventEditor = EventEditor.inst;
 			var themeEditor = ThemeEditor.inst;
 
-			if (loadingThemes == false && !eventEditor.eventDrag)
+			if (!loadingThemes && !eventEditor.eventDrag)
 			{
 				loadingThemes = true;
 				Debug.LogFormat("{0}Rendering theme list...", EditorPlugin.className);
-				var sw = new System.Diagnostics.Stopwatch();
-				sw.Start();
+				//var sw = new System.Diagnostics.Stopwatch();
+				//sw.Start();
 
-				var parent = __0.Find("themes/viewport/content");
-				LSHelpers.DeleteChildren(parent, false);
-				int num = 0;
+				var parent = content.Find("themes/viewport/content");
 
-				var cr = Instantiate(eventEditor.ThemeAdd);
-				var tf = cr.transform;
-				tf.SetParent(parent);
-				cr.SetActive(true);
-				tf.localScale = Vector2.one;
-				cr.GetComponent<Button>().onClick.AddListener(delegate ()
+				yield return ThemePanels.Where(x => x.gameObject.activeSelf).ToList().ForEachReturn(x =>x.SetActive(false));
+
+                //foreach (var themePanel in ThemePanels.Where(x => x.gameObject.activeSelf))
+                //{
+                //    themePanel.SetActive(false);
+                //}
+
+                int num = 0;
+				foreach (var beatmapTheme in DataManager.inst.AllThemes.Where(x => string.IsNullOrEmpty(search) || x.name.ToLower().Contains(search.ToLower())))
 				{
-					RenderThemeEditor(-1);
-				});
+					int index = num;
+					string tmpThemeID = beatmapTheme.id;
 
-				foreach (var themeTmp in DataManager.inst.AllThemes)
-				{
-					if (themeTmp.name.ToLower().Contains(__1.ToLower()))
-					{
-						var tobj = Instantiate(eventEditor.ThemePanel);
-						var ttf = tobj.transform;
-						ttf.SetParent(parent);
-						ttf.localScale = Vector2.one;
-						tobj.name = themeTmp.id;
+					if (num > parent.childCount - 2)
+                    {
+						GenerateThemePanel(parent);
+                    }
 
-						var image = ttf.Find("image");
+					var themePanel = ThemePanels[Mathf.Clamp(num + 1, 0, ThemePanels.Count - 1)];
+					bool active = true;
+					themePanel.SetActive(active);
+                    if (active)
+                    {
+                        for (int j = 0; j < themePanel.Colors.Count; j++)
+                        {
+                            themePanel.Colors[j].color = beatmapTheme.GetObjColor(j);
+                        }
 
-						inst.StartCoroutine(GetThemeSprite(themeTmp, delegate (Sprite _sprite)
-						{
-							image.GetComponent<Image>().sprite = _sprite;
-						}));
+                        themePanel.UseButton.onClick.ClearAll();
+                        themePanel.UseButton.onClick.AddListener(delegate ()
+                        {
+                            DataManager.inst.gameData.eventObjects.allEvents[eventEditor.currentEventType][eventEditor.currentEvent].eventValues[0] = DataManager.inst.GetThemeIndexToID(index);
+                            EventManager.inst.updateEvents();
+                            eventEditor.RenderThemePreview(content);
+                        });
 
-						int tmpVal = num;
-						string tmpThemeID = themeTmp.id;
-						image.GetComponent<Button>().onClick.AddListener(delegate ()
-						{
-							DataManager.inst.gameData.eventObjects.allEvents[eventEditor.currentEventType][eventEditor.currentEvent].eventValues[0] = DataManager.inst.GetThemeIndexToID(tmpVal);
-							EventManager.inst.updateEvents();
-							eventEditor.RenderThemePreview(__0);
-						});
-						ttf.Find("edit").GetComponent<Button>().onClick.AddListener(delegate ()
-						{
-							RenderThemeEditor(int.Parse(tmpThemeID));
-						});
+                        themePanel.EditButton.onClick.ClearAll();
+                        themePanel.EditButton.onClick.AddListener(delegate ()
+                        {
+                            RenderThemeEditor(int.Parse(tmpThemeID));
+                        });
 
-						var delete = ttf.Find("delete").GetComponent<Button>();
+                        themePanel.DeleteButton.onClick.ClearAll();
+                        themePanel.DeleteButton.interactable = index >= DataManager.inst.BeatmapThemes.Count;
+                        themePanel.DeleteButton.onClick.AddListener(delegate ()
+                        {
+                            DeleteThemeDelegate(beatmapTheme);
+                        });
+                        themePanel.Name.text = beatmapTheme.name;
+                    }
 
-						delete.interactable = (tmpVal >= DataManager.inst.BeatmapThemes.Count());
-						delete.onClick.AddListener(delegate ()
-						{
-							EditorManager.inst.ShowDialog("Warning Popup");
-							RTEditor.inst.RefreshWarningPopup("Are you sure you want to delete this theme?", delegate ()
-							{
-								themeEditor.DeleteTheme(themeTmp);
-								eventEditor.previewTheme.id = null;
-								eventEditor.StartCoroutine(ThemeEditor.inst.LoadThemes());
-								Transform child = eventEditor.dialogRight.GetChild(eventEditor.currentEventType);
-								eventEditor.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
-								eventEditor.RenderThemePreview(child);
-								eventEditor.showTheme = false;
-								eventEditor.dialogLeft.Find("theme").gameObject.SetActive(false);
-								EditorManager.inst.HideDialog("Warning Popup");
-							}, delegate ()
-							{
-								EditorManager.inst.HideDialog("Warning Popup");
-							});
-						});
-						ttf.Find("text").GetComponent<Text>().text = themeTmp.name;
-					}
-					num++;
+                    num++;
 				}
 
-				Debug.LogFormat("{0}Finished rendering theme list and took {1} to complete!", EditorPlugin.className, sw.Elapsed);
+				//Debug.LogFormat("{0}Finished rendering theme list and took {1} to complete!", EditorPlugin.className, sw.Elapsed);
 				loadingThemes = false;
 			}
 
 			yield break;
+		}
+
+		public void DeleteThemeDelegate(DataManager.BeatmapTheme themeTmp)
+		{
+			EditorManager.inst.ShowDialog("Warning Popup");
+			RTEditor.inst.RefreshWarningPopup("Are you sure you want to delete this theme?", delegate ()
+			{
+				ThemeEditor.inst.DeleteTheme(themeTmp);
+				EventEditor.inst.previewTheme.id = null;
+				EventEditor.inst.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				Transform child = EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType);
+				EventEditor.inst.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				EventEditor.inst.RenderThemePreview(child);
+				EventEditor.inst.showTheme = false;
+				EventEditor.inst.dialogLeft.Find("theme").gameObject.SetActive(false);
+				EditorManager.inst.HideDialog("Warning Popup");
+			}, delegate ()
+			{
+				EditorManager.inst.HideDialog("Warning Popup");
+			});
 		}
 
 		public BeatmapTheme PreviewTheme { get => (BeatmapTheme)EventEditor.inst.previewTheme; set => EventEditor.inst.previewTheme = value; }
@@ -474,13 +548,14 @@ namespace EditorManagement.Functions.Editors
 			EditorManager.inst.DisplayNotification($"Saved theme [{_theme.name}]!", 2f, EditorManager.NotificationType.Success);
 		}
 
+		public static int ColorsToShow => 4;
 		public static IEnumerator GetThemeSprite(DataManager.BeatmapTheme themeTmp, Action<Sprite> _sprite)
 		{
 			var texture2D = new Texture2D(16, 16, TextureFormat.ARGB32, false);
 			int num2 = 0;
 			for (int i = 0; i < 16; i++)
 			{
-				if (i % 4 == 0)
+				if (i % ColorsToShow == 0)
 				{
 					num2++;
 				}

@@ -1175,7 +1175,7 @@ namespace EditorManagement.Functions.Editors
         {
             if (inst && WatchThemeFiles)
             {
-                StartCoroutine(LoadThemes());
+                StartCoroutine(LoadThemes(EventEditor.inst.dialogRight.GetChild(4).gameObject.activeInHierarchy));
             }
         }
 
@@ -2229,7 +2229,7 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
-                    StartCoroutine(LoadThemes());
+                    StartCoroutine(LoadThemes(true));
                     EventEditor.inst.RenderEventsDialog();
                 });
 
@@ -4229,7 +4229,8 @@ namespace EditorManagement.Functions.Editors
             DataManager.inst.CustomBeatmapThemes.Clear();
             DataManager.inst.BeatmapThemeIDToIndex.Clear();
             DataManager.inst.BeatmapThemeIndexToID.Clear();
-            ((GameData)DataManager.inst.gameData).beatmapThemes.Clear();
+            if (GameData.Current != null)
+                GameData.Current.beatmapThemes.Clear();
 
             int num = 0;
             foreach (var beatmapTheme in DataManager.inst.BeatmapThemes)
@@ -4239,57 +4240,95 @@ namespace EditorManagement.Functions.Editors
                 num++;
             }
 
-            yield return inst.StartCoroutine(GetFileList(themeListPath, "lst", delegate (List<FileManager.LSFile> folders)
+            var files = Directory.GetFiles(RTFile.ApplicationDirectory + RTEditor.themeListPath, "*.lst");
+            foreach (var file in files)
             {
-                folders = (from x in folders
-                           orderby x.Name.ToLower()
-                           select x).ToList();
+                var jn = JSON.Parse(RTFile.ReadFromFile(file));
+                var orig = BeatmapTheme.Parse(jn);
+                DataManager.inst.CustomBeatmapThemes.Add(orig);
 
-                foreach (var folder in folders)
+                if (jn["id"] != null && GameData.Current != null && GameData.Current.beatmapThemes != null && !GameData.Current.beatmapThemes.ContainsKey(jn["id"]))
+                    GameData.Current.beatmapThemes.Add(jn["id"], orig);
+
+                if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(orig.id)))
                 {
-                    var lsfile = folder;
-                    var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath));
-                    var orig = BeatmapTheme.Parse(jn);
-                    DataManager.inst.CustomBeatmapThemes.Add(orig);
+                    var array = DataManager.inst.CustomBeatmapThemes.Where(x => x.id == orig.id).Select(x => x.name).ToArray();
+                    var str = FontManager.TextTranslater.ArrayToString(array);
 
-                    if (jn["id"] != null && !((GameData)DataManager.inst.gameData).beatmapThemes.ContainsKey(jn["id"]))
-                        ((GameData)DataManager.inst.gameData).beatmapThemes.Add(jn["id"], orig);
-
-                    if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(orig.id)))
+                    if (EditorManager.inst != null)
                     {
-                        var list = DataManager.inst.CustomBeatmapThemes.Where(x => x.id == orig.id).ToList();
-                        var str = "";
-                        for (int i = 0; i < list.Count; i++)
-                        {
-                            str += list[i].name;
-                            if (i != list.Count - 1)
-                                str += ", ";
-                        }
-
-                        if (EditorManager.inst != null)
-                        {
-                            EditorManager.inst.DisplayNotification($"Unable to Load theme [{orig.name}] due to conflicting themes: {str}", 2f * list.Count, EditorManager.NotificationType.Error);
-                        }
-                    }
-                    else
-                    {
-                        DataManager.inst.BeatmapThemeIndexToID.Add(DataManager.inst.AllThemes.Count - 1, int.Parse(orig.id));
-                        DataManager.inst.BeatmapThemeIDToIndex.Add(int.Parse(orig.id), DataManager.inst.AllThemes.Count - 1);
-                    }
-
-                    if (jn["id"] == null)
-                    {
-                        var beatmapTheme = BeatmapTheme.DeepCopy(orig);
-                        beatmapTheme.id = LSText.randomNumString(6);
-                        DataManager.inst.CustomBeatmapThemes.Remove(orig);
-                        FileManager.inst.DeleteFileRaw(lsfile.FullPath);
-                        ThemeEditor.inst.SaveTheme(beatmapTheme);
-                        DataManager.inst.CustomBeatmapThemes.Add(beatmapTheme);
+                        EditorManager.inst.DisplayNotification($"Unable to Load theme [{orig.name}] due to conflicting themes: {str}", 2f * array.Length, EditorManager.NotificationType.Error);
                     }
                 }
-                themesLoading = false;
+                else
+                {
+                    DataManager.inst.BeatmapThemeIndexToID.Add(DataManager.inst.AllThemes.Count - 1, int.Parse(orig.id));
+                    DataManager.inst.BeatmapThemeIDToIndex.Add(int.Parse(orig.id), DataManager.inst.AllThemes.Count - 1);
+                }
 
-            }));
+                if (jn["id"] == null)
+                {
+                    var beatmapTheme = BeatmapTheme.DeepCopy(orig);
+                    beatmapTheme.id = LSText.randomNumString(6);
+                    DataManager.inst.CustomBeatmapThemes.Remove(orig);
+                    FileManager.inst.DeleteFileRaw(file);
+                    ThemeEditor.inst.SaveTheme(beatmapTheme);
+                    DataManager.inst.CustomBeatmapThemes.Add(beatmapTheme);
+                }
+            }
+            themesLoading = false;
+
+            //yield return inst.StartCoroutine(GetFileList(themeListPath, "lst", delegate (List<FileManager.LSFile> folders)
+            //{
+            //    folders = (from x in folders
+            //               orderby x.Name.ToLower()
+            //               select x).ToList();
+
+            //    foreach (var folder in folders)
+            //    {
+            //        var lsfile = folder;
+            //        var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath));
+            //        var orig = BeatmapTheme.Parse(jn);
+            //        DataManager.inst.CustomBeatmapThemes.Add(orig);
+
+            //        if (jn["id"] != null && !((GameData)DataManager.inst.gameData).beatmapThemes.ContainsKey(jn["id"]))
+            //            ((GameData)DataManager.inst.gameData).beatmapThemes.Add(jn["id"], orig);
+
+            //        if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(orig.id)))
+            //        {
+            //            var list = DataManager.inst.CustomBeatmapThemes.Where(x => x.id == orig.id).ToList();
+            //            var str = "";
+            //            for (int i = 0; i < list.Count; i++)
+            //            {
+            //                str += list[i].name;
+            //                if (i != list.Count - 1)
+            //                    str += ", ";
+            //            }
+
+            //            if (EditorManager.inst != null)
+            //            {
+            //                EditorManager.inst.DisplayNotification($"Unable to Load theme [{orig.name}] due to conflicting themes: {str}", 2f * list.Count, EditorManager.NotificationType.Error);
+            //            }
+            //        }
+            //        else
+            //        {
+            //            DataManager.inst.BeatmapThemeIndexToID.Add(DataManager.inst.AllThemes.Count - 1, int.Parse(orig.id));
+            //            DataManager.inst.BeatmapThemeIDToIndex.Add(int.Parse(orig.id), DataManager.inst.AllThemes.Count - 1);
+            //        }
+
+            //        if (jn["id"] == null)
+            //        {
+            //            var beatmapTheme = BeatmapTheme.DeepCopy(orig);
+            //            beatmapTheme.id = LSText.randomNumString(6);
+            //            DataManager.inst.CustomBeatmapThemes.Remove(orig);
+            //            FileManager.inst.DeleteFileRaw(lsfile.FullPath);
+            //            ThemeEditor.inst.SaveTheme(beatmapTheme);
+            //            DataManager.inst.CustomBeatmapThemes.Add(beatmapTheme);
+            //        }
+            //    }
+            //    themesLoading = false;
+
+            //}));
 
             if (refreshGUI)
             {
