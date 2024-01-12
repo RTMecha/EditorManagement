@@ -560,7 +560,8 @@ namespace EditorManagement.Patchers
                         if (float.TryParse(_val, out float num))
                         {
                             currentPrefab.autoKillOffset = num;
-                            Updater.UpdatePrefab(currentPrefab, "autokill");
+                            if (currentPrefab.autoKillType != PrefabObject.AutoKillType.Regular)
+                                Updater.UpdatePrefab(currentPrefab, "autokill");
                         }
                     });
 
