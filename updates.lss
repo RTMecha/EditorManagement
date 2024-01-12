@@ -1,3 +1,8 @@
+2.1.13 > [Jan 13, 2024]
+- Fixed a bug with the editor breaking when reloading into it due to an asset being changed already.
+- Optimized theme loading and UI rendering via object pooling. (Yay I'm finally using object pooling lol)
+- Added the new Prefab Object features.
+- Fixed a bug with deleting keyframes not updating the autokill if the autokill type is Last Keyframe or Last Keyframe Offset.
 2.1.12 > [Jan 11, 2024]
 - Fixed some UI issues.
 - Fixed null reference exception caused by an empty object being selected.
