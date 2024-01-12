@@ -443,12 +443,13 @@ namespace EditorManagement.Functions.Editors
                         case "updateObject":
                         case "copyColor":
                         case "loadLevel":
+                        case "loadLevelInternal":
                         case "code":
                         case "setText":
                         case "setTextOther":
                             {
                                 var path = stringInput.Duplicate(layout, "Path");
-                                path.transform.Find("Text").GetComponent<Text>().text = cmd == "updateObject" || cmd == "copyColor" || cmd == "setTextOther" ? "Objects Name" : cmd == "loadLevel" ? "Path" : "Right Click to Edit";
+                                path.transform.Find("Text").GetComponent<Text>().text = cmd == "code" ? "Right Click to Edit" : "Path";
 
                                 var pathInputField = path.transform.Find("Input").GetComponent<InputField>();
                                 pathInputField.onValueChanged.ClearAll();
@@ -813,6 +814,7 @@ namespace EditorManagement.Functions.Editors
                         case "loadGreaterEquals":
                         case "loadLesser":
                         case "loadGreater":
+                        case "loadExists":
                         case "save":
                         case "saveVariable":
                             {
@@ -856,7 +858,7 @@ namespace EditorManagement.Functions.Editors
                                 });
 
 
-                                if (cmd != "saveVariable")
+                                if (cmd != "saveVariable" && cmd != "loadExists")
                                 {
                                     var single = numberInput.Duplicate(layout, "Value");
                                     single.transform.Find("Text").GetComponent<Text>().text = "Value";
@@ -1233,6 +1235,7 @@ namespace EditorManagement.Functions.Editors
                                 break;
                             }
                         case "signalModifier":
+                        case "mouseOverSignalModifier":
                             {
                                 var path = stringInput.Duplicate(layout, "Objects");
                                 path.transform.Find("Text").GetComponent<Text>().text = "Objects Name";
@@ -1706,6 +1709,79 @@ namespace EditorManagement.Functions.Editors
 
                                 TriggerHelper.IncreaseDecreaseButtons(speedIF, min: 0.1f, max: Updater.MaxFastSpeed, t: speed.transform);
                                 TriggerHelper.AddEventTrigger(speed, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(speedIF, min: 0.1f, max: Updater.MaxFastSpeed) });
+
+                                break;
+                            }
+                        case "clampVariable":
+                        case "clampVariableOther":
+                            {
+                                if (cmd == "clampVariableOther")
+                                {
+                                    var path = stringInput.Duplicate(layout, "Objects");
+                                    path.transform.Find("Text").GetComponent<Text>().text = "Objects Name";
+
+                                    var pathInputField = path.transform.Find("Input").GetComponent<InputField>();
+                                    pathInputField.onValueChanged.ClearAll();
+                                    pathInputField.textComponent.alignment = TextAnchor.MiddleLeft;
+                                    pathInputField.text = modifier.value;
+                                    pathInputField.onValueChanged.AddListener(delegate (string _val)
+                                    {
+                                        modifier.value = _val;
+                                        modifier.active = false;
+                                    });
+
+                                    var clickable = path.transform.Find("Input").gameObject.AddComponent<Clickable>();
+                                    clickable.onDown = delegate (PointerEventData pointerEventData)
+                                    {
+                                        if (pointerEventData.button == PointerEventData.InputButton.Right)
+                                        {
+                                            EditorManager.inst.ShowDialog("Object Search Popup");
+                                            RTEditor.inst.RefreshObjectSearch(delegate (BeatmapObject x)
+                                            {
+                                                pathInputField.text = x.name;
+                                                EditorManager.inst.HideDialog("Object Search Popup");
+                                            });
+                                        }
+                                    };
+                                }
+
+                                var min = numberInput.Duplicate(layout, "Min");
+                                min.transform.Find("Text").GetComponent<Text>().text = "Min";
+
+                                var minIF = min.transform.Find("Input").GetComponent<InputField>();
+                                minIF.onValueChanged.ClearAll();
+                                minIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                minIF.text = Parser.TryParse(modifier.commands[1], 0).ToString();
+                                minIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (int.TryParse(_val, out int result))
+                                    {
+                                        modifier.commands[1] = result.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtonsInt(minIF, t: min.transform);
+                                TriggerHelper.AddEventTrigger(min, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(minIF) });
+                                
+                                var max = numberInput.Duplicate(layout, "Max");
+                                max.transform.Find("Text").GetComponent<Text>().text = "Max";
+
+                                var maxIF = max.transform.Find("Input").GetComponent<InputField>();
+                                maxIF.onValueChanged.ClearAll();
+                                maxIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                maxIF.text = Parser.TryParse(modifier.commands[2], 0).ToString();
+                                maxIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (int.TryParse(_val, out int result))
+                                    {
+                                        modifier.commands[2] = result.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtonsInt(maxIF, t: max.transform);
+                                TriggerHelper.AddEventTrigger(max, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(maxIF) });
 
                                 break;
                             }
