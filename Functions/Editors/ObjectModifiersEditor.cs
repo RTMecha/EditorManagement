@@ -221,85 +221,6 @@ namespace EditorManagement.Functions.Editors
             stringInput = StringInput();
 
             dropdownBar = Dropdown();
-
-            //var button = modifierAddPrefab.GetComponent<Button>();
-            //button.onClick.RemoveAllListeners();
-            //button.onClick.AddListener(delegate ()
-            //{
-            //    EditorManager.inst.ShowDialog("Default Modifiers Popup");
-            //    if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
-            //        RefreshDefaultModifiersList(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
-            //});
-
-            //var font = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/Text").GetComponent<Text>().font;
-
-            //replBase = new GameObject("REPL Editor");
-            //replBase.transform.SetParent(EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.parent);
-            //replBase.transform.localScale = Vector3.one;
-            //var replRT = replBase.AddComponent<RectTransform>();
-
-            //replRT.anchoredPosition = Vector2.zero;
-
-            //var uiField = UIManager.GenerateUIInputField("REPL Editor", replBase.transform);
-
-            //replEditor = (InputField)uiField["InputField"];
-
-            //((Image)uiField["Image"]).color = new Color(0.1132075f, 0.1132075f, 0.1132075f);
-
-            //replEditor.lineType = InputField.LineType.MultiLineNewline;
-            //replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
-            //replEditor.textComponent.font = font;
-
-            //((RectTransform)uiField["RectTransform"]).anchoredPosition = Vector2.zero;
-            //((RectTransform)uiField["RectTransform"]).sizeDelta = new Vector2(1000f, 550f);
-
-            //var uiTop = UIManager.GenerateUIImage("Panel", replBase.transform);
-
-            //UIManager.SetRectTransform((RectTransform)uiTop["RectTransform"], new Vector2(0f, 291f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1000f, 32f));
-
-            //((Image)uiTop["Image"]).color = new Color(0.1973585f, 0.1973585f, 0.1973585f);
-
-            //var close = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x").gameObject);
-            //close.transform.SetParent(((GameObject)uiTop["GameObject"]).transform);
-            //close.transform.localScale = Vector3.one;
-
-            //close.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-
-            //var closeButton = close.GetComponent<Button>();
-            //closeButton.onClick.ClearAll();
-            //closeButton.onClick.AddListener(delegate ()
-            //{
-            //    EditorManager.inst.HideDialog("REPL Editor Popup");
-            //    RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection));
-            //});
-
-            //var uiTitle = UIManager.GenerateUIText("Title", ((GameObject)uiTop["GameObject"]).transform);
-            //UIManager.SetRectTransform(((RectTransform)uiTitle["RectTransform"]), new Vector2(-350f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(300f, 32f));
-            //((Text)uiTitle["Text"]).text = "REPL Editor";
-            //((Text)uiTitle["Text"]).alignment = TextAnchor.MiddleLeft;
-            //((Text)uiTitle["Text"]).font = font;
-
-            //var rtext = Instantiate(replEditor.textComponent.gameObject);
-            //rtext.transform.SetParent(replEditor.transform);
-            //rtext.transform.localScale = Vector3.one;
-
-            //var rttext = rtext.GetComponent<RectTransform>();
-            //rttext.anchoredPosition = new Vector2(2f, 0f);
-            //rttext.sizeDelta = new Vector2(-12f, -8f);
-
-            //var selectUI = ((GameObject)uiTop["GameObject"]).AddComponent<SelectGUI>();
-            //selectUI.target = replBase.transform;
-
-            //replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 0f);
-
-            //replEditor.customCaretColor = true;
-            //replEditor.caretColor = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
-
-            //replText = rtext.GetComponent<Text>();
-
-            //replBase.SetActive(false);
-
-            //Triggers.AddEditorDialog("REPL Editor Popup", replBase);
         }
 
         public IEnumerator RenderModifiers(BeatmapObject beatmapObject)
@@ -1603,6 +1524,188 @@ namespace EditorManagement.Functions.Editors
                                     modifier.commands[3] = _val.ToString();
                                     modifier.active = false;
                                 });
+
+                                break;
+                            }
+                        case "spawnPrefab":
+                            {
+                                var prefabIndex = numberInput.Duplicate(layout, "Index");
+                                prefabIndex.transform.Find("Text").GetComponent<Text>().text = "Prefab Index";
+
+                                var prefabIndexIF = prefabIndex.transform.Find("Input").GetComponent<InputField>();
+                                prefabIndexIF.onValueChanged.ClearAll();
+                                prefabIndexIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                prefabIndexIF.text = Parser.TryParse(modifier.value, 0).ToString();
+                                prefabIndexIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (int.TryParse(_val, out int result))
+                                    {
+                                        modifier.value = Mathf.Clamp(result, 0, DataManager.inst.gameData.prefabObjects.Count - 1).ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtonsInt(prefabIndexIF, 1, 0, DataManager.inst.gameData.prefabObjects.Count - 1, prefabIndex.transform);
+                                TriggerHelper.AddEventTrigger(prefabIndex, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(prefabIndexIF, 1, 0, DataManager.inst.gameData.prefabObjects.Count - 1) });
+
+                                var positionX = numberInput.Duplicate(layout, "PosX");
+                                positionX.transform.Find("Text").GetComponent<Text>().text = "Position X";
+
+                                var positionXIF = positionX.transform.Find("Input").GetComponent<InputField>();
+                                positionXIF.onValueChanged.ClearAll();
+                                positionXIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                positionXIF.text = Parser.TryParse(modifier.commands[1], 0f).ToString();
+                                positionXIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[1] = num.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(positionXIF, t: positionX.transform);
+                                TriggerHelper.AddEventTrigger(positionX, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(positionXIF) });
+
+                                var positionY = numberInput.Duplicate(layout, "PosY");
+                                positionY.transform.Find("Text").GetComponent<Text>().text = "Position Y";
+
+                                var positionYIF = positionY.transform.Find("Input").GetComponent<InputField>();
+                                positionYIF.onValueChanged.ClearAll();
+                                positionYIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                positionYIF.text = Parser.TryParse(modifier.commands[2], 0f).ToString();
+                                positionYIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[2] = num.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(positionYIF, t: positionY.transform);
+                                TriggerHelper.AddEventTrigger(positionY, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(positionYIF) });
+
+                                var scaleX = numberInput.Duplicate(layout, "ScaX");
+                                scaleX.transform.Find("Text").GetComponent<Text>().text = "Scale X";
+
+                                var scaleXIF = scaleX.transform.Find("Input").GetComponent<InputField>();
+                                scaleXIF.onValueChanged.ClearAll();
+                                scaleXIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                scaleXIF.text = Parser.TryParse(modifier.commands[3], 1f).ToString();
+                                scaleXIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[3] = num.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(scaleXIF, t: scaleX.transform);
+                                TriggerHelper.AddEventTrigger(scaleX, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(scaleXIF) });
+
+                                var scaleY = numberInput.Duplicate(layout, "ScaY");
+                                scaleY.transform.Find("Text").GetComponent<Text>().text = "Scale Y";
+
+                                var scaleYIF = scaleY.transform.Find("Input").GetComponent<InputField>();
+                                scaleYIF.onValueChanged.ClearAll();
+                                scaleYIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                scaleYIF.text = Parser.TryParse(modifier.commands[4], 0f).ToString();
+                                scaleYIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[4] = num.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(scaleYIF, t: scaleY.transform);
+                                TriggerHelper.AddEventTrigger(scaleY, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(scaleYIF) });
+
+                                var rotation = numberInput.Duplicate(layout, "Rot");
+                                rotation.transform.Find("Text").GetComponent<Text>().text = "Rotation";
+
+                                var rotationIF = rotation.transform.Find("Input").GetComponent<InputField>();
+                                rotationIF.onValueChanged.ClearAll();
+                                rotationIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                rotationIF.text = Parser.TryParse(modifier.commands[5], 0f).ToString();
+                                rotationIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[5] = num.ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(rotationIF, t: rotation.transform);
+                                TriggerHelper.AddEventTrigger(rotation, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(rotationIF) });
+
+                                if (modifier.commands.Count < 8)
+                                {
+                                    modifier.commands.Add("0");
+                                    modifier.commands.Add("0");
+                                    modifier.commands.Add("1");
+                                }
+
+                                var repeatCount = numberInput.Duplicate(layout, "RepeatCount");
+                                repeatCount.transform.Find("Text").GetComponent<Text>().text = "Repeat Count";
+
+                                var repeatCountIF = repeatCount.transform.Find("Input").GetComponent<InputField>();
+                                repeatCountIF.onValueChanged.ClearAll();
+                                repeatCountIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                repeatCountIF.text = Parser.TryParse(modifier.commands[6], 0).ToString();
+                                repeatCountIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (int.TryParse(_val, out int num))
+                                    {
+                                        modifier.commands[6] = Mathf.Clamp(num, 0, 1000).ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(repeatCountIF, t: repeatCount.transform);
+                                TriggerHelper.AddEventTrigger(repeatCount, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(repeatCountIF) });
+
+                                var repeatOffsetTime = numberInput.Duplicate(layout, "RepeatOffsetTime");
+                                repeatOffsetTime.transform.Find("Text").GetComponent<Text>().text = "Repeat Offset Time";
+
+                                var repeatOffsetTimeIF = repeatOffsetTime.transform.Find("Input").GetComponent<InputField>();
+                                repeatOffsetTimeIF.onValueChanged.ClearAll();
+                                repeatOffsetTimeIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                repeatOffsetTimeIF.text = Parser.TryParse(modifier.commands[7], 0f).ToString();
+                                repeatOffsetTimeIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[7] = Mathf.Clamp(num, 0f, 60f).ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(repeatOffsetTimeIF, t: repeatOffsetTime.transform);
+                                TriggerHelper.AddEventTrigger(repeatOffsetTime, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(repeatOffsetTimeIF) });
+
+                                var speed = numberInput.Duplicate(layout, "Speed");
+                                speed.transform.Find("Text").GetComponent<Text>().text = "Speed";
+
+                                var speedIF = speed.transform.Find("Input").GetComponent<InputField>();
+                                speedIF.onValueChanged.ClearAll();
+                                speedIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                speedIF.text = Parser.TryParse(modifier.commands[8], 1f).ToString();
+                                speedIF.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float num))
+                                    {
+                                        modifier.commands[8] = Mathf.Clamp(num, 0.1f, Updater.MaxFastSpeed).ToString();
+                                        modifier.active = false;
+                                    }
+                                });
+
+                                TriggerHelper.IncreaseDecreaseButtons(speedIF, min: 0.1f, max: Updater.MaxFastSpeed, t: speed.transform);
+                                TriggerHelper.AddEventTrigger(speed, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(speedIF, min: 0.1f, max: Updater.MaxFastSpeed) });
 
                                 break;
                             }
