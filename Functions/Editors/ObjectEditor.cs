@@ -135,15 +135,19 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.ShowDialog("Object Editor", false);
 
                 StartCoroutine(RefreshObjectGUI(beatmapObject));
-
-                // Here we remember an object's zoom and timeline position.
-                ObjEditor.inst.Zoom = CurrentSelection.Zoom;
-
-                timelinePosScrollbar.value = CurrentSelection.TimelinePosition;
-
+                StartCoroutine(RememberTimeline());
             }
             else
                 EditorManager.inst.DisplayNotification("Cannot edit non-object!", 2f, EditorManager.NotificationType.Error);
+        }
+
+        public IEnumerator RememberTimeline()
+        {
+            // Here we remember an object's zoom and timeline position.
+            ObjEditor.inst.Zoom = CurrentSelection.Zoom;
+            yield return new WaitForSeconds(0.001f);
+            timelinePosScrollbar.value = CurrentSelection.TimelinePosition;
+            yield break;
         }
 
         #region Deleting
@@ -273,6 +277,9 @@ namespace EditorManagement.Functions.Editors
 
             RenderTimelineObject(bmTimelineObject);
             Updater.UpdateProcessor(beatmapObject, "Keyframes");
+
+            if (beatmapObject.autoKillType == AutoKillType.LastKeyframe || beatmapObject.autoKillType == AutoKillType.LastKeyframeOffset)
+                Updater.UpdateProcessor(beatmapObject, "Autokill");
 
             RenderKeyframes(beatmapObject);
 
