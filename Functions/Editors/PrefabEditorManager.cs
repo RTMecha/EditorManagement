@@ -734,6 +734,47 @@ namespace EditorManagement.Functions.Editors
             #region My Code
 
             {
+                prefabSelectorLeft.Find("tod-dropdown").GetComponentAndPerformAction(delegate (Dropdown dropdown)
+                {
+                    dropdown.onValueChanged.ClearAll();
+                    dropdown.value = (int)currentPrefab.autoKillType;
+                    dropdown.onValueChanged.AddListener(delegate (int _val)
+                    {
+                        currentPrefab.autoKillType = (PrefabObject.AutoKillType)_val;
+                        Updater.UpdatePrefab(currentPrefab, "autokill");
+                    });
+                });
+
+                prefabSelectorLeft.Find("akoffset").GetComponentAndPerformAction(delegate (InputField inputField)
+                {
+                    inputField.onValueChanged.ClearAll();
+                    inputField.characterValidation = InputField.CharacterValidation.None;
+                    inputField.contentType = InputField.ContentType.Standard;
+                    inputField.characterLimit = 0;
+                    inputField.text = currentPrefab.autoKillOffset.ToString();
+                    inputField.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        if (float.TryParse(_val, out float num))
+                        {
+                            currentPrefab.autoKillOffset = num;
+                            Updater.UpdatePrefab(currentPrefab, "autokill");
+                        }
+                    });
+
+                    TriggerHelper.IncreaseDecreaseButtons(inputField);
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
+                });
+
+                prefabSelectorLeft.Find("akoffset/|").GetComponentAndPerformAction(delegate (Button button)
+                {
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        currentPrefab.autoKillOffset = currentPrefab.autoKillType == PrefabObject.AutoKillType.StartTimeOffset ? currentPrefab.StartTime + prefab.Offset :
+                                                       currentPrefab.autoKillType == PrefabObject.AutoKillType.SongTime ? AudioManager.inst.CurrentAudioSource.time : -1f;
+                    });
+                });
+
                 prefabSelectorLeft.Find("time").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
                     inputField.NewValueChangedListener(currentPrefab.StartTime.ToString(), delegate (string _val)
@@ -742,7 +783,7 @@ namespace EditorManagement.Functions.Editors
                         {
                             n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
                             currentPrefab.StartTime = n;
-                            Updater.UpdatePrefab(currentPrefab);
+                            Updater.UpdatePrefab(currentPrefab, "starttime");
                             ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
                         }
                         else
@@ -846,10 +887,7 @@ namespace EditorManagement.Functions.Editors
                     });
                 }
 
-                var prefabCount = prefabSelectorLeft.Find("repeat count").GetComponent<InputField>();
-                var prefabOffsetTime = prefabSelectorLeft.Find("repeat offset time").GetComponent<InputField>();
-
-                prefabSelectorLeft.Find("repeat count").GetComponentAndPerformAction(delegate (InputField inputField)
+                prefabSelectorLeft.Find("repeat/x").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
                     inputField.NewValueChangedListener(Mathf.Clamp(currentPrefab.RepeatCount, 0, 1000).ToString(), delegate (string _val)
                     {
@@ -865,7 +903,7 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField, max: 1000));
                 });
 
-                prefabSelectorLeft.Find("repeat offset time").GetComponentAndPerformAction(delegate (InputField inputField)
+                prefabSelectorLeft.Find("repeat/y").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
                     inputField.NewValueChangedListener(Mathf.Clamp(currentPrefab.RepeatOffsetTime, 0f, 60f).ToString(), delegate (string _val)
                     {
@@ -879,6 +917,22 @@ namespace EditorManagement.Functions.Editors
 
                     TriggerHelper.IncreaseDecreaseButtons(inputField, max: 60f);
                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, max: 60f));
+                });
+
+                prefabSelectorLeft.Find("speed").GetComponentAndPerformAction(delegate (InputField inputField)
+                {
+                    inputField.NewValueChangedListener(Mathf.Clamp(currentPrefab.speed, 0.1f, Updater.MaxFastSpeed).ToString(), delegate (string _val)
+                    {
+                        if (float.TryParse(_val, out float num))
+                        {
+                            num = Mathf.Clamp(num, 0.1f, Updater.MaxFastSpeed);
+                            currentPrefab.speed = num;
+                            Updater.UpdatePrefab(currentPrefab, "Speed");
+                        }
+                    });
+
+                    TriggerHelper.IncreaseDecreaseButtons(inputField, min: 0.1f, max: Updater.MaxFastSpeed);
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, min: 0.1f, max: Updater.MaxFastSpeed));
                 });
 
                 //Global Settings
