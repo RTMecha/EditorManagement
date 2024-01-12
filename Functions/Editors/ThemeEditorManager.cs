@@ -221,7 +221,7 @@ namespace EditorManagement.Functions.Editors
                         themePanel.UseButton.onClick.ClearAll();
                         themePanel.UseButton.onClick.AddListener(delegate ()
                         {
-                            DataManager.inst.gameData.eventObjects.allEvents[eventEditor.currentEventType][eventEditor.currentEvent].eventValues[0] = DataManager.inst.GetThemeIndexToID(index);
+                            DataManager.inst.gameData.eventObjects.allEvents[eventEditor.currentEventType][eventEditor.currentEvent].eventValues[0] = Parser.TryParse(tmpThemeID, 0);
                             EventManager.inst.updateEvents();
                             eventEditor.RenderThemePreview(content);
                         });
