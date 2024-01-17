@@ -619,6 +619,25 @@ namespace EditorManagement.Functions.Editors
 
                         posOffsetLabel.transform.GetChild(0).GetComponent<Text>().text = "Visibility";
 
+                        var requireAllLabel = Instantiate(rotLabel);
+                        requireAllLabel.transform.SetParent(left);
+                        requireAllLabel.transform.localScale = Vector3.one;
+                        requireAllLabel.name = "label";
+
+                        requireAllLabel.transform.GetChild(0).GetComponent<Text>().text = "Require All";
+
+                        var scaActiveParent = new GameObject("require all");
+                        scaActiveParent.transform.SetParent(left);
+                        scaActiveParent.transform.localScale = Vector3.one;
+                        var requireAllRT = scaActiveParent.AddComponent<RectTransform>();
+                        requireAllRT.sizeDelta = new Vector2(351f, 32f);
+
+                        var scaActive = Instantiate(toggle);
+                        scaActive.transform.SetParent(scaActiveParent.transform);
+                        scaActive.transform.localScale = Vector3.one;
+                        scaActive.name = "toggle";
+                        scaActive.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+
                         // Visibility list
                         var visibilityScrollRect = new GameObject("ScrollRect Visibility");
                         visibilityScrollRect.transform.SetParent(left);
@@ -1724,6 +1743,14 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
 
+                var requireAll = content.Find("require all/toggle").GetComponent<Toggle>();
+                requireAll.onValueChanged.ClearAll();
+                requireAll.isOn = currentObject.requireAll;
+                requireAll.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    currentObject.requireAll = _val;
+                });
+
                 LSHelpers.DeleteChildren(visibilityContent);
                 var add = PrefabEditor.inst.CreatePrefab.Duplicate(visibilityContent, "Add");
                 add.transform.Find("Text").GetComponent<Text>().text = "Add Visiblity Setting";
@@ -2123,6 +2150,9 @@ namespace EditorManagement.Functions.Editors
                     if (key != "Base ID" && (string.IsNullOrEmpty(searchTerm) || key.ToLower().Contains(searchTerm.ToLower())))
                     {
                         inst.GetElement<GameObject>(key + " GameObject").SetActive(true);
+
+                        if (inst.UIElements.ContainsKey(key + " Option GameObject"))
+                            inst.GetElement<GameObject>(key + " Option GameObject").SetActive(true);
 
                         //String
                         if (key == "Base Name" || key.Contains("Color") && key.Contains("Custom"))
