@@ -4913,7 +4913,8 @@ namespace EditorManagement.Functions.Editors
                 difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
                 if (RTFile.FileExists(folder + "/level.ogg") ||
-                    RTFile.FileExists(folder + "/level.wav"))
+                    RTFile.FileExists(folder + "/level.wav") ||
+                    RTFile.FileExists(folder + "/level.mp3"))
                 {
                     if (RTHelpers.SearchString(Path.GetFileName(folder), EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.song.title, EditorManager.inst.openFileSearch) ||
