@@ -18,6 +18,7 @@ using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Data.Player;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
@@ -58,6 +59,8 @@ namespace EditorManagement.Functions.Editors
         public static string currentID;
 
         public static bool debug = false;
+
+        public RectTransform visibilityContent;
 
         public static void Init()
         {
@@ -189,7 +192,7 @@ namespace EditorManagement.Functions.Editors
                         var num = playerModelDropdown.options.Count;
 
                         PlayerManager.CreateNewPlayerModel?.Invoke();
-                        PlayerManager.SetPlayerModel?.Invoke(playerModelIndex, PlayerManager.PlayerModelsIndex[num]);
+                        PlayerManager.SetPlayerModel?.Invoke(playerModelIndex, PlayerManager.PlayerModels.ElementAt(num).Key);
                         PlayerManager.RespawnPlayers();
 
                         inst.StartCoroutine(RenderDialog());
@@ -534,18 +537,6 @@ namespace EditorManagement.Functions.Editors
                             bar.transform.localScale = Vector3.one;
                             bar.name = "shape";
 
-                            //var l = Instantiate(label);
-                            //l.transform.SetParent(bar.transform);
-                            //l.transform.SetAsFirstSibling();
-                            //l.transform.localScale = Vector3.one;
-                            //l.transform.GetChild(0).GetComponent<Text>().text = "Shape";
-                            //l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(134f, 20f);
-
-                            //var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                            //{
-                            //    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                            //}
-
                             bar.GetComponent<Image>().enabled = true;
                             bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
 
@@ -596,18 +587,6 @@ namespace EditorManagement.Functions.Editors
                             bar.transform.localScale = Vector3.one;
                             bar.name = "shape option";
 
-                            //var l = Instantiate(label);
-                            //l.transform.SetParent(bar.transform);
-                            //l.transform.SetAsFirstSibling();
-                            //l.transform.localScale = Vector3.one;
-                            //l.transform.GetChild(0).GetComponent<Text>().text = "Shape Option";
-                            //l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(134f, 20f);
-
-                            //var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                            //{
-                            //    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                            //}
-
                             bar.GetComponent<Image>().enabled = true;
                             bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0f);
 
@@ -630,7 +609,7 @@ namespace EditorManagement.Functions.Editors
                             dropdown.options = GetShapeOptions(0);
                         }
                     }
-                    
+
                     //Visibility
                     {
                         var posOffsetLabel = Instantiate(rotLabel);
@@ -640,61 +619,116 @@ namespace EditorManagement.Functions.Editors
 
                         posOffsetLabel.transform.GetChild(0).GetComponent<Text>().text = "Visibility";
 
-                        GameObject x = Instantiate(dropdownInput);
-                        x.transform.SetParent(left);
-                        x.transform.localScale = Vector3.one;
-                        x.name = "visibility";
+                        // Visibility list
+                        var visibilityScrollRect = new GameObject("ScrollRect Visibility");
+                        visibilityScrollRect.transform.SetParent(left);
+                        visibilityScrollRect.transform.localScale = Vector3.one;
+                        var visibilityScrollRectRT = visibilityScrollRect.AddComponent<RectTransform>();
+                        visibilityScrollRectRT.anchoredPosition = new Vector2(0f, 16f);
+                        visibilityScrollRectRT.sizeDelta = new Vector2(400f, 250f);
+                        var visibilityScrollRectSR = visibilityScrollRect.AddComponent<ScrollRect>();
 
-                        Destroy(x.GetComponent<HoverTooltip>());
-                        Destroy(x.GetComponent<HideDropdownOptions>());
+                        var visibilityMaskGO = new GameObject("Mask");
+                        visibilityMaskGO.transform.SetParent(visibilityScrollRectRT);
+                        visibilityMaskGO.transform.localScale = Vector3.one;
+                        var visibilityMaskRT = visibilityMaskGO.AddComponent<RectTransform>();
+                        visibilityMaskRT.anchoredPosition = new Vector2(0f, 0f);
+                        visibilityMaskRT.anchorMax = new Vector2(1f, 1f);
+                        visibilityMaskRT.anchorMin = new Vector2(0f, 0f);
+                        visibilityMaskRT.sizeDelta = new Vector2(0f, 0f);
+                        var visibilityMaskImage = visibilityMaskGO.AddComponent<Image>();
+                        visibilityMaskImage.color = new Color(1f, 1f, 1f, 0.04f);
+                        visibilityMaskGO.AddComponent<Mask>();
 
-                        var xrt = x.GetComponent<RectTransform>();
-                        xrt.anchoredPosition = new Vector2(124f, 30f);
-                        xrt.sizeDelta = new Vector2(248f, 32f);
+                        var visibilityContentGO = new GameObject("Content");
+                        visibilityContentGO.transform.SetParent(visibilityMaskRT);
+                        visibilityContentGO.transform.localScale = Vector3.one;
+                        visibilityContent = visibilityContentGO.AddComponent<RectTransform>();
 
-                        var parentDropdown = x.GetComponent<Dropdown>();
-                        parentDropdown.onValueChanged.RemoveAllListeners();
-                        parentDropdown.options.Clear();
-                        parentDropdown.options = new List<Dropdown.OptionData>()
-                        {
-                            new Dropdown.OptionData("Always"),
-                            new Dropdown.OptionData("Boosting"),
-                            new Dropdown.OptionData("Being Hit"),
-                            new Dropdown.OptionData("In Zen Mode"),
-                            new Dropdown.OptionData("Health Percentage"),
-                            new Dropdown.OptionData("Health Equals Greater"),
-                            new Dropdown.OptionData("Health Equals"),
-                            new Dropdown.OptionData("Health Greater"),
-                            new Dropdown.OptionData("Key Held"),
-                        };
+                        visibilityContent.anchoredPosition = new Vector2(0f, -16f);
+                        visibilityContent.anchorMax = new Vector2(0f, 1f);
+                        visibilityContent.anchorMin = new Vector2(0f, 1f);
+                        visibilityContent.pivot = new Vector2(0f, 1f);
+                        visibilityContent.sizeDelta = new Vector2(400f, 250f);
+
+                        var visibilityContentCSF = visibilityContentGO.AddComponent<ContentSizeFitter>();
+                        visibilityContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+                        visibilityContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+                        var visibilityContentVLG = visibilityContentGO.AddComponent<VerticalLayoutGroup>();
+                        visibilityContentVLG.childControlHeight = false;
+                        visibilityContentVLG.childForceExpandHeight = false;
+                        visibilityContentVLG.spacing = 4f;
+
+                        var visibilityContentLE = visibilityContentGO.AddComponent<LayoutElement>();
+                        visibilityContentLE.layoutPriority = 10000;
+                        visibilityContentLE.minWidth = 349;
+
+                        visibilityScrollRectSR.content = visibilityContent;
                     }
+                    //{
+                    //    var posOffsetLabel = Instantiate(rotLabel);
+                    //    posOffsetLabel.transform.SetParent(left);
+                    //    posOffsetLabel.transform.localScale = Vector3.one;
+                    //    posOffsetLabel.name = "label";
 
-                    //Visibility Health Percentage
-                    {
-                        var rotOffsetLabel = Instantiate(rotLabel);
-                        rotOffsetLabel.transform.SetParent(left);
-                        rotOffsetLabel.transform.localScale = Vector3.one;
-                        rotOffsetLabel.name = "label";
+                    //    posOffsetLabel.transform.GetChild(0).GetComponent<Text>().text = "Visibility";
 
-                        rotOffsetLabel.transform.GetChild(0).GetComponent<Text>().text = "Visibility Properties";
+                    //    GameObject x = Instantiate(dropdownInput);
+                    //    x.transform.SetParent(left);
+                    //    x.transform.localScale = Vector3.one;
+                    //    x.name = "visibility";
 
-                        var rotOffset = Instantiate(rotField);
-                        rotOffset.transform.SetParent(left);
-                        rotOffset.transform.localScale = Vector3.one;
-                        rotOffset.name = "visibility health percentage";
+                    //    Destroy(x.GetComponent<HoverTooltip>());
+                    //    Destroy(x.GetComponent<HideDropdownOptions>());
 
-                        var rotActiveParent = new GameObject("p");
-                        rotActiveParent.transform.SetParent(rotOffset.transform);
-                        rotActiveParent.transform.localScale = Vector3.one;
-                        rotActiveParent.transform.SetAsFirstSibling();
-                        rotActiveParent.AddComponent<RectTransform>();
+                    //    var xrt = x.GetComponent<RectTransform>();
+                    //    xrt.anchoredPosition = new Vector2(124f, 30f);
+                    //    xrt.sizeDelta = new Vector2(248f, 32f);
 
-                        var rotActive = Instantiate(toggle);
-                        rotActive.transform.SetParent(rotActiveParent.transform);
-                        rotActive.transform.localScale = Vector3.one;
-                        rotActive.name = "visibility not";
-                        rotActive.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-                    }
+                    //    var parentDropdown = x.GetComponent<Dropdown>();
+                    //    parentDropdown.onValueChanged.RemoveAllListeners();
+                    //    parentDropdown.options.Clear();
+                    //    parentDropdown.options = new List<Dropdown.OptionData>()
+                    //    {
+                    //        new Dropdown.OptionData("Always"),
+                    //        new Dropdown.OptionData("Boosting"),
+                    //        new Dropdown.OptionData("Being Hit"),
+                    //        new Dropdown.OptionData("In Zen Mode"),
+                    //        new Dropdown.OptionData("Health Percentage"),
+                    //        new Dropdown.OptionData("Health Equals Greater"),
+                    //        new Dropdown.OptionData("Health Equals"),
+                    //        new Dropdown.OptionData("Health Greater"),
+                    //        new Dropdown.OptionData("Key Held"),
+                    //    };
+                    //}
+
+                    ////Visibility Health Percentage
+                    //{
+                    //    var rotOffsetLabel = Instantiate(rotLabel);
+                    //    rotOffsetLabel.transform.SetParent(left);
+                    //    rotOffsetLabel.transform.localScale = Vector3.one;
+                    //    rotOffsetLabel.name = "label";
+
+                    //    rotOffsetLabel.transform.GetChild(0).GetComponent<Text>().text = "Visibility Properties";
+
+                    //    var rotOffset = Instantiate(rotField);
+                    //    rotOffset.transform.SetParent(left);
+                    //    rotOffset.transform.localScale = Vector3.one;
+                    //    rotOffset.name = "visibility health percentage";
+
+                    //    var rotActiveParent = new GameObject("p");
+                    //    rotActiveParent.transform.SetParent(rotOffset.transform);
+                    //    rotActiveParent.transform.localScale = Vector3.one;
+                    //    rotActiveParent.transform.SetAsFirstSibling();
+                    //    rotActiveParent.AddComponent<RectTransform>();
+
+                    //    var rotActive = Instantiate(toggle);
+                    //    rotActive.transform.SetParent(rotActiveParent.transform);
+                    //    rotActive.transform.localScale = Vector3.one;
+                    //    rotActive.name = "visibility not";
+                    //    rotActive.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+                    //}
 
                     //Color
                     {
@@ -773,26 +807,6 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
 
-                //objectDialogTF.GetChild(0).GetComponent<Image>().color = LSColors.HexToColor("E57373");
-                //objectTitle = objectDialogTF.GetChild(0).GetChild(0).GetComponent<Text>();
-                //objectTitle.text = "- Base Name -";
-
-                //objectText = objectDialogTF.Find("Text").GetComponent<Text>();
-
-                //var scrollView2 = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
-                //objectDialogContent = scrollView2.transform;
-                //objectDialogContent.SetParent(objectDialogTF);
-                //objectDialogContent.localScale = Vector3.one;
-                //scrollView.name = "Scroll View";
-
-                //var glg2 = scrollView2.AddComponent<GridLayoutGroup>();
-                //glg2.cellSize = new Vector2(124f, 64f);
-                //glg2.spacing = new Vector2(4f, 4f);
-
-                //LSHelpers.DeleteChildren(scrollView2.transform.Find("Viewport/Content"), false);
-
-                //scrollView2.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 512f);
-
                 #region Dropdown
 
                 EditorHelper.AddEditorDropdown("Player Editor", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png"), delegate ()
@@ -800,49 +814,9 @@ namespace EditorManagement.Functions.Editors
                     OpenDialog();
                 });
 
-                //GameObject timelineZoom = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/View/View Dropdown/Grid View");
-                //timelineZoom.SetActive(true);
-                //RectTransform timelineZoomRT = timelineZoom.transform.GetChild(2).gameObject.GetComponent<RectTransform>();
-
-                //Text timelineZoomText1 = timelineZoom.transform.GetChild(0).gameObject.GetComponent<Text>();
-                //RectTransform timelineZoomTextRT1 = timelineZoom.transform.GetChild(0).gameObject.GetComponent<RectTransform>();
-
-                //timelineZoomText1.text = "Player Editor";
-                //timelineZoomText1.fontSize = 20;
-                //timelineZoomTextRT1.sizeDelta = new Vector2(170, 0);
-
-                //Text timelineZoomText2 = timelineZoom.transform.GetChild(1).gameObject.GetComponent<Text>();
-
-                //timelineZoomText2.text = RTEditor.GetEditorProperty("Player Editor Open Key").GetConfigEntry<KeyCode>().Value.ToString();
-                //timelineZoomText2.fontSize = 20;
-
-                //timelineZoomRT.anchoredPosition = new Vector2(-26f, 0f);
-                //timelineZoomRT.sizeDelta = new Vector2(22, 0);
-                //timelineZoom.gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
-                //{
-                //    OpenDialog();
-                //});
-
-                //string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png";
-
-                //if (RTFile.FileExists("BepInEx/plugins/Assets/editor_gui_player.png"))
-                //{
-                //    Image spriteReloader = timelineZoom.transform.Find("Image").GetComponent<Image>();
-
-                //    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-                //    {
-                //        spriteReloader.sprite = cover;
-                //    }, delegate (string errorFile)
-                //    {
-                //        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-                //    }));
-                //}
-                //else
-                //{
-                //    Debug.LogErrorFormat("{0}Missing editor_gui_player.png!", EditorPlugin.className);
-                //}
-
                 #endregion
+
+                StartCoroutine(GenerateItems());
 
                 EditorHelper.AddEditorDialog("Player Object Editor", objectDialog);
             }
@@ -856,34 +830,559 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void RenderCustomDialog(Dictionary<string, object> _dictionary)
+        public Dictionary<string, object> UIElements { get; set; }
+
+        public T GetElement<T>(string str) => (T)UIElements[str];
+
+        GameObject BarGenerator(GameObject singleInput, GameObject label, Transform parent, string name, string key)
+        {
+            var bar = singleInput.Duplicate(parent, name);
+            bar.transform.localScale = Vector3.one;
+            Destroy(bar.GetComponent<InputField>());
+            Destroy(bar.GetComponent<EventInfo>());
+            Destroy(bar.GetComponent<EventTrigger>());
+
+            UIElements.Add(key + " GameObject", bar);
+
+            LSHelpers.DeleteChildren(bar.transform);
+
+            TooltipHelper.AddTooltip(bar, key, "");
+
+            var l = label.Duplicate(bar.transform, "label", 0);
+            l.transform.localScale = Vector3.one;
+            l.transform.GetChild(0).GetComponent<Text>().text = key;
+            l.transform.AsRT().sizeDelta = new Vector2(354f, 20f);
+
+            l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+            var image = bar.GetComponent<Image>();
+            image.enabled = true;
+            image.color = new Color(1f, 1f, 1f, 0.03f);
+
+            return bar;
+        }
+
+        public IEnumerator GenerateItems()
+        {
+            UIElements = new Dictionary<string, object>();
+
+            #region UI Elements
+
+            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+            var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
+            var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
+            var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+            var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
+            var stringInput = GameObject.Find("TimelineBar/GameObject/Time Input");
+            var colorsInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color");
+
+            #endregion
+
+            var parent = editorDialogContent.Find("Viewport/Content");
+            foreach (var key in PlayerModel.Values)
+            {
+                // String
+                if (key == "Base Name" || key.Contains("Color") && key.Contains("Custom"))
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [STRING]", key);
+
+                    var x = Instantiate(stringInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    x.transform.AsRT().sizeDelta = new Vector2(366f, 32f);
+
+                    var xif = x.GetComponent<InputField>();
+                    xif.onValueChanged.RemoveAllListeners();
+                    xif.characterValidation = InputField.CharacterValidation.None;
+                    xif.characterLimit = 0;
+                    if (key.Contains("Color") && key.Contains("Custom"))
+                        xif.characterLimit = 8;
+                    xif.textComponent.fontSize = 18;
+                    xif.onEndEdit.RemoveAllListeners();
+                    xif.onEndEdit.AddListener(delegate (string _val)
+                    {
+                        inst.StartCoroutine(RenderDialog());
+                    });
+
+                    UIElements.Add(key, xif);
+                }
+
+                // Integer
+                if (key == "Base Health" || key == "Boost Particles Amount")
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [INT]", key);
+
+                    var vector2 = Instantiate(vector2Input);
+                    vector2.transform.SetParent(bar.transform);
+                    vector2.transform.localScale = Vector3.one;
+
+                    Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
+                    vector2.transform.Find("x").localScale = Vector3.one;
+                    vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
+                    var vxif = vector2.transform.Find("x").GetComponent<InputField>();
+                    vxif.onValueChanged.RemoveAllListeners();
+                    vxif.characterValidation = InputField.CharacterValidation.Integer;
+
+                    TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDeltaInt(vxif, 1, 1, 100));
+
+                    TriggerHelper.IncreaseDecreaseButtonsInt(vxif, 1);
+
+                    DestroyImmediate(vector2.transform.Find("y").gameObject);
+
+                    UIElements.Add(key, vxif);
+                }
+
+                // Shape Dropdowns
+                if (key.Contains("Shape"))
+                {
+                    // Shape
+                    {
+                        var bar = BarGenerator(singleInput, label, parent, "input [ENUM]", key);
+
+                        var x = Instantiate(dropdownInput);
+                        x.transform.SetParent(bar.transform);
+                        x.transform.localScale = Vector3.one;
+
+                        var xRT = x.transform.AsRT();
+                        xRT.anchoredPosition = new Vector2(624f, -16f);
+                        xRT.sizeDelta = new Vector2(366f, 32f);
+
+                        Destroy(x.GetComponent<HoverTooltip>());
+
+                        var dropdown = x.GetComponent<Dropdown>();
+                        dropdown.options.Clear();
+                        dropdown.onValueChanged.RemoveAllListeners();
+
+                        dropdown.options = GetShapes();
+
+                        var hide = x.GetComponent<HideDropdownOptions>();
+                        hide.remove = true;
+                        hide.DisabledOptions = new List<bool>
+                        {
+                            false,
+                            false,
+                            false,
+                            false,
+                            true,
+                            false,
+                            true,
+                            false,
+                            false,
+                        };
+
+                        UIElements.Add(key, dropdown);
+                    }
+
+                    // Shape Option
+                    {
+                        var bar = BarGenerator(singleInput, label, parent, "input [ENUM]", key + " Option");
+
+                        var x = Instantiate(dropdownInput);
+                        x.transform.SetParent(bar.transform);
+                        x.transform.localScale = Vector3.one;
+
+                        var xRT = x.transform.AsRT();
+                        xRT.anchoredPosition = new Vector2(624f, -16f);
+                        xRT.sizeDelta = new Vector2(366f, 32f);
+
+                        Destroy(x.GetComponent<HoverTooltip>());
+                        Destroy(x.GetComponent<HideDropdownOptions>());
+
+                        var dropdown = x.GetComponent<Dropdown>();
+                        dropdown.options.Clear();
+                        dropdown.onValueChanged.RemoveAllListeners();
+
+                        dropdown.options = GetShapeOptions(0);
+
+                        UIElements.Add(key + " Option", dropdown);
+                    }
+                }
+
+                // Vector2
+                if (key.Contains("Position") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Scale") && !key.Contains("Particles") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Force") || key.Contains("Origin"))
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [VECTOR2]", key);
+
+                    var vector2 = Instantiate(vector2Input);
+                    vector2.transform.SetParent(bar.transform);
+                    vector2.transform.localScale = Vector3.one;
+
+                    Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
+                    vector2.transform.Find("x").localScale = Vector3.one;
+                    vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
+                    var vxif = vector2.transform.Find("x").GetComponent<InputField>();
+                    vxif.onValueChanged.RemoveAllListeners();
+
+                    Destroy(vector2.transform.Find("y").GetComponent<EventInfo>());
+                    vector2.transform.Find("y").localScale = Vector3.one;
+                    vector2.transform.Find("y").GetChild(0).localScale = Vector3.one;
+                    var vyif = vector2.transform.Find("y").GetComponent<InputField>();
+                    vyif.onValueChanged.RemoveAllListeners();
+
+                    TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDelta(vxif, multi: true), TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
+                    TriggerHelper.AddEventTriggerParams(vector2.transform.Find("y").gameObject, TriggerHelper.ScrollDelta(vyif, multi: true), TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
+
+                    TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
+                    TriggerHelper.IncreaseDecreaseButtons(vyif, 1f);
+
+                    UIElements.Add(key + " X", vxif);
+                    UIElements.Add(key + " Y", vyif);
+                }
+
+                // Single
+                if (key.Contains("Scale") && (key.Contains("Start") || key.Contains("End")) && !key.Contains("Pulse") && !key.Contains("Bullet") ||
+                    key.Contains("Rotation") && !key.Contains("Easing") ||
+                    key == "Tail Base Distance" ||
+                    key.Contains("Opacity") && !key.Contains("Easing") ||
+                    key.Contains("Lifetime") ||
+                    key.Contains("Start Width") ||
+                    key.Contains("End Width") ||
+                    key.Contains("Trail Time") ||
+                    key == "Boost Particles Duration" ||
+                    key.Contains("Amount") && !key.Contains("Boost") ||
+                    key.Contains("Speed") || key.Contains("Depth") || key == "Pulse Duration" ||
+                    key.Contains("Cooldown") || key.Contains("Boost Time") || key == "Bullet Lifetime" || key.Contains("Duration") ||
+                    key == "Tail Base Time")
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [FLOAT]", key);
+
+                    var vector2 = Instantiate(vector2Input);
+                    vector2.transform.SetParent(bar.transform);
+                    vector2.transform.localScale = Vector3.one;
+
+                    Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
+                    vector2.transform.Find("x").localScale = Vector3.one;
+                    vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
+                    var vxif = vector2.transform.Find("x").GetComponent<InputField>();
+                    vxif.onValueChanged.RemoveAllListeners();
+
+                    TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDelta(vxif));
+
+                    TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
+
+                    Destroy(vector2.transform.Find("y").gameObject);
+
+                    UIElements.Add(key, vxif);
+                }
+
+                // Tail Base Mode Dropdown
+                if (key == "Tail Base Mode")
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [ENUM]", key);
+
+                    var x = Instantiate(dropdownInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+
+                    var xRT = x.transform.AsRT();
+                    xRT.anchoredPosition = new Vector2(624f, -16f);
+                    xRT.sizeDelta = new Vector2(366f, 32f);
+
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    var dropdown = x.GetComponent<Dropdown>();
+                    dropdown.options.Clear();
+                    dropdown.onValueChanged.RemoveAllListeners();
+
+                    dropdown.options = new List<Dropdown.OptionData>
+                    {
+                        new Dropdown.OptionData("Legacy"),
+                        new Dropdown.OptionData("Dev+")
+                    };
+
+                    UIElements.Add(key, dropdown);
+                }
+
+                // Base Rotate Mode
+                if (key == "Base Rotate Mode")
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [ENUM]", key);
+
+                    var x = Instantiate(dropdownInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+
+                    var xRT = x.transform.AsRT();
+                    xRT.anchoredPosition = new Vector2(624f, -16f);
+                    xRT.sizeDelta = new Vector2(366f, 32f);
+
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    var dropdown = x.GetComponent<Dropdown>();
+                    dropdown.options.Clear();
+                    dropdown.onValueChanged.RemoveAllListeners();
+
+                    dropdown.options = new List<Dropdown.OptionData>
+                    {
+                        new Dropdown.OptionData("Face Direction"),
+                        new Dropdown.OptionData("None"),
+                        new Dropdown.OptionData("Flip X"),
+                        new Dropdown.OptionData("Flip Y")
+                    };
+
+                    UIElements.Add(key, dropdown);
+                }
+
+                // GUI Health Mode
+                if (key == "GUI Health Mode")
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [ENUM]", key);
+
+                    var x = Instantiate(dropdownInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+
+                    var xRT = x.transform.AsRT();
+                    xRT.anchoredPosition = new Vector2(624f, -16f);
+                    xRT.sizeDelta = new Vector2(366f, 32f);
+
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    var dropdown = x.GetComponent<Dropdown>();
+                    dropdown.options.Clear();
+                    dropdown.onValueChanged.RemoveAllListeners();
+
+                    dropdown.options = new List<Dropdown.OptionData>
+                    {
+                        new Dropdown.OptionData("Images"),
+                        new Dropdown.OptionData("Text"),
+                        new Dropdown.OptionData("Equals Bar"),
+                        new Dropdown.OptionData("Bar"),
+                    };
+
+                    UIElements.Add(key, dropdown);
+                }
+
+                // Easing Dropdown
+                if (key.Contains("Easing"))
+                {
+                    var bar = BarGenerator(singleInput, label, parent, "input [ENUM]", key);
+
+                    var x = Instantiate(dropdownInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+
+                    var xRT = x.transform.AsRT();
+                    xRT.anchoredPosition = new Vector2(624f, -16f);
+                    xRT.sizeDelta = new Vector2(366f, 32f);
+
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    var dropdown = x.GetComponent<Dropdown>();
+                    dropdown.options.Clear();
+                    dropdown.onValueChanged.RemoveAllListeners();
+
+                    dropdown.options = EditorManager.inst.CurveOptions.Select(x => new Dropdown.OptionData(x.name, x.icon)).ToList();
+
+                    UIElements.Add(key, dropdown);
+                }
+
+                // Color
+                if (key.Contains("Color") && !key.Contains("Easing") && !key.Contains("Custom") && !key.Contains("Duration"))
+                {
+                    var bar = singleInput.Duplicate(parent, "input [COLOR]");
+                    bar.transform.localScale = Vector3.one;
+                    Destroy(bar.GetComponent<InputField>());
+                    Destroy(bar.GetComponent<EventInfo>());
+                    Destroy(bar.GetComponent<EventTrigger>());
+
+                    UIElements.Add(key + " GameObject", bar);
+
+                    LSHelpers.DeleteChildren(bar.transform);
+                    bar.transform.AsRT().sizeDelta = new Vector2(750f, 116f);
+
+                    TooltipHelper.AddTooltip(bar, key, "");
+
+                    var l = label.Duplicate(bar.transform, "label", 0);
+                    l.transform.localScale = Vector3.one;
+                    l.transform.GetChild(0).GetComponent<Text>().text = key;
+                    l.transform.AsRT().sizeDelta = new Vector2(354f, 20f);
+
+                    l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var x = Instantiate(colorsInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    for (int i = 19; i < 26; i++)
+                    {
+                        var colorButton = Instantiate(x.transform.GetChild(0).gameObject);
+                        colorButton.name = i.ToString();
+                        colorButton.transform.SetParent(x.transform);
+                        colorButton.transform.localScale = Vector3.one;
+                    }
+
+                    var list = new List<Toggle>();
+                    for (int i = 0; i < x.transform.childCount; i++)
+                    {
+                        if (x.transform.GetChild(i).gameObject.TryGetComponent(out Toggle toggle))
+                        {
+                            list.Add(toggle);
+                        }
+                    }
+
+                    UIElements.Add(key, list);
+                }
+
+                // Bool
+                if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate" || key == "Bullet Constant" || key == "Bullet Hurt Players" || key == "Bullet AutoKill")
+                {
+                    var bar = singleInput.Duplicate(parent, "input [BOOL]");
+                    bar.transform.localScale = Vector3.one;
+                    Destroy(bar.GetComponent<InputField>());
+                    Destroy(bar.GetComponent<EventInfo>());
+                    Destroy(bar.GetComponent<EventTrigger>());
+
+                    UIElements.Add(key + " GameObject", bar);
+
+                    LSHelpers.DeleteChildren(bar.transform);
+
+                    TooltipHelper.AddTooltip(bar, key, "");
+
+                    var l = label.Duplicate(bar.transform, "label", 0);
+                    l.transform.localScale = Vector3.one;
+                    l.transform.GetChild(0).GetComponent<Text>().text = key;
+                    l.transform.AsRT().sizeDelta = new Vector2(688f, 20f);
+
+                    l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var x = Instantiate(boolInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+
+                    var xt = x.GetComponent<Toggle>();
+                    xt.onValueChanged.RemoveAllListeners();
+
+                    UIElements.Add(key, xt);
+                }
+
+                // Button
+                if (key == "Custom Objects")
+                {
+                    //var bar = Instantiate(singleInput);
+                    //DestroyImmediate(bar.GetComponent<InputField>());
+                    //DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
+                    //Destroy(bar.GetComponent<EventInfo>());
+                    //Destroy(bar.GetComponent<EventTrigger>());
+
+                    //UIElements.Add(key + " GameObject", bar);
+
+                    //LSHelpers.DeleteChildren(bar.transform);
+                    //bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
+                    //bar.transform.localScale = Vector3.one;
+                    //bar.name = "input [BUTTON]";
+
+                    //TooltipHelper.AddTooltip(bar, key, "");
+
+                    //var l = label.Duplicate(bar.transform, "label", 0);
+                    //l.transform.localScale = Vector3.one;
+                    //l.transform.GetChild(0).GetComponent<Text>().text = key;
+                    //l.transform.AsRT().sizeDelta = new Vector2(354f, 20f);
+
+                    //l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+                    var bar = BarGenerator(singleInput, label, parent, "input [BUTTON]", key);
+                    DestroyImmediate(bar.GetComponent<InputField>());
+                    DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var btt = bar.AddComponent<Button>();
+                    //btt.onClick.AddListener(delegate ()
+                    //{
+                    //    if (((Dictionary<string, object>)dict["Custom Objects"]).Count > 0)
+                    //        currentID = ((Dictionary<string, object>)dict["Custom Objects"]).ElementAt(0).Key;
+
+                    //    RenderCustomDialog(dict);
+                    //    RenderCustomObjects(dict);
+                    //});
+
+                    UIElements.Add(key, btt);
+                }
+            }
+
+            var b = BarGenerator(singleInput, label, parent, "input [NULL]", "Cannot edit default Player Models!");
+            b.transform.Find("label").AsRT().sizeDelta = new Vector2(554f, 20f);
+
+            TooltipHelper.AddTooltip(b, "Default player models cannot be edited.", "");
+
+            yield break;
+        }
+
+        public int VisibilityToInt(string vis)
+        {
+            switch (vis)
+            {
+                case "isBoosting": return 0;
+                case "isTakingHit": return 1;
+                case "isZenMode": return 2;
+                case "isHealthPercentageGreater": return 3;
+                case "isHealthGreaterEquals": return 4;
+                case "isHealthEquals": return 5;
+                case "isHealthGreater": return 6;
+                case "isPressingKey": return 7;
+                default: return 0;
+            }
+        }
+
+        public string IntToVisibility(int val)
+        {
+            switch (val)
+            {
+                case 0: return "isBoosting";
+                case 1: return "isTakingHit";
+                case 2: return "isZenMode";
+                case 3: return "isHealthPercentageGreater";
+                case 4: return "isHealthGreaterEquals";
+                case 5: return "isHealthEquals";
+                case 6: return "isHealthGreater";
+                case 7: return "isPressingKey";
+                default: return "isBoosting";
+            }
+        }
+
+        public void RenderCustomDialog(PlayerModel playerModel)
         {
             EditorManager.inst.ShowDialog("Player Object Editor");
             var content = objectDialogTF.Find("data/left/Object Scroll View/Viewport/Content");
 
-            var customObjects = (Dictionary<string, object>)_dictionary["Custom Objects"];
+            var customObjects = playerModel.customObjects;
 
             if (customObjects.Count > 0 && !string.IsNullOrEmpty(currentID) && customObjects.ContainsKey(currentID))
             {
                 content.gameObject.SetActive(true);
-                var currentObject = (Dictionary<string, object>)customObjects[currentID];
+                var currentObject = customObjects[currentID];
 
                 var nameIF = content.Find("name/name").GetComponent<InputField>();
                 nameIF.onValueChanged.ClearAll();
                 nameIF.onEndEdit.RemoveAllListeners();
-                nameIF.text = (string)currentObject["Name"];
+                nameIF.text = currentObject.name;
                 nameIF.onValueChanged.AddListener(delegate (string _val)
                 {
-                    currentObject["Name"] = _val;
+                    currentObject.name = _val;
                 });
                 nameIF.onEndEdit.AddListener(delegate (string _val)
                 {
-                    RenderCustomObjects(_dictionary);
+                    RenderCustomObjects(playerModel);
                 });
 
                 //Position
                 {
-                    var val = (Vector2)currentObject["Position"];
+                    var val = currentObject.position;
                     var x = content.Find("position/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.x.ToString();
@@ -894,16 +1393,22 @@ namespace EditorManagement.Functions.Editors
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        currentObject["Position"] = new Vector2(float.Parse(_val), float.Parse(y.text));
+                        if (float.TryParse(_val, out float xv) && float.TryParse(y.text, out float yv))
+                        {
+                            currentObject.position = new Vector2(xv, yv);
 
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     y.onValueChanged.AddListener(delegate (string _val)
                     {
-                        currentObject["Position"] = new Vector2(float.Parse(x.text), float.Parse(_val));
+                        if (float.TryParse(x.text, out float xv) && float.TryParse(_val, out float yv))
+                        {
+                            currentObject.position = new Vector2(xv, yv);
 
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
@@ -915,7 +1420,7 @@ namespace EditorManagement.Functions.Editors
 
                 //Scale
                 {
-                    var val = (Vector2)currentObject["Scale"];
+                    var val = currentObject.scale;
                     var x = content.Find("scale/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.x.ToString();
@@ -926,16 +1431,22 @@ namespace EditorManagement.Functions.Editors
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        currentObject["Scale"] = new Vector2(float.Parse(_val), float.Parse(y.text));
+                        if (float.TryParse(_val, out float xv) && float.TryParse(y.text, out float yv))
+                        {
+                            currentObject.scale = new Vector2(xv, yv);
 
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     y.onValueChanged.AddListener(delegate (string _val)
                     {
-                        currentObject["Scale"] = new Vector2(float.Parse(x.text), float.Parse(_val));
+                        if (float.TryParse(x.text, out float xv) && float.TryParse(_val, out float yv))
+                        {
+                            currentObject.scale = new Vector2(xv, yv);
 
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, multi: true), TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f) });
@@ -947,16 +1458,19 @@ namespace EditorManagement.Functions.Editors
 
                 //Rotation
                 {
-                    var val = (float)currentObject["Rotation"];
+                    var val = currentObject.rotation;
                     var x = content.Find("rotation/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.ToString();
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        currentObject["Rotation"] = float.Parse(_val);
+                        if (float.TryParse(_val, out float rot))
+                        {
+                            currentObject.rotation = rot;
 
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 15f, 3f) });
@@ -966,16 +1480,19 @@ namespace EditorManagement.Functions.Editors
 
                 //Depth
                 {
-                    var val = (float)currentObject["Depth"];
+                    var val = currentObject.depth;
                     var x = content.Find("depth/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.ToString();
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        currentObject["Depth"] = float.Parse(_val);
+                        if (float.TryParse(_val, out float depth))
+                        {
+                            currentObject.depth = depth;
 
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f) });
@@ -1000,8 +1517,8 @@ namespace EditorManagement.Functions.Editors
                         }
                         if (i > 4 && i < 23)
                         {
-                            int num = i - 5;
-                            x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.objectColors[num];
+                            int colnum = i - 5;
+                            x.transform.Find(strr).GetComponent<Image>().color = GameManager.inst.LiveTheme.objectColors[colnum];
                         }
                         if (i == 23)
                         {
@@ -1009,7 +1526,7 @@ namespace EditorManagement.Functions.Editors
                         }
                         if (i == 24)
                         {
-                            x.transform.Find(strr).GetComponent<Image>().color = LSColors.HexToColor(currentObject.ContainsKey("Custom Color") ? (string)currentObject["Custom Color"] : "FFFFFF");
+                            x.transform.Find(strr).GetComponent<Image>().color = LSColors.HexToColor(currentObject.customColor);
                         }
                         if (i == 25)
                         {
@@ -1017,19 +1534,19 @@ namespace EditorManagement.Functions.Editors
                         }
                     }
 
-                    UpdateCustomColorButtons(x, "Color", currentObject);
+                    UpdateCustomColorButtons(x, currentObject);
                 }
 
                 //Custom Color
                 {
                     var x = content.Find("custom color/name").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
-                    x.text = (string)currentObject["Custom Color"];
+                    x.text = currentObject.customColor;
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
                         if (_val.Length == 6)
                         {
-                            currentObject["Custom Color"] = _val;
+                            currentObject.customColor = _val;
 
                             UpdatePlayers();
                         }
@@ -1038,19 +1555,19 @@ namespace EditorManagement.Functions.Editors
 
                 //Opacity
                 {
-                    var val = (float)currentObject["Opacity"];
+                    var val = currentObject.opacity;
                     var x = content.Find("opacity/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.ToString();
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        var num = float.Parse(_val);
-                        num = Mathf.Clamp(num, 0f, 1F);
+                        if (float.TryParse(_val, out float opacity))
+                        {
+                            currentObject.opacity = Mathf.Clamp(opacity, 0f, 1f);
 
-                        currentObject["Opacity"] = num;
-
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 1f) });
@@ -1060,13 +1577,13 @@ namespace EditorManagement.Functions.Editors
 
                 //Parent
                 {
-                    var val = (int)currentObject["Parent"];
+                    var val = (int)currentObject.parent;
                     var x = content.Find("parent").GetComponent<Dropdown>();
                     x.onValueChanged.RemoveAllListeners();
                     x.value = val;
                     x.onValueChanged.AddListener(delegate (int _val)
                     {
-                        currentObject["Parent"] = _val;
+                        currentObject.parent = _val;
 
                         UpdatePlayers();
                     });
@@ -1074,19 +1591,19 @@ namespace EditorManagement.Functions.Editors
 
                 //Parent Pos Offset
                 {
-                    var val = (float)currentObject["Parent Position Offset"];
+                    var val = currentObject.positionOffset;
                     var x = content.Find("parent pos offset/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.ToString();
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        var num = float.Parse(_val);
-                        num = Mathf.Clamp(num, 0.001f, 1F);
+                        if (float.TryParse(_val, out float num))
+                        {
+                            currentObject.positionOffset = Mathf.Clamp(num, 0.001f, 1f);
 
-                        currentObject["Parent Position Offset"] = num;
-
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
@@ -1096,19 +1613,19 @@ namespace EditorManagement.Functions.Editors
 
                 //Parent Sca Offset
                 {
-                    var val = (float)currentObject["Parent Scale Offset"];
+                    var val = currentObject.scaleOffset;
                     var x = content.Find("parent sca offset/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.ToString();
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        var num = float.Parse(_val);
-                        num = Mathf.Clamp(num, 0.001f, 1F);
+                        if (float.TryParse(_val, out float num))
+                        {
+                            currentObject.scaleOffset = Mathf.Clamp(num, 0.001f, 1f);
 
-                        currentObject["Parent Scale Offset"] = num;
-
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
@@ -1118,13 +1635,13 @@ namespace EditorManagement.Functions.Editors
 
                 //Parent Sca Active
                 {
-                    var val = (bool)currentObject["Parent Scale Active"];
+                    var val = (bool)currentObject.scaleParent;
                     var x = content.Find("parent sca offset/p/parent sca active").GetComponent<Toggle>();
                     x.onValueChanged.RemoveAllListeners();
                     x.isOn = val;
                     x.onValueChanged.AddListener(delegate (bool _val)
                     {
-                        currentObject["Parent Scale Active"] = _val;
+                        currentObject.scaleParent = _val;
 
                         UpdatePlayers();
                     });
@@ -1132,19 +1649,19 @@ namespace EditorManagement.Functions.Editors
 
                 //Parent Rot Offset
                 {
-                    var val = (float)currentObject["Parent Rotation Offset"];
+                    var val = currentObject.rotationOffset;
                     var x = content.Find("parent rot offset/x").GetComponent<InputField>();
                     x.onValueChanged.ClearAll();
                     x.text = val.ToString();
 
                     x.onValueChanged.AddListener(delegate (string _val)
                     {
-                        var num = float.Parse(_val);
-                        num = Mathf.Clamp(num, 0.001f, 1F);
+                        if (float.TryParse(_val, out float num))
+                        {
+                            currentObject.rotationOffset = Mathf.Clamp(num, 0.001f, 1f);
 
-                        currentObject["Parent Rotation Offset"] = num;
-
-                        UpdatePlayers();
+                            UpdatePlayers();
+                        }
                     });
 
                     TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0.001f, 1f) });
@@ -1154,13 +1671,13 @@ namespace EditorManagement.Functions.Editors
 
                 //Parent Rot Active
                 {
-                    var val = (bool)currentObject["Parent Rotation Active"];
+                    var val = (bool)currentObject.rotationParent;
                     var x = content.Find("parent rot offset/p/parent rot active").GetComponent<Toggle>();
                     x.onValueChanged.RemoveAllListeners();
                     x.isOn = val;
                     x.onValueChanged.AddListener(delegate (bool _val)
                     {
-                        currentObject["Parent Rotation Active"] = _val;
+                        currentObject.rotationParent = _val;
 
                         UpdatePlayers();
                     });
@@ -1168,7 +1685,7 @@ namespace EditorManagement.Functions.Editors
 
                 //Shape
                 {
-                    var val = (Vector2Int)currentObject["Shape"];
+                    var val = currentObject.shape;
                     //Shape
                     {
                         var shape = content.Find("shape/x").GetComponent<Dropdown>();
@@ -1177,94 +1694,241 @@ namespace EditorManagement.Functions.Editors
 
                         shape.options = GetShapes();
 
-                        shape.value = val.x;
+                        shape.value = val.type;
 
                         var shapeOption = content.Find("shape option/x").GetComponent<Dropdown>();
                         shapeOption.options.Clear();
                         shapeOption.onValueChanged.RemoveAllListeners();
 
-                        shapeOption.options = GetShapeOptions(val.x);
+                        shapeOption.options = GetShapeOptions(val.type);
 
-                        shapeOption.value = val.y;
+                        shapeOption.value = val.option;
 
                         shape.onValueChanged.AddListener(delegate (int _val)
                         {
-                            currentObject["Shape"] = new Vector2Int(_val, 0);
+                            currentObject.shape = ShapeManager.inst.Shapes2D[_val][0];
 
-                            RenderCustomDialog(_dictionary);
+                            RenderCustomDialog(playerModel);
 
                             UpdatePlayers();
                         });
 
                         shapeOption.onValueChanged.AddListener(delegate (int _val)
                         {
-                            currentObject["Shape"] = new Vector2Int(shape.value, _val);
+                            currentObject.shape = ShapeManager.inst.Shapes2D[shape.value][_val];
 
-                            RenderCustomDialog(_dictionary);
+                            RenderCustomDialog(playerModel);
 
                             UpdatePlayers();
                         });
                     }
                 }
 
-                //Visibility
+                LSHelpers.DeleteChildren(visibilityContent);
+                var add = PrefabEditor.inst.CreatePrefab.Duplicate(visibilityContent, "Add");
+                add.transform.Find("Text").GetComponent<Text>().text = "Add Visiblity Setting";
+                ((RectTransform)add.transform).sizeDelta = new Vector2(760f, 32f);
+                var addButton = add.GetComponent<Button>();
+                addButton.onClick.ClearAll();
+                addButton.onClick.AddListener(delegate ()
                 {
-                    var val = (int)currentObject["Visibility"];
-                    var x = content.Find("visibility").GetComponent<Dropdown>();
-                    x.onValueChanged.RemoveAllListeners();
-                    x.value = val;
-                    x.onValueChanged.AddListener(delegate (int _val)
-                    {
-                        currentObject["Visibility"] = _val;
-                        currentObject["Visibility Value"] = 0f;
+                    var newVisibility = new PlayerModel.CustomObject.Visiblity();
+                    newVisibility.command = IntToVisibility(0);
+                    currentObject.visibilitySettings.Add(newVisibility);
+                    RenderCustomDialog(playerModel);
+                });
 
-                        RenderCustomDialog(_dictionary);
-                        UpdatePlayers();
+                var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+                var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+                var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
+                var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+                var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
+                int num = 0;
+                foreach (var visibility in currentObject.visibilitySettings)
+                {
+                    int index = num;
+                    var bar = Instantiate(singleInput);
+
+                    Destroy(bar.GetComponent<EventInfo>());
+                    Destroy(bar.GetComponent<EventTrigger>());
+                    Destroy(bar.GetComponent<InputField>());
+                    Destroy(bar.GetComponent<InputFieldSwapper>());
+
+                    bar.GetComponent<HorizontalLayoutGroup>().spacing = 4;
+
+                    LSHelpers.DeleteChildren(bar.transform);
+                    bar.transform.SetParent(visibilityContent);
+                    bar.transform.localScale = Vector3.one;
+                    bar.name = "input [ENUM]";
+
+                    //var l = Instantiate(label);
+                    //l.transform.SetParent(bar.transform);
+                    //l.transform.SetAsFirstSibling();
+                    //l.transform.localScale = Vector3.one;
+                    //l.transform.GetChild(0).GetComponent<Text>().text = visibility.command;
+                    //l.transform.AsRT().sizeDelta = new Vector2(522f, 20f);
+
+                    //l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var buttonObject = Instantiate(boolInput);
+                    buttonObject.transform.SetParent(bar.transform);
+                    buttonObject.transform.localScale = Vector3.one;
+
+                    var xt = buttonObject.GetComponent<Toggle>();
+                    xt.onValueChanged.RemoveAllListeners();
+                    xt.isOn = visibility.not;
+                    xt.onValueChanged.AddListener(delegate (bool _val)
+                    {
+                        visibility.not = _val;
                     });
+
+                    var x = Instantiate(dropdownInput);
+                    x.transform.SetParent(bar.transform);
+                    x.transform.localScale = Vector3.one;
+
+                    Destroy(x.GetComponent<HoverTooltip>());
+
+                    Destroy(x.GetComponent<HideDropdownOptions>());
+
+                    var dropdown = x.GetComponent<Dropdown>();
+                    dropdown.onValueChanged.RemoveAllListeners();
+                    dropdown.options.Clear();
+                    dropdown.options = new List<Dropdown.OptionData>
+                    {
+                        new Dropdown.OptionData("Is Boosting"),
+                        new Dropdown.OptionData("Is Taking Hit"),
+                        new Dropdown.OptionData("Is Zen Mode"),
+                        new Dropdown.OptionData("Is Health Percentage Greater"),
+                        new Dropdown.OptionData("Is Health Greater Equals"),
+                        new Dropdown.OptionData("Is Health Equals"),
+                        new Dropdown.OptionData("Is Health Greater"),
+                        new Dropdown.OptionData("Is Pressing Key"),
+                    };
+                    dropdown.value = VisibilityToInt(visibility.command);
+                    dropdown.onValueChanged.AddListener(delegate (int _val)
+                    {
+                        visibility.command = IntToVisibility(_val);
+                    });
+
+                    // Value
+                    {
+                        var valueObject = singleInput.Duplicate(bar.transform, "input [FLOAT]");
+
+                        Destroy(valueObject.GetComponent<EventInfo>());
+                        Destroy(valueObject.GetComponent<EventTrigger>());
+                        Destroy(valueObject.GetComponent<InputField>());
+
+                        valueObject.transform.localScale = Vector3.one;
+                        valueObject.transform.GetChild(0).localScale = Vector3.one;
+                        valueObject.transform.AsRT().sizeDelta = new Vector2(50f, 32f);
+
+                        //var l = label.Duplicate(valueObject.transform, "", 0);
+                        //l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                        //l.transform.AsRT().sizeDelta = new Vector2(541f, 20f);
+
+                        //l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+                        var image2 = valueObject.GetComponent<Image>();
+                        image2.enabled = true;
+                        image2.color = new Color(1f, 1f, 1f, 0.03f);
+
+                        var input = valueObject.transform.Find("input");
+                        input.AsRT().sizeDelta = new Vector2(50f, 32f);
+
+                        var xif = input.gameObject.AddComponent<InputField>();
+                        xif.onValueChanged.RemoveAllListeners();
+                        xif.textComponent = input.Find("Text").GetComponent<Text>();
+                        xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                        xif.characterValidation = InputField.CharacterValidation.Integer;
+                        xif.text = visibility.value.ToString();
+                        xif.onValueChanged.AddListener(delegate (string _val)
+                        {
+                            if (float.TryParse(_val, out float result))
+                            {
+                                visibility.value = result;
+                            }
+                        });
+
+                        TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
+
+                        DestroyImmediate(valueObject.transform.Find("<").gameObject);
+                        DestroyImmediate(valueObject.transform.Find(">").gameObject);
+                    }
+
+                    var delete = close.gameObject.Duplicate(bar.transform, "delete");
+
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-5f, 0f);
+
+                    var deleteButton = delete.GetComponent<Button>();
+                    deleteButton.onClick.ClearAll();
+                    deleteButton.onClick.AddListener(delegate ()
+                    {
+                        currentObject.visibilitySettings.RemoveAt(index);
+                        RenderCustomDialog(playerModel);
+                    });
+                    num++;
                 }
 
-                //Visibility Health Percentage
-                {
-                    var val = (float)currentObject["Visibility Value"];
-                    var x = content.Find("visibility health percentage/x").GetComponent<InputField>();
-                    x.onValueChanged.ClearAll();
-                    x.text = val.ToString();
+                ////Visibility
+                //{
+                //    var val = (int)currentObject["Visibility"];
+                //    var x = content.Find("visibility").GetComponent<Dropdown>();
+                //    x.onValueChanged.RemoveAllListeners();
+                //    x.value = val;
+                //    x.onValueChanged.AddListener(delegate (int _val)
+                //    {
+                //        currentObject["Visibility"] = _val;
+                //        currentObject["Visibility Value"] = 0f;
 
-                    x.onValueChanged.AddListener(delegate (string _val)
-                    {
-                        var num = float.Parse(_val);
+                //        RenderCustomDialog(_dictionary);
+                //        UpdatePlayers();
+                //    });
+                //}
 
-                        currentObject["Visibility Value"] = num;
+                ////Visibility Health Percentage
+                //{
+                //    var val = (float)currentObject["Visibility Value"];
+                //    var x = content.Find("visibility health percentage/x").GetComponent<InputField>();
+                //    x.onValueChanged.ClearAll();
+                //    x.text = val.ToString();
 
-                        UpdatePlayers();
-                    });
+                //    x.onValueChanged.AddListener(delegate (string _val)
+                //    {
+                //        var num = float.Parse(_val);
 
-                    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 100f) });
+                //        currentObject["Visibility Value"] = num;
 
-                    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0f, 100f);
-                }
+                //        UpdatePlayers();
+                //    });
 
-                //Visibility Not
-                {
-                    var val = (bool)currentObject["Visibility Not"];
-                    var x = content.Find("visibility health percentage/p/visibility not").GetComponent<Toggle>();
-                    x.onValueChanged.RemoveAllListeners();
-                    x.isOn = val;
-                    x.onValueChanged.AddListener(delegate (bool _val)
-                    {
-                        currentObject["Visibility Not"] = _val;
+                //    TriggerHelper.AddEventTrigger(x.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(x, 0.1f, 10f, 0f, 100f) });
 
-                        UpdatePlayers();
-                    });
-                }
+                //    TriggerHelper.IncreaseDecreaseButtons(x, 1f, 10f, 0f, 100f);
+                //}
+
+                ////Visibility Not
+                //{
+                //    var val = (bool)currentObject["Visibility Not"];
+                //    var x = content.Find("visibility health percentage/p/visibility not").GetComponent<Toggle>();
+                //    x.onValueChanged.RemoveAllListeners();
+                //    x.isOn = val;
+                //    x.onValueChanged.AddListener(delegate (bool _val)
+                //    {
+                //        currentObject["Visibility Not"] = _val;
+
+                //        UpdatePlayers();
+                //    });
+                //}
             }
             else
                 content.gameObject.SetActive(false);
         }
 
-        public static Dictionary<string, object> dictionaryTest;
-
-        public static void RenderCustomObjects(Dictionary<string, object> _dictionary)
+        public void RenderCustomObjects(PlayerModel playerModel)
         {
             var create = objectDialogTF.Find("data/right/create").GetComponent<Button>();
             create.onClick.ClearAll();
@@ -1272,20 +1936,17 @@ namespace EditorManagement.Functions.Editors
             {
                 Debug.LogFormat("{0}Trying to create new object", EditorPlugin.className);
 
-                PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].CreateCustomObject();
+                var addObject = new PlayerModel.CustomObject(playerModel);
+                addObject.id = LSText.randomNumString(16);
+                playerModel.customObjects.Add(addObject.id, addObject);
 
-                var obj = PlayerManager.PlayerModels;
-                var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
-                var currentModel = obj[currentIndex];
-
-                var dict = currentModel.values;
-                var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
+                var customObjects = playerModel.customObjects;
 
                 currentID = customObjects.ElementAt(customObjects.Count - 1).Key;
 
                 UpdatePlayers();
-                RenderCustomObjects(dict);
-                RenderCustomDialog(dict);
+                RenderCustomObjects(playerModel);
+                RenderCustomDialog(playerModel);
             });
 
             var search = objectDialogTF.Find("data/right/search").GetComponent<InputField>();
@@ -1294,17 +1955,18 @@ namespace EditorManagement.Functions.Editors
             search.onValueChanged.AddListener(delegate (string _val)
             {
                 customSearchTerm = _val;
-                RenderCustomObjects(_dictionary);
+                RenderCustomObjects(playerModel);
             });
 
             LSHelpers.DeleteChildren(objectDialogContent);
 
             var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
 
-            var customObjects = (Dictionary<string, object>)_dictionary["Custom Objects"];
+            var customObjects = playerModel.customObjects;
             foreach (var custom in customObjects)
             {
-                var name = (string)((Dictionary<string, object>)custom.Value)["Name"];
+                var customObject = custom.Value;
+                var name = customObject.name;
                 if (string.IsNullOrEmpty(customSearchTerm) || name.ToLower().Contains(customSearchTerm.ToLower()))
                 {
                     string tmpID = custom.Key;
@@ -1322,8 +1984,8 @@ namespace EditorManagement.Functions.Editors
                     button.onClick.AddListener(delegate ()
                     {
                         currentID = tmpID;
-                        RenderCustomDialog(_dictionary);
-                        RenderCustomObjects(_dictionary);
+                        RenderCustomDialog(playerModel);
+                        RenderCustomObjects(playerModel);
                     });
 
                     var dot = gameObject.transform.Find("dot").GetComponent<Image>();
@@ -1355,20 +2017,7 @@ namespace EditorManagement.Functions.Editors
                     dupButton.onClick.ClearAll();
                     dupButton.onClick.AddListener(delegate ()
                     {
-                        PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].DuplicateObject(tmpID);
-
-                        var obj = PlayerManager.PlayerModels;
-                        var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
-                        var currentModel = obj[currentIndex];
-
-                        var dict = currentModel.values;
-                        var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
-
-                        currentID = customObjects.Count > 0 ? customObjects.ElementAt(customObjects.Count - 1).Key : "";
-
-                        UpdatePlayers();
-                        RenderCustomObjects(dict);
-                        RenderCustomDialog(dict);
+                        DuplicateCustomObject();
                     });
 
                     var dupLE = dup.AddComponent<LayoutElement>();
@@ -1387,20 +2036,15 @@ namespace EditorManagement.Functions.Editors
                     deleteButton.onClick.ClearAll();
                     deleteButton.onClick.AddListener(delegate ()
                     {
-                        PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].RemoveCustomObject(tmpID);
+                        playerModel.customObjects.Remove(tmpID);
 
-                        var obj = PlayerManager.PlayerModels;
-                        var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
-                        var currentModel = obj[currentIndex];
-
-                        var dict = currentModel.values;
-                        var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
+                        var customObjects = playerModel.customObjects;
 
                         currentID = customObjects.Count > 0 ? customObjects.ElementAt(customObjects.Count - 1).Key : "";
 
                         UpdatePlayers();
-                        RenderCustomObjects(dict);
-                        RenderCustomDialog(dict);
+                        RenderCustomObjects(playerModel);
+                        RenderCustomDialog(playerModel);
                     });
 
                     var le = delete.AddComponent<LayoutElement>();
@@ -1409,7 +2053,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void OpenDialog()
+        public void OpenDialog()
         {
             if (inst == null)
                 return;
@@ -1419,995 +2063,410 @@ namespace EditorManagement.Functions.Editors
             inst.StartCoroutine(RenderDialog());
         }
 
-        public static IEnumerator RenderDialog()
+        public IEnumerator RenderDialog()
         {
             playerModelDropdown.options.Clear();
 
+            var obj = PlayerManager.PlayerModels;
+            var currentIndex = PlayerManager.GetPlayerModelIndex(playerModelIndex);
+            var currentModel = PlayerManager.PlayerModels[currentIndex];
+
+            int c = PlayerManager.GetPlayerModelInt(currentModel);
+
+            playerModelDropdown.onValueChanged.RemoveAllListeners();
+            playerModelDropdown.options = obj.Values.Select(x => new Dropdown.OptionData(x.basePart.name)).ToList();
+            playerModelDropdown.value = c;
+            playerModelDropdown.onValueChanged.AddListener(delegate (int _val)
             {
-                var obj = PlayerManager.PlayerModels;
-                var currentIndex = PlayerManager.GetPlayerModelIndex(playerModelIndex);
-                var currentModel = PlayerManager.PlayerModels[currentIndex];
+                Debug.LogFormat("{0}Setting Player 1's model index to {1}", EditorPlugin.className, _val);
+                PlayerManager.SetPlayerModelIndex(playerModelIndex, _val);
+                inst.StartCoroutine(RenderDialog());
 
-                int c = PlayerManager.GetPlayerModelInt(currentModel);
+                PlayerManager.RespawnPlayers();
+            });
 
-                playerModelDropdown.onValueChanged.RemoveAllListeners();
-                playerModelDropdown.options = obj.Values.Select(x => new Dropdown.OptionData((string)x.values["Base Name"])).ToList();
-                playerModelDropdown.value = c;
-                playerModelDropdown.onValueChanged.AddListener(delegate (int _val)
+            playerModelIndexIF.onValueChanged.ClearAll();
+            playerModelIndexIF.text = playerModelIndex.ToString();
+            playerModelIndexIF.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int num))
                 {
-                    Debug.LogFormat("{0}Setting Player 1's model index to {1}", EditorPlugin.className, _val);
-                    PlayerManager.SetPlayerModelIndex(playerModelIndex, _val);
+                    num = Mathf.Clamp(num, 0, 3);
+                    playerModelIndex = num;
                     inst.StartCoroutine(RenderDialog());
+                }
+            });
 
-                    PlayerManager.RespawnPlayers();
-                });
+            TriggerHelper.AddEventTrigger(playerModelIndexIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(playerModelIndexIF, 1, 0, 3) });
+            TriggerHelper.IncreaseDecreaseButtonsInt(playerModelIndexIF, 1, 0, 3);
 
-                playerModelIndexIF.onValueChanged.ClearAll();
-                playerModelIndexIF.text = playerModelIndex.ToString();
-                playerModelIndexIF.onValueChanged.AddListener(delegate (string _val)
+            #region UI Elements
+
+            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+            var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
+            var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
+            var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+            var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
+            var stringInput = GameObject.Find("TimelineBar/GameObject/Time Input");
+            var colorsInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color");
+
+            #endregion
+
+            LSHelpers.SetActiveChildren(editorDialogContent.Find("Viewport/Content"), false);
+
+            if (!PlayerModel.DefaultModels.Any(x => currentModel.basePart.id == x.basePart.id))
+            {
+                inst.GetElement<GameObject>("Cannot edit default Player Models! GameObject").SetActive(false);
+                foreach (var key in PlayerModel.Values)
                 {
-                    if (int.TryParse(_val, out int num))
+                    if (key != "Base ID" && (string.IsNullOrEmpty(searchTerm) || key.ToLower().Contains(searchTerm.ToLower())))
                     {
-                        num = Mathf.Clamp(num, 0, 3);
-                        playerModelIndex = num;
-                        inst.StartCoroutine(RenderDialog());
-                    }
-                });
+                        inst.GetElement<GameObject>(key + " GameObject").SetActive(true);
 
-                TriggerHelper.AddEventTrigger(playerModelIndexIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(playerModelIndexIF, 1, 0, 3) });
-                TriggerHelper.IncreaseDecreaseButtonsInt(playerModelIndexIF, 1, 0, 3);
-
-                #region UI Elements
-
-                var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
-                var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-                var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
-                var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
-                var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
-                var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
-                var stringInput = GameObject.Find("TimelineBar/GameObject/Time Input");
-                var colorsInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color");
-
-                #endregion
-
-                LSHelpers.DeleteChildren(editorDialogContent.Find("Viewport/Content"));
-
-                var dict = currentModel.values;
-                var id = (string)dict["Base ID"];
-
-                if (id != "0" && id != "1")
-                {
-                    foreach (var objects in dict)
-                    {
-                        var key = objects.Key;
-
-                        if (key != "Base ID" && (string.IsNullOrEmpty(searchTerm) || key.ToLower().Contains(searchTerm.ToLower())))
+                        //String
+                        if (key == "Base Name" || key.Contains("Color") && key.Contains("Custom"))
                         {
-                            //String
-                            if (key == "Base Name" || key.Contains("Color") && key.Contains("Custom"))
+                            var xif = inst.GetElement<InputField>(key);
+                            xif.onValueChanged.RemoveAllListeners();
+                            xif.characterValidation = InputField.CharacterValidation.None;
+                            xif.characterLimit = 0;
+                            if (key.Contains("Color") && key.Contains("Custom"))
+                                xif.characterLimit = 8;
+                            xif.text = (string)currentModel[key];
+                            xif.textComponent.fontSize = 18;
+                            xif.onValueChanged.AddListener(delegate (string _val)
                             {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
+                                if (!(key.Contains("Color") && key.Contains("Custom")))
+                                    currentModel[key] = _val;
+                                else
+                                    currentModel[key] = _val.Length == 6 || _val.Length == 8 ? _val : LSColors.ColorToHex(LSColors.pink500);
+                            });
+                            //xif.onEndEdit.RemoveAllListeners();
+                            //xif.onEndEdit.AddListener(delegate (string _val)
+                            //{
+                            //    inst.StartCoroutine(RenderDialog());
+                            //});
+                        }
 
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [STRING]";
+                        //Integer
+                        if (key == "Base Health" || key == "Boost Particles Amount")
+                        {
+                            var vxif = inst.GetElement<InputField>(key);
+                            vxif.onValueChanged.RemoveAllListeners();
+                            vxif.characterValidation = InputField.CharacterValidation.Integer;
+                            vxif.text = ((int)currentModel[key]).ToString();
 
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                            vxif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (int.TryParse(_val, out int num))
                                 {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                                    currentModel[key] = num;
+                                    UpdatePlayers();
                                 }
+                            });
+                        }
 
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                        //Shape Dropdowns
+                        if (key.Contains("Shape"))
+                        {
+                            // Shape
+                            {
+                                var dropdown = inst.GetElement<Dropdown>(key);
+                                dropdown.onValueChanged.RemoveAllListeners();
+                                dropdown.options.Clear();
+                                dropdown.options = GetShapes();
+                                dropdown.value = ((Shape)currentModel[key]).type;
 
-                                GameObject x = Instantiate(stringInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                x.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 32f);
-
-                                var xif = x.GetComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.characterValidation = InputField.CharacterValidation.None;
-                                xif.characterLimit = 0;
-                                if (key.Contains("Color") && key.Contains("Custom"))
-                                    xif.characterLimit = 8;
-                                xif.text = (string)objects.Value;
-                                xif.textComponent.fontSize = 18;
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
-                                    if (!(key.Contains("Color") && key.Contains("Custom")))
-                                        dict[key] = _val;
-                                    else
-                                    {
-                                        if (_val.Length == 6 || _val.Length == 8)
-                                        {
-                                            dict[key] = _val;
-                                        }
-                                        else
-                                        {
-                                            dict[key] = LSColors.ColorToHex(LSColors.pink500);
-                                        }
-                                    }
-                                });
-                                xif.onEndEdit.RemoveAllListeners();
-                                xif.onEndEdit.AddListener(delegate (string _val)
-                                {
+                                    currentModel[key] = ShapeManager.inst.Shapes2D[_val][0];
                                     inst.StartCoroutine(RenderDialog());
+                                    UpdatePlayers();
                                 });
                             }
 
-                            //Integer
-                            if (key == "Base Health" || key == "Boost Particles Amount")
+                            // Shape Option
                             {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [INT]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject vector2 = Instantiate(vector2Input);
-                                vector2.transform.SetParent(bar.transform);
-                                vector2.transform.localScale = Vector3.one;
-
-                                var vtmp = (int)objects.Value;
-
-                                Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
-                                vector2.transform.Find("x").localScale = Vector3.one;
-                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
-                                var vxif = vector2.transform.Find("x").GetComponent<InputField>();
-                                {
-                                    vxif.onValueChanged.RemoveAllListeners();
-                                    vxif.characterValidation = InputField.CharacterValidation.Integer;
-                                    vxif.text = vtmp.ToString();
-
-                                    vxif.onValueChanged.AddListener(delegate (string _val)
-                                    {
-                                        vtmp = int.Parse(_val);
-                                        dict[key] = vtmp;
-                                        UpdatePlayers();
-                                    });
-                                }
-
-                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDeltaInt(vxif, 1, 1, 100));
-
-                                TriggerHelper.IncreaseDecreaseButtonsInt(vxif, 1);
-
-                                DestroyImmediate(vector2.transform.Find("y").gameObject);
-                            }
-
-                            //Shape Dropdowns
-                            if (key.Contains("Shape"))
-                            {
-                                //Shape
-                                {
-                                    var bar = Instantiate(singleInput);
-                                    Destroy(bar.GetComponent<InputField>());
-                                    Destroy(bar.GetComponent<EventInfo>());
-                                    Destroy(bar.GetComponent<EventTrigger>());
-
-                                    LSHelpers.DeleteChildren(bar.transform);
-                                    bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                    bar.transform.localScale = Vector3.one;
-                                    bar.name = "input [ENUM]";
-
-                                    TooltipHelper.AddTooltip(bar, key, "");
-
-                                    var l = Instantiate(label);
-                                    l.transform.SetParent(bar.transform);
-                                    l.transform.SetAsFirstSibling();
-                                    l.transform.localScale = Vector3.one;
-                                    l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                    l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                    var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                    {
-                                        ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                    }
-
-                                    bar.GetComponent<Image>().enabled = true;
-                                    bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                    GameObject x = Instantiate(dropdownInput);
-                                    x.transform.SetParent(bar.transform);
-                                    x.transform.localScale = Vector3.one;
-
-                                    RectTransform xRT = x.GetComponent<RectTransform>();
-                                    xRT.anchoredPosition = new Vector2(624f, -16f);
-                                    xRT.sizeDelta = new Vector2(366f, 32f);
-
-                                    Destroy(x.GetComponent<HoverTooltip>());
-
-                                    Dropdown dropdown = x.GetComponent<Dropdown>();
-                                    dropdown.options.Clear();
-                                    dropdown.onValueChanged.RemoveAllListeners();
-
-                                    dropdown.options = GetShapes();
-
-                                    var hide = x.AddComponent<HideDropdownOptions>();
-                                    hide.DisabledOptions = new List<bool>
-                                    {
-                                        false,
-                                        false,
-                                        false,
-                                        false,
-                                        true,
-                                        false,
-                                        true,
-                                        false,
-                                        false,
-                                    };
-
-                                    dropdown.value = ((Vector2Int)objects.Value).x;
-
-                                    var v = (Vector2Int)objects.Value;
-
-                                    dropdown.onValueChanged.AddListener(delegate (int _val)
-                                    {
-                                        dict[key] = new Vector2Int(_val, 0);
-                                        inst.StartCoroutine(RenderDialog());
-                                        UpdatePlayers();
-                                    });
-                                }
-
-                                //Shape Option
-                                {
-                                    var bar = Instantiate(singleInput);
-                                    Destroy(bar.GetComponent<InputField>());
-                                    Destroy(bar.GetComponent<EventInfo>());
-                                    Destroy(bar.GetComponent<EventTrigger>());
-
-                                    LSHelpers.DeleteChildren(bar.transform);
-                                    bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                    bar.transform.localScale = Vector3.one;
-                                    bar.name = "input [ENUM]";
-
-                                    TooltipHelper.AddTooltip(bar, key, "");
-
-                                    var l = Instantiate(label);
-                                    l.transform.SetParent(bar.transform);
-                                    l.transform.SetAsFirstSibling();
-                                    l.transform.localScale = Vector3.one;
-                                    l.transform.GetChild(0).GetComponent<Text>().text = key + " Option";
-                                    l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                    var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                    {
-                                        ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                    }
-
-                                    bar.GetComponent<Image>().enabled = true;
-                                    bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                    GameObject x = Instantiate(dropdownInput);
-                                    x.transform.SetParent(bar.transform);
-                                    x.transform.localScale = Vector3.one;
-
-                                    RectTransform xRT = x.GetComponent<RectTransform>();
-                                    xRT.anchoredPosition = new Vector2(624f, -16f);
-                                    xRT.sizeDelta = new Vector2(366f, 32f);
-
-                                    Destroy(x.GetComponent<HoverTooltip>());
-                                    Destroy(x.GetComponent<HideDropdownOptions>());
-
-                                    Dropdown dropdown = x.GetComponent<Dropdown>();
-                                    dropdown.options.Clear();
-                                    dropdown.onValueChanged.RemoveAllListeners();
-
-                                    dropdown.options = GetShapeOptions(((Vector2Int)objects.Value).x);
-
-                                    dropdown.value = ((Vector2Int)objects.Value).y;
-
-                                    var v = (Vector2Int)objects.Value;
-
-                                    dropdown.onValueChanged.AddListener(delegate (int _val)
-                                    {
-                                        dict[key] = new Vector2Int(v.x, _val);
-                                        UpdatePlayers();
-                                    });
-                                }
-                            }
-
-                            //Vector2
-                            if (key.Contains("Position") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Scale") && !key.Contains("Particles") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Force") || key.Contains("Origin"))
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [VECTOR2]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject vector2 = Instantiate(vector2Input);
-                                vector2.transform.SetParent(bar.transform);
-                                vector2.transform.localScale = Vector3.one;
-
-                                Vector2 vtmp = (Vector2)objects.Value;
-
-                                Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
-                                vector2.transform.Find("x").localScale = Vector3.one;
-                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
-                                var vxif = vector2.transform.Find("x").GetComponent<InputField>();
-                                {
-                                    vxif.onValueChanged.RemoveAllListeners();
-
-                                    vxif.text = vtmp.x.ToString();
-
-                                    vxif.onValueChanged.AddListener(delegate (string _val)
-                                    {
-                                        vtmp = new Vector2(float.Parse(_val), vtmp.y);
-                                        dict[key] = vtmp;
-                                        UpdatePlayers();
-                                    });
-                                }
-
-                                Destroy(vector2.transform.Find("y").GetComponent<EventInfo>());
-                                vector2.transform.Find("y").localScale = Vector3.one;
-                                vector2.transform.Find("y").GetChild(0).localScale = Vector3.one;
-                                var vyif = vector2.transform.Find("y").GetComponent<InputField>();
-                                {
-                                    vyif.onValueChanged.RemoveAllListeners();
-
-                                    vyif.text = vtmp.y.ToString();
-
-                                    vyif.onValueChanged.AddListener(delegate (string _val)
-                                    {
-                                        vtmp = new Vector2(vtmp.x, float.Parse(_val));
-                                        dict[key] = vtmp;
-                                        UpdatePlayers();
-                                    });
-                                }
-
-                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDelta(vxif, multi: true), TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
-                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("y").gameObject, TriggerHelper.ScrollDelta(vyif, multi: true), TriggerHelper.ScrollDeltaVector2(vxif, vyif, 0.1f, 10f));
-
-                                TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
-                                TriggerHelper.IncreaseDecreaseButtons(vyif, 1f);
-                            }
-
-                            //Single
-                            if (key.Contains("Scale") && (key.Contains("Start") || key.Contains("End")) && !key.Contains("Pulse") && !key.Contains("Bullet") ||
-                                key.Contains("Rotation") && !key.Contains("Easing") ||
-                                key == "Tail Base Distance" ||
-                                key.Contains("Opacity") && !key.Contains("Easing") ||
-                                key.Contains("Lifetime") ||
-                                key.Contains("Start Width") ||
-                                key.Contains("End Width") ||
-                                key.Contains("Trail Time") ||
-                                key == "Boost Particles Duration" ||
-                                key.Contains("Amount") && !key.Contains("Boost") ||
-                                key.Contains("Speed") || key.Contains("Depth") || key == "Pulse Duration" ||
-                                key.Contains("Cooldown") || key.Contains("Boost Time") || key == "Bullet Lifetime" || key.Contains("Duration"))
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [FLOAT]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject vector2 = Instantiate(vector2Input);
-                                vector2.transform.SetParent(bar.transform);
-                                vector2.transform.localScale = Vector3.one;
-
-                                var vtmp = (float)objects.Value;
-
-                                Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
-                                vector2.transform.Find("x").localScale = Vector3.one;
-                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
-                                var vxif = vector2.transform.Find("x").GetComponent<InputField>();
-                                {
-                                    vxif.onValueChanged.RemoveAllListeners();
-
-                                    vxif.text = vtmp.ToString();
-
-                                    vxif.onValueChanged.AddListener(delegate (string _val)
-                                    {
-                                        vtmp = float.Parse(_val);
-                                        dict[key] = vtmp;
-                                        UpdatePlayers();
-                                    });
-                                }
-
-                                TriggerHelper.AddEventTriggerParams(vector2.transform.Find("x").gameObject, TriggerHelper.ScrollDelta(vxif));
-
-                                TriggerHelper.IncreaseDecreaseButtons(vxif, 1f);
-
-                                Destroy(vector2.transform.Find("y").gameObject);
-                            }
-
-                            //Tail Base Mode Dropdown
-                            if (key == "Tail Base Mode")
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [ENUM]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(dropdownInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-
-                                RectTransform xRT = x.GetComponent<RectTransform>();
-                                xRT.anchoredPosition = new Vector2(624f, -16f);
-                                xRT.sizeDelta = new Vector2(366f, 32f);
-
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                Dropdown dropdown = x.GetComponent<Dropdown>();
-                                dropdown.options.Clear();
+                                var dropdown = inst.GetElement<Dropdown>(key + " Option");
                                 dropdown.onValueChanged.RemoveAllListeners();
+                                dropdown.options.Clear();
+                                dropdown.options = GetShapeOptions(((Shape)currentModel[key]).type);
+                                dropdown.value = ((Shape)currentModel[key]).option;
 
-                                dropdown.options = new List<Dropdown.OptionData>
-                                {
-                                    new Dropdown.OptionData("Legacy"),
-                                    new Dropdown.OptionData("Dev+")
-                                };
-
-                                dropdown.value = (int)objects.Value;
+                                var v = ((Shape)currentModel[key]).type;
 
                                 dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
-                                    dict[key] = _val;
+                                    currentModel[key] = ShapeManager.inst.Shapes2D[v][_val];
                                     UpdatePlayers();
-                                });
-                            }
-
-                            //Base Rotate Mode
-                            if (key == "Base Rotate Mode")
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [ENUM]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(dropdownInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-
-                                RectTransform xRT = x.GetComponent<RectTransform>();
-                                xRT.anchoredPosition = new Vector2(624f, -16f);
-                                xRT.sizeDelta = new Vector2(366f, 32f);
-
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                Dropdown dropdown = x.GetComponent<Dropdown>();
-                                dropdown.options.Clear();
-                                dropdown.onValueChanged.RemoveAllListeners();
-
-                                dropdown.options = new List<Dropdown.OptionData>
-                                {
-                                    new Dropdown.OptionData("Face Direction"),
-                                    new Dropdown.OptionData("None"),
-                                    new Dropdown.OptionData("Flip X"),
-                                    new Dropdown.OptionData("Flip Y")
-                                };
-
-                                dropdown.value = (int)objects.Value;
-
-                                dropdown.onValueChanged.AddListener(delegate (int _val)
-                                {
-                                    dict[key] = _val;
-                                    UpdatePlayers();
-                                });
-                            }
-                            
-                            //GUI Health Mode
-                            if (key == "GUI Health Mode")
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [ENUM]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(dropdownInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-
-                                RectTransform xRT = x.GetComponent<RectTransform>();
-                                xRT.anchoredPosition = new Vector2(624f, -16f);
-                                xRT.sizeDelta = new Vector2(366f, 32f);
-
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                Dropdown dropdown = x.GetComponent<Dropdown>();
-                                dropdown.options.Clear();
-                                dropdown.onValueChanged.RemoveAllListeners();
-
-                                dropdown.options = new List<Dropdown.OptionData>
-                                {
-                                    new Dropdown.OptionData("Images"),
-                                    new Dropdown.OptionData("Text"),
-                                    new Dropdown.OptionData("Equals Bar"),
-                                    new Dropdown.OptionData("Bar"),
-                                };
-
-                                dropdown.value = (int)objects.Value;
-
-                                dropdown.onValueChanged.AddListener(delegate (int _val)
-                                {
-                                    dict[key] = _val;
-                                    UpdatePlayers();
-                                });
-                            }
-
-                            //Easing Dropdown
-                            if (key.Contains("Easing"))
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [ENUM]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(dropdownInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-
-                                RectTransform xRT = x.GetComponent<RectTransform>();
-                                xRT.anchoredPosition = new Vector2(624f, -16f);
-                                xRT.sizeDelta = new Vector2(366f, 32f);
-
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                Dropdown dropdown = x.GetComponent<Dropdown>();
-                                dropdown.options.Clear();
-                                dropdown.onValueChanged.RemoveAllListeners();
-
-                                foreach (var anim in EditorManager.inst.CurveOptions)
-                                {
-                                    dropdown.options.Add(new Dropdown.OptionData(anim.name, anim.icon));
-                                }
-
-                                dropdown.value = (int)objects.Value;
-
-                                dropdown.onValueChanged.AddListener(delegate (int _val)
-                                {
-                                    dict[key] = _val;
-                                    UpdatePlayers();
-                                });
-                            }
-
-                            //Color
-                            if (key.Contains("Color") && !key.Contains("Easing") && !key.Contains("Custom") && !key.Contains("Duration"))
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [COLOR]";
-                                bar.GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 116f);
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(colorsInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                for (int i = 19; i < 26; i++)
-                                {
-                                    var colorButton = Instantiate(x.transform.GetChild(0).gameObject);
-                                    colorButton.name = i.ToString();
-                                    colorButton.transform.SetParent(x.transform);
-                                    colorButton.transform.localScale = Vector3.one;
-                                }
-
-                                for (int i = 0; i < 25; i++)
-                                {
-                                    var strr = (i + 1).ToString();
-                                    if (i < 4)
-                                    {
-                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.playerColors[i];
-                                    }
-                                    if (i == 4)
-                                    {
-                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.guiColor;
-                                    }
-                                    if (i > 4 && i < 23)
-                                    {
-                                        int num = i - 5;
-                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.objectColors[num];
-                                    }
-                                    if (i == 23)
-                                    {
-                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.playerColors[playerModelIndex];
-                                        TooltipHelper.AddTooltip(x.transform.Find(strr).gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
-                                    }
-                                    if (i == 24)
-                                    {
-                                        Color col = Color.white;
-
-                                        if (dict.ContainsKey(key.Replace("Color", "Custom Color")))
-                                        {
-                                            col = LSColors.HexToColor((string)dict[key.Replace("Color", "Custom Color")]);
-                                        }
-
-                                        x.transform.Find(strr).GetComponent<Image>().color = col;
-                                        TooltipHelper.AddTooltip(x.transform.Find(strr).gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
-                                    }
-                                    if (i == 25)
-                                    {
-                                        x.transform.Find(strr).GetComponent<Image>().color = RTHelpers.BeatmapTheme.guiAccentColor;
-                                    }
-                                }
-
-                                UpdateColorButtons(x.transform, key, dict);
-                            }
-
-                            //Bool
-                            if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate" || key == "Bullet Constant" || key == "Bullet Hurt Players" || key == "Bullet AutoKill")
-                            {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                if (bar.GetComponent<EventTrigger>())
-                                    Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [BOOL]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(688f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(boolInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-
-                                Toggle xt = x.GetComponent<Toggle>();
-                                xt.onValueChanged.RemoveAllListeners();
-                                xt.isOn = (bool)objects.Value;
-                                xt.onValueChanged.AddListener(delegate (bool _val)
-                                {
-                                    dict[key] = _val;
-                                    UpdatePlayers();
-                                });
-                            }
-
-                            //Button
-                            if (key == "Custom Objects")
-                            {
-                                var bar = Instantiate(singleInput);
-                                DestroyImmediate(bar.GetComponent<InputField>());
-                                DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [BUTTON]";
-
-                                TooltipHelper.AddTooltip(bar, key, "");
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = key;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
-
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
-
-                                var btt = bar.AddComponent<Button>();
-                                btt.onClick.AddListener(delegate ()
-                                {
-                                    if (((Dictionary<string, object>)dict["Custom Objects"]).Count > 0)
-                                        currentID = ((Dictionary<string, object>)dict["Custom Objects"]).ElementAt(0).Key;
-
-                                    RenderCustomDialog(dict);
-                                    RenderCustomObjects(dict);
                                 });
                             }
                         }
+
+                        // Vector2
+                        if (key.Contains("Position") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Scale") && !key.Contains("Particles") && !key.Contains("Easing") && !key.Contains("Duration") || key.Contains("Force") || key.Contains("Origin"))
+                        {
+                            var vtmp = (Vector2)currentModel[key];
+
+                            var vxif = inst.GetElement<InputField>(key + " X");
+                            vxif.onValueChanged.RemoveAllListeners();
+                            vxif.text = vtmp.x.ToString();
+                            vxif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float result))
+                                {
+                                    currentModel[key] = new Vector2(result, vtmp.y);
+                                    UpdatePlayers();
+                                }
+                            });
+
+                            var vyif = inst.GetElement<InputField>(key + " Y");
+                            vyif.onValueChanged.RemoveAllListeners();
+                            vyif.text = vtmp.y.ToString();
+                            vyif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float result))
+                                {
+                                    currentModel[key] = new Vector2(vtmp.x, result);
+                                    UpdatePlayers();
+                                }
+                            });
+                        }
+
+                        //Single
+                        if (key.Contains("Scale") && (key.Contains("Start") || key.Contains("End")) && !key.Contains("Pulse") && !key.Contains("Bullet") ||
+                            key.Contains("Rotation") && !key.Contains("Easing") ||
+                            key == "Tail Base Distance" ||
+                            key.Contains("Opacity") && !key.Contains("Easing") ||
+                            key.Contains("Lifetime") ||
+                            key.Contains("Start Width") ||
+                            key.Contains("End Width") ||
+                            key.Contains("Trail Time") ||
+                            key == "Boost Particles Duration" ||
+                            key.Contains("Amount") && !key.Contains("Boost") ||
+                            key.Contains("Speed") || key.Contains("Depth") || key == "Pulse Duration" ||
+                            key.Contains("Cooldown") || key.Contains("Boost Time") || key == "Bullet Lifetime" || key.Contains("Duration") ||
+                            key == "Tail Base Time")
+                        {
+                            var vxif = inst.GetElement<InputField>(key);
+                            vxif.onValueChanged.RemoveAllListeners();
+                            vxif.text = ((float)currentModel[key]).ToString();
+                            vxif.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float result))
+                                {
+                                    currentModel[key] = result;
+                                    UpdatePlayers();
+                                }
+                            });
+                        }
+
+                        //Tail Base Mode Dropdown
+                        if (key == "Tail Base Mode")
+                        {
+                            var dropdown = inst.GetElement<Dropdown>(key);
+                            dropdown.onValueChanged.RemoveAllListeners();
+                            dropdown.value = (int)currentModel[key];
+                            dropdown.onValueChanged.AddListener(delegate (int _val)
+                            {
+                                currentModel[key] = _val;
+                                UpdatePlayers();
+                            });
+                        }
+
+                        //Base Rotate Mode
+                        if (key == "Base Rotate Mode")
+                        {
+                            var dropdown = inst.GetElement<Dropdown>(key);
+                            dropdown.onValueChanged.RemoveAllListeners();
+                            dropdown.value = (int)currentModel[key];
+                            dropdown.onValueChanged.AddListener(delegate (int _val)
+                            {
+                                currentModel[key] = _val;
+                                UpdatePlayers();
+                            });
+                        }
+
+                        //GUI Health Mode
+                        if (key == "GUI Health Mode")
+                        {
+                            var dropdown = inst.GetElement<Dropdown>(key);
+                            dropdown.onValueChanged.RemoveAllListeners();
+                            dropdown.value = (int)currentModel[key];
+                            dropdown.onValueChanged.AddListener(delegate (int _val)
+                            {
+                                currentModel[key] = _val;
+                                UpdatePlayers();
+                            });
+                        }
+
+                        //Easing Dropdown
+                        if (key.Contains("Easing"))
+                        {
+                            var dropdown = inst.GetElement<Dropdown>(key);
+                            dropdown.onValueChanged.RemoveAllListeners();
+
+                            dropdown.value = (int)currentModel[key];
+
+                            dropdown.onValueChanged.AddListener(delegate (int _val)
+                            {
+                                currentModel[key] = _val;
+                                UpdatePlayers();
+                            });
+                        }
+
+                        //Color
+                        if (key.Contains("Color") && !key.Contains("Easing") && !key.Contains("Custom") && !key.Contains("Duration"))
+                        {
+                            var list = inst.GetElement<List<Toggle>>(key);
+
+                            for (int i = 0; i < 25; i++)
+                            {
+                                if (i < 4)
+                                {
+                                    list[i].image.color = RTHelpers.BeatmapTheme.playerColors[i];
+                                }
+                                if (i == 4)
+                                {
+                                    list[i].image.color = RTHelpers.BeatmapTheme.guiColor;
+                                }
+                                if (i > 4 && i < 23)
+                                {
+                                    int num = i - 5;
+                                    list[i].image.color = RTHelpers.BeatmapTheme.objectColors[num];
+                                }
+                                if (i == 23)
+                                {
+                                    list[i].image.color = RTHelpers.BeatmapTheme.playerColors[playerModelIndex];
+                                    TooltipHelper.AddTooltip(list[i].gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
+                                }
+                                if (i == 24)
+                                {
+                                    Color col = Color.white;
+
+                                    if (PlayerModel.Values.TryFind(x => x == key.Replace("Color", "Custom Color"), out string item))
+                                    {
+                                        col = LSColors.HexToColor((string)currentModel[item]);
+                                    }
+
+                                    list[i].image.color = col;
+                                    TooltipHelper.AddTooltip(list[i].gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
+                                }
+                                if (i == 25)
+                                {
+                                    list[i].image.color = RTHelpers.BeatmapTheme.guiAccentColor;
+                                }
+                            }
+
+                            UpdateColorButtons(list, currentModel, key);
+                        }
+
+                        //Bool
+                        if (key.Contains("Active") || key.Contains("Emitting") || key == "Pulse Rotate to Head" || key == "Tail Base Grows" || key == "Base Collision Accurate" || key == "Bullet Constant" || key == "Bullet Hurt Players" || key == "Bullet AutoKill")
+                        {
+                            var xt = inst.GetElement<Toggle>(key);
+                            xt.onValueChanged.RemoveAllListeners();
+                            xt.isOn = (bool)currentModel[key];
+                            xt.onValueChanged.AddListener(delegate (bool _val)
+                            {
+                                currentModel[key] = _val;
+                                UpdatePlayers();
+                            });
+                        }
+
+                        //Button
+                        if (key == "Custom Objects")
+                        {
+                            var btt = inst.GetElement<Button>(key);
+                            btt.onClick.ClearAll();
+                            btt.onClick.AddListener(delegate ()
+                            {
+                                if (currentModel.customObjects.Count > 0)
+                                    currentID = currentModel.customObjects.ElementAt(0).Key;
+
+                                RenderCustomDialog(currentModel);
+                                RenderCustomObjects(currentModel);
+                            });
+                        }
                     }
-                }
-
-                if (id == "0" || id == "1")
-                {
-                    var bar = Instantiate(singleInput);
-                    Destroy(bar.GetComponent<InputField>());
-                    Destroy(bar.GetComponent<EventInfo>());
-
-                    if (bar.GetComponent<EventTrigger>())
-                        Destroy(bar.GetComponent<EventTrigger>());
-
-                    LSHelpers.DeleteChildren(bar.transform);
-                    bar.transform.SetParent(editorDialogContent.Find("Viewport/Content"));
-                    bar.transform.localScale = Vector3.one;
-                    bar.name = "input [STRING]";
-
-                    TooltipHelper.AddTooltip(bar, "Default player models cannot be edited.", "");
-
-                    var l = Instantiate(label);
-                    l.transform.SetParent(bar.transform);
-                    l.transform.SetAsFirstSibling();
-                    l.transform.localScale = Vector3.one;
-                    l.transform.GetChild(0).GetComponent<Text>().text = "Cannot edit default Player Models!";
-                    l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
-
-                    var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
+                    else if (key != "Base ID")
                     {
-                        ltextrt.anchoredPosition = new Vector2(10f, -5f);
+                        inst.GetElement<GameObject>(key + " GameObject").SetActive(false);
                     }
-
-                    bar.GetComponent<Image>().enabled = true;
-                    bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
                 }
-
-                dictionaryTest = dict;
+            }
+            else
+            {
+                inst.GetElement<GameObject>("Cannot edit default Player Models! GameObject").SetActive(true);
             }
 
             yield break;
         }
 
-        public static void UpdatePlayers()
+        public void UpdatePlayers()
         {
             PlayerManager.UpdatePlayers();
         }
 
-        public static void UpdateColorButtons(Transform _tf, string _type, Dictionary<string, object> _dictionary)
+        public void UpdateColorButtons(List<Toggle> toggles, PlayerModel currentModel, string key)
         {
-            for (int i = 0; i < _tf.childCount; i++)
+            for (int i = 0; i < toggles.Count; i++)
             {
-                int n = (int)_dictionary[_type];
-
-                var toggle = _tf.GetChild(i).GetComponent<Toggle>();
-
-                toggle.onValueChanged.RemoveAllListeners();
-                toggle.isOn = i == n;
-                int tmpIndex = i;
-                toggle.onValueChanged.AddListener(delegate (bool _val)
+                int index = i;
+                toggles[i].onValueChanged.ClearAll();
+                toggles[i].isOn = index == (int)currentModel[key];
+                toggles[i].onValueChanged.AddListener(delegate (bool _val)
                 {
-                    _dictionary[_type] = tmpIndex;
-                    inst.StartCoroutine(RenderDialog());
+                    if (_val)
+                    {
+                        currentModel[key] = index;
+                        UpdateColorButtons(toggles, currentModel, key);
+                    }
                 });
             }
         }
 
-        public static void UpdateCustomColorButtons(Transform _tf, string _type, Dictionary<string, object> _dictionary)
+        public void UpdateCustomColorButtons(Transform _tf, PlayerModel.CustomObject customObject)
         {
             for (int i = 0; i < _tf.childCount; i++)
             {
-                int n = (int)_dictionary[_type];
-
                 var toggle = _tf.GetChild(i).GetComponent<Toggle>();
+
+                int index = i;
 
                 toggle.onValueChanged.ClearAll();
-                toggle.isOn = i == n;
-                int tmpIndex = i;
+                toggle.isOn = index == customObject.color;
                 toggle.onValueChanged.AddListener(delegate (bool _val)
                 {
-                    _dictionary[_type] = tmpIndex;
+                    customObject.color = index;
                     UpdatePlayers();
 
-                    UpdateCustomColorButtons(_tf, _type, _dictionary);
+                    UpdateCustomColorButtons(_tf, customObject);
                 });
             }
         }
 
-        public static void DuplicateCustomObject()
+        public void DuplicateCustomObject()
         {
             if (string.IsNullOrEmpty(currentID) || EditorManager.inst.ActiveDialogs.Find(x => x.Dialog.name == "PlayerObjectEditorDialog") == null)
                 return;
 
-            PlayerManager.PlayerModels[PlayerManager.PlayerModelsIndex[playerModelIndex]].DuplicateObject(currentID);
+            var currentModel = PlayerManager.PlayerModels[PlayerManager.GetPlayerModelIndex(playerModelIndex)];
+
+            var customObject = PlayerModel.CustomObject.DeepCopy(currentModel, currentModel.customObjects[currentID]);
+
+            currentModel.customObjects.Add(customObject.id, customObject);
 
             var obj = PlayerManager.PlayerModels;
-            var currentIndex = (string)PlayerManager.GetPlayerModelIndex(playerModelIndex);
-            var currentModel = obj[currentIndex];
 
-            var dict = currentModel.values;
-            var customObjects = (Dictionary<string, object>)dict["Custom Objects"];
+            var customObjects = currentModel.customObjects;
 
             currentID = customObjects.Count > 0 ? customObjects.ElementAt(customObjects.Count - 1).Key : "";
 
             UpdatePlayers();
-            RenderCustomObjects(dict);
-            RenderCustomDialog(dict);
+            RenderCustomObjects(currentModel);
+            RenderCustomDialog(currentModel);
         }
 
         public static List<Dropdown.OptionData> GetShapes()
