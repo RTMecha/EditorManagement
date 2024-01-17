@@ -1563,7 +1563,7 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 10f);
                 }
 
-                inst.RenderID(beatmapObject);
+                inst.RenderIDLDM(beatmapObject);
                 inst.RenderName(beatmapObject);
                 inst.RenderObjectType(beatmapObject);
 
@@ -1602,10 +1602,10 @@ namespace EditorManagement.Functions.Editors
         }
 
         /// <summary>
-        /// Renders the ID Text.
+        /// Renders the ID Text and LDM Toggle.
         /// </summary>
         /// <param name="beatmapObject">The BeatmapObject to set.</param>
-        public void RenderID(BeatmapObject beatmapObject)
+        public void RenderIDLDM(BeatmapObject beatmapObject)
         {
             var idText = (Text)ObjectUIElements["ID Text"];
             idText.text = $"ID: {beatmapObject.id}";
@@ -2179,7 +2179,10 @@ namespace EditorManagement.Functions.Editors
             var shape = (Transform)ObjectUIElements["Shape"];
             var shapeSettings = (Transform)ObjectUIElements["Shape Settings"];
 
-            shape.GetComponent<GridLayoutGroup>().spacing = new Vector2(7.6f, 0f);
+            var shapeGLG = shape.GetComponent<GridLayoutGroup>();
+            shapeGLG.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+            shapeGLG.constraintCount = 1;
+            shapeGLG.spacing = new Vector2(7.6f, 0f);
 
             // Initial removing
             //Debug.Log($"{ObjEditor.inst.className}Adding shapes to list for removal...");
@@ -2266,6 +2269,60 @@ namespace EditorManagement.Functions.Editors
 
                     LastGameObject(shapeSettings.GetChild(i));
                 }
+            }
+
+            if (ObjectManager.inst.objectPrefabs.Count > 9)
+            {
+                var playerSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png");
+                int i = shape.childCount;
+                var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString());
+                if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+                    image.sprite = playerSprite;
+
+                var so = shapeSettings.Find((i + 1).ToString());
+
+                if (!so)
+                {
+                    so = shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString()).transform;
+                    LSHelpers.DeleteChildren(so);
+                }
+
+                var rect = (RectTransform)so;
+                if (!so.GetComponent<ScrollRect>())
+                {
+                    var scroll = so.gameObject.AddComponent<ScrollRect>();
+                    so.gameObject.AddComponent<Mask>();
+                    var ad = so.gameObject.AddComponent<Image>();
+
+                    scroll.horizontal = true;
+                    scroll.vertical = false;
+                    scroll.content = rect;
+                    scroll.viewport = rect;
+                    ad.color = new Color(1f, 1f, 1f, 0.01f);
+                }
+
+                for (int j = 0; j < ObjectManager.inst.objectPrefabs[9].options.Count; j++)
+                {
+                    var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
+                    if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
+                        image1.sprite = playerSprite;
+
+                    var layoutElement = opt.AddComponent<LayoutElement>();
+                    layoutElement.layoutPriority = 1;
+                    layoutElement.minWidth = 32f;
+
+                    ((RectTransform)opt.transform).sizeDelta = new Vector2(32f, 32f);
+
+                    if (!opt.GetComponent<HoverUI>())
+                    {
+                        var he = opt.AddComponent<HoverUI>();
+                        he.animatePos = false;
+                        he.animateSca = true;
+                        he.size = 1.1f;
+                    }
+                }
+
+                LastGameObject(shapeSettings.GetChild(i));
             }
 
             LSHelpers.SetActiveChildren(shapeSettings, false);
