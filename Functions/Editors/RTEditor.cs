@@ -1634,7 +1634,7 @@ namespace EditorManagement.Functions.Editors
 
                 timeObj.transform.SetAsFirstSibling();
                 timeObj.SetActive(true);
-                ((Text)timeIF.placeholder).text = "Set layer...";
+                ((Text)timeIF.placeholder).text = "Set time...";
                 ((Text)timeIF.placeholder).alignment = TextAnchor.MiddleCenter;
                 ((Text)timeIF.placeholder).fontSize = 16;
                 ((Text)timeIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -1643,8 +1643,13 @@ namespace EditorManagement.Functions.Editors
 
                 timeIF.onValueChanged.AddListener(delegate (string _value)
                 {
-                    //SetNewTime(_value);
+                    if (float.TryParse(_value, out float num))
+                    {
+                        AudioManager.inst.CurrentAudioSource.time = num;
+                    }
                 });
+
+                TriggerHelper.AddEventTrigger(timeObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF) });
             }
 
             Debug.LogFormat("{0}Instantiating new layer object", EditorPlugin.className);
@@ -4091,6 +4096,30 @@ namespace EditorManagement.Functions.Editors
             {
                 yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.wav", AudioType.WAV, x => song = x));
             }
+            else if (RTFile.FileExists(fullPath + "/level.mp3"))
+            {
+                yield return song = LSAudio.CreateAudioClipUsingMP3File(fullPath + "/level.mp3");
+
+                //while (song == null)
+                //    yield return null;
+            }
+
+            if (RTFile.FileExists(fullPath + "/bg.mp4") && RTFunctions.FunctionsPlugin.EnableVideoBackground.Value)
+            {
+                RTVideoManager.inst.Play(fullPath + "/bg.mp4", 1f);
+                while (!RTVideoManager.inst.videoPlayer.isPrepared)
+                    yield return null;
+            }
+            else if (RTFile.FileExists(fullPath + "/bg.mov") && RTFunctions.FunctionsPlugin.EnableVideoBackground.Value)
+            {
+                RTVideoManager.inst.Play(fullPath + "/bg.mov", 1f);
+                while (!RTVideoManager.inst.videoPlayer.isPrepared)
+                    yield return null;
+            }
+            else
+            {
+                RTVideoManager.inst.Stop();
+            }
 
             Debug.LogFormat("{0}Parsing level data for {1}...", EditorPlugin.className, fullPath);
             gameManager.gameState = GameManager.State.Parsing;
@@ -5661,12 +5690,11 @@ namespace EditorManagement.Functions.Editors
                                     dropdown.options.Add(new Dropdown.OptionData(str));
                                 }
 
+                                dropdown.value = (int)prop.configEntry.BoxedValue;
                                 dropdown.onValueChanged.AddListener(delegate (int _val)
                                 {
                                     prop.configEntry.BoxedValue = _val;
                                 });
-
-                                dropdown.value = (int)prop.configEntry.BoxedValue;
 
                                 break;
                             }
