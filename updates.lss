@@ -1,3 +1,5 @@
+2.1.16 > [Jan 18, 2024]
+- Quick fix for using Editor Zen Mode in ToggleZenMode keybind.
 2.1.15 > [Jan 18, 2024]
 - Added Player Shape button to shape list. For now, the options only include the default player models. A tag system is planned for having specific options to do with the Player Objects, e.g. allow automatic rotation, etc.
 - .mp3 files can somewhat be used now, though still need to work on that.
