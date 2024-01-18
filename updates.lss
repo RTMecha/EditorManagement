@@ -2,6 +2,7 @@
 - Added Player Shape button to shape list. For now, the options only include the default player models. A tag system is planned for having specific options to do with the Player Objects, e.g. allow automatic rotation, etc.
 - .mp3 files can somewhat be used now, though still need to work on that.
 - Fixed up the Player Editor to use the new Player data. Includes the new Custom Object Visibility Settings.
+- Added Editor Zen Mode in the Editor Preferences window.
 2.1.14 > [Jan 13, 2024]
 - Fixed selecting themes not setting to the ones you search for.
 2.1.13 > [Jan 13, 2024]
