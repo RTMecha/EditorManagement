@@ -1804,9 +1804,8 @@ namespace EditorManagement.Functions.Editors
 
         public static void ToggleZenMode(Keybind keybind)
         {
-            DataManager.inst.UpdateSettingEnum("ArcadeDifficulty", DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1) == 0 ? 1 : 0);
-            EditorManager.inst.DisplayNotification($"Set Zen Mode {(DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1) == 0 ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
-            SaveManager.inst.UpdateSettingsFile(false);
+            RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value = !RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value;
+            EditorManager.inst.DisplayNotification($"Set Zen Mode {(RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
         }
 
         public static void CycleGameDifficulty(Keybind keybind)
