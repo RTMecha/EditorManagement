@@ -1,3 +1,7 @@
+2.1.15 > [Jan 18, 2024]
+- Added Player Shape button to shape list. For now, the options only include the default player models. A tag system is planned for having specific options to do with the Player Objects, e.g. allow automatic rotation, etc.
+- .mp3 files can somewhat be used now, though still need to work on that.
+- Fixed up the Player Editor to use the new Player data. Includes the new Custom Object Visibility Settings.
 2.1.14 > [Jan 13, 2024]
 - Fixed selecting themes not setting to the ones you search for.
 2.1.13 > [Jan 13, 2024]
@@ -96,3 +100,243 @@ They also now use the object keyframe sprites method, meaning they will use the 
 - Added Copy & Paste keyframe data, which will copy the current keyframe and allow it to be pasted to any keyframe of the same type.
 If it is not the same type then it will not paste that data, instead it'll either paste nothing or paste the copied data of that type.
 - Added a config for creating objects at the screen center.
+1.10.9 > [Nov 2, 2023]
+- Removed unlimited depth patch and put it into RTFunctions.
+1.10.8 > [Oct 25, 2023]
+- Added Level Combiner. Find it in the File dropdown! Combine two levels together and save them to a new path. It's ObjectModifiers and EventsCore compatible.
+1.10.7 > [Oct 16, 2023]
+- Added new Background object values.
+- Fixed an issue with setting an Image Objects' image where its' path wouldn't be set correctly if the name of the level is contained in the image name.
+- Other misc fixes and changes.
+1.10.6 > [Oct 13, 2023]
+- Added Fade Color to Background Objects.
+1.10.5 > [Oct 12, 2023]
+- Added custom background values and optimizations.
+- Added ConfigEntry / Setting for saving opacity to themes, since opacity in level.lsb files don't work well with unmodded versions of PA.
+1.10.4 > [Oct 9, 2023]
+- RTFunctions Catalyst update.
+1.10.3 > [Sep 19, 2023]
+- Fix for Parent Picker allowing self to be parented.
+- Clicking the set autokill time to current button now sets the offset correctly if the autokill type is not song time.
+- The last Event KF row is now "Misc".
+1.10.2 > [Sep 10, 2023]
+- Fixed the Settings count for how many objects are outside the camera. It tries to account for shape and size, but not sure how well I did that.
+- Changed Overlay event in editor to Invert
+- Added Prefab Repeating.
+- Added ObjectModifiers features.
+1.10.1 > [Aug 29, 2023]
+- Some input field's text fail to show if the resolution is too low, so that problem should be fixed now.
+- Fixed parent picker, it should now be able to parent properly.
+1.10.0 > [Aug 28, 2023]
+- Added Hue / Saturation / Value (Brightness) input fields, so you can now modify those color values! (Requires Editor Catalyst 3)
+- Added easy parent picker, just click the blue parent picker button and click on a timeline object! (Right click to disable the picker)
+- Moved parent chain count to hover tooltip.
+- Added CreativePlayers and ObjectModifiers features.
+1.9.18 > [Aug 21, 2023]
+- Added ObjectModifiers features.
+1.9.17 > [Aug 18, 2023]
+- Clicking the scroll wheel on the object name input field will flip and references to "left" or "right". So if the name contains "left", it will be replaced with "right" (This now properly works)
+- Moved screenshotting to RTFunctions.
+- Fixed editor settings not loading properly.
+1.9.16 > [Aug 16, 2023]
+- Selecting multiple object keyframes is now faster (and you can now multi drag select by holding shift while dragging!)
+1.9.15 > [Aug 13, 2023]
+- Dragging an object keyframe no longer tries to update objects every frame (causing a lot of lag) and will not only update objects once the keyframe has finished being dragged.
+1.9.14 > [Aug 12, 2023]
+- Added ObjectModifiers features.
+1.9.13 > [Aug 12, 2023]
+- Added CreativePlayers features.
+- EventsCore Editor Camera support (specific actions won't occur when the Editor Camera is on).
+1.9.12 > [Aug 10, 2023]
+- Added Duplicate Player Custom Object. You can either press the blue + button or hit shift & D to duplicate the selected object.
+- Fixed UI rotation bug with Player Custom Object editor.
+1.9.11 > [Aug 4, 2023]
+- Fixed Player Storage issue where you were unable to control the player if you hadn't set players in the Input Selection screen.
+1.9.10 > [Aug 4, 2023]
+- Added new EventsCore values.
+1.9.9 > [Aug 2, 2023]
+- Added Player Index input field, so you can now set the other players' player models without needing to edit the players.lsb file
+- Fixed image file selection so it should now properly set.
+- Set players from the Input Select scene no longer get reset, so you can now have multiple players in the editor.
+1.9.8 > [Jul 30, 2023]
+- Added CreativePlayers features.
+1.9.7 > [Jul 29, 2023]
+- Added searching and a close button to Custom Objects.
+1.9.6 > [Jul 25, 2023]
+- Added CreativePlayers Custom Object editor.
+1.9.5 > [Jul 24, 2023]
+- Fixed a theme saving bug.
+1.9.4 > [Jul 24, 2023]
+- Hopefully fixed the editor reload break bug.
+- Fixed a variable object modifiers.
+1.9.3 > [Jul 18, 2023]
+- Added reload button to CreativePlayers editor.
+- Added secret cipher keybind.
+1.9.2 > [Jul 12, 2023]
+- Fixed a bug with changing layers breaking undo.
+- Added new CreativePlayers features to the Player Editor.
+- Fixed a bug with checkpoints I think.
+1.9.1 > [Jul 11, 2023]
+- Fixed (hopefully) all of the resolution scale issues. Everything should now scale properly with the resolution you set PA to! (This is for you Sleepyz lol)
+- Fixed an error with Object Search breaking at empty objects.
+1.9.0 > [Jul 9, 2023]
+- Fixed an issue with some elements in the Editor Preferences window not allowing you to scroll.
+- Added scroll wheel and arrow button functionality to the editor preferences.
+- Simplified Event Editor window code which means custom increase / decrease values can't be set for any of them.
+- Cleaned up Multi Object Editor code, added scroll functionality to the number input fields and changed the start time left and right arrows to instead move the objects to an offset from the current audio time.
+- Fixed a theme editor issue where pasting copied hex codes wouldn't set the color correctly.
+- Fixed up some color picker stuff.
+- The "color picker" icons should now properly invert all the time.
+- Removed a lot of the unused / pointless configs. If I removed one you liked, then I'm sorry.
+- Moved a ton of code to RTFunctions to allow for mod compatibility and to avoid conflicts. This includes but is not limited to: Example Theme, Theme 18 Object Color Slots function, Extra Difficulties (Master and Animation), Camera Clip Planes (Unlimited Render Depth) and almost all general loading functions so you won't always need EditorManagement to load stuff and so there won't be any conflicts with mods that need to load this stuff.
+- Added a search field for the Player Editor.
+1.8.7 > [Jul 3, 2023]
+- Implemented more ObjectModifiers UI stuff for the final release :D
+- Cleaned up some code
+- If you have UnityExplorer installed, it will add a button allowing you to inspect the Unity gameobject.
+- Removed Z axis and moved it to ObjectModifiers.
+- Fixed an issue with ArcadiaCustoms loading conflict. If you have that mod, it should now use that mods loading method instead of its own.
+1.8.6 > [Jun 29, 2023]
+- Implemented some ObjectModifiers stuff in preperation for the mod.
+- Finally replaced the original pitch button with an input field. If you don't like this, feel free to let me know and I'll revert it.
+- Fixed a theme creating / updating bug where it trying to reload the themes would cause the window to not close.
+- Themes with conflicting ID's now properly show useful information in debug logs and errors.
+- Combined "AnalogGlitch" and "DigitalGlitch" together and set the last event as "???".
+- Plus other small bug fixes and changes.
+1.8.5 > [Jun 26, 2023]
+- Fixed the default keyframe values on level creation
+- Fixed deleting and duplicating not setting the object's values correctly, so instead of changing the current keyframe's values it'll change the previously selected one.
+1.8.4 > [Jun 23, 2023]
+- Tried fixing a few saving and loading bugs.
+- Added UI stuff for the new EventsCore event keyframes.
+1.8.3 > [Jun 22, 2023]
+- Editor should set layer to 0 when loading a level if the remembered layer is on event layer, but not sure.
+- Fixed an issue with deleting objects causing you to select nothing.
+- Apparently selecting objects in the preview window broke so I had to fix that.
+- Added CreativePlayers Editor window, allowing you to create your own player model!
+1.8.2 > [Jun 17, 2023]
+- Fixed (hopefully) all the event loading issues. Shake X and Y should now default to 1, and timeline keyframes will no longer load into overlay keyframes.
+1.8.1 > [Jun 16, 2023]
+- Mod is integrated with my own modified version of Catalyst that works in the editor. I've sent that version off to Reimnop so we'll see if the changes get implemented soon.
+- Fixed a problem with pasting an object causing the multi object editor window to open.
+- Added a config option for render depth, so you can now have the Legacy render depth "cap" or the unlimited render depth.
+- Fixed a bug where creating a new level wouldn't load the level properly.
+- Fixed a bug with Search Object window resetting the Multi Object Editor value not allowing objects to be synced.
+- Fixed a bug with prefabs not being copy-able (this also now means that prefab objects can be included in prefabs potentially).
+- Cleaned up the old Prefab Object dialog code.
+- Changed the way the image shape type is used in editor. (Instead of manually inputting the local path of an image, you can now click on the magnifying glass icon and be taken to a open file search window where you will be able to find any image anywhere)
+- If the event types count goes higher than normal, it will be sent into the next event layer. This requires EventsCore to use.
+- Fixed a problem with themes with small ID's not saving to level.lsb.
+1.8.0 > [May 29, 2023]
+- Done a ton of bug fixing and code optimization.
+- Added a few more tooltips.
+- Began implementing some ObjectModifiers stuff. Much like EventsCore, you will need EditorManagement in order to use the editor stuff for ObjectModifiers. Otherwise that mod is fine to use on it's own.
+- Fixed Legacy waveform color combining (the colors of top and bottom parts of the waveform should now mix if they overlap)
+- Added Fast waveform type for each already existing waveform type. It's called "Fast" because it might be more optimized, but I am unsure.
+- Tried fixing an issue where loading prefabs saving prefabs wouldn't create the z axis.
+- Clicking on a theme keyframe and rendering the theme list should be a little quicker now.
+- Made copied objects save to AppData/LocalLow/Vitamin Games/Project Arrhythmia/copied_objects.lsp so if you have any separate instances of PA you can copy from one instance to another.
+- Pasting objects now properly offset from the current audio time.
+- Fixed an issue where letting the audio play whilst pasting a bunch of objects would offset the start time of each object constantly to the current audio time, rather than a set audio time from when you first pasted.
+- Drag selecting a group of objects, pasting objects and deleting objects are now faster.
+- Added a delete level function to the Open Level Popup. When the delete button is clicked, it will bring up a warning asking if you want to delete the level or not.
+- Made a new Warning Popup window that shows whenever you're trying to quit to menu / quit game, delete a prefab, delete a theme or delete a level like the above feature.
+- Fixed a bug where clicking on Create Backgrounds would create 1 extra background.
+- Added a "Delete All Markers" button to the marker list. This does the same thing as the Delete All Backgrounds button (plus now both bring up the Warning Popup).
+- Themes will no longer reload when a level is loaded due to them being loaded on editor start. If you need to reload the themes, you can click on the refresh button.
+1.7.12 > [May 11, 2023]
+- Changed Sync to First Selected Object in the Multi Object Editor to use the Search Objects function.
+- Fixed an old issue where the zoom wouldn't load properly.
+- Fixed the bug where exiting and re-entering the editor would break the custom editor GUI theme.
+- Minor bug fix for prefabs not being able to change layers using the multi object editor.
+- Fixed an issue where creating a new object wouldn't create the z axis for position keyframes.
+1.7.11 > [May 10, 2023]
+- Fixed pos Z axis breaking prefabs. They now properly render.
+- I tried fixing the event drag selection issue where you can't drag select from the new event rows, but it hasn't been working at all for some reason.
+- Added a config option for the sound that plays when you hover over a UI element. Find it in Editor Preferences > Editor GUI > Hover UI Sound.
+1.7.10 > [May 5, 2023]
+- Made the text input field for text objects bigger, allowing you to see 3 lines in total.
+- Clicking on specific input fields with the scroll wheel on the mouse will invert the numbers in that input field. Only works for Depth and Keyframe input fields.
+- Hitting Ctrl + V while hovering over an input field will paste from the clipboard. Though again this only works for the previously mentioned input fields.
+- Added some more hover elements.
+- Added a little flip sound effect that plays when you hover over some elements, though if you don't like this I can add an option for it next update.
+- Added an Object Search popup, allowing you to look for specific objects without needing to search endlessly throughout the layers.
+- Fixed an issue where the preview theme didn't have the extra 9 object color slots.
+- Moved the create theme to the start of the theme list so it's easier to access.
+- Fixed an issue where saving a theme wouldn't save the alpha hexcode, instead saving it the normal way.
+- Fixed creating a new beatmap theme not having all the colors.
+- Added Z axis to position keyframes. This works for both single objects and parenting and is compatible with render depth. (Think of render depth as Origin Z Offset)
+- Added some more tooltips.
+- Did a small change to the way Editor GUI Colors find objects of a specific color.
+- Implemented a Color Picker for Editor Preferences settings that have color values. To access the Color Picker, click on the colored square next to the hex code.
+1.7.9 > [May 3, 2023]
+- Added 9 more color slots for any theme to use! If a theme doesn't already have 9 slots, the extra color slots will just use the last color slot in that theme.
+- Somewhat fixed the prefab search bug, but I will probably need to optimize it a bit better.
+1.7.8 > [May 2, 2023]
+- Fixed an issue where randomization wouldn't show.
+- Added extra event dialogs for EventsCore to use. EventsCore will not work in the editor without this.
+- Cleaned up the object editor, so now origin offset and render depth input fields match other input fields.
+- Added a lock toggle next to the start time input field, so now locking objects is easily accessible / readable.
+- Fixed an issue where selecting more than 1 keyframe wouldn't allow the object editor to update.
+- Hopefully fixed the issue where creating a new level didn't create anything.
+1.7.7 > [Apr 8, 2023]
+- Implemented EventsPlus, cleaning up the code I had written for it.
+- Fixed the issue where scrolling on an input field with the scroll functionality and going into negative numbers would make the number go all crazy. It now acts as expected.
+- Themes can now have transparency in player, gui and object color slots and themes will now only save to a level if any theme event keyframe contains the theme id.
+- Alongside EventsPlus, NewThemeSystems and PrefabAdditions were also implemented. The PrefabAdditions implementation introduces internal prefab creation, so you don't need to flood your external prefab files with random misc one-off prefabs.
+- Added a template "Example" prefab and theme that comes internally with the mod. The prefab will always be added to the internal prefabs unless you go into Editor Preferences and turn the setting off.
+- The object drag selector now moves to the currently selected object keyframe and when clicked, it will automatically set the cursor time to the keyframe time.
+1.7.6 > [Apr 7, 2023]
+- Added song encryption, so uploading a level will now convert the level.ogg file to a "song.lsen" file, which cannot be played as an audio file due to it being encrypted. This is good to use with ArcadiaCustoms.
+- Added a few more hover ui stuff.
+- Added an option for the timeline cursor to not pause when dragged around.
+1.7.5 > [April 7, 2023]
+- Trying to fix the timeline cursor so it doesn't pause when you drag.
+- Fully implemented and did some changes to how the implemented mods work. (That's RenderDepthUnlimited and OriginOffset). Because of this, use the mod with caution when making levels until we're sure we can use it without the game breaking.
+- Added template theme config stuff.
+1.7.4 > [Apr 4, 2023]
+- Fixed a bug where prefabs weren't taken into consideration with multi object selection.
+- Added two more config settings: Snap Keyframes and Snap Amount. Snap keyframes now allows you to BPM snap the time of keyframes when you drag them and Snap amount is basically the timing of the song (I think, Idk music that much)
+- Prefabs can now have their timeline object collapsed.
+- Fixed a zoom bug where selecting an event keyframe would cause zooming in / out to not work.
+- Fixed zooming for the object keyframe timeline, so now it'll (most of the time) zoom in on the cursor position. Doesn't do this all the time, and I have no idea why.
+- Added hover scaling to open file popup buttons, timeline objects and object keyframes. The scale setting can be modified via the config.
+1.7.3 > [Apr 3, 2023]
+- Moved all the code in mods RenderDepthUnlimted, OriginOffset, CursorColor and NoAutokillSelectable to EditorManagement. It's pretty much the same exact code as before, but I do plan on stream-lining it to make it work a whole lot better.
+1.7.2 > [Apr 3, 2023]
+- Added the rest of the Config Settings for EditorManagement.
+1.7.1 > [Apr 3, 2023]
+- Fixed an issue with creating new levels not working.
+- In the future I plan on combining other mods with this one(like RenderDepthUnlimited, OriginOffset and NoAutokillSelectable) just so it's easier for me to work on the mods, and it just makes sense overall to do that since all of those mods do stuff with the editor.
+- Started working on a Editor Properties window! This will replace ConfigurationManager as a more PA-style GUI thing.
+1.7.0 > [Mar 31, 2023]
+- Added some custom notifications for me to use.
+- Notifications' width, size and direction can now be modified in the config.
+- Added an option for saving date_edited in the metadata to be the most recent.
+- Added "Delete All Backgrounds" button to the BG window. This will do exactly as it says, except for keeping one object due to problems occuring if a BG object doesn't exist (I think). Oh and there's a "Create Backgrounds", so you can add a specific amount of random backgrounds.
+- Added a clear parent button, so you can now easily reset an objects' parent to nothing.
+- Added a TON of tooltips.
+- When hovering your mouse over an object or clicking on one (and if Debug is enabled in config), it will display a notification related to the object's data, including current position.
+- You can now drag the first positition keyframe of an object around. This feature is very experimental but it works enough for me to have it here.
+- The layer input field will now change when you scroll wheel over it. When you press the middle mouse button, it will send a notification listing all the layers that have an object.
+- Added more functionality to the scroll wheel stuff for the object keyframes, although there is a minor bug with it atm and Idk why it happens. (It's just where going into the negative numbers would make it jump to a weird number)
+- Markers now show a tooltip relating to what their name, time and description is.
+- Changed some config stuff so it's a little more readable.
+- Certain UI popups can now be dragged around.
+- Gave more popups / dialogs animations, but they have more settings that can be modified via the config (which include custom easings).
+1.6.2 > [Mar 29, 2023]
+- Fixed an issue where an unused feature got in the way of loading the level list properly.
+1.6.1 > [Mar 26, 2023]
+- Fixed prefab deleting, now you should be able to delete prefab objects (Not the ones that come from an expanded prefab).
+- Fixed the timeline and object zooms, so now it will only zoom if your mouse is hovered over the timeline. (This also means I fixed the event layer timeline zoom issue)
+- Made the Level Open Popup do the thing it does in dev+.
+1.6.0 > [Feb 27, 2023]
+- Removed waveform external loading, caused a few issues so unfortunately it had to be removed. Still saves into your level folder though!
+- Fixed applying prefab selection bug.
+- Added deleting objects to undo! Even when you delete a ton of objects, you can undo that.
+- Deleting, pasting, drag selecting and expanding prefabs now runs 10x as fast, although at the cost of it appearing to happen instantaneously. Works similarly to deleting event keyframes where it deletes them one by one.
+- Drag selection now allows you to multi select by holding SHIFT and drag selecting more objects.
+- Implemented a custom EditorGUI theme system so now you can really customize the colors of the editor.
+- Fixed instant keyframe easing so now it should actually be instant.
+1.5.7 > [Feb 22, 2023]
+- Fixed an issue where expanding and applying a prefab would cause the whole editor to error.
