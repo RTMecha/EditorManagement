@@ -17,12 +17,13 @@ using EditorManagement.Functions.Editors;
 
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
+using RTFunctions.Functions.Components.Player;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.14")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.1.15")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -143,6 +144,8 @@ namespace EditorManagement
 				RTRotator.RotatorRadius = RTEditor.GetEditorProperty("Object Dragger Rotator Radius").GetConfigEntry<float>().Value;
                 RTScaler.ScalerOffset = RTEditor.GetEditorProperty("Object Dragger Scaler Offset").GetConfigEntry<float>().Value;
                 RTScaler.ScalerScale = RTEditor.GetEditorProperty("Object Dragger Scaler Scale").GetConfigEntry<float>().Value;
+
+				RTPlayer.ZenModeInEditor = RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value;
 			}
 			catch (Exception ex)
 			{

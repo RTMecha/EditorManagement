@@ -5939,6 +5939,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("General", "Create Objects at Camera Center", true, "When an object is created, its position will be set to that of the camera's.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Editor Zen Mode", false, "If on, the player will not take damage in Preview Mode.")),
 
             #endregion
 
