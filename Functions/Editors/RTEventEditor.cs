@@ -91,8 +91,8 @@ namespace EditorManagement.Functions.Editors
 			"Player",
 			"Follow Player",
 			"Audio",
-			"???",
-			"???",
+			"???", //"Video BG Parent",
+			"???", //"Video BG",
 		};
 
 		public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
@@ -124,8 +124,8 @@ namespace EditorManagement.Functions.Editors
 			{ "- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
 			{ "- Follow Player Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
 			{ "- Audio Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
-			{ "- ??? 1 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
-			{ "- ??? 2 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			{ /*"- Video BG Parent Editor -"*/ "- ??? 1 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
+			{ /*"- Video BG Editor -"*/ "- ??? 2 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
         };
 
 		public static List<Color> EventLayerColors => new List<Color>
