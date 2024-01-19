@@ -541,7 +541,7 @@ namespace EditorManagement.Patchers
 
 			// ID & LDM
 			{
-				var id = ObjEditor.inst.ObjectView.transform.GetChild(0).gameObject.Duplicate(ObjEditor.inst.ObjectView.transform, "id", 0);
+				var id = __instance.ObjectView.transform.GetChild(0).gameObject.Duplicate(__instance.ObjectView.transform, "id", 0);
 				Destroy(id.transform.GetChild(1).gameObject);
 
 				((RectTransform)id.transform).sizeDelta = new Vector2(515, 32f);
@@ -672,6 +672,86 @@ namespace EditorManagement.Patchers
 				//scroll.content = (RectTransform)color;
 				//scroll.viewport = (RectTransform)color;
 				//scroll.horizontal = false;
+			}
+
+			// Object Tags
+			{
+				var label = __instance.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(__instance.ObjectView.transform);
+				var index = __instance.ObjectView.transform.Find("name").GetSiblingIndex() + 1;
+				label.transform.SetSiblingIndex(index);
+
+				Destroy(label.transform.GetChild(1).gameObject);
+				label.transform.GetChild(0).GetComponent<Text>().text = "Tags";
+
+				// Tags Scroll View/Viewport/Content
+				var tagScrollView = new GameObject("Tags Scroll View");
+				tagScrollView.transform.SetParent(__instance.ObjectView.transform);
+				tagScrollView.transform.SetSiblingIndex(index + 1);
+				tagScrollView.transform.localScale = Vector3.one;
+
+				var tagScrollViewRT = tagScrollView.AddComponent<RectTransform>();
+				tagScrollViewRT.sizeDelta = new Vector2(522f, 40f);
+				var scroll = tagScrollView.AddComponent<ScrollRect>();
+				//layout.AddComponent<Mask>();
+				//var image = layout.AddComponent<Image>();
+
+				scroll.horizontal = true;
+				scroll.vertical = false;
+
+				var image = tagScrollView.AddComponent<Image>();
+				image.color = new Color(1f, 1f, 1f, 0.01f);
+
+				var mask = tagScrollView.AddComponent<Mask>();
+
+				var tagViewport = new GameObject("Viewport");
+				tagViewport.transform.SetParent(tagScrollViewRT);
+				tagViewport.transform.localScale = Vector3.one;
+
+				var tagViewPortRT = tagViewport.AddComponent<RectTransform>();
+				tagViewPortRT.anchoredPosition = Vector2.zero;
+				tagViewPortRT.anchorMax = Vector2.one;
+				tagViewPortRT.anchorMin = Vector2.zero;
+				tagViewPortRT.sizeDelta = Vector2.zero;
+
+				var tagContent = new GameObject("Content");
+				tagContent.transform.SetParent(tagViewPortRT);
+				tagContent.transform.localScale = Vector3.one;
+
+				var tagContentRT = tagContent.AddComponent<RectTransform>();
+
+				var tagContentGLG = tagContent.AddComponent<GridLayoutGroup>();
+				tagContentGLG.cellSize = new Vector2(168f, 32f);
+				tagContentGLG.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+				tagContentGLG.constraintCount = 1;
+				tagContentGLG.childAlignment = TextAnchor.MiddleLeft;
+				tagContentGLG.spacing = new Vector2(8f, 0f);
+
+				var tagContentCSF = tagContent.AddComponent<ContentSizeFitter>();
+				tagContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+				tagContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+				scroll.viewport = tagViewPortRT;
+				scroll.content = tagContentRT;
+			}
+
+            // Render Type
+            {
+				var label = __instance.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(__instance.ObjectView.transform);
+				var index = __instance.ObjectView.transform.Find("depth").GetSiblingIndex() + 1;
+				label.transform.SetSiblingIndex(index);
+
+				Destroy(label.transform.GetChild(1).gameObject);
+				label.transform.GetChild(0).GetComponent<Text>().text = "Render Type";
+
+				var renderType = ObjEditor.inst.ObjectView.transform.Find("autokill/tod-dropdown").gameObject
+					.Duplicate(__instance.ObjectView.transform, "rendertype", index + 1);
+				var renderTypeDD = renderType.GetComponent<Dropdown>();
+				renderTypeDD.options.Clear();
+				renderTypeDD.options = new List<Dropdown.OptionData>
+				{
+					new Dropdown.OptionData("Foreground"),
+					new Dropdown.OptionData("Background"),
+				};
 			}
 
 			DestroyImmediate(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);

@@ -90,8 +90,9 @@ namespace EditorManagement.Functions.Editors
                 if (CurrentSelection.IsBeatmapObject)
                     CurrentSelection.Zoom = _val;
             });
-        }
 
+            StartCoroutine(Wait());
+        }
 
         void Update()
         {
@@ -99,6 +100,35 @@ namespace EditorManagement.Functions.Editors
                 ModCompatibility.sharedFunctions.Add("SelectedObjectCount", SelectedObjectCount);
             else
                 ModCompatibility.sharedFunctions["SelectedObjectCount"] = SelectedObjectCount;
+        }
+
+        public IEnumerator Wait()
+        {
+            while (!EditorManager.inst || !RTEditor.inst || !RTEditor.inst.defaultIF)
+                yield return null;
+
+            try
+            {
+                tagPrefab = new GameObject("Tag");
+                var tagPrefabRT = tagPrefab.AddComponent<RectTransform>();
+                var tagPrefabImage = tagPrefab.AddComponent<Image>();
+                tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);
+                var tagPrefabLayout = tagPrefab.AddComponent<HorizontalLayoutGroup>();
+                tagPrefabLayout.childControlWidth = false;
+                tagPrefabLayout.childForceExpandWidth = false;
+
+                var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
+                ((RectTransform)input.transform).sizeDelta = new Vector2(136f, 32f);
+                input.transform.Find("Text").GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
+                input.transform.Find("Text").GetComponent<Text>().fontSize = 17;
+
+                var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
+                ((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex.ToString());
+            }
         }
 
         public Scrollbar timelinePosScrollbar;
@@ -126,6 +156,8 @@ namespace EditorManagement.Functions.Editors
         public static bool RenderPrefabTypeIcon { get; set; }
 
         public static float TimelineObjectHoverSize { get; set; }
+
+        public GameObject tagPrefab;
 
         public void OpenDialog(BeatmapObject beatmapObject)
         {
@@ -1182,7 +1214,7 @@ namespace EditorManagement.Functions.Editors
                 RTEditor.inst.SetLayer(timelineObject.Layer);
             }
 
-            if (timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().RTObject)
+            if (RTObject.Enabled && timelineObject.IsBeatmapObject && timelineObject.GetData<BeatmapObject>().RTObject)
                 timelineObject.GetData<BeatmapObject>().RTObject?.GenerateDraggers();
         }
 
@@ -1492,6 +1524,7 @@ namespace EditorManagement.Functions.Editors
 
                     objectUIElements.Add("Name IF", tfv.Find("name/name").GetComponent<InputField>());
                     objectUIElements.Add("Object Type DD", tfv.Find("name/object-type").GetComponent<Dropdown>());
+                    objectUIElements.Add("Tags Content", tfv.Find("Tags Scroll View/Viewport/Content").transform);
 
                     objectUIElements.Add("Start Time ET", tfv.Find("time").GetComponent<EventTrigger>());
                     objectUIElements.Add("Start Time IF", tfv.Find("time/time").GetComponent<InputField>());
@@ -1532,6 +1565,7 @@ namespace EditorManagement.Functions.Editors
                     objectUIElements.Add("Depth IF", tfv.Find("spacer/depth")?.GetComponent<InputField>());
                     objectUIElements.Add("Depth <", tfv.Find("spacer/depth/<")?.GetComponent<Button>());
                     objectUIElements.Add("Depth >", tfv.Find("spacer/depth/>")?.GetComponent<Button>());
+                    objectUIElements.Add("Render Type", tfv.Find("rendertype")?.GetComponent<Dropdown>());
 
                     objectUIElements.Add("Bin Slider", tfv.Find("editor/bin").GetComponent<Slider>());
                     objectUIElements.Add("Layers IF", tfv.Find("editor/layers")?.GetComponent<InputField>());
@@ -1655,6 +1689,44 @@ namespace EditorManagement.Functions.Editors
 
                 // Since name has no effect on the physical object, we will only need to update the timeline object.
                 RenderTimelineObject(new TimelineObject(beatmapObject));
+            });
+
+            var tagsParent = (Transform)ObjectUIElements["Tags Content"];
+
+            LSHelpers.DeleteChildren(tagsParent);
+
+            int num = 0;
+            foreach (var tag in beatmapObject.tags)
+            {
+                int index = num;
+                var gameObject = tagPrefab.Duplicate(tagsParent, index.ToString());
+                var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                input.onValueChanged.ClearAll();
+                input.text = tag;
+                input.onValueChanged.AddListener(delegate (string _val)
+                {
+                    beatmapObject.tags[index] = _val;
+                });
+
+                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                delete.onClick.ClearAll();
+                delete.onClick.AddListener(delegate ()
+                {
+                    beatmapObject.tags.RemoveAt(index);
+                    RenderName(beatmapObject);
+                });
+
+                num++;
+            }
+
+            var add = PrefabEditor.inst.CreatePrefab.Duplicate(tagsParent, "Add");
+            add.transform.Find("Text").GetComponent<Text>().text = "Add Tag";
+            var addButton = add.GetComponent<Button>();
+            addButton.onClick.ClearAll();
+            addButton.onClick.AddListener(delegate ()
+            {
+                beatmapObject.tags.Add("New Tag");
+                RenderName(beatmapObject);
             });
         }
 
@@ -2523,6 +2595,15 @@ namespace EditorManagement.Functions.Editors
 
             TriggerHelper.IncreaseDecreaseButtonsInt(depthText, -1);
             TriggerHelper.AddEventTrigger(depthText.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(depthText, 1) });
+
+            var renderType = (Dropdown)ObjectUIElements["Render Type"];
+            renderType.onValueChanged.ClearAll();
+            renderType.value = beatmapObject.background ? 1 : 0;
+            renderType.onValueChanged.AddListener(delegate (int _val)
+            {
+                beatmapObject.background = _val == 1;
+                Updater.UpdateProcessor(beatmapObject);
+            });
         }
 
         /// <summary>
