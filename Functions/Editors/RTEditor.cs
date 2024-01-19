@@ -3127,6 +3127,37 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
+            
+            //Background Swap
+            {
+                labelGenerator("Swap each object's render type");
+
+                buttonGenerator("render type swap", "Swap Render Type", parent, delegate ()
+                {
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.background = !beatmapObject.background;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                });
+            }
+
+            //Background Toggle
+            {
+                labelGenerator("Toggle all object's render type");
+
+                bool boggle = false;
+
+                buttonGenerator("render type toggle", "Toggle Render Type", parent, delegate ()
+                {
+                    boggle = !boggle;
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.background = boggle;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                });
+            }
 
             //Sync object selection
             {
