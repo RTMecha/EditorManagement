@@ -1,3 +1,6 @@
+2.1.17 > [Jan 19, 2024]
+- Added two buttons to the Multi Object Editor that allows you to change the render type of each selected object.
+- Implemented Object Tags UI. Right now, the only functionality it's used for is "DontRotate" for Player Shape.
 2.1.16 > [Jan 18, 2024]
 - Quick fix for using Editor Zen Mode in ToggleZenMode keybind.
 2.1.15 > [Jan 18, 2024]
