@@ -887,6 +887,9 @@ namespace EditorManagement.Functions.Editors
                         case "reactiveRot":
                         case "reactiveCol":
                         case "reactiveColLerp":
+                        case "reactivePosChain":
+                        case "reactiveScaChain":
+                        case "reactiveRotChain":
                             {
                                 var single = numberInput.Duplicate(layout, "Value");
                                 single.transform.Find("Text").GetComponent<Text>().text = "Total Multiply";
@@ -907,7 +910,7 @@ namespace EditorManagement.Functions.Editors
                                 TriggerHelper.IncreaseDecreaseButtons(inputField, t: single.transform);
                                 TriggerHelper.AddEventTrigger(single, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
 
-                                if (cmd == "reactivePos" || cmd == "reactiveSca")
+                                if (cmd == "reactivePos" || cmd == "reactiveSca" || cmd == "reactivePosChain" || cmd == "reactiveScaChain")
                                 {
                                     var samplesX = numberInput.Duplicate(layout, "Value");
                                     samplesX.transform.Find("Text").GetComponent<Text>().text = "Sample X";
