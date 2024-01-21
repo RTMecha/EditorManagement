@@ -346,3 +346,85 @@ If it is not the same type then it will not paste that data, instead it'll eithe
 - Fixed instant keyframe easing so now it should actually be instant.
 1.5.7 > [Feb 22, 2023]
 - Fixed an issue where expanding and applying a prefab would cause the whole editor to error.
+1.5.6 > [Feb 19, 2023]
+- Added some configurable editor preview stuff. You can now highlight selectable objects, show empty objects, show only damagable objects, set objects not on current layer as transparent and set empties not selectable in preview.
+1.5.5 > [Feb 19, 2023]
+- Added a scroll viewport to the Multi Object Editor to allow for more options.
+- Added multi object name, swap / toggle lock / collapse and sync actions.
+- Added BPM Snap saving.
+1.5.4 > [Feb 16, 2023]
+- First release for GitHub! This update contains no changes other than adding a "date edited / created" sort option in the sort dropdown for the editor level list popup.
+1.5.3 > [Feb 10, 2023]
+- Fixed the custom waveform stuff.
+- Waveform now saves and if it already exists, it will load from the level folder. Else it will just generate a new one, which I think will make the level loading take longer. If you don't want a waveform timeline, you can just disable generation in the config.
+- Did some minor changes.
+1.5.2 > [Feb 9, 2023]
+- Fixed creating new levels and loading icons from directories.
+- Started potentially implementing a waveform saver / loader system? Idk how to cache stuff yet so this'll hopefully be a thing in the future when I get that going.
+1.5.1 > [Feb 7, 2023]
+-Replaced editor layer buttons with an input field and changes the way layers and objects are handled to allow for practically as many editor layers as you could want.
+-Added more game difficulties, but I might move this to a separate mod later so you don't need to have EditorManagement in order to have the extra difficulties.
+-Added multi object editor, you can now select a group of objects and affect them in a certain way!
+-Made a bunch of stuff configurable (Open File Popup, waveform colors, autosaves, etc)
+-Added custom editor path so you can load the level list from any directory in the beatmaps folder.
+-Added editor level list sorting.
+-Brought back Save As.
+-Autosaves now save in beatmaps/editor level path/autosaves.
+-Fixed a few name issues where you can't type spaces when naming prefabs and when naming themes you're forced to have the first letter of each new word be a capital and not have any other symbols like numbers.
+-Added extra level details in the settings window, such as object count, alive objects count, time in editor, etc.
+-Added marker looping so you can loop between two markers.
+-Last editor position (layer, timeline scrollbar, audio time, zoom) now saves and loads each time you open a level, allowing you to easily continue where you last left off.
+-Added a button that takes you to the artist link you set.
+-Added a little doggo!
+1.5.0 > [Feb 5, 2023]
+- Added some stuff to the multi object editor window, including: set depth, set layer, set time, cycle object type and set song autokill time to current song time.
+- It's now possible to customize the directory you load levels from. However currently it won't reload in-game atm so for now the feature's not accessible.
+- Cleaned up an error log spam issue when going into preview mode.
+- Fixed up the Save As feature, now you can save a copy of your current level to beatmaps/editor, including sub-directories!
+1.4.5 > [Feb 3, 2023]
+- Fixed pasting objects on layers higher than normal.
+- Fixed selecting objects on layers higher than normal.
+1.4.4 > [Feb 3, 2023]
+- Fixed an issue with autosave constantly running whenever the camera zoom is being updated. 
+1.4.3 > [Feb 3, 2023]
+- Fixed a minor issue with Event/Check using the old way of setting the layer.
+1.4.2 > [Feb 3, 2023]
+- Added the layer input field to the beatmap object editor window.
+- Fixed an issue relating to if an object is at a higher editor layer than the layer button count, so now you can have the object on any layer you want! :D
+1.4.1 > [Feb 3, 2023]
+- Changes the layer input field to feel a bit more familiar with how PA usually is.
+1.4.0 > [Feb 3, 2023]
+- Added editor level list sorting via a dropdown list and checkbox.
+- Added optional difficulty colors to each level button.
+- Added Hover Help Tooltips to each level button, containing artist - title (with the base name being the difficulty color) and the description.
+- Added a loading doggo! Isn't he cute?
+- Time spent in specific level now loads and saves to and from editor.lse.
+- Current layer, main timeline zoom and main timeline scroll all get loaded and saved to and from editor.lse.
+- Added open artist link button next to the link type dropdown in the metadata window.
+- Added the two new difficulties as properly selectable options. ("None" difficulty is the animation difficulty)
+- You can now have as many editor layers as you want, however objects above layer 9 won't render correctly due to a similar issue to that custom objects bug that was fixed in Image Shapes.
+1.3.1 > [Jan 7, 2023]
+- Fixes error log spam when in Editor Preview mode.
+1.3.0 > [Jan 3, 2023]
+- Fully implements the Count values to the Settings window. Still unsure if this is entirely stable.
+- Finally adds custom level button text formatting.
+- Fixes an issue where when you drag the timeline cursor the game pauses. (Not entirely fixed yet)
+- Adds timeline pos save so if the config is enabled, loading a level with a saved timeline_pos value will automatically set the audio time to it on start. This can be saved and also be modified via the config menu.
+- Brings back the normal time button (the one that tells you the current minutes:seconds.milliseconds of the level).
+- Removes the check button from the timeline bar because it's pretty useless.
+- Fixes the new marker colors not rendering and shows the current marker's index number at the bottom through some text.
+- Cleans up the config, which means previous versions of the config file won't be read.
+1.2.3 > [Dec 19, 2022]
+- Adds a Object Count text object to the Settings window. This does exactly what you think it does, it shows the current amount of objects the current level has. It automatically updates as you add more objects AND it updates when you switch to another level.
+1.2.2 > [Dec 17, 2022]
+- Adds marker looping so you can easily stay within the bounds of a selected area. This could be really helpful for collabs or for focusing on certain parts of a level. (I'm legit going crazy over this due to it being another old suggestion of mine that never happened)
+1.2.1 > [Dec 15, 2022]
+- Replaces the original time button with a time text InputField.
+1.2.0 > [Dec 14, 2022]
+- Adds config options like the recent Prefab Additions updates, allowing you to customize the Open File Popup window.
+1.1.1 > [Dec 10, 2022]
+- Adds config options for the editor zoom limit, so you can now zoom out even further!
+1.1.0 > [Dec 9, 2022]
+- Adds two new difficulties to the game: Master and animation. Metadata difficulty 5 is Master and 6 is Animation. If the mod isn't used OR the number is higher than what the mod allows, the difficulty just becomes "Unknown Difficulty".
+1.0.0 > [Dec 3, 2022]
+- Currently this mod adds config to the repeating AutoSave function. Mod can't increase the autosave count yet. Future versions of this mod will allow for custom beatmap folders.
