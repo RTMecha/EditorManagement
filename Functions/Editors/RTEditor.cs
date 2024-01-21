@@ -4066,6 +4066,11 @@ namespace EditorManagement.Functions.Editors
             var gameManager = GameManager.inst;
             var dataManager = DataManager.inst;
 
+            if (editorManager.hasLoadedLevel && RTFile.DirectoryExists(gameManager.path.Replace("/level.lsb", "")))
+            {
+                yield return StartCoroutine(ProjectData.Writer.SaveData(gameManager.path.Replace("level.lsb", "level-open-backup.lsb"), GameData.Current));
+            }
+
             editorManager.loading = true;
 
             string code = $"{fullPath}/EditorLoad.cs";
