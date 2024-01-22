@@ -1592,10 +1592,10 @@ namespace EditorManagement.Functions.Editors
                 inst.CurrentSelection = inst.GetTimelineObject(beatmapObject);
                 inst.CurrentSelection.selected = true;
 
-                if (RTHelpers.AprilFools)
-                {
-                    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 10f);
-                }
+                //if (RTHelpers.AprilFools)
+                //{
+                //    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 10f);
+                //}
 
                 inst.RenderIDLDM(beatmapObject);
                 inst.RenderName(beatmapObject);
@@ -1626,10 +1626,10 @@ namespace EditorManagement.Functions.Editors
                     inst.StartCoroutine(ObjectModifiersEditor.inst.RenderModifiers(beatmapObject));
 
                 // April Fools!
-                if (RTHelpers.AprilFools)
-                {
-                    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 180f);
-                }
+                //if (RTHelpers.AprilFools)
+                //{
+                //    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 180f);
+                //}
             }
 
             yield break;
