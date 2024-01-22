@@ -444,12 +444,12 @@ namespace EditorManagement.Functions.Editors
                         case "copyColor":
                         case "loadLevel":
                         case "loadLevelInternal":
-                        case "code":
+                        //case "code":
                         case "setText":
                         case "setTextOther":
                             {
                                 var path = stringInput.Duplicate(layout, "Path");
-                                path.transform.Find("Text").GetComponent<Text>().text = cmd == "code" ? "Right Click to Edit" : "Path";
+                                path.transform.Find("Text").GetComponent<Text>().text = cmd == "code" ? "Right Click to Edit" : cmd == "updateObject" || cmd == "setText" || cmd == "copyColor" ? "Objects Name" : "Path";
 
                                 var pathInputField = path.transform.Find("Input").GetComponent<InputField>();
                                 pathInputField.onValueChanged.ClearAll();
