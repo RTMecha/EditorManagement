@@ -150,6 +150,9 @@ namespace EditorManagement.Patchers
                 Updater.levelProcessor = null;
             }
 
+            EditorManager.inst.hasLoadedLevel = false;
+            EditorManager.inst.loading = false;
+
             RTEditor.Init(__instance);
             KeybindManager.Init(__instance);
 
@@ -238,7 +241,8 @@ namespace EditorManagement.Patchers
                     {
                         try
                         {
-                            Instance.AssignWaveformTextures();
+                            Instance.StartCoroutine(RTEditor.inst.AssignTimelineTexture());
+                            //Instance.AssignWaveformTextures();
                             Instance.UpdateTimelineSizes();
                             Instance.firstOpened = true;
 
@@ -248,7 +252,10 @@ namespace EditorManagement.Patchers
                             CheckpointEditor.inst.CreateGhostCheckpoints();
                             GameManager.inst.UpdateTimeline();
                             CheckpointEditor.inst.SetCurrentCheckpoint(0);
-                            Instance.TogglePlayingSong();
+                            if (!RTHelpers.AprilFools)
+                                Instance.TogglePlayingSong();
+                            else
+                                Instance.DisplayNotification("April Fools!", 6f, EditorManager.NotificationType.Error);
                             Instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
                             if (Instance.loadedLevels.Count > 0)
                                 Instance.OpenBeatmapPopup();
@@ -333,6 +340,26 @@ namespace EditorManagement.Patchers
             }
 
             Instance.prevAudioTime = AudioManager.inst.CurrentAudioSource.time;
+            return false;
+        }
+
+        [HarmonyPatch("TogglePlayingSong")]
+        [HarmonyPrefix]
+        static bool TogglePlayingSongPrefix()
+        {
+            if (RTHelpers.AprilFools || Instance.hasLoadedLevel)
+            {
+                if (AudioManager.inst.CurrentAudioSource.isPlaying)
+                    AudioManager.inst.CurrentAudioSource.Pause();
+                else
+                    AudioManager.inst.CurrentAudioSource.Play();
+                Instance.UpdatePlayButton();
+            }
+            else
+            {
+                AudioManager.inst.CurrentAudioSource.Pause();
+                Instance.UpdatePlayButton();
+            }
             return false;
         }
 

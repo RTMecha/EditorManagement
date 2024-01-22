@@ -740,7 +740,8 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator AssignTimelineTexture()
         {
-            if (!RTFile.FileExists(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png"))
+            if (!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading && !RTFile.FileExists($"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png") ||
+                !RTFile.FileExists(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png"))
             {
                 int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
                 Texture2D waveform = null;
@@ -763,12 +764,16 @@ namespace EditorManagement.Functions.Editors
             }
             else
             {
-                var waveSprite = SpriteManager.LoadSprite(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
+                var waveSprite = SpriteManager.LoadSprite(!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading ?
+                    $"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png" :
+                    GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
                 TimelineImage.sprite = waveSprite;
                 TimelineOverlayImage.sprite = TimelineImage.sprite;
             }
 
-            TimelineImage.sprite.Save(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
+            TimelineImage.sprite.Save(!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading ?
+                    $"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png" :
+                    GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
 
             yield break;
         }
@@ -4067,9 +4072,7 @@ namespace EditorManagement.Functions.Editors
             var dataManager = DataManager.inst;
 
             if (editorManager.hasLoadedLevel && RTFile.DirectoryExists(gameManager.path.Replace("/level.lsb", "")))
-            {
                 yield return StartCoroutine(ProjectData.Writer.SaveData(gameManager.path.Replace("level.lsb", "level-open-backup.lsb"), GameData.Current));
-            }
 
             editorManager.loading = true;
 
