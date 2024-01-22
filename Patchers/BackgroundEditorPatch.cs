@@ -996,7 +996,6 @@ namespace EditorManagement.Patchers
 			bgGameObject.SetActive(backgroundObject.active);
 			bgGameObject.transform.localPosition = new Vector3(backgroundObject.pos.x, backgroundObject.pos.y, 32f + backgroundObject.layer * 10f);
 			bgGameObject.transform.localScale = new Vector3(backgroundObject.scale.x, backgroundObject.scale.y, 10f);
-			//bgGameObject.transform.transform.localRotation = Quaternion.Euler(new Vector3(bg == null ? 0f : bg.rotation.x, bg == null ? 0f : bg.rotation.y, backgroundObject.rot));
 			bgGameObject.transform.localRotation = Quaternion.Euler(new Vector3(backgroundObject.rotation.x, backgroundObject.rotation.y, backgroundObject.rot));
 
 			foreach (object obj in bgGameObject.transform)
