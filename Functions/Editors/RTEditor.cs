@@ -4150,9 +4150,6 @@ namespace EditorManagement.Functions.Editors
             var gameManager = GameManager.inst;
             var dataManager = DataManager.inst;
 
-            if (editorManager.hasLoadedLevel && RTFile.DirectoryExists(gameManager.path.Replace("/level.lsb", "")))
-                yield return StartCoroutine(ProjectData.Writer.SaveData(gameManager.path.Replace("level.lsb", "level-open-backup.lsb"), GameData.Current));
-
             editorManager.loading = true;
 
             string code = $"{fullPath}/EditorLoad.cs";
@@ -4184,10 +4181,16 @@ namespace EditorManagement.Functions.Editors
             string rawMetadataJSON = null;
             AudioClip song = null;
 
-            editorManager.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
+            editorManager.ClearDialogs();
             editorManager.ShowDialog("File Info Popup");
 
             var fileInfo = editorManager.GetDialog("File Info Popup").Dialog.transform.Find("text").GetComponent<Text>();
+
+            if (editorManager.hasLoadedLevel && RTFile.DirectoryExists(gameManager.path.Replace("/level.lsb", "")))
+            {
+                fileInfo.text = $"Backing up previous level [ {Path.GetFileName(gameManager.path.Replace("/level.lsb", ""))} ]";
+                yield return StartCoroutine(ProjectData.Writer.SaveData(gameManager.path.Replace("level.lsb", "level-open-backup.lsb"), GameData.Current));
+            }
 
             fileInfo.text = $"Loading Level Data for [ {name} ]";
 
