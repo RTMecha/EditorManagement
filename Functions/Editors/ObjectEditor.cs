@@ -2910,12 +2910,12 @@ namespace EditorManagement.Functions.Editors
                 Debug.Log($"{EditorPlugin.className}jpgFileLocation: {jpgFileLocation}");
 
                 var levelPath = jpgFile.Replace("\\", "/").Replace(editorPath + "/", "");
-                Debug.Log("{EditorPlugin.className}levelPath: {levelPath}");
+                Debug.Log($"{EditorPlugin.className}levelPath: {levelPath}");
 
                 if (!RTFile.FileExists(jpgFileLocation) && !jpgFile.Replace("\\", "/").Contains(editorPath))
                 {
                     File.Copy(jpgFile, jpgFileLocation);
-                    Debug.Log("{EditorPlugin.className}Copied file to : {jpgFileLocation}");
+                    Debug.Log($"{EditorPlugin.className}Copied file to : {jpgFileLocation}");
                 }
                 else
                     jpgFileLocation = editorPath + "/" + levelPath;
