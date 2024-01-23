@@ -884,6 +884,19 @@ namespace EditorManagement.Patchers
             return false;
         }
 
+        [HarmonyPatch("OpenLevelFolder")]
+        [HarmonyPrefix]
+        static bool OpenLevelFolder()
+        {
+            if (RTFile.DirectoryExists(GameManager.inst.basePath.Substring(0, GameManager.inst.basePath.LastIndexOf("/"))))
+            {
+                RTFile.OpenInFileBrowser.Open(GameManager.inst.basePath);
+                return false;
+            }
+            RTFile.OpenInFileBrowser.Open(RTFile.ApplicationDirectory + RTEditor.editorListPath);
+            return false;
+        }
+
         [HarmonyPatch("OpenedLevel", MethodType.Getter)]
         [HarmonyPrefix]
         static bool OpenedLevelPrefix(EditorManager __instance, ref bool __result)
