@@ -436,6 +436,30 @@ namespace EditorManagement.Functions.Editors
                         case "playSound":
                             {
                                 stringGenerator("Path", 0);
+                                {
+                                    var search = layout.Find("Path/Input").gameObject.AddComponent<Clickable>();
+                                    search.onClick = delegate (PointerEventData pointerEventData)
+                                    {
+                                        if (pointerEventData.button == PointerEventData.InputButton.Right)
+                                        {
+                                            EditorManager.inst.ShowDialog("Browser Popup");
+                                            RTFileBrowser.inst.UpdateBrowser(System.IO.Directory.GetCurrentDirectory(), new string[] { ".wav", ".ogg" }, onSelectFile: delegate (string _val)
+                                            {
+                                                var global = Parser.TryParse(modifier.commands[1], false);
+
+                                                if (_val.Replace("\\", "/").Contains(global ? RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/soundlibrary/" : GameManager.inst.basePath.Replace("\\", "/")))
+                                                {
+                                                    layout.Find("Path/Input").GetComponent<InputField>().text = _val.Replace("\\", "/").Replace(global ? RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/soundlibrary/" : GameManager.inst.basePath.Replace("\\", "/"), "");
+                                                    EditorManager.inst.HideDialog("Browser Popup");
+                                                }
+                                                else
+                                                {
+                                                    EditorManager.inst.DisplayNotification($"Path does not contain the proper directory.", 2f, EditorManager.NotificationType.Warning);
+                                                }
+                                            });
+                                        }
+                                    };
+                                }
                                 boolGenerator("Global", 1, false);
                                 singleGenerator("Pitch", 2, 1f);
                                 singleGenerator("Volume", 3, 1f);
@@ -450,6 +474,7 @@ namespace EditorManagement.Functions.Editors
                         case "loadLevelInternal":
                         case "setText":
                         case "setTextOther":
+                        case "objectCollide":
                             {
                                 if (cmd == "setTextOther")
                                 {
@@ -457,7 +482,7 @@ namespace EditorManagement.Functions.Editors
                                     stringGenerator("Text", 0);
                                 }
 
-                                if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther")
+                                if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther" || cmd == "objectCollide")
                                     stringGenerator("Object Group", 0);
                                 else if (cmd != "setTextOther")
                                     stringGenerator(cmd == "setText" ? "Text" : "Path", 0);
@@ -771,6 +796,9 @@ namespace EditorManagement.Functions.Editors
 
                                 if (cmd == "eventOffsetAnimate")
                                 {
+                                    if (modifier.commands.Count < 6)
+                                        modifier.commands.Add("False");
+
                                     singleGenerator("Time", 3, 1f);
 
                                     var dd = dropdownBar.Duplicate(layout, "Easing");
@@ -792,6 +820,8 @@ namespace EditorManagement.Functions.Editors
                                     {
                                         modifier.commands[4] = EditorManager.inst.CurveOptions[EditorManager.inst.CurveOptions.Count > _val ? _val : 0].name;
                                     });
+
+                                    boolGenerator("Relative", 5, false);
                                 }
 
                                 break;
