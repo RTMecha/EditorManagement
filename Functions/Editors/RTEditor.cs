@@ -2791,7 +2791,7 @@ namespace EditorManagement.Functions.Editors
                 button.onClick.AddListener(unityAction);
             };
 
-            //Layers
+            // Layers
             {
                 labelGenerator("Set Group Layer");
 
@@ -2847,7 +2847,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Depth
+            // Depth
             {
                 labelGenerator("Set Group Depth");
 
@@ -2896,7 +2896,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Song Time
+            // Song Time
             {
                 labelGenerator("Set Song Time");
 
@@ -2961,7 +2961,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Name
+            // Name
             {
                 labelGenerator("Set Name");
 
@@ -3030,7 +3030,86 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Song Time Autokill
+            // Tags
+            {
+                labelGenerator("Add a Tag");
+
+                var multiNameSet = zoom.Duplicate(parent, "name");
+                multiNameSet.transform.localScale = Vector3.one;
+
+                multiNameSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
+
+                var inputField = multiNameSet.transform.GetChild(0).GetComponent<InputField>();
+                inputField.characterValidation = InputField.CharacterValidation.None;
+                inputField.characterLimit = 0;
+                inputField.text = "name";
+                ((Text)inputField.placeholder).text = "Enter tag...";
+
+                Destroy(multiNameSet.transform.GetChild(0).Find("<").gameObject);
+                //var multiNB = multiNameSet.transform.GetChild(0).Find("<").gameObject;
+                //multiNB.name = "|";
+                //multiNB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
+
+                //var multiNBB = multiNB.GetComponent<Button>();
+                //multiNBB.onClick.RemoveAllListeners();
+                //multiNBB.onClick.AddListener(delegate ()
+                //{
+                //    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                //    {
+                //        timelineObject.GetData<BeatmapObject>().name = inputField.text;
+                //        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                //    }
+                //});
+
+                var mtnRight = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Button>();
+
+                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/add.png";
+
+                if (RTFile.FileExists(jpgFileLocation))
+                {
+                    Image spriteReloader = multiNameSet.transform.GetChild(0).Find(">").GetComponent<Image>();
+
+                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
+                    {
+                        spriteReloader.sprite = cover;
+                    }, delegate (string errorFile)
+                    {
+                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
+                    }));
+                }
+
+                var mtnLeftLE = multiNameSet.transform.GetChild(0).Find(">").gameObject.AddComponent<LayoutElement>();
+                mtnLeftLE.ignoreLayout = true;
+
+                var mtnLeftRT = multiNameSet.transform.GetChild(0).Find(">").GetComponent<RectTransform>();
+                mtnLeftRT.anchoredPosition = new Vector2(339f, 0f);
+                mtnLeftRT.sizeDelta = new Vector2(32f, 32f);
+
+                var mtnRightB = mtnRight.GetComponent<Button>();
+                mtnRightB.onClick.RemoveAllListeners();
+                mtnRightB.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        timelineObject.GetData<BeatmapObject>().tags.Add(inputField.text);
+                    }
+                });
+            }
+
+            // Clear Tags
+            {
+                labelGenerator("Clear all objects' tags");
+
+                buttonGenerator("clear tags", "Clear Tags", parent, delegate ()
+                {
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.tags.Clear();
+                    }
+                });
+            }
+
+            // Song Time Autokill
             {
                 labelGenerator("Set Song Time Autokill to Current");
 
@@ -3048,7 +3127,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Cycle Object Type
+            // Cycle Object Type
             {
                 labelGenerator("Cycle Object Type");
 
@@ -3067,7 +3146,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Lock Swap
+            // Lock Swap
             {
                 labelGenerator("Swap each object's lock state");
 
@@ -3082,7 +3161,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Lock Toggle
+            // Lock Toggle
             {
                 labelGenerator("Toggle all object's lock state");
 
@@ -3100,7 +3179,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Collapse Swap
+            // Collapse Swap
             {
                 labelGenerator("Swap each object's collapse state");
 
@@ -3115,7 +3194,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Collapse Toggle
+            // Collapse Toggle
             {
                 labelGenerator("Toggle all object's collapse state");
 
@@ -3133,7 +3212,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
             
-            //Background Swap
+            // Background Swap
             {
                 labelGenerator("Swap each object's render type");
 
@@ -3147,7 +3226,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Background Toggle
+            // Background Toggle
             {
                 labelGenerator("Toggle all object's render type");
 
@@ -3164,7 +3243,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            //Sync object selection
+            // Sync object selection
             {
                 labelGenerator("Sync to specific object");
 
