@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using LSFunctions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,6 +10,7 @@ using RTFunctions.Functions;
 using TMPro;
 
 using RTFunctions.Functions.Components;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -23,6 +25,73 @@ namespace EditorManagement.Functions.Editors
         {
 			inst = this;
 			title = transform.Find("Panel/Text").GetComponent<TextMeshProUGUI>();
+		}
+
+		public void UpdateBrowser(string _folder, string[] fileExtensions, Action<string> onSelectFile = null)
+		{
+			if (Directory.Exists(_folder))
+			{
+				title.text = $"<b>File Browser</b> ({FontManager.TextTranslater.ArrayToString(fileExtensions).ToLower()})";
+
+				var dir = transform.Find("folder-bar").GetComponent<InputField>();
+				dir.onValueChanged.ClearAll();
+				dir.onValueChanged.AddListener(delegate (string _val)
+				{
+					UpdateBrowser(_val, fileExtensions, onSelectFile);
+				});
+
+				LSHelpers.DeleteChildren(viewport);
+				Debug.LogFormat("Update Browser: [{0}]", new object[]
+				{
+					_folder
+				});
+				var directoryInfo = new DirectoryInfo(_folder);
+				defaultDir = _folder;
+				string[] directories = Directory.GetDirectories(defaultDir);
+				string[] files = Directory.GetFiles(defaultDir);
+				if (directoryInfo.Parent != null)
+				{
+					string backStr = directoryInfo.Parent.FullName;
+					var gameObject = backPrefab.Duplicate(viewport, backStr);
+					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						UpdateBrowser(backStr, fileExtensions, onSelectFile);
+					});
+				}
+				string[] array = directories;
+				for (int i = 0; i < array.Length; i++)
+				{
+					string folder = array[i];
+					string name = new DirectoryInfo(folder).Name;
+					var gameObject = folderPrefab.Duplicate(viewport, name);
+					gameObject.transform.Find("Text").GetComponent<Text>().text = name;
+					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					{
+						UpdateBrowser(folder, fileExtensions, onSelectFile);
+					});
+				}
+				array = files;
+				for (int i = 0; i < array.Length; i++)
+				{
+					string fileName = array[i];
+					var fileInfoFolder = new FileInfo(fileName);
+					string name = fileInfoFolder.Name;
+					if (fileExtensions.Any(x => x.ToLower() == fileInfoFolder.Extension.ToLower()))
+					{
+						var gameObject = filePrefab.Duplicate(viewport, name);
+						gameObject.transform.Find("Text").GetComponent<Text>().text = name;
+						var button = gameObject.GetComponent<Button>();
+						button.onClick.ClearAll();
+						button.onClick.AddListener(delegate ()
+						{
+							onSelectFile?.Invoke(fileInfoFolder.FullName);
+						});
+					}
+				}
+				folderBar.text = defaultDir;
+				return;
+			}
+			EditorManager.inst.DisplayNotification("Folder doesn't exist.", 2f, EditorManager.NotificationType.Error);
 		}
 
 		public void UpdateBrowser(string _folder, string fileExtension, string specificName = "", Action<string> onSelectFile = null)
