@@ -1,3 +1,8 @@
+2.1.18 > [Jan 23, 2024]
+- Fixed Prefab search breaking if an objects' type is invalid.
+- Cleaned up ObjectModifiers editor code and added new modifiers.
+- Object Tags can be added / cleared using the Multi Object Editor.
+- Added level-open-backup.lsb saving to EditorManagement. When loading a level while currently in a level, the current level will save a backup of its current state in case you forgot to save. Feature suggested by Diggydog.
 2.1.17 > [Jan 19, 2024]
 - Added two buttons to the Multi Object Editor that allows you to change the render type of each selected object.
 - Implemented Object Tags UI. Right now, the only functionality it's used for is "DontRotate" for Player Shape.
