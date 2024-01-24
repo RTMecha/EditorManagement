@@ -2281,7 +2281,7 @@ namespace EditorManagement.Functions.Editors
 
             public bool watchingKeybind;
 
-            public string DefaultCode => $"var keybind = EditorManagement.Functions.Editors.KeybindManager.inst.keybinds.Find(x => x.id == {id});{Environment.NewLine}";
+            public string DefaultCode => $"var keybind = EditorManagement.Functions.Editors.KeybindManager.inst.keybinds.Find(x => x.id == \"{id}\");{Environment.NewLine}";
 
             public List<Key> keys = new List<Key>();
 
