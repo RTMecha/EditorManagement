@@ -111,6 +111,7 @@ namespace EditorManagement.Functions.Editors
             CreateREPLEditor();
             CreateMultiObjectEditor();
             CreatePropertiesWindow();
+            CreateDocumentation();
 
             if (!RTFile.FileExists(EditorSettingsPath))
                 CreateGlobalSettings();
@@ -365,6 +366,8 @@ namespace EditorManagement.Functions.Editors
 
         public Transform timelinePreview;
         public RectTransform timelinePosition;
+
+        public List<Document> documentations = new List<Document>();
 
         #endregion
 
@@ -1925,7 +1928,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }, 7);
 
-            EditorHelper.AddEditorDropdown("Switch to Arcade Mode", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_right_small.png"), delegate ()
+            EditorHelper.AddEditorDropdown("Switch to Arcade Mode", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_right_small.png"), delegate ()
             {
                 if (EditorManager.inst.hasLoadedLevel)
                 {
@@ -2467,29 +2470,6 @@ namespace EditorManagement.Functions.Editors
                 RefreshObjectSearch(x => ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(x), Input.GetKey(KeyCode.LeftControl)));
             });
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
-
-            // Turn this into a separate method
-            //var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut")
-            //    .Duplicate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform, "Search Objects");
-
-            //propWin.transform.Find("Text").GetComponent<Text>().text = "Search Objects";
-            //((RectTransform)propWin.transform.Find("Text")).sizeDelta = new Vector2(224f, 0f);
-            //propWin.transform.Find("Text 1").GetComponent<Text>().text = "";
-
-            //var propWinButton = propWin.GetComponent<Button>();
-            //propWinButton.onClick.ClearAll();
-            //propWinButton.onClick.AddListener(delegate ()
-            //{
-            //    EditorManager.inst.ShowDialog("Object Search Popup");
-            //    RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
-            //    {
-            //        ObjectEditor.inst.SetCurrentObject(new TimelineObject(beatmapObject), true);
-            //    });
-            //});
-
-            //propWin.SetActive(true);
-
-            //propWin.transform.Find("Image").GetComponent<Image>().sprite = SearchSprite;
 
             EditorHelper.AddEditorDropdown("Search Objects", "", "Edit", SearchSprite, delegate ()
             {
@@ -4082,6 +4062,65 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public string documentationSearch;
+        public void CreateDocumentation()
+        {
+            var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Documentation");
+            objectSearch.transform.localPosition = Vector3.zero;
+
+            var objectSearchRT = (RectTransform)objectSearch.transform;
+            objectSearchRT.sizeDelta = new Vector2(600f, 450f);
+            var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
+            objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
+            objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Documentation";
+            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
+            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
+
+            var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
+            x.onClick.RemoveAllListeners();
+            x.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.HideDialog("Documentation Popup");
+            });
+
+            var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
+            searchBar.onValueChanged.ClearAll();
+            searchBar.onValueChanged.AddListener(delegate (string _value)
+            {
+                documentationSearch = _value;
+                RefreshDocumentation();
+            });
+            searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for document...";
+
+            EditorHelper.AddEditorDropdown("Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "Documentation/editor_gui_question.png"), delegate ()
+            {
+                EditorManager.inst.ShowDialog("Documentation Popup");
+                RefreshDocumentation();
+            });
+
+            EditorHelper.AddEditorPopup("Documentation Popup", objectSearch);
+
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Creating a new level", "Description.");
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+        }
+
         #endregion
 
         #region Saving / Loading
@@ -4188,7 +4227,9 @@ namespace EditorManagement.Functions.Editors
 
             if (editorManager.hasLoadedLevel && RTFile.DirectoryExists(gameManager.path.Replace("/level.lsb", "")))
             {
+                Debug.Log($"{EditorPlugin.className}Backing up previous level {Path.GetFileName(gameManager.path.Replace("/level.lsb", ""))}...");
                 fileInfo.text = $"Backing up previous level [ {Path.GetFileName(gameManager.path.Replace("/level.lsb", ""))} ]";
+
                 yield return StartCoroutine(ProjectData.Writer.SaveData(gameManager.path.Replace("level.lsb", "level-open-backup.lsb"), GameData.Current));
             }
 
@@ -5982,6 +6023,30 @@ namespace EditorManagement.Functions.Editors
             {
                 RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory, ".lsb", "level",  x => StartCoroutine(LoadLevel(x.Replace("\\", "/").Replace("/level.lsb", ""))));
             }
+        }
+
+        public void RefreshDocumentation()
+        {
+            if (documentations.Count > 0)
+                foreach (var document in documentations)
+                {
+                    if (string.IsNullOrEmpty(documentationSearch) || document.Name.ToLower().Contains(documentationSearch.ToLower()))
+                    {
+                        document.PopupButton?.SetActive(true);
+                        if (document.PopupButton && document.PopupButton.TryGetComponent(out Button button))
+                        {
+                            button.onClick.ClearAll();
+                            button.onClick.AddListener(delegate ()
+                            {
+                                EditorManager.inst.DisplayNotification($"Show document {document.Name}", 2f, EditorManager.NotificationType.Success);
+                            });
+                        }
+                    }
+                    else
+                    {
+                        document.PopupButton?.SetActive(false);
+                    }
+                }
         }
 
         #endregion
