@@ -897,6 +897,24 @@ namespace EditorManagement.Patchers
             return false;
         }
 
+        [HarmonyPatch("SetEditRenderArea")]
+        [HarmonyPrefix]
+        static bool SetEditRenderAreaPrefix()
+        {
+            EventManager.inst.cam.rect = new Rect(0f, 0.3708f, 0.601f, 0.601f);
+            EventManager.inst.camPer.rect = new Rect(0f, 0.3708f, 0.601f, 0.601f);
+            return false;
+        }
+
+        [HarmonyPatch("SetNormalRenderArea")]
+        [HarmonyPrefix]
+        static bool SetNormalRenderAreaPrefix()
+        {
+            EventManager.inst.cam.rect = new Rect(0f, 0f, 1f, 1f);
+            EventManager.inst.camPer.rect = new Rect(0f, 0f, 1f, 1f);
+            return false;
+        }
+
         [HarmonyPatch("OpenedLevel", MethodType.Getter)]
         [HarmonyPrefix]
         static bool OpenedLevelPrefix(EditorManager __instance, ref bool __result)
