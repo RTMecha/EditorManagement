@@ -79,11 +79,33 @@ namespace EditorManagement.Functions.Editors
 
             time = timeOffset - Time.time;
             timeOffset = Time.time;
+
+            try
+            {
+                if (ObjectEditor.inst.SelectedObjectCount == 1 && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                    intVariable.text = $"Integer Variable: [ {ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().integerVariable} ]";
+            }
+            catch
+            {
+                
+            }
         }
+
+        public Text intVariable;
 
         public void CreateModifiersOnAwake()
         {
             var bmb = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View");
+
+            {
+                var label = ObjEditor.inst.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(ObjEditor.inst.ObjectView.transform);
+                //var index = act.transform.GetSiblingIndex();
+                //label.transform.SetSiblingIndex(index);
+
+                Destroy(label.transform.GetChild(1).gameObject);
+                intVariable = label.transform.GetChild(0).GetComponent<Text>();
+                intVariable.text = "Integer Variable: [ null ]";
+            }
 
             var act = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
             act.transform.SetParent(bmb.transform.Find("Viewport/Content"));
