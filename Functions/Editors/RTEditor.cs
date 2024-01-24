@@ -4103,6 +4103,25 @@ namespace EditorManagement.Functions.Editors
 
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Introduction", "Description.");
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Creating a new level", "Description.");
 
                 var htt = gameObject.AddComponent<HoverTooltip>();
