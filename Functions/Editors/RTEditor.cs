@@ -4062,7 +4062,9 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public Text documentationTitle;
         public string documentationSearch;
+        public Transform documentationContent;
         public void CreateDocumentation()
         {
             var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
@@ -4093,7 +4095,7 @@ namespace EditorManagement.Functions.Editors
             });
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for document...";
 
-            EditorHelper.AddEditorDropdown("Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "Documentation/editor_gui_question.png"), delegate ()
+            EditorHelper.AddEditorDropdown("Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_question.png"), delegate ()
             {
                 EditorManager.inst.ShowDialog("Documentation Popup");
                 RefreshDocumentation();
@@ -4101,9 +4103,305 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorPopup("Documentation Popup", objectSearch);
 
+            var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
+            var editorDialogTransform = editorDialogObject.transform;
+            editorDialogObject.name = "DocumentationDialog";
+            editorDialogObject.layer = 5;
+            editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
+            editorDialogTransform.localScale = Vector3.one;
+            editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
+            editorDialogTransform.AsRT().sizeDelta = new Vector2(0f, 32f);
+
+            var editorDialogTitle = editorDialogTransform.GetChild(0);
+            editorDialogTitle.GetComponent<Image>().color = LSColors.HexToColor("D89356");
+            documentationTitle = editorDialogTitle.GetChild(0).GetComponent<Text>();
+            documentationTitle.text = "- Documentation -";
+
+            var editorDialogSpacer = editorDialogTransform.GetChild(1);
+            editorDialogSpacer.AsRT().sizeDelta = new Vector2(765f, 54f);
+
+            Destroy(editorDialogTransform.GetChild(2).gameObject);
+
+            EditorHelper.AddEditorDialog("Documentation Dialog", editorDialogObject);
+
+            var scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
+            documentationContent = scrollView.transform.Find("Viewport/Content");
+            scrollView.transform.SetParent(editorDialogTransform);
+            scrollView.transform.localScale = Vector3.one;
+            scrollView.name = "Scroll View";
+
+            LSHelpers.DeleteChildren(documentationContent);
+
+            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 638f);
+
+            // Introduction
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Introduction", "Description.");
+                var documentation = new Document(gameObject, "Introduction", "Welcome to Project Arrhythmia.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Welcome to Project Arrhythmia! Whether you're new to the game, modding or have been around for a while, I'm sure this " +
+                        "documentation will help massively in understanding the ins and outs of the editor and the game as a whole.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Info
+                {
+                    var element = new Document.Element("DOCUMENTATION INFO", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Vanilla
+                {
+                    var element = new Document.Element("[VANILLA] represents a feature from original Legacy, with very minor tweaks done to it if any.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Modded
+                {
+                    var element = new Document.Element("[MODDED] represents a feature added by mods. These features will not work in unmodded PA.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Patched
+                {
+                    var element = new Document.Element("[PATCHED] represents a feature modified by mods. They're either in newer versions of PA or are partially modded, meaning they might not work in regular PA.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Add legend ([VANILLA] / [MODDED] / [PATCHED])
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+            
+            // Beatmap Objects
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Beatmap Objects", "The very objects that make up Project Arrhythmia levels.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Beatmap Objects are the objects people use to create a variety of things for their levels. " +
+                        "Whether it be backgrounds, characters, attacks, you name it! Below is a list of data Beatmap Objects have.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // ID & LDM Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_id_ldm.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // ID
+                {
+                    var element = new Document.Element("ID [PATCHED]\nThe ID is used for specifying a Beatmap Object, otherwise it'd most likely get lost in a sea of other objects! " +
+                        "It's mostly used with parenting. This is patched because in unmodded PA, creators aren't able to see the ID of an object unless they look at the level.lsb.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // LDM
+                {
+                    var element = new Document.Element("LDM (Low Detail Mode) [MODDED]\nLDM is useful for having objects not render for lower end devices. If the option is on and the user has " +
+                        "Low Detail Mode enabled through the RTFunctions mod config, the Beatmap Object will not render.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Name & Type Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_name_type.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Name
+                {
+                    var element = new Document.Element("Name [VANILLA]\nNaming an object is incredibly helpful for readablility and knowing what an object does at a glance.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Object Type
+                {
+                    var element = new Document.Element("Object Type [PATCHED]\nThis makes the objects' physics act in different ways. Normal hits the player, helper is transparent, doesn't hit " +
+                        "the player and is a good opacity template to use for warnings, decoration doesn't hit the player and empty doesn't render. [MODDED] Solid prevents players from passing " +
+                        "through itself but doesn't hit them.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Tags Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tags.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Tags
+                {
+                    var element = new Document.Element("Tags [MODDED]\nBeing able to group objects together or even specify things about an object is possible with Object Tags. This feature " +
+                        "is mostly used by ObjectModifiers, but can be used in other ways such as a \"DontRotate\" tag which prevents Player Shapes from rotating automatically.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Start Time Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_start_time.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Locked
+                {
+                    var element = new Document.Element("Locked [PATCHED]\nIf on, prevents Beatmap Objects' start time from being changed. It's patched because unmodded doesn't have the toggle UI " +
+                        "for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Start Time
+                {
+                    var element = new Document.Element("Start Time [VANILLA]\nUsed for when the Beatmap Object spawns.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Time of Death Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tod.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Time of Death
+                {
+                    var element = new Document.Element("Time of Death [VANILLA]\nUsed for when the Beatmap Object despawns.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // No Autokill
+                {
+                    var element = new Document.Element("No Autokill [PATCHED]\nBeatmap Objects never despawn. This option is viable in modded PA due to heavily optimized object code, so don't worry " +
+                        "about using a couple of these. Just make sure to only use them when necessary, like for backgrounds or a persistent character.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Last KF
+                {
+                    var element = new Document.Element("Last KF [VANILLA]\nBeatmap Objects despawn once all animations are finished. This does NOT include parent animations. When the level " +
+                        "time reaches after the last keyframe, the object despawns.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Last KF Offset
+                {
+                    var element = new Document.Element("Last KF Offset [VANILLA]\nSame as above but at an offset.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Fixed Time
+                {
+                    var element = new Document.Element("Fixed Time [VANILLA]\nBeatmap Objects despawn at a fixed time, regardless of animations. Fixed time is Beatmap Objects Start Time with an offset added to it.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Song Time
+                {
+                    var element = new Document.Element("Song Time [VANILLA]\nSame as above, except it ignores the Beatmap Object Start Time, despawning the object at song time.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Collapse
+                {
+                    var element = new Document.Element("Collapse [VANILLA]\nBeatmap Objects in the editor timeline have their length shortened to the smallest amount if this is on.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                if (ModCompatibility.ObjectModifiersInstalled)
+                {
+                    var element = new Document.Element("Modifiers [MODDED]\nModifiers come from the ObjectModifiers mod and are made up of two different types: Triggers and Actions. " +
+                        "Triggers check if a specified thing is happening and Actions do things depending on if any triggers are active or there aren't any. A detailed description of every modifier " +
+                        "can be found in the Modifiers documentation. [WIP]", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Modifiers
+            if (ModCompatibility.ObjectModifiersInstalled)
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Object Modifiers", "Make your levels dynamic!");
+
+                // Intro
+                {
+                    var element = new Document.Element("WIP Intro text.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // setPitch
+                {
+                    var element = new Document.Element("setPitch - Modifies the speed of the game and the pitch of the audio. If you have EventsCore installed, it sets a multiplied offset from the " +
+                        "audio keyframe's pitch value. However unlike that, setPitch can go into the negatives allowing for reversed audio.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            //if (RTHelpers.AprilFools)
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "April fools!", "fol.");
+
+                // Intro
+                {
+                    var element = new Document.Element("oops, i spilled my images everywhere...", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var dir = Directory.GetFiles(RTFile.ApplicationDirectory, "*.png", SearchOption.AllDirectories);
+
+                for (int i = 0; i < UnityEngine.Random.Range(0, Mathf.Clamp(dir.Length, 0, 20)); i++)
+                {
+                    var element = new Document.Element(dir[UnityEngine.Random.Range(0, dir.Length)].Replace("\\", "/").Replace(RTFile.ApplicationDirectory, ""), Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
                 var htt = gameObject.AddComponent<HoverTooltip>();
 
@@ -4121,22 +4419,22 @@ namespace EditorManagement.Functions.Editors
             }
 
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Creating a new level", "Description.");
+                //var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                //var documentation = new Document(gameObject, "Creating a new level", "Description.");
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
+                //var htt = gameObject.AddComponent<HoverTooltip>();
 
-                var levelTip = new HoverTooltip.Tooltip();
+                //var levelTip = new HoverTooltip.Tooltip();
 
-                levelTip.desc = documentation.Name;
-                levelTip.hint = documentation.Description;
-                htt.tooltipLangauges.Add(levelTip);
+                //levelTip.desc = documentation.Name;
+                //levelTip.hint = documentation.Description;
+                //htt.tooltipLangauges.Add(levelTip);
 
-                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                //var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-                text.text = documentation.Name;
+                //text.text = documentation.Name;
 
-                documentations.Add(documentation);
+                //documentations.Add(documentation);
             }
         }
 
@@ -6057,7 +6355,7 @@ namespace EditorManagement.Functions.Editors
                             button.onClick.ClearAll();
                             button.onClick.AddListener(delegate ()
                             {
-                                EditorManager.inst.DisplayNotification($"Show document {document.Name}", 2f, EditorManager.NotificationType.Success);
+                                SelectDocumentation(document);
                             });
                         }
                     }
@@ -6066,6 +6364,122 @@ namespace EditorManagement.Functions.Editors
                         document.PopupButton?.SetActive(false);
                     }
                 }
+        }
+
+        public void SelectDocumentation(Document document)
+        {
+            documentationTitle.text = $"- {document.Name} -";
+
+            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+
+            LSHelpers.DeleteChildren(documentationContent);
+
+            int num = 0;
+            foreach (var element in document.elements)
+            {
+                switch (element.type)
+                {
+                    case Document.Element.Type.Text:
+                        {
+                            if (element.Data is not string || string.IsNullOrEmpty((string)element.Data))
+                                break;
+
+                            var bar = Instantiate(singleInput);
+                            Destroy(bar.GetComponent<InputField>());
+                            Destroy(bar.GetComponent<EventInfo>());
+                            Destroy(bar.GetComponent<EventTrigger>());
+
+                            LSHelpers.DeleteChildren(bar.transform);
+                            bar.transform.SetParent(documentationContent);
+                            bar.transform.localScale = Vector3.one;
+                            bar.name = "element";
+                            bar.transform.AsRT().sizeDelta = new Vector2(764f, 22f * LSText.WordWrap((string)element.Data, 73).Count);
+
+                            var l = Instantiate(label);
+                            l.transform.SetParent(bar.transform);
+                            l.transform.localScale = Vector3.one;
+                            var text = l.transform.GetChild(0).GetComponent<Text>();
+                            text.text = (string)element.Data;
+                            text.alignment = TextAnchor.UpperLeft;
+
+                            l.transform.AsRT().sizeDelta = new Vector2(764f, 22f);
+                            l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(762f, 22f);
+
+                            l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+
+                            var barImage = bar.GetComponent<Image>();
+                            barImage.enabled = true;
+                            barImage.color = new Color(1f, 1f, 1f, 0.03f);
+
+                            break;
+                        }
+                    case Document.Element.Type.Image:
+                        {
+                            if (element.Data is not string)
+                                break;
+
+                            var bar = Instantiate(singleInput);
+                            LSHelpers.DeleteChildren(bar.transform);
+                            Destroy(bar.GetComponent<InputField>());
+                            Destroy(bar.GetComponent<EventInfo>());
+                            Destroy(bar.GetComponent<EventTrigger>());
+                            Destroy(bar.GetComponent<HorizontalLayoutGroup>());
+
+                            bar.transform.SetParent(documentationContent);
+                            bar.transform.localScale = Vector3.one;
+                            bar.name = "element";
+
+                            var imageObj = bar.Duplicate(bar.transform, "image");
+                            imageObj.transform.AsRT().anchoredPosition = Vector2.zero;
+
+                            LSHelpers.DeleteChildren(imageObj.transform);
+
+                            var barImage = bar.GetComponent<Image>();
+                            barImage.enabled = true;
+                            barImage.color = new Color(1f, 1f, 1f, 0.03f);
+
+                            var imageObjImage = imageObj.GetComponent<Image>();
+                            imageObjImage.enabled = true;
+                            imageObjImage.color = new Color(1f, 1f, 1f, 1f);
+
+                            if (RTFile.FileExists($"{RTFile.ApplicationDirectory}{(string)element.Data}"))
+                                imageObjImage.sprite = SpriteManager.LoadSprite($"{RTFile.ApplicationDirectory}{(string)element.Data}");
+                            else
+                                imageObjImage.enabled = false;
+
+                            if (imageObjImage.sprite && imageObjImage.sprite.texture)
+                            {
+                                bar.transform.AsRT().sizeDelta = new Vector2(imageObjImage.sprite.texture.width, imageObjImage.sprite.texture.height);
+                                imageObj.transform.AsRT().sizeDelta = new Vector2(imageObjImage.sprite.texture.width, imageObjImage.sprite.texture.height);
+                            }
+
+                            break;
+                        }
+                }
+
+                // Spacer
+                if (num != document.elements.Count - 1)
+                {
+                    var bar = Instantiate(singleInput);
+                    Destroy(bar.GetComponent<InputField>());
+                    Destroy(bar.GetComponent<EventInfo>());
+                    Destroy(bar.GetComponent<EventTrigger>());
+
+                    LSHelpers.DeleteChildren(bar.transform);
+                    bar.transform.SetParent(documentationContent);
+                    bar.transform.localScale = Vector3.one;
+                    bar.name = "spacer";
+                    bar.transform.AsRT().sizeDelta = new Vector2(764f, 2f);
+
+                    var barImage = bar.GetComponent<Image>();
+                    barImage.enabled = true;
+                    barImage.color = new Color(1f, 1f, 1f, 0.75f);
+                }
+                num++;
+            }
+
+            EditorManager.inst.ShowDialog("Documentation Dialog");
         }
 
         #endregion

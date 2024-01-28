@@ -28,14 +28,12 @@ namespace EditorManagement.Functions
         /// </summary>
         public class Element
         {
-            public Element(GameObject gameObject, object data, Type type)
+            public Element(object data, Type type)
             {
-                UIElement = gameObject;
                 Data = data;
                 this.type = type;
             }
 
-            public GameObject UIElement { get; set; }
             public object Data { get; set; }
 
             public Type type;
