@@ -105,6 +105,7 @@ namespace EditorManagement.Functions.Editors
                 Destroy(label.transform.GetChild(1).gameObject);
                 intVariable = label.transform.GetChild(0).GetComponent<Text>();
                 intVariable.text = "Integer Variable: [ null ]";
+                intVariable.fontSize = 18;
             }
 
             var act = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
@@ -496,9 +497,11 @@ namespace EditorManagement.Functions.Editors
                         case "loadLevelInternal":
                         case "setText":
                         case "setTextOther":
+                        case "addText":
+                        case "addTextOther":
                         case "objectCollide":
                             {
-                                if (cmd == "setTextOther")
+                                if (cmd == "setTextOther" || cmd == "addTextOther")
                                 {
                                     stringGenerator("Object Group", 1);
                                     stringGenerator("Text", 0);
@@ -506,8 +509,8 @@ namespace EditorManagement.Functions.Editors
 
                                 if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther" || cmd == "objectCollide")
                                     stringGenerator("Object Group", 0);
-                                else if (cmd != "setTextOther")
-                                    stringGenerator(cmd == "setText" ? "Text" : "Path", 0);
+                                else if (cmd != "setTextOther" && cmd != "addTextOther")
+                                    stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : "Path", 0);
 
                                 break;
                             }
@@ -578,10 +581,14 @@ namespace EditorManagement.Functions.Editors
                         case "variableOtherGreaterEquals":
                         case "variableOtherLesser":
                         case "variableOtherGreater":
+                        case "removeText":
+                        case "removeTextAt":
+                        case "removeTextOther":
+                        case "removeTextOtherAt":
                             {
                                 integerGenerator("Value", 0, 0);
 
-                                if (cmd == "addVariable" || cmd == "subVariable" || cmd == "setVariable" || cmd.Contains("variableOther") || cmd == "setAlphaOther")
+                                if (cmd == "addVariable" || cmd == "subVariable" || cmd == "setVariable" || cmd.Contains("variableOther") || cmd == "setAlphaOther" || cmd == "removeTextOther" || cmd == "removeTextOtherAt")
                                 {
                                     stringGenerator("Object Group", 1);
                                 }
