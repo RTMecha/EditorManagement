@@ -256,11 +256,7 @@ namespace EditorManagement.Patchers
                                 Instance.TogglePlayingSong();
                             else
                                 Instance.DisplayNotification("April Fools!", 6f, EditorManager.NotificationType.Error);
-                            Instance.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-                            if (Instance.loadedLevels.Count > 0)
-                                Instance.OpenBeatmapPopup();
-                            else
-                                Instance.OpenNewLevelPopup();
+                            Instance.ClearDialogs();
                         }
                         catch (Exception ex)
                         {
@@ -867,7 +863,7 @@ namespace EditorManagement.Patchers
             DG.Tweening.DOTween.Clear(true);
             __instance.loadedLevels.Clear();
             DataManager.inst.gameData = null;
-            DataManager.inst.gameData = new RTFunctions.Functions.Data.GameData();
+            DataManager.inst.gameData = new GameData();
             DiscordController.inst.OnIconChange("");
             DiscordController.inst.OnStateChange("");
             Debug.Log($"{__instance.className}Quit to Main Menu");
@@ -913,6 +909,31 @@ namespace EditorManagement.Patchers
             EventManager.inst.cam.rect = new Rect(0f, 0f, 1f, 1f);
             EventManager.inst.camPer.rect = new Rect(0f, 0f, 1f, 1f);
             return false;
+        }
+
+        [HarmonyPatch("GetSprite")]
+        [HarmonyPrefix]
+        static bool GetSpritePrefix(ref IEnumerator __result, string __0, EditorManager.SpriteLimits __1, Action<Sprite> __2, Action<string> __3)
+        {
+            __result = GetSprite(__0, __1, __2, __3);
+            return false;
+        }
+
+        public static IEnumerator GetSprite(string _path, EditorManager.SpriteLimits _limits, Action<Sprite> callback, Action<string> onError)
+        {
+            yield return Instance.StartCoroutine(FileManager.inst.LoadImageFileRaw(_path, delegate (Sprite _texture)
+            {
+                if ((_texture.texture.width > _limits.size.x && _limits.size.x > 0f) || (_texture.texture.height > _limits.size.y && _limits.size.y > 0f))
+                {
+                    onError?.Invoke(_path);
+                    return;
+                }
+                callback?.Invoke(_texture);
+            }, delegate (string error)
+            {
+                onError?.Invoke(_path);
+            }));
+            yield break;
         }
 
         [HarmonyPatch("OpenedLevel", MethodType.Getter)]
