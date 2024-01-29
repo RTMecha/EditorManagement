@@ -1555,16 +1555,20 @@ namespace EditorManagement.Functions.Editors
                     objectUIElements.Add("Parent Offset 2", tfv.Find("parent_more/sca_row"));
                     objectUIElements.Add("Parent Offset 3", tfv.Find("parent_more/rot_row"));
 
+                    objectUIElements.Add("Origin", tfv.Find("origin"));
                     objectUIElements.Add("Origin X IF", tfv.Find("origin/x").GetComponent<InputField>());
                     objectUIElements.Add("Origin Y IF", tfv.Find("origin/y").GetComponent<InputField>());
 
                     objectUIElements.Add("Shape", tfv.Find("shape"));
                     objectUIElements.Add("Shape Settings", tfv.Find("shapesettings"));
 
+                    objectUIElements.Add("Depth", tfv.Find("depth"));
+                    objectUIElements.Add("Depth T", tfv.Find("spacer"));
                     objectUIElements.Add("Depth Slider", tfv.Find("depth/depth").GetComponent<Slider>());
                     objectUIElements.Add("Depth IF", tfv.Find("spacer/depth")?.GetComponent<InputField>());
                     objectUIElements.Add("Depth <", tfv.Find("spacer/depth/<")?.GetComponent<Button>());
                     objectUIElements.Add("Depth >", tfv.Find("spacer/depth/>")?.GetComponent<Button>());
+                    objectUIElements.Add("Render Type T", tfv.Find("rendertype"));
                     objectUIElements.Add("Render Type", tfv.Find("rendertype")?.GetComponent<Dropdown>());
 
                     objectUIElements.Add("Bin Slider", tfv.Find("editor/bin").GetComponent<Slider>());
@@ -1606,9 +1610,14 @@ namespace EditorManagement.Functions.Editors
 
                 inst.RenderParent(beatmapObject);
 
-                inst.RenderOrigin(beatmapObject);
-                inst.RenderShape(beatmapObject);
-                inst.RenderDepth(beatmapObject);
+                inst.RenderEmpty(beatmapObject);
+
+                if (!RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value || beatmapObject.objectType != ObjectType.Empty)
+                {
+                    inst.RenderOrigin(beatmapObject);
+                    inst.RenderShape(beatmapObject);
+                    inst.RenderDepth(beatmapObject);
+                }
 
                 inst.RenderLayers(beatmapObject);
                 inst.RenderBin(beatmapObject);
@@ -1633,6 +1642,28 @@ namespace EditorManagement.Functions.Editors
             }
 
             yield break;
+        }
+
+        public void RenderEmpty(BeatmapObject beatmapObject)
+        {
+            var active = !RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value || beatmapObject.objectType != ObjectType.Empty;
+            var shapeTF = (Transform)ObjectUIElements["Shape"];
+            shapeTF.parent.GetChild(shapeTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
+            shapeTF.gameObject.SetActive(active);
+
+            ((Transform)ObjectUIElements["Shape Settings"]).gameObject.SetActive(active);
+            ((Transform)ObjectUIElements["Depth"]).gameObject.SetActive(active);
+            var depthTf = (Transform)ObjectUIElements["Depth T"];
+            depthTf.parent.GetChild(depthTf.GetSiblingIndex() - 1).gameObject.SetActive(active);
+            depthTf.gameObject.SetActive(active);
+
+            var renderTypeTF = (Transform)ObjectUIElements["Render Type T"];
+            renderTypeTF.parent.GetChild(renderTypeTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
+            renderTypeTF.gameObject.SetActive(active);
+
+            var originTF = (Transform)ObjectUIElements["Origin"];
+            originTF.parent.GetChild(originTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
+            originTF.gameObject.SetActive(active);
         }
 
         /// <summary>
@@ -1763,6 +1794,8 @@ namespace EditorManagement.Functions.Editors
                 RenderTimelineObject(new TimelineObject(beatmapObject));
                 if (UpdateObjects)
                     Updater.UpdateProcessor(beatmapObject);
+
+                RenderEmpty(beatmapObject);
             });
         }
 
