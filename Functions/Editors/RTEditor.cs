@@ -4095,7 +4095,7 @@ namespace EditorManagement.Functions.Editors
             });
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for document...";
 
-            EditorHelper.AddEditorDropdown("Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_question.png"), delegate ()
+            EditorHelper.AddEditorDropdown("Wiki / Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_question.png"), delegate ()
             {
                 EditorManager.inst.ShowDialog("Documentation Popup");
                 RefreshDocumentation();
@@ -4145,32 +4145,32 @@ namespace EditorManagement.Functions.Editors
 
                 // Intro
                 {
-                    var element = new Document.Element("Welcome to Project Arrhythmia! Whether you're new to the game, modding or have been around for a while, I'm sure this " +
+                    var element = new Document.Element("Welcome to <b>Project Arrhythmia</b>!\nWhether you're new to the game, modding or have been around for a while, I'm sure this " +
                         "documentation will help massively in understanding the ins and outs of the editor and the game as a whole.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Info
                 {
-                    var element = new Document.Element("DOCUMENTATION INFO", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>DOCUMENTATION INFO</b>", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
                 // Vanilla
                 {
-                    var element = new Document.Element("[VANILLA] represents a feature from original Legacy, with very minor tweaks done to it if any.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>[VANILLA]</b> represents a feature from original Legacy, with very minor tweaks done to it if any.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
                 // Modded
                 {
-                    var element = new Document.Element("[MODDED] represents a feature added by mods. These features will not work in unmodded PA.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>[MODDED]</b> represents a feature added by mods. These features will not work in unmodded PA.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Patched
                 {
-                    var element = new Document.Element("[PATCHED] represents a feature modified by mods. They're either in newer versions of PA or are partially modded, meaning they might not work in regular PA.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>[PATCHED]</b> represents a feature modified by mods. They're either in newer versions of PA or are partially modded, meaning they might not work in regular PA.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
@@ -4235,9 +4235,12 @@ namespace EditorManagement.Functions.Editors
 
                 // Object Type
                 {
-                    var element = new Document.Element("<b>Object Type [PATCHED]</b>\nThis makes the objects' physics act in different ways. Normal hits the player, helper is transparent, doesn't hit " +
-                        "the player and is a good opacity template to use for warnings, decoration doesn't hit the player and empty doesn't render. [MODDED] Solid prevents players from passing " +
-                        "through itself but doesn't hit them.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Object Type [PATCHED]</b>\nThis makes the objects' physics act in different ways." +
+                        "\n<b>[VANILLA]</b> Normal hits the player." +
+                        "\n<b>[VANILLA]</b> Helper is transparent, doesn't hit the player and is a good opacity template to use for warnings." +
+                        "\n<b>[VANILLA]</b> Decoration doesn't hit the player." +
+                        "\n<b>[VANILLA]</b> Empty doesn't render." +
+                        "\n<b>[MODDED]</b> Solid prevents players from passing through itself but doesn't hit them.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4281,39 +4284,14 @@ namespace EditorManagement.Functions.Editors
 
                 // Time of Death
                 {
-                    var element = new Document.Element("<b>Time of Death [VANILLA]</b>\nUsed for when the Beatmap Object despawns.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-
-                // No Autokill
-                {
-                    var element = new Document.Element("<b>No Autokill [PATCHED]</b>\nBeatmap Objects never despawn. This option is viable in modded PA due to heavily optimized object code, so don't worry " +
-                        "about having a couple of objects with this. Just make sure to only use this when necessary, like for backgrounds or a persistent character.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-
-                // Last KF
-                {
-                    var element = new Document.Element("<b>Last KF [VANILLA]</b>\nBeatmap Objects despawn once all animations are finished. This does NOT include parent animations. When the level " +
-                        "time reaches after the last keyframe, the object despawns.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-
-                // Last KF Offset
-                {
-                    var element = new Document.Element("<b>Last KF Offset [VANILLA]</b>\nSame as above but at an offset.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-
-                // Fixed Time
-                {
-                    var element = new Document.Element("<b>Fixed Time [VANILLA]</b>\nBeatmap Objects despawn at a fixed time, regardless of animations. Fixed time is Beatmap Objects Start Time with an offset added to it.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-                
-                // Song Time
-                {
-                    var element = new Document.Element("<b>Song Time [VANILLA]</b>\nSame as above, except it ignores the Beatmap Object Start Time, despawning the object at song time.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Time of Death [VANILLA]</b>\nUsed for when the Beatmap Object despawns." +
+                        "\n<b>[PATCHED]</b> No Autokill - Beatmap Objects never despawn. This option is viable in modded PA due to heavily optimized object code, so don't worry " +
+                        "about having a couple of objects with this. Just make sure to only use this when necessary, like for backgrounds or a persistent character." +
+                        "\n<b>[VANILLA]</b> Last KF - Beatmap Objects despawn once all animations are finished. This does NOT include parent animations. When the level " +
+                        "time reaches after the last keyframe, the object despawns." +
+                        "\n<b>[VANILLA]</b> Last KF Offset - Same as above but at an offset." +
+                        "\n<b>[VANILLA]</b> Fixed Time - Beatmap Objects despawn at a fixed time, regardless of animations. Fixed time is Beatmap Objects Start Time with an offset added to it." +
+                        "\n<b>[VANILLA]</b> Song Time - Same as above, except it ignores the Beatmap Object Start Time, despawning the object at song time.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4381,15 +4359,15 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Parent Offset
-                {
-                    var element = new Document.Element("<b>Parent Offset [VANILLA]</b>\nParent animations applied to the Beatmap Objects own parent chain get delayed at this offset.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-
                 // Parent Type
                 {
                     var element = new Document.Element("<b>Parent Type [VANILLA]</b>\nWhether the Beatmap Object applies this type of animation from the parent.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Offset
+                {
+                    var element = new Document.Element("<b>Parent Offset [VANILLA]</b>\nParent animations applied to the Beatmap Objects own parent chain get delayed at this offset.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4413,15 +4391,127 @@ namespace EditorManagement.Functions.Editors
 
                 // Origin
                 {
-                    var element = new Document.Element("<b>Origin [VANILLA]</b>\nOrigin is the offset applied to the visual of the Beatmap Object.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Origin [VANILLA]</b>\nOrigin is the offset applied to the visual of the Beatmap Object. Only usable for non-Empty object types.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Shape Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_shape.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Shape
+                {
+                    var element = new Document.Element("<b>Shape [PATCHED]</b>\nShape is whatever the visual of the Beatmap Object displays as. This doesn't just include actual shapes but stuff " +
+                        "like text, images and player models too. More shape types and options were added. Unmodded PA does not include Image Shape, Pentagon Shape, Misc Shape, Player Shape.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Render Depth Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_depth.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Render Depth
+                {
+                    var element = new Document.Element("<b>Render Depth [PATCHED]</b>\nDepth is how deep an object is in visual layers. Higher amount of Render Depth means the object is lower " +
+                        "in the layers. Unmodded PA Legacy allows from 219 to -98. PA Alpha only allows from 40 to 0. Player is located at -60 depth. Z Axis Position keyframes use depth as a " +
+                        "multiplied offset.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Render Type Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_render_type.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Render Type
+                {
+                    var element = new Document.Element("<b>Render Type [MODDED]</b>\nRender Type is if the visual of the Beatmap Object renders in the 2D layer or the 3D layer, aka Foreground / Background.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Editor Data Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editordata.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Layer
+                {
+                    var element = new Document.Element("<b>Layer [PATCHED]</b>\nLayer is what editor layer the Beatmap Object renders on. It can go as high as 2147483646. " +
+                        "In unmodded PA its limited from layers 1 to 5, though in PA Editor Alpha another layer was introduced.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Bin
+                {
+                    var element = new Document.Element("<b>Bin [VANILLA]</b>\nBin is what row of the timeline the Beatmap Objects' timeline object renders on.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Object Debug Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_debug.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Object Debug
+                {
+                    var element = new Document.Element("<b>Object Debug [MODDED]</b>\nThis UI element only generates if UnityExplorer is installed. If it is, clicking on either button will inspect " +
+                        "the internal data of the respective item.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 if (ModCompatibility.ObjectModifiersInstalled)
                 {
-                    var element = new Document.Element("<b>Modifiers [MODDED]</b>\nModifiers come from the ObjectModifiers mod and are made up of two different types: Triggers and Actions. " +
-                        "Triggers check if a specified thing is happening and Actions do things depending on if any triggers are active or there aren't any. A detailed description of every modifier " +
-                        "can be found in the Modifiers documentation. [WIP]", Document.Element.Type.Text);
+                    // Object Modifiers Image
+                    {
+                        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_modifiers_edit.png", Document.Element.Type.Image);
+                        documentation.elements.Add(element);
+                    }
+
+                    // Integer Variable
+                    {
+                        var element = new Document.Element("<b>Integer Variable [MODDED]</b>\nEvery object has a whole number stored that ObjectModifiers can use.", Document.Element.Type.Text);
+                        documentation.elements.Add(element);
+                    }
+
+                    // Modifiers
+                    {
+                        var element = new Document.Element("<b>Modifiers [MODDED]</b>\nModifiers come from the ObjectModifiers mod and are made up of two different types: Triggers and Actions. " +
+                            "Triggers check if a specified thing is happening and Actions do things depending on if any triggers are active or there aren't any. A detailed description of every modifier " +
+                            "can be found in the Modifiers documentation. [WIP]", Document.Element.Type.Text);
+                        documentation.elements.Add(element);
+                    }
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Beatmap Object Keyframes
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Beatmap Object Keyframes", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("The keyframes in the Beatmap Objects' keyframe timeline allow animating several aspects of a Beatmap Objects' visual.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4526,6 +4616,32 @@ namespace EditorManagement.Functions.Editors
                 // Intro
                 {
                     var element = new Document.Element("Events intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+            
+            // Text Objects (details useable fonts and text formatting)
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Text Objects", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Text Objects intro.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
