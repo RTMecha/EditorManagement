@@ -2044,7 +2044,7 @@ namespace EditorManagement.Functions.Editors
             sortListDD.onValueChanged.AddListener(delegate (int _value)
             {
                 levelFilter = _value;
-                EditorManager.inst.RenderOpenBeatmapPopup();
+                StartCoroutine(RefreshLevelList());
             });
 
             var checkDes = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle")
@@ -2062,7 +2062,7 @@ namespace EditorManagement.Functions.Editors
             toggle.onValueChanged.AddListener(delegate (bool _value)
             {
                 levelAscend = _value;
-                EditorManager.inst.RenderOpenBeatmapPopup();
+                StartCoroutine(RefreshLevelList());
             });
 
             if (toggle.gameObject)
@@ -4132,7 +4132,11 @@ namespace EditorManagement.Functions.Editors
 
             LSHelpers.DeleteChildren(documentationContent);
 
-            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 638f);
+            var scrollViewLE = scrollView.AddComponent<LayoutElement>();
+            scrollViewLE.ignoreLayout = true;
+
+            scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
+            scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
 
             // Introduction
             {
@@ -4169,9 +4173,7 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("[PATCHED] represents a feature modified by mods. They're either in newer versions of PA or are partially modded, meaning they might not work in regular PA.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-
-                // Add legend ([VANILLA] / [MODDED] / [PATCHED])
-
+                
                 var htt = gameObject.AddComponent<HoverTooltip>();
 
                 var levelTip = new HoverTooltip.Tooltip();
@@ -4194,7 +4196,7 @@ namespace EditorManagement.Functions.Editors
 
                 // Intro
                 {
-                    var element = new Document.Element("Beatmap Objects are the objects people use to create a variety of things for their levels. " +
+                    var element = new Document.Element("<b>Beatmap Objects</b> are the objects people use to create a variety of things for their levels. " +
                         "Whether it be backgrounds, characters, attacks, you name it! Below is a list of data Beatmap Objects have.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
@@ -4207,14 +4209,14 @@ namespace EditorManagement.Functions.Editors
                 
                 // ID
                 {
-                    var element = new Document.Element("ID [PATCHED]\nThe ID is used for specifying a Beatmap Object, otherwise it'd most likely get lost in a sea of other objects! " +
+                    var element = new Document.Element("<b>ID [PATCHED]</b>\nThe ID is used for specifying a Beatmap Object, otherwise it'd most likely get lost in a sea of other objects! " +
                         "It's mostly used with parenting. This is patched because in unmodded PA, creators aren't able to see the ID of an object unless they look at the level.lsb.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
                 // LDM
                 {
-                    var element = new Document.Element("LDM (Low Detail Mode) [MODDED]\nLDM is useful for having objects not render for lower end devices. If the option is on and the user has " +
+                    var element = new Document.Element("<b>LDM (Low Detail Mode) [MODDED]</b>\nLDM is useful for having objects not render for lower end devices. If the option is on and the user has " +
                         "Low Detail Mode enabled through the RTFunctions mod config, the Beatmap Object will not render.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
@@ -4227,13 +4229,13 @@ namespace EditorManagement.Functions.Editors
 
                 // Name
                 {
-                    var element = new Document.Element("Name [VANILLA]\nNaming an object is incredibly helpful for readablility and knowing what an object does at a glance.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Name [VANILLA]</b>\nNaming an object is incredibly helpful for readablility and knowing what an object does at a glance.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Object Type
                 {
-                    var element = new Document.Element("Object Type [PATCHED]\nThis makes the objects' physics act in different ways. Normal hits the player, helper is transparent, doesn't hit " +
+                    var element = new Document.Element("<b>Object Type [PATCHED]</b>\nThis makes the objects' physics act in different ways. Normal hits the player, helper is transparent, doesn't hit " +
                         "the player and is a good opacity template to use for warnings, decoration doesn't hit the player and empty doesn't render. [MODDED] Solid prevents players from passing " +
                         "through itself but doesn't hit them.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
@@ -4247,7 +4249,7 @@ namespace EditorManagement.Functions.Editors
 
                 // Tags
                 {
-                    var element = new Document.Element("Tags [MODDED]\nBeing able to group objects together or even specify things about an object is possible with Object Tags. This feature " +
+                    var element = new Document.Element("<b>Tags [MODDED]</b>\nBeing able to group objects together or even specify things about an object is possible with Object Tags. This feature " +
                         "is mostly used by ObjectModifiers, but can be used in other ways such as a \"DontRotate\" tag which prevents Player Shapes from rotating automatically.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
@@ -4260,14 +4262,14 @@ namespace EditorManagement.Functions.Editors
 
                 // Locked
                 {
-                    var element = new Document.Element("Locked [PATCHED]\nIf on, prevents Beatmap Objects' start time from being changed. It's patched because unmodded doesn't have the toggle UI " +
+                    var element = new Document.Element("<b>Locked [PATCHED]</b>\nIf on, prevents Beatmap Objects' start time from being changed. It's patched because unmodded doesn't have the toggle UI " +
                         "for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
                 // Start Time
                 {
-                    var element = new Document.Element("Start Time [VANILLA]\nUsed for when the Beatmap Object spawns.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Start Time [VANILLA]</b>\nUsed for when the Beatmap Object spawns.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4279,45 +4281,45 @@ namespace EditorManagement.Functions.Editors
 
                 // Time of Death
                 {
-                    var element = new Document.Element("Time of Death [VANILLA]\nUsed for when the Beatmap Object despawns.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Time of Death [VANILLA]</b>\nUsed for when the Beatmap Object despawns.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // No Autokill
                 {
-                    var element = new Document.Element("No Autokill [PATCHED]\nBeatmap Objects never despawn. This option is viable in modded PA due to heavily optimized object code, so don't worry " +
-                        "about using a couple of these. Just make sure to only use them when necessary, like for backgrounds or a persistent character.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>No Autokill [PATCHED]</b>\nBeatmap Objects never despawn. This option is viable in modded PA due to heavily optimized object code, so don't worry " +
+                        "about having a couple of objects with this. Just make sure to only use this when necessary, like for backgrounds or a persistent character.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Last KF
                 {
-                    var element = new Document.Element("Last KF [VANILLA]\nBeatmap Objects despawn once all animations are finished. This does NOT include parent animations. When the level " +
+                    var element = new Document.Element("<b>Last KF [VANILLA]</b>\nBeatmap Objects despawn once all animations are finished. This does NOT include parent animations. When the level " +
                         "time reaches after the last keyframe, the object despawns.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Last KF Offset
                 {
-                    var element = new Document.Element("Last KF Offset [VANILLA]\nSame as above but at an offset.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Last KF Offset [VANILLA]</b>\nSame as above but at an offset.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Fixed Time
                 {
-                    var element = new Document.Element("Fixed Time [VANILLA]\nBeatmap Objects despawn at a fixed time, regardless of animations. Fixed time is Beatmap Objects Start Time with an offset added to it.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Fixed Time [VANILLA]</b>\nBeatmap Objects despawn at a fixed time, regardless of animations. Fixed time is Beatmap Objects Start Time with an offset added to it.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
                 // Song Time
                 {
-                    var element = new Document.Element("Song Time [VANILLA]\nSame as above, except it ignores the Beatmap Object Start Time, despawning the object at song time.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Song Time [VANILLA]</b>\nSame as above, except it ignores the Beatmap Object Start Time, despawning the object at song time.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Collapse
                 {
-                    var element = new Document.Element("Collapse [VANILLA]\nBeatmap Objects in the editor timeline have their length shortened to the smallest amount if this is on.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Collapse [VANILLA]</b>\nBeatmap Objects in the editor timeline have their length shortened to the smallest amount if this is on.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4327,9 +4329,97 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
+                // Parent Search
+                {
+                    var element = new Document.Element("<b>Parent Search [PATCHED]</b>\nHere you can search for an object to parent the Beatmap Object to. It includes Camera Parenting.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Search Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent_search.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Camera Parent
+                {
+                    var element = new Document.Element("<b>Camera Parent [MODDED]</b>\nBeatmap Objects parented to the camera will always follow it, depending on the parent settings. This includes " +
+                        "anything that makes the camera follow the player. This feature does exist in modern PA, but doesn't work the same way this does.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Clear Parent
+                {
+                    var element = new Document.Element("<b>Clear Parent [MODDED]</b>\nClicking this will remove the Beatmap Object from its parent.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Picker
+                {
+                    var element = new Document.Element("<b>Parent Picker [MODDED]</b>\nClicking this will activate a dropper. Right clicking will deactivate the dropper. Clicking on an object " +
+                        "in the timeline will set the current selected Beatmap Objects parent to the selected Timeline Object.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Display
+                {
+                    var element = new Document.Element("<b>Parent Display [VANILLA]</b>\nShows what the Beatmap Object is parented to. Clicking this button selects the parent. " +
+                        "Hovering your mouse over it shows parent chain info in the Hover Info box.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Advanced Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent_more.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Settings
+                {
+                    var element = new Document.Element("<b>Parent Settings [PATCHED]</b>\nParent settings can be adjusted here. Each of the below settings refer to both " +
+                        "position / scale / rotation.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Offset
+                {
+                    var element = new Document.Element("<b>Parent Offset [VANILLA]</b>\nParent animations applied to the Beatmap Objects own parent chain get delayed at this offset.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Type
+                {
+                    var element = new Document.Element("<b>Parent Type [VANILLA]</b>\nWhether the Beatmap Object applies this type of animation from the parent.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Additive
+                {
+                    var element = new Document.Element("<b>Parent Additive [MODDED]</b>\nForces Parent Offset to apply to every parent chain connected to the Beatmap Object.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Parallax
+                {
+                    var element = new Document.Element("<b>Parent Parallax [MODDED]</b>\nParent animations are multiplied by this amount, allowing for Parallax.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Origin Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_origin.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Origin
+                {
+                    var element = new Document.Element("<b>Origin [VANILLA]</b>\nOrigin is the offset applied to the visual of the Beatmap Object.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 if (ModCompatibility.ObjectModifiersInstalled)
                 {
-                    var element = new Document.Element("Modifiers [MODDED]\nModifiers come from the ObjectModifiers mod and are made up of two different types: Triggers and Actions. " +
+                    var element = new Document.Element("<b>Modifiers [MODDED]</b>\nModifiers come from the ObjectModifiers mod and are made up of two different types: Triggers and Actions. " +
                         "Triggers check if a specified thing is happening and Actions do things depending on if any triggers are active or there aren't any. A detailed description of every modifier " +
                         "can be found in the Modifiers documentation. [WIP]", Document.Element.Type.Text);
                     documentation.elements.Add(element);
@@ -4350,6 +4440,162 @@ namespace EditorManagement.Functions.Editors
                 documentations.Add(documentation);
             }
 
+            // Prefabs
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Prefabs", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Prefab intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+            
+            // Prefab Objects
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Prefab Objects", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Prefab Object intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Background Object
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Background Object", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Background Object intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Events
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Events", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Events intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Title Bar
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Title Bar", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Title Bar intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+            
+            // Timeline Bar
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Timeline Bar", "temp.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Timeline Bar intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+            
             // Modifiers
             if (ModCompatibility.ObjectModifiersInstalled)
             {
@@ -4384,7 +4630,7 @@ namespace EditorManagement.Functions.Editors
                 documentations.Add(documentation);
             }
 
-            //if (RTHelpers.AprilFools)
+            if (RTHelpers.AprilFools)
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "April fools!", "fol.");
@@ -4464,10 +4710,46 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator LoadLevels()
         {
             EditorManager.inst.loadedLevels.Clear();
-            //var folderList = FileManager.inst.GetFolderList(editorListPath);
+
+            var olfnm = GetEditorProperty("Open Level Folder Name Max").GetConfigEntry<int>();
+            var olsnm = GetEditorProperty("Open Level Song Name Max").GetConfigEntry<int>();
+            var olanm = GetEditorProperty("Open Level Artist Name Max").GetConfigEntry<int>();
+            var olcnm = GetEditorProperty("Open Level Creator Name Max").GetConfigEntry<int>();
+            var oldem = GetEditorProperty("Open Level Description Max").GetConfigEntry<int>();
+            var oldam = GetEditorProperty("Open Level Date Max").GetConfigEntry<int>();
+
+            int foldClamp = olfnm.Value < 3 ? olfnm.Value : (int)olfnm.DefaultValue;
+            int songClamp = olsnm.Value < 3 ? olsnm.Value : (int)olsnm.DefaultValue;
+            int artiClamp = olanm.Value < 3 ? olanm.Value : (int)olanm.DefaultValue;
+            int creaClamp = olcnm.Value < 3 ? olcnm.Value : (int)olcnm.DefaultValue;
+            int descClamp = oldem.Value < 3 ? oldem.Value : (int)oldem.DefaultValue;
+            int dateClamp = oldam.Value < 3 ? oldam.Value : (int)oldam.DefaultValue;
+
+            var transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask/content");
+            var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
+
+            var horizontalOverflow = GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var verticalOverflow = GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            //text.color = ConfigEntries.OpenFileTextColor.Value;
+            var fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
+            var format = GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
+            var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+
+            var iconPosition = GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
+            var iconScale = GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+
+            var showDeleteButton = GetEditorProperty("Open Level Show Delete Button").GetConfigEntry<bool>().Value;
+
+            LSHelpers.DeleteChildren(transform);
+
+            bool anyFailed = false;
+            var failedLevels = new List<string>();
 
             var list = new List<Coroutine>();
-            foreach (var file in Directory.GetDirectories(RTFile.ApplicationDirectory + editorListPath))
+            var files = Directory.GetDirectories(RTFile.ApplicationDirectory + editorListPath);
+
+            int num = 0;
+            foreach (var file in files)
             {
                 var path = file.Replace("\\", "/");
                 var name = Path.GetFileName(path);
@@ -4475,25 +4757,162 @@ namespace EditorManagement.Functions.Editors
 
                 if (metadataStr != null)
                 {
+                    var metadata = Metadata.Parse(JSON.Parse(metadataStr));
+
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(path)}]");
+
+                    var hoverUI = gameObject.AddComponent<HoverUI>();
+                    hoverUI.size = buttonHoverSize;
+                    hoverUI.animatePos = false;
+                    hoverUI.animateSca = true;
+
+                    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                    text.text = string.Format(format,
+                        LSText.ClampString(Path.GetFileName(path), foldClamp),
+                        LSText.ClampString(metadata.song.title, songClamp),
+                        LSText.ClampString(metadata.artist.Name, artiClamp),
+                        LSText.ClampString(metadata.creator.steam_name, creaClamp),
+                        metadata.song.difficulty,
+                        LSText.ClampString(metadata.song.description, descClamp),
+                        LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
+
+                    text.horizontalOverflow = horizontalOverflow;
+                    text.verticalOverflow = verticalOverflow;
+                    text.fontSize = fontSize;
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
+                        DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
+
+                    levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
+                    levelTip.hint = "</color>" + metadata.song.description;
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+                    {
+                        StartCoroutine(LoadLevel(path));
+                        EditorManager.inst.HideDialog("Open File Popup");
+                    });
+
+                    var icon = new GameObject("icon");
+                    icon.transform.SetParent(gameObject.transform);
+                    icon.transform.localScale = Vector3.one;
+                    icon.layer = 5;
+                    var iconRT = icon.AddComponent<RectTransform>();
+                    icon.AddComponent<CanvasRenderer>();
+                    var iconImage = icon.AddComponent<Image>();
+
+                    iconRT.anchoredPosition = iconPosition;
+                    iconRT.sizeDelta = iconScale;
+
+                    // Close
+                    if (showDeleteButton)
+                    {
+                        var delete = close.gameObject.Duplicate(gameObject.transform, "delete");
+
+                        delete.GetComponent<RectTransform>().anchoredPosition = new Vector2(-5f, 0f);
+
+                        string levelName = path;
+
+                        var deleteButton = delete.GetComponent<Button>();
+                        deleteButton.onClick.ClearAll();
+                        deleteButton.onClick.AddListener(delegate ()
+                        {
+                            EditorManager.inst.ShowDialog("Warning Popup");
+                            RefreshWarningPopup("Are you sure you want to delete this level? (It will be moved to a recycling folder)", delegate ()
+                            {
+                                DeleteLevelFunction(levelName);
+                                EditorManager.inst.DisplayNotification("Deleted level!", 2f, EditorManager.NotificationType.Success);
+                                EditorManager.inst.GetLevelList();
+                                EditorManager.inst.HideDialog("Warning Popup");
+                            }, delegate ()
+                            {
+                                EditorManager.inst.HideDialog("Warning Popup");
+                            });
+                        });
+                    }
+
+
+                    //if (RTFile.FileExists(path + "/level.jpg"))
+                    //{
+                    //    var cover = SpriteManager.LoadSprite(path + "/level.jpg");
+
+                    //    iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
+
+                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, cover ?? SteamWorkshop.inst.defaultSteamImageSprite));
+                    //}
+                    //else
+                    //{
+                    //    anyFailed = true;
+                    //    failedLevels.Add(Path.GetFileName(path));
+
+                    //    iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
+
+                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite));
+                    //}
+
+                    //list.Add(StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadImageTexture(path + "/level.jpg", delegate (Texture2D texture2D)
+                    //{
+                    //    var cover = SpriteManager.CreateSprite(texture2D);
+
+                    //    iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
+
+                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, cover ?? SteamWorkshop.inst.defaultSteamImageSprite));
+                    //}, delegate (string onError)
+                    //{
+                    //    anyFailed = true;
+                    //    failedText += Path.GetFileName(path) + (num != files.Length - 1 ? ", " : "");
+
+                    //    iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
+
+                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite));
+                    //})));
+
                     list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), path, (cover != null) ? cover : SteamWorkshop.inst.defaultSteamImageSprite));
+                        iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
+
+                        EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, cover ?? SteamWorkshop.inst.defaultSteamImageSprite));
                     }, delegate
                     {
-                        EditorManager.inst.loadedLevels.Add(new MetadataWrapper(Metadata.Parse(JSON.Parse(metadataStr)), path, SteamWorkshop.inst.defaultSteamImageSprite));
+                        anyFailed = true;
+                        failedLevels.Add(Path.GetFileName(path));
+                        iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
+
+                        EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite));
                     })));
                 }
                 else
                     Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{name}]!");
+                num++;
             }
 
             if (list.Count >= 1)
-                yield return EditorManager.inst.StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate
+                yield return StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate
                 {
-                    EditorManager.inst.FinishedLoadingLevelsFunc();
+                    if (anyFailed)
+                        EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
+                    if (EditorManager.inst.loadedLevels.Count > 0)
+                        EditorManager.inst.OpenBeatmapPopup();
+                    else
+                        EditorManager.inst.OpenNewLevelPopup();
                 }));
             else
-                EditorManager.inst.FinishedLoadingLevelsFunc();
+            {
+                if (anyFailed)
+                    EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
+                if (EditorManager.inst.loadedLevels.Count > 0)
+                    EditorManager.inst.OpenBeatmapPopup();
+                else
+                    EditorManager.inst.OpenNewLevelPopup();
+            }
+
+            failedLevels.Clear();
+            failedLevels = null;
 
             yield break;
         }
@@ -5279,20 +5698,6 @@ namespace EditorManagement.Functions.Editors
         {
             levelItems.Clear();
 
-            var olfnm = GetEditorProperty("Open Level Folder Name Max").GetConfigEntry<int>();
-            var olsnm = GetEditorProperty("Open Level Song Name Max").GetConfigEntry<int>();
-            var olanm = GetEditorProperty("Open Level Artist Name Max").GetConfigEntry<int>();
-            var olcnm = GetEditorProperty("Open Level Creator Name Max").GetConfigEntry<int>();
-            var oldem = GetEditorProperty("Open Level Description Max").GetConfigEntry<int>();
-            var oldam = GetEditorProperty("Open Level Date Max").GetConfigEntry<int>();
-
-            int foldClamp = olfnm.Value < 3 ? olfnm.Value : (int)olfnm.DefaultValue;
-            int songClamp = olsnm.Value < 3 ? olsnm.Value : (int)olsnm.DefaultValue;
-            int artiClamp = olanm.Value < 3 ? olanm.Value : (int)olanm.DefaultValue;
-            int creaClamp = olcnm.Value < 3 ? olcnm.Value : (int)olcnm.DefaultValue;
-            int descClamp = oldem.Value < 3 ? oldem.Value : (int)oldem.DefaultValue;
-            int dateClamp = oldam.Value < 3 ? oldam.Value : (int)oldam.DefaultValue;
-
             #region Sorting
 
             switch (levelFilter)
@@ -5349,33 +5754,11 @@ namespace EditorManagement.Functions.Editors
 
             #endregion
 
-            var transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask/content");
-            var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
-
-
-            var horizontalOverflow = GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-            var verticalOverflow = GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-            //text.color = ConfigEntries.OpenFileTextColor.Value;
-            var fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
-            var format = GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
-            var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
-
-            var iconPosition = GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
-            var iconScale = GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
-
-            var showDeleteButton = GetEditorProperty("Open Level Show Delete Button").GetConfigEntry<bool>().Value;
-
-            LSHelpers.DeleteChildren(transform);
-
+            int num = 0;
             foreach (var metadataWrapper in EditorManager.inst.loadedLevels)
             {
+                var folder = metadataWrapper.folder;
                 var metadata = metadataWrapper.metadata;
-                string folder = metadataWrapper.folder;
-
-                if (metadata == null)
-                    continue;
-
-                string difficultyName = "None";
 
                 string[] difficultyNames = new string[]
                 {
@@ -5389,102 +5772,19 @@ namespace EditorManagement.Functions.Editors
                     "Unknown difficulty",
                 };
 
-                difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
+                string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
-                if (RTFile.FileExists(folder + "/level.ogg") ||
+                ((EditorWrapper)metadataWrapper).SetActive((RTFile.FileExists(folder + "/level.ogg") ||
                     RTFile.FileExists(folder + "/level.wav") ||
-                    RTFile.FileExists(folder + "/level.mp3"))
-                {
-                    if (RTHelpers.SearchString(Path.GetFileName(folder), EditorManager.inst.openFileSearch) ||
+                    RTFile.FileExists(folder + "/level.mp3")) && RTHelpers.SearchString(Path.GetFileName(folder), EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.song.title, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.artist.Name, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.creator.steam_name, EditorManager.inst.openFileSearch) ||
                         RTHelpers.SearchString(metadata.song.description, EditorManager.inst.openFileSearch) ||
-                        RTHelpers.SearchString(difficultyName, EditorManager.inst.openFileSearch))
-                    {
-                        var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(folder)}]");
+                        RTHelpers.SearchString(difficultyName, EditorManager.inst.openFileSearch));
 
-                        var hoverUI = gameObject.AddComponent<HoverUI>();
-                        hoverUI.size = buttonHoverSize;
-                        hoverUI.animatePos = false;
-                        hoverUI.animateSca = true;
-
-                        var text = gameObject.transform.GetChild(0).GetComponent<Text>();
-
-                        text.text = string.Format(format,
-                            LSText.ClampString(Path.GetFileName(folder), foldClamp),
-                            LSText.ClampString(metadata.song.title, songClamp),
-                            LSText.ClampString(metadata.artist.Name, artiClamp),
-                            LSText.ClampString(metadata.creator.steam_name, creaClamp),
-                            metadata.song.difficulty,
-                            LSText.ClampString(metadata.song.description, descClamp),
-                            LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
-
-                        text.horizontalOverflow = horizontalOverflow;
-                        text.verticalOverflow = verticalOverflow;
-                        //text.color = ConfigEntries.OpenFileTextColor.Value;
-                        text.fontSize = fontSize;
-
-                        var htt = gameObject.AddComponent<HoverTooltip>();
-
-                        var levelTip = new HoverTooltip.Tooltip();
-
-                        var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
-                            DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
-
-                        levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
-                        levelTip.hint = "</color>" + metadata.song.description;
-                        htt.tooltipLangauges.Add(levelTip);
-
-                        gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
-                        {
-                            StartCoroutine(LoadLevel(folder));
-                            EditorManager.inst.HideDialog("Open File Popup");
-                        });
-
-                        var icon = new GameObject("icon");
-                        icon.transform.SetParent(gameObject.transform);
-                        icon.transform.localScale = Vector3.one;
-                        icon.layer = 5;
-                        var iconRT = icon.AddComponent<RectTransform>();
-                        icon.AddComponent<CanvasRenderer>();
-                        var iconImage = icon.AddComponent<Image>();
-
-                        iconRT.anchoredPosition = iconPosition;
-                        iconRT.sizeDelta = iconScale;
-
-                        iconImage.sprite = metadataWrapper.albumArt;
-
-                        // Close
-                        if (showDeleteButton)
-                        {
-                            var delete = close.gameObject.Duplicate(gameObject.transform, "delete");
-
-                            delete.GetComponent<RectTransform>().anchoredPosition = new Vector2(-5f, 0f);
-
-                            string levelName = metadataWrapper.folder;
-
-                            var deleteButton = delete.GetComponent<Button>();
-                            deleteButton.onClick.ClearAll();
-                            deleteButton.onClick.AddListener(delegate ()
-                            {
-                                EditorManager.inst.ShowDialog("Warning Popup");
-                                RefreshWarningPopup("Are you sure you want to delete this level? (It will be moved to a recycling folder)", delegate ()
-                                {
-                                    DeleteLevelFunction(levelName);
-                                    EditorManager.inst.DisplayNotification("Deleted level!", 2f, EditorManager.NotificationType.Success);
-                                    EditorManager.inst.GetLevelList();
-                                    EditorManager.inst.HideDialog("Warning Popup");
-                                }, delegate ()
-                                {
-                                    EditorManager.inst.HideDialog("Warning Popup");
-                                });
-                            });
-                        }
-
-                        levelItems.Add(new LevelFolder<MetadataWrapper>(metadataWrapper, gameObject, gameObject.GetComponent<RectTransform>(), iconImage));
-                    }
-                }
+                ((EditorWrapper)metadataWrapper).GameObject.transform.SetSiblingIndex(num);
+                num++;
             }
 
             if (ModCompatibility.sharedFunctions.ContainsKey("EditorLevelFolders"))
@@ -5641,20 +5941,20 @@ namespace EditorManagement.Functions.Editors
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(688f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var image = bar.GetComponent<Image>();
+                                image.enabled = true;
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
 
-                                GameObject x = Instantiate(boolInput);
+                                var x = Instantiate(boolInput);
                                 x.transform.SetParent(bar.transform);
                                 x.transform.localScale = Vector3.one;
 
@@ -5684,16 +5984,17 @@ namespace EditorManagement.Functions.Editors
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                x.GetComponent<Image>().enabled = true;
-                                x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var image = x.GetComponent<Image>();
+                                image.enabled = true;
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
 
                                 TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
 
@@ -5743,19 +6044,18 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+                                l.transform.localScale = Vector3.one;
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                x.transform.localScale = Vector3.one;
-                                x.transform.GetChild(0).localScale = Vector3.one;
-
-                                x.GetComponent<Image>().enabled = true;
-                                x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var image = x.GetComponent<Image>();
+                                image.enabled = true;
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
 
                                 TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
 
@@ -5963,18 +6263,18 @@ namespace EditorManagement.Functions.Editors
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(354f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var image = bar.GetComponent<Image>();
+                                image.enabled = true;
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
 
                                 GameObject x = Instantiate(stringInput);
                                 x.transform.SetParent(bar.transform);
@@ -6014,18 +6314,18 @@ namespace EditorManagement.Functions.Editors
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(354f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var image = bar.GetComponent<Image>();
+                                image.enabled = true;
+                                image.color = new Color(1f, 1f, 1f, 0.03f);
 
                                 GameObject vector2 = Instantiate(vector2Input);
                                 vector2.transform.SetParent(bar.transform);
@@ -6098,18 +6398,18 @@ namespace EditorManagement.Functions.Editors
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(isKeyCode ? 482 : 522f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(isKeyCode ? 482 : 522f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var im = bar.GetComponent<Image>();
+                                im.enabled = true;
+                                im.color = new Color(1f, 1f, 1f, 0.03f);
 
                                 if (isKeyCode)
                                 {
@@ -6196,18 +6496,18 @@ namespace EditorManagement.Functions.Editors
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
-                                l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(314f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                l.transform.AsRT().sizeDelta = new Vector2(314f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                                bar.GetComponent<Image>().enabled = true;
-                                bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                                var im = bar.GetComponent<Image>();
+                                im.enabled = true;
+                                im.color = new Color(1f, 1f, 1f, 0.03f);
 
                                 var bar2 = Instantiate(singleInput);
                                 Destroy(bar2.GetComponent<InputField>());
@@ -6394,7 +6694,7 @@ namespace EditorManagement.Functions.Editors
                             bar.transform.SetParent(documentationContent);
                             bar.transform.localScale = Vector3.one;
                             bar.name = "element";
-                            bar.transform.AsRT().sizeDelta = new Vector2(764f, 22f * LSText.WordWrap((string)element.Data, 73).Count);
+                            bar.transform.AsRT().sizeDelta = new Vector2(722f, 22f * LSText.WordWrap((string)element.Data, 73).Count);
 
                             var l = Instantiate(label);
                             l.transform.SetParent(bar.transform);
@@ -6403,8 +6703,8 @@ namespace EditorManagement.Functions.Editors
                             text.text = (string)element.Data;
                             text.alignment = TextAnchor.UpperLeft;
 
-                            l.transform.AsRT().sizeDelta = new Vector2(764f, 22f);
-                            l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(762f, 22f);
+                            l.transform.AsRT().sizeDelta = new Vector2(722f, 22f);
+                            l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(722f, 22f);
 
                             l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
@@ -6645,6 +6945,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Editor GUI", "Notifications Display", true, "If the notifications should display. Does not include the help box.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Adjust Position Inputs", true, "If position keyframe input fields should be adjusted so they're in a proper row rather than having Z Axis below X Axis without a label. Drawback with doing this is it makes the fields smaller than normal.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Editor GUI", "Hide Visual Elements When Object Is Empty", true, "If the Beatmap Object is empty, anything related to the visuals of the object doesn't show.")),
             new EditorProperty(EditorProperty.ValueType.Vector2,
                 Config.Bind("Editor GUI", "Open Level Position", Vector2.zero, "The position of the Open Level popup.")),
             new EditorProperty(EditorProperty.ValueType.Vector2,
