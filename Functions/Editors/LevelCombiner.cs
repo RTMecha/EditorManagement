@@ -386,11 +386,6 @@ namespace EditorManagement.Functions.Editors
         {
             if (first != null || second != null || !string.IsNullOrEmpty(savePath))
 			{
-				ProjectData.Writer.onSave = delegate ()
-				{
-					EditorManager.inst.DisplayNotification($"Combined {first.folder} and {second.folder} to {savePath}!", 3f, EditorManager.NotificationType.Success);
-				};
-
 				string save = savePath;
 				if (!save.Contains("level.lsb") && save.LastIndexOf('/') == save.Length - 1)
 					save += "level.lsb";
@@ -402,10 +397,10 @@ namespace EditorManagement.Functions.Editors
 				else if (!save.Contains(RTFile.ApplicationDirectory))
 					save = RTFile.ApplicationDirectory + save;
 
-				ProjectData.Combiner.Combine(
-					RTFile.ApplicationDirectory + RTEditor.editorListSlash + first.folder + "/level.lsb",
-					RTFile.ApplicationDirectory + RTEditor.editorListSlash + second.folder + "/level.lsb",
-					save);
+				ProjectData.Combiner.Combine(first.folder + "/level.lsb", second.folder + "/level.lsb", save, delegate()
+				{
+					EditorManager.inst.DisplayNotification($"Combined {first.folder} and {second.folder} to {savePath}!", 3f, EditorManager.NotificationType.Success);
+				});
 			}
 
 			if (first == null)
