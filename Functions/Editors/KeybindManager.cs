@@ -1105,6 +1105,7 @@ namespace EditorManagement.Functions.Editors
             TransformScale, //55
             TransformRotation, //56
             SpawnSelectedQuickPrefab, //57
+            ResetIntegerVariables, // 58
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1851,6 +1852,14 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.DisplayNotification("No selected quick prefab!", 1f, EditorManager.NotificationType.Error);
         }
 
+        public static void ResetIntegerVariables(Keybind keybind)
+        {
+            foreach (var beatmapObject in GameData.Current.BeatmapObjects)
+            {
+                beatmapObject.integerVariable = 0;
+            }
+        }
+
         #endregion
 
         #region Settings
@@ -1954,6 +1963,7 @@ namespace EditorManagement.Functions.Editors
             null, // 55
             null, // 56
             null, // 57
+            null, // 58
         };
 
         #endregion
