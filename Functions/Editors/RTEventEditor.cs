@@ -799,7 +799,7 @@ namespace EditorManagement.Functions.Editors
             {
 				var intensity = GenerateUIElement("introt", "Vector2", gradient.transform, 8, "Intensity", "Rotation");
 				var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons);
-				var colorsBottom = SetupColorButtons("colors2", "Colors Top", gradient.transform, 12, gradientColor2Buttons);
+				var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 12, gradientColor2Buttons);
 
 				var modeLabel = intensity["Label"].Duplicate(gradient.transform);
                 GenerateLabels(modeLabel.transform, "Mode");
