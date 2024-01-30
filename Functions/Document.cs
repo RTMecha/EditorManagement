@@ -36,13 +36,14 @@ namespace EditorManagement.Functions
 
             public object Data { get; set; }
 
+            public Action Function { get; set; }
+
             public Type type;
 
             public enum Type
             {
                 Text,
-                Image,
-                Function
+                Image
             }
         }
     }
