@@ -2463,10 +2463,6 @@ namespace EditorManagement.Functions.Editors
             searchBar.onValueChanged.AddListener(delegate (string _value)
             {
                 objectSearchTerm = _value;
-                //RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
-                //{
-                //    ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(beatmapObject), Input.GetKey(KeyCode.LeftControl));
-                //});
                 RefreshObjectSearch(x => ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(x), Input.GetKey(KeyCode.LeftControl)));
             });
             searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
@@ -4201,16 +4197,11 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // ID & LDM Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_id_ldm.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
-                
                 // ID
                 {
                     var element = new Document.Element("<b>ID [PATCHED]</b>\nThe ID is used for specifying a Beatmap Object, otherwise it'd most likely get lost in a sea of other objects! " +
-                        "It's mostly used with parenting. This is patched because in unmodded PA, creators aren't able to see the ID of an object unless they look at the level.lsb.", Document.Element.Type.Text);
+                        "It's mostly used with parenting. This is patched because in unmodded PA, creators aren't able to see the ID of an object unless they look at the level.lsb.\n" +
+                        "Clicking on the ID will copy it to your clipboard.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
@@ -4221,15 +4212,16 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Name & Type Image
+                // ID & LDM Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_name_type.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_id_ldm.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
                 // Name
                 {
-                    var element = new Document.Element("<b>Name [VANILLA]</b>\nNaming an object is incredibly helpful for readablility and knowing what an object does at a glance.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Name [VANILLA]</b>\nNaming an object is incredibly helpful for readablility and knowing what an object does at a glance. " +
+                        "Clicking your scroll wheel over it will flip any left / right.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4244,9 +4236,9 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Tags Image
+                // Name & Type Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tags.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_name_type.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4257,9 +4249,9 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Start Time Image
+                // Tags Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_start_time.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tags.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4269,16 +4261,16 @@ namespace EditorManagement.Functions.Editors
                         "for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Start Time
                 {
                     var element = new Document.Element("<b>Start Time [VANILLA]</b>\nUsed for when the Beatmap Object spawns.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
-                // Time of Death Image
+                // Start Time Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tod.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_start_time.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4301,9 +4293,9 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Parent Image
+                // Time of Death Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tod.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4346,58 +4338,66 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Parent Advanced Image
+                // Parent Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent_more.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
                 // Parent Settings
                 {
                     var element = new Document.Element("<b>Parent Settings [PATCHED]</b>\nParent settings can be adjusted here. Each of the below settings refer to both " +
-                        "position / scale / rotation.", Document.Element.Type.Text);
+                        "position / scale / rotation. Position, scale and rotation are the rows and the types of Parent Settings are the columns.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Parent Type
                 {
-                    var element = new Document.Element("<b>Parent Type [VANILLA]</b>\nWhether the Beatmap Object applies this type of animation from the parent.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Parent Type [VANILLA]</b>\nWhether the Beatmap Object applies this type of animation from the parent. " +
+                        "It is the first column in the Parent Settings UI.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Parent Offset
                 {
-                    var element = new Document.Element("<b>Parent Offset [VANILLA]</b>\nParent animations applied to the Beatmap Objects own parent chain get delayed at this offset.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Parent Offset [VANILLA]</b>\nParent animations applied to the Beatmap Objects own parent chain get delayed at this offset. Normally, only " +
+                        "the objects current parent gets delayed. " +
+                        "It is the second column in the Parent Settings UI.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Parent Additive
                 {
-                    var element = new Document.Element("<b>Parent Additive [MODDED]</b>\nForces Parent Offset to apply to every parent chain connected to the Beatmap Object.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Parent Additive [MODDED]</b>\nForces Parent Offset to apply to every parent chain connected to the Beatmap Object. With this off, it only " +
+                        "uses the Beatmap Objects' current parent. For example, say we have objects A, B, C and D. With this on, D delays the animation of every parent. With this off, it delays only C. " +
+                        "It is the third column in the Parent Settings UI.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Parent Parallax
                 {
-                    var element = new Document.Element("<b>Parent Parallax [MODDED]</b>\nParent animations are multiplied by this amount, allowing for Parallax.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Parent Parallax [MODDED]</b>\nParent animations are multiplied by this amount, allowing for a parallax effect. Say the amount was 2 and the parent " +
+                        "moves to position X 20, the object would move to 40 due to it being multiplied by 2. " +
+                        "It is the fourth column in the Parent Settings UI.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Parent Advanced Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_parent_more.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Origin
+                {
+                    var element = new Document.Element("<b>Origin [PATCHED]</b>\nOrigin is the offset applied to the visual of the Beatmap Object. Only usable for non-Empty object types. " +
+                        "It's patched because of the number input fields instead of the direction buttons.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
                 // Origin Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_origin.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
-
-                // Origin
-                {
-                    var element = new Document.Element("<b>Origin [VANILLA]</b>\nOrigin is the offset applied to the visual of the Beatmap Object. Only usable for non-Empty object types.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
-
-                // Shape Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_shape.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4408,12 +4408,12 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Render Depth Image
+                // Shape Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_depth.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_shape.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Render Depth
                 {
                     var element = new Document.Element("<b>Render Depth [PATCHED]</b>\nDepth is how deep an object is in visual layers. Higher amount of Render Depth means the object is lower " +
@@ -4422,9 +4422,9 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Render Type Image
+                // Render Depth Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_render_type.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_depth.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4434,9 +4434,9 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Editor Data Image
+                // Render Type Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editordata.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_render_type.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4453,12 +4453,12 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Object Debug Image
+                // Editor Data Image
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_debug.png", Document.Element.Type.Image);
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editordata.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Object Debug
                 {
                     var element = new Document.Element("<b>Object Debug [MODDED]</b>\nThis UI element only generates if UnityExplorer is installed. If it is, clicking on either button will inspect " +
@@ -4466,14 +4466,14 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
+                // Object Debug Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_debug.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
                 if (ModCompatibility.ObjectModifiersInstalled)
                 {
-                    // Object Modifiers Image
-                    {
-                        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_modifiers_edit.png", Document.Element.Type.Image);
-                        documentation.elements.Add(element);
-                    }
-
                     // Integer Variable
                     {
                         var element = new Document.Element("<b>Integer Variable [MODDED]</b>\nEvery object has a whole number stored that ObjectModifiers can use.", Document.Element.Type.Text);
@@ -4485,6 +4485,12 @@ namespace EditorManagement.Functions.Editors
                         var element = new Document.Element("<b>Modifiers [MODDED]</b>\nModifiers come from the ObjectModifiers mod and are made up of two different types: Triggers and Actions. " +
                             "Triggers check if a specified thing is happening and Actions do things depending on if any triggers are active or there aren't any. A detailed description of every modifier " +
                             "can be found in the Modifiers documentation. [WIP]", Document.Element.Type.Text);
+                        documentation.elements.Add(element);
+                    }
+                    
+                    // Object Modifiers Image
+                    {
+                        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_modifiers_edit.png", Document.Element.Type.Image);
                         documentation.elements.Add(element);
                     }
                 }
@@ -4507,11 +4513,113 @@ namespace EditorManagement.Functions.Editors
             // Beatmap Object Keyframes
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Beatmap Object Keyframes", "temp.");
+                var documentation = new Document(gameObject, "Beatmap Object Keyframes", "The things that animate objects.");
 
                 // Intro
                 {
                     var element = new Document.Element("The keyframes in the Beatmap Objects' keyframe timeline allow animating several aspects of a Beatmap Objects' visual.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Normal Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_normal.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Toggle Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_toggle.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Scale Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_scale.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Static Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_static_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Dynamic Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_dynamic_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Normal Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_normal.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Toggle Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_toggle.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Scale Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_scale.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Normal Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_normal.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Toggle Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_toggle.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Static Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_static_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Dynamic Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_dynamic_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Dynamic Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_dynamic_homing.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4533,7 +4641,7 @@ namespace EditorManagement.Functions.Editors
             // Prefabs
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Prefabs", "temp.");
+                var documentation = new Document(gameObject, "Prefabs", "A package of objects that can be transfered to another level.");
 
                 // Intro
                 {
@@ -4559,11 +4667,11 @@ namespace EditorManagement.Functions.Editors
             // Prefab Objects
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Prefab Objects", "temp.");
+                var documentation = new Document(gameObject, "Prefab Objects", "Individual instances of prefabs.");
 
                 // Intro
                 {
-                    var element = new Document.Element("Prefab Object intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("Prefab Objects are something.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4585,7 +4693,7 @@ namespace EditorManagement.Functions.Editors
             // Background Object
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Background Object", "temp.");
+                var documentation = new Document(gameObject, "Background Object", "Make classic 3D style backgrounds.");
 
                 // Intro
                 {
@@ -4611,7 +4719,7 @@ namespace EditorManagement.Functions.Editors
             // Events
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Events", "temp.");
+                var documentation = new Document(gameObject, "Events", "Effects to make your level pretty.");
 
                 // Intro
                 {
@@ -4634,14 +4742,127 @@ namespace EditorManagement.Functions.Editors
                 documentations.Add(documentation);
             }
             
-            // Text Objects (details useable fonts and text formatting)
+            // Text Objects
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Text Objects", "temp.");
+                var documentation = new Document(gameObject, "Text Objects", "Flavor your levels with text!");
 
                 // Intro
                 {
-                    var element = new Document.Element("Text Objects intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("Text Objects can be used in extensive ways, from conveying character dialogue to decoration. This document is for showcasing usable " +
+                        "fonts and formats Text Objects can use. Also do note to ignore the spaces in the formattings as the UI text will just make the text like <b>this</b>.\n" +
+                        "WIP, still missing a lot of formatting and fonts.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // FORMATTING
+                {
+                    var element = new Document.Element("<b>- FORMATTING -</b>", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Bold
+                {
+                    var element = new Document.Element("<b>[VANILLA]</b> < b> - For making text <b>BOLD</b>. Use </ b> to clear.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Italic
+                {
+                    var element = new Document.Element("<b>[VANILLA]</b> < i> - For making text <i>italic</i>. Use </ i> to clear.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // FONTS
+                {
+                    var element = new Document.Element("<b>- FONTS -</b>", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // FONTS IMAGE
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_fonts.png", Document.Element.Type.Image);
+                    element.Function = delegate ()
+                    {
+                        RTFile.OpenInFileBrowser.Open(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/Documentation");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Info
+                {
+                    var element = new Document.Element("To use a font, do <font=Font Name>. To clear, do </font>. Click on one of the fonts below to copy the <font=Font Name> to your clipboard. " +
+                        "Click on the image above to open the folder to the documentation assets folder.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Arrhythmia
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Arrhythmia - The font from the earliest builds of Project Arrhythmia.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Arrhythmia>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Fredoka One
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Fredoka One - The font from the Vitamin Games website.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Fredoka One>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Pusab
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Pusab - The font from the hit game Geometry Dash. And yes, it is the right one.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Pusab>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Oxygene
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Oxygene - The font from the title of Geometry Dash.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Oxygene>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Marker
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Marker", "Organize and remember details about a level.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Marker intro.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4663,11 +4884,107 @@ namespace EditorManagement.Functions.Editors
             // Title Bar
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Title Bar", "temp.");
+                var documentation = new Document(gameObject, "Title Bar", "The thing at the top with dropdowns.");
 
                 // Intro
                 {
-                    var element = new Document.Element("Title Bar intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("Title Bar has the main functions for loading, saving and editing.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Title Bar Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // File
+                {
+                    var element = new Document.Element("<b>File [PATCHED]</b>" +
+                        "\nPowerful functions related to the application or files." +
+                        "\n<b>[VANILLA]</b> New Level - Creates a new level." +
+                        "\n<b>[VANILLA]</b> Open Level - Opens the level list popup, where you can search and select a level to load." +
+                        "\n<b>[VANILLA]</b> Open Level Folder - Opens the current loaded level's folder in your local file explorer." +
+                        "\n<b>[MODDED]</b> Open Level Browser - Opens a built-in browser to open a level from anywhere on your computer." +
+                        "\n<b>[MODDED]</b> Level Combiner - Combines multiple levels together." +
+                        "\n<b>[VANILLA]</b> Save - Saves the current level." +
+                        "\n<b>[PATCHED]</b> Save As - Saves a copy of the current level." +
+                        "\n<b>[VANILLA]</b> Toggle Play Mode - Opens preview mode." +
+                        "\n<b>[MODDED]</b> Switch to Arcade Mode - Switches to the handling of level loading in Arcade." +
+                        "\n<b>[MODDED]</b> Quit to Arcade - Opens the Input Select scene just before loading arcade levels." +
+                        "\n<b>[VANILLA]</b> Quit to Main Menu - Exits to the main menu." +
+                        "\n<b>[VANILLA]</b> Quit Game - Quits the game.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // File Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td_file.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Edit
+                {
+                    var element = new Document.Element("<b>Edit [PATCHED]</b>" +
+                        "\nHow far can you edit in a modded editor?" +
+                        "\n<b>[PATCHED]</b> Undo - Undoes the most recent action. Still heavily WIP. (sorry)" +
+                        "\n<b>[PATCHED]</b> Redo - Same as above but goes back to the recent action when undone." +
+                        "\n<b>[MODDED]</b> Search Objects - Search for specific objects by name or index. Hold Left Control to take yourself to the object in the timeline." +
+                        "\n<b>[MODDED]</b> Preferences - Modify editor specific mod configs directly in the editor. Also known as Editor Properties." +
+                        "\n<b>[MODDED]</b> Player Editor - Only shows if you have CreativePlayers installed. Opens the Player Editor." +
+                        "\n<b>[MODDED]</b> View Keybinds - Customize the keybinds of the editor in any way you want.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Edit Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td_edit.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // View
+                {
+                    var element = new Document.Element("<b>View [PATCHED]</b>" +
+                        "\nView specific things." +
+                        "\n<b>[MODDED]</b> Get Example - Only shows if you have ExampleCompanion installed. It summons Example to the scene." +
+                        "\n<b>[VANILLA]</b> Show Help - Toggles the Info box.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // View Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td_view.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Steam
+                {
+                    var element = new Document.Element("<b>Steam [VANILLA]</b>" +
+                        "\nView Steam related things... even though modded PA doesn't use Steam anymore lol" +
+                        "\n<b>[VANILLA]</b> Open Workshop - Opens a link to the Steam workshop." +
+                        "\n<b>[VANILLA]</b> Publish / Update Level - Opens the Metadata Editor / Level Uploader.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Steam Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td_steam.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Help
+                {
+                    var element = new Document.Element("<b>Help [PATCHED]</b>" +
+                        "\nGet some help." +
+                        "\n<b>[MODDED]</b> Modder's Discord - Opens a link to the mod creator's Discord server." +
+                        "\n<b>[MODDED]</b> Watch PA History - Since there are no <i>modded</i> guides yet, this just takes you to the System Error BTS PA History playlist." +
+                        "\n<b>[MODDED]</b> Wiki / Documentation - In-editor documentation of everything the game has to offer. You're reading it right now!", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Help Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td_help.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4689,11 +5006,104 @@ namespace EditorManagement.Functions.Editors
             // Timeline Bar
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Timeline Bar", "temp.");
+                var documentation = new Document(gameObject, "Timeline Bar", "Modify stuff like audio and editor layer.");
 
                 // Intro
                 {
-                    var element = new Document.Element("Timeline Bar intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("The Timeline Bar is where you can see and edit general game and editor info.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Audio Time (Precise)
+                {
+                    var element = new Document.Element("<b>Audio Time (Precise) [MODDED]</b>\nText shows the precise audio time. This can be edited to set a specific time for the audio.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Audio Time (Formatted)
+                {
+                    var element = new Document.Element("<b>Audio Time (Formatted) [VANILLA]</b>\nText shows the audio time formatted like \"minutes.seconds.milliseconds\". Clicking this sets the " +
+                        "audio time to 0.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Pause / Play
+                {
+                    var element = new Document.Element("<b>Pause / Play [VANILLA]</b>\nPressing this toggles if the song is playing or not.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Pitch
+                {
+                    var element = new Document.Element("<b>Pitch [PATCHED]</b>\nThe speed of the song. Clicking the buttons adjust the pitch by 0.1, depending on the direction the button is facing.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Audio Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tb_audio.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Editor Layer
+                {
+                    var element = new Document.Element("<b>Editor Layer [PATCHED]</b>\nEditor Layer is what objects show in the timeline, depending on their own Editor Layer. " +
+                        "It can go as high as 2147483646. In unmodded PA its limited from layers 1 to 5, though in PA Editor Alpha another layer was introduced.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Editor Layer Type
+                {
+                    var element = new Document.Element("<b>Editor Layer Type [MODDED]</b>\nWhether the timeline shows objects or event keyframes / checkpoints.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Layer Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tb_layer.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Prefab
+                {
+                    var element = new Document.Element("<b>Prefab [VANILLA]</b>\nOpens the Prefab list popups (Internal & External).", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Object
+                {
+                    var element = new Document.Element("<b>Object [PATCHED]</b>\nOpens a popup featuring different object templates such as Decoration, Empty, etc. It's patched because " +
+                        "Persistent was replaced with No Autokill.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Marker
+                {
+                    var element = new Document.Element("<b>Marker [VANILLA]</b>\nCreates a Marker.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // BG
+                {
+                    var element = new Document.Element("<b>BG [VANILLA]</b>\nOpens a popup to open the BG editor or create a new BG.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Create Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tb_create.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Preview Mode
+                {
+                    var element = new Document.Element("<b>Preview Mode [VANILLA]</b>\nSwitches the game to Preview Mode.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Preview Mode Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tb_preview_mode.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4711,7 +5121,65 @@ namespace EditorManagement.Functions.Editors
 
                 documentations.Add(documentation);
             }
-            
+
+            // Keybinds
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Keybinds", "Perform specific actions when pressing set keys.");
+
+                // Intro
+                {
+                    var element = new Document.Element("Keybinds intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
+            // Editor Properties
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Editor Properties", "Configure the editor!");
+
+                // Intro
+                {
+                    var element = new Document.Element("Editor Properties intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Editor Properties Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editor_properties.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+
+                documentations.Add(documentation);
+            }
+
             // Modifiers
             if (ModCompatibility.ObjectModifiersInstalled)
             {
@@ -4910,6 +5378,12 @@ namespace EditorManagement.Functions.Editors
 
                     gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
                     {
+                        // Use this to show autosaves or something
+                        if (Input.GetKey(KeyCode.LeftShift))
+                        {
+
+                        }
+
                         StartCoroutine(LoadLevel(path));
                         EditorManager.inst.HideDialog("Open File Popup");
                     });
@@ -6802,15 +7276,15 @@ namespace EditorManagement.Functions.Editors
                                 break;
 
                             var bar = Instantiate(singleInput);
-                            Destroy(bar.GetComponent<InputField>());
-                            Destroy(bar.GetComponent<EventInfo>());
-                            Destroy(bar.GetComponent<EventTrigger>());
+                            DestroyImmediate(bar.GetComponent<InputField>());
+                            DestroyImmediate(bar.GetComponent<EventInfo>());
+                            DestroyImmediate(bar.GetComponent<EventTrigger>());
 
                             LSHelpers.DeleteChildren(bar.transform);
                             bar.transform.SetParent(documentationContent);
                             bar.transform.localScale = Vector3.one;
                             bar.name = "element";
-                            bar.transform.AsRT().sizeDelta = new Vector2(722f, 22f * LSText.WordWrap((string)element.Data, 73).Count);
+                            bar.transform.AsRT().sizeDelta = new Vector2(722f, 22f * LSText.WordWrap((string)element.Data, 67).Count);
 
                             var l = Instantiate(label);
                             l.transform.SetParent(bar.transform);
@@ -6828,6 +7302,11 @@ namespace EditorManagement.Functions.Editors
                             barImage.enabled = true;
                             barImage.color = new Color(1f, 1f, 1f, 0.03f);
 
+                            if (element.Function != null)
+                            {
+                                bar.AddComponent<Button>().onClick.AddListener(() => element.Function.Invoke());
+                            }
+
                             break;
                         }
                     case Document.Element.Type.Image:
@@ -6837,10 +7316,10 @@ namespace EditorManagement.Functions.Editors
 
                             var bar = Instantiate(singleInput);
                             LSHelpers.DeleteChildren(bar.transform);
-                            Destroy(bar.GetComponent<InputField>());
-                            Destroy(bar.GetComponent<EventInfo>());
-                            Destroy(bar.GetComponent<EventTrigger>());
-                            Destroy(bar.GetComponent<HorizontalLayoutGroup>());
+                            DestroyImmediate(bar.GetComponent<InputField>());
+                            DestroyImmediate(bar.GetComponent<EventInfo>());
+                            DestroyImmediate(bar.GetComponent<EventTrigger>());
+                            DestroyImmediate(bar.GetComponent<HorizontalLayoutGroup>());
 
                             bar.transform.SetParent(documentationContent);
                             bar.transform.localScale = Vector3.one;
@@ -6866,8 +7345,14 @@ namespace EditorManagement.Functions.Editors
 
                             if (imageObjImage.sprite && imageObjImage.sprite.texture)
                             {
-                                bar.transform.AsRT().sizeDelta = new Vector2(imageObjImage.sprite.texture.width, imageObjImage.sprite.texture.height);
-                                imageObj.transform.AsRT().sizeDelta = new Vector2(imageObjImage.sprite.texture.width, imageObjImage.sprite.texture.height);
+                                var width = Mathf.Clamp(imageObjImage.sprite.texture.width, 0, 718);
+                                bar.transform.AsRT().sizeDelta = new Vector2(width, imageObjImage.sprite.texture.height);
+                                imageObj.transform.AsRT().sizeDelta = new Vector2(width, imageObjImage.sprite.texture.height);
+                            }
+
+                            if (element.Function != null)
+                            {
+                                bar.AddComponent<Button>().onClick.AddListener(() => element.Function.Invoke());
                             }
 
                             break;
@@ -6959,6 +7444,8 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Debug", false, "If enabled, specific debugging functions for the editor will be enabled.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Editor Zen Mode", false, "If on, the player will not take damage in Preview Mode.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "BPM Snaps Keyframes", false, "Makes object's keyframes snap if Snap BPM is enabled.")),
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("General", "BPM Snap Divisions", 4f, "How many times the snap is divided into. Can be good for songs that don't do 4 divisions.")),
@@ -6973,9 +7460,9 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Create Objects at Camera Center", true, "When an object is created, its position will be set to that of the camera's.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
+                Config.Bind("General", "Create Objects Scale Parent Default", true, "The default value for new Beatmap Objects' Scale Parent.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Editor Zen Mode", false, "If on, the player will not take damage in Preview Mode.")),
+                Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
 
             #endregion
 
