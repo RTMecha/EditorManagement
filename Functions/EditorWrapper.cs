@@ -14,5 +14,7 @@ namespace EditorManagement.Functions
         public GameObject GameObject { get; set; }
 
         public void SetActive(bool active) => GameObject?.SetActive(active);
+
+        public bool selected;
     }
 }
