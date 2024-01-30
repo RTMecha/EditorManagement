@@ -828,7 +828,7 @@ namespace EditorManagement.Functions.Editors
 
                 #region Dropdown
 
-                EditorHelper.AddEditorDropdown("Player Editor", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png"), delegate ()
+                EditorHelper.AddEditorDropdown("Player Editor", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png"), delegate ()
                 {
                     OpenDialog();
                 });
