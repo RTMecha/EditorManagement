@@ -1013,6 +1013,7 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.autoKillType = AutoKillType.LastKeyframeOffset;
             beatmapObject.autoKillOffset = 5f;
             beatmapObject.editorData.layer = RTEditor.inst.Layer;
+            beatmapObject.parentType = RTEditor.GetEditorProperty("Create Objects Scale Parent Default").GetConfigEntry<bool>().Value ? "111" : "101";
 
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
@@ -1032,11 +1033,6 @@ namespace EditorManagement.Functions.Editors
 
             if (_select)
                 SetCurrentObject(timelineObject);
-
-            //if (ObjectModifiersEditor.inst != null)
-            //{
-            //    ObjectModifiersEditor.AddModifierObject(beatmapObject);
-            //}
 
             return timelineObject;
         }
@@ -1682,7 +1678,6 @@ namespace EditorManagement.Functions.Editors
 
             clickable.onClick = delegate (PointerEventData pointerEventData)
             {
-                Debug.Log($"{ObjEditor.inst.className}Copied ID from {beatmapObject}!");
                 EditorManager.inst.DisplayNotification($"Copied ID from {beatmapObject.name}!", 2f, EditorManager.NotificationType.Success);
                 LSText.CopyToClipboard(beatmapObject.id);
             };
