@@ -1201,6 +1201,24 @@ namespace EditorManagement.Functions.Editors
 
                                 break;
                             }
+                        case "copyAxis":
+                            {
+                                stringGenerator("Object Group", 0);
+                                integerGenerator("From Type", 1, 0);
+                                integerGenerator("From Axis", 2, 0);
+                                integerGenerator("To Type", 3, 0);
+                                integerGenerator("To Axis", 4, 0);
+
+                                break;
+                            }
+                        case "setVariableRandom":
+                            {
+                                stringGenerator("Object Group", 0);
+                                integerGenerator("Minimum Range", 1, 0);
+                                integerGenerator("Maximum Range", 2, 0);
+
+                                break;
+                            }
                     }
 
                     /* List of modifiers that have no values:
