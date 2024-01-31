@@ -1361,10 +1361,24 @@ namespace EditorManagement.Functions.Editors
         {
             if (IsObjectDialog)
             {
-                if (ObjEditor.inst.currentKeyframe != 0)
-                {
-                    inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
-                }
+                if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                    if (ObjEditor.inst.currentKeyframe != 0)
+                    {
+                        var list = new List<TimelineObject>();
+                        foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected))
+                            list.Add(timelineObject);
+                        var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+                        EditorManager.inst.history.Add(new History.Command("Delete Keyframes", delegate ()
+                        {
+                            inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
+                        }, delegate ()
+                        {
+                            ObjectEditor.inst.PasteKeyframes(beatmapObject, list, false);
+                        }));
+
+                        inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
+                    }
                 else
                     EditorManager.inst.DisplayNotification("Can't Delete First Keyframe.", 1f, EditorManager.NotificationType.Error);
                 return;
@@ -1412,49 +1426,26 @@ namespace EditorManagement.Functions.Editors
             }
             if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Event))
             {
-                if (RTEventEditor.inst.SelectedKeyframes.Count > 1)
+                if (RTEventEditor.inst.SelectedKeyframes.Count > 0 && !RTEventEditor.inst.SelectedKeyframes.Has(x => x.Index == 0))
                 {
                     EditorManager.inst.ClearDialogs(EditorManager.EditorDialog.DialogType.Event);
 
-                    //EditorManager.inst.history.Add(new History.Command("Delete Event Keyframes", delegate ()
-                    //{
-                    //	List<EventEditor.KeyframeSelection> list3 = new List<EventEditor.KeyframeSelection>();
-                    //	foreach (var keyframeSelection in EventEditor.inst.keyframeSelections)
-                    //	{
-                    //		if (keyframeSelection.Index != 0)
-                    //		{
-                    //			list3.Add(keyframeSelection);
-                    //		}
-                    //		else
-                    //		{
-                    //			EditorManager.inst.DisplayNotification("Can't Delete First Event Keyframe.", 1f, EditorManager.NotificationType.Error, false);
-                    //		}
-                    //	}
-                    //	EditorManager.inst.ClearDialogs(new EditorManager.EditorDialog.DialogType[]
-                    //	{
-                    //	EditorManager.EditorDialog.DialogType.Event
-                    //	});
-                    //	list3 = (from x in list3
-                    //			 orderby x.Index descending
-                    //			 select x).ToList();
-                    //	inst.StartCoroutine(DeleteEvent(list3));
-                    //}, delegate ()
-                    //{
-                    //	PasteEventKeyframes(dictionary);
-                    //}));
+                    var list = new List<TimelineObject>();
+                    foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+                        list.Add(timelineObject);
+
+                    EditorManager.inst.history.Add(new History.Command("Delete Event Keyframes", delegate ()
+                    {
+                        StartCoroutine(RTEventEditor.inst.DeleteKeyframes(list));
+                    }, delegate ()
+                    {
+                        RTEventEditor.inst.PasteEvents(list, false);
+                    }));
 
                     StartCoroutine(RTEventEditor.inst.DeleteKeyframes());
-                    EditorManager.inst.DisplayNotification("Deleted Event Keyframes.", 1f, EditorManager.NotificationType.Success);
-                }
-                else if (EventEditor.inst.currentEvent != 0)
-                {
-                    EventEditor.inst.DeleteEvent(EventEditor.inst.currentEventType, EventEditor.inst.currentEvent);
-                    EditorManager.inst.DisplayNotification("Deleted Event Keyframe.", 1f, EditorManager.NotificationType.Success);
                 }
                 else
-                {
                     EditorManager.inst.DisplayNotification("Can't Delete First Event Keyframe.", 1f, EditorManager.NotificationType.Error);
-                }
                 return;
             }
             if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Background))
@@ -4650,36 +4641,74 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
+                // Name
+                {
+                    var element = new Document.Element("<b>Name [VANILLA]</b>\nThe name of the Prefab. External prefabs gets saved with this as its file name, but all lowercase and " +
+                        "spaces replaced with underscores.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Name Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_name.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Offset
+                {
+                    var element = new Document.Element("<b>Offset [VANILLA]</b>\nThe delay set to every Prefab Objects' spawned objects related to this Prefab.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Offset Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_offset.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Type
+                {
+                    var element = new Document.Element("<b>Type [PATCHED]</b>\nThe group name and color of the Prefab. Good for color coding what a Prefab does at a glance.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Type Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_type.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Description
+                {
+                    var element = new Document.Element("<b>Description [MODDED]</b>\nA good way to tell you and others what the Prefab does or contains in great detail.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Description Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_description.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
-                // Search Image
+
+                // Seletion List
+                {
+                    var element = new Document.Element("<b>Seletion List [PATCHED]</b>\nShows every object, you can toggle the selection on any of them to add them to the prefab. All selected " +
+                        "objects will be copied into the Prefab. This is patched because the UI and the code for it already existed in Legacy, it was just unused.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Seletion List Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_search.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Create
+                {
+                    var element = new Document.Element("<b>Create [MODDED]</b>\nApplies all data and copies all selected objects to a new Prefab.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Create Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_create.png", Document.Element.Type.Image);
@@ -4711,6 +4740,90 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("Prefab Objects are a copied version of the original prefab, placed into the level. They take all the objects stored in the original prefab " +
                         "and add them to the level, meaning you can have multiple copies of the same group of objects. Editing the objects of the prefab by expanding it applies all changes to " +
                         "the prefab, updating every Prefab Object (once collapsed back into a Prefab Object).", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Expand Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_expand.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Layer Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_layer.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Time Of Death Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_tod.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Time Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_time.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Position Offset Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_pos_offset.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Scale Offset Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_sca_offset.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Rotation Offset Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_rot_offset.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Repeat Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_repeat.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Speed Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_speed.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Lead Time / Offset Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_lead.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Name Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_name.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Type Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_type.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Save Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_save.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Count Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_counts.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -5968,14 +6081,58 @@ namespace EditorManagement.Functions.Editors
 
                 // Intro
                 {
-                    var element = new Document.Element("WIP Intro text.", Document.Element.Type.Text);
+                    var element = new Document.Element("ObjectModifiers adds a trigger / action based system to Beatmap Objects called \"Modifiers\". " +
+                        "Modifiers have two types: Triggers check if something is happening and if it is, it activates any Action type modifiers. If there are no Triggers, then the Action modifiers " +
+                        "activates. This document is heavily WIP and will be added to over time.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
                 // setPitch
                 {
-                    var element = new Document.Element("setPitch - Modifies the speed of the game and the pitch of the audio. If you have EventsCore installed, it sets a multiplied offset from the " +
+                    var element = new Document.Element("<b>setPitch</b> - Modifies the speed of the game and the pitch of the audio. If you have EventsCore installed, it sets a multiplied offset from the " +
                         "audio keyframe's pitch value. However unlike that, setPitch can go into the negatives allowing for reversed audio.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // addPitch
+                {
+                    var element = new Document.Element("<b>addPitch</b> - Does the same as above, except adds to the pitch offset.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // setMusicTime
+                {
+                    var element = new Document.Element("<b>setMusicTime</b> - Sets the Audio Time to go to any point in the song, allowing for skipping specific sections of a song.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // playSound
+                {
+                    var element = new Document.Element("<b>playSound</b> - Plays an external sound. The following details what each value in the modifier does." +
+                        "\nPath - If global is on, path should be set to something within beatmaps/soundlibrary directory. If global is off, then the path should be set to something within the level " +
+                        "folder that has level.lsb and metadata.lsb." +
+                        "\nGlobal - Affects the above setting in the way described." +
+                        "\nPitch - The speed of the sound played." +
+                        "\nVolume - How loud the sound is." +
+                        "\nLoop - If the sound should loop while the Modifier is active.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // playSoundOnline
+                {
+                    var element = new Document.Element("<b>playSoundOnline</b> - Same as above except plays from a link. The global toggle does nothing here.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // loadLevel
+                {
+                    var element = new Document.Element("<b>loadLevel</b> - Loads a level from the current level folder path.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // loadLevelInternal
+                {
+                    var element = new Document.Element("<b>loadLevelInternal</b> - Same as above, except it always loads from the current levels own path.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -6214,6 +6371,31 @@ namespace EditorManagement.Functions.Editors
                         uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
                         inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
                         .Invoke(inspector, new object[] { ObjectEditor.inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+                
+                // Inspect ObjectManager
+                {
+                    string name = "ObjectManager";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "ObjectManager is the component that handles regular object stuff.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { ObjectManager.inst, null });
                     });
                     gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
                 }
