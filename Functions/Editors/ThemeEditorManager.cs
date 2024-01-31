@@ -229,11 +229,11 @@ namespace EditorManagement.Functions.Editors
                         themePanel.EditButton.onClick.ClearAll();
                         themePanel.EditButton.onClick.AddListener(delegate ()
                         {
-                            RenderThemeEditor(int.Parse(tmpThemeID));
+                            RenderThemeEditor(Parser.TryParse(tmpThemeID, 0));
                         });
 
                         themePanel.DeleteButton.onClick.ClearAll();
-                        themePanel.DeleteButton.interactable = index >= DataManager.inst.BeatmapThemes.Count;
+                        themePanel.DeleteButton.interactable = Parser.TryParse(tmpThemeID, 0) >= DataManager.inst.BeatmapThemes.Count;
                         themePanel.DeleteButton.onClick.AddListener(delegate ()
                         {
                             DeleteThemeDelegate(beatmapTheme);
