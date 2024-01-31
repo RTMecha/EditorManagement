@@ -118,6 +118,7 @@ namespace EditorManagement.Functions.Editors
                 tagPrefabLayout.childForceExpandWidth = false;
 
                 var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
+                input.transform.localScale = Vector3.one;
                 ((RectTransform)input.transform).sizeDelta = new Vector2(136f, 32f);
                 input.transform.Find("Text").GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
                 input.transform.Find("Text").GetComponent<Text>().fontSize = 17;
@@ -1726,6 +1727,7 @@ namespace EditorManagement.Functions.Editors
             {
                 int index = num;
                 var gameObject = tagPrefab.Duplicate(tagsParent, index.ToString());
+                gameObject.transform.localScale = Vector3.one;
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
                 input.text = tag;
@@ -1746,6 +1748,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             var add = PrefabEditor.inst.CreatePrefab.Duplicate(tagsParent, "Add");
+            add.transform.localScale = Vector3.one;
             add.transform.Find("Text").GetComponent<Text>().text = "Add Tag";
             var addButton = add.GetComponent<Button>();
             addButton.onClick.ClearAll();
@@ -2645,6 +2648,7 @@ namespace EditorManagement.Functions.Editors
                 var tfv = ObjEditor.inst.ObjectView.transform;
 
                 var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
+                var uiManager = AccessTools.TypeByName("UnityExplorer.UI.UIManager");
 
                 if (inspector != null && !tfv.Find("inspect"))
                 {
@@ -2679,6 +2683,7 @@ namespace EditorManagement.Functions.Editors
                     if (active)
                         deleteButton.onClick.AddListener(delegate ()
                         {
+                            uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
                             inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { levelObject, null });
                         });
                 }
@@ -2689,6 +2694,7 @@ namespace EditorManagement.Functions.Editors
                     deleteButton.onClick.ClearAll();
                     deleteButton.onClick.AddListener(delegate ()
                     {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
                         inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") }).Invoke(inspector, new object[] { beatmapObject, null });
                     });
                 }
