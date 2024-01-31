@@ -194,6 +194,7 @@ namespace EditorManagement.Functions.Editors
 		{
 			var strs = new List<string>();
 			var list = SelectedKeyframes;
+			var count = list.Count;
 			foreach (var timelineObject in list)
             {
 				strs.Add(timelineObject.ID);
@@ -209,6 +210,38 @@ namespace EditorManagement.Functions.Editors
 
 			CreateEventObjects();
 			EventManager.inst.updateEvents();
+
+			SetCurrentEvent(0, 0);
+
+			EditorManager.inst.DisplayNotification($"Deleted Event Keyframes [ {count} ]", 1f, EditorManager.NotificationType.Success);
+
+			yield break;
+		}
+
+		public IEnumerator DeleteKeyframes(List<TimelineObject> kfs)
+		{
+			var strs = new List<string>();
+			var list = kfs;
+			var count = list.Count;
+			foreach (var timelineObject in list)
+			{
+				strs.Add(timelineObject.ID);
+			}
+
+			ClearEventObjects();
+
+			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
+			for (int i = 0; i < allEvents.Count; i++)
+			{
+				allEvents[i].RemoveAll(x => strs.Contains(((EventKeyframe)x).id));
+			}
+
+			CreateEventObjects();
+			EventManager.inst.updateEvents();
+
+			SetCurrentEvent(0, 0);
+
+			EditorManager.inst.DisplayNotification($"Deleted Event Keyframes [ {count} ]", 1f, EditorManager.NotificationType.Success);
 
 			yield break;
 		}
@@ -238,19 +271,24 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-		public void PasteEvents()
+		public void PasteEvents(bool setTime = true) => PasteEvents(copiedEventKeyframes, setTime);
+
+		public void PasteEvents(List<TimelineObject> kfs, bool setTime = true)
 		{
-			if (copiedEventKeyframes.Count <= 0)
+			if (kfs.Count <= 0)
 			{
 				Debug.LogError($"{EditorPlugin.className}No copied event yet!");
 				return;
 			}
-			foreach (var keyframeSelection in copiedEventKeyframes)
+			foreach (var keyframeSelection in kfs)
 			{
 				var eventKeyframe = EventKeyframe.DeepCopy(keyframeSelection.GetData<EventKeyframe>());
-				eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos + eventKeyframe.eventTime;
-				if (SettingEditor.inst.SnapActive)
-					eventKeyframe.eventTime = RTEditor.SnapToBPM(eventKeyframe.eventTime);
+				if (setTime)
+				{
+					eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos + eventKeyframe.eventTime;
+					if (SettingEditor.inst.SnapActive)
+						eventKeyframe.eventTime = RTEditor.SnapToBPM(eventKeyframe.eventTime);
+				}
 
 				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type].Add(eventKeyframe);
 			}

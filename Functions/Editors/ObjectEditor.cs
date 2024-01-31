@@ -189,9 +189,13 @@ namespace EditorManagement.Functions.Editors
         {
             var list = SelectedObjects;
             int count = SelectedObjectCount;
-            int min = list.Min(x => x.Index) - 1;
 
-            EditorManager.inst.DisplayNotification($"Deleting Beatmap Objects [ {count} ]", 1f, EditorManager.NotificationType.Success);
+            if (count == DataManager.inst.gameData.beatmapObjects.FindAll(x => !x.fromPrefab).Count + DataManager.inst.gameData.prefabObjects.Count)
+            {
+                yield break;
+            }
+
+            int min = list.Min(x => x.Index) - 1;
 
             var beatmapObjects = list.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()).ToList();
             var beatmapObjectIDs = new List<string>();
@@ -200,6 +204,11 @@ namespace EditorManagement.Functions.Editors
             beatmapObjectIDs.AddRange(list.Where(x => x.IsBeatmapObject).Select(x => x.ID));
             prefabObjectIDs.AddRange(list.Where(x => x.IsPrefabObject).Select(x => x.ID));
 
+            if (beatmapObjectIDs.Count == DataManager.inst.gameData.beatmapObjects.FindAll(x => !x.fromPrefab).Count)
+            {
+                yield break;
+            }
+            
             if (prefabObjectIDs.Count > 0)
                 list.Where(x => x.IsPrefabObject)
                     .Select(x => x.GetData<PrefabObject>()).ToList()
@@ -370,27 +379,18 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void PasteKeyframes(BeatmapObject beatmapObject)
+        public void PasteKeyframes(BeatmapObject beatmapObject, bool setTime = true) => PasteKeyframes(beatmapObject, copiedObjectKeyframes, setTime);
+
+        public void PasteKeyframes(BeatmapObject beatmapObject, List<TimelineObject> kfs, bool setTime = true)
         {
-            if (copiedObjectKeyframes.Count <= 0)
+            if (kfs.Count <= 0)
             {
                 Debug.LogError($"{ObjEditor.inst.className}No copied event yet!");
                 return;
             }
 
-            //foreach (var timelineObject in copiedObjectKeyframes)
-            //{
-            //    var eventKeyframe = EventKeyframe.DeepCopy(timelineObject.GetData<EventKeyframe>());
-
-            //    eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - beatmapObject.StartTime + eventKeyframe.eventTime;
-            //    if (eventKeyframe.eventTime <= 0f)
-            //        eventKeyframe.eventTime = 0.001f;
-
-            //    beatmapObject.events[timelineObject.Type].Add(eventKeyframe);
-            //}
-
             for (int i = 0; i < beatmapObject.events.Count; i++)
-                beatmapObject.events[i].AddRange(copiedObjectKeyframes.Where(x => x.Type == i).Select(x => PasteKF(beatmapObject, x)));
+                beatmapObject.events[i].AddRange(kfs.Where(x => x.Type == i).Select(x => PasteKF(beatmapObject, x, setTime)));
 
             ResizeKeyframeTimeline(beatmapObject);
             UpdateKeyframeOrder(beatmapObject);
@@ -401,13 +401,16 @@ namespace EditorManagement.Functions.Editors
                 Updater.UpdateProcessor(beatmapObject, "Keyframes");
         }
 
-        EventKeyframe PasteKF(BeatmapObject beatmapObject, TimelineObject timelineObject)
+        EventKeyframe PasteKF(BeatmapObject beatmapObject, TimelineObject timelineObject, bool setTime = true)
         {
             var eventKeyframe = EventKeyframe.DeepCopy(timelineObject.GetData<EventKeyframe>());
 
-            eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - beatmapObject.StartTime + eventKeyframe.eventTime;
-            if (eventKeyframe.eventTime <= 0f)
-                eventKeyframe.eventTime = 0.001f;
+            if (setTime)
+            {
+                eventKeyframe.eventTime = EditorManager.inst.CurrentAudioPos - beatmapObject.StartTime + eventKeyframe.eventTime;
+                if (eventKeyframe.eventTime <= 0f)
+                    eventKeyframe.eventTime = 0.001f;
+            }
 
             return eventKeyframe;
         }
