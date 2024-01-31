@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 using HarmonyLib;
 
@@ -46,13 +47,17 @@ namespace EditorManagement.Patchers
 			var ttindex = index.AddComponent<Text>();
 
 			rtindex.anchoredPosition = new Vector2(-135f, 2f);
+			rtindex.sizeDelta = new Vector2(100f, 32f);
 
-			ttindex.text = "Index: " + Instance.currentMarker.ToString();
+			ttindex.text = "Index: 0";
 			ttindex.font = FontManager.inst.Inconsolata;
 			ttindex.color = new Color(0.9f, 0.9f, 0.9f);
 			ttindex.alignment = TextAnchor.MiddleLeft;
 			ttindex.fontSize = 24;
 			ttindex.horizontalOverflow = HorizontalWrapMode.Overflow;
+
+			transform.GetChild(2).GetChild(0).GetComponent<Text>().text = "Time";
+			transform.GetChild(4).GetChild(0).GetComponent<Text>().text = "Description";
 		}
 
 		[HarmonyPatch("Update")]
@@ -82,22 +87,112 @@ namespace EditorManagement.Patchers
 		}
 
 		[HarmonyPatch("OpenDialog")]
-		[HarmonyPostfix]
-		static void OpenDialogPostfix(MarkerEditor __instance, int __0)
+		[HarmonyPrefix]
+		static bool OpenDialogPostfix(int __0)
 		{
-			GameObject.Find("EditorDialogs/MarkerDialog/data/left/color").GetComponent<GridLayoutGroup>().spacing = new Vector2(8f, 8f);
-			GameObject.Find("EditorDialogs/MarkerDialog/data/left/index/text").GetComponent<Text>().text = "Index: " + Instance.currentMarker.ToString();
+			EditorManager.inst.ClearDialogs();
+			EditorManager.inst.SetDialogStatus("Marker Editor", true);
+			Instance.left = EditorManager.inst.GetDialog("Marker Editor").Dialog.Find("data/left");
+			Instance.right = EditorManager.inst.GetDialog("Marker Editor").Dialog.Find("data/right");
 
-			var regex = new System.Text.RegularExpressions.Regex(@"setLayer\((.*?)\)");
-			var match = regex.Match(DataManager.inst.gameData.beatmapData.markers[__0].desc);
-			if (match.Success)
+
+
+			Instance.left.Find("color").GetComponent<GridLayoutGroup>().spacing = new Vector2(8f, 8f);
+			Instance.left.Find("index/text").GetComponent<Text>().text = $"Index: {__0}";
+
+			var marker = DataManager.inst.gameData.beatmapData.markers[__0];
+
+			var matchCollection = Regex.Matches(marker.desc, @"setLayer\((.*?)\)");
+
+			if (matchCollection.Count > 0)
+				foreach (var obj in matchCollection)
+				{
+					var match = (Match)obj;
+
+					var matchGroup = match.Groups[1].ToString();
+					if (matchGroup.ToLower() == "events" || matchGroup.ToLower() == "check" || matchGroup.ToLower() == "event/check" || matchGroup.ToLower() == "event")
+						RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
+					else if (matchGroup.ToLower() == "object" || matchGroup.ToLower() == "objects")
+						RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
+					else if (matchGroup.ToLower() == "toggle" || matchGroup.ToLower() == "swap")
+						RTEditor.inst.SetLayer(RTEditor.inst.layerType == RTEditor.LayerType.Objects ? RTEditor.LayerType.Events : RTEditor.LayerType.Objects);
+					else if (int.TryParse(matchGroup, out int layer))
+						RTEditor.inst.SetLayer(Mathf.Clamp(layer - 1, 0, int.MaxValue));
+				}
+
+			//var regex = new Regex(@"setLayer\((.*?)\)");
+			//var match = regex.Match(marker.desc);
+			//if (match.Success)
+			//{
+			//	var matchGroup = match.Groups[1].ToString();
+			//	if (matchGroup.ToLower() == "events" || matchGroup.ToLower() == "check" || matchGroup.ToLower() == "event/check")
+			//		RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
+			//	else if (matchGroup.ToLower() == "object" || matchGroup.ToLower() == "objects")
+			//		RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
+			//	else if (matchGroup.ToLower() == "toggle" || matchGroup.ToLower() == "swap")
+			//		RTEditor.inst.SetLayer(RTEditor.inst.layerType == RTEditor.LayerType.Objects ? RTEditor.LayerType.Events : RTEditor.LayerType.Objects);
+			//	else if (int.TryParse(matchGroup, out int layer))
+			//		RTEditor.inst.SetLayer(Mathf.Clamp(layer + 1, 0, int.MaxValue));
+			//}
+
+			LSHelpers.DeleteChildren(Instance.left.Find("color"), false);
+			int num = 0;
+			foreach (var color in Instance.markerColors)
 			{
-				var matchGroup = match.Groups[1].ToString();
-				if (matchGroup.ToLower() == "events" || matchGroup.ToLower() == "check" || matchGroup.ToLower() == "event/check")
-					RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
-				else if (int.TryParse(matchGroup, out int layer))
-					RTEditor.inst.SetLayer(Mathf.Clamp(layer, 0, int.MaxValue));
+				int index = num;
+				var gameObject = EditorManager.inst.colorGUI.Duplicate(Instance.left.Find("color"), "marker color");
+				gameObject.transform.localScale = Vector3.one;
+				gameObject.transform.Find("Image").gameObject.SetActive(marker.color == index);
+				var button = gameObject.GetComponent<Button>();
+				((Image)button.targetGraphic).color = color;
+				button.onClick.ClearAll();
+				button.onClick.AddListener(delegate
+				{
+					Debug.Log($"{EditorManager.inst.className}Set Marker {__0}'s color to {index}");
+					Instance.SetColor(index);
+					Instance.UpdateColorSelection();
+				});
+				num++;
 			}
+
+			var name = Instance.left.Find("name").GetComponent<InputField>();
+			name.onValueChanged.ClearAll();
+			name.text = marker.name.ToString();
+			name.onValueChanged.AddListener(delegate (string val)
+			{
+				Instance.SetName(val);
+			});
+
+			var desc = Instance.left.Find("desc").GetComponent<InputField>();
+			desc.onValueChanged.ClearAll();
+			desc.text = marker.desc.ToString();
+			desc.onValueChanged.AddListener(delegate (string val)
+			{
+				Instance.SetDescription(val);
+			});
+
+			var time = Instance.left.Find("time/time").GetComponent<InputField>();
+			time.onValueChanged.ClearAll();
+			time.text = marker.time.ToString();
+			time.onValueChanged.AddListener(delegate (string val)
+			{
+				Instance.SetTime(val);
+			});
+
+			TriggerHelper.AddEventTriggerParams(time.gameObject, TriggerHelper.ScrollDelta(time));
+			TriggerHelper.IncreaseDecreaseButtons(time, t: Instance.left.Find("time"));
+
+			var set = Instance.left.Find("time/|").GetComponent<Button>();
+			set.onClick.ClearAll();
+			set.onClick.AddListener(delegate
+			{
+				Instance.left.Find("time/time").GetComponent<InputField>().text = AudioManager.inst.CurrentAudioSource.time.ToString();
+			});
+			EditorManager.inst.ShowDialog("Marker Editor");
+			Instance.UpdateMarkerList();
+			Instance.RenderMarkers();
+
+			return false;
 		}
 
 		[HarmonyPatch("RenderMarker")]
@@ -240,6 +335,33 @@ namespace EditorManagement.Patchers
 			Instance.CreateMarkers();
 			Instance.SetCurrentMarker(index);
 			Instance.UpdateMarkerList();
+			return false;
+		}
+
+		[HarmonyPatch("UpdateColorSelection")]
+		[HarmonyPrefix]
+		static bool UpdateColorSelectionPrefix()
+		{
+			var marker = DataManager.inst.gameData.beatmapData.markers[Instance.currentMarker];
+			int num = 0;
+			foreach (var color in Instance.markerColors)
+			{
+				Instance.left.Find("color").GetChild(num).Find("Image").gameObject.SetActive(marker.color == num);
+				num++;
+			}
+			return false;
+		}
+
+		[HarmonyPatch("DeleteMarker")]
+		[HarmonyPrefix]
+		static bool DeleteMarkerPrefix(int __0)
+		{
+			DataManager.inst.gameData.beatmapData.markers.RemoveAt(__0);
+			if (DataManager.inst.gameData.beatmapData.markers.Count > 0)
+				Instance.UpdateMarkerList();
+			else
+				CheckpointEditor.inst.SetCurrentCheckpoint(0);
+			Instance.CreateMarkers();
 			return false;
 		}
 	}
