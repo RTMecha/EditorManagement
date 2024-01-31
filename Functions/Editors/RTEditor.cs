@@ -112,6 +112,7 @@ namespace EditorManagement.Functions.Editors
             CreateMultiObjectEditor();
             CreatePropertiesWindow();
             CreateDocumentation();
+            CreateDebug();
 
             if (!RTFile.FileExists(EditorSettingsPath))
                 CreateGlobalSettings();
@@ -4641,11 +4642,47 @@ namespace EditorManagement.Functions.Editors
             // Prefabs
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Prefabs", "A package of objects that can be transfered to another level.");
+                var documentation = new Document(gameObject, "Prefabs", "A package of objects that can be transfered to another level. They can also be added to the level as a Prefab Object.");
 
                 // Intro
                 {
-                    var element = new Document.Element("Prefab intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("Prefabs are collections of objects grouped together for easy transfering from level to level.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Name Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_name.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Offset Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_offset.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Type Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_type.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Description Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_description.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Search Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_search.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+                
+                // Create Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pc_create.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -4671,7 +4708,9 @@ namespace EditorManagement.Functions.Editors
 
                 // Intro
                 {
-                    var element = new Document.Element("Prefab Objects are something.", Document.Element.Type.Text);
+                    var element = new Document.Element("Prefab Objects are a copied version of the original prefab, placed into the level. They take all the objects stored in the original prefab " +
+                        "and add them to the level, meaning you can have multiple copies of the same group of objects. Editing the objects of the prefab by expanding it applies all changes to " +
+                        "the prefab, updating every Prefab Object (once collapsed back into a Prefab Object).", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4691,56 +4730,56 @@ namespace EditorManagement.Functions.Editors
             }
 
             // Background Object
-            {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Background Object", "Make classic 3D style backgrounds.");
+            //{
+            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+            //    var documentation = new Document(gameObject, "Background Object", "Make classic 3D style backgrounds.");
 
-                // Intro
-                {
-                    var element = new Document.Element("Background Object intro.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
+            //    // Intro
+            //    {
+            //        var element = new Document.Element("Background Object intro.", Document.Element.Type.Text);
+            //        documentation.elements.Add(element);
+            //    }
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
+            //    var htt = gameObject.AddComponent<HoverTooltip>();
 
-                var levelTip = new HoverTooltip.Tooltip();
+            //    var levelTip = new HoverTooltip.Tooltip();
 
-                levelTip.desc = documentation.Name;
-                levelTip.hint = documentation.Description;
-                htt.tooltipLangauges.Add(levelTip);
+            //    levelTip.desc = documentation.Name;
+            //    levelTip.hint = documentation.Description;
+            //    htt.tooltipLangauges.Add(levelTip);
 
-                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-                text.text = documentation.Name;
+            //    text.text = documentation.Name;
 
-                documentations.Add(documentation);
-            }
+            //    documentations.Add(documentation);
+            //}
 
             // Events
-            {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Events", "Effects to make your level pretty.");
+            //{
+            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+            //    var documentation = new Document(gameObject, "Events", "Effects to make your level pretty.");
 
-                // Intro
-                {
-                    var element = new Document.Element("Events intro.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
+            //    // Intro
+            //    {
+            //        var element = new Document.Element("Events intro.", Document.Element.Type.Text);
+            //        documentation.elements.Add(element);
+            //    }
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
+            //    var htt = gameObject.AddComponent<HoverTooltip>();
 
-                var levelTip = new HoverTooltip.Tooltip();
+            //    var levelTip = new HoverTooltip.Tooltip();
 
-                levelTip.desc = documentation.Name;
-                levelTip.hint = documentation.Description;
-                htt.tooltipLangauges.Add(levelTip);
+            //    levelTip.desc = documentation.Name;
+            //    levelTip.hint = documentation.Description;
+            //    htt.tooltipLangauges.Add(levelTip);
 
-                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-                text.text = documentation.Name;
+            //    text.text = documentation.Name;
 
-                documentations.Add(documentation);
-            }
+            //    documentations.Add(documentation);
+            //}
             
             // Text Objects
             {
@@ -4750,8 +4789,7 @@ namespace EditorManagement.Functions.Editors
                 // Intro
                 {
                     var element = new Document.Element("Text Objects can be used in extensive ways, from conveying character dialogue to decoration. This document is for showcasing usable " +
-                        "fonts and formats Text Objects can use. Also do note to ignore the spaces in the formattings as the UI text will just make the text like <b>this</b>.\n" +
-                        "WIP, still missing a lot of formatting and fonts.", Document.Element.Type.Text);
+                        "fonts and formats Text Objects can use. Also do note to ignore the spaces in the formattings as the UI text will just make the text like <b>this</b>.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
                 
@@ -4792,10 +4830,43 @@ namespace EditorManagement.Functions.Editors
                 // Info
                 {
                     var element = new Document.Element("To use a font, do <font=Font Name>. To clear, do </font>. Click on one of the fonts below to copy the <font=Font Name> to your clipboard. " +
-                        "Click on the image above to open the folder to the documentation assets folder.", Document.Element.Type.Text);
+                        "Click on the image above to open the folder to the documentation assets folder where a higher resolution screenshot is located.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
+                // Adam Warren Pro Bold
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Adam Warren Pro Bold - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Adam Warren Pro Bold>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Adam Warren Pro BoldItalic
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Adam Warren Pro BoldItalic - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Adam Warren Pro BoldItalic>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Adam Warren Pro
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Adam Warren Pro - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Adam Warren Pro>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
                 // Arrhythmia
                 {
                     var element = new Document.Element("<b>[MODDED]</b> Arrhythmia - The font from the earliest builds of Project Arrhythmia.", Document.Element.Type.Text);
@@ -4803,6 +4874,84 @@ namespace EditorManagement.Functions.Editors
                     {
                         EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
                         LSText.CopyToClipboard("<font=Arrhythmia>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // BadaBoom BB
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> BadaBoom BB - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=BadaBoom BB>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Matoran Language 1
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Matoran Language 1 - The language used by the Matoran in the BIONICLE series.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Matoran Language 1>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
+                // Matoran Language 2
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Matoran Language 2 - The language used by the Matoran in the BIONICLE series.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Matoran Language 2>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Determination Mono
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Determination Mono - The font UNDERTALE/deltarune uses for its interfaces.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Determination Mono>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // determination sans
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> determination sans - sans undertale.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=determination sans>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Determination Wingdings
+                {
+                    string font = "Determination Wingdings";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - Beware the man who speaks in hands.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Flow Circular
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Flow Circular - A fun line font suggested by ManIsLiS.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Flow Circular>");
                     };
                     documentation.elements.Add(element);
                 }
@@ -4818,6 +4967,303 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
+                // Ancient Autobot
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Ancient Autobot - The launguage used by ancient Autobots in the original Transformers cartoon.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Ancient Autobot>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Hachicro
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Hachicro - The font used by UNDERTALE's hit text.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Hachicro>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Inconsolata Variable
+                {
+                    string font = "Inconsolata Variable";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The default PA font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // LiberationSans SDF
+                {
+                    string font = "LiberationSans SDF";
+                    var element = new Document.Element($"<b>[VANILLA]</b> {font} - An extra font unmodded Legacy has.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Hand
+                {
+                    string font = "Komika Hand";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Hand Bold
+                {
+                    string font = "Komika Hand Bold";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Slick
+                {
+                    string font = "Komika Slick";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Slim
+                {
+                    string font = "Komika Slim";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Hand BoldItalic
+                {
+                    string font = "Komika Hand BoldItalic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Hand Italic
+                {
+                    string font = "Komika Hand Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Jam
+                {
+                    string font = "Komika Jam";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Jam Italic
+                {
+                    string font = "Komika Jam Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Slick Italic
+                {
+                    string font = "Komika Slick Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Komika Slim Italic
+                {
+                    string font = "Komika Slim Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A comic style font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Minecraft Text Bold
+                {
+                    string font = "Minecraft Text Bold";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The font used for the text UI in Minecraft.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Minecraft Text BoldItalic
+                {
+                    string font = "Minecraft Text BoldItalic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The font used for the text UI in Minecraft.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Minecraft Text Italic
+                {
+                    string font = "Minecraft Text Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The font used for the text UI in Minecraft.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Minecraft Text
+                {
+                    string font = "Minecraft Text";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The font used for the text UI in Minecraft.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Minecraftory
+                {
+                    string font = "Minecraftory";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - Geometry Dash font mainly used in Geometry Dash SubZero.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Monster Friend Back
+                {
+                    string font = "Monster Friend Back";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font based on UNDERTALE's title.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
+                // Monster Friend Fore
+                {
+                    string font = "Monster Friend Fore";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font based on UNDERTALE's title.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // About Friend
+                {
+                    string font = "About Friend";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by Ama.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
+                // Oxygene
+                {
+                    var element = new Document.Element("<b>[MODDED]</b> Oxygene - The font from the title of Geometry Dash.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard("<font=Oxygene>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Piraka Theory
+                {
+                    string font = "Piraka Theory";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The language used by the Piraka in the BIONICLE series.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
+                // Piraka
+                {
+                    string font = "Piraka";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The language used by the Piraka in the BIONICLE series.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
                 // Pusab
                 {
                     var element = new Document.Element("<b>[MODDED]</b> Pusab - The font from the hit game Geometry Dash. And yes, it is the right one.", Document.Element.Type.Text);
@@ -4829,13 +5275,189 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
-                // Oxygene
+                // Rahkshi
                 {
-                    var element = new Document.Element("<b>[MODDED]</b> Oxygene - The font from the title of Geometry Dash.", Document.Element.Type.Text);
+                    string font = "Rahkshi";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The font used for promoting the Rahkshi sets in the BIONICLE series.", Document.Element.Type.Text);
                     element.Function = delegate ()
                     {
                         EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
-                        LSText.CopyToClipboard("<font=Oxygene>");
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Revue
+                {
+                    string font = "Revue";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - The font used early 2000s Transformers titles.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Transdings
+                {
+                    string font = "Transdings";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font that contains a ton of Transformer insignias / logos. Below is an image featuring each letter " +
+                        $"of the alphabet.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Transdings IMAGE
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_tf.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Transformers Movie
+                {
+                    string font = "Transformers Movie";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font based on the Transformers movies title font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Nexa Book
+                {
+                    string font = "Nexa Book";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by CubeCube.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Nexa Bold
+                {
+                    string font = "Nexa Bold";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by CubeCube.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Angsana
+                {
+                    string font = "Angsana";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by KarasuTori. Supports non-English languages like Thai.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Angsana Bold
+                {
+                    string font = "Angsana Bold";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by KarasuTori. Supports non-English languages like Thai.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Angsana Italic
+                {
+                    string font = "Angsana Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by KarasuTori. Supports non-English languages like Thai.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Angsana Bold Italic
+                {
+                    string font = "Angsana Bold Italic";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by KarasuTori. Supports non-English languages like Thai.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // VAG Rounded
+                {
+                    string font = "VAG Rounded";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - A font suggested by KarasuTori. Supports non-English languages like Russian.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Comic Sans
+                {
+                    string font = "Comic Sans";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - You know the font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
+                // Comic Sans Bold
+                {
+                    string font = "Comic Sans Bold";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - You know the font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+
+                // Comic Sans Hairline
+                {
+                    string font = "Comic Sans Hairline";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - You know the font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
+                    };
+                    documentation.elements.Add(element);
+                }
+                
+                // Comic Sans Light
+                {
+                    string font = "Comic Sans Light";
+                    var element = new Document.Element($"<b>[MODDED]</b> {font} - You know the font.", Document.Element.Type.Text);
+                    element.Function = delegate ()
+                    {
+                        EditorManager.inst.DisplayNotification($"Copied font!", 2f, EditorManager.NotificationType.Success);
+                        LSText.CopyToClipboard($"<font={font}>");
                     };
                     documentation.elements.Add(element);
                 }
@@ -4855,14 +5477,103 @@ namespace EditorManagement.Functions.Editors
                 documentations.Add(documentation);
             }
 
-            // Marker
+            // Markers
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Marker", "Organize and remember details about a level.");
+                var documentation = new Document(gameObject, "Markers", "Organize and remember details about a level.");
 
                 // Intro
                 {
-                    var element = new Document.Element("Marker intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("Markers can organize certain parts of your level or help with aligning objects to a specific time.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Timeline
+                {
+                    var element = new Document.Element("In the image below is two types of markers. The blue marker is the Audio Marker and the marker with a circle on the top is just a Marker. " +
+                        "Left clicking on the Marker's circle knob moves the Audio Marker to the regular Marker. Right clicking the Marker's circle knob deletes it.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Timeline Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_timeline.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Name
+                {
+                    var element = new Document.Element("<b>Name [VANILLA]</b>\nThe name of the Marker. This renders next to the Marker's circle knob in the timeline.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Name Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_name.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Time
+                {
+                    var element = new Document.Element("<b>Time [VANILLA]</b>\nThe time the Marker renders at in the timeline.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Time Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_time.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Description
+                {
+                    var element = new Document.Element("<b>Description [PATCHED]</b>\nDescription helps you remember details about specific parts of a song or even stuff about the level you're " +
+                        "editing. Typing setLayer(1) will set the editor layer to 1 when the Marker is selected. You can also have it be setLayer(events), setLayer(objects), setLayer(toggle), which " +
+                        "sets the layer type to those respective types (toggle switches between Events and Objects layer types). Fun fact, the title for description in the UI in unmodded Legacy " +
+                        "said \"Name\" lol.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Description Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_description.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Colors
+                {
+                    var element = new Document.Element("<b>Colors [PATCHED]</b>\nWhat color the marker displays as. You can customize the colors in the Settings window.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Colors Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_colors.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Index
+                {
+                    var element = new Document.Element("<b>Index [MODDED]</b>\nThe number of the Marker in the list.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Index Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_index.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Delete
+                {
+                    var element = new Document.Element("On the right-hand-side of the Marker Editor window is a list of markers. At the top is a Search field and a Delete Markers button. " +
+                        "Delete Markers clears every marker in the level and closes the Marker Editor.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Marker Delete Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_marker_delete.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -5123,45 +5834,114 @@ namespace EditorManagement.Functions.Editors
             }
 
             // Keybinds
-            {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Keybinds", "Perform specific actions when pressing set keys.");
+            //{
+            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+            //    var documentation = new Document(gameObject, "Keybinds", "Perform specific actions when pressing set keys.");
 
-                // Intro
-                {
-                    var element = new Document.Element("Keybinds intro.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
+            //    // Intro
+            //    {
+            //        var element = new Document.Element("Keybinds intro.", Document.Element.Type.Text);
+            //        documentation.elements.Add(element);
+            //    }
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
+            //    // Keybinds List Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_keybind_list.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                var levelTip = new HoverTooltip.Tooltip();
+            //    // Keybinds Editor Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_keybind_editor.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                levelTip.desc = documentation.Name;
-                levelTip.hint = documentation.Description;
-                htt.tooltipLangauges.Add(levelTip);
+            //    var htt = gameObject.AddComponent<HoverTooltip>();
 
-                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+            //    var levelTip = new HoverTooltip.Tooltip();
 
-                text.text = documentation.Name;
+            //    levelTip.desc = documentation.Name;
+            //    levelTip.hint = documentation.Description;
+            //    htt.tooltipLangauges.Add(levelTip);
 
-                documentations.Add(documentation);
-            }
+            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+            //    text.text = documentation.Name;
+
+            //    documentations.Add(documentation);
+            //}
 
             // Editor Properties
+            //{
+            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+            //    var documentation = new Document(gameObject, "Editor Properties", "Configure the editor!");
+
+            //    // Intro
+            //    {
+            //        var element = new Document.Element("Editor Properties intro.", Document.Element.Type.Text);
+            //        documentation.elements.Add(element);
+            //    }
+
+            //    // Editor Properties Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editor_properties.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
+
+            //    var htt = gameObject.AddComponent<HoverTooltip>();
+
+            //    var levelTip = new HoverTooltip.Tooltip();
+
+            //    levelTip.desc = documentation.Name;
+            //    levelTip.hint = documentation.Description;
+            //    htt.tooltipLangauges.Add(levelTip);
+
+            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+            //    text.text = documentation.Name;
+
+            //    documentations.Add(documentation);
+            //}
+
+            // Misc
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Editor Properties", "Configure the editor!");
+                var documentation = new Document(gameObject, "Misc", "The stuff that didn't fit in a document of its own.");
 
-                // Intro
+                // Editor Level Path
                 {
-                    var element = new Document.Element("Editor Properties intro.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Editor Level Path [MODDED]</b>\nThe path within the Project Arrhythmia/beatmaps directory that is used for the editor level list.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Refresh
+                {
+                    var element = new Document.Element("<b>Refresh [MODDED]</b>\nRefreshes the editor level list.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
-                // Editor Properties Image
+                // Descending
                 {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editor_properties.png", Document.Element.Type.Image);
+                    var element = new Document.Element("<b>Descending [MODDED]</b>\nIf the editor level list should be descending or ascending.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Order
+                {
+                    var element = new Document.Element("<b>Order [MODDED]</b>\nHow the editor level list should be ordered." +
+                        "\nCover - Order by if the level has a cover or not." +
+                        "\nArtist - Order by Artist Name." +
+                        "\nCreator - Order by Creator Name." +
+                        "\nFolder - Order by Folder Name." +
+                        "\nTitle - Order by Song Title." +
+                        "\nDifficulty - Order by (Easy, Normal, Hard, Expert, Expert+, Master, Animation)" +
+                        "\nDate Edited - Order by last saved time, so recently edited levels appear at one side and older levels appear at the other.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Open Level Top Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_open_level_top.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
 
@@ -5265,6 +6045,203 @@ namespace EditorManagement.Functions.Editors
                 //text.text = documentation.Name;
 
                 //documentations.Add(documentation);
+            }
+        }
+
+        public List<string> debugs = new List<string>();
+        public string debugSearch;
+        public void CreateDebug()
+        {
+            if (ModCompatibility.mods.ContainsKey("UnityExplorer"))
+            {
+                var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
+                var uiManager = AccessTools.TypeByName("UnityExplorer.UI.UIManager");
+
+                var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+                    .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Debugger");
+                objectSearch.transform.localPosition = Vector3.zero;
+
+                var objectSearchRT = (RectTransform)objectSearch.transform;
+                objectSearchRT.sizeDelta = new Vector2(600f, 450f);
+                var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
+                objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
+                objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Debugger";
+                ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
+                objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
+
+                var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
+                x.onClick.RemoveAllListeners();
+                x.onClick.AddListener(delegate ()
+                {
+                    EditorManager.inst.HideDialog("Debugger Popup");
+                });
+
+                var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
+                searchBar.onValueChanged.ClearAll();
+                searchBar.onValueChanged.AddListener(delegate (string _value)
+                {
+                    debugSearch = _value;
+                    RefreshDebugger();
+                });
+                searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for function...";
+
+                EditorHelper.AddEditorDropdown("Debugger", "", "View", null, delegate ()
+                {
+                    EditorManager.inst.ShowDialog("Debugger Popup");
+                    RefreshDocumentation();
+                });
+
+                EditorHelper.AddEditorPopup("Debugger Popup", objectSearch);
+
+                // Inspect DataManager
+                {
+                    string name = "DataManager";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "DataManager is a pretty important storage component of Project Arrhythmia.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { DataManager.inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect EditorManager
+                {
+                    string name = "EditorManager";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "EditorManager is the component that handles general editor stuff.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { EditorManager.inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect RTEditor
+                {
+                    string name = "RTEditor";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "RTEditor is the component that handles modded general editor stuff.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect ObjEditor
+                {
+                    string name = "ObjEditor";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "ObjEditor is the component that handles object editor stuff.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { ObjEditor.inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect ObjectEditor
+                {
+                    string name = "ObjectEditor";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "ObjectEditor is the component that handles modded object editor stuff.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { ObjectEditor.inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect Object Editor UI
+                {
+                    string name = "Object Editor UI";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "Object Editor UI.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { ObjEditor.inst.ObjectView, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
             }
         }
 
@@ -5757,7 +6734,7 @@ namespace EditorManagement.Functions.Editors
                 num++;
             }
 
-            var files = Directory.GetFiles(RTFile.ApplicationDirectory + RTEditor.themeListPath, "*.lst");
+            var files = Directory.GetFiles(RTFile.ApplicationDirectory + themeListPath, "*.lst");
             foreach (var file in files)
             {
                 var jn = JSON.Parse(RTFile.ReadFromFile(file));
@@ -5794,58 +6771,6 @@ namespace EditorManagement.Functions.Editors
                 }
             }
             themesLoading = false;
-
-            //yield return inst.StartCoroutine(GetFileList(themeListPath, "lst", delegate (List<FileManager.LSFile> folders)
-            //{
-            //    folders = (from x in folders
-            //               orderby x.Name.ToLower()
-            //               select x).ToList();
-
-            //    foreach (var folder in folders)
-            //    {
-            //        var lsfile = folder;
-            //        var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath));
-            //        var orig = BeatmapTheme.Parse(jn);
-            //        DataManager.inst.CustomBeatmapThemes.Add(orig);
-
-            //        if (jn["id"] != null && !((GameData)DataManager.inst.gameData).beatmapThemes.ContainsKey(jn["id"]))
-            //            ((GameData)DataManager.inst.gameData).beatmapThemes.Add(jn["id"], orig);
-
-            //        if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(orig.id)))
-            //        {
-            //            var list = DataManager.inst.CustomBeatmapThemes.Where(x => x.id == orig.id).ToList();
-            //            var str = "";
-            //            for (int i = 0; i < list.Count; i++)
-            //            {
-            //                str += list[i].name;
-            //                if (i != list.Count - 1)
-            //                    str += ", ";
-            //            }
-
-            //            if (EditorManager.inst != null)
-            //            {
-            //                EditorManager.inst.DisplayNotification($"Unable to Load theme [{orig.name}] due to conflicting themes: {str}", 2f * list.Count, EditorManager.NotificationType.Error);
-            //            }
-            //        }
-            //        else
-            //        {
-            //            DataManager.inst.BeatmapThemeIndexToID.Add(DataManager.inst.AllThemes.Count - 1, int.Parse(orig.id));
-            //            DataManager.inst.BeatmapThemeIDToIndex.Add(int.Parse(orig.id), DataManager.inst.AllThemes.Count - 1);
-            //        }
-
-            //        if (jn["id"] == null)
-            //        {
-            //            var beatmapTheme = BeatmapTheme.DeepCopy(orig);
-            //            beatmapTheme.id = LSText.randomNumString(6);
-            //            DataManager.inst.CustomBeatmapThemes.Remove(orig);
-            //            FileManager.inst.DeleteFileRaw(lsfile.FullPath);
-            //            ThemeEditor.inst.SaveTheme(beatmapTheme);
-            //            DataManager.inst.CustomBeatmapThemes.Add(beatmapTheme);
-            //        }
-            //    }
-            //    themesLoading = false;
-
-            //}));
 
             if (refreshGUI)
             {
@@ -7381,6 +8306,18 @@ namespace EditorManagement.Functions.Editors
             }
 
             EditorManager.inst.ShowDialog("Documentation Dialog");
+        }
+
+        public void RefreshDebugger()
+        {
+            var parent = EditorManager.inst.GetDialog("Debugger Popup").Dialog.transform.Find("mask/content");
+            
+            for (int i = 0; i < debugs.Count; i++)
+            {
+                var current = parent.GetChild(i);
+
+                current.gameObject.SetActive(string.IsNullOrEmpty(debugSearch) || debugs[i].ToLower().Contains(debugSearch.ToLower()));
+            }
         }
 
         #endregion
