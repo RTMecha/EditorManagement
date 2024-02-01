@@ -55,7 +55,7 @@ namespace EditorManagement.Functions.Editors
 				for (int i = 0; i < 18; i++)
                 {
 					var col = themeParent.Find("object8").gameObject.Duplicate(themeParent, "effect" + i.ToString());
-					col.transform.Find("text").GetComponent<Text>().text = i.ToString();
+					col.transform.Find("text").GetComponent<Text>().text = (i + 1).ToString();
 				}
 
 				var actions = dialog.Find("data/left/theme/actions");
@@ -72,12 +72,20 @@ namespace EditorManagement.Functions.Editors
                 // Save & Use
                 {
 					var saveUse = createNew.gameObject.Duplicate(actions, "save-use", 1);
-					saveUse.transform.GetChild(0).gameObject.GetComponent<Text>().text = "Save & Use";
+					saveUse.transform.GetChild(0).GetComponent<Text>().text = "Save & Use";
 				}
+
+                {
+					var shuffleID = createNew.gameObject.Duplicate(actions.parent, "shuffle", 3);
+					shuffleID.transform.GetChild(0).GetComponent<Text>().text = "Shuffle ID";
+				}
+
+				var themeContent = dialog.Find("data/right/theme/themes/viewport/content");				
+				LSHelpers.DeleteChildren(themeContent);
 
 				//StartCoroutine(Wait());
 			}
-            catch (Exception ex)
+			catch (Exception ex)
             {
 				Debug.LogError($"{EditorPlugin.className}{ex}");
             }
@@ -235,11 +243,33 @@ namespace EditorManagement.Functions.Editors
 			var actions = theme.Find("actions");
 			theme.Find("theme").localRotation = Quaternion.Euler(Vector3.zero);
 
-			foreach (var child in themeContent)
-			{
-				var obj = (Transform)child;
-				obj.localRotation = Quaternion.Euler(Vector3.zero);
-			}
+			if (!RTHelpers.AprilFools)
+				foreach (var child in themeContent)
+				{
+					var obj = (Transform)child;
+					obj.localRotation = Quaternion.Euler(Vector3.zero);
+				}
+
+			theme.Find("theme_title/Text").GetComponent<Text>().text = __0 != 0 ? $"- Theme Editor (ID: {__0}) -" : "- Theme Editor -";
+
+			var shuffle = theme.Find("shuffle").GetComponent<Button>();
+			shuffle.onClick.ClearAll();
+			shuffle.gameObject.SetActive(__0 != -1 && !(__0 < DataManager.inst.BeatmapThemes.Count));
+			if (__0 != -1 && !(__0 < DataManager.inst.BeatmapThemes.Count))
+            {
+				shuffle.onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.ShowDialog("Warning Popup");
+					RTEditor.inst.RefreshWarningPopup("Are you sure you want to shuffle the theme ID? Any levels that use this theme will need to have their theme keyframes reassigned.", delegate ()
+					{
+						PreviewTheme.id = LSText.randomNumString(BeatmapTheme.IDLength);
+						EditorManager.inst.HideDialog("Warning Popup");
+					}, delegate ()
+					{
+						EditorManager.inst.HideDialog("Warning Popup");
+					});
+				});
+            }
 
 			var name = theme.Find("name").GetComponent<InputField>();
 			var cancel = actions.Find("cancel").GetComponent<Button>();
@@ -269,30 +299,33 @@ namespace EditorManagement.Functions.Editors
 			{
 				PreviewTheme.id = null;
 				ThemeEditor.inst.SaveTheme(BeatmapTheme.DeepCopy(PreviewTheme));
-				Instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
 				var child = Instance.dialogRight.GetChild(Instance.currentEventType);
-				Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				//Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
 			});
 			update.onClick.AddListener(delegate ()
 			{
-				var fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
-				fileList = (from x in fileList
-							orderby x.Name.ToLower()
-							select x).ToList();
-				foreach (var lsfile in fileList)
-				{
-					if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
-					{
-						FileManager.inst.DeleteFileRaw(lsfile.FullPath);
-					}
-				}
-				ThemeEditor.inst.SaveTheme(BeatmapTheme.DeepCopy(PreviewTheme, true));
-				Instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
+                var fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
+                fileList = (from x in fileList
+                            orderby x.Name.ToLower()
+                            select x).ToList();
+                foreach (var lsfile in fileList)
+                {
+                    if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
+                    {
+                        FileManager.inst.DeleteFileRaw(lsfile.FullPath);
+                    }
+                }
+
+                var beatmapTheme = BeatmapTheme.DeepCopy(PreviewTheme, true);
+
+				ThemeEditor.inst.SaveTheme(beatmapTheme);
+				Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
 				var child = EventEditor.inst.dialogRight.GetChild(Instance.currentEventType);
-				Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				//Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
@@ -324,9 +357,9 @@ namespace EditorManagement.Functions.Editors
 				}
 
 				ThemeEditor.inst.SaveTheme(beatmapTheme);
-				Instance.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
 				var child = Instance.dialogRight.GetChild(Instance.currentEventType);
-				Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
+				//Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
@@ -433,7 +466,7 @@ namespace EditorManagement.Functions.Editors
 				hex.characterLimit = 8;
 				hex.characterValidation = InputField.CharacterValidation.None;
 				hex.contentType = InputField.ContentType.Standard;
-				hex.text = RTHelpers.ColorToHex(colors[indexTmp]);
+				hex.text = allowAlpha ? RTHelpers.ColorToHex(colors[indexTmp]) : LSColors.ColorToHex(colors[indexTmp]);
 				preview.color = colors[indexTmp];
 				hex.onValueChanged.AddListener(delegate (string val)
 				{
