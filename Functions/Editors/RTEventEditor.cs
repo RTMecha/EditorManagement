@@ -416,11 +416,11 @@ namespace EditorManagement.Functions.Editors
 
 			EventEditor.inst.currentEventType = type;
 			EventEditor.inst.currentEvent = index;
+			RenderEventObjects();
 			if (SelectedKeyframes.Count > 1 && EditorManager.inst.ActiveDialogs.Find(x => x.Name == "Multi Keyframe Editor") == null)
 			{
 				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
 				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
-				RenderEventObjects();
 				Debug.LogFormat($"{EditorPlugin.className}Add keyframe to selection -> [{type}] - [{index}]");
 				return;
 			}
@@ -433,8 +433,8 @@ namespace EditorManagement.Functions.Editors
 			AddSelectedEvent(type, index);
 			EventEditor.inst.currentEventType = type;
 			EventEditor.inst.currentEvent = index;
-			RenderEventObjects();
-			OpenDialog();
+			//RenderEventObjects();
+			//OpenDialog();
 		}
 
 		#endregion
