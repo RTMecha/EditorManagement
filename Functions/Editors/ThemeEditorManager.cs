@@ -250,7 +250,7 @@ namespace EditorManagement.Functions.Editors
 					obj.localRotation = Quaternion.Euler(Vector3.zero);
 				}
 
-			theme.Find("theme_title/Text").GetComponent<Text>().text = __0 != 0 ? $"- Theme Editor (ID: {__0}) -" : "- Theme Editor -";
+			theme.Find("theme_title/Text").GetComponent<Text>().text = __0 != -1 ? $"- Theme Editor (ID: {__0}) -" : "- Theme Editor -";
 
 			var shuffle = theme.Find("shuffle").GetComponent<Button>();
 			shuffle.onClick.ClearAll();
