@@ -52,7 +52,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool LoadThemesPrefix(ref IEnumerator __result)
         {
-            __result = RTEditor.inst.LoadThemes(false);
+            __result = RTEditor.inst.LoadThemes();
             return false;
         }
     }
