@@ -113,6 +113,7 @@ namespace EditorManagement.Functions.Editors
             CreatePropertiesWindow();
             CreateDocumentation();
             CreateDebug();
+            CreateAutosavePopup();
 
             if (!RTFile.FileExists(EditorSettingsPath))
                 CreateGlobalSettings();
@@ -2785,7 +2786,7 @@ namespace EditorManagement.Functions.Editors
                 {
                     if (parent.Find("layer") && parent.Find("layer").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
-                        inputField.text = "1";
+                        //inputField.text = "1";
                         TriggerHelper.AddEventTrigger(parent.Find("layer").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField, min: 0) });
 
                         if (int.TryParse(inputField.text, out int num))
@@ -2838,7 +2839,7 @@ namespace EditorManagement.Functions.Editors
                 {
                     if (parent.Find("depth") && parent.Find("depth").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
-                        inputField.text = "15";
+                        //inputField.text = "15";
                         TriggerHelper.AddEventTrigger(parent.Find("depth").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField, min: 0) });
 
                         if (int.TryParse(inputField.text, out int num))
@@ -6170,6 +6171,19 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
+                // Loading Autosaves
+                {
+                    var element = new Document.Element("<b>Loading Autosaves [MODDED]</b>\nHolding shift when you click on a level in the level list will open an Autosave popup instead of " +
+                        "loading the level. This allows you to load any autosaved file so you don't need to go into the level folder and change one of the autosaves to the level.lsb.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Loading Autosaves Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_autosaves.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
                 var htt = gameObject.AddComponent<HoverTooltip>();
 
                 var levelTip = new HoverTooltip.Tooltip();
@@ -6512,6 +6526,31 @@ namespace EditorManagement.Functions.Editors
                     gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
                 }
 
+                // Inspect GameManager
+                {
+                    string name = "GameManager";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "GameManager is the component that handles regular object stuff.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { GameManager.inst, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
                 // Inspect Object Editor UI
                 {
                     string name = "Object Editor UI";
@@ -6537,6 +6576,39 @@ namespace EditorManagement.Functions.Editors
                     gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
                 }
             }
+        }
+
+        public string autosaveSearch;
+        public Transform autosaveContent;
+        public InputField autosaveSearchField;
+        public void CreateAutosavePopup()
+        {
+            var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Autosaves");
+            objectSearch.transform.localPosition = Vector3.zero;
+
+            var objectSearchRT = (RectTransform)objectSearch.transform;
+            objectSearchRT.anchoredPosition = new Vector2(522f, 0f);
+            objectSearchRT.sizeDelta = new Vector2(360f, 350f);
+            var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
+            objectSearchPanel.sizeDelta = new Vector2(392f, 32f);
+            objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Autosaves";
+            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(360f, 32f);
+            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(355f, 32f);
+            objectSearch.transform.Find("Scrollbar").AsRT().sizeDelta = new Vector2(32f, 350f);
+
+            var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
+            x.onClick.RemoveAllListeners();
+            x.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.HideDialog("Autosaves Popup");
+            });
+
+            autosaveSearchField = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
+            objectSearch.transform.Find("search-box/search/Placeholder").GetComponent<Text>().text = "Search for autosave...";
+            autosaveContent = objectSearch.transform.Find("mask/content");
+
+            EditorHelper.AddEditorPopup("Autosaves Popup", objectSearch);
         }
 
         #endregion
@@ -6605,6 +6677,7 @@ namespace EditorManagement.Functions.Editors
             int num = 0;
             foreach (var file in files)
             {
+                int index = num;
                 var path = file.Replace("\\", "/");
                 var name = Path.GetFileName(path);
                 var metadataStr = FileManager.inst.LoadJSONFileRaw(file + "/metadata.lsb");
@@ -6614,6 +6687,8 @@ namespace EditorManagement.Functions.Editors
                     var metadata = Metadata.Parse(JSON.Parse(metadataStr));
 
                     var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(path)}]");
+
+                    var editorWrapper = new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite);
 
                     var hoverUI = gameObject.AddComponent<HoverUI>();
                     hoverUI.size = buttonHoverSize;
@@ -6651,11 +6726,14 @@ namespace EditorManagement.Functions.Editors
                         // Use this to show autosaves or something
                         if (Input.GetKey(KeyCode.LeftShift))
                         {
-
+                            EditorManager.inst.ShowDialog("Autosaves Popup");
+                            RefreshAutosaveList(editorWrapper);
                         }
-
-                        StartCoroutine(LoadLevel(path));
-                        EditorManager.inst.HideDialog("Open File Popup");
+                        else
+                        {
+                            StartCoroutine(LoadLevel(path));
+                            EditorManager.inst.HideDialog("Open File Popup");
+                        }
                     });
 
                     var icon = new GameObject("icon");
@@ -6699,15 +6777,18 @@ namespace EditorManagement.Functions.Editors
                     list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
                     {
                         iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
+                        editorWrapper.albumArt = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
 
-                        EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, cover ?? SteamWorkshop.inst.defaultSteamImageSprite));
+                        EditorManager.inst.loadedLevels.Add(editorWrapper);
                     }, delegate
                     {
                         anyFailed = true;
                         failedLevels.Add(Path.GetFileName(path));
-                        iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
 
-                        EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite));
+                        iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
+                        editorWrapper.albumArt = SteamWorkshop.inst.defaultSteamImageSprite;
+
+                        EditorManager.inst.loadedLevels.Add(editorWrapper);
                     })));
                 }
                 else
@@ -6718,7 +6799,7 @@ namespace EditorManagement.Functions.Editors
             if (list.Count >= 1)
                 yield return StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate
                 {
-                    if (anyFailed)
+                    if (anyFailed && GetEditorProperty("Show Levels Without Cover Notification").GetConfigEntry<bool>().Value)
                         EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
                     if (EditorManager.inst.loadedLevels.Count > 0)
                         EditorManager.inst.OpenBeatmapPopup();
@@ -6727,7 +6808,7 @@ namespace EditorManagement.Functions.Editors
                 }));
             else
             {
-                if (anyFailed)
+                if (anyFailed && GetEditorProperty("Show Levels Without Cover Notification").GetConfigEntry<bool>().Value)
                     EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
                 if (EditorManager.inst.loadedLevels.Count > 0)
                     EditorManager.inst.OpenBeatmapPopup();
@@ -6741,7 +6822,7 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public IEnumerator LoadLevel(string fullPath)
+        public IEnumerator LoadLevel(string fullPath, string autosave = "")
         {
             var editorManager = EditorManager.inst;
             var objectManager = ObjectManager.inst;
@@ -6795,8 +6876,8 @@ namespace EditorManagement.Functions.Editors
 
             fileInfo.text = $"Loading Level Data for [ {name} ]";
 
-            Debug.LogFormat("{0}Loading {1}...", EditorPlugin.className, fullPath);
-            rawJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/level.lsb");
+            Debug.Log($"{EditorPlugin.className}Loading {(string.IsNullOrEmpty(autosave) ? "level.lsb" : autosave)}...");
+            rawJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/" + (string.IsNullOrEmpty(autosave) ? "level.lsb" : autosave));
             rawMetadataJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/metadata.lsb");
 
             if (string.IsNullOrEmpty(rawMetadataJSON))
@@ -6974,8 +7055,12 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
+        public GameObject themeAddButton;
         public IEnumerator LoadThemes(bool refreshGUI = false)
         {
+            if (themesLoading)
+                yield break;
+
             themesLoading = true;
             DataManager.inst.CustomBeatmapThemes.Clear();
             DataManager.inst.BeatmapThemeIDToIndex.Clear();
@@ -6985,19 +7070,25 @@ namespace EditorManagement.Functions.Editors
 
             var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
             var parent = dialogTmp.Find("themes/viewport/content");
-            LSHelpers.DeleteChildren(parent);
-            ThemeEditorManager.inst.ThemePanels.Clear();
 
-            var cr = Instantiate(EventEditor.inst.ThemeAdd);
-            cr.name = "Create New";
-            var tf = cr.transform;
-            tf.SetParent(parent);
-            cr.SetActive(true);
-            tf.localScale = Vector2.one;
-            cr.GetComponent<Button>().onClick.AddListener(delegate ()
+            if (ThemeEditorManager.inst.ThemePanels.Count > 0)
             {
-                ThemeEditorManager.inst.RenderThemeEditor();
-            });
+                ThemeEditorManager.inst.ThemePanels.ForEach(x => Destroy(x.gameObject));
+            }
+            ThemeEditorManager.inst.ThemePanels.Clear();
+            //LSHelpers.DeleteChildren(parent);
+
+            if (themeAddButton == null)
+            {
+                themeAddButton = EventEditor.inst.ThemeAdd.Duplicate(parent, "Create New");
+                var tf = themeAddButton.transform;
+                themeAddButton.SetActive(true);
+                tf.localScale = Vector2.one;
+                themeAddButton.GetComponent<Button>().onClick.AddListener(delegate ()
+                {
+                    ThemeEditorManager.inst.RenderThemeEditor();
+                });
+            }
 
             int num = 0;
             foreach (var beatmapTheme in DataManager.inst.BeatmapThemes.Select(x => x as BeatmapTheme))
@@ -8669,6 +8760,42 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public void RefreshAutosaveList(EditorWrapper editorWrapper)
+        {
+            autosaveSearchField.onValueChanged.ClearAll();
+            autosaveSearchField.onValueChanged.AddListener(delegate (string _value)
+            {
+                autosaveSearch = _value;
+                RefreshAutosaveList(editorWrapper);
+            });
+
+            var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+
+            LSHelpers.DeleteChildren(autosaveContent);
+
+            var files = Directory.GetFiles(editorWrapper.folder, "autosave_*.lsb", SearchOption.AllDirectories);
+
+            foreach (var file in files)
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(autosaveContent, $"Folder [{Path.GetFileName(file)}]");
+
+                var hoverUI = gameObject.AddComponent<HoverUI>();
+                hoverUI.size = buttonHoverSize;
+                hoverUI.animatePos = false;
+                hoverUI.animateSca = true;
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = Path.GetFileName(file);
+
+                gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+                {
+                    StartCoroutine(LoadLevel(editorWrapper.folder, file.Replace("\\", "/").Replace(editorWrapper.folder + "/", "")));
+                    EditorManager.inst.HideDialog("Open File Popup");
+                });
+            }
+        }
+
         #endregion
 
         #region Misc Functions
@@ -8802,7 +8929,7 @@ namespace EditorManagement.Functions.Editors
             #region Data
 
             new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Data", "Autosave Limit", 3, "If autosave count reaches this number, delete the first autosave.")),
+                Config.Bind("Data", "Autosave Limit", 7, "If autosave count reaches this number, delete the first autosave.")),
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("Data", "Autosave Loop Time", 600f, "The repeat time of autosave.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
@@ -8815,6 +8942,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Data", "Update Prefab List on Files Changed", true, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Update Theme List on Files Changed", true, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Data", "Show Levels Without Cover Notification", false, "Sends an error notification for what levels don't have covers.")),
 
             #endregion
 
