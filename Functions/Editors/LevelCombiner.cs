@@ -2,8 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.IO;
 
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,6 +14,7 @@ using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 
 using EditorManagement.Functions.Helpers;
 using EditorManagement.Functions.Components;
@@ -36,8 +36,6 @@ namespace EditorManagement.Functions.Editors
 
         public static InputField searchField;
         public static string searchTerm;
-
-		public static Transform combinerContent;
 
         public static Font editorFont;
 
@@ -82,7 +80,7 @@ namespace EditorManagement.Functions.Editors
 
             editorDialogText.SetSiblingIndex(1);
 
-            editorDialogText.GetComponent<Text>().text = "To combine two levels, select two levels from the list below, set a save path and click save.";
+            editorDialogText.GetComponent<Text>().text = "To combine levels into one, select multiple levels from the list below, set a save path and click save.";
 
 			// Label
 			{
@@ -92,7 +90,7 @@ namespace EditorManagement.Functions.Editors
 				label1.name = "label";
 
 				label1.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 32f);
-				label1.GetComponent<Text>().text = "Pick two levels to combine";
+				label1.GetComponent<Text>().text = "Select levels to combine";
 			}
 
 			var search = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("search-box").gameObject);
@@ -119,32 +117,9 @@ namespace EditorManagement.Functions.Editors
 
 			editorDialogContent = scrollView.transform.Find("Viewport/Content");
 
-			//var glg = scrollView.AddComponent<GridLayoutGroup>();
-			//glg.cellSize = new Vector2(124f, 64f);
-			//glg.spacing = new Vector2(4f, 4f);
+			LSHelpers.DeleteChildren(editorDialogContent);
 
-			LSHelpers.DeleteChildren(editorDialogContent, false);
-
-            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 256f);
-
-			// Label
-			{
-				var label1 = Instantiate(editorDialogText.gameObject);
-				label1.transform.SetParent(editorDialogTransform);
-				label1.transform.localScale = Vector3.one;
-				label1.name = "label";
-
-				label1.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 32f);
-				label1.GetComponent<Text>().text = "Combine list";
-			}
-
-			var combinerContentGO = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
-			combinerContent = combinerContentGO.transform.Find("Viewport/Content");
-			combinerContentGO.transform.SetParent(editorDialogTransform);
-			combinerContentGO.transform.localScale = Vector3.one;
-			combinerContentGO.transform.name = "Combine List";
-
-			combinerContentGO.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 76f);
+            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 392f);
 
 			EditorHelper.AddEditorDialog("Level Combiner", editorDialogObject);
 
@@ -204,7 +179,7 @@ namespace EditorManagement.Functions.Editors
 			}
 
 			// Dropdown
-			EditorHelper.AddEditorDropdown("Level Combiner", "", "File", RTFunctions.Functions.Managers.SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_combine_t.png"), delegate ()
+			EditorHelper.AddEditorDropdown("Level Combiner", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_combine_t.png"), delegate ()
 			{
 				OpenDialog();
 			}, 4);
@@ -217,7 +192,6 @@ namespace EditorManagement.Functions.Editors
 
         public void OpenDialog()
         {
-            Debug.LogFormat("{0}Attempting to open Level Combiner!", EditorPlugin.className);
             EditorManager.inst.ShowDialog("Level Combiner");
             StartCoroutine(RenderDialog());
         }
@@ -243,17 +217,22 @@ namespace EditorManagement.Functions.Editors
 			#endregion
 
 			LSHelpers.DeleteChildren(editorDialogContent);
-			LSHelpers.DeleteChildren(combinerContent);
 
-			foreach (var metadataWrapper in EditorManager.inst.loadedLevels)
-			{
-				if (metadataWrapper.metadata == null || !(metadataWrapper.metadata is Metadata))
-					continue;
+			var horizontalOverflow = RTEditor.GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+			var verticalOverflow = RTEditor.GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+			var fontSize = RTEditor.GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
+			var format = RTEditor.GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
+			var buttonHoverSize = RTEditor.GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
 
-				var metadata = (Metadata)metadataWrapper.metadata;
-				string name = metadataWrapper.folder;
+			var iconPosition = RTEditor.GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
+			var iconScale = RTEditor.GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+			iconPosition.x += -80f;
 
-				string difficultyName = "None";
+			int num = 0;
+			foreach (var editorWrapper in EditorManager.inst.loadedLevels.Select(x => x as EditorWrapper))
+            {
+				var folder = editorWrapper.folder;
+				var metadata = editorWrapper.metadata;
 
 				string[] difficultyNames = new string[]
 				{
@@ -264,128 +243,125 @@ namespace EditorManagement.Functions.Editors
 					"expert+",
 					"master",
 					"animation",
+					"Unknown difficulty",
 				};
 
-				difficultyName = difficultyNames[metadata.song.difficulty];
+				DestroyImmediate(editorWrapper.CombinerGameObject);
 
-				if (RTFile.FileExists(metadataWrapper.folder + "/level.lsb"))
-				{
-					if (((first == null || first.folder != metadataWrapper.folder) && (second == null || second.folder != metadataWrapper.folder)) && (string.IsNullOrEmpty(searchTerm)
-						|| name.ToLower().Contains(searchTerm.ToLower())
-						|| metadata.song.title.ToLower().Contains(searchTerm.ToLower())
-						|| metadata.artist.Name.ToLower().Contains(searchTerm.ToLower())
-						|| metadata.creator.steam_name.ToLower().Contains(searchTerm.ToLower())
-						|| metadata.song.description.ToLower().Contains(searchTerm.ToLower())
-						|| difficultyName.Contains(searchTerm.ToLower())))
+                {
+					var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(editorDialogContent, $"Folder [{System.IO.Path.GetFileName(editorWrapper.folder)}]");
+					editorWrapper.CombinerGameObject = gameObject;
+
+					var hoverUI = gameObject.AddComponent<HoverUI>();
+					hoverUI.size = buttonHoverSize;
+					hoverUI.animatePos = false;
+					hoverUI.animateSca = true;
+
+					var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+					text.text = string.Format(format,
+						LSText.ClampString(System.IO.Path.GetFileName(editorWrapper.folder), foldClamp),
+						LSText.ClampString(metadata.song.title, songClamp),
+						LSText.ClampString(metadata.artist.Name, artiClamp),
+						LSText.ClampString(metadata.creator.steam_name, creaClamp),
+						metadata.song.difficulty,
+						LSText.ClampString(metadata.song.description, descClamp),
+						LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
+
+					text.horizontalOverflow = horizontalOverflow;
+					text.verticalOverflow = verticalOverflow;
+					text.fontSize = fontSize;
+
+					var htt = gameObject.AddComponent<HoverTooltip>();
+
+					var levelTip = new HoverTooltip.Tooltip();
+
+					var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
+						DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
+
+					levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
+					levelTip.hint = "</color>" + metadata.song.description;
+					htt.tooltipLangauges.Add(levelTip);
+
+					Action<Button> action = delegate (Button x)
 					{
-						CreateFolder(metadata, metadataWrapper, foldClamp, songClamp, artiClamp, creaClamp, descClamp, dateClamp, editorDialogContent, delegate ()
-						{
-                            if (first == null)
-                            {
-                                Debug.Log($"{EditorPlugin.className}Selected {metadataWrapper.folder} and set it to first selected.");
-                                first = metadataWrapper;
-                            }
-                            else
-                            {
-                                Debug.Log($"{EditorPlugin.className}Selected {metadataWrapper.folder} and set it to second selected.");
-                                second = metadataWrapper;
-                            }
+						var cb = x.colors;
+						cb.normalColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+						cb.selectedColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+						cb.highlightedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
+						cb.pressedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
+						x.colors = cb;
 
-                            StartCoroutine(RenderDialog());
-                        });
-                    }
-					else if (first != null && first.folder == metadataWrapper.folder || second != null && second.folder == metadataWrapper.folder)
+						text.color = editorWrapper.combinerSelected ? new Color(0.1173f, 0.0973f, 0.0973f, 1f) : new Color(0.9373f, 0.9216f, 0.9373f, 1f);
+					};
+
+					var button = gameObject.GetComponent<Button>();
+					button.onClick.AddListener(delegate ()
 					{
-						CreateFolder(metadata, metadataWrapper, foldClamp, songClamp, artiClamp, creaClamp, descClamp, dateClamp, combinerContent, delegate ()
-						{
-                            if (first != null && first.folder == metadataWrapper.folder)
-                            {
-                                Debug.Log($"{EditorPlugin.className}Removed {metadataWrapper.folder} from first selected.");
-                                first = null;
-                            }
-                            else if (second != null && second.folder == metadataWrapper.folder)
-                            {
-                                Debug.Log($"{EditorPlugin.className}Removed {metadataWrapper.folder} from second selected.");
-                                second = null;
-                            }
+						editorWrapper.combinerSelected = !editorWrapper.combinerSelected;
+						action.Invoke(button);
+					});
+					action.Invoke(button);
 
-                            StartCoroutine(RenderDialog());
-                        });
-                    }
+					var icon = new GameObject("icon");
+					icon.transform.SetParent(gameObject.transform);
+					icon.transform.localScale = Vector3.one;
+					icon.layer = 5;
+					var iconRT = icon.AddComponent<RectTransform>();
+					icon.AddComponent<CanvasRenderer>();
+					var iconImage = icon.AddComponent<Image>();
+
+					iconRT.anchoredPosition = iconPosition;
+					iconRT.sizeDelta = iconScale;
+
+					iconImage.sprite = editorWrapper.albumArt ?? SteamWorkshop.inst.defaultSteamImageSprite;
 				}
-			}
 
-			yield break;
+				string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
+
+				editorWrapper.CombinerSetActive((RTFile.FileExists(folder + "/level.ogg") ||
+					RTFile.FileExists(folder + "/level.wav") ||
+					RTFile.FileExists(folder + "/level.mp3")) && RTHelpers.SearchString(System.IO.Path.GetFileName(folder), EditorManager.inst.openFileSearch) ||
+						RTHelpers.SearchString(metadata.song.title, EditorManager.inst.openFileSearch) ||
+						RTHelpers.SearchString(metadata.artist.Name, EditorManager.inst.openFileSearch) ||
+						RTHelpers.SearchString(metadata.creator.steam_name, EditorManager.inst.openFileSearch) ||
+						RTHelpers.SearchString(metadata.song.description, EditorManager.inst.openFileSearch) ||
+						RTHelpers.SearchString(difficultyName, EditorManager.inst.openFileSearch));
+
+				editorWrapper.CombinerGameObject.transform.SetSiblingIndex(num);
+
+				num++;
+            }
+
+            yield break;
         }
-
-		public void CreateFolder(Metadata metadata, EditorManager.MetadataWrapper metadataWrapper,
-			int foldClamp, int songClamp, int artiClamp, int creaClamp, int descClamp, int dateClamp,
-			Transform parent, UnityAction onClick)
-        {
-			var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(parent, $"Folder [{metadataWrapper.folder}]");
-
-			var hoverUI = gameObject.AddComponent<HoverUI>();
-			hoverUI.size = RTEditor.GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
-			hoverUI.animatePos = false;
-			hoverUI.animateSca = true;
-
-			var htt = gameObject.AddComponent<HoverTooltip>();
-
-			var levelTip = new HoverTooltip.Tooltip();
-
-			var text = gameObject.transform.GetChild(0).GetComponent<Text>();
-
-			if (metadata != null)
-			{
-				text.text =
-					string.Format(RTEditor.GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value,
-					LSText.ClampString(metadataWrapper.folder, foldClamp),
-					LSText.ClampString(metadata.song.title, songClamp),
-					LSText.ClampString(metadata.artist.Name, artiClamp),
-					LSText.ClampString(metadata.creator.steam_name, creaClamp),
-					metadata.song.difficulty,
-					LSText.ClampString(metadata.song.description, descClamp),
-					LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
-
-				text.horizontalOverflow = RTEditor.GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-				text.verticalOverflow = RTEditor.GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-				//text.color = ConfigEntries.OpenFileTextColor.Value;
-				text.fontSize = RTEditor.GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
-
-				var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
-					DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
-
-				levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
-				levelTip.hint = "</color>" + metadata.song.description;
-				htt.tooltipLangauges.Add(levelTip);
-			}
-			else
-			{
-				text.GetComponent<Text>().text = string.Format("/{0} : {1}", LSText.ClampString(metadataWrapper.folder, foldClamp), LSText.ClampString("No MetaData File", songClamp));
-			}
-
-			gameObject.GetComponent<Button>().onClick.AddListener(onClick);
-
-			var icon = new GameObject("icon");
-			icon.transform.SetParent(gameObject.transform);
-			icon.transform.localScale = Vector3.one;
-			icon.layer = 5;
-			var iconRT = icon.AddComponent<RectTransform>();
-			icon.AddComponent<CanvasRenderer>();
-			var iconImage = icon.AddComponent<Image>();
-
-			//iconRT.anchoredPosition = RTEditor.GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
-			//iconRT.sizeDelta = RTEditor.GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
-			iconRT.anchoredPosition = new Vector2(-360f, 0f);
-			iconRT.sizeDelta = new Vector2(26f, 26f);
-
-			iconImage.sprite = metadataWrapper.albumArt;
-		}
 
         public void Combine()
         {
-            if (first != null || second != null || !string.IsNullOrEmpty(savePath))
-			{
+			var combineList = new List<GameData>();
+			var list = new List<string>();
+			var paths = new List<string>();
+			var selected = EditorManager.inst.loadedLevels.Select(x => x as EditorWrapper).Where(x => x.combinerSelected);
+
+			foreach (var editorWrapper in selected)
+            {
+				if (RTFile.FileExists(editorWrapper.folder + "/level.lsb"))
+                {
+					Debug.Log($"{EditorManager.inst.className}Parsing GameData from {Path.GetFileName(editorWrapper.folder)}");
+					paths.Add(editorWrapper.folder + "/level.lsb");
+					list.Add(Path.GetFileName(editorWrapper.folder));
+					combineList.Add(GameData.Parse(SimpleJSON.JSON.Parse(RTFile.ReadFromFile(editorWrapper.folder + "/level.lsb"))));
+                }
+            }
+
+			Debug.Log($"{EditorManager.inst.className}Can Combine: {combineList.Count > 0 && !string.IsNullOrEmpty(savePath)}" +
+				$"\nGameData Count: {combineList.Count}" +
+				$"\nSavePath: {savePath}");
+
+			if (combineList.Count > 0 && !string.IsNullOrEmpty(savePath))
+            {
+				var combinedGameData = ProjectData.Combiner.Combine(combineList.ToArray());
+
 				string save = savePath;
 				if (!save.Contains("level.lsb") && save.LastIndexOf('/') == save.Length - 1)
 					save += "level.lsb";
@@ -397,19 +373,39 @@ namespace EditorManagement.Functions.Editors
 				else if (!save.Contains(RTFile.ApplicationDirectory))
 					save = RTFile.ApplicationDirectory + save;
 
-				ProjectData.Combiner.Combine(first.folder + "/level.lsb", second.folder + "/level.lsb", save, delegate()
+				foreach (var file in paths)
 				{
-					EditorManager.inst.DisplayNotification($"Combined {first.folder} and {second.folder} to {savePath}!", 3f, EditorManager.NotificationType.Success);
-				});
+					if (!RTFile.FileExists(file))
+						return;
+
+					var directory = Path.GetDirectoryName(save);
+					if (!RTFile.DirectoryExists(directory))
+						Directory.CreateDirectory(directory);
+
+					var files1 = Directory.GetFiles(Path.GetDirectoryName(file));
+
+					foreach (var file2 in files1)
+					{
+						string dir = Path.GetDirectoryName(file2);
+						if (!RTFile.DirectoryExists(dir))
+						{
+							Directory.CreateDirectory(dir);
+						}
+
+						if (Path.GetFileName(file2) != "level.lsb" && !RTFile.FileExists(file2.Replace(Path.GetDirectoryName(file), directory)))
+							File.Copy(file2, file2.Replace(Path.GetDirectoryName(file), directory));
+					}
+				}
+
+				StartCoroutine(ProjectData.Writer.SaveData(save, combinedGameData, delegate ()
+				{
+					EditorManager.inst.DisplayNotification($"Combined {FontManager.TextTranslater.ArrayToString(list.ToArray())} to {savePath}!", 3f, EditorManager.NotificationType.Success);
+				}));
 			}
 
-			if (first == null)
-				EditorManager.inst.DisplayNotification("Cannot combine without a first level selected!", 1f, EditorManager.NotificationType.Error);
-
-			if (second == null)
-				EditorManager.inst.DisplayNotification("Cannot combine without a second level selected!", 1f, EditorManager.NotificationType.Error);
-
-			if (string.IsNullOrEmpty(savePath))
+            if (selected.Count() < 1)
+                EditorManager.inst.DisplayNotification("Cannot combine without a any levels selected!", 1f, EditorManager.NotificationType.Error);
+			else if (string.IsNullOrEmpty(savePath))
 				EditorManager.inst.DisplayNotification("Cannot combine with an empty path!", 1f, EditorManager.NotificationType.Error);
         }
     }

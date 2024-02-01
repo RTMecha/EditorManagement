@@ -13,8 +13,12 @@ namespace EditorManagement.Functions
 
         public GameObject GameObject { get; set; }
 
+        public GameObject CombinerGameObject { get; set; }
+
         public void SetActive(bool active) => GameObject?.SetActive(active);
 
-        public bool selected;
+        public void CombinerSetActive(bool active) => CombinerGameObject?.SetActive(active);
+
+        public bool combinerSelected;
     }
 }
