@@ -6983,11 +6983,64 @@ namespace EditorManagement.Functions.Editors
             if (GameData.Current != null)
                 GameData.Current.beatmapThemes.Clear();
 
+            var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
+            var parent = dialogTmp.Find("themes/viewport/content");
+            LSHelpers.DeleteChildren(parent);
+            ThemeEditorManager.inst.ThemePanels.Clear();
+
+            var cr = Instantiate(EventEditor.inst.ThemeAdd);
+            cr.name = "Create New";
+            var tf = cr.transform;
+            tf.SetParent(parent);
+            cr.SetActive(true);
+            tf.localScale = Vector2.one;
+            cr.GetComponent<Button>().onClick.AddListener(delegate ()
+            {
+                ThemeEditorManager.inst.RenderThemeEditor();
+            });
+
             int num = 0;
-            foreach (var beatmapTheme in DataManager.inst.BeatmapThemes)
+            foreach (var beatmapTheme in DataManager.inst.BeatmapThemes.Select(x => x as BeatmapTheme))
             {
                 DataManager.inst.BeatmapThemeIDToIndex.Add(num, num);
                 DataManager.inst.BeatmapThemeIndexToID.Add(num, num);
+
+                var themePanel = ThemeEditorManager.inst.GenerateThemePanel(parent);
+                themePanel.Theme = beatmapTheme;
+
+                for (int j = 0; j < themePanel.Colors.Count; j++)
+                {
+                    themePanel.Colors[j].color = beatmapTheme.GetObjColor(j);
+                }
+
+                themePanel.UseButton.onClick.ClearAll();
+                themePanel.UseButton.onClick.AddListener(delegate ()
+                {
+                    if (RTEventEditor.inst.SelectedKeyframes.Count > 1 && RTEventEditor.inst.SelectedKeyframes.All(x => RTEventEditor.inst.SelectedKeyframes.Min(y => y.Type) == x.Type))
+                    {
+                        foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+                        {
+                            timelineObject.GetData<EventKeyframe>().eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+                        }
+                    }
+                    else
+                    {
+                        DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+                    }
+                    EventManager.inst.updateEvents();
+                    EventEditor.inst.RenderThemePreview(dialogTmp);
+
+                });
+
+                themePanel.EditButton.onClick.ClearAll();
+                themePanel.EditButton.onClick.AddListener(delegate ()
+                {
+                    ThemeEditorManager.inst.RenderThemeEditor(Parser.TryParse(beatmapTheme.id, 0));
+                });
+
+                themePanel.DeleteButton.onClick.ClearAll();
+                themePanel.DeleteButton.interactable = false;
+                themePanel.Name.text = beatmapTheme.name;
                 num++;
             }
 
@@ -7015,6 +7068,46 @@ namespace EditorManagement.Functions.Editors
                 {
                     DataManager.inst.BeatmapThemeIndexToID.Add(DataManager.inst.AllThemes.Count - 1, int.Parse(orig.id));
                     DataManager.inst.BeatmapThemeIDToIndex.Add(int.Parse(orig.id), DataManager.inst.AllThemes.Count - 1);
+
+                    var themePanel = ThemeEditorManager.inst.GenerateThemePanel(parent);
+                    themePanel.Theme = orig;
+
+                    for (int j = 0; j < themePanel.Colors.Count; j++)
+                    {
+                        themePanel.Colors[j].color = orig.GetObjColor(j);
+                    }
+
+                    themePanel.UseButton.onClick.ClearAll();
+                    themePanel.UseButton.onClick.AddListener(delegate ()
+                    {
+                        if (RTEventEditor.inst.SelectedKeyframes.Count > 1 && RTEventEditor.inst.SelectedKeyframes.All(x => RTEventEditor.inst.SelectedKeyframes.Min(y => y.Type) == x.Type))
+                        {
+                            foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+                            {
+                                timelineObject.GetData<EventKeyframe>().eventValues[0] = Parser.TryParse(orig.id, 0);
+                            }
+                        }
+                        else
+                        {
+                            DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = Parser.TryParse(orig.id, 0);
+                        }
+                        EventManager.inst.updateEvents();
+                        EventEditor.inst.RenderThemePreview(dialogTmp);
+                    });
+
+                    themePanel.EditButton.onClick.ClearAll();
+                    themePanel.EditButton.onClick.AddListener(delegate ()
+                    {
+                        ThemeEditorManager.inst.RenderThemeEditor(Parser.TryParse(orig.id, 0));
+                    });
+
+                    themePanel.DeleteButton.onClick.ClearAll();
+                    themePanel.DeleteButton.interactable = true;
+                    themePanel.DeleteButton.onClick.AddListener(delegate ()
+                    {
+                        ThemeEditorManager.inst.DeleteThemeDelegate(orig);
+                    });
+                    themePanel.Name.text = orig.name;
                 }
 
                 if (jn["id"] == null)
@@ -7031,9 +7124,8 @@ namespace EditorManagement.Functions.Editors
 
             if (refreshGUI)
             {
-                var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
                 var themeSearch = dialogTmp.Find("theme-search").GetComponent<InputField>();
-                yield return StartCoroutine(ThemeEditorManager.inst.RenderThemeList(dialogTmp, themeSearch.text));
+                yield return StartCoroutine(ThemeEditorManager.inst.RenderThemeList(themeSearch.text));
             }
 
             yield break;

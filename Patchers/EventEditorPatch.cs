@@ -276,7 +276,7 @@ namespace EditorManagement.Patchers
 			if (__0.TryFind("theme/themepathers/themes path", out Transform themePath) && themePath.gameObject.TryGetComponent(out InputField themePathIF))
 				themePathIF.text = RTEditor.ThemePath;
 
-			RTEditor.inst.StartCoroutine(ThemeEditorManager.inst.RenderThemeList(__0, __1));
+			RTEditor.inst.StartCoroutine(ThemeEditorManager.inst.RenderThemeList(__1));
 			return false;
         }
 

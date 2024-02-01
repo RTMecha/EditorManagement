@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.UI;
 
+using RTFunctions.Functions.Data;
+
 namespace EditorManagement.Functions.Components
 {
     public class ThemePanel : MonoBehaviour
@@ -20,5 +22,7 @@ namespace EditorManagement.Functions.Components
         public Text Name { get; set; }
 
         public void SetActive(bool active) => gameObject.SetActive(active);
+
+        public BeatmapTheme Theme { get; set; }
     }
 }
