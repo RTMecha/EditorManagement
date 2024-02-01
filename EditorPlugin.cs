@@ -59,8 +59,9 @@ namespace EditorManagement
             }
 
 			SetPreviewConfig();
+			UpdateDefaultThemeValues();
 
-            SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+			SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
 
@@ -96,6 +97,7 @@ namespace EditorManagement
                 {
 					RTEventEditor.inst.RenderLayerBins();
 				}
+				UpdateDefaultThemeValues();
 			}
 		}
 
@@ -223,6 +225,66 @@ namespace EditorManagement
 			notifyGroup.childAlignment = direction != Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
 
             SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+		}
+
+		public static void UpdateDefaultThemeValues()
+        {
+			RTFunctions.Functions.Data.BeatmapTheme.DefaultName = RTEditor.GetEditorProperty("Theme Template Name").GetConfigEntry<string>().Value;
+			RTFunctions.Functions.Data.BeatmapTheme.DefaultGUIColor = RTEditor.GetEditorProperty("Theme Template GUI").GetConfigEntry<Color>().Value;
+			RTFunctions.Functions.Data.BeatmapTheme.DefaultTailColor = RTEditor.GetEditorProperty("Theme Template Tail").GetConfigEntry<Color>().Value;
+			RTFunctions.Functions.Data.BeatmapTheme.DefaultBGColor = RTEditor.GetEditorProperty("Theme Template BG").GetConfigEntry<Color>().Value;
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultPlayerColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template Player {i + 1}"))
+						RTFunctions.Functions.Data.BeatmapTheme.DefaultPlayerColors[i] = RTEditor.GetEditorProperty($"Theme Template Player {i + 1}").GetConfigEntry<Color>().Value;
+				}
+				catch (Exception ex)
+				{
+
+				}
+			}
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultObjectColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template OBJ {i + 1}"))
+						RTFunctions.Functions.Data.BeatmapTheme.DefaultObjectColors[i] = RTEditor.GetEditorProperty($"Theme Template OBJ {i + 1}").GetConfigEntry<Color>().Value;
+				}
+				catch (Exception ex)
+				{
+
+				}
+			}
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaulBackgroundColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template BG {i + 1}"))
+						RTFunctions.Functions.Data.BeatmapTheme.DefaulBackgroundColors[i] = RTEditor.GetEditorProperty($"Theme Template BG {i + 1}").GetConfigEntry<Color>().Value;
+				}
+				catch (Exception ex)
+				{
+
+				}
+			}
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultEffectColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template FX {i + 1}"))
+						RTFunctions.Functions.Data.BeatmapTheme.DefaultEffectColors[i] = RTEditor.GetEditorProperty($"Theme Template FX {i + 1}").GetConfigEntry<Color>().Value;
+				}
+				catch (Exception ex)
+				{
+
+				}
+			}
 		}
 
 		public static void ListObjectLayers()
