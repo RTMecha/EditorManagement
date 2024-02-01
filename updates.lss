@@ -1,3 +1,8 @@
+2.2.1 > [Feb 2, 2024]
+- Added Autosave loading via holding shift and selecting a level in the level list. This is also featured in the Misc Document in Documentation.
+- Fixed some issues with theme loading that caused the game to crash when making a new theme or updating it.
+- Added Shuffle ID since theme IDs can now be 10 digits long and there tend to be a lot of conflicting themes. Only use this if absolutely necessary.
+- Theme ID now displays on the Theme Editor title.
 2.2.0 > [Feb 1, 2024]
 - Reworked LevelCombiner so more than two levels can be combined.
 - Added ResetIntegerVariables to keybind actions. Good for reseting ObjectModifiers variables.
