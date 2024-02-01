@@ -740,13 +740,28 @@ namespace EditorManagement.Patchers
         {
             if (__instance.hasLoadedLevel)
             {
-                string str = "/beatmaps/editor/" + __0;
-                Directory.CreateDirectory(LSFile.GetApplicationDirectory() + str);
-                File.Copy(LSFile.GetApplicationDirectory() + "/" + RTEditor.editorListSlash + GameManager.inst.levelName + "/level.ogg", LSFile.GetApplicationDirectory() + str + "/level.ogg", true);
-                __instance.StartCoroutine(DataManager.inst.SaveData(RTFile.ApplicationDirectory + str + "/level.lsb"));
+                string str = RTFile.ApplicationDirectory + RTEditor.editorListSlash + __0;
+                if (!RTFile.DirectoryExists(str))
+                    Directory.CreateDirectory(str);
+
+                var files = Directory.GetFiles(RTFile.ApplicationDirectory + RTEditor.editorListSlash + GameManager.inst.levelName);
+
+                foreach (var file in files)
+                {
+                    if (!RTFile.DirectoryExists(Path.GetDirectoryName(file)))
+                        Directory.CreateDirectory(Path.GetDirectoryName(file));
+
+                    string saveTo = file.Replace("\\", "/").Replace(RTFile.ApplicationDirectory + RTEditor.editorListSlash + GameManager.inst.levelName, str);
+                    File.Copy(file, saveTo, RTFile.FileExists(saveTo));
+                }
+
+                __instance.StartCoroutine(ProjectData.Writer.SaveData(str + "/level.lsb", GameData.Current, delegate ()
+                {
+                    __instance.DisplayNotification($"Saved beatmap to {__0}", 3f, EditorManager.NotificationType.Success);
+                }));
                 return false;
             }
-            __instance.DisplayNotification("Beatmap Can't be saved till you load a level.", 5f, EditorManager.NotificationType.Error);
+            __instance.DisplayNotification("Beatmap can't be saved until you load a level.", 3f, EditorManager.NotificationType.Error);
             return false;
         }
 
