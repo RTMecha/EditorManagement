@@ -241,18 +241,6 @@ namespace EditorManagement.Functions.Editors
                     setKey?.Invoke(key);
                     onKeySet?.Invoke();
                 }
-
-
-                //for (int i = 0; i < 345; i++)
-                //{
-                //    if (Input.GetKeyDown((KeyCode)i))
-                //    {
-                //        selectingKey = false;
-
-                //        setKey?.Invoke((KeyCode)i);
-                //        onKeySet?.Invoke();
-                //    }
-                //}
             }
 
             if (GameManager.inst.timeline && timelinePreview)
@@ -270,14 +258,16 @@ namespace EditorManagement.Functions.Editors
                 timelinePreview.localScale = GameManager.inst.timeline.transform.localScale;
                 timelinePreview.localRotation = GameManager.inst.timeline.transform.localRotation;
 
-                // Very unoptimized but this is the only way I can do it rn unless I do an image checkpoint storage thing
-                var timelinePreviewImages = timelinePreview.GetComponentsInChildren<Image>();
-                var timelineImages = GameManager.inst.timeline.GetComponentsInChildren<Image>();
-                for (int i = 0; i < timelinePreviewImages.Length; i++)
+                for (int i = 0; i < checkpointImages.Count; i++)
                 {
-                    if (i < timelineImages.Length)
-                        timelinePreviewImages[i].color = timelineImages[i].color;
+                    if (GameStorageManager.inst.checkpointImages.Count > i)
+                        checkpointImages[i].color = GameStorageManager.inst.checkpointImages[i].color;
                 }
+
+                timelinePreviewPlayer.color = GameStorageManager.inst.timelinePlayer.color;
+                timelinePreviewLeftCap.color = GameStorageManager.inst.timelineLeftCap.color;
+                timelinePreviewRightCap.color = GameStorageManager.inst.timelineRightCap.color;
+                timelinePreviewLine.color = GameStorageManager.inst.timelineLine.color;
             }
         }
 
@@ -2410,12 +2400,23 @@ namespace EditorManagement.Functions.Editors
             gui.SetActive(true);
             timelinePreview = gui.transform.Find("Timeline");
             timelinePosition = timelinePreview.Find("Base/position").GetComponent<RectTransform>();
+
+            timelinePreviewPlayer = timelinePreview.Find("Base/position").GetComponent<Image>();
+            timelinePreviewLeftCap = timelinePreview.Find("Base/Image").GetComponent<Image>();
+            timelinePreviewRightCap = timelinePreview.Find("Base/Image 1").GetComponent<Image>();
+            timelinePreviewLine = timelinePreview.Find("Base").GetComponent<Image>();
         }
 
+        public Image timelinePreviewPlayer;
+        public Image timelinePreviewLine;
+        public Image timelinePreviewLeftCap;
+        public Image timelinePreviewRightCap;
+        public List<Image> checkpointImages = new List<Image>();
         public void UpdateTimeline()
         {
             if (timelinePreview && AudioManager.inst.CurrentAudioSource.clip != null && DataManager.inst.gameData.beatmapData != null)
             {
+                checkpointImages.Clear();
                 LSHelpers.DeleteChildren(timelinePreview.Find("elements"), true);
                 foreach (var checkpoint in DataManager.inst.gameData.beatmapData.checkpoints)
                 {
@@ -2424,6 +2425,7 @@ namespace EditorManagement.Functions.Editors
                         var gameObject = GameManager.inst.checkpointPrefab.Duplicate(timelinePreview.Find("elements"), $"Checkpoint [{checkpoint.name}] - [{checkpoint.time}]");
                         float num = checkpoint.time * 400f / AudioManager.inst.CurrentAudioSource.clip.length;
                         gameObject.transform.AsRT().anchoredPosition = new Vector2(num, 0f);
+                        checkpointImages.Add(gameObject.GetComponent<Image>());
                     }
                 }
             }
@@ -4249,8 +4251,8 @@ namespace EditorManagement.Functions.Editors
 
                 // Locked
                 {
-                    var element = new Document.Element("<b>Locked [PATCHED]</b>\nIf on, prevents Beatmap Objects' start time from being changed. It's patched because unmodded doesn't have the toggle UI " +
-                        "for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
+                    var element = new Document.Element("<b>Locked [PATCHED]</b>\nIf on, prevents Beatmap Objects' start time from being changed. It's patched because unmodded PA doesn't " +
+                        "have the toggle UI for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
 
@@ -4503,132 +4505,132 @@ namespace EditorManagement.Functions.Editors
             }
 
             // Beatmap Object Keyframes
-            {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-                var documentation = new Document(gameObject, "Beatmap Object Keyframes", "The things that animate objects.");
+            //{
+            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+            //    var documentation = new Document(gameObject, "Beatmap Object Keyframes", "The things that animate objects.");
 
-                // Intro
-                {
-                    var element = new Document.Element("The keyframes in the Beatmap Objects' keyframe timeline allow animating several aspects of a Beatmap Objects' visual.", Document.Element.Type.Text);
-                    documentation.elements.Add(element);
-                }
+            //    // Intro
+            //    {
+            //        var element = new Document.Element("The keyframes in the Beatmap Objects' keyframe timeline allow animating several aspects of a Beatmap Objects' visual.", Document.Element.Type.Text);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // None Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_none.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // None Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_none.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Normal Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_normal.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Normal Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_normal.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Toggle Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_toggle.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Toggle Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_toggle.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Scale Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_scale.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Scale Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_scale.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Static Homing Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_static_homing.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Static Homing Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_static_homing.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Dynamic Homing Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_dynamic_homing.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Dynamic Homing Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_dynamic_homing.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // None Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_none.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // None Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_none.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Normal Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_normal.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Normal Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_normal.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Toggle Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_toggle.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Toggle Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_toggle.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
                 
-                // Scale Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_scale.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Scale Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_scale.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // None Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_none.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // None Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_none.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // Normal Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_normal.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Normal Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_normal.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // Toggle Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_toggle.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Toggle Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_toggle.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // Static Homing Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_static_homing.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Static Homing Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_static_homing.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // Dynamic Homing Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_dynamic_homing.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Dynamic Homing Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_dynamic_homing.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // None Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_none.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // None Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_none.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                // Dynamic Homing Image
-                {
-                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_dynamic_homing.png", Document.Element.Type.Image);
-                    documentation.elements.Add(element);
-                }
+            //    // Dynamic Homing Image
+            //    {
+            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_dynamic_homing.png", Document.Element.Type.Image);
+            //        documentation.elements.Add(element);
+            //    }
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
+            //    var htt = gameObject.AddComponent<HoverTooltip>();
 
-                var levelTip = new HoverTooltip.Tooltip();
+            //    var levelTip = new HoverTooltip.Tooltip();
 
-                levelTip.desc = documentation.Name;
-                levelTip.hint = documentation.Description;
-                htt.tooltipLangauges.Add(levelTip);
+            //    levelTip.desc = documentation.Name;
+            //    levelTip.hint = documentation.Description;
+            //    htt.tooltipLangauges.Add(levelTip);
 
-                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-                text.text = documentation.Name;
+            //    text.text = documentation.Name;
 
-                documentations.Add(documentation);
-            }
+            //    documentations.Add(documentation);
+            //}
 
             // Prefabs
             {
@@ -4743,84 +4745,194 @@ namespace EditorManagement.Functions.Editors
                     documentation.elements.Add(element);
                 }
 
+                // Expand
+                {
+                    var element = new Document.Element("<b>Expand [VANILLA]</b>\nExpands all the objects contained within the original prefab into the level and deletes the Prefab Object.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Expand Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_expand.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Layer
+                {
+                    var element = new Document.Element("<b>Layer [PATCHED]</b>\nWhat Editor Layer the Prefab Object displays on. Can go from 1 to 2147483646. In unmodded Legacy its 1 to 5.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Layer Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_layer.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
-                // Time Of Death Image
+
+                // Time of Death
+                {
+                    var element = new Document.Element("<b>Time of Death [MODDED]</b>\nTime of Death allows every object spawned from the Prefab Object still alive at a certain point to despawn." +
+                        "\nRegular - Just how the game handles Prefab Objects kill time normally." +
+                        "\nStart Offset - Kill time is offset plus the Prefab Object start time." +
+                        "\nSong Time - Kill time is song time, so no matter where you change the start time to the kill time remains the same.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
+                // Time of Death Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_tod.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
+
+                // Locked
+                {
+                    var element = new Document.Element("<b>Locked [PATCHED]</b>\nIf on, prevents Prefab Objects' start time from being changed. It's patched because unmodded PA doesn't " +
+                        "have the toggle UI for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
                 
+                // Collapse
+                {
+                    var element = new Document.Element("<b>Collapse [PATCHED]</b>\nIf on, collapses the Prefab Objects' timeline object. This is patched because it literally doesn't " +
+                        "work in unmodded PA.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+                
+                // Start Time
+                {
+                    var element = new Document.Element("<b>Start Time [VANILLA]</b>\nWhere the objects spawned from the Prefab Object start.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Time Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_time.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Position Offset
+                {
+                    var element = new Document.Element("<b>Position Offset [PATCHED]</b>\nEvery objects' top-most-parent has its position set to this offset. Unmodded PA technically has this " +
+                        "feature, but it's not editable in the editor.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Position Offset Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_pos_offset.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Scale Offset
+                {
+                    var element = new Document.Element("<b>Scale Offset [PATCHED]</b>\nEvery objects' top-most-parent has its scale set to this offset. Unmodded PA technically has this " +
+                        "feature, but it's not editable in the editor.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Scale Offset Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_sca_offset.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Rotation Offset
+                {
+                    var element = new Document.Element("<b>Rotation Offset [PATCHED]</b>\nEvery objects' top-most-parent has its rotation set to this offset. Unmodded PA technically has this " +
+                        "feature, but it's not editable in the editor.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Rotation Offset Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_rot_offset.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Repeat
+                {
+                    var element = new Document.Element("<b>Repeat [MODDED]</b>\nWhen spawning the objects from the Prefab Object, every object gets repeated a set amount of times" +
+                        "with their start offset added onto each time they repeat depending on the Repeat Offset Time set. The data for Repeat Count and Repeat Offset Time " +
+                        "already existed in unmodded PA, it just went completely unused.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Repeat Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_repeat.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Speed
+                {
+                    var element = new Document.Element("<b>Speed [MODDED]</b>\nHow fast each object spawned from the Prefab Object spawns and is animated.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Speed Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_object_speed.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Lead Time / Offset
+                {
+                    var element = new Document.Element("<b>Lead Time / Offset [VANILLA]</b>\nEvery Prefab Object starts at an added offset from the Offset amount. I have no idea why " +
+                        "it's called Lead Time here even though its Offset everywhere else.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Lead Time / Offset Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_lead.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Name
+                {
+                    var element = new Document.Element("<b>Name [MODDED]</b>\nChanges the name of the original Prefab related to the Prefab Object. This is modded because you couldn't " +
+                        "change this in the Prefab Object editor.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Name Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_name.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Type
+                {
+                    var element = new Document.Element("<b>Type [MODDED]</b>\nChanges the Type of the original Prefab related to the Prefab Object. This is modded because you couldn't " +
+                        "change this in the Prefab Object editor. (You can scroll-wheel over the input field to change the type easily)", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Type Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_type.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Save
+                {
+                    var element = new Document.Element("<b>Save [MODDED]</b>\nSaves all changes made to the original Prefab to any External Prefab with a matching name.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Save Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_save.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
+                // Count
+                {
+                    var element = new Document.Element("<b>Count [MODDED]</b>\nTells how many objects are in the original Prefab and how many Prefab Objects there are in the timeline " +
+                        "for the Prefab. The Prefab Object Count goes unused for now...", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
+
                 // Count Image
                 {
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_prefab_counts.png", Document.Element.Type.Image);
@@ -6473,7 +6585,6 @@ namespace EditorManagement.Functions.Editors
 
             var horizontalOverflow = GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
             var verticalOverflow = GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-            //text.color = ConfigEntries.OpenFileTextColor.Value;
             var fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
             var format = GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
             var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
@@ -6584,42 +6695,6 @@ namespace EditorManagement.Functions.Editors
                             });
                         });
                     }
-
-
-                    //if (RTFile.FileExists(path + "/level.jpg"))
-                    //{
-                    //    var cover = SpriteManager.LoadSprite(path + "/level.jpg");
-
-                    //    iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
-
-                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, cover ?? SteamWorkshop.inst.defaultSteamImageSprite));
-                    //}
-                    //else
-                    //{
-                    //    anyFailed = true;
-                    //    failedLevels.Add(Path.GetFileName(path));
-
-                    //    iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
-
-                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite));
-                    //}
-
-                    //list.Add(StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadImageTexture(path + "/level.jpg", delegate (Texture2D texture2D)
-                    //{
-                    //    var cover = SpriteManager.CreateSprite(texture2D);
-
-                    //    iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
-
-                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, cover ?? SteamWorkshop.inst.defaultSteamImageSprite));
-                    //}, delegate (string onError)
-                    //{
-                    //    anyFailed = true;
-                    //    failedText += Path.GetFileName(path) + (num != files.Length - 1 ? ", " : "");
-
-                    //    iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
-
-                    //    EditorManager.inst.loadedLevels.Add(new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite));
-                    //})));
 
                     list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
                     {
@@ -8949,13 +9024,13 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Color,
                 Config.Bind("Preview", "Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Preview", "Object Dragger Enabled", true, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+                Config.Bind("Preview", "Object Dragger Enabled", false, "If an object can be dragged around.")),
             new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Object Dragger Rotator Radius", 22f, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+                Config.Bind("Preview", "Object Dragger Rotator Radius", 22f, "The size of the Object Draggers' rotation ring.")),
             new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Object Dragger Scaler Offset", 6f, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+                Config.Bind("Preview", "Object Dragger Scaler Offset", 6f, "The distance of the Object Draggers' scale arrows.")),
             new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Object Dragger Scaler Scale", 1.6f, "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
+                Config.Bind("Preview", "Object Dragger Scaler Scale", 1.6f, "The size of the Object Draggers' scale arrows.")),
 
             #endregion
         };
