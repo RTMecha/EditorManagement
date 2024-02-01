@@ -1,3 +1,16 @@
+2.2.0 > [Feb 1, 2024]
+- Reworked LevelCombiner so more than two levels can be combined.
+- Added ResetIntegerVariables to keybind actions. Good for reseting ObjectModifiers variables.
+- Added new ObjectModifiers to the editor.
+- Added Wiki / Documentation, allowing creators to read up on what a feature does.
+- Moved Player Editor from View to Edit dropdown.
+- Added config for default scale parent, so now new Beatmap Objects will get created with scale parent on.
+- Fixed Gradient Color 2 text being "Color Top" despite it being "Color Bottom".
+- Fixed some bugs with Markers and fully implemented special description functions like setLayer(0).
+- Added Debugger window for people who use UnityExplorer.
+- Fixed Level list and Theme list object pooling. Now searching the list isn't as slow.
+- Undo / Redo on deleting objects, event keyframes and object keyframes now works again.
+- Default Theme values can now properly be set through the config.
 2.1.18 > [Jan 23, 2024]
 - Fixed Prefab search breaking if an objects' type is invalid.
 - Cleaned up ObjectModifiers editor code and added new modifiers.
