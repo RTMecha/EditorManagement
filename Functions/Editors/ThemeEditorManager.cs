@@ -130,11 +130,14 @@ namespace EditorManagement.Functions.Editors
 
 			image.GetComponent<Image>().enabled = false;
 
-			var themePanel = gameObject.AddComponent<ThemePanel>();
-			themePanel.UseButton = image.GetComponent<Button>();
-			themePanel.EditButton = gameObject.transform.Find("edit").GetComponent<Button>();
-			themePanel.DeleteButton = gameObject.transform.Find("delete").GetComponent<Button>();
-			themePanel.Name = gameObject.transform.Find("text").GetComponent<Text>();
+			var themePanel = new ThemePanel
+			{
+				GameObject = gameObject,
+				UseButton = image.GetComponent<Button>(),
+				EditButton = gameObject.transform.Find("edit").GetComponent<Button>(),
+				DeleteButton = gameObject.transform.Find("delete").GetComponent<Button>(),
+				Name = gameObject.transform.Find("text").GetComponent<Text>()
+			};
 
 			var hlg = image.gameObject.AddComponent<HorizontalLayoutGroup>();
 
