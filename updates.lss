@@ -1,3 +1,5 @@
+2.2.2 > [Feb 2, 2024]
+- Added Delay and Multiply to copyAxis modifier in ObjectModifiers editor.
 2.2.1 > [Feb 2, 2024]
 - Added Autosave loading via holding shift and selecting a level in the level list. This is also featured in the Misc Document in Documentation.
 - Fixed some issues with theme loading that caused the game to crash when making a new theme or updating it.
