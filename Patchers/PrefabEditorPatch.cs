@@ -19,6 +19,7 @@ using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Optimization;
@@ -57,25 +58,6 @@ namespace EditorManagement.Patchers
             Instance.OffsetLine = Instance.OffsetLinePrefab.Duplicate(EditorManager.inst.timeline.transform, "offset line");
             Instance.OffsetLine.transform.AsRT().pivot = Vector2.one;
 
-            //Debug.Log($"{Instance.className}Creating prefab types...");
-            //var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types").transform;
-
-            //var list = new List<GameObject>();
-            //for (int i = 0; i < transform.childCount; i++)
-            //{
-            //    var tf = transform.Find($"col_{i}");
-            //    if (tf)
-            //        list.Add(tf.gameObject);
-            //}
-
-            //foreach (var go in list)
-            //    Destroy(go);
-
-            //Debug.Log($"{Instance.className}Duplicating...");
-            //for (int i = 0; i < 20; i++)
-            //    transform.GetChild(0).gameObject.Duplicate(transform, $"col_{i}", i + 1);
-
-            Debug.Log($"{Instance.className}Setting dialogs...");
             Instance.dialog = EditorManager.inst.GetDialog("Prefab Editor").Dialog;
             Instance.externalPrefabDialog = EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs");
             Instance.internalPrefabDialog = EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("internal prefabs");
@@ -83,6 +65,15 @@ namespace EditorManagement.Patchers
             Instance.internalSearch = Instance.internalPrefabDialog.Find("search-box/search").GetComponent<InputField>();
             Instance.externalContent = Instance.externalPrefabDialog.Find("mask/content");
             Instance.internalContent = Instance.internalPrefabDialog.Find("mask/content");
+
+            var externalSelectGUI = Instance.externalPrefabDialog.gameObject.AddComponent<SelectGUI>();
+            var internalSelectGUI = Instance.internalPrefabDialog.gameObject.AddComponent<SelectGUI>();
+            externalSelectGUI.ogPos = Instance.externalPrefabDialog.position;
+            internalSelectGUI.ogPos = Instance.internalPrefabDialog.position;
+            externalSelectGUI.target = Instance.externalPrefabDialog;
+            internalSelectGUI.target = Instance.internalPrefabDialog;
+
+            Instance.internalPrefabDialog.Find("Panel/Text").GetComponent<Text>().text = "Internal Prefabs";
 
             Debug.Log($"{Instance.className}Setting search...");
             Instance.gridSearch = Instance.dialog.Find("data/selection/search-box/search").GetComponent<InputField>();
@@ -94,22 +85,18 @@ namespace EditorManagement.Patchers
                 Destroy(component);
             }
 
-            Debug.Log($"{Instance.className}Setting left / right...");
             PrefabEditorManager.inst.prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
             PrefabEditorManager.inst.prefabSelectorRight = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/right");
             
             var eventDialogTMP = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right");
 
-            Debug.Log($"{Instance.className}Setting Inputs to reuse...");
             var singleInput = eventDialogTMP.Find("move/position/x").gameObject;
             var vector2Input = eventDialogTMP.Find("move/position").gameObject;
             var labelTemp = eventDialogTMP.Find("move").transform.GetChild(8).gameObject;
 
-            Debug.Log($"{Instance.className}Deleting unneeded...");
             DestroyImmediate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(4).gameObject);
             DestroyImmediate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(4).gameObject);
 
-            Debug.Log($"{Instance.className}Setting Generators...");
             Action<Transform, string, string> labelGenerator = delegate (Transform parent, string name, string x)
             {
                 var label = labelTemp.Duplicate(parent, $"{name.ToLower()} label");
@@ -123,8 +110,6 @@ namespace EditorManagement.Patchers
                 label.transform.GetChild(0).GetComponent<Text>().text = x;
                 label.transform.GetChild(1).GetComponent<Text>().text = y;
             };
-
-            Debug.Log($"{Instance.className}Setting Instance values...");
 
             // AutoKill
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "tod-dropdown", "Time of Death");
@@ -182,16 +167,6 @@ namespace EditorManagement.Patchers
 
             vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat");
 
-            //// Repeat Count
-            //labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "repeat count", "Repeat Count");
-
-            //singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat count");
-
-            //// Repeat Offset Time
-            //labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "repeat offset time", "Repeat Offset Time");
-
-            //singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat offset time");
-            
             // Speed
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "speed", "Speed");
 
@@ -316,11 +291,6 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool UpdatePrefix()
         {
-            // Replace this with KeybindManager system.
-            //if (InputDataManager.inst.editorActions.SpawnPrefab.WasPressed && !EditorManager.inst.IsUsingInputField() && EditorManager.inst.hasLoadedLevel)
-            //{
-            //    Instance.AddPrefabObjectToLevel(Instance.currentPrefab);
-            //}
             if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab))
             {
                 float num;
