@@ -10,6 +10,7 @@ using HarmonyLib;
 using UnityEngine;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Data;
 
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 using EventKeyframe = DataManager.GameData.EventKeyframe;
@@ -98,7 +99,7 @@ namespace EditorManagement.Functions
             if (prefab == null)
                 return ObjEditor.inst.NormalColor;
 
-            return DataManager.inst.PrefabTypes[prefab.Type].Color;
+            return prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
         }
         
         public static Color GetPrefabTypeColor(this PrefabObject _beatmapObject)
@@ -107,7 +108,7 @@ namespace EditorManagement.Functions
             if (prefab == null)
                 return ObjEditor.inst.NormalColor;
 
-            return DataManager.inst.PrefabTypes[prefab.Type].Color;
+            return prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
         }
 
         #endregion
