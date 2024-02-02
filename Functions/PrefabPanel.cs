@@ -9,10 +9,12 @@ using UnityEngine.UI;
 
 using RTFunctions.Functions.Data;
 
-namespace EditorManagement.Functions.Components
+namespace EditorManagement.Functions
 {
-    public class PrefabPanel : MonoBehaviour
+    public class PrefabPanel
     {
+        public GameObject GameObject { get; set; }
+
         public Button Button { get; set; }
 
         public Button DeleteButton { get; set; }
@@ -26,5 +28,7 @@ namespace EditorManagement.Functions.Components
         public PrefabDialog Dialog { get; set; }
 
         public Prefab Prefab { get; set; }
+
+        public void SetActive(bool active) => GameObject?.SetActive(active);
     }
 }
