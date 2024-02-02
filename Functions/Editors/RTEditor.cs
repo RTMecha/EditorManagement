@@ -8939,6 +8939,8 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Create Objects Scale Parent Default", true, "The default value for new Beatmap Objects' Scale Parent.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Allow Editor Keybinds With Editor Cam", true, "Allows keybinds to be used if EventsCore editor camera is on.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
 
             #endregion

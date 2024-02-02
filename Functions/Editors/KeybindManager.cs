@@ -49,6 +49,8 @@ namespace EditorManagement.Functions.Editors
 
         public int currentKey;
 
+        public static bool AllowKeys { get; set; }
+
         public static void Init(EditorManager editorManager)
         {
             var gameObject = new GameObject("KeybindManager");
@@ -70,7 +72,7 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
-            if (!LSHelpers.IsUsingInputField() && EditorManager.inst.isEditing && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
+            if (!LSHelpers.IsUsingInputField() && EditorManager.inst.isEditing && (AllowKeys || (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"])))
             {
                 foreach (var keybind in keybinds)
                 {

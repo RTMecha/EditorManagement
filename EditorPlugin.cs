@@ -64,6 +64,7 @@ namespace EditorManagement
 			SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
+			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
 
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
@@ -97,6 +98,7 @@ namespace EditorManagement
                 {
 					RTEventEditor.inst.RenderLayerBins();
 				}
+				KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
 				UpdateDefaultThemeValues();
 			}
 		}
