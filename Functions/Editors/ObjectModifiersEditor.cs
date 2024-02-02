@@ -1203,11 +1203,19 @@ namespace EditorManagement.Functions.Editors
                             }
                         case "copyAxis":
                             {
+                                if (modifier.commands.Count < 6)
+                                    modifier.commands.Add("0");
+                                
+                                if (modifier.commands.Count < 7)
+                                    modifier.commands.Add("1");
+
                                 stringGenerator("Object Group", 0);
                                 integerGenerator("From Type", 1, 0);
                                 integerGenerator("From Axis", 2, 0);
                                 integerGenerator("To Type", 3, 0);
                                 integerGenerator("To Axis", 4, 0);
+                                singleGenerator("Delay", 5, 0f);
+                                singleGenerator("Multiply", 6, 1f);
 
                                 break;
                             }
