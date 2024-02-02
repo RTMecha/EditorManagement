@@ -1,3 +1,10 @@
+2.2.3 > [Feb 3, 2024]
+- Fixed some Prefab Type errors involving an invalid Prefab Type.
+- Optimized theme list pool.
+- Added pooling to external prefab list. Internal still uses original system.
+- Added Editor Property to enable / disable keybind blocking if editor camera is enabled.
+- Prefab Internal / External popups can now be dragged around.
+- Changed "Level Prefabs" title to "Internal Prefabs" to be more consistent with game code and naming conventions.
 2.2.2 > [Feb 2, 2024]
 - Added Delay and Multiply to copyAxis modifier in ObjectModifiers editor.
 2.2.1 > [Feb 2, 2024]
