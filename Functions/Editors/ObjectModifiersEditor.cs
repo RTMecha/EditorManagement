@@ -500,16 +500,18 @@ namespace EditorManagement.Functions.Editors
                         case "addText":
                         case "addTextOther":
                         case "objectCollide":
+                        case "setImage":
+                        case "setImageOther":
                             {
-                                if (cmd == "setTextOther" || cmd == "addTextOther")
+                                if (cmd == "setTextOther" || cmd == "addTextOther" || cmd == "setImageOther")
                                 {
                                     stringGenerator("Object Group", 1);
-                                    stringGenerator("Text", 0);
+                                    stringGenerator(cmd == "setImageOther" ? "Path" : "Text", 0);
                                 }
 
                                 if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther" || cmd == "objectCollide")
                                     stringGenerator("Object Group", 0);
-                                else if (cmd != "setTextOther" && cmd != "addTextOther")
+                                else if (cmd != "setTextOther" && cmd != "addTextOther" && cmd != "setImageOther")
                                     stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : "Path", 0);
 
                                 break;
@@ -1224,6 +1226,86 @@ namespace EditorManagement.Functions.Editors
                                 stringGenerator("Object Group", 0);
                                 integerGenerator("Minimum Range", 1, 0);
                                 integerGenerator("Maximum Range", 2, 0);
+
+                                break;
+                            }
+                        case "rigidbody":
+                        case "rigidbodyOther":
+                            {
+                                if (cmd == "rigidbodyOther")
+                                    stringGenerator("Object Group", 0);
+
+                                singleGenerator("Gravity", 1, 0f);
+
+                                {
+                                    var dd = dropdownBar.Duplicate(layout, "Collision Mode");
+                                    dd.transform.Find("Text").GetComponent<Text>().text = "Collision Mode";
+
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+                                    var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                                    d.onValueChanged.RemoveAllListeners();
+                                    d.options.Clear();
+
+                                    d.options = new List<Dropdown.OptionData>
+                                {
+                                    new Dropdown.OptionData("Discrete"),
+                                    new Dropdown.OptionData("Continuous")
+                                };
+
+                                    d.value = Parser.TryParse(modifier.commands[2], 0);
+
+                                    d.onValueChanged.AddListener(delegate (int _val)
+                                    {
+                                        modifier.commands[2] = Mathf.Clamp(_val, 0, 1).ToString();
+                                    });
+                                }
+
+                                singleGenerator("Drag", 3, 0f);
+                                singleGenerator("Velocity X", 4, 0f);
+                                singleGenerator("Velocity Y", 5, 0f);
+
+                                {
+                                    var dd = dropdownBar.Duplicate(layout, "Body Type");
+                                    dd.transform.Find("Text").GetComponent<Text>().text = "Body Type";
+
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+                                    var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                                    d.onValueChanged.RemoveAllListeners();
+                                    d.options.Clear();
+
+                                    d.options = new List<Dropdown.OptionData>
+                                    {
+                                        new Dropdown.OptionData("Dynamic"),
+                                        new Dropdown.OptionData("Kinematic"),
+                                        new Dropdown.OptionData("Static"),
+                                    };
+
+                                    d.value = Parser.TryParse(modifier.commands[6], 0);
+
+                                    d.onValueChanged.AddListener(delegate (int _val)
+                                    {
+                                        modifier.commands[6] = Mathf.Clamp(_val, 0, 2).ToString();
+                                    });
+                                }
+
+                                break;
+                            }
+                        case "gravity":
+                        case "gravityOther":
+                            {
+                                if (modifier.commands.Count < 4)
+                                    modifier.commands.Add("0.1");
+
+                                if (cmd == "gravityOther")
+                                    stringGenerator("Object Group", 0);
+
+                                singleGenerator("Gravity X", 1, -1f);
+                                singleGenerator("Gravity Y", 2, 0f);
+                                singleGenerator("Gravity Time", 3, 0.1f);
 
                                 break;
                             }
