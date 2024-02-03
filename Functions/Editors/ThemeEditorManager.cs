@@ -80,6 +80,8 @@ namespace EditorManagement.Functions.Editors
 					shuffleID.transform.GetChild(0).GetComponent<Text>().text = "Shuffle ID";
 				}
 
+				dialog.Find("data/left/theme/theme").AsRT().sizeDelta = new Vector2(366f, 572f);
+
 				var themeContent = dialog.Find("data/right/theme/themes/viewport/content");				
 				LSHelpers.DeleteChildren(themeContent);
 
