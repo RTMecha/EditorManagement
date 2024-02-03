@@ -99,8 +99,6 @@ namespace EditorManagement.Functions.Editors
 
             {
                 var label = ObjEditor.inst.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(ObjEditor.inst.ObjectView.transform);
-                //var index = act.transform.GetSiblingIndex();
-                //label.transform.SetSiblingIndex(index);
 
                 Destroy(label.transform.GetChild(1).gameObject);
                 intVariable = label.transform.GetChild(0).GetComponent<Text>();
@@ -250,17 +248,6 @@ namespace EditorManagement.Functions.Editors
         {
             if (EditorManager.inst.isEditing)
             {
-                var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(2).gameObject;
-                var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-                var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
-                var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
-                //var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
-                var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
-                //var stringInput = GameObject.Find("TimelineBar/GameObject/Time Input");
-
-                Text textFont = GameObject.Find("TitleBar/File/Text").GetComponent<Text>();
-                var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
-
                 LSHelpers.DeleteChildren(content);
 
                 ((RectTransform)content.parent.parent).sizeDelta = new Vector2(351f, 300f * Mathf.Clamp(beatmapObject.modifiers.Count, 1, 5));
@@ -1407,17 +1394,7 @@ namespace EditorManagement.Functions.Editors
             var qap = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog;
             var dialog = qap.gameObject.Duplicate(qap.parent, "Default Modifiers Popup");
 
-            EditorHelper.AddEditorDialog("Default Modifiers Popup", dialog);
-
-            // Since ObjectTags has been long since deprecated, this is no longer needed.
-            //if (dialog.transform.Find("Panel/mod-helper"))
-            //{
-            //    Destroy(dialog.transform.Find("Panel/mod-helper").gameObject);
-            //}
-            //if (dialog.transform.Find("command-input"))
-            //{
-            //    Destroy(dialog.transform.Find("command-input").gameObject);
-            //}
+            EditorHelper.AddEditorPopup("Default Modifiers Popup", dialog);
 
             var search = dialog.transform.Find("search-box/search").GetComponent<InputField>();
             search.onValueChanged.ClearAll();
