@@ -262,7 +262,13 @@ namespace EditorManagement.Patchers
             prefabTypeButton.onClick.ClearAll();
             prefabTypeButton.onClick.AddListener(delegate ()
             {
-                PrefabEditorManager.inst.OpenPrefabTypePopup();
+                PrefabEditorManager.inst.OpenPrefabTypePopup(delegate (int index)
+                {
+                    PrefabEditor.inst.NewPrefabType = index;
+                    if (PrefabEditor.inst.dialog)
+                        PrefabEditor.inst.dialog.Find("data/type/Show Type Editor").GetComponent<Image>().color =
+                            DataManager.inst.PrefabTypes[Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, DataManager.inst.PrefabTypes.Count - 1)].Color;
+                });
             });
 
             ((RectTransform)prefabEditorData.Find("spacer")).sizeDelta = new Vector2(749f, 32f);
