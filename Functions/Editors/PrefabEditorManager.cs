@@ -64,6 +64,8 @@ namespace EditorManagement.Functions.Editors
 
         public List<PrefabPanel> PrefabPanels { get; set; } = new List<PrefabPanel>();
 
+        public static bool ImportPrefabsDirectly { get; set; }
+
         #endregion
 
         public static void Init(PrefabEditor prefabEditor) => prefabEditor?.gameObject?.AddComponent<PrefabEditorManager>();
@@ -93,9 +95,11 @@ namespace EditorManagement.Functions.Editors
             prefabTypeTogglePrefab.transform.SetParent(null);
 
             CreatePrefabTypesPopup();
+            CreatePrefabExternalDialog();
 
             if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/"))
                 StartCoroutine(LoadPrefabTypes());
+
         }
 
         public void CreatePrefabTypesPopup()
@@ -293,10 +297,10 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public void OpenPrefabTypePopup()
+        public void OpenPrefabTypePopup(Action<int> onSelect)
         {
             EditorManager.inst.ShowDialog("Prefab Types Popup");
-            RenderPrefabTypesPopup();
+            RenderPrefabTypesPopup(onSelect);
         }
 
         public void ReorderPrefabTypes()
@@ -309,7 +313,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void RenderPrefabTypesPopup()
+        public void RenderPrefabTypesPopup(Action<int> onSelect)
         {
             LSHelpers.DeleteChildren(prefabTypeContent);
 
@@ -338,7 +342,7 @@ namespace EditorManagement.Functions.Editors
 
                 SavePrefabTypes();
 
-                RenderPrefabTypesPopup();
+                RenderPrefabTypesPopup(onSelect);
             });
 
             int num = 0;
@@ -352,11 +356,8 @@ namespace EditorManagement.Functions.Editors
                 toggle.isOn = PrefabEditor.inst.NewPrefabType == index;
                 toggle.onValueChanged.AddListener(delegate (bool _val)
                 {
-                    PrefabEditor.inst.NewPrefabType = index;
-                    if (PrefabEditor.inst.dialog)
-                        PrefabEditor.inst.dialog.Find("data/type/Show Type Editor").GetComponent<Image>().color =
-                            DataManager.inst.PrefabTypes[Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, DataManager.inst.PrefabTypes.Count - 1)].Color;
-                    RenderPrefabTypesPopup();
+                    onSelect?.Invoke(index);
+                    RenderPrefabTypesPopup(onSelect);
                 });
                 
                 toggle.image.color = prefabType.Color;
@@ -392,7 +393,7 @@ namespace EditorManagement.Functions.Editors
                 inputField.onEndEdit.AddListener(delegate (string _val)
                 {
                     SavePrefabTypes();
-                    RenderPrefabTypesPopup();
+                    RenderPrefabTypesPopup(onSelect);
                 });
 
                 var color = gameObject.transform.Find("Color").GetComponent<InputField>();
@@ -407,7 +408,7 @@ namespace EditorManagement.Functions.Editors
                 color.onEndEdit.ClearAll();
                 color.onEndEdit.AddListener(delegate (string _val)
                 {
-                    RenderPrefabTypesPopup();
+                    RenderPrefabTypesPopup(onSelect);
                     SavePrefabTypes();
                 });
 
@@ -438,12 +439,177 @@ namespace EditorManagement.Functions.Editors
 
                     ReorderPrefabTypes();
 
-                    RenderPrefabTypesPopup();
+                    RenderPrefabTypesPopup(onSelect);
                     SavePrefabTypes();
                 });
 
                 num++;
             }
+        }
+
+        public Text externalDescription;
+        public Button externalType;
+        public Image extenalTypeImage;
+
+        public Button importPrefab;
+        public Button exportToVG;
+
+        public void CreatePrefabExternalDialog()
+        {
+            var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
+            var editorDialogTransform = editorDialogObject.transform;
+            editorDialogObject.name = "PrefabExternalDialog";
+            editorDialogObject.layer = 5;
+            editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
+            editorDialogTransform.localScale = Vector3.one;
+            editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
+            editorDialogTransform.AsRT().sizeDelta = new Vector2(0f, 32f);
+
+            var editorDialogTitle = editorDialogTransform.GetChild(0);
+            editorDialogTitle.GetComponent<Image>().color = LSColors.HexToColor("4C4C4C");
+            var documentationTitle = editorDialogTitle.GetChild(0).GetComponent<Text>();
+            documentationTitle.text = "- Prefab External View -";
+            documentationTitle.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+
+            var editorDialogSpacer = editorDialogTransform.GetChild(1);
+            editorDialogSpacer.AsRT().sizeDelta = new Vector2(765f, 54f);
+
+            //Destroy(editorDialogTransform.GetChild(2).gameObject);
+
+            //var scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
+            //var documentationContent = scrollView.transform.Find("Viewport/Content");
+            //scrollView.transform.SetParent(editorDialogTransform);
+            //scrollView.transform.localScale = Vector3.one;
+            //scrollView.name = "Scroll View";
+
+            //LSHelpers.DeleteChildren(documentationContent);
+
+            //var scrollViewLE = scrollView.AddComponent<LayoutElement>();
+            //scrollViewLE.ignoreLayout = true;
+
+            //scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
+            //scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
+
+            editorDialogTransform.GetChild(1).AsRT().sizeDelta = new Vector2(765f, 24f);
+
+            //{
+            //    var prefabEditorData = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/type");
+
+            //    var prefabType = prefabEditorData.gameObject.Duplicate(editorDialogTransform, "Show Type Editor");
+
+            //    ((RectTransform)prefabType.transform).sizeDelta = new Vector2(132f, 34f);
+            //    prefabType.transform.Find("Text").GetComponent<Text>().text = "Open Prefab Type Editor";
+            //    externalType = prefabType.GetComponent<Button>();
+            //    extenalTypeImage = prefabType.GetComponent<Image>();
+            //}
+
+            {
+                var spacer = new GameObject("spacer2");
+                spacer.transform.SetParent(editorDialogTransform);
+                spacer.transform.localScale = Vector3.one;
+
+                var spacerRT = spacer.AddComponent<RectTransform>();
+                spacerRT.sizeDelta = new Vector2(765f, 24f);
+            }
+
+            var textBase1 = new GameObject("Text Base 1");
+            textBase1.transform.SetParent(editorDialogTransform);
+            textBase1.transform.localScale = Vector3.one;
+
+            var textBase1RT = textBase1.AddComponent<RectTransform>();
+            textBase1RT.sizeDelta = new Vector2(765f, 300f);
+            
+            var textBase2 = new GameObject("Text Base 2");
+            textBase2.transform.SetParent(textBase1RT);
+            textBase2.transform.localScale = Vector3.one;
+
+            var textBase2RT = textBase2.AddComponent<RectTransform>();
+            textBase2RT.sizeDelta = new Vector2(740f, 300f);
+            var textBase2Image = textBase2.AddComponent<Image>();
+            textBase2Image.color = new Color(1f, 1f, 1f, 0.07f);
+
+            var text = editorDialogTransform.GetChild(2);
+            text.SetParent(textBase2RT);
+            text.localPosition = Vector3.zero;
+            text.localScale = Vector3.one;
+            text.AsRT().sizeDelta = new Vector2(725f, 290f);
+            externalDescription = text.GetComponent<Text>();
+            externalDescription.text = "No description";
+            externalDescription.alignment = TextAnchor.UpperLeft;
+
+            {
+                var spacer = new GameObject("spacer3");
+                spacer.transform.SetParent(editorDialogTransform);
+                spacer.transform.localScale = Vector3.one;
+
+                var spacerRT = spacer.AddComponent<RectTransform>();
+                spacerRT.sizeDelta = new Vector2(765f, 260f);
+            }
+
+            var buttonsBase = new GameObject("buttons base");
+            buttonsBase.transform.SetParent(editorDialogTransform);
+            buttonsBase.transform.localScale = Vector3.one;
+
+            var buttonsBaseRT = buttonsBase.AddComponent<RectTransform>();
+            buttonsBaseRT.sizeDelta = new Vector2(765f, 0f);
+
+            var buttons = new GameObject("buttons");
+            buttons.transform.SetParent(buttonsBaseRT);
+            buttons.transform.localScale = Vector3.one;
+
+            var buttonsHLG = buttons.AddComponent<HorizontalLayoutGroup>();
+            buttonsHLG.spacing = 60f;
+
+            buttons.transform.AsRT().sizeDelta = new Vector2(600f, 32f);
+            
+            var tfv = ObjEditor.inst.ObjectView.transform;
+
+            var importPrefab = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform);
+            importPrefab.SetActive(true);
+            importPrefab.name = "import";
+            this.importPrefab = importPrefab.GetComponent<Button>();
+            importPrefab.transform.GetChild(0).GetComponent<Text>().text = "Import Prefab";
+
+            var exportToVG = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform);
+            exportToVG.SetActive(true);
+            exportToVG.name = "export";
+            this.exportToVG = exportToVG.GetComponent<Button>();
+            exportToVG.transform.GetChild(0).GetComponent<Text>().text = "Export to VG Format";
+
+            EditorHelper.AddEditorDialog("Prefab External Dialog", editorDialogObject);
+        }
+
+        public void RenderPrefabExternalDialog(Prefab prefab)
+        {
+            //extenalTypeImage.color = prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
+            //externalType.onClick.ClearAll();
+            //externalType.onClick.AddListener(delegate ()
+            //{
+            //    OpenPrefabTypePopup(delegate (int index)
+            //    {
+            //        prefab.Type = index;
+            //        extenalTypeImage.color = prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
+            //    });
+            //});
+
+            importPrefab.onClick.ClearAll();
+            importPrefab.onClick.AddListener(delegate ()
+            {
+                ImportPrefabIntoLevel(prefab);
+            });
+
+            exportToVG.onClick.ClearAll();
+            exportToVG.onClick.AddListener(delegate ()
+            {
+                if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+
+                RTFile.WriteToFile($"{RTFile.ApplicationDirectory}beatmaps/exports/{prefab.Name.ToLower()}.vgp", prefab.ToJSONVG().ToString());
+
+                EditorManager.inst.DisplayNotification($"Converted Prefab to VG format and saved to {prefab.Name.ToLower()}.vgp!", 4f, EditorManager.NotificationType.Success);
+            });
+
+            externalDescription.text = prefab.description;
         }
 
         public void CreateNewPrefab()
@@ -1413,7 +1579,13 @@ namespace EditorManagement.Functions.Editors
                 });
                 addPrefabObject.onClick.AddListener(delegate ()
                 {
-                    ImportPrefabIntoLevel(prefab);
+                    if (!ImportPrefabsDirectly)
+                    {
+                        EditorManager.inst.ShowDialog("Prefab External Dialog");
+                        RenderPrefabExternalDialog(prefab);
+                    }
+                    else
+                        ImportPrefabIntoLevel(prefab);
                 });
             }
 
