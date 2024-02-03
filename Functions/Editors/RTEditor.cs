@@ -1936,6 +1936,74 @@ namespace EditorManagement.Functions.Editors
                 RefreshFileBrowserLevels();
             }, 3);
 
+            EditorHelper.AddEditorDropdown("Convert VG to LS", "", "File", SearchSprite, delegate ()
+            {
+                EditorManager.inst.ShowDialog("Browser Popup");
+                RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".lsp", ".vgp", "lst", ".vgt" }, onSelectFile: delegate (string _val)
+                {
+                    if (_val.Contains(".lsp"))
+                    {
+                        var file = RTFile.ApplicationDirectory + prefabListSlash + Path.GetFileName(_val);
+                        File.Copy(_val, file, RTFile.FileExists(file));
+                    }
+                    else if (_val.Contains(".vgp"))
+                    {
+                        try
+                        {
+                            var file = RTFile.ReadFromFile(_val);
+
+                            var vgjn = JSON.Parse(file);
+
+                            var prefab = Prefab.ParseVG(vgjn);
+
+                            var jn = prefab.ToJSON();
+
+                            RTFile.WriteToFile(RTFile.ApplicationDirectory + prefabListSlash + $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp", jn.ToString());
+
+                            file = null;
+                            vgjn = null;
+                            prefab = null;
+                            jn = null;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Log(ex);
+                        }
+                    }
+                    else if (_val.Contains(".lst"))
+                    {
+                        var file = RTFile.ApplicationDirectory + themeListSlash + Path.GetFileName(_val);
+                        File.Copy(_val, file, RTFile.FileExists(file));
+                    }
+                    else if (_val.Contains(".vgt"))
+                    {
+                        try
+                        {
+                            var file = RTFile.ReadFromFile(_val);
+
+                            var vgjn = JSON.Parse(file);
+
+                            var theme = BeatmapTheme.ParseVG(vgjn);
+
+                            var jn = theme.ToJSON();
+
+                            RTFile.WriteToFile(RTFile.ApplicationDirectory + themeListSlash + $"{theme.name.ToLower().Replace(" ", "_")}.lst", jn.ToString());
+
+                            file = null;
+                            vgjn = null;
+                            theme = null;
+                            jn = null;
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.Log(ex);
+                        }
+                    }
+
+                    EditorManager.inst.HideDialog("Browser Popup");
+                });
+            }, 4);
+
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
             {
                 var exitToArcade = Instantiate(titleBar.Find("File/File Dropdown/Quit to Main Menu").gameObject);
@@ -9019,6 +9087,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Editor GUI", "Drag UI", false, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Editor GUI", "Import Prefabs Directly", false, "When clicking on an External Prefab, instead of importing it directly it'll bring up a Prefab External View Dialog if this config is off.")),
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("Editor GUI", "Notification Width", 221f, "Width of the notifications.")),
             new EditorProperty(EditorProperty.ValueType.Float,
