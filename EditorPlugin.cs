@@ -65,6 +65,7 @@ namespace EditorManagement
 			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
 			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
+			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
 
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
@@ -77,6 +78,12 @@ namespace EditorManagement
         void UpdateEditorManagementConfigs(object sender, SettingChangedEventArgs e)
 		{
 			SetPreviewConfig();
+
+			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
+			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
+			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
+			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
+
 			if (EditorManager.inst)
             {
 				SetNotificationProperties();
@@ -91,16 +98,15 @@ namespace EditorManagement
 				SetTimelineColors();
 				AdjustPositionInputsChanged?.Invoke();
 
-				ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
-				ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
 				ObjEditor.inst.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
 				if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 {
 					RTEventEditor.inst.RenderLayerBins();
 				}
-				KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
+
 				UpdateDefaultThemeValues();
 			}
+
 		}
 
 		public static void SetPreviewConfig()
