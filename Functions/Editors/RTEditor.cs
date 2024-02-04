@@ -2051,7 +2051,7 @@ namespace EditorManagement.Functions.Editors
 
                             if (RTFile.FileExists(path + "/metadata.vgm") && RTFile.FileExists(path + "/audio.ogg") && RTFile.FileExists(path + "/cover.jpg"))
                             {
-                                var copyTo = path.Replace(Path.GetDirectoryName(path).Replace("\\", "/"), RTFile.ApplicationDirectory + "beatmaps/exports");
+                                var copyTo = path.Replace(Path.GetDirectoryName(path).Replace("\\", "/"), RTFile.ApplicationDirectory + editorListPath);
 
                                 if (!RTFile.DirectoryExists(copyTo))
                                     Directory.CreateDirectory(copyTo);
@@ -9187,6 +9187,12 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Data", "Update Theme List on Files Changed", true, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Show Levels Without Cover Notification", false, "Sends an error notification for what levels don't have covers.")),
+            new EditorProperty(EditorProperty.ValueType.String,
+                Config.Bind("Data", "Convert Level LS to VG Export Path", "", "The custom path to export a level to. If no path is set then it will export to beatmaps/exports.")),
+            new EditorProperty(EditorProperty.ValueType.String,
+                Config.Bind("Data", "Convert Prefab LS to VG Export Path", "", "The custom path to export a prefab to. If no path is set then it will export to beatmaps/exports.")),
+            new EditorProperty(EditorProperty.ValueType.String,
+                Config.Bind("Data", "Convert Theme LS to VG Export Path", "", "The custom path to export a prefab to. If no path is set then it will export to beatmaps/exports.")),
 
             #endregion
 

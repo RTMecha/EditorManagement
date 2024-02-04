@@ -574,7 +574,7 @@ namespace EditorManagement.Functions.Editors
             exportToVG.SetActive(true);
             exportToVG.name = "export";
             this.exportToVG = exportToVG.GetComponent<Button>();
-            exportToVG.transform.GetChild(0).GetComponent<Text>().text = "Export to VG Format";
+            exportToVG.transform.GetChild(0).GetComponent<Text>().text = "Convert to VG Format";
 
             EditorHelper.AddEditorDialog("Prefab External Dialog", editorDialogObject);
         }
@@ -601,12 +601,29 @@ namespace EditorManagement.Functions.Editors
             exportToVG.onClick.ClearAll();
             exportToVG.onClick.AddListener(delegate ()
             {
-                if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
-                    Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+                var exportPath = RTEditor.GetEditorProperty("Convert Prefab LS to VG Export Path").GetConfigEntry<string>().Value;
 
-                RTFile.WriteToFile($"{RTFile.ApplicationDirectory}beatmaps/exports/{prefab.Name.ToLower()}.vgp", prefab.ToJSONVG().ToString());
+                if (string.IsNullOrEmpty(exportPath))
+                {
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+                    exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+                }
 
-                EditorManager.inst.DisplayNotification($"Converted Prefab to VG format and saved to {prefab.Name.ToLower()}.vgp!", 4f, EditorManager.NotificationType.Success);
+                if (!string.IsNullOrEmpty(exportPath) && exportPath[exportPath.Length - 1] != '/')
+                    exportPath += "/";
+
+                if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+                {
+                    EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+                    return;
+                }
+
+                var vgjn = prefab.ToJSONVG();
+
+                RTFile.WriteToFile($"{exportPath}{prefab.Name.ToLower()}.vgp", vgjn.ToString());
+
+                EditorManager.inst.DisplayNotification($"Converted Prefab {prefab.Name.ToLower()}.lsp from LS format to VG format and saved to {prefab.Name.ToLower()}.vgp!", 4f, EditorManager.NotificationType.Success);
             });
 
             externalDescription.text = prefab.description;

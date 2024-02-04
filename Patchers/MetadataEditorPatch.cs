@@ -390,10 +390,89 @@ namespace EditorManagement.Patchers
 			//}
 
 			RenderTags();
-			content.Find("agreement/text").GetComponent<Text>().text = "Currently there is no way to upload to any online service. A custom online arcade is planned, so stay tuned!";
+			content.Find("agreement/text").GetComponent<Text>().text = "Currently there is no way to upload to any online service. A custom online arcade is planned, so stay tuned! For now, " +
+				"you can convert the level to the current level format for vanilla PA and upload it to the workshop. Beware any modded features not in current PA will not be saved.";
 			for (int i = 5; i < 9; i++)
             {
 				content.GetChild(i).gameObject.SetActive(false);
+            }
+
+            try
+            {
+				content.Find("spacer").gameObject.SetActive(true);
+				content.Find("submit").gameObject.SetActive(true);
+				var button = content.Find("submit/submit").GetComponent<Button>();
+				button.GetComponent<Image>().sprite = null;
+				content.Find("submit/submit").AsRT().sizeDelta = new Vector2(300f, 48f);
+				content.Find("submit/submit/Text").GetComponent<Text>().text = "Convert to VG Format";
+
+				button.onClick.ClearAll();
+				button.onClick.AddListener(delegate ()
+				{
+					var exportPath = RTEditor.GetEditorProperty("Convert Level LS to VG Export Path").GetConfigEntry<string>().Value;
+
+					if (string.IsNullOrEmpty(exportPath))
+					{
+						if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+							Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+						exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+					}
+
+					if (exportPath[exportPath.Length - 1] != '/')
+						exportPath += "/";
+
+					if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+                    {
+						EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+						return;
+                    }
+
+					var vg = GameData.Current.ToJSONVG();
+
+					var metadata = ((Metadata)DataManager.inst.metaData).ToJSONVG();
+
+					var path = exportPath + EditorManager.inst.currentLoadedLevel;
+
+					if (!RTFile.DirectoryExists(path))
+						Directory.CreateDirectory(path);
+
+					var ogPath = GameManager.inst.path.Replace("/level.lsb", "");
+
+					if (RTFile.FileExists(ogPath + "/level.ogg"))
+                    {
+						File.Copy(ogPath + "/level.ogg", path + "/audio.ogg", RTFile.FileExists(path + "/audio.ogg"));
+                    }
+
+					if (RTFile.FileExists(ogPath + "/level.jpg"))
+                    {
+						File.Copy(ogPath + "/level.jpg", path + "/cover.jpg", RTFile.FileExists(path + "/cover.jpg"));
+                    }
+
+					try
+					{
+						RTFile.WriteToFile(path + "/metadata.vgm", metadata.ToString());
+					}
+					catch (Exception ex)
+					{
+						Debug.LogError($"{Instance.className}Convert to VG error (MetaData) {ex}");
+					}
+
+					try
+					{
+						RTFile.WriteToFile(path + "/level.vgd", vg.ToString());
+					}
+                    catch (Exception ex)
+                    {
+						Debug.LogError($"{Instance.className}Convert to VG error (GameData) {ex}");
+					}
+
+					EditorManager.inst.DisplayNotification($"Converted Level \"{EditorManager.inst.currentLoadedLevel}\" from LS format to VG format and saved to {Path.GetFileName(path)}.", 4f,
+						EditorManager.NotificationType.Success);
+				});
+			}
+			catch (Exception ex)
+            {
+				Debug.LogError(ex);
             }
 
 			//bool hasID = DataManager.inst.metaData.beatmap.workshop_id != -1;
