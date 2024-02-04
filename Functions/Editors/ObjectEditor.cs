@@ -1415,7 +1415,7 @@ namespace EditorManagement.Functions.Editors
                         isBeatmapObject ? DataManager.inst.gameData.prefabs.Find(x => x.ID == timelineObject.GetData<BeatmapObject>().prefabID).Type :
                         isPrefab ? timelineObject.GetData<PrefabObject>().GetPrefab().Type : 0;
 
-                    iconImage.sprite = (i < DataManager.inst.PrefabTypes.Count? (PrefabType)DataManager.inst.PrefabTypes[i] : PrefabType.InvalidType).Icon;
+                    iconImage.sprite = (i < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[i] : PrefabType.InvalidType).Icon;
                 }
 
                 float zoom = EditorManager.inst.Zoom;
