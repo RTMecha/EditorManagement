@@ -649,8 +649,8 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.DisplayNotification($"Saving Prefab to System [{prefab.Name}]!", 2f, EditorManager.NotificationType.Warning);
             Debug.Log($"{PrefabEditor.inst.className}Saving Prefab to File System!");
 
-            prefab.objects.ForEach(x => x.prefabID = "");
-            prefab.objects.ForEach(x => x.prefabInstanceID = "");
+            prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
+            //prefab.objects.ForEach(x => x.prefabInstanceID = "");
             PrefabEditor.inst.LoadedPrefabs.Add(prefab);
             PrefabEditor.inst.LoadedPrefabsFiles.Add($"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp");
 
