@@ -1888,26 +1888,27 @@ namespace EditorManagement.Functions.Editors
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/name/input").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/Popups/New File Popup/Browser Popup").SetActive(true);
 
-            EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
-            {
-                EditorManager.inst.ShowDialog("Warning Popup");
-                RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+            if (ModCompatibility.ArcadiaCustomsInstalled)
+                EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
                 {
-                    DG.Tweening.DOTween.Clear();
-                    Updater.UpdateObjects(false);
-                    DataManager.inst.gameData = null;
-                    DataManager.inst.gameData = new DataManager.GameData();
+                    EditorManager.inst.ShowDialog("Warning Popup");
+                    RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+                    {
+                        DG.Tweening.DOTween.Clear();
+                        Updater.UpdateObjects(false);
+                        DataManager.inst.gameData = null;
+                        DataManager.inst.gameData = new DataManager.GameData();
 
-                    ArcadeManager.inst.skippedLoad = false;
-                    ArcadeManager.inst.forcedSkip = false;
-                    DataManager.inst.UpdateSettingBool("IsArcade", true);
+                        ArcadeManager.inst.skippedLoad = false;
+                        ArcadeManager.inst.forcedSkip = false;
+                        DataManager.inst.UpdateSettingBool("IsArcade", true);
 
-                    SceneManager.inst.LoadScene("Input Select");
-                }, delegate ()
-                {
-                    EditorManager.inst.HideDialog("Warning Popup");
-                });
-            }, 7);
+                        SceneManager.inst.LoadScene("Input Select");
+                    }, delegate ()
+                    {
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    });
+                }, 7);
 
             EditorHelper.AddEditorDropdown("Switch to Arcade Mode", "", "File", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_right_small.png"), delegate ()
             {
@@ -1939,12 +1940,14 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorDropdown("Convert VG to LS", "", "File", SearchSprite, delegate ()
             {
                 EditorManager.inst.ShowDialog("Browser Popup");
-                RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".lsp", ".vgp", "lst", ".vgt" }, onSelectFile: delegate (string _val)
+                RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".lsp", ".vgp", "lst", ".vgt", ".lsb", ".vgd" }, onSelectFile: delegate (string _val)
                 {
+                    bool failed = false;
                     if (_val.Contains(".lsp"))
                     {
                         var file = RTFile.ApplicationDirectory + prefabListSlash + Path.GetFileName(_val);
                         File.Copy(_val, file, RTFile.FileExists(file));
+                        EditorManager.inst.DisplayNotification($"Copied {Path.GetFileName(_val)} to prefab ({prefabListPath}) folder.", 2f, EditorManager.NotificationType.Success);
                     }
                     else if (_val.Contains(".vgp"))
                     {
@@ -1958,22 +1961,31 @@ namespace EditorManagement.Functions.Editors
 
                             var jn = prefab.ToJSON();
 
-                            RTFile.WriteToFile(RTFile.ApplicationDirectory + prefabListSlash + $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp", jn.ToString());
+                            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+                                Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+
+                            string fileName = $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp";
+                            RTFile.WriteToFile(RTFile.ApplicationDirectory + prefabListSlash + fileName, jn.ToString());
 
                             file = null;
                             vgjn = null;
                             prefab = null;
                             jn = null;
+
+                            EditorManager.inst.DisplayNotification($"Successfully converted {Path.GetFileName(_val)} to {fileName} and added it to your prefab ({prefabListPath}) folder.", 2f,
+                                EditorManager.NotificationType.Success);
                         }
                         catch (Exception ex)
                         {
-                            Debug.Log(ex);
+                            Debug.LogError(ex);
+                            failed = true;
                         }
                     }
                     else if (_val.Contains(".lst"))
                     {
                         var file = RTFile.ApplicationDirectory + themeListSlash + Path.GetFileName(_val);
                         File.Copy(_val, file, RTFile.FileExists(file));
+                        EditorManager.inst.DisplayNotification($"Copied {Path.GetFileName(_val)} to theme ({themeListPath}) folder.", 2f, EditorManager.NotificationType.Success);
                     }
                     else if (_val.Contains(".vgt"))
                     {
@@ -1987,20 +1999,117 @@ namespace EditorManagement.Functions.Editors
 
                             var jn = theme.ToJSON();
 
-                            RTFile.WriteToFile(RTFile.ApplicationDirectory + themeListSlash + $"{theme.name.ToLower().Replace(" ", "_")}.lst", jn.ToString());
+                            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+                                Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
+
+                            var fileName = $"{theme.name.ToLower().Replace(" ", "_")}.lst";
+                            RTFile.WriteToFile(RTFile.ApplicationDirectory + themeListSlash + fileName, jn.ToString());
 
                             file = null;
                             vgjn = null;
                             theme = null;
                             jn = null;
+
+                            EditorManager.inst.DisplayNotification($"Successfully converted {Path.GetFileName(_val)} to {fileName} and added it to your theme ({themeListPath}) folder.", 2f,
+                                EditorManager.NotificationType.Success);
                         }
                         catch (Exception ex)
                         {
-                            Debug.Log(ex);
+                            Debug.LogError(ex);
+                            failed = true;
                         }
                     }
+                    else if (_val.Replace("\\", "/").Contains("/level.lsb"))
+                    {
+                        EditorManager.inst.ShowDialog("Warning Popup");
+                        RefreshWarningPopup("Warning! Selecting a level will copy all of its contents to your editor, are you sure you want to do this?", delegate ()
+                        {
+                            var path = _val.Replace("\\", "/").Replace("/level.lsb", "");
 
-                    EditorManager.inst.HideDialog("Browser Popup");
+                            var files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
+
+                            foreach (var file in files)
+                            {
+                                var copyTo = file.Replace("\\", "/").Replace(Path.GetDirectoryName(path), RTFile.ApplicationDirectory + editorListPath);
+                                File.Copy(file, copyTo, RTFile.FileExists(copyTo));
+                            }
+
+                            EditorManager.inst.DisplayNotification($"Copied {Path.GetFileName(path)} to level ({editorListPath}) folder.", 2f, EditorManager.NotificationType.Success);
+
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        }, delegate ()
+                        {
+                            EditorManager.inst.HideDialog("Warning Popup");
+                            EditorManager.inst.ShowDialog("Browser Popup");
+                        });
+                    }
+                    else if (_val.Replace("\\", "/").Contains("/level.vgd"))
+                    {
+                        try
+                        {
+                            var path = _val.Replace("\\", "/").Replace("/level.vgd", "");
+
+                            if (RTFile.FileExists(path + "/metadata.vgm") && RTFile.FileExists(path + "/audio.ogg") && RTFile.FileExists(path + "/cover.jpg"))
+                            {
+                                var copyTo = path.Replace(Path.GetDirectoryName(path).Replace("\\", "/"), RTFile.ApplicationDirectory + "beatmaps/exports");
+
+                                if (!RTFile.DirectoryExists(copyTo))
+                                    Directory.CreateDirectory(copyTo);
+
+                                var metadataVGJSON = RTFile.ReadFromFile(path + "/metadata.vgm");
+
+                                var metadataVGJN = JSON.Parse(metadataVGJSON);
+
+                                var metadata = Metadata.ParseVG(metadataVGJN);
+
+                                var metadataJN = metadata.ToJSON();
+
+                                RTFile.WriteToFile(copyTo + "/metadata.lsb", metadataJN.ToString());
+
+                                File.Copy(path + "/audio.ogg", copyTo + "/level.ogg", RTFile.FileExists(copyTo + "/level.ogg"));
+
+                                File.Copy(path + "/cover.jpg", copyTo + "/level.jpg", RTFile.FileExists(copyTo + "/level.jpg"));
+
+                                var levelVGJSON = RTFile.ReadFromFile(path + "/level.vgd");
+
+                                var levelVGJN = JSON.Parse(levelVGJSON);
+
+                                var level = GameData.ParseVG(levelVGJN);
+
+                                StartCoroutine(ProjectData.Writer.SaveData(copyTo + "/level.lsb", level, delegate ()
+                                {
+                                    EditorManager.inst.DisplayNotification($"Successfully converted {Path.GetFileName(path)} to {Path.GetFileName(copyTo)} and added it to your level ({editorListPath}) folder.", 2f,
+                                        EditorManager.NotificationType.Success);
+
+                                    metadataVGJSON = null;
+                                    metadataVGJN = null;
+                                    metadata = null;
+                                    metadataJN = null;
+                                    levelVGJSON = null;
+                                    levelVGJN = null;
+                                    level = null;
+                                }));
+                            }
+                            else
+                            {
+                                EditorManager.inst.DisplayNotification("Could not convert since some needed files are missing!", 2f, EditorManager.NotificationType.Error);
+                                failed = true;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.LogError(ex);
+                            failed = true;
+                        }
+                    }
+                    else if (_val.Replace("\\", "/").Contains("/autosave_") && _val.Contains(".vgd"))
+                    {
+                        EditorManager.inst.DisplayNotification("Cannot select autosave.", 2f, EditorManager.NotificationType.Warning);
+                        failed = true;
+                    }
+
+                    if (!failed)
+                        EditorManager.inst.HideDialog("Browser Popup");
                 });
             }, 4);
 
