@@ -1,3 +1,10 @@
+2.2.4 > [Feb 5, 2024]
+- Fixed editor re-entry bug.
+- Added new modifiers to ObjectModifiers.
+- Added Prefab External View dialog. This is an optional replacement for directly importing an external prefab (can be changed via Editor Properties / configs under the Editor GUI section). Currently it has description display, Import and Convert to VG format buttons.
+- Added Convert to VG format button to Metadata Editor / Uploader. You can set a custom export path via Editor Properties / configs under the Data section.
+- Added Convert VG to LS to File Title Bar dropdown. Clicking it will bring up the in-game file browser, allowing you to search for a file to convert. If the file you select is already LS format, it'll just get added to your prefab / theme / editor list. Otherwise, it'll get converted from VG format to LS format and get added to your prefab / theme / editor list.
+- Fixed minor UI bug with theme editor going over the timeline.
 2.2.3 > [Feb 3, 2024]
 - Fixed some Prefab Type errors involving an invalid Prefab Type.
 - Optimized theme list pool.
