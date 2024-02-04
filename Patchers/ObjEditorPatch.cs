@@ -859,7 +859,7 @@ namespace EditorManagement.Patchers
 
             // Timeline Object adjustments
             {
-				var gameObject = ObjEditor.inst.timelineObjectPrefab;
+				var gameObject = ObjEditor.inst.timelineObjectPrefab.Duplicate(null, ObjEditor.inst.timelineObjectPrefab.name);
 				var icons = gameObject.transform.Find("icons");
 
 				if (!icons.gameObject.GetComponent<HorizontalLayoutGroup>())
@@ -906,6 +906,8 @@ namespace EditorManagement.Patchers
 					hoverUI.animatePos = false;
 					hoverUI.animateSca = true;
 				}
+
+				ObjEditor.inst.timelineObjectPrefab = gameObject;
 			}
 
 			__instance.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
