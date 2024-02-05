@@ -1426,12 +1426,12 @@ namespace EditorManagement.Functions.Editors
                 if (timelineObject.IsPrefabObject)
                     timelineObject.GetData<PrefabObject>().editorData.locked = loggled;
 
-                loggled = !loggled;
-
                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
             }
+
+            loggled = !loggled;
         }
-        
+
         public static void SwapCollapseSelection(Keybind keybind)
         {
             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
@@ -1455,10 +1455,10 @@ namespace EditorManagement.Functions.Editors
                 if (timelineObject.IsPrefabObject)
                     timelineObject.GetData<PrefabObject>().editorData.collapse = coggled;
 
-                coggled = !coggled;
-
                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
             }
+
+            coggled = !coggled;
         }
 
         public static void AddObjectLayer(Keybind keybind)

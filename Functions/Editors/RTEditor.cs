@@ -359,6 +359,9 @@ namespace EditorManagement.Functions.Editors
 
         public List<Document> documentations = new List<Document>();
 
+        public bool canUpdateThemes = true;
+        public bool canUpdatePrefabs = true;
+
         #endregion
 
         #region Settings
@@ -1163,7 +1166,7 @@ namespace EditorManagement.Functions.Editors
 
         public void OnPrefabPathChanged(object sender, FileSystemEventArgs e)
         {
-            if (inst && WatchPrefabFiles)
+            if (canUpdatePrefabs && WatchPrefabFiles)
             {
                 StartCoroutine(UpdatePrefabs());
             }
@@ -1171,7 +1174,7 @@ namespace EditorManagement.Functions.Editors
 
         public void OnThemePathChanged(object sender, FileSystemEventArgs e)
         {
-            if (inst && WatchThemeFiles)
+            if (canUpdateThemes && WatchThemeFiles)
             {
                 StartCoroutine(LoadThemes(EventEditor.inst.dialogRight.GetChild(4).gameObject.activeInHierarchy));
             }
@@ -3351,7 +3354,7 @@ namespace EditorManagement.Functions.Editors
                     coggle = !coggle;
                     foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
-                        timelineObject.Locked = coggle;
+                        timelineObject.Collapse = coggle;
 
                         ObjectEditor.inst.RenderTimelineObject(timelineObject);
                     }
@@ -4234,7 +4237,7 @@ namespace EditorManagement.Functions.Editors
         public void CreateDocumentation()
         {
             var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Documentation");
+                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Documentation Popup");
             objectSearch.transform.localPosition = Vector3.zero;
 
             var objectSearchRT = (RectTransform)objectSearch.transform;
@@ -6516,7 +6519,7 @@ namespace EditorManagement.Functions.Editors
                 var uiManager = AccessTools.TypeByName("UnityExplorer.UI.UIManager");
 
                 var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                    .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Debugger");
+                    .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Debugger Popup");
                 objectSearch.transform.localPosition = Vector3.zero;
 
                 var objectSearchRT = (RectTransform)objectSearch.transform;
@@ -6759,17 +6762,17 @@ namespace EditorManagement.Functions.Editors
         public void CreateAutosavePopup()
         {
             var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Autosaves");
+                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Autosaves Popup");
             objectSearch.transform.localPosition = Vector3.zero;
 
             var objectSearchRT = (RectTransform)objectSearch.transform;
-            objectSearchRT.anchoredPosition = new Vector2(522f, 0f);
-            objectSearchRT.sizeDelta = new Vector2(360f, 350f);
+            objectSearchRT.anchoredPosition = new Vector2(572f, 0f);
+            objectSearchRT.sizeDelta = new Vector2(460f, 350f);
             var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
-            objectSearchPanel.sizeDelta = new Vector2(392f, 32f);
+            objectSearchPanel.sizeDelta = new Vector2(492f, 32f);
             objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Autosaves";
-            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(360f, 32f);
-            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(355f, 32f);
+            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(460f, 32f);
+            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(455f, 32f);
             objectSearch.transform.Find("Scrollbar").AsRT().sizeDelta = new Vector2(32f, 350f);
 
             var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
@@ -7337,6 +7340,8 @@ namespace EditorManagement.Functions.Editors
 
                     var themePanel = ThemeEditorManager.inst.GenerateThemePanel(parent);
                     themePanel.Theme = orig;
+                    themePanel.Path = file.Replace("\\", "/");
+                    themePanel.OriginalID = orig.id;
 
                     for (int j = 0; j < themePanel.Colors.Count; j++)
                     {
@@ -7393,6 +7398,8 @@ namespace EditorManagement.Functions.Editors
                 var themeSearch = dialogTmp.Find("theme-search").GetComponent<InputField>();
                 yield return StartCoroutine(ThemeEditorManager.inst.RenderThemeList(themeSearch.text));
             }
+
+            canUpdateThemes = true;
 
             yield break;
         }
@@ -9010,11 +9017,13 @@ namespace EditorManagement.Functions.Editors
                 RefreshAutosaveList(editorWrapper);
             });
 
+            var backupPrefab = timelineBar.transform.Find("event");
+
             var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
 
             LSHelpers.DeleteChildren(autosaveContent);
 
-            var files = Directory.GetFiles(editorWrapper.folder, "autosave_*.lsb", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(editorWrapper.folder, "autosave_*.lsb", SearchOption.AllDirectories).Union(Directory.GetFiles(editorWrapper.folder, "backup_*.lsb", SearchOption.AllDirectories));
 
             foreach (var file in files)
             {
@@ -9029,10 +9038,47 @@ namespace EditorManagement.Functions.Editors
 
                 text.text = Path.GetFileName(file);
 
-                gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
                     StartCoroutine(LoadLevel(editorWrapper.folder, file.Replace("\\", "/").Replace(editorWrapper.folder + "/", "")));
                     EditorManager.inst.HideDialog("Open File Popup");
+                });
+
+                string tmpFile = file;
+
+                var backup = backupPrefab.gameObject.Duplicate(gameObject.transform, "backup");
+                backup.transform.localScale = Vector3.one;
+                backup.transform.AsRT().anchoredPosition = new Vector2(450f, -16f);
+                backup.transform.AsRT().sizeDelta = new Vector2(80f, 28f);
+                var backupText = backup.transform.GetChild(0).GetComponent<Text>();
+                backupText.text = "Backup";
+                backupText.color = new Color(0.1098f, 0.1098f, 0.1137f, 1f);
+                var backupButton = backup.GetComponent<Button>();
+                ((Image)backupButton.targetGraphic).color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+                backupButton.onClick.ClearAll();
+                backupButton.onClick.AddListener(delegate ()
+                {
+                    var fi = new FileInfo(tmpFile);
+
+                    tmpFile = tmpFile.Contains("autosave_") ? tmpFile.Replace("autosave_", "backup_") : tmpFile.Replace("backup_", "autosave_");
+
+                    if (fi.Exists)
+                    {
+                        fi.MoveTo(tmpFile);
+                    }
+
+                    var fileName = Path.GetFileName(tmpFile);
+                    text.text = fileName;
+                    gameObject.name = $"Folder [{fileName}]";
+
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        StartCoroutine(LoadLevel(editorWrapper.folder, tmpFile.Replace("\\", "/").Replace(editorWrapper.folder + "/", "")));
+                        EditorManager.inst.HideDialog("Open File Popup");
+                    });
                 });
             }
         }
@@ -9180,7 +9226,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Saving Saves Beatmap Opacity", true, "Turn this off if you don't want themes to break in unmodded PA.")),
+                Config.Bind("Data", "Saving Saves Beatmap Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Update Prefab List on Files Changed", true, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
@@ -9193,6 +9239,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Data", "Convert Prefab LS to VG Export Path", "", "The custom path to export a prefab to. If no path is set then it will export to beatmaps/exports.")),
             new EditorProperty(EditorProperty.ValueType.String,
                 Config.Bind("Data", "Convert Theme LS to VG Export Path", "", "The custom path to export a prefab to. If no path is set then it will export to beatmaps/exports.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Data", "Theme Saves Indents", false, "If .lst files should save with multiple lines and indents.")),
 
             #endregion
 
