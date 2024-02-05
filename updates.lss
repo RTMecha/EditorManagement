@@ -2,6 +2,7 @@
 - Optimized theme updating and deleting.
 - Fixed a bug with collapse not working with keybinds nor Multi Object Editor.
 - Added Backup button to Autosaves popup. (Access the Autosaves popup by holding shift and clicking on a level in the level list)
+- Added a config for saving themes as multiples lines and with an indent.
 2.2.4 > [Feb 5, 2024]
 - Fixed editor re-entry bug.
 - Added new modifiers to ObjectModifiers.
