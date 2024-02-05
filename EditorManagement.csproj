@@ -4,7 +4,7 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>EditorManagement</AssemblyName>
     <Description>My first plugin</Description>
-    <Version>2.2.4</Version>
+    <Version>2.2.5</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
