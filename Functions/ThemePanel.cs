@@ -25,5 +25,9 @@ namespace EditorManagement.Functions
         public void SetActive(bool active) => GameObject?.SetActive(active);
 
         public BeatmapTheme Theme { get; set; }
+
+        public string Path { get; set; }
+
+        public string OriginalID { get; set; }
     }
 }

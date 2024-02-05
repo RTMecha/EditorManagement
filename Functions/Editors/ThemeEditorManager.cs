@@ -164,7 +164,6 @@ namespace EditorManagement.Functions.Editors
 
 		public void RenderThemeContent(Transform p, string search)
 		{
-			Debug.LogFormat("{0}RenderThemeContent Prefix Patch", EditorPlugin.className);
 			var parent = p.Find("themes/viewport/content");
 
 			p.Find("themes").GetComponent<ScrollRect>().horizontal = false;
@@ -194,12 +193,8 @@ namespace EditorManagement.Functions.Editors
 			if (!loadingThemes && !EventEditor.inst.eventDrag)
 			{
 				loadingThemes = true;
-				Debug.LogFormat($"{EditorPlugin.className}Rendering theme list...");
 
-				foreach (var beatmapTheme in ThemePanels)
-                {
-					beatmapTheme.SetActive(RTHelpers.SearchString(beatmapTheme.Theme.name, search));
-                }
+				ThemePanels.ForEach(x => x.SetActive(RTHelpers.SearchString(x.Theme.name, search)));
 
 				loadingThemes = false;
 			}
@@ -214,7 +209,7 @@ namespace EditorManagement.Functions.Editors
 			{
 				ThemeEditor.inst.DeleteTheme(themeTmp);
 				EventEditor.inst.previewTheme.id = null;
-				EventEditor.inst.StartCoroutine(ThemeEditor.inst.LoadThemes());
+				//EventEditor.inst.StartCoroutine(ThemeEditor.inst.LoadThemes());
 				Transform child = EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType);
 				EventEditor.inst.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				EventEditor.inst.RenderThemePreview(child);
@@ -306,31 +301,91 @@ namespace EditorManagement.Functions.Editors
 				ThemeEditor.inst.SaveTheme(BeatmapTheme.DeepCopy(PreviewTheme));
 				Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
 				var child = Instance.dialogRight.GetChild(Instance.currentEventType);
-				//Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
 			});
+
 			update.onClick.AddListener(delegate ()
 			{
-                var fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
-                fileList = (from x in fileList
-                            orderby x.Name.ToLower()
-                            select x).ToList();
-                foreach (var lsfile in fileList)
+				RTEditor.inst.canUpdateThemes = false;
+
+				if (ThemePanels.TryFind(x => x.Theme.id == PreviewTheme.id, out ThemePanel themePanel) && RTFile.FileExists(themePanel.Path))
                 {
-                    if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
-                    {
-                        FileManager.inst.DeleteFileRaw(lsfile.FullPath);
-                    }
+					System.IO.File.Delete(themePanel.Path);
                 }
+				else
+				{
+					var fileList = FileManager.inst.GetFileList(RTEditor.themeListPath, "lst");
+					fileList = (from x in fileList
+								orderby x.Name.ToLower()
+								select x).ToList();
+
+					foreach (var lsfile in fileList)
+					{
+						if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
+						{
+							FileManager.inst.DeleteFileRaw(lsfile.FullPath);
+						}
+					}
+				}
 
                 var beatmapTheme = BeatmapTheme.DeepCopy(PreviewTheme, true);
 
 				ThemeEditor.inst.SaveTheme(beatmapTheme);
-				Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
+				if (DataManager.inst.CustomBeatmapThemes.Has(x => x.id == __0.ToString()))
+                {
+					DataManager.inst.CustomBeatmapThemes[DataManager.inst.CustomBeatmapThemes.FindIndex(x => x.id == __0.ToString())] = beatmapTheme;
+				}
+
+				if (themePanel != null)
+				{
+					var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
+
+					themePanel.Theme = beatmapTheme;
+					themePanel.OriginalID = beatmapTheme.id;
+					themePanel.Name.text = beatmapTheme.name;
+                    themePanel.Path = RTFile.ApplicationDirectory + RTEditor.themeListSlash + beatmapTheme.name.ToLower().Replace(" ", "_") + ".lst";
+
+					for (int j = 0; j < themePanel.Colors.Count; j++)
+					{
+						themePanel.Colors[j].color = beatmapTheme.GetObjColor(j);
+					}
+
+					themePanel.UseButton.onClick.ClearAll();
+					themePanel.UseButton.onClick.AddListener(delegate ()
+					{
+						if (RTEventEditor.inst.SelectedKeyframes.Count > 1 && RTEventEditor.inst.SelectedKeyframes.All(x => RTEventEditor.inst.SelectedKeyframes.Min(y => y.Type) == x.Type))
+						{
+							foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+							{
+								timelineObject.GetData<EventKeyframe>().eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+							}
+						}
+						else
+						{
+							DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+						}
+						EventManager.inst.updateEvents();
+						EventEditor.inst.RenderThemePreview(dialogTmp);
+					});
+
+					themePanel.EditButton.onClick.ClearAll();
+					themePanel.EditButton.onClick.AddListener(delegate ()
+					{
+						RenderThemeEditor(Parser.TryParse(beatmapTheme.id, 0));
+					});
+
+					themePanel.DeleteButton.onClick.ClearAll();
+					themePanel.DeleteButton.interactable = true;
+					themePanel.DeleteButton.onClick.AddListener(delegate ()
+					{
+						DeleteThemeDelegate(beatmapTheme);
+					});
+					themePanel.Name.text = beatmapTheme.name;
+				}
+
 				var child = EventEditor.inst.dialogRight.GetChild(Instance.currentEventType);
-				//Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
@@ -339,6 +394,8 @@ namespace EditorManagement.Functions.Editors
 			saveUse.onClick.ClearAll();
 			saveUse.onClick.AddListener(delegate ()
 			{
+				RTEditor.inst.canUpdateThemes = false;
+
 				BeatmapTheme beatmapTheme;
 				if (__0 < DataManager.inst.BeatmapThemes.Count)
 				{
@@ -347,24 +404,86 @@ namespace EditorManagement.Functions.Editors
 				}
 				else
 				{
-					var fileList = FileManager.inst.GetFileList("beatmaps/themes", "lst");
-					fileList = (from x in fileList
-								orderby x.Name.ToLower()
-								select x).ToList();
-					foreach (var lsfile in fileList)
+					if (ThemePanels.TryFind(x => x.Theme.id == PreviewTheme.id, out ThemePanel themePanel1) && RTFile.FileExists(themePanel1.Path))
 					{
-						if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
+						System.IO.File.Delete(themePanel1.Path);
+					}
+					else
+					{
+						var fileList = FileManager.inst.GetFileList(RTEditor.themeListPath, "lst");
+						fileList = (from x in fileList
+									orderby x.Name.ToLower()
+									select x).ToList();
+
+						foreach (var lsfile in fileList)
 						{
-							FileManager.inst.DeleteFileRaw(lsfile.FullPath);
+							if (int.Parse(BeatmapTheme.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(lsfile.FullPath))).id) == __0)
+							{
+								FileManager.inst.DeleteFileRaw(lsfile.FullPath);
+							}
 						}
 					}
+
 					beatmapTheme = BeatmapTheme.DeepCopy(PreviewTheme, true);
 				}
 
 				ThemeEditor.inst.SaveTheme(beatmapTheme);
-				Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
+				if (__0 < DataManager.inst.BeatmapThemes.Count)
+					Instance.StartCoroutine(RTEditor.inst.LoadThemes(true));
+
+				if (DataManager.inst.CustomBeatmapThemes.Has(x => x.id == __0.ToString()))
+				{
+					DataManager.inst.CustomBeatmapThemes[DataManager.inst.CustomBeatmapThemes.FindIndex(x => x.id == __0.ToString())] = beatmapTheme;
+				}
+
+				if (!(__0 < DataManager.inst.BeatmapThemes.Count) && ThemePanels.TryFind(x => x.Theme.id == __0.ToString(), out ThemePanel themePanel))
+				{
+					var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
+
+					themePanel.Theme = beatmapTheme;
+					themePanel.OriginalID = beatmapTheme.id;
+					themePanel.Name.text = beatmapTheme.name;
+					themePanel.Path = RTFile.ApplicationDirectory + RTEditor.themeListSlash + beatmapTheme.name.ToLower().Replace(" ", "_") + ".lst";
+
+					for (int j = 0; j < themePanel.Colors.Count; j++)
+					{
+						themePanel.Colors[j].color = beatmapTheme.GetObjColor(j);
+					}
+
+					themePanel.UseButton.onClick.ClearAll();
+					themePanel.UseButton.onClick.AddListener(delegate ()
+					{
+						if (RTEventEditor.inst.SelectedKeyframes.Count > 1 && RTEventEditor.inst.SelectedKeyframes.All(x => RTEventEditor.inst.SelectedKeyframes.Min(y => y.Type) == x.Type))
+						{
+							foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+							{
+								timelineObject.GetData<EventKeyframe>().eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+							}
+						}
+						else
+						{
+							DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+						}
+						EventManager.inst.updateEvents();
+						EventEditor.inst.RenderThemePreview(dialogTmp);
+					});
+
+					themePanel.EditButton.onClick.ClearAll();
+					themePanel.EditButton.onClick.AddListener(delegate ()
+					{
+						RenderThemeEditor(Parser.TryParse(beatmapTheme.id, 0));
+					});
+
+					themePanel.DeleteButton.onClick.ClearAll();
+					themePanel.DeleteButton.interactable = true;
+					themePanel.DeleteButton.onClick.AddListener(delegate ()
+					{
+						DeleteThemeDelegate(beatmapTheme);
+					});
+					themePanel.Name.text = beatmapTheme.name;
+				}
+
 				var child = Instance.dialogRight.GetChild(Instance.currentEventType);
-				//Instance.RenderThemeContent(child, child.Find("theme-search").GetComponent<InputField>().text);
 				Instance.RenderThemePreview(child);
 				Instance.showTheme = false;
 				theme.gameObject.SetActive(false);
@@ -495,39 +614,43 @@ namespace EditorManagement.Functions.Editors
 
 		public void DeleteTheme(DataManager.BeatmapTheme _theme)
 		{
+			RTEditor.inst.canUpdateThemes = false;
+
 			FileManager.inst.DeleteFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst");
-			StartCoroutine(RTEditor.inst.LoadThemes(true));
+
+			Predicate<ThemePanel> predicate = x => x.Theme.id == _theme.id;
+			if (ThemePanels.TryFind(predicate, out ThemePanel themePanel))
+            {
+				Destroy(themePanel.GameObject);
+				ThemePanels.RemoveAt(ThemePanels.FindIndex(predicate));
+			}
+
+			StartCoroutine(SetUpdate(1f, true));
 		}
 
 		public void SaveTheme(BeatmapTheme _theme)
 		{
 			Debug.Log($"{EventEditor.inst.className}Saving {_theme.id} ({_theme.name}) to File System!");
 
+			RTEditor.inst.canUpdateThemes = false;
+
 			if (string.IsNullOrEmpty(_theme.id))
-			{
-				_theme.id = LSText.randomNumString(6);
-			}
+				_theme.id = LSText.randomNumString(BeatmapTheme.IDLength);
 
 			GameData.SaveOpacityToThemes = RTEditor.GetEditorProperty("Saving Saves Beatmap Opacity").GetConfigEntry<bool>().Value;
-
-			//jsonnode["id"] = _theme.id.ToString();
-			//jsonnode["name"] = _theme.name;
-			//jsonnode["gui"] = saveOpacity ? RTHelpers.ColorToHex(_theme.guiColor) : LSColors.ColorToHex(_theme.guiColor);
-			//jsonnode["gui_ex"] = saveOpacity ? RTHelpers.ColorToHex(_theme.guiColor) : LSColors.ColorToHex(_theme.guiColor);
-			//jsonnode["bg"] = LSColors.ColorToHex(_theme.backgroundColor);
-
-			//for (int i = 0; i < _theme.playerColors.Count; i++)
-			//	jsonnode["players"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.playerColors[i]) : LSColors.ColorToHex(_theme.playerColors[i]);
-			//for (int i = 0; i < _theme.objectColors.Count; i++)
-			//	jsonnode["objs"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.objectColors[i]) : LSColors.ColorToHex(_theme.objectColors[i]);
-			//for (int i = 0; i < _theme.backgroundColors.Count; i++)
-			//	jsonnode["bgs"][i] = LSColors.ColorToHex(_theme.backgroundColors[i]);
-			//for (int i = 0; i < _theme.effectColors.Count; i++)
-			//	jsonnode["fx"][i] = saveOpacity ? RTHelpers.ColorToHex(_theme.effectColors[i]) : LSColors.ColorToHex(_theme.effectColors[i]);
-
-			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst", _theme.ToJSON().ToString());
+			
+			var str = RTEditor.GetEditorProperty("Theme Saves Indents").GetConfigEntry<bool>().Value ? _theme.ToJSON().ToString(3) : _theme.ToJSON().ToString();
+			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst", str);
 			EditorManager.inst.DisplayNotification($"Saved theme [{_theme.name}]!", 2f, EditorManager.NotificationType.Success);
+
+			StartCoroutine(SetUpdate(1f, true));
 		}
+
+		public IEnumerator SetUpdate(float delay, bool update)
+        {
+			yield return new WaitForSeconds(delay);
+			RTEditor.inst.canUpdateThemes = update;
+        }
 
 		public static int ColorsToShow => 4;
 		public static IEnumerator GetThemeSprite(DataManager.BeatmapTheme themeTmp, Action<Sprite> _sprite)
