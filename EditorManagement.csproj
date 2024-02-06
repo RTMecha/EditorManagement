@@ -56,8 +56,4 @@
       <HintPath>..\..\4.1.16 Mods\lib\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
-  
-  <ItemGroup>
-    <Folder Include="Functions\Project Planner\" />
-  </ItemGroup>
 </Project>

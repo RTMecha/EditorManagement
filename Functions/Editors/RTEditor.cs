@@ -141,6 +141,13 @@ namespace EditorManagement.Functions.Editors
                 gameObject.AddComponent<LevelCombiner>();
             }
 
+            // Project Planner
+            {
+                var gameObject = new GameObject("ProjectPlanner");
+                gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
+                gameObject.AddComponent<ProjectPlannerManager>();
+            }
+
             mousePicker = new GameObject("picker");
             mousePicker.transform.SetParent(EditorManager.inst.GetDialog("Parent Selector").Dialog.parent.parent);
             mousePicker.transform.localScale = Vector3.one;
@@ -6546,7 +6553,7 @@ namespace EditorManagement.Functions.Editors
                 });
                 searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for function...";
 
-                EditorHelper.AddEditorDropdown("Debugger", "", "View", null, delegate ()
+                EditorHelper.AddEditorDropdown("Debugger", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "debugger.png"), delegate ()
                 {
                     EditorManager.inst.ShowDialog("Debugger Popup");
                     RefreshDocumentation();
@@ -8148,10 +8155,10 @@ namespace EditorManagement.Functions.Editors
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
                                 l.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
 
                                 l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
 
                                 var image = bar.GetComponent<Image>();
                                 image.enabled = true;
@@ -8798,13 +8805,13 @@ namespace EditorManagement.Functions.Editors
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
-                                l.transform.GetChild(0).GetComponent<Text>().text = prop.name;
-                                l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+                                var text = l.transform.GetChild(0).GetComponent<Text>();
+                                text.alignment = TextAnchor.MiddleLeft;
+                                text.text = prop.name;
+                                l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
 
-                                var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                                {
-                                    ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                                }
+                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(541, 32f);
 
                                 var image = x.GetComponent<Image>();
                                 image.enabled = true;
@@ -9542,7 +9549,7 @@ namespace EditorManagement.Functions.Editors
                             for (int i = 0; i < bm.events.Count; i++)
                             {
                                 bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
-                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0]);
+                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0], false);
                                 bm.events[i].Clear();
                                 bm.events[i].Add(firstKF);
                             }
@@ -9552,6 +9559,7 @@ namespace EditorManagement.Functions.Editors
                                 ObjectEditor.inst.RenderKeyframes(bm);
                             }
 
+                            Updater.UpdateProcessor(bm, "Keyframes");
                             ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         }
                     }
