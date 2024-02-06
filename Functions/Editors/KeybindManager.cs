@@ -72,7 +72,7 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
-            if (!LSHelpers.IsUsingInputField() && EditorManager.inst.isEditing && (AllowKeys || (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"])))
+            if (!LSHelpers.IsUsingInputField() && !dragging && EditorManager.inst.isEditing && (AllowKeys || (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"])))
             {
                 foreach (var keybind in keybinds)
                 {
@@ -145,6 +145,7 @@ namespace EditorManagement.Functions.Editors
             // Set Layer 1
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha1),
             }, 11, new Dictionary<string, string>
             {
@@ -154,6 +155,7 @@ namespace EditorManagement.Functions.Editors
             // Set Layer 2
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha2),
             }, 11, new Dictionary<string, string>
             {
@@ -163,6 +165,7 @@ namespace EditorManagement.Functions.Editors
             // Set Layer 3
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha3),
             }, 11, new Dictionary<string, string>
             {
@@ -172,6 +175,7 @@ namespace EditorManagement.Functions.Editors
             // Set Layer 4
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha4),
             }, 11, new Dictionary<string, string>
             {
@@ -181,6 +185,7 @@ namespace EditorManagement.Functions.Editors
             // Set Layer 5
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha5),
             }, 11, new Dictionary<string, string>
             {
@@ -190,6 +195,7 @@ namespace EditorManagement.Functions.Editors
             // Set Layer 6
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
+                new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Alpha6),
             }, 11, new Dictionary<string, string>
             {
@@ -392,6 +398,12 @@ namespace EditorManagement.Functions.Editors
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.R),
                 new Keybind.Key(Keybind.Key.Type.NotPressed, KeyCode.LeftControl),
             }, 56));
+            
+            // ToggleProjectPlanner
+            keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
+            {
+                new Keybind.Key(Keybind.Key.Type.Down, KeyCode.F10),
+            }, 59));
 
             // Custom Code
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
@@ -1108,6 +1120,7 @@ namespace EditorManagement.Functions.Editors
             TransformRotation, //56
             SpawnSelectedQuickPrefab, //57
             ResetIntegerVariables, // 58
+            ToggleProjectPlanner, // 59
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1862,6 +1875,11 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public static void ToggleProjectPlanner(Keybind keybind)
+        {
+            ProjectPlannerManager.inst?.ToggleState();
+        }
+
         #endregion
 
         #region Settings
@@ -1966,6 +1984,7 @@ namespace EditorManagement.Functions.Editors
             null, // 56
             null, // 57
             null, // 58
+            null, // 59
         };
 
         #endregion
@@ -2066,6 +2085,22 @@ namespace EditorManagement.Functions.Editors
                                     firstDirection = RTObject.Axis.PosY;
 
                                 if (dragOffset.y < finalVector.y)
+                                    firstDirection = RTObject.Axis.NegY;
+                            }
+
+                            if (Input.GetKey(KeyCode.X))
+                            {
+                                if (dragOffset.x > finalVector.x)
+                                    firstDirection = RTObject.Axis.PosX;
+                                if (dragOffset.x < finalVector.x)
+                                    firstDirection = RTObject.Axis.NegX;
+                            }
+                            
+                            if (Input.GetKey(KeyCode.Y))
+                            {
+                                if (dragOffset.x > finalVector.x)
+                                    firstDirection = RTObject.Axis.PosY;
+                                if (dragOffset.x < finalVector.x)
                                     firstDirection = RTObject.Axis.NegY;
                             }
 
