@@ -769,6 +769,7 @@ namespace EditorManagement.Functions.Editors
                                 break;
                             }
                         case "eventOffset":
+                        case "eventOffsetVariable":
                         case "eventOffsetAnimate":
                             {
                                 // Change this to a dropdown so people know what each type is.
@@ -810,7 +811,7 @@ namespace EditorManagement.Functions.Editors
                                 TriggerHelper.IncreaseDecreaseButtonsInt(vindexIF, 1, 0, GameData.DefaultKeyframes[Parser.TryParse(modifier.commands[1], 0)].eventValues.Length - 1, vindex.transform);
                                 TriggerHelper.AddEventTriggerParams(vindexIF.gameObject, TriggerHelper.ScrollDeltaInt(vindexIF, 1, 0, GameData.DefaultKeyframes[Parser.TryParse(modifier.commands[1], 0)].eventValues.Length - 1));
 
-                                singleGenerator("Value", 0, 0f);
+                                singleGenerator(cmd == "eventOffsetVariable" ? "Multiply Var" : "Value", 0, 0f);
 
                                 if (cmd == "eventOffsetAnimate")
                                 {
