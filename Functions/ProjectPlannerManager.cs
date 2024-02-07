@@ -2257,9 +2257,9 @@ namespace EditorManagement.Functions
                     delete.onClick.AddListener(delegate ()
                     {
                         character.CharacterTraits.RemoveAt(index);
-                        OpenCharacterEditor(character);
                         character.DetailsUI.text = character.FormatDetails;
                         character.Save();
+                        OpenCharacterEditor(character);
                     });
 
                     num++;
@@ -2273,9 +2273,9 @@ namespace EditorManagement.Functions
                 addButton.onClick.AddListener(delegate ()
                 {
                     character.CharacterTraits.Add("New Detail");
-                    OpenCharacterEditor(character);
                     character.DetailsUI.text = character.FormatDetails;
                     character.Save();
+                    OpenCharacterEditor(character);
                 });
             }
 
@@ -2308,9 +2308,9 @@ namespace EditorManagement.Functions
                     delete.onClick.AddListener(delegate ()
                     {
                         character.CharacterLore.RemoveAt(index);
-                        OpenCharacterEditor(character);
                         character.DetailsUI.text = character.FormatDetails;
                         character.Save();
+                        OpenCharacterEditor(character);
                     });
 
                     num++;
@@ -2324,9 +2324,9 @@ namespace EditorManagement.Functions
                 addButton.onClick.AddListener(delegate ()
                 {
                     character.CharacterLore.Add("New Detail");
-                    OpenCharacterEditor(character);
                     character.DetailsUI.text = character.FormatDetails;
                     character.Save();
+                    OpenCharacterEditor(character);
                 });
             }
 
@@ -2359,9 +2359,9 @@ namespace EditorManagement.Functions
                     delete.onClick.AddListener(delegate ()
                     {
                         character.CharacterAbilities.RemoveAt(index);
-                        OpenCharacterEditor(character);
                         character.DetailsUI.text = character.FormatDetails;
                         character.Save();
+                        OpenCharacterEditor(character);
                     });
 
                     num++;
@@ -2375,9 +2375,9 @@ namespace EditorManagement.Functions
                 addButton.onClick.AddListener(delegate ()
                 {
                     character.CharacterAbilities.Add("New Detail");
-                    OpenCharacterEditor(character);
                     character.DetailsUI.text = character.FormatDetails;
                     character.Save();
+                    OpenCharacterEditor(character);
                 });
             }
         }
@@ -2746,7 +2746,8 @@ namespace EditorManagement.Functions
             character.DescriptionUI = gameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
 
             character.ProfileUI.sprite = character.CharacterSprite;
-            character.DetailsUI.text = character.FormatDetails;
+            character.DetailsUI.overflowMode = TextOverflowModes.Truncate;
+            character.DetailsUI.text = character.Format(true);
             character.DescriptionUI.text = character.Description;
 
             var delete = gameObject.transform.Find("delete").GetComponent<Button>();
@@ -3136,36 +3137,73 @@ namespace EditorManagement.Functions
             public TextMeshProUGUI DescriptionUI { get; set; }
             public Image ProfileUI { get; set; }
 
+            public string Format(bool clamp)
+            {
+                var str = "<b>Name</b>: " + Name + "<br><b>Gender</b>: " + Gender + "<br><b>Character Traits</b>:<br>";
+
+                for (int i = 0; i < CharacterTraits.Count; i++)
+                    str += "- " + CharacterTraits[i] + "<br>";
+
+                str += "<br><b>Lore</b>:<br>";
+
+                for (int i = 0; i < CharacterLore.Count; i++)
+                    str += "- " + CharacterLore[i] + "<br>";
+
+                str += "<br><b>Abilities</b>:<br>";
+
+                for (int i = 0; i < CharacterAbilities.Count; i++)
+                    str += "- " + CharacterAbilities[i] + (i == CharacterAbilities.Count - 1 ? "" : "<br>");
+
+                if (clamp)
+                    return LSText.ClampString(str, 252);
+                return str;
+            }
+
             public string FormatDetails
             {
                 get
                 {
+                    //var stringBuilder = new StringBuilder();
+
+                    //stringBuilder.AppendLine($"<b>Name</b>: {Name}<br>");
+                    //stringBuilder.AppendLine($"<b>Gender</b>: {Gender}<br>");
+
+                    //stringBuilder.AppendLine($"<b>Character Traits</b>:<br>");
+                    //for (int i = 0; i < CharacterTraits.Count; i++)
+                    //{
+                    //    stringBuilder.AppendLine($"- {CharacterTraits[i]}<br>");
+                    //}
+                    //stringBuilder.AppendLine($"<br>");
+
+                    //stringBuilder.AppendLine($"<b>Lore</b>:<br>");
+                    //for (int i = 0; i < CharacterLore.Count; i++)
+                    //{
+                    //    stringBuilder.AppendLine($"- {CharacterLore[i]}<br>");
+                    //}
+                    //stringBuilder.AppendLine($"<br>");
+
+                    //stringBuilder.AppendLine($"<b>Abilities</b>:<br>");
+                    //for (int i = 0; i < CharacterAbilities.Count; i++)
+                    //{
+                    //    stringBuilder.AppendLine($"- {CharacterAbilities[i]}<br>");
+                    //}
+
                     var str = "";
 
-                    str += $"<b>Name</b>: {Name}" + Environment.NewLine;
-                    str += $"<b>Gender</b>: {Gender}" + Environment.NewLine;
-                    str += $"<b>Character Traits</b>:" + Environment.NewLine;
+                    str += "<b>Name</b>: " + Name + "<br><b>Gender</b>: " + Gender + "<br><b>Character Traits</b>:<br>";
 
                     for (int i = 0; i < CharacterTraits.Count; i++)
-                    {
-                        str += $"- {CharacterTraits[i]}" + Environment.NewLine;
-                    }
-                    str += Environment.NewLine;
+                        str += "- " + CharacterTraits[i] + "<br>";
 
-                    str += $"<b>Lore</b>:" + Environment.NewLine;
+                    str += "<br><b>Lore</b>:<br>";
 
                     for (int i = 0; i < CharacterLore.Count; i++)
-                    {
-                        str += $"- {CharacterLore[i]}" + Environment.NewLine;
-                    }
-                    str += Environment.NewLine;
+                        str += "- " + CharacterLore[i] + "<br>";
 
-                    str += $"<b>Abilities</b>:" + Environment.NewLine;
+                    str += "<br><b>Abilities</b>:<br>";
 
                     for (int i = 0; i < CharacterAbilities.Count; i++)
-                    {
-                        str += $"- {CharacterAbilities[i]}" + Environment.NewLine;
-                    }
+                        str += "- " + CharacterAbilities[i] + (i == CharacterAbilities.Count - 1 ? "" : "<br>");
 
                     return str;
                 }
