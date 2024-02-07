@@ -23,7 +23,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.2.5")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.3.0")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -379,6 +379,19 @@ namespace EditorManagement
 		[HarmonyPrefix]
 		static bool OnPointerClickPrefix(HideDropdownOptions __instance, PointerEventData __0)
 		{
+			return false;
+		}
+	}
+
+	[HarmonyPatch(typeof(LSFunctions.LSHelpers))]
+	public class LSHelpersPatch
+    {
+		[HarmonyPatch("IsUsingInputField")]
+		[HarmonyPrefix]
+		static bool IsUsingInputFieldPrefix(ref bool __result)
+		{
+			__result = EventSystem.current && EventSystem.current.currentSelectedGameObject &&
+				(EventSystem.current.currentSelectedGameObject.GetComponentInChildren<InputField>() || EventSystem.current.currentSelectedGameObject.GetComponentInChildren<TMPro.TMP_InputField>());
 			return false;
 		}
 	}
