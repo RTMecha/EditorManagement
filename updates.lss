@@ -1,3 +1,8 @@
+2.3.0 > [Feb 8, 2024]
+- Fixed a bug with new level name being empty by default despite the input field having "New Awesome Beatmap" in it.
+- Fully implemented the brand new Project Planner feature! Access it via the edit dropdown. Use it to plan out your levels, stories, etc.
+- Fixed a bug with pasting Event Keyframes that caused them not to be selected.
+- Multiple selected Event Keyframes can now be edited at once.
 2.2.5 > [Feb 6, 2024]
 - Optimized theme updating and deleting.
 - Fixed a bug with collapse not working with keybinds nor Multi Object Editor.
