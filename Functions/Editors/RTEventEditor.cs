@@ -280,6 +280,9 @@ namespace EditorManagement.Functions.Editors
 				Debug.LogError($"{EditorPlugin.className}No copied event yet!");
 				return;
 			}
+
+			RTEditor.inst.timelineKeyframes.ForEach(x => x.selected = false);
+
 			foreach (var keyframeSelection in kfs)
 			{
 				var eventKeyframe = EventKeyframe.DeepCopy(keyframeSelection.GetData<EventKeyframe>());
@@ -290,11 +293,21 @@ namespace EditorManagement.Functions.Editors
 						eventKeyframe.eventTime = RTEditor.SnapToBPM(eventKeyframe.eventTime);
 				}
 
-				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type].Add(eventKeyframe);
+				var index = AllEvents[keyframeSelection.Type].FindIndex(x => x.eventTime > eventKeyframe.eventTime) - 1;
+				if (index < 0)
+					index = AllEvents[keyframeSelection.Type].Count;
+
+				DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type].Insert(index, eventKeyframe);
+
+				var kf = CreateEventObject(keyframeSelection.Type, index);
+				RenderTimelineObject(kf);
+				kf.selected = true;
+				RTEditor.inst.timelineKeyframes.Add(kf);
 			}
 
-			UpdateEventOrder();
-			CreateEventObjects();
+			//UpdateEventOrder();
+			//CreateEventObjects();
+			OpenDialog();
 			EventManager.inst.updateEvents();
 		}
 
@@ -366,6 +379,7 @@ namespace EditorManagement.Functions.Editors
 			SetCurrentEvent(__1, DataManager.inst.gameData.eventObjects.allEvents[__1].IndexOf(eventKeyframe));
 		}
 
+		public float NewKeyframeOffset { get; set; } = -0.1f;
 		public void NewKeyframeFromTimeline(int _type)
 		{
 			if (!(DataManager.inst.gameData.eventObjects.allEvents.Count > _type))
@@ -374,7 +388,7 @@ namespace EditorManagement.Functions.Editors
 				return;
 			}
 
-			float timeTmp = EditorManager.inst.GetTimelineTime();
+			float timeTmp = EditorManager.inst.GetTimelineTime(NewKeyframeOffset);
 
 			if (SettingEditor.inst.SnapActive)
 				timeTmp = RTEditor.SnapToBPM(timeTmp);
@@ -417,13 +431,6 @@ namespace EditorManagement.Functions.Editors
 			EventEditor.inst.currentEventType = type;
 			EventEditor.inst.currentEvent = index;
 			RenderEventObjects();
-			if (SelectedKeyframes.Count > 1 && EditorManager.inst.ActiveDialogs.Find(x => x.Name == "Multi Keyframe Editor") == null)
-			{
-				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
-				Debug.LogFormat($"{EditorPlugin.className}Add keyframe to selection -> [{type}] - [{index}]");
-				return;
-			}
 			OpenDialog();
 		}
 
@@ -555,16 +562,17 @@ namespace EditorManagement.Functions.Editors
 
 		public void OpenDialog()
 		{
-			EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-			EditorManager.inst.SetDialogStatus("Event Editor", true, true);
-
-			if (SelectedKeyframes.Count > 1)
+			if (SelectedKeyframes.Count > 1 && !SelectedKeyframes.All(x => x.Type == SelectedKeyframes.Min(y => y.Type)))
 			{
-				EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+				EditorManager.inst.ClearDialogs();
 				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
+				RenderMultiEventsDialog();
 			}
-			else if (SelectedKeyframes.Count == 1)
+			else if (SelectedKeyframes.Count > 0)
 			{
+				EditorManager.inst.ClearDialogs();
+				EditorManager.inst.SetDialogStatus("Event Editor", true);
+
 				EventEditor.inst.currentEventType = SelectedKeyframes[0].Type;
 				EventEditor.inst.currentEvent = SelectedKeyframes[0].Index;
 
@@ -581,6 +589,10 @@ namespace EditorManagement.Functions.Editors
 					Debug.LogError($"{EventEditor.inst.className}Keyframe Type {EventEditor.inst.currentEventType} does not exist.");
 				}
 			}
+			else
+            {
+				CheckpointEditor.inst.SetCurrentCheckpoint(0);
+            }
 		}
 
 		void SetupCopies()
@@ -912,8 +924,6 @@ namespace EditorManagement.Functions.Editors
 				var moveable = GenerateUIElement("move", "Bool", player.transform, 10, "Can Move");
 				moveable["UI"].transform.Find("Text").GetComponent<Text>().text = "Moveable";
 
-				// I need to change Velocity to just be position.
-				//var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
 				var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
 
 				var rotation = GenerateUIElement("rotation", "Single", player.transform, 14, "Rotation");
@@ -944,6 +954,84 @@ namespace EditorManagement.Functions.Editors
             {
 				var pitchVol = GenerateUIElement("music", "Vector2", audio.transform, 8, "Pitch", "Volume");
             }
+
+            try
+            {
+				var move = EventEditor.inst.dialogRight.Find("move");
+				var multiKeyframeEditor = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
+
+				multiKeyframeEditor.Find("Text").AsRT().sizeDelta = new Vector2(765f, 120f);
+
+				// Label
+				{
+					var labelBase1 = new GameObject("label base");
+					labelBase1.transform.SetParent(multiKeyframeEditor);
+					labelBase1.transform.localScale = Vector3.one;
+					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+					var l = Instantiate(uiDictionary["Label"]);
+					l.name = "label";
+					l.transform.SetParent(labelBase1RT);
+					l.transform.localScale = Vector3.one;
+					GenerateLabels(l.transform, "Time");
+					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+				}
+
+				var timeBase = new GameObject("time");
+				timeBase.transform.SetParent(multiKeyframeEditor);
+				timeBase.transform.localScale = Vector3.one;
+				var timeBaseRT = timeBase.AddComponent<RectTransform>();
+				timeBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+				var time = move.Find("time").gameObject.Duplicate(timeBaseRT, "time");
+				time.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
+
+				// Label
+				{
+					var labelBase1 = new GameObject("label base");
+					labelBase1.transform.SetParent(multiKeyframeEditor);
+					labelBase1.transform.localScale = Vector3.one;
+					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+					var l = Instantiate(uiDictionary["Label"]);
+					l.name = "label";
+					l.transform.SetParent(labelBase1RT);
+					l.transform.localScale = Vector3.one;
+					GenerateLabels(l.transform, "Ease / Animation Type");
+					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+				}
+
+				var curveBase = new GameObject("curves");
+				curveBase.transform.SetParent(multiKeyframeEditor);
+				curveBase.transform.localScale = Vector3.one;
+				var curveBaseRT = curveBase.AddComponent<RectTransform>();
+				curveBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+				var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
+				curves.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
+
+				//var valueIndexBase = new GameObject("value index");
+				//valueIndexBase.transform.SetParent(multiKeyframeEditor);
+				//valueIndexBase.transform.localScale = Vector3.one;
+				//var valueIndexBaseRT = valueIndexBase.AddComponent<RectTransform>();
+				//valueIndexBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+				var valueIndex = GenerateUIElement("value index", "Single", multiKeyframeEditor, 7, "Value Index");
+
+				//var valueBase = new GameObject("value");
+				//valueBase.transform.SetParent(multiKeyframeEditor);
+				//valueBase.transform.localScale = Vector3.one;
+				//var valueBaseRT = valueBase.AddComponent<RectTransform>();
+				//valueBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+				var value = GenerateUIElement("value", "Single", multiKeyframeEditor, 9, "Value");
+			}
+			catch (Exception ex)
+            {
+				Debug.LogError($"{EventEditor.inst.className}{ex}");
+			}
         }
 
         #endregion
@@ -951,6 +1039,85 @@ namespace EditorManagement.Functions.Editors
         #region Dialogs
 
         public static void LogIncorrectFormat(string str) => Debug.LogError($"{EventEditor.inst.className}Event Value was not in correct format! String: {str}");
+
+		public void RenderMultiEventsDialog()
+        {
+			var dialog = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
+			var time = dialog.Find("time/time/time").GetComponent<InputField>();
+			time.onValueChanged.ClearAll();
+			if (time.text == "100.000")
+				time.text = "10";
+			time.onValueChanged.AddListener(delegate (string _val)
+			{
+				if (float.TryParse(_val, out float num))
+				{
+					num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+                    foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+                    {
+                        kf.GetData<EventKeyframe>().eventTime = num;
+                    }
+
+					UpdateEventOrder();
+					RenderEventObjects();
+					EventManager.inst.updateEvents();
+				}
+				else
+					LogIncorrectFormat(_val);
+			});
+
+			TriggerHelper.IncreaseDecreaseButtons(time, t: dialog.Find("time/time"));
+			TriggerHelper.AddEventTriggerParams(time.gameObject, TriggerHelper.ScrollDelta(time));
+
+			var curves = dialog.Find("curves/curves").GetComponent<Dropdown>();
+			curves.onValueChanged.ClearAll();
+			curves.onValueChanged.AddListener(delegate (int _val)
+			{
+				if (DataManager.inst.AnimationListDictionary.ContainsKey(_val))
+				{
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+					{
+						kf.GetData<EventKeyframe>().curveType = DataManager.inst.AnimationListDictionary[_val];
+					}
+
+					EventManager.inst.updateEvents();
+				}
+			});
+
+			var valueIndex = dialog.Find("value index/x").GetComponent<InputField>();
+			valueIndex.onValueChanged.ClearAll();
+			if (valueIndex.text == "25.0")
+				valueIndex.text = "0";
+			valueIndex.onValueChanged.AddListener(delegate (string _val)
+			{
+				if (!int.TryParse(_val, out int n))
+					valueIndex.text = "0";
+			});
+
+			TriggerHelper.IncreaseDecreaseButtonsInt(valueIndex);
+			TriggerHelper.AddEventTriggerParams(valueIndex.gameObject, TriggerHelper.ScrollDeltaInt(valueIndex));
+
+			var value = dialog.Find("value/x").GetComponent<InputField>();
+			value.onValueChanged.ClearAll();
+			value.onValueChanged.AddListener(delegate (string _val)
+			{
+				if (float.TryParse(_val, out float num))
+				{
+					foreach (var kf in SelectedKeyframes)
+					{
+						var index = Parser.TryParse(valueIndex.text, 0);
+
+						index = Mathf.Clamp(index, 0, kf.GetData<EventKeyframe>().eventValues.Length - 1);
+						kf.GetData<EventKeyframe>().eventValues[index] = num;
+					}
+				}
+				else
+					LogIncorrectFormat(_val);
+			});
+
+			TriggerHelper.IncreaseDecreaseButtons(value);
+			TriggerHelper.AddEventTriggerParams(value.gameObject, TriggerHelper.ScrollDelta(value));
+		}
 
 		public void RenderEventsDialog()
 		{
@@ -981,9 +1148,23 @@ namespace EditorManagement.Functions.Editors
 				timeTime.onValueChanged.AddListener(delegate (string val)
 				{
 					if (float.TryParse(val, out float num))
-						__instance.SetEventStartTime(float.Parse(val));
-					else
-						LogIncorrectFormat(val);
+                    {
+
+						num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+						foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0 && x.Type == __instance.currentEventType))
+						{
+							kf.GetData<EventKeyframe>().eventTime = num;
+						}
+
+						UpdateEventOrder();
+						RenderEventObjects();
+						EventManager.inst.updateEvents();
+
+						//__instance.SetEventStartTime(float.Parse(val));
+					}
+                    else
+                        LogIncorrectFormat(val);
 				});
 
 				TriggerHelper.IncreaseDecreaseButtons(timeTime, 0.1f, 10f, t: time);
@@ -1355,7 +1536,12 @@ namespace EditorManagement.Functions.Editors
 				}
 				curvesDropdown.onValueChanged.AddListener(delegate (int _value)
 				{
-					currentKeyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0 && x.Type == __instance.currentEventType))
+					{
+						kf.GetData<EventKeyframe>().curveType = DataManager.inst.AnimationListDictionary[_value];
+					}
+
+					//currentKeyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
 					eventManager.updateEvents();
 				});
 
@@ -1436,7 +1622,12 @@ namespace EditorManagement.Functions.Editors
 
 		public void SetListColor(int value, int index, List<Toggle> toggles, Color defaultColor)
 		{
-			DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[index] = value;
+			foreach (var kf in SelectedKeyframes.Where(x => x.Type == EventEditor.inst.currentEventType))
+			{
+				kf.GetData<EventKeyframe>().eventValues[index] = value;
+			}
+
+			//DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[index] = value;
 			EventManager.inst.updateEvents();
 
 			int num = 0;
@@ -1467,7 +1658,13 @@ namespace EditorManagement.Functions.Editors
 			vignetteRounded.isOn = currentKeyframe.eventValues[index] == onValue;
 			vignetteRounded.onValueChanged.AddListener(delegate (bool val)
 			{
-				currentKeyframe.eventValues[index] = val ? onValue : offValue;
+				//currentKeyframe.eventValues[index] = val ? onValue : offValue;
+
+				foreach (var kf in SelectedKeyframes.Where(x => x.Type == __instance.currentEventType))
+				{
+					kf.GetData<EventKeyframe>().eventValues[index] = val ? onValue : offValue;
+				}
+
 				EventManager.inst.updateEvents();
 			});
 		}
@@ -1493,14 +1690,74 @@ namespace EditorManagement.Functions.Editors
 					if (min != 0f || max != 0f)
 						num = Mathf.Clamp(num, min, max);
 
-					currentKeyframe.eventValues[index] = num;
+					//currentKeyframe.eventValues[index] = num;
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Type == __instance.currentEventType))
+					{
+						kf.GetData<EventKeyframe>().eventValues[index] = num;
+					}
+
 					EventManager.inst.updateEvents();
 				}
 				else
 					LogIncorrectFormat(val);
 			});
 
-			TriggerHelper.IncreaseDecreaseButtons(zoom, increase * multiply, multiply, min, max);
+			if (dialogTmp.Find($"{name}/<") && dialogTmp.Find($"{name}/>"))
+			{
+				var tf = dialogTmp.Find($"{name}");
+
+				float num = 1f;
+
+				var btR = tf.Find("<").GetComponent<Button>();
+				var btL = tf.Find(">").GetComponent<Button>();
+
+				btR.onClick.ClearAll();
+				btR.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(zoom.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[index] -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							zoom.text = result.ToString();
+					}
+				});
+
+				btL.onClick.ClearAll();
+				btL.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(zoom.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[index] += Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							zoom.text = result.ToString();
+					}
+				});
+			}
+
+			//TriggerHelper.IncreaseDecreaseButtons(zoom, increase * multiply, multiply, min, max);
 			TriggerHelper.AddEventTrigger(zoom.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(zoom, increase, multiply, min, max) });
 
 			if (allowNegative && !zoom.gameObject.GetComponent<InputFieldSwapper>())
@@ -1531,14 +1788,74 @@ namespace EditorManagement.Functions.Editors
 					if (min != 0 && max != 0)
 						num = Mathf.Clamp(num, min, max);
 
-					currentKeyframe.eventValues[index] = num;
+					//currentKeyframe.eventValues[index] = num;
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Type == __instance.currentEventType))
+					{
+						kf.GetData<EventKeyframe>().eventValues[index] = num;
+					}
+
 					EventManager.inst.updateEvents();
 				}
 				else
 					LogIncorrectFormat(val);
 			});
 
-			TriggerHelper.IncreaseDecreaseButtonsInt(zoom, increase * 10, min, max);
+			if (dialogTmp.Find($"{name}/<") && dialogTmp.Find($"{name}/>"))
+			{
+				var tf = dialogTmp.Find($"{name}");
+
+				float num = 1f;
+
+				var btR = tf.Find("<").GetComponent<Button>();
+				var btL = tf.Find(">").GetComponent<Button>();
+
+				btR.onClick.ClearAll();
+				btR.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(zoom.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[index] -= Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							zoom.text = result.ToString();
+					}
+				});
+
+				btL.onClick.ClearAll();
+				btL.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(zoom.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[index] += Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							zoom.text = result.ToString();
+					}
+				});
+			}
+
+			//TriggerHelper.IncreaseDecreaseButtonsInt(zoom, increase * 10, min, max);
 			TriggerHelper.AddEventTrigger(zoom.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(zoom, increase, min, max) });
 
 			if (allowNegative && !zoom.gameObject.GetComponent<InputFieldSwapper>())
@@ -1569,7 +1886,13 @@ namespace EditorManagement.Functions.Editors
 					if (min != 0f && max != 0f)
 						num = Mathf.Clamp(num, min, max);
 
-					currentKeyframe.eventValues[xindex] = num;
+					//currentKeyframe.eventValues[xindex] = num;
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Type == __instance.currentEventType))
+                    {
+						kf.GetData<EventKeyframe>().eventValues[xindex] = num;
+                    }
+
 					EventManager.inst.updateEvents();
 				}
 				else
@@ -1585,15 +1908,130 @@ namespace EditorManagement.Functions.Editors
 					if (min != 0f && max != 0f)
 						num = Mathf.Clamp(num, min, max);
 
-					currentKeyframe.eventValues[yindex] = num;
+					//currentKeyframe.eventValues[yindex] = num;
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Type == __instance.currentEventType))
+					{
+						kf.GetData<EventKeyframe>().eventValues[yindex] = num;
+					}
+
 					EventManager.inst.updateEvents();
 				}
 				else
 					LogIncorrectFormat(val);
 			});
 
-			TriggerHelper.IncreaseDecreaseButtons(posX, 1f, 10f, min, max);
-			TriggerHelper.IncreaseDecreaseButtons(posY, 1f, 10f, min, max);
+			if (dialogTmp.Find($"{name}/x/<") && dialogTmp.Find($"{name}/x/>"))
+            {
+				var tf = dialogTmp.Find($"{name}/x");
+
+				float num = 1f;
+
+				var btR = tf.Find("<").GetComponent<Button>();
+				var btL = tf.Find(">").GetComponent<Button>();
+
+				btR.onClick.ClearAll();
+				btR.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(posX.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[xindex] -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							posX.text = result.ToString();
+					}
+				});
+
+				btL.onClick.ClearAll();
+				btL.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(posX.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[xindex] += Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							posX.text = result.ToString();
+					}
+				});
+			}
+			
+			if (dialogTmp.Find($"{name}/y/<") && dialogTmp.Find($"{name}/y/>"))
+            {
+				var tf = dialogTmp.Find($"{name}/y");
+
+				float num = 1f;
+
+				var btR = tf.Find("<").GetComponent<Button>();
+				var btL = tf.Find(">").GetComponent<Button>();
+
+				btR.onClick.ClearAll();
+				btR.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(posY.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[yindex] -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							posY.text = result.ToString();
+					}
+				});
+
+				btL.onClick.ClearAll();
+				btL.onClick.AddListener(delegate ()
+				{
+					if (float.TryParse(posY.text, out float result))
+					{
+						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+
+						if (min != 0f || max != 0f)
+							result = Mathf.Clamp(result, min, max);
+
+						var list = SelectedKeyframes.Where(x => x.Type == __instance.currentEventType);
+
+						if (list.Count() > 1)
+							foreach (var kf in list)
+							{
+								kf.GetData<EventKeyframe>().eventValues[yindex] += Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+							}
+						else
+							posY.text = result.ToString();
+					}
+				});
+			}
+			
+			//TriggerHelper.IncreaseDecreaseButtons(posX, 1f, 10f, min, max);
+			//TriggerHelper.IncreaseDecreaseButtons(posY, 1f, 10f, min, max);
+
 			var clampList = new List<float> { min, max };
 			TriggerHelper.AddEventTrigger(posX.gameObject, new List<EventTrigger.Entry>
 			{
