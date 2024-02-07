@@ -1,3 +1,5 @@
+2.3.1 > [Feb 8, 2024]
+- Temporary patch to character rendering due to having too many lines in the character info causes the game to crash.
 2.3.0 > [Feb 8, 2024]
 - Fixed a bug with new level name being empty by default despite the input field having "New Awesome Beatmap" in it.
 - Fully implemented the brand new Project Planner feature! Access it via the edit dropdown. Use it to plan out your levels, stories, etc.
