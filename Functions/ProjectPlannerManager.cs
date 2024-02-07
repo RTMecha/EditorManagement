@@ -11,8 +11,10 @@ using UnityEngine.UI;
 using SimpleJSON;
 using LSFunctions;
 using TMPro;
+using Crosstales.FB;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 
@@ -34,9 +36,14 @@ namespace EditorManagement.Functions
         public Transform contentBase;
         public Transform contentScroll;
         public Transform content;
+        public Transform notesParent;
         public GridLayoutGroup contentLayout;
 
         public Transform assetsParent;
+
+        public GameObject documentFullView;
+        public TMP_InputField documentInputField;
+        public TextMeshProUGUI documentTitle;
 
         public List<Toggle> tabs = new List<Toggle>();
 
@@ -58,9 +65,9 @@ namespace EditorManagement.Functions
             new Vector2(232f, 400f),
             new Vector2(1280f, 64f),
             new Vector2(296f, 270f),
-            new Vector2(339f, 400f),
-            new Vector2(339f, 400f),
-            new Vector2(339f, 400f),
+            new Vector2(1280f, 250f),
+            new Vector2(1280f, 64f),
+            new Vector2(339f, 150f),
         };
 
         public int[] tabConstraintCounts = new int[]
@@ -68,10 +75,12 @@ namespace EditorManagement.Functions
             5,
             1,
             4,
-            5,
-            5,
-            5,
+            1,
+            1,
+            3,
         };
+
+        public GameObject tagPrefab;
 
         public GameObject tabPrefab;
 
@@ -86,6 +95,13 @@ namespace EditorManagement.Functions
         public List<PlannerItem> planners = new List<PlannerItem>();
 
         public string PlannersPath { get; set; } = "planners";
+
+        public GameObject timelineButtonPrefab;
+
+        public GameObject timelineAddPrefab;
+
+        public Texture2D horizontalDrag;
+        public Texture2D verticalDrag;
 
         #endregion
 
@@ -153,7 +169,9 @@ namespace EditorManagement.Functions
             baseCardPrefab.transform.SetParent(assetsParent);
             baseCardPrefab.SetActive(true);
             var baseCardPrefabButton = baseCardPrefab.GetComponent<Button>();
-            baseCardPrefabButton.colors = UIManager.SetColorBlock(baseCardPrefabButton.colors, new Color(0.1294f, 0.1294f, 0.1294f, 1f), new Color(0.3f, 0.3f, 0.3f, 1f), new Color(0.3f, 0.3f, 0.3f, 1f), new Color(0.3f, 0.3f, 0.3f, 1f), LSColors.red700);
+            var normalColor = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+            var lightColor = new Color(0.3f, 0.3f, 0.3f, 1f);
+            baseCardPrefabButton.colors = UIManager.SetColorBlock(baseCardPrefabButton.colors, normalColor, lightColor, lightColor, normalColor, LSColors.red700);
 
             var scrollBarVertical = contentScroll.Find("Scrollbar Vertical");
             scrollBarVertical.GetComponent<Image>().color = new Color(0.11f, 0.11f, 0.11f, 1f);
@@ -164,135 +182,191 @@ namespace EditorManagement.Functions
             contentBase.Find("Image").AsRT().anchoredPosition = new Vector2(690f, /*-94f*/ -104f);
             contentBase.Find("Image").AsRT().sizeDelta = new Vector2(1384f, 48f);
 
-            var searchBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/search-box").Duplicate(contentBase.Find("Image"), "search base");
-            searchBase.transform.localScale = Vector3.one;
-            searchBase.transform.AsRT().anchoredPosition = Vector2.zero;
-            searchBase.transform.AsRT().sizeDelta = new Vector2(0f, 48f);
-            searchBase.transform.GetChild(0).AsRT().sizeDelta = new Vector2(0f, 48f);
-
-            var searchField = searchBase.transform.GetChild(0).GetComponent<InputField>();
-            searchField.onValueChanged.ClearAll();
-            ((Text)searchField.placeholder).text = "Search...";
-            searchField.onValueChanged.AddListener(delegate (string _val)
+            // List handlers
             {
-                Debug.Log($"{EditorPlugin.className}Searching {_val}");
-                SearchTerm = _val;
-                RefreshList();
-            });
+                var searchBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/search-box").Duplicate(contentBase.Find("Image"), "search base");
+                searchBase.transform.localScale = Vector3.one;
+                searchBase.transform.AsRT().anchoredPosition = Vector2.zero;
+                searchBase.transform.AsRT().sizeDelta = new Vector2(0f, 48f);
+                searchBase.transform.GetChild(0).AsRT().sizeDelta = new Vector2(0f, 48f);
 
-            var tfv = ObjEditor.inst.ObjectView.transform;
-
-            var addNewItem = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
-            addNewItem.SetActive(true);
-            addNewItem.name = "new";
-            addNewItem.transform.SetSiblingIndex(1);
-            addNewItem.transform.AsRT().anchoredPosition = new Vector2(120f, 970f);
-            addNewItem.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-            addNewItem.transform.GetChild(0).GetComponent<Text>().text = "Add New Item";
-            var addNewItemButton = addNewItem.GetComponent<Button>();
-            addNewItemButton.onClick.ClearAll();
-            addNewItemButton.onClick.AddListener(delegate ()
-            {
-                Debug.Log($"{EditorPlugin.className}Create new {tabNames[CurrentTab]}");
-                var path = $"{RTFile.ApplicationDirectory}beatmaps/{PlannersPath}";
-                switch (CurrentTab)
+                var searchField = searchBase.transform.GetChild(0).GetComponent<InputField>();
+                searchField.onValueChanged.ClearAll();
+                ((Text)searchField.placeholder).text = "Search...";
+                searchField.onValueChanged.AddListener(delegate (string _val)
                 {
-                    case 0:
-                        {
-                            var list = planners.Where(x => x.PlannerType == PlannerItem.Type.Document && x is DocumentItem).Select(x => x as DocumentItem);
+                    Debug.Log($"{EditorPlugin.className}Searching {_val}");
+                    SearchTerm = _val;
+                    RefreshList();
+                });
 
-                            var document = new DocumentItem();
-                            document.PlannerType = PlannerItem.Type.Document;
-                            document.Name = $"New Story {list.Count() + 1}";
-                            document.Text = "<align=center>Plan out your story!";
-                            planners.Add(document);
-                            GenerateDocument(document);
+                var tfv = ObjEditor.inst.ObjectView.transform;
 
-                            SaveDocuments();
-
-                            break;
-                        } // Document
-                    case 1:
-                        {
-                            var list = planners.Where(x => x.PlannerType == PlannerItem.Type.TODO && x is TODOItem).Select(x => x as TODOItem);
-
-                            var todo = new TODOItem();
-                            todo.PlannerType = PlannerItem.Type.TODO;
-                            todo.Checked = false;
-                            todo.Text = "Do this.";
-                            todo.Priority = list.Count();
-                            planners.Add(todo);
-                            GenerateTODO(todo);
-
-                            SaveTODO();
-
-                            break;
-                        } // TODO
-                    case 2:
-                        {
-                            var list = planners.Where(x => x.PlannerType == PlannerItem.Type.Character && x is CharacterItem).Select(x => x as CharacterItem);
-
-                            if (string.IsNullOrEmpty(Path.GetFileName(path)))
-                                return;
-
-                            if (!RTFile.DirectoryExists(path + "/characters"))
+                var addNewItem = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
+                addNewItem.SetActive(true);
+                addNewItem.name = "new";
+                addNewItem.transform.SetSiblingIndex(1);
+                addNewItem.transform.AsRT().anchoredPosition = new Vector2(120f, 970f);
+                addNewItem.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                addNewItem.transform.GetChild(0).GetComponent<Text>().text = "Add New Item";
+                var addNewItemButton = addNewItem.GetComponent<Button>();
+                addNewItemButton.onClick.ClearAll();
+                addNewItemButton.onClick.AddListener(delegate ()
+                {
+                    Debug.Log($"{EditorPlugin.className}Create new {tabNames[CurrentTab]}");
+                    var path = $"{RTFile.ApplicationDirectory}beatmaps/{PlannersPath}";
+                    switch (CurrentTab)
+                    {
+                        case 0:
                             {
-                                Directory.CreateDirectory(path + "/characters");
-                            }
+                                var list = planners.Where(x => x.PlannerType == PlannerItem.Type.Document && x is DocumentItem).Select(x => x as DocumentItem);
 
-                            var fullPath = path + "/characters/New Character";
+                                var document = new DocumentItem();
+                                document.Name = $"New Story {list.Count() + 1}";
+                                document.Text = "<align=center>Plan out your story!";
+                                planners.Add(document);
+                                GenerateDocument(document);
 
-                            int num = 1;
-                            while (RTFile.DirectoryExists(fullPath))
+                                SaveDocuments();
+
+                                break;
+                            } // Document
+                        case 1:
                             {
-                                fullPath = $"{path}/characters/New Character {num}";
-                                num++;
-                            }
+                                var list = planners.Where(x => x.PlannerType == PlannerItem.Type.TODO && x is TODOItem).Select(x => x as TODOItem);
 
-                            Directory.CreateDirectory(fullPath);
+                                var todo = new TODOItem();
+                                todo.Checked = false;
+                                todo.Text = "Do this.";
+                                todo.Priority = list.Count();
+                                planners.Add(todo);
+                                GenerateTODO(todo);
 
-                            var character = new CharacterItem();
+                                SaveTODO();
 
-                            for (int i = 0; i < 3; i++)
+                                break;
+                            } // TODO
+                        case 2:
                             {
-                                character.CharacterTraits.Add("???");
-                                character.CharacterLore.Add("???");
-                                character.CharacterAbilities.Add("???");
+                                var list = planners.Where(x => x.PlannerType == PlannerItem.Type.Character && x is CharacterItem).Select(x => x as CharacterItem);
+
+                                if (string.IsNullOrEmpty(Path.GetFileName(path)))
+                                    return;
+
+                                if (!RTFile.DirectoryExists(path + "/characters"))
+                                {
+                                    Directory.CreateDirectory(path + "/characters");
+                                }
+
+                                var fullPath = path + "/characters/New Character";
+
+                                int num = 1;
+                                while (RTFile.DirectoryExists(fullPath))
+                                {
+                                    fullPath = $"{path}/characters/New Character {num}";
+                                    num++;
+                                }
+
+                                Directory.CreateDirectory(fullPath);
+
+                                var character = new CharacterItem();
+
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    character.CharacterTraits.Add("???");
+                                    character.CharacterLore.Add("???");
+                                    character.CharacterAbilities.Add("???");
+                                }
+
+                                character.CharacterSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "CA Hal.png");
+                                character.Name = Path.GetFileName(fullPath);
+                                character.FullPath = fullPath;
+                                character.Gender = "He";
+                                character.Description = "This is the default description";
+                                planners.Add(character);
+                                GenerateCharacter(character);
+                                character.Save();
+
+                                break;
+                            } // Character
+                        case 3:
+                            {
+                                var timeline = new TimelineItem();
+                                timeline.Name = "Classic Arrhythmia";
+                                timeline.Levels.Add(new TimelineItem.Event
+                                {
+                                    Name = "Beginning",
+                                    Description = $"Introduces players / viewers to Hal.)",
+                                    ElementType = TimelineItem.Event.Type.Cutscene,
+                                    Path = ""
+                                });
+                                timeline.Levels.Add(new TimelineItem.Event
+                                {
+                                    Name = "Tokyo Skies",
+                                    Description = $"Players learn very basic stuff about Classic Arrhythmia / Project Arrhythmia mechanics.{Environment.NewLine}{Environment.NewLine}(Click on this button to open the level.)",
+                                    ElementType = TimelineItem.Event.Type.Level,
+                                    Path = ""
+                                });
+
+                                planners.Add(timeline);
+                                GenerateTimeline(timeline);
+
+                                SaveTimelines();
+
+                                break;
+                            } // Timeline
+                        case 4:
+                            {
+                                var schedule = new ScheduleItem();
+                                schedule.Date = DateTime.Now.AddDays(1).ToString("g");
+                                schedule.Description = "Tomorrow!";
+                                planners.Add(schedule);
+                                GenerateSchedule(schedule);
+
+                                SaveSchedules();
+
+                                break;
+                            } // Schedule
+                        case 5:
+                            {
+                                var note = new NoteItem();
+                                note.Active = true;
+                                note.Name = "New Note";
+                                note.Color = UnityEngine.Random.Range(0, MarkerEditor.inst.markerColors.Count);
+                                note.Position = new Vector2(Screen.width / 2, Screen.height / 2);
+                                note.Text = "This note appears in the editor and can be dragged to anywhere.";
+                                planners.Add(note);
+                                GenerateNote(note);
+
+                                SaveNotes();
+
+                                break;
+                            } // Note
+                        default:
+                            {
+                                Debug.LogWarning($"{EditorPlugin.className}NHow did you do that...?");
+                                break;
                             }
+                    }
+                    RenderTabs();
+                    RefreshList();
+                });
 
-                            character.CharacterSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "CA Hal.png");
-                            character.Name = Path.GetFileName(fullPath);
-                            character.FullPath = fullPath;
-                            character.Gender = "He";
-                            character.Description = "This is the default description";
-                            planners.Add(character);
-                            GenerateCharacter(character);
-                            character.Save();
+                var reload = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
+                reload.SetActive(true);
+                reload.name = "reload";
+                reload.transform.SetSiblingIndex(2);
+                reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                reload.transform.GetChild(0).GetComponent<Text>().text = "Reload";
+                var reloadButton = reload.GetComponent<Button>();
+                reloadButton.onClick.ClearAll();
+                reloadButton.onClick.AddListener(delegate ()
+                {
+                    Load();
+                });
 
-                            break;
-                        } // Character
-                    default:
-                        {
-                            Debug.LogWarning($"{EditorPlugin.className}Not implemented yet!");
-                            break;
-                        }
-                }
-                RefreshList();
-            });
-
-            var reload = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
-            reload.SetActive(true);
-            reload.name = "reload";
-            reload.transform.SetSiblingIndex(2);
-            reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
-            reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-            reload.transform.GetChild(0).GetComponent<Text>().text = "Reload";
-            var reloadButton = reload.GetComponent<Button>();
-            reloadButton.onClick.ClearAll();
-            reloadButton.onClick.AddListener(delegate ()
-            {
-                Load();
-            });
+            }
 
             gradientSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "linear_gradient.png");
 
@@ -329,6 +403,11 @@ namespace EditorManagement.Functions
                     tmp.alignment = TextAlignmentOptions.TopLeft;
                     tmp.enableWordWrapping = true;
                     tmp.text = "This is your story.";
+
+                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-18f, -18f);
+                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    delete.transform.AsRT().sizeDelta = new Vector2(26f, 26f);
 
                     prefabs.Add(prefab);
                 }
@@ -372,10 +451,12 @@ namespace EditorManagement.Functions
 
                 // Character
                 {
-                    var prefab = baseCardPrefab.Duplicate(assetsParent, "todo prefab");
+                    var prefab = baseCardPrefab.Duplicate(assetsParent, "character prefab");
                     var albumArt = prefab.transform.GetChild(0);
                     var title = prefab.transform.GetChild(1);
                     var artist = prefab.transform.GetChild(2);
+
+                    prefab.GetComponent<Image>().sprite = null;
 
                     albumArt.name = "profile";
                     title.name = "details";
@@ -404,13 +485,1220 @@ namespace EditorManagement.Functions
                     tmpArtist.enableWordWrapping = true;
                     tmpArtist.text = "Description";
 
+                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-16f, -16f);
+                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    delete.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+
                     prefabs.Add(prefab);
+                }
+
+                // Timeline
+                {
+                    var prefab = new GameObject("timeline prefab");
+                    prefab.transform.SetParent(assetsParent);
+                    prefab.transform.localScale = Vector3.one;
+
+                    var prefabRT = prefab.AddComponent<RectTransform>();
+                    UIManager.SetRectTransform(prefabRT, Vector2.zero, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), Vector2.zero);
+                    var prefabImage = prefab.AddComponent<Image>();
+                    prefabImage.color = new Color(0f, 0f, 0f, 0.2f);
+
+                    var editPrefab = closePrefab.Duplicate(prefabRT, "edit");
+                    editPrefab.transform.AsRT().anchoredPosition = new Vector2(-46f, -16f);
+                    editPrefab.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    editPrefab.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+                    editPrefab.transform.GetChild(0).AsRT().sizeDelta = new Vector2(0f, 0f);
+                    var editPrefabButton = editPrefab.GetComponent<Button>();
+                    editPrefabButton.colors = UIManager.SetColorBlock(editPrefabButton.colors, new Color(0.9f, 0.9f, 0.9f, 1f), Color.white, Color.white, new Color(0.9f, 0.9f, 0.9f, 1f), LSColors.red700);
+                    var spritePrefabImage = editPrefab.transform.GetChild(0).GetComponent<Image>();
+                    spritePrefabImage.color = new Color(0.037f, 0.037f, 0.037f, 1f);
+                    spritePrefabImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_edit.png");
+
+                    var deletePrefab = closePrefab.Duplicate(prefabRT, "delete");
+                    deletePrefab.transform.AsRT().anchoredPosition = new Vector2(-12f, -12f);
+                    deletePrefab.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    deletePrefab.transform.AsRT().sizeDelta = new Vector2(20f, 20f);
+
+                    var prefabScroll = new GameObject("Scroll");
+                    prefabScroll.transform.SetParent(prefabRT);
+                    prefabScroll.transform.localScale = Vector3.one;
+                    var prefabScrollRT = prefabScroll.AddComponent<RectTransform>();
+                    prefabScrollRT.anchoredPosition = new Vector2(590f, -125f);
+                    prefabScrollRT.anchorMax = new Vector2(0f, 1f);
+                    prefabScrollRT.anchorMin = new Vector2(0f, 1f);
+                    prefabScrollRT.sizeDelta = new Vector2(1180f, 200f);
+                    var prefabScrollRect = prefabScroll.AddComponent<ScrollRect>();
+
+                    var prefabViewport = new GameObject("Viewport");
+                    prefabViewport.transform.SetParent(prefabScrollRT);
+                    prefabViewport.transform.localScale = Vector3.one;
+                    var prefabViewportRT = prefabViewport.AddComponent<RectTransform>();
+                    prefabViewportRT.anchoredPosition = Vector3.zero;
+                    prefabViewportRT.anchorMax = Vector3.one;
+                    prefabViewportRT.anchorMin = Vector3.zero;
+                    prefabViewportRT.pivot = new Vector2(0f, 1f);
+                    var prefabViewportImage = prefabViewport.AddComponent<Image>();
+                    var prefabViewportMask = prefabViewport.AddComponent<Mask>();
+                    prefabViewportMask.showMaskGraphic = false;
+
+                    var prefabContent = new GameObject("Content");
+                    prefabContent.transform.SetParent(prefabViewportRT);
+                    prefabContent.transform.localScale = Vector3.one;
+                    var prefabContentRT = prefabContent.AddComponent<RectTransform>();
+                    prefabContentRT.anchoredPosition = Vector3.zero;
+                    prefabContentRT.anchorMax = new Vector2(0f, 1f);
+                    prefabContentRT.anchorMin = new Vector2(0f, 1f);
+                    prefabContentRT.pivot = new Vector2(0f, 1f);
+                    var prefabContentGLG = prefabContent.AddComponent<GridLayoutGroup>();
+                    prefabContentGLG.cellSize = new Vector2(422f, 200f);
+                    prefabContentGLG.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+                    prefabContentGLG.constraintCount = 1;
+                    prefabContentGLG.spacing = new Vector2(8f, 0f);
+                    var prefabContentCSF = prefabContent.AddComponent<ContentSizeFitter>();
+                    prefabContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+
+                    prefabScrollRect.content = prefabContentRT;
+                    prefabScrollRect.viewport = prefabViewportRT;
+                    prefabScrollRect.vertical = false;
+
+                    var scrollBar = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").Duplicate(prefabRT, "Scrollbar");
+                    scrollBar.transform.AsRT().anchoredPosition = Vector2.zero;
+                    scrollBar.transform.AsRT().pivot = new Vector2(0.5f, 0f);
+                    scrollBar.transform.AsRT().sizeDelta = new Vector2(0f, 25f);
+
+                    prefabScrollRect.horizontalScrollbar = scrollBar.GetComponent<Scrollbar>();
+
+                    timelineButtonPrefab = baseCardPrefab.Duplicate(assetsParent, "timeline button prefab");
+                    var albumArt = timelineButtonPrefab.transform.GetChild(0);
+                    var title = timelineButtonPrefab.transform.GetChild(1);
+                    var artist = timelineButtonPrefab.transform.GetChild(2);
+
+                    DestroyImmediate(albumArt.gameObject);
+
+                    timelineButtonPrefab.GetComponent<Image>().sprite = null;
+
+                    title.name = "name";
+                    artist.name = "description";
+
+                    title.AsRT().anchoredPosition = new Vector2(0f, 50f);
+                    title.AsRT().sizeDelta = new Vector2(-32f, 40f);
+                    artist.AsRT().anchoredPosition = new Vector2(0f, -28f);
+                    artist.AsRT().sizeDelta = new Vector2(-32f, 140f);
+
+                    var tmpTitle = title.GetComponent<TextMeshProUGUI>();
+                    tmpTitle.alignment = TextAlignmentOptions.TopLeft;
+                    tmpTitle.fontSize = 21;
+                    var tmpArtist = artist.GetComponent<TextMeshProUGUI>();
+                    tmpArtist.alignment = TextAlignmentOptions.TopLeft;
+                    tmpArtist.fontSize = 16;
+                    tmpArtist.enableWordWrapping = true;
+                    tmpArtist.text = $"Players learn very basic stuff about Classic Arrhythmia / Project Arrhythmia mechanics.{Environment.NewLine}{Environment.NewLine}(Click on this button to open the level.)";
+
+                    var edit = closePrefab.Duplicate(timelineButtonPrefab.transform, "edit");
+                    edit.transform.AsRT().anchoredPosition = new Vector2(-46f, -16f);
+                    edit.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    edit.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+                    edit.transform.GetChild(0).AsRT().sizeDelta = new Vector2(0f, 0f);
+                    var editButton = edit.GetComponent<Button>();
+                    editButton.colors = UIManager.SetColorBlock(editButton.colors, new Color(0.9f, 0.9f, 0.9f, 1f), Color.white, Color.white, new Color(0.9f, 0.9f, 0.9f, 1f), LSColors.red700);
+                    var spriteImage = edit.transform.GetChild(0).GetComponent<Image>();
+                    spriteImage.color = new Color(0.037f, 0.037f, 0.037f, 1f);
+                    spriteImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_edit.png");
+
+                    var delete = closePrefab.Duplicate(timelineButtonPrefab.transform, "delete");
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-16f, -16f);
+                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    delete.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+
+                    timelineAddPrefab = baseCardPrefab.Duplicate(assetsParent, "timeline add prefab");
+                    var albumArtAdd = timelineAddPrefab.transform.GetChild(0);
+                    var titleAdd = timelineAddPrefab.transform.GetChild(1);
+                    var artistAdd = timelineAddPrefab.transform.GetChild(2);
+
+                    timelineAddPrefab.GetComponent<Image>().sprite = null;
+
+                    DestroyImmediate(albumArtAdd.gameObject);
+                    artistAdd.SetParent(prefabRT);
+                    artistAdd.AsRT().anchoredPosition = new Vector2(-56f, 105f);
+                    artistAdd.AsRT().sizeDelta = new Vector2(-128f, 40f);
+                    artistAdd.name = "name";
+
+                    var tmpArtistAdd = artistAdd.GetComponent<TextMeshProUGUI>();
+                    tmpArtistAdd.alignment = TextAlignmentOptions.TopLeft;
+                    tmpArtistAdd.color = Color.white;
+
+                    titleAdd.AsRT().anchoredPosition = Vector2.zero;
+                    titleAdd.AsRT().sizeDelta = new Vector2(0f, 400f);
+                    titleAdd.name = "add";
+
+                    timelineAddPrefab.transform.AsRT().sizeDelta = new Vector2(200f, 200f);
+
+                    var tmpTitleAdd = titleAdd.GetComponent<TextMeshProUGUI>();
+                    tmpTitleAdd.fontSize = 50;
+                    tmpTitleAdd.text = "Add Event";
+
+                    prefabs.Add(prefab);
+                }
+
+                // Schedule
+                {
+                    var prefab = baseCardPrefab.Duplicate(assetsParent, "schedule prefab");
+                    var albumArt = prefab.transform.GetChild(0);
+                    var title = prefab.transform.GetChild(1);
+                    var artist = prefab.transform.GetChild(2);
+
+                    Destroy(albumArt.gameObject);
+                    Destroy(artist.gameObject);
+
+                    prefab.GetComponent<Image>().sprite = null;
+
+                    title.name = "text";
+
+                    title.AsRT().anchoredPosition = new Vector2(-20f, 0f);
+                    title.AsRT().sizeDelta = new Vector2(-80f, 64f);
+
+                    var tmp = title.GetComponent<TextMeshProUGUI>();
+                    tmp.alignment = TextAlignmentOptions.Left;
+                    tmp.enableWordWrapping = false;
+                    tmp.text = DateTime.Now.ToString("g");
+
+                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-32f, -32f);
+                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    delete.transform.AsRT().sizeDelta = new Vector2(38f, 38f);
+
+                    prefabs.Add(prefab);
+                }
+
+                // Note
+                {
+                    var prefab = new GameObject("note prefab");
+                    prefab.transform.SetParent(assetsParent);
+                    prefab.transform.localScale = Vector3.one;
+
+                    var prefabRT = prefab.AddComponent<RectTransform>();
+                    prefabRT.sizeDelta = new Vector2(300f, 150f);
+                    var prefabImage = prefab.AddComponent<Image>();
+                    prefabImage.color = new Color(0.251f, 0.251f, 0.251f, 1f);
+
+                    //var inputField = prefab.AddComponent<TMP_InputField>();
+
+                    var prefabPanel = new GameObject("panel");
+                    prefabPanel.transform.SetParent(prefabRT);
+                    prefabPanel.transform.localScale = Vector3.one;
+
+                    var prefabPanelRT = prefabPanel.AddComponent<RectTransform>();
+                    prefabPanelRT.anchoredPosition = Vector2.zero;
+                    prefabPanelRT.anchorMax = Vector2.one;
+                    prefabPanelRT.anchorMin = new Vector2(0f, 1f);
+                    prefabPanelRT.pivot = Vector2.zero;
+                    prefabPanelRT.sizeDelta = new Vector2(0f, 32f);
+                    var prefabPanelImage = prefabPanel.AddComponent<Image>();
+
+                    var noteTitle = baseCardPrefab.transform.Find("title").gameObject.Duplicate(prefabPanelRT, "title");
+                    noteTitle.transform.AsRT().anchoredPosition = new Vector2(-26f, 0f);
+                    noteTitle.transform.AsRT().sizeDelta = new Vector2(-70f, 40f);
+
+                    var tmpNoteTitle = noteTitle.GetComponent<TextMeshProUGUI>();
+                    tmpNoteTitle.alignment = TextAlignmentOptions.Left;
+                    tmpNoteTitle.enableWordWrapping = false;
+                    tmpNoteTitle.fontSize = 16;
+
+                    var toggle = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle").Duplicate(prefabPanelRT, "active");
+                    toggle.transform.AsRT().anchoredPosition = Vector2.zero;
+                    toggle.transform.AsRT().anchorMax = new Vector2(0.87f, 0.5f);
+                    toggle.transform.AsRT().anchorMin = new Vector2(0.87f, 0.5f);
+                    toggle.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    toggle.transform.AsRT().sizeDelta = Vector2.zero;
+                    toggle.transform.GetChild(0).AsRT().anchoredPosition = Vector2.zero;
+                    toggle.transform.GetChild(0).AsRT().anchorMax = Vector2.one;
+                    toggle.transform.GetChild(0).AsRT().anchorMin = Vector2.zero;
+                    toggle.transform.GetChild(0).AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    toggle.transform.GetChild(0).AsRT().sizeDelta = new Vector2(22f, 22f);
+
+                    var editPrefab = closePrefab.Duplicate(prefabPanelRT, "edit");
+                    editPrefab.transform.AsRT().anchoredPosition = new Vector2(-44f, 0f);
+                    editPrefab.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+                    editPrefab.transform.AsRT().anchorMin = new Vector2(1f, 0.5f);
+                    editPrefab.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    editPrefab.transform.AsRT().sizeDelta = new Vector2(22f, 22f);
+                    editPrefab.transform.GetChild(0).AsRT().sizeDelta = new Vector2(4f, 4f);
+                    var editPrefabButton = editPrefab.GetComponent<Button>();
+                    editPrefabButton.colors = UIManager.SetColorBlock(editPrefabButton.colors, new Color(0.9f, 0.9f, 0.9f, 1f), Color.white, Color.white, new Color(0.9f, 0.9f, 0.9f, 1f), LSColors.red700);
+                    var spritePrefabImage = editPrefab.transform.GetChild(0).GetComponent<Image>();
+                    spritePrefabImage.color = new Color(0.037f, 0.037f, 0.037f, 1f);
+                    spritePrefabImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_edit.png");
+
+                    var delete = closePrefab.Duplicate(prefabPanelRT, "delete");
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-16f, 0f);
+                    delete.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+                    delete.transform.AsRT().anchorMin = new Vector2(1f, 0.5f);
+                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    delete.transform.AsRT().sizeDelta = new Vector2(22f, 22f);
+
+                    var noteText = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(prefabRT, "text");
+                    noteText.transform.AsRT().anchoredPosition = Vector2.zero;
+                    noteText.transform.AsRT().anchorMax = Vector2.one;
+                    noteText.transform.AsRT().anchorMin = Vector2.zero;
+                    noteText.transform.AsRT().sizeDelta = new Vector2(-16f, 0f);
+
+                    var tmpNoteText = noteText.GetComponent<TextMeshProUGUI>();
+                    tmpNoteText.alignment = TextAlignmentOptions.TopLeft;
+                    tmpNoteText.alpha = 1f;
+                    tmpNoteText.enableWordWrapping = true;
+                    tmpNoteText.fontSize = 14;
+
+                    //inputField.textComponent = tmpNoteText;
+
+                    prefabs.Add(prefab);
+                }
+            }
+
+            // Mouse Drag Textures
+            {
+                horizontalDrag = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+                var bytes = File.ReadAllBytes(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_mouse_scroll_h.png");
+                horizontalDrag.LoadImage(bytes);
+
+                horizontalDrag.wrapMode = TextureWrapMode.Clamp;
+                horizontalDrag.filterMode = FilterMode.Point;
+                horizontalDrag.Apply();
+
+                verticalDrag = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+                bytes = File.ReadAllBytes(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_mouse_scroll_v.png");
+                verticalDrag.LoadImage(bytes);
+
+                verticalDrag.wrapMode = TextureWrapMode.Clamp;
+                verticalDrag.filterMode = FilterMode.Point;
+                verticalDrag.Apply();
+            }
+
+            // Notes
+            {
+                var notesParent = new GameObject("notes");
+                notesParent.transform.SetParent(plannerBase);
+                notesParent.transform.localScale = Vector3.one;
+
+                var notesParentRT = notesParent.AddComponent<RectTransform>();
+
+                this.notesParent = notesParentRT;
+            }
+
+            // Document Full View
+            {
+                var fullView = new GameObject("full view");
+                documentFullView = fullView;
+                fullView.transform.SetParent(contentBase);
+                fullView.transform.localScale = Vector3.one;
+                var fullViewRT = fullView.AddComponent<RectTransform>();
+                var fullViewImage = fullView.AddComponent<Image>();
+                fullViewImage.color = new Color(0.082f, 0.082f, 0.078f, 1f);
+                fullViewRT.anchoredPosition = new Vector2(690f, -548f);
+                fullViewRT.sizeDelta = new Vector2(1384f, 936f);
+                fullViewRT.anchorMax = new Vector2(0f, 1f);
+                fullViewRT.anchorMin = new Vector2(0f, 1f);
+
+                documentInputField = fullView.AddComponent<TMP_InputField>();
+
+                var docText = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(fullViewRT, "text");
+                docText.transform.AsRT().anchoredPosition = new Vector2(0f, -50f);
+                docText.transform.AsRT().sizeDelta = new Vector2(-32f, 840f);
+                var t = docText.GetComponent<TextMeshProUGUI>();
+
+                documentInputField.textComponent = t;
+
+                var docTitle = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(fullViewRT, "title");
+
+                docTitle.transform.AsRT().anchoredPosition = new Vector2(0f, 15f);
+                docTitle.transform.AsRT().sizeDelta = new Vector2(-32, 840f);
+
+                documentTitle = docTitle.GetComponent<TextMeshProUGUI>();
+                documentTitle.alignment = TextAlignmentOptions.TopLeft;
+                documentTitle.fontSize = 32;
+
+                t.alignment = TextAlignmentOptions.TopLeft;
+                t.enableWordWrapping = true;
+
+                fullView.SetActive(false);
+            }
+
+            // Editor
+            {
+                var editorBase = new GameObject("editor base");
+                editorBase.transform.SetParent(contentBase);
+                editorBase.transform.localScale = Vector3.one;
+                var editorBaseRT = editorBase.AddComponent<RectTransform>();
+                editorBaseRT.anchoredPosition = new Vector2(691f, -40f);
+                editorBaseRT.sizeDelta = new Vector2(537f, 936f);
+                var editorBaseImage = editorBase.AddComponent<Image>();
+                editorBaseImage.color = new Color(0.078f, 0.067f, 0.067f, 1f);
+
+                var editor = new GameObject("editor");
+                editor.transform.SetParent(editorBaseRT);
+                editor.transform.localScale = Vector3.one;
+                var editorRT = editor.AddComponent<RectTransform>();
+                editorRT.anchoredPosition = Vector3.zero;
+                editorRT.sizeDelta = new Vector2(524f, 936f);
+
+                var panel = new GameObject("panel");
+                panel.transform.SetParent(editorRT);
+                panel.transform.localScale = Vector3.one;
+                var panelRT = panel.AddComponent<RectTransform>();
+                panelRT.anchoredPosition = new Vector2(0f, 436f);
+                panelRT.anchorMax = new Vector2(1f, 0.5f);
+                panelRT.anchorMin = new Vector2(0f, 0.5f);
+                panelRT.sizeDelta = new Vector2(14f, 64f);
+                var panelImage = panel.AddComponent<Image>();
+                panelImage.color = new Color(0.310f, 0.467f, 0.737f, 1f);
+
+                var editorTitle = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(panelRT, "title");
+                editorTitle.transform.AsRT().anchoredPosition = Vector2.zero;
+                editorTitle.transform.AsRT().anchorMax = Vector2.one;
+                editorTitle.transform.AsRT().anchorMin = Vector2.zero;
+                editorTitle.transform.AsRT().sizeDelta = new Vector2(569f, 0f);
+                var tmpEditorTitle = editorTitle.GetComponent<TextMeshProUGUI>();
+                tmpEditorTitle.alignment = TextAlignmentOptions.Center;
+                tmpEditorTitle.fontSize = 32;
+                tmpEditorTitle.text = "<b>- Editor -</b>";
+
+                // Document
+                {
+                    var g1 = new GameObject("Document");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "text");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    documentEditorName = text1.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Text";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text2 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "text");
+                    text2.transform.AsRT().sizeDelta = new Vector2(537f, 720f);
+                    text2.gameObject.SetActive(true);
+
+                    documentEditorText = text2.GetComponent<InputField>();
+                    documentEditorText.textComponent.alignment = TextAnchor.UpperLeft;
+                    ((Text)documentEditorText.placeholder).alignment = TextAnchor.UpperLeft;
+                    documentEditorText.lineType = InputField.LineType.MultiLineNewline;
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
+
+                // TODO
+                {
+                    var g1 = new GameObject("TODO");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Text";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "text");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    todoEditorText = text1.GetComponent<InputField>();
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
+
+                // Character
+                {
+                    var g1 = new GameObject("Character");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "name");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    characterEditorName = text1.GetComponent<InputField>();
+                    
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Gender";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text2 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "gender");
+                    text2.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text2.gameObject.SetActive(true);
+
+                    characterEditorGender = text2.GetComponent<InputField>();
+                    
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Description";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text3 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "description");
+                    text3.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text3.gameObject.SetActive(true);
+
+                    characterEditorDescription = text3.GetComponent<InputField>();
+                    characterEditorDescription.textComponent.alignment = TextAnchor.UpperLeft;
+                    ((Text)characterEditorDescription.placeholder).alignment = TextAnchor.UpperLeft;
+                    characterEditorDescription.lineType = InputField.LineType.MultiLineNewline;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Select Profile Image";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var tfv = ObjEditor.inst.ObjectView.transform;
+
+                    var reload = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
+                    reload.SetActive(true);
+                    reload.name = "pick profile";
+                    reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    reload.transform.GetChild(0).GetComponent<Text>().text = "Select";
+                    characterEditorProfileSelector = reload.GetComponent<Button>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Character Traits";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    // Character Traits
+                    {
+                        var tagScrollView = new GameObject("Character Traits Scroll View");
+                        tagScrollView.transform.SetParent(g1RT);
+                        tagScrollView.transform.localScale = Vector3.one;
+
+                        var tagScrollViewRT = tagScrollView.AddComponent<RectTransform>();
+                        tagScrollViewRT.sizeDelta = new Vector2(522f, 120f);
+                        var scroll = tagScrollView.AddComponent<ScrollRect>();
+
+                        scroll.horizontal = false;
+                        scroll.vertical = true;
+
+                        var image = tagScrollView.AddComponent<Image>();
+                        image.color = new Color(1f, 1f, 1f, 0.01f);
+
+                        var mask = tagScrollView.AddComponent<Mask>();
+
+                        var tagViewport = new GameObject("Viewport");
+                        tagViewport.transform.SetParent(tagScrollViewRT);
+                        tagViewport.transform.localScale = Vector3.one;
+
+                        var tagViewPortRT = tagViewport.AddComponent<RectTransform>();
+                        tagViewPortRT.anchoredPosition = Vector2.zero;
+                        tagViewPortRT.anchorMax = Vector2.one;
+                        tagViewPortRT.anchorMin = Vector2.zero;
+                        tagViewPortRT.sizeDelta = Vector2.zero;
+
+                        var tagContent = new GameObject("Content");
+                        tagContent.transform.SetParent(tagViewPortRT);
+                        tagContent.transform.localScale = Vector3.one;
+
+                        var tagContentRT = tagContent.AddComponent<RectTransform>();
+
+                        var tagContentGLG = tagContent.AddComponent<GridLayoutGroup>();
+                        tagContentGLG.cellSize = new Vector2(536f, 32f);
+                        tagContentGLG.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                        tagContentGLG.constraintCount = 1;
+                        tagContentGLG.childAlignment = TextAnchor.MiddleLeft;
+                        tagContentGLG.spacing = new Vector2(8f, 8f);
+
+                        var tagContentCSF = tagContent.AddComponent<ContentSizeFitter>();
+                        tagContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+                        tagContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+                        scroll.viewport = tagViewPortRT;
+                        scroll.content = tagContentRT;
+
+                        characterEditorTraitsContent = tagContentRT;
+                    }
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Lore";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    // Lore
+                    {
+                        var tagScrollView = new GameObject("Lore Scroll View");
+                        tagScrollView.transform.SetParent(g1RT);
+                        tagScrollView.transform.localScale = Vector3.one;
+
+                        var tagScrollViewRT = tagScrollView.AddComponent<RectTransform>();
+                        tagScrollViewRT.sizeDelta = new Vector2(522f, 120f);
+                        var scroll = tagScrollView.AddComponent<ScrollRect>();
+
+                        scroll.horizontal = false;
+                        scroll.vertical = true;
+
+                        var image = tagScrollView.AddComponent<Image>();
+                        image.color = new Color(1f, 1f, 1f, 0.01f);
+
+                        var mask = tagScrollView.AddComponent<Mask>();
+
+                        var tagViewport = new GameObject("Viewport");
+                        tagViewport.transform.SetParent(tagScrollViewRT);
+                        tagViewport.transform.localScale = Vector3.one;
+
+                        var tagViewPortRT = tagViewport.AddComponent<RectTransform>();
+                        tagViewPortRT.anchoredPosition = Vector2.zero;
+                        tagViewPortRT.anchorMax = Vector2.one;
+                        tagViewPortRT.anchorMin = Vector2.zero;
+                        tagViewPortRT.sizeDelta = Vector2.zero;
+
+                        var tagContent = new GameObject("Content");
+                        tagContent.transform.SetParent(tagViewPortRT);
+                        tagContent.transform.localScale = Vector3.one;
+
+                        var tagContentRT = tagContent.AddComponent<RectTransform>();
+
+                        var tagContentGLG = tagContent.AddComponent<GridLayoutGroup>();
+                        tagContentGLG.cellSize = new Vector2(536f, 32f);
+                        tagContentGLG.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                        tagContentGLG.constraintCount = 1;
+                        tagContentGLG.childAlignment = TextAnchor.MiddleLeft;
+                        tagContentGLG.spacing = new Vector2(8f, 8f);
+
+                        var tagContentCSF = tagContent.AddComponent<ContentSizeFitter>();
+                        tagContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+                        tagContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+                        scroll.viewport = tagViewPortRT;
+                        scroll.content = tagContentRT;
+
+                        characterEditorLoreContent = tagContentRT;
+                    }
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Abilities";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    // Abilities
+                    {
+                        var tagScrollView = new GameObject("Abilities Scroll View");
+                        tagScrollView.transform.SetParent(g1RT);
+                        tagScrollView.transform.localScale = Vector3.one;
+
+                        var tagScrollViewRT = tagScrollView.AddComponent<RectTransform>();
+                        tagScrollViewRT.sizeDelta = new Vector2(522f, 120f);
+                        var scroll = tagScrollView.AddComponent<ScrollRect>();
+
+                        scroll.horizontal = false;
+                        scroll.vertical = true;
+
+                        var image = tagScrollView.AddComponent<Image>();
+                        image.color = new Color(1f, 1f, 1f, 0.01f);
+
+                        var mask = tagScrollView.AddComponent<Mask>();
+
+                        var tagViewport = new GameObject("Viewport");
+                        tagViewport.transform.SetParent(tagScrollViewRT);
+                        tagViewport.transform.localScale = Vector3.one;
+
+                        var tagViewPortRT = tagViewport.AddComponent<RectTransform>();
+                        tagViewPortRT.anchoredPosition = Vector2.zero;
+                        tagViewPortRT.anchorMax = Vector2.one;
+                        tagViewPortRT.anchorMin = Vector2.zero;
+                        tagViewPortRT.sizeDelta = Vector2.zero;
+
+                        var tagContent = new GameObject("Content");
+                        tagContent.transform.SetParent(tagViewPortRT);
+                        tagContent.transform.localScale = Vector3.one;
+
+                        var tagContentRT = tagContent.AddComponent<RectTransform>();
+
+                        var tagContentGLG = tagContent.AddComponent<GridLayoutGroup>();
+                        tagContentGLG.cellSize = new Vector2(536f, 32f);
+                        tagContentGLG.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                        tagContentGLG.constraintCount = 1;
+                        tagContentGLG.childAlignment = TextAnchor.MiddleLeft;
+                        tagContentGLG.spacing = new Vector2(8f, 8f);
+
+                        var tagContentCSF = tagContent.AddComponent<ContentSizeFitter>();
+                        tagContentCSF.horizontalFit = ContentSizeFitter.FitMode.MinSize;
+                        tagContentCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+                        scroll.viewport = tagViewPortRT;
+                        scroll.content = tagContentRT;
+
+                        characterEditorAbilitiesContent = tagContentRT;
+                    }
+
+                    // Tag Prefab
+                    {
+                        tagPrefab = new GameObject("Tag");
+                        var tagPrefabRT = tagPrefab.AddComponent<RectTransform>();
+                        var tagPrefabImage = tagPrefab.AddComponent<Image>();
+                        tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);
+                        var tagPrefabLayout = tagPrefab.AddComponent<HorizontalLayoutGroup>();
+                        tagPrefabLayout.childControlWidth = false;
+                        tagPrefabLayout.childForceExpandWidth = false;
+
+                        var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
+                        input.transform.localScale = Vector3.one;
+                        ((RectTransform)input.transform).sizeDelta = new Vector2(500f, 32f);
+                        input.transform.Find("Text").GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+                        input.transform.Find("Text").GetComponent<Text>().fontSize = 17;
+
+                        var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
+                        ((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
+                    }
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
+
+                // Timeline
+                {
+                    var g1 = new GameObject("Timeline");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "text");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    timelineEditorName = text1.GetComponent<InputField>();
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
+
+                // Event
+                {
+                    var g1 = new GameObject("Event");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "name");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    eventEditorName = text1.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Description";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text2 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "description");
+                    text2.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text2.gameObject.SetActive(true);
+
+                    eventEditorDescription = text2.GetComponent<InputField>();
+                    eventEditorDescription.textComponent.alignment = TextAnchor.UpperLeft;
+                    ((Text)eventEditorDescription.placeholder).alignment = TextAnchor.UpperLeft;
+                    eventEditorDescription.lineType = InputField.LineType.MultiLineNewline;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Path";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text3 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "path");
+                    text3.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text3.gameObject.SetActive(true);
+
+                    eventEditorPath = text3.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Type";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var renderType = ObjEditor.inst.ObjectView.transform.Find("autokill/tod-dropdown").gameObject.Duplicate(g1RT, "type");
+                    eventEditorType = renderType.GetComponent<Dropdown>();
+                    eventEditorType.options.Clear();
+                    eventEditorType.options = new List<Dropdown.OptionData>
+                    {
+                        new Dropdown.OptionData("Level"),
+                        new Dropdown.OptionData("Cutscene"),
+                        new Dropdown.OptionData("Story"),
+                    };
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
+
+                // Schedule
+                {
+                    var g1 = new GameObject("Event");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "name");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    scheduleEditorDescription = text1.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Year";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text2 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "year");
+                    text2.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text2.gameObject.SetActive(true);
+
+                    scheduleEditorYear = text2.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Month";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var renderType = ObjEditor.inst.ObjectView.transform.Find("autokill/tod-dropdown").gameObject.Duplicate(g1RT, "month");
+                    scheduleEditorMonth = renderType.GetComponent<Dropdown>();
+                    scheduleEditorMonth.options.Clear();
+                    scheduleEditorMonth.options = new List<Dropdown.OptionData>
+                    {
+                        new Dropdown.OptionData("January"),
+                        new Dropdown.OptionData("February"),
+                        new Dropdown.OptionData("March"),
+                        new Dropdown.OptionData("April"),
+                        new Dropdown.OptionData("May"),
+                        new Dropdown.OptionData("June"),
+                        new Dropdown.OptionData("July"),
+                        new Dropdown.OptionData("August"),
+                        new Dropdown.OptionData("September"),
+                        new Dropdown.OptionData("October"),
+                        new Dropdown.OptionData("November"),
+                        new Dropdown.OptionData("December"),
+                    };
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Day";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text3 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "day");
+                    text3.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text3.gameObject.SetActive(true);
+
+                    scheduleEditorDay = text3.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Hour";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text4 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "hour");
+                    text4.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text4.gameObject.SetActive(true);
+
+                    scheduleEditorHour = text4.GetComponent<InputField>();
+                    
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Minute";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text5 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "minute");
+                    text5.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text5.gameObject.SetActive(true);
+
+                    scheduleEditorMinute = text5.GetComponent<InputField>();
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
+
+                // Note
+                {
+                    var g1 = new GameObject("Note");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "text");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    noteEditorName = text1.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Text";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text2 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "text");
+                    text2.transform.AsRT().sizeDelta = new Vector2(537f, 360f);
+                    text2.gameObject.SetActive(true);
+
+                    noteEditorText = text2.GetComponent<InputField>();
+                    noteEditorText.textComponent.alignment = TextAnchor.UpperLeft;
+                    ((Text)noteEditorText.placeholder).alignment = TextAnchor.UpperLeft;
+                    noteEditorText.lineType = InputField.LineType.MultiLineNewline;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Color";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var colorBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color");
+                    this.colorBase = colorBase.transform;
+                    var colors = colorBase.Duplicate(g1RT, "colors");
+                    noteEditorColorsParent = colors.transform;
+                    noteEditorColorsParent.AsRT().sizeDelta = new Vector2(537f, 64f);
+
+                    LSHelpers.DeleteChildren(noteEditorColorsParent);
+                    for (int i = 0; i < 18; i++)
+                    {
+                        var col = Instantiate(colorBase.transform.Find("1").gameObject);
+                        col.name = (i + 1).ToString();
+                        col.transform.SetParent(noteEditorColorsParent);
+                        noteEditorColors.Add(col.GetComponent<Toggle>());
+                    }
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(300f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Reset Position and Scale";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var tfv = ObjEditor.inst.ObjectView.transform;
+
+                    var reload = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
+                    reload.SetActive(true);
+                    reload.name = "reset";
+                    reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    reload.transform.GetChild(0).GetComponent<Text>().text = "Reset";
+                    noteEditorReset = reload.GetComponent<Button>();
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
                 }
             }
 
             RenderTabs();
             Load();
         }
+
+        public InputField documentEditorName;
+        public InputField documentEditorText;
+
+        public InputField todoEditorText;
+
+        public InputField characterEditorName;
+        public InputField characterEditorGender;
+        public InputField characterEditorDescription;
+        public Button characterEditorProfileSelector;
+        public Transform characterEditorTraitsContent;
+        public Transform characterEditorLoreContent;
+        public Transform characterEditorAbilitiesContent;
+
+        public InputField timelineEditorName;
+        public InputField eventEditorName;
+        public InputField eventEditorDescription;
+        public InputField eventEditorPath;
+        public Dropdown eventEditorType;
+
+        public InputField scheduleEditorDescription;
+        public InputField scheduleEditorYear;
+        public Dropdown scheduleEditorMonth;
+        public InputField scheduleEditorDay;
+        public InputField scheduleEditorHour;
+        public InputField scheduleEditorMinute;
+
+        public InputField noteEditorName;
+        public InputField noteEditorText;
+        public Transform noteEditorColorsParent;
+        public Transform colorBase;
+        public List<Toggle> noteEditorColors = new List<Toggle>();
+        public Button noteEditorReset;
+
+        public List<GameObject> editors = new List<GameObject>();
 
         void Start()
         {
@@ -419,7 +1707,38 @@ namespace EditorManagement.Functions
 
         void Update()
         {
+            foreach (var note in planners.Where(x => x.PlannerType == PlannerItem.Type.Note && x is NoteItem).Select(x => x as NoteItem))
+            {
+                note.TopBar?.SetColor(note.TopColor);
+                if (note.TitleUI)
+                    note.TitleUI.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(note.TopColor));
 
+                if (!PlannerActive || CurrentTab != 5)
+                    note.GameObject?.SetActive(note.Active);
+
+                note.ActiveUI?.gameObject?.SetActive(PlannerActive && CurrentTab == 5);
+
+                var currentParent = !PlannerActive || CurrentTab != 5 ? notesParent : content;
+
+                if (note.GameObject && note.GameObject.transform.parent != (currentParent))
+                {
+                    note.GameObject.transform.SetParent(currentParent);
+                    if (PlannerActive && CurrentTab == 5)
+                        note.GameObject.transform.localScale = Vector3.one;
+                }
+
+                if (!note.Dragging && note.GameObject && (!PlannerActive || CurrentTab != 5))
+                {
+                    note.GameObject.transform.localPosition = note.Position;
+                    note.GameObject.transform.localScale = note.Scale;
+                    note.GameObject.transform.AsRT().sizeDelta = note.Size;
+                }
+
+                if (note.GameObject && note.GameObject.transform.Find("panel/edit"))
+                {
+                    note.GameObject.transform.Find("panel/edit").gameObject.SetActive(!PlannerActive || CurrentTab != 5);
+                }
+            }
         }
 
         #region Save / Load
@@ -567,19 +1886,15 @@ namespace EditorManagement.Functions
 
             for (int i = 0; i < list.Count; i++)
             {
+                jn["timelines"][i]["name"] = list[i].Name;
+
                 for (int j = 0; j < list[i].Levels.Count; j++)
                 {
                     var level = list[i].Levels[j];
                     jn["timelines"][i]["levels"][j]["n"] = level.Name;
                     jn["timelines"][i]["levels"][j]["p"] = level.Path;
+                    jn["timelines"][i]["levels"][j]["t"] = ((int)level.ElementType).ToString();
                     jn["timelines"][i]["levels"][j]["d"] = level.Description;
-                }
-
-                for (int j = 0; j < list[i].Stories.Count; j++)
-                {
-                    var story = list[i].Stories[j];
-                    jn["timelines"][i]["stories"][j]["n"] = story.Name;
-                    jn["timelines"][i]["stories"][j]["d"] = story.Description;
                 }
             }
 
@@ -598,26 +1913,20 @@ namespace EditorManagement.Functions
             {
                 var timeline = new TimelineItem();
 
+                timeline.Name = jn["timelines"][i]["name"];
+
                 for (int j = 0; j < jn["timelines"][i]["levels"].Count; j++)
                 {
-                    timeline.Levels.Add(new TimelineItem.Level
+                    timeline.Levels.Add(new TimelineItem.Event
                     {
                         Name = jn["timelines"][i]["levels"][j]["n"],
                         Path = jn["timelines"][i]["levels"][j]["p"],
+                        ElementType = (TimelineItem.Event.Type)jn["timelines"][i]["levels"][j]["t"].AsInt,
                         Description = jn["timelines"][i]["levels"][j]["d"],
                     });
                 }
 
-                for (int j = 0; j < jn["timelines"][i]["stories"].Count; j++)
-                {
-                    timeline.Stories.Add(new TimelineItem.Story
-                    {
-                        Name = jn["timelines"][i]["stories"][j]["n"],
-                        Description = jn["timelines"][i]["stories"][j]["d"],
-                    });
-                }
-
-                // Generate Timelines goes here
+                GenerateTimeline(timeline);
 
                 planners.Add(timeline);
             }
@@ -655,9 +1964,9 @@ namespace EditorManagement.Functions
             {
                 var schedule = new ScheduleItem();
                 schedule.Date = jn["schedules"][i]["date"];
-                schedule.Description = jn["schedules"][i]["schedules"];
+                schedule.Description = jn["schedules"][i]["desc"];
 
-                // Generate Shedule goes here
+                GenerateSchedule(schedule);
 
                 planners.Add(schedule);
             }
@@ -678,10 +1987,13 @@ namespace EditorManagement.Functions
                 var note = list[i];
 
                 jn["notes"][i]["active"] = note.Active.ToString();
+                jn["notes"][i]["name"] = note.Name;
                 jn["notes"][i]["pos"]["x"] = note.Position.x.ToString();
                 jn["notes"][i]["pos"]["y"] = note.Position.y.ToString();
                 jn["notes"][i]["sca"]["x"] = note.Scale.x.ToString();
                 jn["notes"][i]["sca"]["y"] = note.Scale.y.ToString();
+                jn["notes"][i]["size"]["x"] = note.Size.x.ToString();
+                jn["notes"][i]["size"]["y"] = note.Size.y.ToString();
                 jn["notes"][i]["col"] = note.Color.ToString();
                 jn["notes"][i]["text"] = note.Text;
             }
@@ -702,11 +2014,19 @@ namespace EditorManagement.Functions
                 var note = new NoteItem();
 
                 note.Active = jn["notes"][i]["active"].AsBool;
+                if (!string.IsNullOrEmpty(jn["notes"][i]["name"]))
+                    note.Name = jn["notes"][i]["name"];
+                else
+                    note.Name = "";
+                
                 note.Position = new Vector2(jn["notes"][i]["pos"]["x"].AsFloat, jn["notes"][i]["pos"]["y"].AsFloat);
                 note.Scale = new Vector2(jn["notes"][i]["sca"]["x"].AsFloat, jn["notes"][i]["sca"]["y"].AsFloat);
+                if (jn["notes"][i]["size"] != null)
+                    note.Size = new Vector2(jn["notes"][i]["size"]["x"].AsFloat, jn["notes"][i]["size"]["y"].AsFloat);
                 note.Text = jn["notes"][i]["text"];
+                note.Color = jn["notes"][i]["col"].AsInt;
 
-                // Generate Note goes here
+                GenerateNote(note);
 
                 planners.Add(note);
             }
@@ -720,6 +2040,8 @@ namespace EditorManagement.Functions
         {
             contentLayout.cellSize = tabCellSizes[CurrentTab];
             contentLayout.constraintCount = tabConstraintCounts[CurrentTab];
+            documentFullView.SetActive(false);
+            //documentFullView.SetActive(DocumentFullViewActive && CurrentTab == (int)PlannerItem.Type.Document);
             int num = 0;
             foreach (var tab in tabs)
             {
@@ -729,17 +2051,18 @@ namespace EditorManagement.Functions
                 tab.isOn = index == CurrentTab;
                 tab.onValueChanged.AddListener(delegate (bool value)
                 {
-                    if (value)
-                    {
-                        Debug.Log($"{EditorPlugin.className}Set tab to {tabNames[index]}");
+                    //if (value)
+                    //{
+                        //Debug.Log($"{EditorPlugin.className}Set tab to {tabNames[index]}");
                         CurrentTab = index;
                         RenderTabs();
                         RefreshList();
-                    }
+                    //}
                 });
 
                 num++;
             }
+            SetEditorsInactive();
         }
 
         public void RefreshList()
@@ -750,7 +2073,7 @@ namespace EditorManagement.Functions
                     plan is DocumentItem document && !string.IsNullOrEmpty(document.Name) && document.Name.ToLower().Contains(SearchTerm.ToLower()) ||
                     plan is TODOItem todo && (CheckOn(SearchTerm.ToLower()) && todo.Checked || CheckOff(SearchTerm.ToLower()) && !todo.Checked || todo.Text.ToLower().Contains(SearchTerm.ToLower())) ||
                     plan is CharacterItem character && (!string.IsNullOrEmpty(character.Name) && character.Name.ToLower().Contains(SearchTerm.ToLower()) || !string.IsNullOrEmpty(character.Description) && character.Description.ToLower().Contains(SearchTerm.ToLower())) ||
-                    plan is TimelineItem timeline && (timeline.Levels.Has(x => x.Name.ToLower().Contains(SearchTerm.ToLower())) || timeline.Stories.Has(x => x.Name.ToLower().Contains(SearchTerm.ToLower()))) ||
+                    plan is TimelineItem timeline && timeline.Levels.Has(x => x.Name.ToLower().Contains(SearchTerm.ToLower())) ||
                     plan is ScheduleItem schedule && (!string.IsNullOrEmpty(schedule.Description) && schedule.Description.ToLower().Contains(SearchTerm.ToLower()) || schedule.Date.ToLower().Contains(SearchTerm.ToLower())) ||
                     plan is NoteItem note && !string.IsNullOrEmpty(note.Text) && note.Text.ToLower().Contains(SearchTerm.ToLower())));
             }
@@ -761,6 +2084,552 @@ namespace EditorManagement.Functions
         
         bool CheckOff(string searchTerm)
             => searchTerm == "\"false\"" || searchTerm == "\"off\"" || searchTerm == "\"not done\"" || searchTerm == "\"not finished\"" || searchTerm == "\"unfinished\"" || searchTerm == "\"unchecked\"";
+
+        public void SetEditorsInactive()
+        {
+            for (int i = 0; i < editors.Count; i++)
+                editors[i].SetActive(false);
+        }
+
+        public bool DocumentFullViewActive { get; set; }
+        public void OpenDocumentEditor(DocumentItem document)
+        {
+            editors[0].SetActive(true);
+
+            documentEditorName.onValueChanged.ClearAll();
+            documentEditorName.text = document.Name;
+            documentEditorName.onValueChanged.AddListener(delegate (string _val)
+            {
+                document.Name = _val;
+                document.NameUI.text = _val;
+                documentTitle.text = document.Name;
+            });
+            documentEditorName.onEndEdit.ClearAll();
+            documentEditorName.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveDocuments();
+            });
+            
+            documentEditorText.onValueChanged.ClearAll();
+            documentEditorText.text = document.Text;
+            documentEditorText.onValueChanged.AddListener(delegate (string _val)
+            {
+                document.Text = _val;
+                document.TextUI.text = _val;
+
+                documentInputField.onValueChanged.RemoveAllListeners();
+                documentInputField.text = document.Text;
+                documentInputField.onValueChanged.AddListener(delegate (string _val)
+                {
+                    document.Text = _val;
+                    document.TextUI.text = _val;
+                });
+            });
+            documentEditorText.onEndEdit.ClearAll();
+            documentEditorText.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveDocuments();
+            });
+
+            DocumentFullViewActive = true;
+            documentFullView.SetActive(true);
+            documentTitle.text = document.Name;
+            documentInputField.onValueChanged.RemoveAllListeners();
+            documentInputField.text = document.Text;
+            documentInputField.onValueChanged.AddListener(delegate (string _val)
+            {
+                document.Text = _val;
+                document.TextUI.text = _val;
+            });
+        }
+
+        public void OpenTODOEditor(TODOItem todo)
+        {
+            editors[1].SetActive(true);
+
+            todoEditorText.onValueChanged.ClearAll();
+            todoEditorText.text = todo.Text;
+            todoEditorText.onValueChanged.AddListener(delegate (string _val)
+            {
+                todo.Text = _val;
+                todo.TextUI.text = _val;
+            });
+            todoEditorText.onEndEdit.ClearAll();
+            todoEditorText.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveTODO();
+            });
+        }
+
+        public void OpenCharacterEditor(CharacterItem character)
+        {
+            editors[2].SetActive(true);
+
+            characterEditorName.onValueChanged.ClearAll();
+            characterEditorName.text = character.Name;
+            characterEditorName.onValueChanged.AddListener(delegate (string _val)
+            {
+                character.Name = _val;
+                character.DetailsUI.text = character.FormatDetails;
+            });
+            characterEditorName.onEndEdit.ClearAll();
+            characterEditorName.onEndEdit.AddListener(delegate (string _val)
+            {
+                character.Save();
+            });
+            
+            characterEditorGender.onValueChanged.ClearAll();
+            characterEditorGender.text = character.Gender;
+            characterEditorGender.onValueChanged.AddListener(delegate (string _val)
+            {
+                character.Gender = _val;
+                character.DetailsUI.text = character.FormatDetails;
+            });
+            characterEditorGender.onEndEdit.ClearAll();
+            characterEditorGender.onEndEdit.AddListener(delegate (string _val)
+            {
+                character.Save();
+            });
+            
+            characterEditorDescription.onValueChanged.ClearAll();
+            characterEditorDescription.text = character.Description;
+            characterEditorDescription.onValueChanged.AddListener(delegate (string _val)
+            {
+                character.Description = _val;
+                character.DescriptionUI.text = character.Description;
+            });
+            characterEditorDescription.onEndEdit.ClearAll();
+            characterEditorDescription.onEndEdit.AddListener(delegate (string _val)
+            {
+                character.Save();
+            });
+
+            characterEditorProfileSelector.onClick.ClearAll();
+            characterEditorProfileSelector.onClick.AddListener(delegate ()
+            {
+                var editorPath = RTFile.ApplicationDirectory;
+                string jpgFile = FileBrowser.OpenSingleFile("Select an image!", editorPath, new string[] { "png", "jpg" });
+
+                if (!string.IsNullOrEmpty(jpgFile))
+                {
+                    character.CharacterSprite = SpriteManager.LoadSprite(jpgFile);
+                    character.ProfileUI.sprite = character.CharacterSprite;
+                    character.Save();
+                }
+
+                //EditorManager.inst.ShowDialog("Browser Popup");
+                //RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".png" }, onSelectFile: delegate (string _val)
+                //{
+                //    character.CharacterSprite = SpriteManager.LoadSprite(_val);
+
+                //    character.Save();
+
+                //    EditorManager.inst.HideDialog("Browser Popup");
+                //});
+            });
+
+            // Character Traits
+            {
+                LSHelpers.DeleteChildren(characterEditorTraitsContent);
+
+                int num = 0;
+                foreach (var tag in character.CharacterTraits)
+                {
+                    int index = num;
+                    var gameObject = tagPrefab.Duplicate(characterEditorTraitsContent, index.ToString());
+                    gameObject.transform.localScale = Vector3.one;
+                    var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                    input.onValueChanged.ClearAll();
+                    input.onEndEdit.ClearAll();
+                    input.text = tag;
+                    input.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        character.CharacterTraits[index] = _val;
+                        character.DetailsUI.text = character.FormatDetails;
+                    });
+                    input.onEndEdit.AddListener(delegate (string _val)
+                    {
+                        character.Save();
+                    });
+
+                    var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                    delete.onClick.ClearAll();
+                    delete.onClick.AddListener(delegate ()
+                    {
+                        character.CharacterTraits.RemoveAt(index);
+                        OpenCharacterEditor(character);
+                        character.DetailsUI.text = character.FormatDetails;
+                        character.Save();
+                    });
+
+                    num++;
+                }
+
+                var add = PrefabEditor.inst.CreatePrefab.Duplicate(characterEditorTraitsContent, "Add");
+                add.transform.localScale = Vector3.one;
+                add.transform.Find("Text").GetComponent<Text>().text = "Add Trait";
+                var addButton = add.GetComponent<Button>();
+                addButton.onClick.ClearAll();
+                addButton.onClick.AddListener(delegate ()
+                {
+                    character.CharacterTraits.Add("New Detail");
+                    OpenCharacterEditor(character);
+                    character.DetailsUI.text = character.FormatDetails;
+                    character.Save();
+                });
+            }
+
+            // Lore
+            {
+                LSHelpers.DeleteChildren(characterEditorLoreContent);
+
+                int num = 0;
+                foreach (var tag in character.CharacterLore)
+                {
+                    int index = num;
+                    var gameObject = tagPrefab.Duplicate(characterEditorLoreContent, index.ToString());
+                    gameObject.transform.localScale = Vector3.one;
+                    var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                    input.onValueChanged.ClearAll();
+                    input.onEndEdit.ClearAll();
+                    input.text = tag;
+                    input.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        character.CharacterLore[index] = _val;
+                        character.DetailsUI.text = character.FormatDetails;
+                    });
+                    input.onEndEdit.AddListener(delegate (string _val)
+                    {
+                        character.Save();
+                    });
+
+                    var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                    delete.onClick.ClearAll();
+                    delete.onClick.AddListener(delegate ()
+                    {
+                        character.CharacterLore.RemoveAt(index);
+                        OpenCharacterEditor(character);
+                        character.DetailsUI.text = character.FormatDetails;
+                        character.Save();
+                    });
+
+                    num++;
+                }
+
+                var add = PrefabEditor.inst.CreatePrefab.Duplicate(characterEditorLoreContent, "Add");
+                add.transform.localScale = Vector3.one;
+                add.transform.Find("Text").GetComponent<Text>().text = "Add Lore";
+                var addButton = add.GetComponent<Button>();
+                addButton.onClick.ClearAll();
+                addButton.onClick.AddListener(delegate ()
+                {
+                    character.CharacterLore.Add("New Detail");
+                    OpenCharacterEditor(character);
+                    character.DetailsUI.text = character.FormatDetails;
+                    character.Save();
+                });
+            }
+
+            // Abilities
+            {
+                LSHelpers.DeleteChildren(characterEditorAbilitiesContent);
+
+                int num = 0;
+                foreach (var tag in character.CharacterAbilities)
+                {
+                    int index = num;
+                    var gameObject = tagPrefab.Duplicate(characterEditorAbilitiesContent, index.ToString());
+                    gameObject.transform.localScale = Vector3.one;
+                    var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                    input.onValueChanged.ClearAll();
+                    input.onEndEdit.ClearAll();
+                    input.text = tag;
+                    input.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        character.CharacterAbilities[index] = _val;
+                        character.DetailsUI.text = character.FormatDetails;
+                    });
+                    input.onEndEdit.AddListener(delegate (string _val)
+                    {
+                        character.Save();
+                    });
+
+                    var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                    delete.onClick.ClearAll();
+                    delete.onClick.AddListener(delegate ()
+                    {
+                        character.CharacterAbilities.RemoveAt(index);
+                        OpenCharacterEditor(character);
+                        character.DetailsUI.text = character.FormatDetails;
+                        character.Save();
+                    });
+
+                    num++;
+                }
+
+                var add = PrefabEditor.inst.CreatePrefab.Duplicate(characterEditorAbilitiesContent, "Add");
+                add.transform.localScale = Vector3.one;
+                add.transform.Find("Text").GetComponent<Text>().text = "Add Ability";
+                var addButton = add.GetComponent<Button>();
+                addButton.onClick.ClearAll();
+                addButton.onClick.AddListener(delegate ()
+                {
+                    character.CharacterAbilities.Add("New Detail");
+                    OpenCharacterEditor(character);
+                    character.DetailsUI.text = character.FormatDetails;
+                    character.Save();
+                });
+            }
+        }
+
+        public void OpenTimelineEditor(TimelineItem timeline)
+        {
+            SetEditorsInactive();
+            editors[3].SetActive(true);
+
+            timelineEditorName.onValueChanged.ClearAll();
+            timelineEditorName.text = timeline.Name;
+            timelineEditorName.onValueChanged.AddListener(delegate (string _val)
+            {
+                timeline.Name = _val;
+                timeline.NameUI.text = _val;
+            });
+            timelineEditorName.onEndEdit.ClearAll();
+            timelineEditorName.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveTimelines();
+            });
+        }
+
+        public void OpenEventEditor(TimelineItem.Event level)
+        {
+            SetEditorsInactive();
+            editors[4].SetActive(true);
+
+            eventEditorName.onValueChanged.ClearAll();
+            eventEditorName.text = level.Name;
+            eventEditorName.onValueChanged.AddListener(delegate (string _val)
+            {
+                level.Name = _val;
+                level.NameUI.text = $"{level.ElementType}: {level.Name}";
+            });
+            eventEditorName.onEndEdit.ClearAll();
+            eventEditorName.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveTimelines();
+            });
+
+            eventEditorDescription.onValueChanged.ClearAll();
+            eventEditorDescription.text = level.Description;
+            eventEditorDescription.onValueChanged.AddListener(delegate (string _val)
+            {
+                level.Description = _val;
+                level.DescriptionUI.text = _val;
+            });
+            eventEditorDescription.onEndEdit.ClearAll();
+            eventEditorDescription.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveTimelines();
+            });
+            
+            eventEditorPath.onValueChanged.ClearAll();
+            eventEditorPath.text = level.Path == null ? "" : level.Path;
+            eventEditorPath.onValueChanged.AddListener(delegate (string _val)
+            {
+                level.Path = _val;
+            });
+            eventEditorPath.onEndEdit.ClearAll();
+            eventEditorPath.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveTimelines();
+            });
+
+            eventEditorType.onValueChanged.ClearAll();
+            eventEditorType.value = (int)level.ElementType;
+            eventEditorType.onValueChanged.AddListener(delegate (int _val)
+            {
+                level.ElementType = (TimelineItem.Event.Type)_val;
+                level.NameUI.text = $"{level.ElementType}: {level.Name}";
+                SaveTimelines();
+            });
+        }
+
+        public void OpenScheduleEditor(ScheduleItem schedule)
+        {
+            editors[5].SetActive(true);
+
+            scheduleEditorDescription.onValueChanged.ClearAll();
+            scheduleEditorDescription.text = schedule.Description;
+            scheduleEditorDescription.onValueChanged.AddListener(delegate (string _val)
+            {
+                schedule.Description = _val;
+                schedule.TextUI.text = schedule.Text;
+            });
+            scheduleEditorDescription.onEndEdit.ClearAll();
+            scheduleEditorDescription.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveSchedules();
+            });
+
+            scheduleEditorYear.onValueChanged.ClearAll();
+            scheduleEditorYear.text = schedule.DateTime.Year.ToString();
+            scheduleEditorYear.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int year))
+                {
+                    var dateTime = schedule.DateTime;
+
+                    schedule.DateTime = DateTime.Parse(schedule.FormatDate(dateTime.Day, dateTime.Month, year, dateTime.Hour >= 12 ? dateTime.Hour - 12 : dateTime.Hour, dateTime.Minute, dateTime.Hour >= 12 && dateTime.Hour < 24 ? "PM" : "AM"));
+
+                    schedule.Date = schedule.DateTime.ToString("g");
+                    schedule.TextUI.text = schedule.Text;
+
+                    SaveSchedules();
+                }
+            });
+
+            scheduleEditorMonth.onValueChanged.ClearAll();
+            scheduleEditorMonth.value = schedule.DateTime.Month - 1;
+            scheduleEditorMonth.onValueChanged.AddListener(delegate (int _val)
+            {
+                var dateTime = schedule.DateTime;
+
+                schedule.DateTime = DateTime.Parse(schedule.FormatDate(dateTime.Day, _val + 1, dateTime.Year, dateTime.Hour >= 12 ? dateTime.Hour - 12 : dateTime.Hour, dateTime.Minute, dateTime.Hour >= 12 && dateTime.Hour < 24 ? "PM" : "AM"));
+
+                schedule.Date = schedule.DateTime.ToString("g");
+                schedule.TextUI.text = schedule.Text;
+
+                SaveSchedules();
+            });
+
+            scheduleEditorDay.onValueChanged.ClearAll();
+            scheduleEditorDay.text = schedule.DateTime.Day.ToString();
+            scheduleEditorDay.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int day))
+                {
+                    var dateTime = schedule.DateTime;
+
+                    schedule.DateTime = DateTime.Parse(schedule.FormatDate(day, dateTime.Month, dateTime.Year, dateTime.Hour >= 12 ? dateTime.Hour - 12 : dateTime.Hour, dateTime.Minute, dateTime.Hour >= 12 && dateTime.Hour < 24 ? "PM" : "AM"));
+
+                    schedule.Date = schedule.DateTime.ToString("g");
+                    schedule.TextUI.text = schedule.Text;
+
+                    SaveSchedules();
+                }
+            });
+
+            scheduleEditorHour.onValueChanged.ClearAll();
+            scheduleEditorHour.text = schedule.DateTime.Hour.ToString();
+            scheduleEditorHour.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int hour))
+                {
+                    var dateTime = schedule.DateTime;
+
+                    hour = Mathf.Clamp(hour, 0, 23);
+
+                    schedule.DateTime = DateTime.Parse(schedule.FormatDate(dateTime.Day, dateTime.Month, dateTime.Year, hour >= 12 ? hour - 12 : hour, dateTime.Minute, hour >= 12 && hour < 24 ? "PM" : "AM"));
+
+                    schedule.Date = schedule.DateTime.ToString("g");
+                    schedule.TextUI.text = schedule.Text;
+
+                    SaveSchedules();
+                }
+            });
+
+            scheduleEditorMinute.onValueChanged.ClearAll();
+            scheduleEditorMinute.text = schedule.DateTime.Minute.ToString();
+            scheduleEditorMinute.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int minute))
+                {
+                    var dateTime = schedule.DateTime;
+
+                    schedule.DateTime = DateTime.Parse(schedule.FormatDate(dateTime.Day, dateTime.Month, dateTime.Year, dateTime.Hour >= 12 ? dateTime.Hour - 12 : dateTime.Hour, minute, dateTime.Hour >= 12 && dateTime.Hour < 24 ? "PM" : "AM"));
+
+                    schedule.Date = schedule.DateTime.ToString("g");
+                    schedule.TextUI.text = schedule.Text;
+
+                    SaveSchedules();
+                }
+            });
+        }
+
+        public void OpenNoteEditor(NoteItem note)
+        {
+            editors[6].SetActive(true);
+
+            noteEditorName.onValueChanged.ClearAll();
+            noteEditorName.text = note.Name;
+            noteEditorName.onValueChanged.AddListener(delegate (string _val)
+            {
+                note.Name = _val;
+                note.TitleUI.text = $"Note - {note.Name}";
+            });
+            noteEditorName.onEndEdit.ClearAll();
+            noteEditorName.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveNotes();
+            });
+
+            noteEditorText.onValueChanged.ClearAll();
+            noteEditorText.text = note.Text;
+            noteEditorText.onValueChanged.AddListener(delegate (string _val)
+            {
+                note.Text = _val;
+                note.TextUI.text = _val;
+            });
+            noteEditorText.onEndEdit.ClearAll();
+            noteEditorText.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveNotes();
+            });
+
+            noteEditorColors.Clear();
+            LSHelpers.DeleteChildren(noteEditorColorsParent);
+            for (int i = 0; i < 18; i++)
+            {
+                var col = Instantiate(colorBase.Find("1").gameObject);
+                col.transform.localScale = Vector3.one;
+                col.name = (i + 1).ToString();
+                col.transform.SetParent(noteEditorColorsParent);
+                noteEditorColors.Add(col.GetComponent<Toggle>());
+            }
+
+            SetNoteColors(note);
+
+            noteEditorReset.onClick.ClearAll();
+            noteEditorReset.onClick.AddListener(delegate ()
+            {
+                note.Position = Vector2.zero;
+                note.Scale = Vector2.one;
+                note.Size = new Vector2(300f, 150f);
+                SaveNotes();
+            });
+        }
+
+        public void SetNoteColors(NoteItem note)
+        {
+            int num = 0;
+            foreach (var toggle in noteEditorColors)
+            {
+                int index = num;
+
+                var color = index < MarkerEditor.inst.markerColors.Count ? MarkerEditor.inst.markerColors[index] : LSColors.red700;
+                toggle.onValueChanged.ClearAll();
+                toggle.isOn = index == note.Color;
+                toggle.image.color = color;
+                ((Image)toggle.graphic).color = new Color(0.078f, 0.067f, 0.067f, 1f);
+                toggle.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    note.Color = index;
+                    SetNoteColors(note);
+                });
+
+                num++;
+            }
+        }
 
         #endregion
 
@@ -795,8 +2664,29 @@ namespace EditorManagement.Functions
         {
             var gameObject = prefabs[0].Duplicate(content, "document");
             document.GameObject = gameObject;
-            gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>().text = document.Name;
-            gameObject.transform.Find("words").GetComponent<TextMeshProUGUI>().text = document.Text;
+
+            var button = gameObject.GetComponent<Button>();
+            button.onClick.ClearAll();
+            button.onClick.AddListener(delegate ()
+            {
+                OpenDocumentEditor(document);
+            });
+
+            document.NameUI = gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
+            document.NameUI.text = document.Name;
+
+            document.TextUI = gameObject.transform.Find("words").GetComponent<TextMeshProUGUI>();
+            document.TextUI.text = document.Text;
+
+            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
+            delete.onClick.ClearAll();
+            delete.onClick.AddListener(delegate ()
+            {
+                planners.RemoveAll(x => x is DocumentItem && x.ID == document.ID);
+                SaveDocuments();
+                Destroy(gameObject);
+            });
+
             return gameObject;
         }
 
@@ -805,9 +2695,18 @@ namespace EditorManagement.Functions
             var gameObject = prefabs[1].Duplicate(content, "todo");
             todo.GameObject = gameObject;
 
-            gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = todo.Text;
+            var button = gameObject.GetComponent<Button>();
+            button.onClick.ClearAll();
+            button.onClick.AddListener(delegate ()
+            {
+                OpenTODOEditor(todo);
+            });
+
+            todo.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
+            todo.TextUI.text = todo.Text;
 
             var toggle = gameObject.transform.Find("checked").GetComponent<Toggle>();
+            todo.CheckedUI = toggle;
             toggle.onValueChanged.ClearAll();
             toggle.isOn = todo.Checked;
             toggle.onValueChanged.AddListener(delegate (bool _val)
@@ -833,15 +2732,262 @@ namespace EditorManagement.Functions
             var gameObject = prefabs[2].Duplicate(content, "character");
             character.GameObject = gameObject;
 
-            var profile = gameObject.transform.Find("profile").GetComponent<Image>();
+            var button = gameObject.GetComponent<Button>();
+            button.onClick.ClearAll();
+            button.onClick.AddListener(delegate ()
+            {
+                OpenCharacterEditor(character);
+            });
 
-            var details = gameObject.transform.Find("details").GetComponent<TextMeshProUGUI>();
+            character.ProfileUI = gameObject.transform.Find("profile").GetComponent<Image>();
 
-            var description = gameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
+            character.DetailsUI = gameObject.transform.Find("details").GetComponent<TextMeshProUGUI>();
 
-            profile.sprite = character.CharacterSprite;
-            details.text = character.FormatDetails;
-            description.text = character.Description;
+            character.DescriptionUI = gameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
+
+            character.ProfileUI.sprite = character.CharacterSprite;
+            character.DetailsUI.text = character.FormatDetails;
+            character.DescriptionUI.text = character.Description;
+
+            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
+            delete.onClick.ClearAll();
+            delete.onClick.AddListener(delegate ()
+            {
+                planners.RemoveAll(x => x is CharacterItem && x.ID == character.ID);
+
+                if (RTFile.DirectoryExists(character.FullPath))
+                {
+                    var directory = character.FullPath;
+                    var files = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
+                    var directories = Directory.GetFiles(directory, "*", SearchOption.AllDirectories);
+
+                    foreach (var file in files)
+                    {
+                        File.Delete(file);
+                    }
+
+                    foreach (var dir in directories)
+                    {
+                        Directory.Delete(dir);
+                    }
+
+                    Directory.Delete(directory);
+                }
+
+                Destroy(gameObject);
+            });
+
+            return gameObject;
+        }
+
+        public GameObject GenerateTimeline(TimelineItem timeline)
+        {
+            var gameObject = prefabs[3].Duplicate(content, "timeline");
+            timeline.GameObject = gameObject;
+
+            timeline.Content = gameObject.transform.Find("Scroll/Viewport/Content");
+
+            timeline.NameUI = gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
+            timeline.NameUI.text = timeline.Name;
+
+            var edit = gameObject.transform.Find("edit").GetComponent<Button>();
+            edit.onClick.ClearAll();
+            edit.onClick.AddListener(delegate ()
+            {
+                OpenTimelineEditor(timeline);
+            });
+            
+            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
+            delete.onClick.ClearAll();
+            delete.onClick.AddListener(delegate ()
+            {
+                planners.RemoveAll(x => x is TimelineItem && x.ID == timeline.ID);
+                SaveTimelines();
+                Destroy(gameObject);
+            });
+
+            timeline.UpdateTimeline();
+
+            return gameObject;
+        }
+
+        public GameObject GenerateSchedule(ScheduleItem schedule)
+        {
+            var gameObject = prefabs[4].Duplicate(content, "schedule");
+            schedule.GameObject = gameObject;
+
+            var button = gameObject.GetComponent<Button>();
+            button.onClick.ClearAll();
+            button.onClick.AddListener(delegate ()
+            {
+                OpenScheduleEditor(schedule);
+            });
+
+            schedule.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
+            schedule.TextUI.text = schedule.Text;
+
+            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
+            delete.onClick.ClearAll();
+            delete.onClick.AddListener(delegate ()
+            {
+                planners.RemoveAll(x => x is ScheduleItem && x.ID == schedule.ID);
+                SaveSchedules();
+                Destroy(gameObject);
+            });
+
+            return gameObject;
+        }
+
+        public static bool DisplayEdges { get; set; }
+        public GameObject GenerateNote(NoteItem note)
+        {
+            var gameObject = prefabs[5].Duplicate(content, "note");
+            note.GameObject = gameObject;
+
+            var noteDraggable = gameObject.AddComponent<NoteDraggable>();
+            noteDraggable.note = note;
+            noteDraggable.onClick = delegate ()
+            {
+                OpenNoteEditor(note);
+            };
+
+            // Left
+            {
+                var left = new GameObject("left");
+                left.transform.SetParent(gameObject.transform);
+                left.transform.localScale = Vector3.one;
+                var leftRT = left.AddComponent<RectTransform>();
+                leftRT.anchoredPosition = Vector2.zero;
+                leftRT.anchorMax = new Vector2(1f, 1f);
+                leftRT.anchorMin = new Vector2(1f, 0f);
+                leftRT.pivot = new Vector2(0.5f, 0.5f);
+                leftRT.sizeDelta = new Vector2(4f, 0f);
+                var leftImage = left.AddComponent<Image>();
+                leftImage.color = new Color(1f, 1f, 1f, DisplayEdges ? 1f : 0f);
+                var noteDraggableLeft = left.AddComponent<NoteDraggable>();
+                noteDraggableLeft.part = NoteDraggable.DragPart.Left;
+                noteDraggableLeft.note = note;
+            }
+            
+            // Right
+            {
+                var left = new GameObject("right");
+                left.transform.SetParent(gameObject.transform);
+                left.transform.localScale = Vector3.one;
+                var leftRT = left.AddComponent<RectTransform>();
+                leftRT.anchoredPosition = Vector2.zero;
+                leftRT.anchorMax = new Vector2(0f, 1f);
+                leftRT.anchorMin = new Vector2(0f, 0f);
+                leftRT.pivot = new Vector2(0.5f, 0.5f);
+                leftRT.sizeDelta = new Vector2(4f, 0f);
+                var leftImage = left.AddComponent<Image>();
+                leftImage.color = new Color(1f, 1f, 1f, DisplayEdges ? 1f : 0f);
+                var noteDraggableLeft = left.AddComponent<NoteDraggable>();
+                noteDraggableLeft.part = NoteDraggable.DragPart.Right;
+                noteDraggableLeft.note = note;
+            }
+
+            // Up
+            {
+                var left = new GameObject("up");
+                left.transform.SetParent(gameObject.transform);
+                left.transform.localScale = Vector3.one;
+                var leftRT = left.AddComponent<RectTransform>();
+                leftRT.anchoredPosition = new Vector2(0f, 30f);
+                leftRT.anchorMax = Vector2.one;
+                leftRT.anchorMin = new Vector2(0f, 1f);
+                leftRT.pivot = new Vector2(0.5f, 0.5f);
+                leftRT.sizeDelta = new Vector2(0f, 4f);
+                var leftImage = left.AddComponent<Image>();
+                leftImage.color = new Color(1f, 1f, 1f, DisplayEdges ? 1f : 0f);
+                var noteDraggableLeft = left.AddComponent<NoteDraggable>();
+                noteDraggableLeft.part = NoteDraggable.DragPart.Up;
+                noteDraggableLeft.note = note;
+            }
+            
+            // Down
+            {
+                var left = new GameObject("down");
+                left.transform.SetParent(gameObject.transform);
+                left.transform.localScale = Vector3.one;
+                var leftRT = left.AddComponent<RectTransform>();
+                leftRT.anchoredPosition = Vector2.zero;
+                leftRT.anchorMax = new Vector2(1f, 0f);
+                leftRT.anchorMin = new Vector2(0f, 0f);
+                leftRT.pivot = new Vector2(0.5f, 0.5f);
+                leftRT.sizeDelta = new Vector2(0f, 4f);
+                var leftImage = left.AddComponent<Image>();
+                leftImage.color = new Color(1f, 1f, 1f, DisplayEdges ? 1f : 0f);
+                var noteDraggableLeft = left.AddComponent<NoteDraggable>();
+                noteDraggableLeft.part = NoteDraggable.DragPart.Down;
+                noteDraggableLeft.note = note;
+            }
+
+            //var inputField = gameObject.GetComponent<TMP_InputField>();
+            //inputField.onValueChanged.RemoveAllListeners();
+            //inputField.onEndEdit.RemoveAllListeners();
+            //inputField.text = note.Text;
+
+            //inputField.onValueChanged.AddListener(delegate (string _val)
+            //{
+            //    note.Text = _val;
+            //});
+
+            //inputField.onEndEdit.AddListener(delegate (string _val)
+            //{
+            //    SaveNotes();
+            //});
+
+            //var clickable = gameObject.AddComponent<Clickable>();
+            //clickable.onEnter = delegate (UnityEngine.EventSystems.PointerEventData pointerEventData)
+            //{
+            //    inputField.enabled = true;
+            //};
+            //clickable.onExit = delegate (UnityEngine.EventSystems.PointerEventData pointerEventData)
+            //{
+            //    inputField.enabled = false;
+            //};
+
+            var edit = gameObject.transform.Find("panel/edit").GetComponent<Button>();
+            edit.onClick.ClearAll();
+            edit.onClick.AddListener(delegate ()
+            {
+                CurrentTab = 5;
+                Open();
+                RenderTabs();
+                RefreshList();
+                OpenNoteEditor(note);
+            });
+
+            note.TitleUI = gameObject.transform.Find("panel/title").GetComponent<TextMeshProUGUI>();
+            note.TitleUI.text = $"Note - {note.Name}";
+            note.ActiveUI = gameObject.transform.Find("panel/active").GetComponent<Toggle>();
+            note.TopBar = gameObject.transform.Find("panel").GetComponent<Image>();
+            note.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
+            note.TextUI.text = note.Text;
+
+            note.ActiveUI.onValueChanged.ClearAll();
+            note.ActiveUI.isOn = note.Active;
+            note.ActiveUI.onValueChanged.AddListener(delegate (bool _val)
+            {
+                note.Active = _val;
+            });
+
+            var delete = gameObject.transform.Find("panel/delete").GetComponent<Button>();
+            delete.onClick.ClearAll();
+            delete.onClick.AddListener(delegate ()
+            {
+                if (!PlannerActive || CurrentTab != 5)
+                {
+                    note.ActiveUI.isOn = false;
+                }
+                else
+                {
+                    planners.RemoveAll(x => x is NoteItem && x.ID == note.ID);
+                    SaveNotes();
+                    Destroy(gameObject);
+                }
+            });
 
             return gameObject;
         }
@@ -849,6 +2995,8 @@ namespace EditorManagement.Functions
         #endregion
 
         #region Open / Close UI
+
+        public bool PlannerActive => EditorManager.inst.editorState == EditorManager.EditorState.Intro;
 
         public void Open()
         {
@@ -916,7 +3064,9 @@ namespace EditorManagement.Functions
             }
 
             public string Name { get; set; }
+            public TextMeshProUGUI NameUI { get; set; }
             public string Text { get; set; }
+            public TextMeshProUGUI TextUI { get; set; }
         }
 
         public class TODOItem : PlannerItem
@@ -927,7 +3077,9 @@ namespace EditorManagement.Functions
             }
 
             public string Text { get; set; }
+            public TextMeshProUGUI TextUI { get; set; }
             public bool Checked { get; set; }
+            public Toggle CheckedUI { get; set; }
             public int Priority { get; set; }
         }
 
@@ -979,6 +3131,10 @@ namespace EditorManagement.Functions
             public Sprite CharacterSprite { get; set; }
 
             public string FullPath { get; set; }
+
+            public TextMeshProUGUI DetailsUI { get; set; }
+            public TextMeshProUGUI DescriptionUI { get; set; }
+            public Image ProfileUI { get; set; }
 
             public string FormatDetails
             {
@@ -1060,26 +3216,123 @@ namespace EditorManagement.Functions
                 PlannerType = Type.Timeline;
             }
 
-            public List<Level> Levels { get; set; } = new List<Level>();
-            public List<Story> Stories { get; set; } = new List<Story>();
+            public string Name { get; set; }
 
-            public class Level
+            public TextMeshProUGUI NameUI { get; set; }
+
+            public List<Event> Levels { get; set; } = new List<Event>();
+
+            public Transform Content { get; set; }
+
+            public GameObject Add { get; set; }
+
+            public void UpdateTimeline(bool destroy = true)
             {
-                public string Name { get; set; }
-                /// <summary>
-                /// Path to level to open when level button is clicked.
-                /// </summary>
-                public string Path { get; set; }
-                /// <summary>
-                /// Not the actual metadata description. Just a timeline description.
-                /// </summary>
-                public string Description { get; set; }
+                if (destroy)
+                {
+                    LSHelpers.DeleteChildren(Content);
+                    int num = 0;
+                    foreach (var level in Levels)
+                    {
+                        int index = num;
+                        var gameObject = inst.timelineButtonPrefab.Duplicate(Content, "event");
+                        gameObject.transform.localScale = Vector3.one;
+                        level.GameObject = gameObject;
+
+                        level.Button = gameObject.GetComponent<Button>();
+                        level.Button.onClick.ClearAll();
+                        level.Button.onClick.AddListener(delegate ()
+                        {
+                            string path = $"{RTFile.ApplicationDirectory}beatmaps/{level.Path.Replace("\\", "/").Replace("/level.lsb", "")}";
+                            if (!string.IsNullOrEmpty(level.Path) && RTFile.DirectoryExists(path) &&
+                            (RTFile.FileExists(path + "/level.ogg") || RTFile.FileExists(path + "/level.wav") || RTFile.FileExists(path + "/level.mp3")))
+                            {
+                                inst.Close();
+                                RTEditor.inst.StartCoroutine(RTEditor.inst.LoadLevel(path));
+                            }
+                        });
+
+                        level.NameUI = gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
+                        level.NameUI.text = $"{level.ElementType}: {level.Name}";
+                        level.DescriptionUI = gameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
+                        level.DescriptionUI.text = level.Description;
+
+                        var delete = gameObject.transform.Find("delete").GetComponent<Button>();
+                        delete.onClick.ClearAll();
+                        delete.onClick.AddListener(delegate ()
+                        {
+                            Levels.RemoveAt(index);
+                            UpdateTimeline();
+                            inst.SaveTimelines();
+                        });
+
+                        var edit = gameObject.transform.Find("edit").GetComponent<Button>();
+                        edit.onClick.ClearAll();
+                        edit.onClick.AddListener(delegate ()
+                        {
+                            Debug.Log($"{EditorPlugin.className}Editing {Name}");
+                            inst.OpenEventEditor(level);
+                        });
+                        num++;
+                    }
+
+                    Add = inst.timelineAddPrefab.Duplicate(Content, "add");
+                    var button = Add.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        var level = new Event
+                        {
+                            Name = "New Level",
+                            Description = "Set my path to a level in your beatmaps folder and then click me!",
+                            Path = ""
+                        };
+
+                        Levels.Add(level);
+                        UpdateTimeline();
+                        inst.SaveTimelines();
+                    });
+                }
+                else
+                {
+                    foreach (var level in Levels)
+                    {
+                        if (!level.GameObject)
+                        {
+                            var gameObject = inst.timelineButtonPrefab.Duplicate(Content, "event");
+                            gameObject.transform.localScale = Vector3.one;
+                            level.GameObject = gameObject;
+                        }
+
+                        if (!level.NameUI)
+                            level.NameUI = level.GameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
+                        if (!level.DescriptionUI)
+                            level.DescriptionUI = level.GameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
+
+                        level.NameUI.text = $"{level.ElementType}: {level.Name}";
+                        level.DescriptionUI.text = level.Description;
+                    }
+                }
             }
 
-            public class Story
+            public class Event
             {
+                public GameObject GameObject { get; set; }
+                public Button Button { get; set; }
+                public TextMeshProUGUI NameUI { get; set; }
+                public TextMeshProUGUI DescriptionUI { get; set; }
+
                 public string Name { get; set; }
                 public string Description { get; set; }
+                public string Path { get; set; }
+                public Type ElementType { get; set; }
+
+                public enum Type
+                {
+                    Level,
+                    Cutscene,
+                    Story
+                }
             }
         }
 
@@ -1090,7 +3343,22 @@ namespace EditorManagement.Functions
                 PlannerType = Type.Schedule;
             }
 
-            public string Date { get; set; } = DateTime.Now.ToString("G");
+            public TextMeshProUGUI TextUI { get; set; }
+            public string Text => $"{Date} - {Description}";
+            public string Date { get; set; } = DateTime.Now.AddDays(1).ToString("g");
+
+            public string FormatDateFull(int day, int month, int year, int hour, int minute)
+            {
+                return $"{day}/{(month < 10 ? "0" + month.ToString() : month.ToString())}/{year} {(hour > 12 ? hour - 12 : hour)}:{minute} {(hour > 12 ? "PM" : "AM")}";
+            }
+            
+            public string FormatDate(int day, int month, int year, int hour, int minute, string apm)
+            {
+                return $"{day}/{(month < 10 ? "0" + month.ToString() : month.ToString())}/{year} {(hour)}:{minute} {apm}";
+            }
+
+            public string DateFormat => $"{DateTime.Day}/{(DateTime.Month < 10 ? "0" + DateTime.Month.ToString() : DateTime.Month.ToString())}/{DateTime.Year} {(DateTime.Hour > 12 ? DateTime.Hour - 12 : DateTime.Hour)}:{DateTime.Minute} {(DateTime.Hour > 12 ? "PM" : "AM")}";
+            public DateTime DateTime { get; set; } = DateTime.Now.AddDays(1);
             public string Description { get; set; }
         }
 
@@ -1101,13 +3369,22 @@ namespace EditorManagement.Functions
                 PlannerType = Type.Note;
             }
 
+            public bool Dragging { get; set; }
+
             public bool Active { get; set; }
+            public string Name { get; set; }
             public Vector2 Position { get; set; } = Vector2.zero;
-            public Vector2 Scale { get; set; } = new Vector2(600f, 300f);
+            public Vector2 Scale { get; set; } = new Vector2(1f, 1f);
+            public Vector2 Size { get; set; } = new Vector2(300f, 150f);
             public int Color { get; set; }
             public string Text { get; set; }
 
-            public Color TopColor => Color > 0 && Color < MarkerEditor.inst.markerColors.Count ? MarkerEditor.inst.markerColors[Color] : LSColors.red700;
+            public Toggle ActiveUI { get; set; }
+            public Image TopBar { get; set; }
+            public TextMeshProUGUI TitleUI { get; set; }
+            public TextMeshProUGUI TextUI { get; set; }
+
+            public Color TopColor => Color >= 0 && Color < MarkerEditor.inst.markerColors.Count ? MarkerEditor.inst.markerColors[Color] : LSColors.red700;
         }
 
         #endregion
