@@ -62,6 +62,7 @@ namespace EditorManagement.Functions.Editors
 		public List<Toggle> bgColorButtons = new List<Toggle>();
 		public List<Toggle> overlayColorButtons = new List<Toggle>();
 		public List<Toggle> timelineColorButtons = new List<Toggle>();
+		public List<Toggle> dangerColorButtons = new List<Toggle>();
 
 		public static string[] EventTypes => new string[]
 		{
@@ -91,8 +92,15 @@ namespace EditorManagement.Functions.Editors
 			"Player",
 			"Follow Player",
 			"Audio",
-			"???", //"Video BG Parent",
-			"???", //"Video BG",
+			"Video BG Parent",
+			"Video BG",
+			"Sharpen",
+			"Bars",
+			"Danger",
+			"3D Rotation",
+			"Camera Depth",
+			"Player Force",
+			"Mosaic",
 		};
 
 		public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
@@ -124,8 +132,23 @@ namespace EditorManagement.Functions.Editors
 			{ "- Player Event Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
 			{ "- Follow Player Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
 			{ "- Audio Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
-			{ /*"- Video BG Parent Editor -"*/ "- ??? 1 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
-			{ /*"- Video BG Editor -"*/ "- ??? 2 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			{ "- Video BG Parent Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
+			{ "- Video BG Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			
+			{ "- Sharpen Editor -", new Color(0.3372549f, 0.2941177f, 0.4156863f, 1f) }, // 1
+			{ "- Bars Editor -", new Color(0.254902f, 0.2705882f, 0.372549f, 1f) }, // 2
+			{ "- Danger Editor -", new Color(0.2705882f, 0.3843138f, 0.4784314f, 1f) }, // 3
+			{ "- 3D Rotation Editor -", new Color(0.1960784f, 0.3607843f, 0.4313726f, 1f) }, // 4
+			{ "- Camera Depth Editor -", new Color(0.2470588f, 0.427451f, 0.4509804f, 1f) }, // 5
+			{ "- Player Force Editor -", new Color(0.1882353f, 0.3372549f, 0.3254902f, 1f) }, // 6
+			{ "- Mosaic Editor -", new Color(0.3137255f, 0.4117647f, 0.3176471f, 1f) }, // 7
+			{ "- ??? 1 Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f) }, // 8
+			{ "- ??? 2 Distort Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f) }, // 9
+			{ "- ??? 3 Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
+			{ "- ??? 4 Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
+			{ "- ??? 5 Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
+			{ "- ??? 6 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
+			{ "- ??? 7 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
         };
 
 		public static List<Color> EventLayerColors => new List<Color>
@@ -200,7 +223,25 @@ namespace EditorManagement.Functions.Editors
 				strs.Add(timelineObject.ID);
             }
 
-			ClearEventObjects();
+			var types = SelectedKeyframes.Select(x => x.Type);
+
+			int num = 0;
+			foreach (var type in types)
+				num += type;
+
+			if (types.Count() > 0)
+				num /= types.Count();
+
+			int index = 0;
+			if (count == 1)
+            {
+				index = SelectedKeyframes[0].Index - 1;
+				if (index < 0)
+					index = 0;
+			}
+
+			SelectedKeyframes.ForEach(x => Destroy(x.GameObject));
+			RTEditor.inst.timelineKeyframes.RemoveAll(x => strs.Contains(x.ID));
 
 			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
 			for (int i = 0; i < allEvents.Count; i++)
@@ -208,10 +249,10 @@ namespace EditorManagement.Functions.Editors
 				allEvents[i].RemoveAll(x => strs.Contains(((EventKeyframe)x).id));
 			}
 
-			CreateEventObjects();
+			UpdateEventOrder();
 			EventManager.inst.updateEvents();
 
-			SetCurrentEvent(0, 0);
+			SetCurrentEvent(num, index);
 
 			EditorManager.inst.DisplayNotification($"Deleted Event Keyframes [ {count} ]", 1f, EditorManager.NotificationType.Success);
 
@@ -228,7 +269,25 @@ namespace EditorManagement.Functions.Editors
 				strs.Add(timelineObject.ID);
 			}
 
-			ClearEventObjects();
+			var types = SelectedKeyframes.Select(x => x.Type);
+
+			int num = 0;
+			foreach (var type in types)
+				num += type;
+
+			if (types.Count() > 0)
+				num /= types.Count();
+
+			int index = 0;
+			if (count == 1)
+			{
+				index = SelectedKeyframes[0].Index - 1;
+				if (index < 0)
+					index = 0;
+			}
+
+			SelectedKeyframes.ForEach(x => Destroy(x.GameObject));
+			RTEditor.inst.timelineKeyframes.RemoveAll(x => strs.Contains(x.ID));
 
 			var allEvents = DataManager.inst.gameData.eventObjects.allEvents;
 			for (int i = 0; i < allEvents.Count; i++)
@@ -236,10 +295,10 @@ namespace EditorManagement.Functions.Editors
 				allEvents[i].RemoveAll(x => strs.Contains(((EventKeyframe)x).id));
 			}
 
-			CreateEventObjects();
+			UpdateEventOrder();
 			EventManager.inst.updateEvents();
 
-			SetCurrentEvent(0, 0);
+			SetCurrentEvent(num, index);
 
 			EditorManager.inst.DisplayNotification($"Deleted Event Keyframes [ {count} ]", 1f, EditorManager.NotificationType.Success);
 
@@ -305,8 +364,7 @@ namespace EditorManagement.Functions.Editors
 				RTEditor.inst.timelineKeyframes.Add(kf);
 			}
 
-			//UpdateEventOrder();
-			//CreateEventObjects();
+			UpdateEventOrder();
 			OpenDialog();
 			EventManager.inst.updateEvents();
 		}
@@ -379,7 +437,7 @@ namespace EditorManagement.Functions.Editors
 			SetCurrentEvent(__1, DataManager.inst.gameData.eventObjects.allEvents[__1].IndexOf(eventKeyframe));
 		}
 
-		public float NewKeyframeOffset { get; set; } = -0.1f;
+		public float NewKeyframeOffset { get; set; } = /*-0.1f*/0f;
 		public void NewKeyframeFromTimeline(int _type)
 		{
 			if (!(DataManager.inst.gameData.eventObjects.allEvents.Count > _type))
@@ -495,8 +553,8 @@ namespace EditorManagement.Functions.Editors
 			kf.Image = kf.GameObject.transform.GetChild(0).GetComponent<Image>();
 
 			TriggerHelper.AddEventTriggerParams(kf.GameObject,
-				TriggerHelper.CreateEventObjectTrigger(EventEditor.inst, type, index),
-				TriggerHelper.CreateEventStartDragTrigger(EventEditor.inst, type, index),
+				TriggerHelper.CreateEventObjectTrigger(kf),
+				TriggerHelper.CreateEventStartDragTrigger(type, index),
 				TriggerHelper.CreateEventEndDragTrigger(),
 				TriggerHelper.CreateEventSelectTrigger(kf));
 
@@ -640,6 +698,12 @@ namespace EditorManagement.Functions.Editors
 				vector3.transform.SetParent(eventCopies);
 				vector3.transform.localScale = Vector3.one;
 
+				for (int i = 0; i < vector3.transform.childCount; i++)
+				{
+					((RectTransform)vector3.transform.GetChild(i)).sizeDelta = new Vector2(122f, 32f);
+					((RectTransform)vector3.transform.GetChild(i).GetChild(0)).sizeDelta = new Vector2(60f, 32f);
+				}
+
 				uiDictionary.Add("Vector3", vector3);
 			}
 
@@ -780,6 +844,8 @@ namespace EditorManagement.Functions.Editors
 			var shake = EventEditor.inst.dialogRight.Find("shake");
             {
 				var direction = GenerateUIElement("direction", "Vector2", shake, 10, "Direction X", "Direction Y");
+				var interpolation = GenerateUIElement("interpolation", "Single", shake, 12, "Interpolation");
+				var speed = GenerateUIElement("speed", "Single", shake, 14, "Speed");
             }
 
 			Log($"{EventEditor.inst.className}Modifying Bloom Event");
@@ -794,7 +860,7 @@ namespace EditorManagement.Functions.Editors
 			Log($"{EventEditor.inst.className}Modifying Vignette Event");
 			var vignette = EventEditor.inst.dialogRight.Find("vignette");
 			{
-				var colors = SetupColorButtons("colors", "Colors", vignette, 16, vignetteColorButtons);
+				var colors = SetupColorButtons("colors", "Colors", vignette, 18, vignetteColorButtons);
 			}
 
 			Log($"{EventEditor.inst.className}Modifying Lens Event");
@@ -955,8 +1021,72 @@ namespace EditorManagement.Functions.Editors
 				var pitchVol = GenerateUIElement("music", "Vector2", audio.transform, 8, "Pitch", "Volume");
             }
 
-            try
+			var videoBGParent = GenerateEventDialog("videobgparent");
             {
+				var position = GenerateUIElement("position", "Vector3", videoBGParent.transform, 8, "Position X", "Position Y", "Position Z");
+				var scale = GenerateUIElement("scale", "Vector3", videoBGParent.transform, 10, "Scale X", "Scale Y", "Scale Z");
+				var rotation = GenerateUIElement("rotation", "Vector3", videoBGParent.transform, 12, "Rotation X", "Rotation Y", "Rotation Z");
+            }
+			
+			var videoBG = GenerateEventDialog("videobg");
+            {
+				var position = GenerateUIElement("position", "Vector3", videoBG.transform, 8, "Position X", "Position Y", "Position Z");
+				var scale = GenerateUIElement("scale", "Vector3", videoBG.transform, 10, "Scale X", "Scale Y", "Scale Z");
+				var rotation = GenerateUIElement("rotation", "Vector3", videoBG.transform, 12, "Rotation X", "Rotation Y", "Rotation Z");
+
+				var modeLabel = position["Label"].Duplicate(videoBG.transform);
+				GenerateLabels(modeLabel.transform, "Render Type");
+
+				var mode = gradient.transform.Find("curves").gameObject.Duplicate(videoBG.transform, "rendertype");
+				mode.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
+				{
+					new Dropdown.OptionData("Background"),
+					new Dropdown.OptionData("Foreground"),
+				};
+			}
+
+			Log($"{EventEditor.inst.className}Generating Sharpen Event");
+			var sharpen = GenerateEventDialog("sharpen");
+			{
+				var intensity = GenerateUIElement("intensity", "Single", sharpen.transform, 8, "Intensity");
+			}
+			
+			Log($"{EventEditor.inst.className}Generating Sharpen Event");
+			var bars = GenerateEventDialog("bars");
+			{
+				var intensity = GenerateUIElement("intensity", "Single", bars.transform, 8, "Intensity");
+
+				var modeLabel = intensity["Label"].Duplicate(bars.transform);
+				GenerateLabels(modeLabel.transform, "Direction");
+
+				var mode = gradient.transform.Find("curves").gameObject.Duplicate(bars.transform, "direction");
+				mode.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
+				{
+					new Dropdown.OptionData("Horizontal"),
+					new Dropdown.OptionData("Vertical"),
+				};
+			}
+
+			var danger = GenerateEventDialog("danger");
+            {
+				var intensity = GenerateUIElement("intensity", "Single", danger.transform, 8, "Intensity");
+				var size = GenerateUIElement("size", "Single", danger.transform, 10, "Size");
+				var colors = SetupColorButtons("colors", "Colors", danger.transform, 12, dangerColorButtons);
+			}
+
+			var rotxy = GenerateEventDialog("3d rotation");
+			{
+				var rotation = GenerateUIElement("rotation", "Vector2", rotxy.transform, 8, "Rotation X", "Rotation Y");
+			}
+			
+			var cameraDepth = GenerateEventDialog("cameradepth");
+			{
+				var depth = GenerateUIElement("depth", "Single", cameraDepth.transform, 8, "Depth");
+				var perspectiveZoom = GenerateUIElement("zoom", "Single", cameraDepth.transform, 10, "Zoom");
+			}
+
+			try
+			{
 				var move = EventEditor.inst.dialogRight.Find("move");
 				var multiKeyframeEditor = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
 
@@ -1198,7 +1328,11 @@ namespace EditorManagement.Functions.Editors
 
 						// Shake Intensity X / Y
 						if (EventsCore)
+                        {
 							SetVector2InputField(dialogTmp, "direction", 1, 2, -10f, 10f);
+							SetFloatInputField(dialogTmp, "interpolation/x", 3, max: 999f, allowNegative: false);
+							SetFloatInputField(dialogTmp, "speed/x", 4, min: 0.001f, max: 9999f, allowNegative: false);
+						}
 						break;
 					}
 				case 4: // Theme
@@ -1303,12 +1437,7 @@ namespace EditorManagement.Functions.Editors
 						// ColorGrading Contrast
 						SetFloatInputField(dialogTmp, "contrast/x", 1, 1f, 10f);
 
-						// ColorGrading Gamma (Not sure how to do the UI for this since it's literally four values)
-						// Gamma X = 2
-						// Gamma Y = 3
-						// Gamma Z = 4
-						// Gamma W = 5
-
+						// ColorGrading Gamma
 						SetFloatInputField(dialogTmp, "gamma/x", 2);
 						SetFloatInputField(dialogTmp, "gamma/y", 3);
 						SetFloatInputField(dialogTmp, "gamma/z", 4);
@@ -1521,6 +1650,105 @@ namespace EditorManagement.Functions.Editors
 
 						break;
 					}
+				case 26: // Video BG Parent
+                    {
+						// Position
+						SetFloatInputField(dialogTmp, "position/x", 0);
+						SetFloatInputField(dialogTmp, "position/y", 1);
+						SetFloatInputField(dialogTmp, "position/z", 2);
+
+						// Scale
+						SetFloatInputField(dialogTmp, "scale/x", 3);
+						SetFloatInputField(dialogTmp, "scale/y", 4);
+						SetFloatInputField(dialogTmp, "scale/z", 5);
+
+						// Rotation
+						SetFloatInputField(dialogTmp, "rotation/x", 6, 5f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/y", 7, 5f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/z", 8, 5f, 3f);
+
+						break;
+                    }
+				case 27: // Video BG
+                    {
+						// Position
+						SetFloatInputField(dialogTmp, "position/x", 0);
+						SetFloatInputField(dialogTmp, "position/y", 1);
+						SetFloatInputField(dialogTmp, "position/z", 2);
+
+						// Scale
+						SetFloatInputField(dialogTmp, "scale/x", 3);
+						SetFloatInputField(dialogTmp, "scale/y", 4);
+						SetFloatInputField(dialogTmp, "scale/z", 5);
+
+						// Rotation
+						SetFloatInputField(dialogTmp, "rotation/x", 6, 5f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/y", 7, 5f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/z", 8, 5f, 3f);
+
+						// Render Type
+						{
+							var drp = dialogTmp.Find("rendertype").GetComponent<Dropdown>();
+							drp.onValueChanged.RemoveAllListeners();
+							drp.value = (int)currentKeyframe.eventValues[9];
+							drp.onValueChanged.AddListener(delegate (int _val)
+							{
+								currentKeyframe.eventValues[9] = _val;
+								EventManager.inst.updateEvents();
+							});
+						}
+
+
+						break;
+                    }
+				case 28: // Sharpen
+                    {
+						SetFloatInputField(dialogTmp, "intensity/x", 0);
+						break;
+					}
+				case 29: // Sharpen
+                    {
+						SetFloatInputField(dialogTmp, "intensity/x", 0);
+
+						// Direction
+						{
+							var drp = dialogTmp.Find("direction").GetComponent<Dropdown>();
+							drp.onValueChanged.RemoveAllListeners();
+							drp.value = (int)currentKeyframe.eventValues[1];
+							drp.onValueChanged.AddListener(delegate (int _val)
+							{
+								currentKeyframe.eventValues[1] = _val;
+								EventManager.inst.updateEvents();
+							});
+						}
+
+						break;
+					}
+				case 30:
+					{
+						SetFloatInputField(dialogTmp, "intensity/x", 0);
+
+						SetFloatInputField(dialogTmp, "size/x", 1);
+
+						// Danger Color
+						SetListColor((int)currentKeyframe.eventValues[2], 2, dangerColorButtons, new Color(0.66f, 0f, 0f));
+
+						break;
+                    } // Danger
+				case 31:
+                    {
+						SetFloatInputField(dialogTmp, "rotation/x", 0, 5f, 3f);
+						SetFloatInputField(dialogTmp, "rotation/y", 1, 5f, 3f);
+
+						break;
+                    } // 3D Rotation
+				case 32:
+                    {
+						SetFloatInputField(dialogTmp, "depth/x", 0);
+						SetFloatInputField(dialogTmp, "zoom/x", 1);
+
+						break;
+                    } // Camera Depth
 			}
 
 			// Curves
@@ -1542,6 +1770,7 @@ namespace EditorManagement.Functions.Editors
 					}
 
 					//currentKeyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
+					RenderEventObjects();
 					eventManager.updateEvents();
 				});
 
@@ -2065,24 +2294,37 @@ namespace EditorManagement.Functions.Editors
 
 		public void UpdateEventOrder()
         {
-			var strs = new List<string>();
-			foreach (var timelineObject in SelectedKeyframes)
-				strs.Add(timelineObject.ID);
-
-			ClearEventObjects();
-
 			for (int i = 0; i < AllEvents.Count; i++)
-            {
+			{
 				DataManager.inst.gameData.eventObjects.allEvents[i] = DataManager.inst.gameData.eventObjects.allEvents[i].OrderBy(x => x.eventTime).ToList();
+				foreach (var keyframe in RTEditor.inst.timelineKeyframes)
+				{
+					if (DataManager.inst.gameData.eventObjects.allEvents[i].Has(x => x is EventKeyframe eventKeyframe && eventKeyframe.id == keyframe.ID))
+					{
+						keyframe.Index = DataManager.inst.gameData.eventObjects.allEvents[i].FindIndex(x => x is EventKeyframe eventKeyframe && eventKeyframe.id == keyframe.ID);
+					}
+				}
 			}
-			
-			CreateEventObjects();
 
-			foreach (var timelineObject in RTEditor.inst.timelineKeyframes)
-            {
-				if (strs.Contains(timelineObject.ID))
-					timelineObject.selected = true;
-            }
+
+            //var strs = new List<string>();
+            //foreach (var timelineObject in SelectedKeyframes)
+            //    strs.Add(timelineObject.ID);
+
+            //ClearEventObjects();
+
+            //for (int i = 0; i < AllEvents.Count; i++)
+            //{
+            //    DataManager.inst.gameData.eventObjects.allEvents[i] = DataManager.inst.gameData.eventObjects.allEvents[i].OrderBy(x => x.eventTime).ToList();
+            //}
+
+            //CreateEventObjects();
+
+            //foreach (var timelineObject in RTEditor.inst.timelineKeyframes)
+            //{
+            //    if (strs.Contains(timelineObject.ID))
+            //        timelineObject.selected = true;
+            //}
         }
 
 		void RenderTitles()

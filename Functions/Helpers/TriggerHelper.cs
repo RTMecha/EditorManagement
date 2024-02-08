@@ -679,14 +679,14 @@ namespace EditorManagement.Functions.Helpers
 
 		#region Events
 
-		public static EventTrigger.Entry CreateEventObjectTrigger(EventEditor instance, int type, int index)
+		public static EventTrigger.Entry CreateEventObjectTrigger(TimelineObject kf)
 		{
 			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.PointerClick;
 			entry.callback.AddListener(delegate (BaseEventData eventData)
 			{
-				if (!instance.eventDrag && (eventData as PointerEventData).button != PointerEventData.InputButton.Middle)
-					(InputDataManager.inst.editorActions.MultiSelect.IsPressed ? (Action<int, int>)instance.AddedSelectedEvent : instance.SetCurrentEvent)(type, index);
+				if (!EventEditor.inst.eventDrag && (eventData as PointerEventData).button != PointerEventData.InputButton.Middle)
+					(InputDataManager.inst.editorActions.MultiSelect.IsPressed ? (Action<int, int>)EventEditor.inst.AddedSelectedEvent : EventEditor.inst.SetCurrentEvent)(kf.Type, kf.Index);
 			});
 			return entry;
 		}
@@ -704,7 +704,7 @@ namespace EditorManagement.Functions.Helpers
 			return eventEndDragTrigger;
 		}
 
-		public static EventTrigger.Entry CreateEventStartDragTrigger(EventEditor instance, int type, int index)
+		public static EventTrigger.Entry CreateEventStartDragTrigger(int type, int index)
 		{
 			var startDragTrigger = new EventTrigger.Entry();
 			startDragTrigger.eventID = EventTriggerType.BeginDrag;
@@ -721,11 +721,11 @@ namespace EditorManagement.Functions.Helpers
                         }
 					}
 					else
-						instance.SetCurrentEvent(type, index);
+						EventEditor.inst.SetCurrentEvent(type, index);
 
 					float timelineTime = EditorManager.inst.GetTimelineTime();
-					instance.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[type][index].eventTime - timelineTime;
-					instance.eventDrag = true;
+					EventEditor.inst.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[type][index].eventTime - timelineTime;
+					EventEditor.inst.eventDrag = true;
 				}
 				else
 					EditorManager.inst.DisplayNotification("Can't change time of first Event", 2f, EditorManager.NotificationType.Warning);
