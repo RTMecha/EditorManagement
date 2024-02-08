@@ -2104,6 +2104,12 @@ namespace EditorManagement.Functions.Editors
                                     firstDirection = RTObject.Axis.NegY;
                             }
 
+                            if (firstDirection == RTObject.Axis.NegX || firstDirection == RTObject.Axis.PosX)
+                                selectedKeyframe.eventValues[1] = dragKeyframeValues.y;
+                            
+                            if (firstDirection == RTObject.Axis.NegY || firstDirection == RTObject.Axis.PosY)
+                                selectedKeyframe.eventValues[0] = dragKeyframeValues.x;
+
                             if (firstDirection == RTObject.Axis.Static || firstDirection == RTObject.Axis.PosX || firstDirection == RTObject.Axis.NegX)
                                 selectedKeyframe.eventValues[0] = dragKeyframeValues.x - dragOffset.x + (Input.GetKey(KeyCode.LeftShift) ? vector3.x : vector2.x);
                             if (firstDirection == RTObject.Axis.Static || firstDirection == RTObject.Axis.PosY || firstDirection == RTObject.Axis.NegY)
