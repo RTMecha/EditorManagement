@@ -1,3 +1,8 @@
+2.3.2 > [Feb 8, 2024]
+- Deleting Event Keyframes now select the previous keyframe in the type. Though if you have more than 1 keyframe selected, the first keyframe will be selected.
+- Fixed a few bugs with rendering Event Keyframes.
+- Added the new EventsCore Event Keyframe types.
+- Pressing X or Y while moving / scaling / rotating an object now resets the other Y / X value to the previous value it was.
 2.3.1 > [Feb 8, 2024]
 - Temporary patch to character rendering due to having too many lines in the character info causes the game to crash.
 2.3.0 > [Feb 8, 2024]
