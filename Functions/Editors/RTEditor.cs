@@ -99,6 +99,8 @@ namespace EditorManagement.Functions.Editors
             SetupFileBrowser();
             SetupPaths();
             SetupTimelinePreview();
+            SetupTimelineElements();
+            SetupTimelineGrid();
             CreateObjectSearch();
             CreateWarningPopup();
             CreateREPLEditor();
@@ -164,7 +166,10 @@ namespace EditorManagement.Functions.Editors
             doggoImage = doggoObject.GetComponent<Image>();
             timelineTime = EditorManager.inst.timelineTime.GetComponent<Text>();
             EditorPlugin.SetNotificationProperties();
-            EditorPlugin.SetTimelineColors();
+            
+            timelineSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
+
+            //EditorPlugin.SetTimelineColors();
         }
 
         void Update()
@@ -279,6 +284,8 @@ namespace EditorManagement.Functions.Editors
 
         public bool ienumRunning;
         public bool parentPickerEnabled = false;
+
+        public Slider timelineSlider;
 
         public GameObject mousePicker;
         RectTransform mousePickerRT;
@@ -695,8 +702,6 @@ namespace EditorManagement.Functions.Editors
         public bool IsTimeline => (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) &&
             EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object)) || EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab);
 
-        public static float SnapToBPM(float _time) => Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / BPMSnapDivisions)) * (SettingEditor.inst.BPMMulti / BPMSnapDivisions);
-
         #endregion
 
         #region Timeline Objects
@@ -770,6 +775,8 @@ namespace EditorManagement.Functions.Editors
             TimelineImage.sprite.Save(!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading ?
                     $"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png" :
                     GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
+
+            SetTimelineGridSize();
 
             yield break;
         }
@@ -974,6 +981,25 @@ namespace EditorManagement.Functions.Editors
             }
 
             return Color.white - invertedColorSum / colors.Count;
+        }
+
+        public float timelineGridRenderMultiSizeCloser = 160f;
+        public float timelineGridRenderMultiSizeClose = 60f;
+        public float timelineGridUnrenderSize = 25f;
+        public void SetTimelineGridSize()
+        {
+            var clipLength = AudioManager.inst.CurrentAudioSource.clip.length;
+            var bpm = EditorManager.inst.Zoom > timelineGridRenderMultiSizeCloser ? SettingEditor.inst.SnapBPM : EditorManager.inst.Zoom > timelineGridRenderMultiSizeClose ? SettingEditor.inst.SnapBPM / 2f : SettingEditor.inst.SnapBPM / 4f;
+            var snapDivisions = BPMSnapDivisions * 2f;
+            if (timelineGridRenderer && EditorManager.inst.Zoom > timelineGridUnrenderSize && GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().Value)
+            {
+                timelineGridRenderer.enabled = false;
+                timelineGridRenderer.gridCellSize.x = ((int)bpm / (int)snapDivisions) * (int)clipLength;
+                timelineGridRenderer.gridSize.x = clipLength * bpm / (snapDivisions * 1.875f);
+                timelineGridRenderer.enabled = true;
+            }
+            else if (timelineGridRenderer)
+                timelineGridRenderer.enabled = false;
         }
 
         #endregion
@@ -1601,7 +1627,6 @@ namespace EditorManagement.Functions.Editors
 
             timelineBar.transform.GetChild(0).gameObject.name = "Time Default";
 
-            Debug.LogFormat("{0}Removing unused object", EditorPlugin.className);
             var t = timelineBar.transform.Find("Time");
             defaultIF = t.gameObject;
             defaultIF.SetActive(true);
@@ -1613,7 +1638,6 @@ namespace EditorManagement.Functions.Editors
                 frick.textComponent.fontSize = 19;
             }
 
-            Debug.LogFormat("{0}Instantiating new time object", EditorPlugin.className);
             var timeObj = Instantiate(t.gameObject);
             {
                 timeObj.transform.SetParent(timelineBar.transform);
@@ -1645,7 +1669,6 @@ namespace EditorManagement.Functions.Editors
                 TriggerHelper.AddEventTrigger(timeObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF) });
             }
 
-            Debug.LogFormat("{0}Instantiating new layer object", EditorPlugin.className);
             var layersObj = Instantiate(timeObj);
             {
                 layersObj.transform.SetParent(timelineBar.transform);
@@ -1683,10 +1706,17 @@ namespace EditorManagement.Functions.Editors
 
                 layerImage.color = GetLayerColor(EditorManager.inst.layer);
 
-                TriggerHelper.AddEventTrigger(layersObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(layersIF, 1, 1, int.MaxValue) });
+                TriggerHelper.AddEventTriggerParams(layersObj,
+                    TriggerHelper.ScrollDeltaInt(layersIF, 1, 1, int.MaxValue), TriggerHelper.CreateEntry(EventTriggerType.PointerDown, delegate (BaseEventData eventData)
+                    {
+                        var pointerEventData = (PointerEventData)eventData;
+                        if (pointerEventData.button == PointerEventData.InputButton.Middle)
+                        {
+                            EditorPlugin.ListObjectLayers();
+                        }
+                    }));
             }
 
-            Debug.LogFormat("{0}Instantiating new pitch object", EditorPlugin.className);
             var pitchObj = Instantiate(timeObj);
             {
                 pitchObj.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject").transform);
@@ -1721,8 +1751,6 @@ namespace EditorManagement.Functions.Editors
 
                 pitchObj.AddComponent<InputFieldSwapper>();
             }
-
-            timelineBar.transform.Find("checkpoint").gameObject.SetActive(false);
         }
 
         public bool isOverMainTimeline;
@@ -1759,11 +1787,6 @@ namespace EditorManagement.Functions.Editors
                     et.triggers.Add(TriggerHelper.StartDragTrigger());
                     et.triggers.Add(TriggerHelper.DragTrigger());
                     et.triggers.Add(TriggerHelper.EndDragTrigger());
-
-                    //if (et.triggers.Count > 3)
-                    //{
-                    //	et.triggers.RemoveAt(3);
-                    //}
 
                     int typeTmp = i;
                     var entry3 = new EventTrigger.Entry();
@@ -2614,6 +2637,90 @@ namespace EditorManagement.Functions.Editors
             timelinePreviewLine = timelinePreview.Find("Base").GetComponent<Image>();
         }
 
+        public void SetupTimelineElements()
+        {
+            Debug.Log($"{EditorPlugin.className}Setting Timeline Cursor Colors");
+            try
+            {
+                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle", out GameObject gm) && gm.TryGetComponent(out Image image))
+                {
+                    timelineSliderHandle = image;
+                    timelineSliderHandle.color = GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
+                }
+                else
+                {
+                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
+                }
+
+                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image", out GameObject gm1) && gm1.TryGetComponent(out Image image1))
+                {
+                    timelineSliderRuler = image1;
+                    timelineSliderRuler.color = GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
+                }
+                else
+                {
+                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
+                }
+
+                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image", out GameObject gm2) && gm2.TryGetComponent(out Image image2))
+                {
+                    keyframeTimelineSliderHandle = image2;
+                    keyframeTimelineSliderHandle.color = GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
+                }
+                else
+                {
+                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
+                }
+
+                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle", out GameObject gm3) && gm3.TryGetComponent(out Image image3))
+                {
+                    keyframeTimelineSliderRuler = image3;
+                    keyframeTimelineSliderRuler.color = GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
+                }
+                else
+                {
+                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"{EditorPlugin.className}Error {ex}");
+            }
+        }
+
+        public GridRenderer timelineGridRenderer;
+        public void SetupTimelineGrid()
+        {
+            var grid = new GameObject("grid");
+            grid.transform.SetParent(EditorManager.inst.timeline.transform);
+            grid.transform.localScale = Vector3.one;
+            grid.transform.SetSiblingIndex(0);
+
+            var gridRT = grid.AddComponent<RectTransform>();
+
+            grid.AddComponent<CanvasRenderer>();
+
+            var gridLayout = grid.AddComponent<LayoutElement>();
+            gridLayout.ignoreLayout = true;
+
+            gridRT.anchoredPosition = Vector3.zero;
+            gridRT.anchorMax = Vector3.one;
+            gridRT.anchorMin = Vector3.zero;
+            gridRT.pivot = Vector3.zero;
+            gridRT.sizeDelta = Vector3.zero;
+
+            timelineGridRenderer = grid.AddComponent<GridRenderer>();
+
+            timelineGridRenderer.color = GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().Value;
+            timelineGridRenderer.thickness = GetEditorProperty("Timeline Grid Thickness").GetConfigEntry<float>().Value;
+
+            timelineGridRenderer.enabled = GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().Value;
+
+            var gridCanvasGroup = grid.AddComponent<CanvasGroup>();
+            gridCanvasGroup.blocksRaycasts = false;
+            gridCanvasGroup.interactable = false;
+        }
+
         public Image timelinePreviewPlayer;
         public Image timelinePreviewLine;
         public Image timelinePreviewLeftCap;
@@ -3303,6 +3410,25 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
+            
+            // Force Snap BPM
+            {
+                labelGenerator("Force Snap Start Time to BPM");
+
+                buttonGenerator("set autokill", "Snap", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Time = SnapToBPM(timelineObject.Time);
+                        if (timelineObject.IsBeatmapObject)
+                            Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Start Time");
+                        if (timelineObject.IsPrefabObject)
+                            Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>(), "Start Time");
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
 
             // Cycle Object Type
             {
@@ -3416,6 +3542,42 @@ namespace EditorManagement.Functions.Editors
                     {
                         beatmapObject.background = boggle;
                         Updater.UpdateProcessor(beatmapObject);
+                    }
+                });
+            }
+
+            // Clear Animations
+            {
+                labelGenerator("Clear Animations");
+
+                buttonGenerator("clear animations", "Clear", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        if (timelineObject.IsBeatmapObject)
+                        {
+                            var bm = timelineObject.GetData<BeatmapObject>();
+                            foreach (var tkf in timelineObject.InternalSelections)
+                            {
+                                Destroy(tkf.GameObject);
+                            }
+                            timelineObject.InternalSelections.Clear();
+                            for (int i = 0; i < bm.events.Count; i++)
+                            {
+                                bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
+                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0], false);
+                                bm.events[i].Clear();
+                                bm.events[i].Add(firstKF);
+                            }
+                            if (ObjectEditor.inst.SelectedObjects.Count == 1)
+                            {
+                                ObjectEditor.inst.ResizeKeyframeTimeline(bm);
+                                ObjectEditor.inst.RenderKeyframes(bm);
+                            }
+
+                            Updater.UpdateProcessor(bm, "Keyframes");
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
                     }
                 });
             }
@@ -6838,6 +7000,7 @@ namespace EditorManagement.Functions.Editors
         {
             EditorManager.inst.loadedLevels.Clear();
 
+            // We get level editor properties before iterating level list.
             var olfnm = GetEditorProperty("Open Level Folder Name Max").GetConfigEntry<int>();
             var olsnm = GetEditorProperty("Open Level Song Name Max").GetConfigEntry<int>();
             var olanm = GetEditorProperty("Open Level Artist Name Max").GetConfigEntry<int>();
@@ -6923,7 +7086,7 @@ namespace EditorManagement.Functions.Editors
 
                     gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
                     {
-                        // Use this to show autosaves or something
+                        // If clicking on the level button shows the autosaves popup or not.
                         if (Input.GetKey(KeyCode.LeftShift))
                         {
                             EditorManager.inst.ShowDialog("Autosaves Popup");
@@ -7022,6 +7185,12 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
+        /// <summary>
+        /// Loads a level in the editor from a full path. For example: E:/4.1.16/beatmaps/editor/New Awesome Beatmap.
+        /// </summary>
+        /// <param name="fullPath"></param>
+        /// <param name="autosave"></param>
+        /// <returns></returns>
         public IEnumerator LoadLevel(string fullPath, string autosave = "")
         {
             EditorManager.inst.loading = true;
@@ -7044,6 +7213,8 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateObjects(false);
 
+            // We stop and play the doggo bop animation in case the user has looked at the settings dialog.
+            EditorManager.inst.CancelInvoke("LoadingIconUpdate");
             EditorManager.inst.InvokeRepeating("LoadingIconUpdate", 0f, 0.05f);
 
             var name = Path.GetFileName(fullPath);
@@ -7079,20 +7250,52 @@ namespace EditorManagement.Functions.Editors
             if (string.IsNullOrEmpty(rawMetadataJSON))
             {
                 DataManager.inst.SaveMetadata(fullPath + "/metadata.lsb");
+                rawMetadataJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/metadata.lsb");
             }
 
             GameManager.inst.path = fullPath + "/level.lsb";
             GameManager.inst.basePath = fullPath + "/";
             GameManager.inst.levelName = name;
-            fileInfo.text = $"Loading Level Music for [ {name} ]\n\nIf this is taking more than a minute or two check if the .ogg file is corrupt.";
+            fileInfo.text = $"Loading Level Music for [ {name} ]\n\nIf this is taking more than a minute or two check if the song file (.ogg / .wav / .mp3) is corrupt. If not, then something went really wrong.";
 
+            string errorMessage = "";
+            bool hadError = false;
             Debug.Log($"{EditorPlugin.className}Loading audio for {name}...");
             if (RTFile.FileExists(fullPath + "/level.ogg"))
-                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.ogg", AudioType.OGGVORBIS, x => song = x));
+            {
+                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.ogg", AudioType.OGGVORBIS, x => song = x, delegate (string onError) { hadError = true; errorMessage = onError; }));
+            }
             else if (RTFile.FileExists(fullPath + "/level.wav"))
-                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.wav", AudioType.WAV, x => song = x));
+            {
+                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.wav", AudioType.WAV, x => song = x, delegate (string onError) { hadError = true; errorMessage = onError; }));
+            }
             else if (RTFile.FileExists(fullPath + "/level.mp3"))
+            {
                 yield return song = LSAudio.CreateAudioClipUsingMP3File(fullPath + "/level.mp3");
+            }
+
+            // Wait for the song.
+            while (song == null && !hadError)
+                yield return null;
+
+            if (hadError)
+            {
+                bool audioExists = RTFile.FileExists(fullPath + "/level.ogg") || RTFile.FileExists(fullPath + "/level.wav") || RTFile.FileExists(fullPath + "/level.mp3");
+
+                if (!audioExists)
+                    fileInfo.text = $"Something went wrong when loading the song file. Either the file is corrupt or something went wrong internally.";
+                else
+                    fileInfo.text = $"Song file does not exist.";
+
+                EditorManager.inst.DisplayNotification($"Song file could not load due to {errorMessage}", 3f, EditorManager.NotificationType.Error);
+
+                Debug.LogError($"{EditorPlugin.className}Level loading caught an error: {errorMessage}\n" +
+                    $"level.ogg exists: {RTFile.FileExists(fullPath + "/level.ogg")}\n" +
+                    $"level.wav exists: {RTFile.FileExists(fullPath + "/level.wav")}\n" +
+                    $"level.mp3 exists: {RTFile.FileExists(fullPath + "/level.mp3")}\n");
+
+                yield break;
+            }
 
             if (RTFile.FileExists(fullPath + "/bg.mp4") && RTFunctions.FunctionsPlugin.EnableVideoBackground.Value)
             {
@@ -7115,15 +7318,43 @@ namespace EditorManagement.Functions.Editors
             fileInfo.text = $"Parsing Level Data for [ {name} ]";
             if (!string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
             {
-                DataManager.inst.metaData = Metadata.Parse(JSON.Parse(rawMetadataJSON));
+                try
+                {
+                    DataManager.inst.metaData = Metadata.Parse(JSON.Parse(rawMetadataJSON));
 
-                if (DataManager.inst.metaData.beatmap.game_version != "4.1.16" && DataManager.inst.metaData.beatmap.game_version != "20.4.4")
-                    rawJSON = DataManager.inst.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
+                    if (DataManager.inst.metaData.beatmap.game_version != "4.1.16" && DataManager.inst.metaData.beatmap.game_version != "20.4.4")
+                        rawJSON = DataManager.inst.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
 
-                DataManager.inst.gameData = GameData.Parse(JSON.Parse(rawJSON), false);
+                    DataManager.inst.gameData = GameData.Parse(JSON.Parse(rawJSON), false);
 
-                if (DataManager.inst.metaData.beatmap.workshop_id == -1)
-                    DataManager.inst.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
+                    if (DataManager.inst.metaData.beatmap.workshop_id == -1)
+                        DataManager.inst.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
+                }
+                catch (Exception ex)
+                {
+                    fileInfo.text = $"Something went wrong when parsing the level data. Press the open log folder key and send the log to Mecha.";
+
+                    EditorManager.inst.DisplayNotification("Level could not load.", 3f, EditorManager.NotificationType.Error);
+
+                    Debug.LogError($"{EditorPlugin.className}Level loading caught an error: {ex}");
+
+                    yield break;
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
+                    fileInfo.text = $"level.lsb is empty or corrupt.";
+
+                if (!string.IsNullOrEmpty(rawJSON) && string.IsNullOrEmpty(rawMetadataJSON))
+                    fileInfo.text = $"metadata.lsb is empty or corrupt.";
+
+                if (string.IsNullOrEmpty(rawJSON) && string.IsNullOrEmpty(rawMetadataJSON))
+                    fileInfo.text = $"both level.lsb and metadata.lsb are corrupt.";
+
+                EditorManager.inst.DisplayNotification("Level could not load.", 3f, EditorManager.NotificationType.Error);
+
+                yield break;
             }
 
             if (ModCompatibility.CreativePlayersInstalled)
@@ -7135,6 +7366,14 @@ namespace EditorManagement.Functions.Editors
 
             fileInfo.text = $"Loading Themes for [ {name} ]";
             yield return StartCoroutine(LoadThemes());
+
+            // For some reason loading themes doesn't hold the enumerator so instead we check for themesLoading.
+            float delayTheme = 0f;
+            while (themesLoading)
+            {
+                yield return new WaitForSeconds(delayTheme);
+                delayTheme += 0.0001f;
+            }
 
             Debug.Log($"{EditorPlugin.className}Music is null: {song == null}");
 
@@ -7535,16 +7774,6 @@ namespace EditorManagement.Functions.Editors
             }
 
             string autosavePath = $"{GameManager.inst.basePath}autosaves/autosave_{DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss")}.lsb";
-
-            //string autosavePath = string.Concat(new string[]
-            //{
-            //	FileManager.GetAppPath(),
-            //	"/",
-            //	GameManager.inst.basePath,
-            //	"autosaves/autosave_",
-            //	DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss"),
-            //	".lsb"
-            //});
 
             if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
                 Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
@@ -8220,6 +8449,9 @@ namespace EditorManagement.Functions.Editors
                                 Destroy(x.GetComponent<EventInfo>());
                                 Destroy(x.GetComponent<EventTrigger>());
                                 Destroy(x.GetComponent<InputField>());
+
+                                x.transform.localScale = Vector3.one;
+                                x.transform.GetChild(0).localScale = Vector3.one;
 
                                 var l = Instantiate(label);
                                 l.transform.SetParent(x.transform);
@@ -9103,6 +9335,8 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public static float SnapToBPM(float _time) => Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / BPMSnapDivisions)) * (SettingEditor.inst.BPMMulti / BPMSnapDivisions);
+
         #endregion
 
         #region Editor Properties
@@ -9183,6 +9417,12 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Timeline", "Waveform Bottom Color", LSColors.blue300, "If waveform is Legacy, this will be the bottom color. Otherwise, it will be unused.")),
             new EditorProperty(EditorProperty.ValueType.Enum,
                 Config.Bind("Timeline", "Waveform Texture Format", TextureFormat.ARGB32, "What format the waveform's texture should render under.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Timeline", "Timeline Grid Enabled", true, "If the timeline grid renders.")),
+            new EditorProperty(EditorProperty.ValueType.Color,
+                Config.Bind("Timeline", "Timeline Grid Color", new Color(0.2157f, 0.2157f, 0.2196f, 1f), "The color of the timeline grid.")),
+            new EditorProperty(EditorProperty.ValueType.Float,
+                Config.Bind("Timeline", "Timeline Grid Thickness", 2f, "The size of each line of the timeline grid.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Timeline", "Marker Loop Active", false, "If the marker should loop between markers.")),
             new EditorProperty(EditorProperty.ValueType.Int,
@@ -9498,42 +9738,11 @@ namespace EditorManagement.Functions.Editors
 
             #region Functions
             
-            new EditorProperty("Open Keybind Editor", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
-                delegate ()
-                {
-                    KeybindManager.inst.OpenPopup();
-                }, "Opens Keybind list"),
-            new EditorProperty("Remove all but first keyframes foreach object", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
-                delegate ()
-                {
-                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                    {
-                        if (timelineObject.IsBeatmapObject)
-                        {
-                            var bm = timelineObject.GetData<BeatmapObject>();
-                            foreach (var tkf in timelineObject.InternalSelections)
-                            {
-                                Destroy(tkf.GameObject);
-                            }
-                            timelineObject.InternalSelections.Clear();
-                            for (int i = 0; i < bm.events.Count; i++)
-                            {
-                                bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
-                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0], false);
-                                bm.events[i].Clear();
-                                bm.events[i].Add(firstKF);
-                            }
-                            if (ObjectEditor.inst.SelectedObjects.Count == 1)
-                            {
-                                ObjectEditor.inst.ResizeKeyframeTimeline(bm);
-                                ObjectEditor.inst.RenderKeyframes(bm);
-                            }
-
-                            Updater.UpdateProcessor(bm, "Keyframes");
-                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
-                        }
-                    }
-                }, "Removes every keyframe but the first keyframe foreach selected object."),
+            //new EditorProperty("Open Keybind Editor", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
+            //    delegate ()
+            //    {
+            //        KeybindManager.inst.OpenPopup();
+            //    }, "Opens Keybind list"),
 
             #endregion
 
