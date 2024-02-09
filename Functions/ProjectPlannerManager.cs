@@ -2097,6 +2097,7 @@ namespace EditorManagement.Functions
             editors[0].SetActive(true);
 
             documentEditorName.onValueChanged.ClearAll();
+            documentEditorName.onEndEdit.ClearAll();
             documentEditorName.text = document.Name;
             documentEditorName.onValueChanged.AddListener(delegate (string _val)
             {
@@ -2104,42 +2105,51 @@ namespace EditorManagement.Functions
                 document.NameUI.text = _val;
                 documentTitle.text = document.Name;
             });
-            documentEditorName.onEndEdit.ClearAll();
             documentEditorName.onEndEdit.AddListener(delegate (string _val)
             {
                 SaveDocuments();
             });
-            
+
+            HandleDocumentEditor(document);
+            HandleDocumentEditorPreview(document);
+        }
+
+        void HandleDocumentEditor(DocumentItem document)
+        {
             documentEditorText.onValueChanged.ClearAll();
+            documentEditorText.onEndEdit.ClearAll();
             documentEditorText.text = document.Text;
             documentEditorText.onValueChanged.AddListener(delegate (string _val)
             {
                 document.Text = _val;
                 document.TextUI.text = _val;
 
-                documentInputField.onValueChanged.RemoveAllListeners();
-                documentInputField.text = document.Text;
-                documentInputField.onValueChanged.AddListener(delegate (string _val)
-                {
-                    document.Text = _val;
-                    document.TextUI.text = _val;
-                });
+                HandleDocumentEditorPreview(document);
             });
-            documentEditorText.onEndEdit.ClearAll();
             documentEditorText.onEndEdit.AddListener(delegate (string _val)
             {
                 SaveDocuments();
             });
-
+        }
+        
+        void HandleDocumentEditorPreview(DocumentItem document)
+        {
             DocumentFullViewActive = true;
             documentFullView.SetActive(true);
             documentTitle.text = document.Name;
             documentInputField.onValueChanged.RemoveAllListeners();
+            documentInputField.onEndEdit.RemoveAllListeners();
             documentInputField.text = document.Text;
             documentInputField.onValueChanged.AddListener(delegate (string _val)
             {
                 document.Text = _val;
                 document.TextUI.text = _val;
+
+                HandleDocumentEditor(document);
+            });
+            documentInputField.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveDocuments();
             });
         }
 
@@ -2588,7 +2598,7 @@ namespace EditorManagement.Functions
 
             noteEditorColors.Clear();
             LSHelpers.DeleteChildren(noteEditorColorsParent);
-            for (int i = 0; i < 18; i++)
+            for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
             {
                 var col = Instantiate(colorBase.Find("1").gameObject);
                 col.transform.localScale = Vector3.one;
@@ -2663,6 +2673,7 @@ namespace EditorManagement.Functions
         public GameObject GenerateDocument(DocumentItem document)
         {
             var gameObject = prefabs[0].Duplicate(content, "document");
+            gameObject.transform.localScale = Vector3.one;
             document.GameObject = gameObject;
 
             var button = gameObject.GetComponent<Button>();
@@ -2693,6 +2704,7 @@ namespace EditorManagement.Functions
         public GameObject GenerateTODO(TODOItem todo)
         {
             var gameObject = prefabs[1].Duplicate(content, "todo");
+            gameObject.transform.localScale = Vector3.one;
             todo.GameObject = gameObject;
 
             var button = gameObject.GetComponent<Button>();
@@ -2730,6 +2742,7 @@ namespace EditorManagement.Functions
         public GameObject GenerateCharacter(CharacterItem character)
         {
             var gameObject = prefabs[2].Duplicate(content, "character");
+            gameObject.transform.localScale = Vector3.one;
             character.GameObject = gameObject;
 
             var button = gameObject.GetComponent<Button>();
@@ -2784,6 +2797,7 @@ namespace EditorManagement.Functions
         public GameObject GenerateTimeline(TimelineItem timeline)
         {
             var gameObject = prefabs[3].Duplicate(content, "timeline");
+            gameObject.transform.localScale = Vector3.one;
             timeline.GameObject = gameObject;
 
             timeline.Content = gameObject.transform.Find("Scroll/Viewport/Content");
@@ -2815,6 +2829,7 @@ namespace EditorManagement.Functions
         public GameObject GenerateSchedule(ScheduleItem schedule)
         {
             var gameObject = prefabs[4].Duplicate(content, "schedule");
+            gameObject.transform.localScale = Vector3.one;
             schedule.GameObject = gameObject;
 
             var button = gameObject.GetComponent<Button>();
@@ -2843,6 +2858,7 @@ namespace EditorManagement.Functions
         public GameObject GenerateNote(NoteItem note)
         {
             var gameObject = prefabs[5].Duplicate(content, "note");
+            gameObject.transform.localScale = Vector3.one;
             note.GameObject = gameObject;
 
             var noteDraggable = gameObject.AddComponent<NoteDraggable>();
