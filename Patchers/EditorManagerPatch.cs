@@ -150,8 +150,8 @@ namespace EditorManagement.Patchers
                 Updater.levelProcessor = null;
             }
 
-            EditorManager.inst.hasLoadedLevel = false;
-            EditorManager.inst.loading = false;
+            __instance.hasLoadedLevel = false;
+            __instance.loading = false;
 
             RTEditor.Init(__instance);
             KeybindManager.Init(__instance);
@@ -211,10 +211,10 @@ namespace EditorManagement.Patchers
             InputDataManager.inst.editorActions.Redo.ClearBindings();
             InputDataManager.inst.editorActions.CreateMarker.ClearBindings();
 
-            EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(true);
+            Instance.notification.transform.Find("info").gameObject.SetActive(true);
 
             //Set Editor Zoom cap
-            EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
+            Instance.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
 
             return false;
         }
@@ -245,11 +245,8 @@ namespace EditorManagement.Patchers
                         try
                         {
                             Instance.StartCoroutine(RTEditor.inst.AssignTimelineTexture());
-                            //Instance.AssignWaveformTextures();
                             Instance.UpdateTimelineSizes();
                             Instance.firstOpened = true;
-
-                            // If the NullReference is in this area, then it's somewhere below.
 
                             RTEventEditor.inst.CreateEventObjects();
                             CheckpointEditor.inst.CreateGhostCheckpoints();
@@ -309,8 +306,7 @@ namespace EditorManagement.Patchers
                 }
             }
 
-
-            if (EditorManager.inst.GUI.activeSelf == true && EditorManager.inst.isEditing == true)
+            if (Instance.GUI.activeSelf == true && Instance.isEditing == true)
             {
                 if (RTEditor.inst.timeIF && !RTEditor.inst.timeIF.isFocused)
                     RTEditor.inst.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
@@ -320,10 +316,10 @@ namespace EditorManagement.Patchers
                         ((float)ModCompatibility.sharedFunctions["EventsCorePitchOffset"]).ToString() : AudioManager.inst.pitch.ToString();
 
                 if (RTEditor.inst.doggoImage)
-                    RTEditor.inst.doggoImage.sprite = EditorManager.inst.loadingImage.sprite;
+                    RTEditor.inst.doggoImage.sprite = Instance.loadingImage.sprite;
             }
 
-            var multi = EditorManager.inst.GetDialog("Multi Object Editor").Dialog;
+            var multi = Instance.GetDialog("Multi Object Editor").Dialog;
             if (multi.gameObject.activeSelf && ((RectTransform)multi.Find("data")).sizeDelta != new Vector2(810f, 730.11f))
             {
                 ((RectTransform)multi.Find("data")).sizeDelta = new Vector2(810f, 730.11f);
@@ -331,11 +327,6 @@ namespace EditorManagement.Patchers
             if (multi.gameObject.activeSelf && ((RectTransform)multi.Find("data/left")).sizeDelta != new Vector2(355f, 730f))
             {
                 ((RectTransform)multi.Find("data/left")).sizeDelta = new Vector2(355f, 730f);
-            }
-
-            if (!LSHelpers.IsUsingInputField() && Input.GetMouseButtonDown(2))
-            {
-                EditorPlugin.ListObjectLayers();
             }
 
             Instance.prevAudioTime = AudioManager.inst.CurrentAudioSource.time;
@@ -498,10 +489,10 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool handleViewShortcutsPrefix()
         {
-            if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
-                && EditorManager.inst.IsOverObjTimeline
+            if (Instance.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
+                && Instance.IsOverObjTimeline
                 && !LSHelpers.IsUsingInputField()
-                && !RTEditor.inst.isOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
+                && !RTEditor.inst.isOverMainTimeline)
             {
                 float multiply = 1f;
                 if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
@@ -515,7 +506,7 @@ namespace EditorManagement.Patchers
                     ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - RTEditor.GetEditorProperty("Keyframe Zoom Amount").GetConfigEntry<float>().Value * multiply;
             }
 
-            if (!EditorManager.inst.IsOverObjTimeline && RTEditor.inst.isOverMainTimeline && (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
+            if (!Instance.IsOverObjTimeline && RTEditor.inst.isOverMainTimeline)
             {
                 float multiply = 1f;
                 if (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
@@ -524,12 +515,10 @@ namespace EditorManagement.Patchers
                     multiply = 0.1f;
 
                 if (InputDataManager.inst.editorActions.ZoomIn.WasPressed)
-                    EditorManager.inst.Zoom = EditorManager.inst.zoomFloat + RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
+                    Instance.Zoom = Instance.zoomFloat + RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
                 if (InputDataManager.inst.editorActions.ZoomOut.WasPressed)
-                    EditorManager.inst.Zoom = EditorManager.inst.zoomFloat - RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
+                    Instance.Zoom = Instance.zoomFloat - RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
             }
-            //if (InputDataManager.inst.editorActions.ShowHelp.WasPressed)
-            //    EditorManager.inst.SetShowHelp(!EditorManager.inst.showHelp);
 
             return false;
         }
@@ -540,50 +529,51 @@ namespace EditorManagement.Patchers
         {
             Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
             Rect rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
-            if (EditorManager.inst.updateAudioTime && Input.GetMouseButtonUp(0) && rect.Contains(point))
+            if (Instance.updateAudioTime && Input.GetMouseButtonUp(0) && rect.Contains(point))
             {
-                AudioManager.inst.CurrentAudioSource.time = EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom;
-                EditorManager.inst.updateAudioTime = false;
+                AudioManager.inst.CurrentAudioSource.time = Instance.audioTimeForSlider / Instance.Zoom;
+                Instance.updateAudioTime = false;
             }
-            if (Input.GetMouseButton(0) && rect.Contains(point))
+            if (Input.GetMouseButton(0) && rect.Contains(point) && RTEditor.inst && RTEditor.inst.timelineSlider)
             {
-                var slider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
+                var slider = RTEditor.inst.timelineSlider;
                 slider.minValue = 0f;
-                slider.maxValue = AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom;
-                EditorManager.inst.audioTimeForSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>().value;
-                EditorManager.inst.updateAudioTime = true;
-                EditorManager.inst.wasDraggingPointer = true;
-                if (Mathf.Abs(EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom - EditorManager.inst.prevAudioTime) < 2f)
+                slider.maxValue = AudioManager.inst.CurrentAudioSource.clip.length * Instance.Zoom;
+                Instance.audioTimeForSlider = Instance.timelineSlider.GetComponent<Slider>().value;
+                Instance.updateAudioTime = true;
+                Instance.wasDraggingPointer = true;
+                if (Mathf.Abs(Instance.audioTimeForSlider / Instance.Zoom - Instance.prevAudioTime) < 2f)
                 {
                     if (RTEditor.GetEditorProperty("Dragging main Cursor Pauses Level").GetConfigEntry<bool>().Value)
                     {
                         AudioManager.inst.CurrentAudioSource.Pause();
-                        EditorManager.inst.UpdatePlayButton();
+                        Instance.UpdatePlayButton();
                     }
-                    AudioManager.inst.CurrentAudioSource.time = EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom;
+                    AudioManager.inst.CurrentAudioSource.time = Instance.audioTimeForSlider / Instance.Zoom;
                 }
             }
-            else if (EditorManager.inst.updateAudioTime && EditorManager.inst.wasDraggingPointer && !rect.Contains(point))
+            else if (Instance.updateAudioTime && Instance.wasDraggingPointer && !rect.Contains(point))
             {
-                AudioManager.inst.CurrentAudioSource.time = EditorManager.inst.audioTimeForSlider / EditorManager.inst.Zoom;
-                EditorManager.inst.updateAudioTime = false;
-                EditorManager.inst.wasDraggingPointer = false;
+                AudioManager.inst.CurrentAudioSource.time = Instance.audioTimeForSlider / Instance.Zoom;
+                Instance.updateAudioTime = false;
+                Instance.wasDraggingPointer = false;
             }
-            else
+            else if (RTEditor.inst && RTEditor.inst.timelineSlider)
             {
-                var slider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
+                var slider = RTEditor.inst.timelineSlider;
+
                 slider.minValue = 0f;
-                slider.maxValue = AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom;
-                slider.value = AudioManager.inst.CurrentAudioSource.time * EditorManager.inst.Zoom;
-                EditorManager.inst.audioTimeForSlider = AudioManager.inst.CurrentAudioSource.time * EditorManager.inst.Zoom;
+                slider.maxValue = AudioManager.inst.CurrentAudioSource.clip.length * Instance.Zoom;
+                slider.value = AudioManager.inst.CurrentAudioSource.time * Instance.Zoom;
+                Instance.audioTimeForSlider = AudioManager.inst.CurrentAudioSource.time * Instance.Zoom;
             }
-            EditorManager.inst.timelineSlider.GetComponent<RectTransform>().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * EditorManager.inst.Zoom, 25f);
+            Instance.timelineSlider.transform.AsRT().sizeDelta = new Vector2(AudioManager.inst.CurrentAudioSource.clip.length * Instance.Zoom, 25f);
             return false;
         }
 
         [HarmonyPatch("AddToPitch")]
         [HarmonyPrefix]
-        static bool AddToPitchPrefix(EditorManager __instance, float __0)
+        static bool AddToPitchPrefix(float __0)
         {
             if (Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.LeftAlt))
             {
@@ -605,102 +595,33 @@ namespace EditorManagement.Patchers
         [HarmonyPostfix]
         static void ToggleEditorPrefix()
         {
-            if (EditorManager.inst.isEditing)
+            if (Instance.isEditing)
             {
-                EditorManager.inst.UpdatePlayButton();
+                Instance.UpdatePlayButton();
             }
             GameManager.inst.ResetCheckpoints();
         }
 
         [HarmonyPatch("CloseOpenBeatmapPopup")]
         [HarmonyPrefix]
-        static bool CloseOpenBeatmapPopupPrefix(EditorManager __instance)
+        static bool CloseOpenBeatmapPopupPrefix()
         {
-            if (EditorManager.inst.hasLoadedLevel)
-            {
-                __instance.HideDialog("Open File Popup");
-            }
-            else
-            {
-                EditorManager.inst.DisplayNotification("Please select a level first!", 2f, EditorManager.NotificationType.Error);
-            }
+            Instance.HideDialog("Open File Popup");
             return false;
-        }
-
-        static void SaveBeatmapPrefix()
-        {
-            string str = "beatmaps/" + RTEditor.EditorPath + "/" + EditorManager.inst.currentLoadedLevel;
-            if (RTFile.FileExists(RTFile.ApplicationDirectory + str + "/level-previous.lsb"))
-            {
-                File.Delete(RTFile.ApplicationDirectory + str + "/level-previous.lsb");
-            }
-
-            if (RTFile.FileExists(RTFile.ApplicationDirectory + str + "/level.lsb"))
-                File.Copy(RTFile.ApplicationDirectory + str + "/level.lsb", RTFile.ApplicationDirectory + str + "/level-previous.lsb");
-        }
-        
-        static void EditorSaveBeatmapPatch()
-        {
-            DataManager.inst.gameData.beatmapData.editorData.timelinePos = AudioManager.inst.CurrentAudioSource.time;
-            DataManager.inst.metaData.song.BPM = SettingEditor.inst.SnapBPM;
-            DataManager.inst.gameData.beatmapData.levelData.backgroundColor = EditorManager.inst.layer;
-            //EditorPlugin.scrollBar = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value;
-
-            Sprite waveform = EditorManager.inst.timeline.GetComponent<Image>().sprite;
-            if (RTEditor.GetEditorProperty("Waveform Mode").GetConfigEntry<WaveformType>().Value == WaveformType.Legacy &&
-                RTEditor.GetEditorProperty("Waveform Generate").GetConfigEntry<bool>().Value)
-            {
-                File.WriteAllBytes(RTFile.ApplicationDirectory + GameManager.inst.basePath + "waveform.png", EditorManager.inst.timeline.GetComponent<Image>().sprite.texture.EncodeToPNG());
-            }
-            if (RTEditor.GetEditorProperty("Waveform Mode").GetConfigEntry<WaveformType>().Value == WaveformType.Beta && RTEditor.GetEditorProperty("Waveform Generate").GetConfigEntry<bool>().Value)
-            {
-                File.WriteAllBytes(RTFile.ApplicationDirectory + GameManager.inst.basePath + "waveform_old.png", EditorManager.inst.timeline.GetComponent<Image>().sprite.texture.EncodeToPNG());
-            }
-
-            // Reimplement this layer
-            //if (RTFile.FileExists(RTFile.ApplicationDirectory + "beatmaps/" + RTEditor.editorListSlash + EditorManager.inst.currentLoadedLevel + "/editor.lse"))
-            //{
-            //    string rawProfileJSON = null;
-            //    rawProfileJSON = FileManager.inst.LoadJSONFile("beatmaps/" + RTEditor.editorListSlash + EditorManager.inst.currentLoadedLevel + "/editor.lse");
-
-            //    var jsonnode = JSON.Parse(rawProfileJSON);
-
-            //    jsonnode["timeline"]["tsc"] = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value.ToString("f2");
-            //    jsonnode["timeline"]["z"] = EditorManager.inst.zoomFloat.ToString("f3");
-            //    jsonnode["timeline"]["l"] = EditorManager.inst.layer.ToString();
-            //    jsonnode["editor"]["t"] = EditorPlugin.itsTheTime.ToString();
-            //    jsonnode["editor"]["a"] = EditorPlugin.openAmount.ToString();
-            //    jsonnode["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
-
-            //    RTFile.WriteToFile("beatmaps/" + EditorPlugin.editorPath + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse", jsonnode.ToString(3));
-            //}
-            //else
-            //{
-            //    var jsonnode = JSON.Parse("{}");
-
-            //    jsonnode["timeline"]["tsc"] = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar").GetComponent<Scrollbar>().value.ToString("f2");
-            //    jsonnode["timeline"]["z"] = EditorManager.inst.zoomFloat.ToString("f3");
-            //    jsonnode["timeline"]["l"] = EditorManager.inst.layer.ToString();
-            //    jsonnode["editor"]["t"] = EditorPlugin.itsTheTime.ToString();
-            //    jsonnode["editor"]["a"] = EditorPlugin.openAmount.ToString();
-            //    jsonnode["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
-
-            //    RTFile.WriteToFile("beatmaps/" + RTEditor.editorListSlash + "/" + EditorManager.inst.currentLoadedLevel + "/editor.lse", jsonnode.ToString(3));
-            //}
         }
 
         [HarmonyPatch("SaveBeatmap")]
         [HarmonyPrefix]
-        static bool SaveBeatmapPrefix(EditorManager __instance)
+        static bool SaveBeatmapPrefix()
         {
-            if (!__instance.hasLoadedLevel)
+            if (!Instance.hasLoadedLevel)
             {
-                __instance.DisplayNotification("Beatmap can't be saved until you load a level.", 5f, EditorManager.NotificationType.Error);
+                Instance.DisplayNotification("Beatmap can't be saved until you load a level.", 5f, EditorManager.NotificationType.Error);
                 return false;
             }
-            if (__instance.savingBeatmap)
+            if (Instance.savingBeatmap)
             {
-                __instance.DisplayNotification("Attempting to save beatmap already, please wait!", 2f, EditorManager.NotificationType.Error);
+                Instance.DisplayNotification("Attempting to save beatmap already, please wait!", 2f, EditorManager.NotificationType.Error);
                 return false;
             }
 
@@ -711,7 +632,7 @@ namespace EditorManagement.Patchers
                 File.Copy(GameManager.inst.basePath + "level.lsb", GameManager.inst.basePath + "level-previous.lsb");
 
             DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb");
-            __instance.StartCoroutine(SaveData(GameManager.inst.path));
+            Instance.StartCoroutine(SaveData(GameManager.inst.path));
             PlayerManager.SaveLocalModels?.Invoke();
 
             RTEditor.inst.SaveSettings();
@@ -721,27 +642,27 @@ namespace EditorManagement.Patchers
 
         public static IEnumerator SaveData(string _path)
         {
-            if (EditorManager.inst != null)
+            if (Instance != null)
             {
-                EditorManager.inst.DisplayNotification("Saving Beatmap!", 1f, EditorManager.NotificationType.Warning);
-                EditorManager.inst.savingBeatmap = true;
+                Instance.DisplayNotification("Saving Beatmap!", 1f, EditorManager.NotificationType.Warning);
+                Instance.savingBeatmap = true;
             }
             Task task;
             yield return DataManager.inst.StartCoroutineAsync(RTFunctions.Functions.ProjectData.Writer.SaveData(_path, (GameData)DataManager.inst.gameData), out task);
             yield return new WaitForSeconds(0.5f);
-            if (EditorManager.inst != null)
+            if (Instance != null)
             {
-                EditorManager.inst.DisplayNotification("Saved Beatmap!", 2f, EditorManager.NotificationType.Success);
-                EditorManager.inst.savingBeatmap = false;
+                Instance.DisplayNotification("Saved Beatmap!", 2f, EditorManager.NotificationType.Success);
+                Instance.savingBeatmap = false;
             }
             yield break;
         }
 
         [HarmonyPatch("SaveBeatmapAs", new Type[] { typeof(string) })]
         [HarmonyPrefix]
-        static bool SaveBeatmapAsPrefix(EditorManager __instance, string __0)
+        static bool SaveBeatmapAsPrefix(string __0)
         {
-            if (__instance.hasLoadedLevel)
+            if (Instance.hasLoadedLevel)
             {
                 string str = RTFile.ApplicationDirectory + RTEditor.editorListSlash + __0;
                 if (!RTFile.DirectoryExists(str))
@@ -758,34 +679,34 @@ namespace EditorManagement.Patchers
                     File.Copy(file, saveTo, RTFile.FileExists(saveTo));
                 }
 
-                __instance.StartCoroutine(ProjectData.Writer.SaveData(str + "/level.lsb", GameData.Current, delegate ()
+                Instance.StartCoroutine(ProjectData.Writer.SaveData(str + "/level.lsb", GameData.Current, delegate ()
                 {
-                    __instance.DisplayNotification($"Saved beatmap to {__0}", 3f, EditorManager.NotificationType.Success);
+                    Instance.DisplayNotification($"Saved beatmap to {__0}", 3f, EditorManager.NotificationType.Success);
                 }));
                 return false;
             }
-            __instance.DisplayNotification("Beatmap can't be saved until you load a level.", 3f, EditorManager.NotificationType.Error);
+            Instance.DisplayNotification("Beatmap can't be saved until you load a level.", 3f, EditorManager.NotificationType.Error);
             return false;
         }
 
         [HarmonyPatch("OpenBeatmapPopup")]
         [HarmonyPrefix]
-        static bool OpenBeatmapPopupPrefix(EditorManager __instance)
+        static bool OpenBeatmapPopupPrefix()
         {
             Debug.LogFormat("{0}Open Beatmap Popup", EditorPlugin.className);
-            var component = __instance.GetDialog("Open File Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
-            if (__instance.openFileSearch == null)
-                __instance.openFileSearch = "";
+            var component = Instance.GetDialog("Open File Popup").Dialog.Find("search-box/search").GetComponent<InputField>();
+            if (Instance.openFileSearch == null)
+                Instance.openFileSearch = "";
 
-            component.text = __instance.openFileSearch;
-            __instance.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
-            __instance.RenderOpenBeatmapPopup();
-            __instance.ShowDialog("Open File Popup");
+            component.text = Instance.openFileSearch;
+            Instance.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
+            Instance.RenderOpenBeatmapPopup();
+            Instance.ShowDialog("Open File Popup");
 
             try
             {
                 //Create Local Variables
-                var openLevel = __instance.GetDialog("Open File Popup").Dialog.gameObject;
+                var openLevel = Instance.GetDialog("Open File Popup").Dialog.gameObject;
                 var openTLevel = openLevel.transform;
                 var openRTLevel = openLevel.GetComponent<RectTransform>();
                 var openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
@@ -822,30 +743,30 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("RenderParentSearchList")]
         [HarmonyPrefix]
-        static bool RenderParentSearchList(EditorManager __instance)
+        static bool RenderParentSearchList()
         {
             if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
-                RTEditor.inst.RefreshParentSearch(__instance, ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+                RTEditor.inst.RefreshParentSearch(Instance, ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
             return false;
         }
 
         [HarmonyPatch("OpenAlbumArtSelector")]
         [HarmonyPrefix]
-        static bool OpenAlbumArtSelector(EditorManager __instance)
+        static bool OpenAlbumArtSelector()
         {
             string jpgFile = FileBrowser.OpenSingleFile("jpg");
             Debug.Log("Selected file: " + jpgFile);
             if (!string.IsNullOrEmpty(jpgFile))
             {
-                string jpgFileLocation = RTFile.ApplicationDirectory + RTEditor.editorListSlash + __instance.currentLoadedLevel + "/level.jpg";
-                __instance.StartCoroutine(__instance.GetSprite(jpgFile, new EditorManager.SpriteLimits(new Vector2(512f, 512f)), delegate (Sprite cover)
+                string jpgFileLocation = RTFile.ApplicationDirectory + RTEditor.editorListSlash + Instance.currentLoadedLevel + "/level.jpg";
+                Instance.StartCoroutine(Instance.GetSprite(jpgFile, new EditorManager.SpriteLimits(new Vector2(512f, 512f)), delegate (Sprite cover)
                 {
                     File.Copy(jpgFile, jpgFileLocation, true);
-                    EditorManager.inst.GetDialog("Metadata Editor").Dialog.transform.Find("Scroll View/Viewport/Content/creator/cover_art/image").GetComponent<Image>().sprite = cover;
+                    Instance.GetDialog("Metadata Editor").Dialog.transform.Find("Scroll View/Viewport/Content/creator/cover_art/image").GetComponent<Image>().sprite = cover;
                     MetadataEditor.inst.currentLevelCover = cover;
                 }, delegate (string errorFile)
                 {
-                    __instance.DisplayNotification("Please resize your image to be less then or equal to 512 x 512 pixels. It must also be a jpg.", 2f, EditorManager.NotificationType.Error, false);
+                    Instance.DisplayNotification("Please resize your image to be less then or equal to 512 x 512 pixels. It must also be a jpg.", 2f, EditorManager.NotificationType.Error, false);
                 }));
             }
             return false;
@@ -853,7 +774,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("RenderTimeline")]
         [HarmonyPrefix]
-        static bool RenderTimelinePatch(EditorManager __instance)
+        static bool RenderTimelinePatch()
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 EventEditor.inst.RenderEventObjects();
@@ -863,7 +784,10 @@ namespace EditorManagement.Patchers
             CheckpointEditor.inst.RenderCheckpoints();
             MarkerEditor.inst.RenderMarkers();
 
-            __instance.UpdateTimelineSizes();
+            Instance.UpdateTimelineSizes();
+
+            RTEditor.inst.SetTimelineGridSize();
+
             return false;
         }
 
