@@ -391,7 +391,15 @@ namespace EditorManagement.Patchers
 				for (int i = 0; i < opacity.transform.childCount; i++)
 				{
 					if (!opacity.transform.GetChild(i).GetComponent<InputFieldSwapper>())
-						opacity.transform.GetChild(i).gameObject.AddComponent<InputFieldSwapper>();
+					{
+						var inputField = opacity.transform.GetChild(i).GetComponent<InputField>();
+						var swapper = opacity.transform.GetChild(i).gameObject.AddComponent<InputFieldSwapper>();
+						swapper.inputField = inputField;
+
+						inputField.characterValidation = InputField.CharacterValidation.None;
+						inputField.contentType = InputField.ContentType.Standard;
+						inputField.keyboardType = TouchScreenKeyboardType.Default;
+					}
 
 					var horizontal = opacity.transform.GetChild(i).GetComponent<HorizontalLayoutGroup>();
 					var input = opacity.transform.GetChild(i).Find("input").GetComponent<RectTransform>();
