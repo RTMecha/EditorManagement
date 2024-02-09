@@ -31,8 +31,6 @@ namespace EditorManagement.Functions.Editors
     {
         public static ObjectModifiersEditor inst;
 
-        public static Type objectModifiersPlugin;
-
         public static bool installed = false;
 
         public static Transform content;
@@ -50,14 +48,12 @@ namespace EditorManagement.Functions.Editors
 
         void Awake()
         {
-            if (!GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin"))
+            if (!ModCompatibility.ObjectModifiersInstalled)
             {
                 Destroy(gameObject);
             }
             else
             {
-                objectModifiersPlugin = GameObject.Find("BepInEx_Manager").GetComponentByName("ObjectModifiersPlugin").GetType();
-
                 inst = this;
 
                 CreateModifiersOnAwake();
@@ -416,6 +412,29 @@ namespace EditorManagement.Functions.Editors
                         SetObjectColors(startColors.GetComponentsInChildren<Toggle>(), type, Parser.TryParse(modifier.commands[type], 0), modifier);
                     };
 
+                    Action<string, int, List<string>> dropdownGenerator = delegate (string label, int type, List<string> options)
+                    {
+                        var dd = dropdownBar.Duplicate(layout, label);
+                        dd.transform.Find("Text").GetComponent<Text>().text = label;
+
+                        Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                        Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+                        var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                        d.onValueChanged.RemoveAllListeners();
+                        d.options.Clear();
+
+                        d.options = options.Select(x => new Dropdown.OptionData(x)).ToList();
+
+                        d.value = Parser.TryParse(modifier.commands[type], 0);
+
+                        d.onValueChanged.AddListener(delegate (int _val)
+                        {
+                            modifier.commands[type] = _val.ToString();
+                            modifier.active = false;
+                        });
+                    };
+
                     var cmd = modifier.commands[0];
                     switch (cmd)
                     {
@@ -772,25 +791,47 @@ namespace EditorManagement.Functions.Editors
                         case "eventOffsetVariable":
                         case "eventOffsetAnimate":
                             {
-                                // Change this to a dropdown so people know what each type is.
-                                var type = numberInput.Duplicate(layout, "Value");
-                                type.transform.Find("Text").GetComponent<Text>().text = "Type";
-
-                                var typeIF = type.transform.Find("Input").GetComponent<InputField>();
-                                typeIF.onValueChanged.ClearAll();
-                                typeIF.textComponent.alignment = TextAnchor.MiddleCenter;
-                                typeIF.text = Parser.TryParse(modifier.commands[1], 0).ToString();
-                                typeIF.onValueChanged.AddListener(delegate (string _val)
+                                // Event Keyframe Type
                                 {
-                                    if (int.TryParse(_val, out int result))
-                                    {
-                                        modifier.commands[1] = Mathf.Clamp(result, 0, GameData.DefaultKeyframes.Count - 1).ToString();
-                                        modifier.active = false;
-                                    }
-                                });
+                                    var dd = dropdownBar.Duplicate(layout, "Event Type");
+                                    dd.transform.Find("Text").GetComponent<Text>().text = "Event Type";
 
-                                TriggerHelper.IncreaseDecreaseButtonsInt(typeIF, 1, 0, GameData.DefaultKeyframes.Count - 1, type.transform);
-                                TriggerHelper.AddEventTrigger(typeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(typeIF, 1, 0, GameData.DefaultKeyframes.Count - 1) });
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+                                    var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                                    d.onValueChanged.RemoveAllListeners();
+                                    d.options.Clear();
+
+                                    d.options = RTEventEditor.EventTypes.Select(x => new Dropdown.OptionData(x)).ToList();
+
+                                    d.value = Parser.TryParse(modifier.commands[1], 0);
+
+                                    d.onValueChanged.AddListener(delegate (int _val)
+                                    {
+                                        modifier.commands[1] = Mathf.Clamp(_val, 0, GameData.DefaultKeyframes.Count - 1).ToString();
+                                        modifier.active = false;
+                                    });
+                                }
+
+                                //var type = numberInput.Duplicate(layout, "Value");
+                                //type.transform.Find("Text").GetComponent<Text>().text = "Type";
+
+                                //var typeIF = type.transform.Find("Input").GetComponent<InputField>();
+                                //typeIF.onValueChanged.ClearAll();
+                                //typeIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                                //typeIF.text = Parser.TryParse(modifier.commands[1], 0).ToString();
+                                //typeIF.onValueChanged.AddListener(delegate (string _val)
+                                //{
+                                //    if (int.TryParse(_val, out int result))
+                                //    {
+                                //        modifier.commands[1] = Mathf.Clamp(result, 0, GameData.DefaultKeyframes.Count - 1).ToString();
+                                //        modifier.active = false;
+                                //    }
+                                //});
+
+                                //TriggerHelper.IncreaseDecreaseButtonsInt(typeIF, 1, 0, GameData.DefaultKeyframes.Count - 1, type.transform);
+                                //TriggerHelper.AddEventTrigger(typeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(typeIF, 1, 0, GameData.DefaultKeyframes.Count - 1) });
 
                                 var vindex = numberInput.Duplicate(layout, "Value");
                                 vindex.transform.Find("Text").GetComponent<Text>().text = "Val Index";
@@ -925,6 +966,7 @@ namespace EditorManagement.Functions.Editors
                                 d.onValueChanged.AddListener(delegate (int _val)
                                 {
                                     modifier.commands[2] = Mathf.Clamp(_val, 0, 3).ToString();
+                                    modifier.active = false;
                                 });
 
                                 break;
@@ -1200,10 +1242,13 @@ namespace EditorManagement.Functions.Editors
                                     modifier.commands.Add("1");
 
                                 stringGenerator("Object Group", 0);
-                                integerGenerator("From Type", 1, 0);
-                                integerGenerator("From Axis", 2, 0);
-                                integerGenerator("To Type", 3, 0);
-                                integerGenerator("To Axis", 4, 0);
+
+                                dropdownGenerator("From Type", 1, new List<string> { "Position", "Scale", "Rotation", "Color" });
+                                dropdownGenerator("From Axis", 2, new List<string> { "X", "Y", "Z" });
+
+                                dropdownGenerator("To Type", 3, new List<string> { "Position", "Scale", "Rotation", "Color" });
+                                dropdownGenerator("To Axis (3D)", 4, new List<string> { "X", "Y", "Z" });
+
                                 singleGenerator("Delay", 5, 0f);
                                 singleGenerator("Multiply", 6, 1f);
 
