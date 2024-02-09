@@ -1786,7 +1786,6 @@ namespace EditorManagement.Functions.Editors
             DataManager.inst.gameData.prefabObjects.Add(prefabObject);
 
             Updater.AddPrefabToLevel(prefabObject);
-            //Updater.UpdatePrefab(prefabObject); < Idk why this isn't working
 
             ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
         }
