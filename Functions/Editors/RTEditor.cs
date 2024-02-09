@@ -983,15 +983,22 @@ namespace EditorManagement.Functions.Editors
             return Color.white - invertedColorSum / colors.Count;
         }
 
-        public float timelineGridRenderMultiSizeCloser = 160f;
-        public float timelineGridRenderMultiSizeClose = 60f;
-        public float timelineGridUnrenderSize = 25f;
+        public float timelineGridRenderMultiSizeCloser = 40f;
+        public float timelineGridRenderMultiSizeClose = 20f;
+        public float timelineGridUnrenderSize = 6f;
         public void SetTimelineGridSize()
         {
             var clipLength = AudioManager.inst.CurrentAudioSource.clip.length;
-            var bpm = EditorManager.inst.Zoom > timelineGridRenderMultiSizeCloser ? SettingEditor.inst.SnapBPM : EditorManager.inst.Zoom > timelineGridRenderMultiSizeClose ? SettingEditor.inst.SnapBPM / 2f : SettingEditor.inst.SnapBPM / 4f;
+
+            float x = SettingEditor.inst.SnapBPM / 60f;
+
+            var closer = timelineGridRenderMultiSizeCloser * x;
+            var close = timelineGridRenderMultiSizeClose * x;
+            var unrender = timelineGridUnrenderSize * x;
+
+            var bpm = EditorManager.inst.Zoom > closer ? SettingEditor.inst.SnapBPM : EditorManager.inst.Zoom > close ? SettingEditor.inst.SnapBPM / 2f : SettingEditor.inst.SnapBPM / 4f;
             var snapDivisions = BPMSnapDivisions * 2f;
-            if (timelineGridRenderer && EditorManager.inst.Zoom > timelineGridUnrenderSize && GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().Value)
+            if (timelineGridRenderer && EditorManager.inst.Zoom > unrender && GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().Value)
             {
                 timelineGridRenderer.enabled = false;
                 timelineGridRenderer.gridCellSize.x = ((int)bpm / (int)snapDivisions) * (int)clipLength;
@@ -7231,17 +7238,17 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.ClearDialogs();
             EditorManager.inst.ShowDialog("File Info Popup");
 
-            var fileInfo = EditorManager.inst.GetDialog("File Info Popup").Dialog.transform.Find("text").GetComponent<Text>();
+            //var fileInfo = EditorManager.inst.GetDialog("File Info Popup").Dialog.transform.Find("text").GetComponent<Text>();
 
             if (EditorManager.inst.hasLoadedLevel && RTFile.DirectoryExists(GameManager.inst.path.Replace("/level.lsb", "")))
             {
                 Debug.Log($"{EditorPlugin.className}Backing up previous level {Path.GetFileName(GameManager.inst.path.Replace("/level.lsb", ""))}...");
-                fileInfo.text = $"Backing up previous level [ {Path.GetFileName(GameManager.inst.path.Replace("/level.lsb", ""))} ]";
+                SetFileInfo($"Backing up previous level [ {Path.GetFileName(GameManager.inst.path.Replace("/level.lsb", ""))} ]");
 
                 yield return StartCoroutine(ProjectData.Writer.SaveData(GameManager.inst.path.Replace("level.lsb", "level-open-backup.lsb"), GameData.Current));
             }
 
-            fileInfo.text = $"Loading Level Data for [ {name} ]";
+            SetFileInfo($"Loading Level Data for [ {name} ]");
 
             Debug.Log($"{EditorPlugin.className}Loading {(string.IsNullOrEmpty(autosave) ? "level.lsb" : autosave)}...");
             rawJSON = FileManager.inst.LoadJSONFileRaw(fullPath + "/" + (string.IsNullOrEmpty(autosave) ? "level.lsb" : autosave));
@@ -7256,7 +7263,7 @@ namespace EditorManagement.Functions.Editors
             GameManager.inst.path = fullPath + "/level.lsb";
             GameManager.inst.basePath = fullPath + "/";
             GameManager.inst.levelName = name;
-            fileInfo.text = $"Loading Level Music for [ {name} ]\n\nIf this is taking more than a minute or two check if the song file (.ogg / .wav / .mp3) is corrupt. If not, then something went really wrong.";
+            SetFileInfo($"Loading Level Music for [ {name} ]\n\nIf this is taking more than a minute or two check if the song file (.ogg / .wav / .mp3) is corrupt. If not, then something went really wrong.");
 
             string errorMessage = "";
             bool hadError = false;
@@ -7282,10 +7289,10 @@ namespace EditorManagement.Functions.Editors
             {
                 bool audioExists = RTFile.FileExists(fullPath + "/level.ogg") || RTFile.FileExists(fullPath + "/level.wav") || RTFile.FileExists(fullPath + "/level.mp3");
 
-                if (!audioExists)
-                    fileInfo.text = $"Something went wrong when loading the song file. Either the file is corrupt or something went wrong internally.";
+                if (audioExists)
+                    SetFileInfo($"Something went wrong when loading the song file. Either the file is corrupt or something went wrong internally.");
                 else
-                    fileInfo.text = $"Song file does not exist.";
+                    SetFileInfo($"Song file does not exist.");
 
                 EditorManager.inst.DisplayNotification($"Song file could not load due to {errorMessage}", 3f, EditorManager.NotificationType.Error);
 
@@ -7315,7 +7322,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             GameManager.inst.gameState = GameManager.State.Parsing;
-            fileInfo.text = $"Parsing Level Data for [ {name} ]";
+            SetFileInfo($"Parsing Level Data for [ {name} ]");
             if (!string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
             {
                 try
@@ -7332,7 +7339,7 @@ namespace EditorManagement.Functions.Editors
                 }
                 catch (Exception ex)
                 {
-                    fileInfo.text = $"Something went wrong when parsing the level data. Press the open log folder key and send the log to Mecha.";
+                    SetFileInfo($"Something went wrong when parsing the level data. Press the open log folder key ({RTFunctions.FunctionsPlugin.OpenPAPersistentFolder.Value}) and send the Player.log file to Mecha.");
 
                     EditorManager.inst.DisplayNotification("Level could not load.", 3f, EditorManager.NotificationType.Error);
 
@@ -7344,13 +7351,13 @@ namespace EditorManagement.Functions.Editors
             else
             {
                 if (string.IsNullOrEmpty(rawJSON) && !string.IsNullOrEmpty(rawMetadataJSON))
-                    fileInfo.text = $"level.lsb is empty or corrupt.";
+                    SetFileInfo($"level.lsb is empty or corrupt.");
 
                 if (!string.IsNullOrEmpty(rawJSON) && string.IsNullOrEmpty(rawMetadataJSON))
-                    fileInfo.text = $"metadata.lsb is empty or corrupt.";
+                    SetFileInfo($"metadata.lsb is empty or corrupt.");
 
                 if (string.IsNullOrEmpty(rawJSON) && string.IsNullOrEmpty(rawMetadataJSON))
-                    fileInfo.text = $"both level.lsb and metadata.lsb are corrupt.";
+                    SetFileInfo($"Both level.lsb and metadata.lsb are corrupt.");
 
                 EditorManager.inst.DisplayNotification("Level could not load.", 3f, EditorManager.NotificationType.Error);
 
@@ -7364,7 +7371,7 @@ namespace EditorManagement.Functions.Editors
                 PlayerManager.RespawnPlayers();
             }
 
-            fileInfo.text = $"Loading Themes for [ {name} ]";
+            SetFileInfo($"Loading Themes for [ {name} ]");
             yield return StartCoroutine(LoadThemes());
 
             // For some reason loading themes doesn't hold the enumerator so instead we check for themesLoading.
@@ -7377,22 +7384,22 @@ namespace EditorManagement.Functions.Editors
 
             Debug.Log($"{EditorPlugin.className}Music is null: {song == null}");
 
-            fileInfo.text = $"Playing Music for [ {name} ]\n\nIf it doesn't, then something went wrong!";
+            SetFileInfo($"Playing Music for [ {name} ]\n\nIf it doesn't, then something went wrong!");
             AudioManager.inst.PlayMusic(null, song, true, 0f, true);
             StartCoroutine(EditorManager.inst.SpawnPlayersWithDelay(0.2f));
             if (GenerateWaveform)
             {
-                fileInfo.text = $"Assigning Waveform Textures for [ {name} ]";
+                SetFileInfo($"Assigning Waveform Textures for [ {name} ]");
                 yield return AssignTimelineTexture();
             }
             else
             {
-                fileInfo.text = $"Skipping Waveform Textures for [ {name} ]";
+                SetFileInfo($"Skipping Waveform Textures for [ {name} ]");
                 TimelineImage.sprite = null;
                 TimelineOverlayImage.sprite = null;
             }
 
-            fileInfo.text = $"Updating Timeline for [ {name} ]";
+            SetFileInfo($"Updating Timeline for [ {name} ]");
             EditorManager.inst.UpdateTimelineSizes();
             GameManager.inst.UpdateTimeline();
             EditorManager.inst.ClearDialogs();
@@ -7400,7 +7407,7 @@ namespace EditorManagement.Functions.Editors
 
             CheckpointEditor.inst.CreateGhostCheckpoints();
 
-            fileInfo.text = $"Updating states for [ {name} ]";
+            SetFileInfo($"Updating states for [ {name} ]");
             RTFunctions.FunctionsPlugin.UpdateDiscordStatus($"Editing: {DataManager.inst.metaData.song.title}", "In Editor", "editor");
 
             ObjectManager.inst.updateObjects();
@@ -7415,14 +7422,15 @@ namespace EditorManagement.Functions.Editors
                 ((Action)ModCompatibility.sharedFunctions["EventsCoreResetOffsets"])?.Invoke();
             }
 
-            fileInfo.text = $"Setting first object of [ {name} ]";
+            SetFileInfo($"Setting first object of [ {name} ]");
             ObjectEditor.inst.CreateTimelineObjects();
             ObjectEditor.inst.RenderTimelineObjects();
-            ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
+            if (timelineObjects.Count > 0)
+                ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
 
             CheckpointEditor.inst.SetCurrentCheckpoint(0);
 
-            fileInfo.text = "Done!";
+            SetFileInfo("Done!");
             EditorManager.inst.HideDialog("File Info Popup");
             EditorManager.inst.CancelInvoke("LoadingIconUpdate");
 
