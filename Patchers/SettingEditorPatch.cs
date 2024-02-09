@@ -289,6 +289,33 @@ namespace EditorManagement.Patchers
             }
         }
 
+        static void SetBPMSlider(Slider slider, InputField input)
+        {
+            slider.onValueChanged.RemoveAllListeners();
+            slider.value = SettingEditor.inst.SnapBPM;
+            slider.onValueChanged.AddListener(delegate (float _val)
+            {
+                DataManager.inst.metaData.song.BPM = _val;
+                SettingEditor.inst.SnapBPM = _val;
+                SetBPMInputField(slider, input);
+                RTEditor.inst.SetTimelineGridSize();
+            });
+        }
+        
+        static void SetBPMInputField(Slider slider, InputField input)
+        {
+            input.onValueChanged.RemoveAllListeners();
+            input.text = SettingEditor.inst.SnapBPM.ToString();
+            input.onValueChanged.AddListener(delegate (string _val)
+            {
+                var bpm = Parser.TryParse(_val, 120f);
+                DataManager.inst.metaData.song.BPM = bpm;
+                SettingEditor.inst.SnapBPM = bpm;
+                SetBPMSlider(slider, input);
+                RTEditor.inst.SetTimelineGridSize();
+            });
+        }
+
         [HarmonyPatch("Render")]
         [HarmonyPrefix]
         static bool RenderPrefix()
@@ -316,43 +343,12 @@ namespace EditorManagement.Patchers
 
             var slider = transform.Find("snap/bpm/slider").GetComponent<Slider>();
             var input = transform.Find("snap/bpm/input").GetComponent<InputField>();
-            slider.onValueChanged.RemoveAllListeners();
-            slider.value = SettingEditor.inst.SnapBPM;
-            slider.onValueChanged.AddListener(delegate (float _val)
-            {
-                DataManager.inst.metaData.song.BPM = _val;
-                SettingEditor.inst.SnapBPM = _val;
-                input.text = SettingEditor.inst.SnapBPM.ToString();
-            });
-            input.onValueChanged.RemoveAllListeners();
-            input.text = SettingEditor.inst.SnapBPM.ToString();
-            input.onValueChanged.AddListener(delegate (string _val)
-            {
-                DataManager.inst.metaData.song.BPM = float.Parse(_val);
-                SettingEditor.inst.SnapBPM = float.Parse(_val);
-                slider.value = SettingEditor.inst.SnapBPM;
-            });
+            SetBPMSlider(slider, input);
+            SetBPMInputField(slider, input);
 
             TriggerHelper.IncreaseDecreaseButtons(input, t: transform.Find("snap/bpm"));
             TriggerHelper.AddEventTriggerParams(input.gameObject,
                 TriggerHelper.ScrollDelta(input, 1f));
-
-            //transform.Find("snap/bpm/<").GetComponent<Button>().onClick.RemoveAllListeners();
-            //transform.Find("snap/bpm/<").GetComponent<Button>().onClick.AddListener(delegate ()
-            //{
-            //    DataManager.inst.metaData.song.BPM -= 1f;
-            //    SettingEditor.inst.SnapBPM -= 1f;
-            //    transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
-            //    transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
-            //});
-            //transform.Find("snap/bpm/>").GetComponent<Button>().onClick.RemoveAllListeners();
-            //transform.Find("snap/bpm/>").GetComponent<Button>().onClick.AddListener(delegate ()
-            //{
-            //    DataManager.inst.metaData.song.BPM += 1f;
-            //    SettingEditor.inst.SnapBPM += 1f;
-            //    transform.Find("snap/bpm/input").GetComponent<InputField>().text = SettingEditor.inst.SnapBPM.ToString();
-            //    transform.Find("snap/bpm/slider").GetComponent<Slider>().value = SettingEditor.inst.SnapBPM;
-            //});
 
             try
             {
