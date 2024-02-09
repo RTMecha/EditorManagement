@@ -3190,13 +3190,14 @@ namespace EditorManagement.Functions.Editors
 
                 tet.triggers.Clear();
                 if (tkf.Index != 0)
-                    tet.triggers.Add(TriggerHelper.ScrollDelta(tif, 0.1f, 10f));
+                    tet.triggers.Add(TriggerHelper.ScrollDelta(tif));
 
                 tif.onValueChanged.RemoveAllListeners();
                 tif.text = keyframe.eventTime.ToString();
                 tif.onValueChanged.AddListener(delegate (string _value)
                 {
-                    SetKeyframeTime(beatmapObject, float.Parse(_value), false);
+                    if (float.TryParse(_value, out float num))
+                        SetKeyframeTime(beatmapObject, num, false);
                 });
 
                 TriggerHelper.IncreaseDecreaseButtons(tif, t: p.Find("time"));
@@ -3234,7 +3235,7 @@ namespace EditorManagement.Functions.Editors
                             var pos = p.GetChild(9).GetChild(i);
 
                             // Checks if type is rotation.
-                            EventTrigger posET = type != 2 ? pos.GetComponent<EventTrigger>() : p.GetChild(9).GetComponent<EventTrigger>();
+                            var posET = type != 2 ? pos.GetComponent<EventTrigger>() : p.GetChild(9).GetComponent<EventTrigger>();
 
                             var posIF = pos.GetComponent<InputField>();
                             var posLeft = pos.Find("<").GetComponent<Button>();
@@ -3259,15 +3260,22 @@ namespace EditorManagement.Functions.Editors
 
                             int current = i;
 
+                            posIF.characterValidation = InputField.CharacterValidation.None;
+                            posIF.contentType = InputField.ContentType.Standard;
+                            posIF.keyboardType = TouchScreenKeyboardType.Default;
+
                             posIF.onValueChanged.RemoveAllListeners();
                             posIF.text = keyframe.eventValues[i].ToString();
                             posIF.onValueChanged.AddListener(delegate (string _value)
                             {
-                                keyframe.eventValues[current] = float.Parse(_value);
+                                if (float.TryParse(_value, out float num))
+                                {
+                                    keyframe.eventValues[current] = num;
 
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                }
                             });
 
                             posLeft.onClick.RemoveAllListeners();
@@ -3405,6 +3413,10 @@ namespace EditorManagement.Functions.Editors
                             int index = kf;
                             var randomValueX = randomValue.GetChild(index).GetComponent<InputField>();
 
+                            randomValueX.characterValidation = InputField.CharacterValidation.None;
+                            randomValueX.contentType = InputField.ContentType.Standard;
+                            randomValueX.keyboardType = TouchScreenKeyboardType.Default;
+
                             randomValueX.NewValueChangedListener(keyframe.eventRandomValues[index].ToString(), delegate (string _val)
                             {
                                 if (float.TryParse(_val, out float num))
@@ -3446,6 +3458,7 @@ namespace EditorManagement.Functions.Editors
                 }
                 else
                 {
+                    bool showModifiedColors = RTEditor.ShowModifiedColors;
                     int index = 0;
                     foreach (var toggle in ObjEditor.inst.colorButtons)
                     {
@@ -3457,7 +3470,7 @@ namespace EditorManagement.Functions.Editors
                             SetKeyframeColor(beatmapObject, 0, tmpIndex);
                         });
 
-                        if (RTEditor.ShowModifiedColors)
+                        if (showModifiedColors)
                         {
                             var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
 
@@ -3495,7 +3508,8 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[1] = Mathf.Clamp(-n + 1, 0f, 1f);
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                Updater.UpdateProcessor(beatmapObject);
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
 
@@ -3515,13 +3529,10 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[2] = n;
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                //if (UpdateObjects)
-                                //    Updater.UpdateProcessor(beatmapObject);
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
-
-                        //hue.gameObject.AddComponent<InputFieldHelper>();
 
                         Destroy(p.transform.Find("huesatval").GetComponent<EventTrigger>());
 
@@ -3539,9 +3550,8 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[3] = n;
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                //if (UpdateObjects)
-                                //    Updater.UpdateProcessor(beatmapObject);
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
 
@@ -3561,9 +3571,8 @@ namespace EditorManagement.Functions.Editors
                                 keyframe.eventValues[4] = n;
 
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                //if (UpdateObjects)
-                                //    Updater.UpdateProcessor(beatmapObject);
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
 
@@ -3592,8 +3601,8 @@ namespace EditorManagement.Functions.Editors
                                 if (float.TryParse(_val, out float n))
                                 {
                                     keyframe.eventRandomValues[0] = n;
-                                    //Updater.UpdateProcessor(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3604,8 +3613,8 @@ namespace EditorManagement.Functions.Editors
                                 if (float.TryParse(_val, out float n))
                                 {
                                     keyframe.eventRandomValues[1] = n;
-                                    //Updater.UpdateProcessor(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3642,7 +3651,7 @@ namespace EditorManagement.Functions.Editors
                                     SetKeyframeRandomColorTarget(beatmapObject, 3, tmpIndex, toggles);
                                 });
 
-                                if (RTEditor.ShowModifiedColors)
+                                if (showModifiedColors)
                                 {
                                     var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
 
@@ -3682,8 +3691,8 @@ namespace EditorManagement.Functions.Editors
                             if (_val)
                             {
                                 keyframe.random = 0;
-                                //Updater.UpdateProcessor(beatmapObject);
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 RenderKeyframeDialog(beatmapObject);
                             }
                         });
@@ -3695,8 +3704,8 @@ namespace EditorManagement.Functions.Editors
                             if (_val)
                             {
                                 keyframe.random = 5;
-                                //Updater.UpdateProcessor(beatmapObject);
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 RenderKeyframeDialog(beatmapObject);
                             }
                         });
@@ -3713,8 +3722,8 @@ namespace EditorManagement.Functions.Editors
                                 if (float.TryParse(_val, out float n))
                                 {
                                     keyframe.eventRandomValues[2] = n;
-                                    //Updater.UpdateProcessor(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                                 }
                             });
 
@@ -3731,22 +3740,11 @@ namespace EditorManagement.Functions.Editors
 
         public void UpdateKeyframeOrder(BeatmapObject beatmapObject)
         {
-            //ClearKeyframes(beatmapObject);
-
             for (int i = 0; i < beatmapObject.events.Count; i++)
             {
                 beatmapObject.events[i] = (from x in beatmapObject.events[i]
                                             orderby x.eventTime
                                             select x).ToList();
-
-                //for (int j = 0; j < beatmapObject.events[i].Count; j++)
-                //{
-                //    if (beatmapObject.timelineObject.InternalSelections.TryFind(x => x.ID == (beatmapObject.events[i][j] as EventKeyframe).id, out TimelineObject timelineObject))
-                //    {
-                //        timelineObject.Type = i;
-                //        timelineObject.Index = j;
-                //    }
-                //}
             }
 
             RenderKeyframes(beatmapObject);
