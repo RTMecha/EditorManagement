@@ -46,7 +46,18 @@ namespace EditorManagement.Functions.Helpers
 
 		public static bool FloatNearZero(float f, float range = 0.01f) => f < range && f > -range;
 
-		public static EventTrigger.Entry ScrollDelta(InputField _if, float amount = 0.1f, float mutliply = 10f, float min = 0f, float max = 0f, bool multi = false)
+		public static EventTrigger.Entry CreateEntry(EventTriggerType triggerType, Action<BaseEventData> action)
+        {
+			var entry = new EventTrigger.Entry();
+			entry.eventID = triggerType;
+            entry.callback.AddListener(delegate (BaseEventData eventData)
+            {
+                action?.Invoke(eventData);
+            });
+			return entry;
+        }
+
+        public static EventTrigger.Entry ScrollDelta(InputField _if, float amount = 0.1f, float mutliply = 10f, float min = 0f, float max = 0f, bool multi = false)
 		{
 			var entry = new EventTrigger.Entry();
 			entry.eventID = EventTriggerType.Scroll;
