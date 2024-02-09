@@ -1388,7 +1388,7 @@ namespace EditorManagement.Functions.Editors
                     image.type = Image.Type.Simple;
                     image.sprite = null;
 
-                    var prefabType = prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
+                    var prefabType = prefab.Type >= 0 && prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
 
                     color = prefabType.Color;
                     nullName = prefabType.Name;
