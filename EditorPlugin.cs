@@ -67,11 +67,92 @@ namespace EditorManagement
 			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
 			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
 
+			SetupSettingChanged();
+
 			Config.SettingChanged += new EventHandler<SettingChangedEventArgs>(UpdateEditorManagementConfigs);
 
 			// Plugin startup logic
 			Logger.LogInfo($"Plugin EditorManagement is loaded!");
         }
+
+		void SetupSettingChanged()
+		{
+            RTEditor.GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().SettingChanged += TimelineGridChanged;
+            RTEditor.GetEditorProperty("Timeline Grid Thickness").GetConfigEntry<float>().SettingChanged += TimelineGridChanged;
+            RTEditor.GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().SettingChanged += TimelineGridChanged;
+            RTEditor.GetEditorProperty("BPM Snap Divisions").GetConfigEntry<float>().SettingChanged += TimelineGridChanged;
+			RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().SettingChanged += DragUIChanged;
+			RTEditor.GetEditorProperty("Theme Template Name").GetConfigEntry<string>().SettingChanged += ThemeTemplateChanged;
+			RTEditor.GetEditorProperty("Theme Template GUI").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+			RTEditor.GetEditorProperty("Theme Template Tail").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+			RTEditor.GetEditorProperty("Theme Template BG").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultPlayerColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template Player {i + 1}"))
+						RTEditor.GetEditorProperty($"Theme Template Player {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+				}
+				catch
+				{
+
+				}
+			}
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultObjectColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template OBJ {i + 1}"))
+						RTEditor.GetEditorProperty($"Theme Template OBJ {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+				}
+				catch
+				{
+
+				}
+			}
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaulBackgroundColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template BG {i + 1}"))
+						RTEditor.GetEditorProperty($"Theme Template BG {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+				}
+				catch
+				{
+
+				}
+			}
+
+			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultEffectColors.Count; i++)
+			{
+				try
+				{
+					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template FX {i + 1}"))
+						RTEditor.GetEditorProperty($"Theme Template FX {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+				}
+				catch
+				{
+
+				}
+			}
+		}
+
+        void TimelineGridChanged(object sender, EventArgs e)
+        {
+			RTEditor.inst.timelineGridRenderer.enabled = false;
+
+			RTEditor.inst.timelineGridRenderer.color = RTEditor.GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().Value;
+			RTEditor.inst.timelineGridRenderer.thickness = RTEditor.GetEditorProperty("Timeline Grid Thickness").GetConfigEntry<float>().Value;
+
+			RTEditor.inst.SetTimelineGridSize();
+		}
+
+		void ThemeTemplateChanged(object sender, EventArgs e) => UpdateDefaultThemeValues();
+
+		void DragUIChanged(object sender, EventArgs e) => SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 
 		public static Action AdjustPositionInputsChanged { get; set; }
 
@@ -103,10 +184,7 @@ namespace EditorManagement
                 {
 					RTEventEditor.inst.RenderLayerBins();
 				}
-
-				UpdateDefaultThemeValues();
 			}
-
 		}
 
 		public static void SetPreviewConfig()
@@ -165,51 +243,30 @@ namespace EditorManagement
 
 		public static void SetTimelineColors()
         {
-			Debug.LogFormat("{0}Setting Timeline Cursor Colors", className);
+			Debug.LogFormat($"{className}Setting Timeline Cursor Colors");
 			{
-				Debug.LogFormat("{0}Cursor Color Handle 1", className);
-				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle", out GameObject gm) && gm.TryGetComponent(out Image image))
-				{
-					RTEditor.inst.timelineSliderHandle = image;
-					RTEditor.inst.timelineSliderHandle.color = RTEditor.GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
-				}
-				else
-				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
-				}
+				var timelineCursorColor = RTEditor.GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
+				var KeyframeCursorColor = RTEditor.GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
 
-				Debug.LogFormat("{0}Cursor Color Ruler 1", className);
-				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image", out GameObject gm1) && gm1.TryGetComponent(out Image image1))
-				{
-					RTEditor.inst.timelineSliderRuler = image1;
-					RTEditor.inst.timelineSliderRuler.color = RTEditor.GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
-				}
+				if (RTEditor.inst.timelineSliderHandle)
+					RTEditor.inst.timelineSliderHandle.color = timelineCursorColor;
 				else
-				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
-				}
+					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
 
-				Debug.LogFormat("{0}Cursor Color Handle 2", className);
-				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image", out GameObject gm2) && gm2.TryGetComponent(out Image image2))
-				{
-					RTEditor.inst.keyframeTimelineSliderHandle = image2;
-					RTEditor.inst.keyframeTimelineSliderHandle.color = RTEditor.GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
-				}
+				if (RTEditor.inst.timelineSliderRuler)
+					RTEditor.inst.timelineSliderRuler.color = timelineCursorColor;
 				else
-				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
-				}
+					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
 
-				Debug.LogFormat("{0}Cursor Color Ruler 2", className);
-				if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle", out GameObject gm3) && gm3.TryGetComponent(out Image image3))
-				{
-					RTEditor.inst.keyframeTimelineSliderRuler = image3;
-					RTEditor.inst.keyframeTimelineSliderRuler.color = RTEditor.GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
-				}
+				if (RTEditor.inst.keyframeTimelineSliderHandle)
+					RTEditor.inst.keyframeTimelineSliderHandle.color = KeyframeCursorColor;
 				else
-				{
-					Debug.LogFormat("{0}Whoooops you gotta put this CD up your-", className);
-				}
+					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
+
+				if (RTEditor.inst.keyframeTimelineSliderRuler)
+					RTEditor.inst.keyframeTimelineSliderRuler.color = KeyframeCursorColor;
+				else
+					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
 			}
 
 			ObjEditor.inst.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
@@ -231,8 +288,6 @@ namespace EditorManagement
 
 			notifyRT.anchoredPosition = new Vector2(8f, direction == Direction.Up ? 408f : 410f);
 			notifyGroup.childAlignment = direction != Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
-
-            SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 		}
 
 		public static void UpdateDefaultThemeValues()
@@ -301,9 +356,7 @@ namespace EditorManagement
 			foreach (var beatmapObject in DataManager.inst.gameData.beatmapObjects)
 			{
 				if (!allLayers.Contains(beatmapObject.editorData.layer))
-				{
 					allLayers.Add(beatmapObject.editorData.layer);
-				}
 			}
 
 			foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
@@ -322,10 +375,6 @@ namespace EditorManagement
 			foreach (var l in allLayers)
 			{
 				int num = l + 1;
-				if (num > 5)
-				{
-					num -= 1;
-				}
 				if (!lister.Contains(num.ToString()))
 				{
 					lister += num.ToString();
@@ -335,7 +384,7 @@ namespace EditorManagement
 				i++;
 			}
 
-			EditorManager.inst.DisplayNotification("Objects on Layers:<br>[ " + lister + " ]", 2f, EditorManager.NotificationType.Info);
+			EditorManager.inst.DisplayNotification($"Objects on Layers:<br>[ {lister} ]", 2f, EditorManager.NotificationType.Info);
 		}
 
 		public static bool DontRun() => false;
