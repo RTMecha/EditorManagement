@@ -1,3 +1,5 @@
+2.3.4 > [Feb 10, 2024]
+- Fixed a very old issue with pasting a negative value into a Beatmap Object keyframe's values not working.
 2.3.3 > [Feb 10, 2024]
 - Added Timeline Grid from Dev Branch, except actually snaps to BPM and being customizable of course.
 - Added some functions to force stuffs time to the BPM. Multi Object Editor and Multi Keyframe Editor now have the function and so does the new keybind action.
@@ -5,6 +7,7 @@
 - Fixed a bug with some Project Planner items being scaled incorrectly.
 - Simplified the copyAxis modifier UI so it's more clear what each input field is for.
 - Clicking the scroll wheel over the Editor Layer input field now displays a list of layers that have objects. It did this before, but not over the input field.
+- Brought back the checkpoint button.
 2.3.2 > [Feb 8, 2024]
 - Deleting Event Keyframes now select the previous keyframe in the type. Though if you have more than 1 keyframe selected, the first keyframe will be selected.
 - Fixed a few bugs with rendering Event Keyframes.
