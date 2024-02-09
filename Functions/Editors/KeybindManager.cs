@@ -1121,6 +1121,7 @@ namespace EditorManagement.Functions.Editors
             SpawnSelectedQuickPrefab, //57
             ResetIntegerVariables, // 58
             ToggleProjectPlanner, // 59
+            ForceSnapBPM, // 60
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1745,26 +1746,26 @@ namespace EditorManagement.Functions.Editors
         {
             bool useExternal = keybind.settings.ContainsKey("External") && bool.TryParse(keybind.settings["External"], out useExternal);
 
-            if (keybind.settings.ContainsKey("UseID") && bool.TryParse(keybind.settings["UseID"], out bool boolean) && keybind.settings.ContainsKey("ID"))
+            if (keybind.settings.ContainsKey("UseID") && bool.TryParse(keybind.settings["UseID"], out bool boolean) && keybind.settings.ContainsKey("ID") && boolean)
             {
                 if (useExternal && !string.IsNullOrEmpty(keybind.settings["ID"]) && PrefabEditor.inst.LoadedPrefabs.Has(x => x.ID == keybind.settings["ID"]))
                 {
-                    PrefabEditor.inst.AddPrefabObjectToLevel(PrefabEditor.inst.LoadedPrefabs.Find(x => x.ID == keybind.settings["ID"]));
+                    PrefabEditorManager.inst.AddPrefabObjectToLevel(PrefabEditor.inst.LoadedPrefabs.Find(x => x.ID == keybind.settings["ID"]));
                 }
                 else if (!useExternal && DataManager.inst.gameData.prefabs.Has(x => x.ID == keybind.settings["ID"]))
                 {
-                    PrefabEditor.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs.Find(x => x.ID == keybind.settings["ID"]));
+                    PrefabEditorManager.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs.Find(x => x.ID == keybind.settings["ID"]));
                 }
             }
             else if (keybind.settings.ContainsKey("Index") && int.TryParse(keybind.settings["Index"], out int index))
             {
-                if (useExternal && index > 0 && index < PrefabEditor.inst.LoadedPrefabs.Count)
+                if (useExternal && index >= 0 && index < PrefabEditor.inst.LoadedPrefabs.Count && PrefabEditor.inst.LoadedPrefabs[index] != null)
                 {
-                    PrefabEditor.inst.AddPrefabObjectToLevel(PrefabEditor.inst.LoadedPrefabs[index]);
+                    PrefabEditorManager.inst.AddPrefabObjectToLevel(PrefabEditor.inst.LoadedPrefabs[index]);
                 }
-                else if (!useExternal && index > 0 && index < DataManager.inst.gameData.prefabs.Count)
+                else if (!useExternal && index >= 0 && index < DataManager.inst.gameData.prefabs.Count && DataManager.inst.gameData.prefabs[index] != null)
                 {
-                    PrefabEditor.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs[index]);
+                    PrefabEditorManager.inst.AddPrefabObjectToLevel(DataManager.inst.gameData.prefabs[index]);
                 }
             }
         }
@@ -1880,6 +1881,30 @@ namespace EditorManagement.Functions.Editors
             ProjectPlannerManager.inst?.ToggleState();
         }
 
+        public static void ForceSnapBPM(Keybind keybind)
+        {
+            if (RTEditor.inst.layerType == RTEditor.LayerType.Objects && ObjectEditor.inst.SelectedObjects.Count > 0)
+                foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                {
+                    timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+                    if (timelineObject.IsBeatmapObject)
+                        Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Start Time");
+                    if (timelineObject.IsPrefabObject)
+                        Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>(), "Start Time");
+
+                    ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                }
+
+            if (RTEditor.inst.layerType == RTEditor.LayerType.Events && RTEventEditor.inst.SelectedKeyframes.Count > 0)
+                foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+                {
+                    if (timelineObject.Index != 0)
+                        timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+
+                    RTEventEditor.inst.RenderTimelineObject(timelineObject);
+                }
+        }
+
         #endregion
 
         #region Settings
@@ -1985,6 +2010,7 @@ namespace EditorManagement.Functions.Editors
             null, // 57
             null, // 58
             null, // 59
+            null, // 60
         };
 
         #endregion

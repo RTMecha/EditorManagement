@@ -99,8 +99,8 @@ namespace EditorManagement.Functions.Editors
 			"Danger",
 			"3D Rotation",
 			"Camera Depth",
-			"Player Force",
-			"Mosaic",
+			//"Player Force",
+			//"Mosaic",
 		};
 
 		public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
@@ -1142,21 +1142,48 @@ namespace EditorManagement.Functions.Editors
 				var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
 				curves.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
 
-				//var valueIndexBase = new GameObject("value index");
-				//valueIndexBase.transform.SetParent(multiKeyframeEditor);
-				//valueIndexBase.transform.localScale = Vector3.one;
-				//var valueIndexBaseRT = valueIndexBase.AddComponent<RectTransform>();
-				//valueIndexBaseRT.sizeDelta = new Vector2(765f, 38f);
-
 				var valueIndex = GenerateUIElement("value index", "Single", multiKeyframeEditor, 7, "Value Index");
 
-				//var valueBase = new GameObject("value");
-				//valueBase.transform.SetParent(multiKeyframeEditor);
-				//valueBase.transform.localScale = Vector3.one;
-				//var valueBaseRT = valueBase.AddComponent<RectTransform>();
-				//valueBaseRT.sizeDelta = new Vector2(765f, 38f);
-
 				var value = GenerateUIElement("value", "Single", multiKeyframeEditor, 9, "Value");
+
+				// Label
+				{
+					var labelBase1 = new GameObject("label base");
+					labelBase1.transform.SetParent(multiKeyframeEditor);
+					labelBase1.transform.localScale = Vector3.one;
+					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+					var l = Instantiate(uiDictionary["Label"]);
+					l.name = "label";
+					l.transform.SetParent(labelBase1RT);
+					l.transform.localScale = Vector3.one;
+					GenerateLabels(l.transform, "Force Snap Time to BPM");
+					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+				}
+
+				var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+
+				var gameObject = eventButton.Duplicate(multiKeyframeEditor, "snap bpm");
+				gameObject.transform.localScale = Vector3.one;
+
+				((RectTransform)gameObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				gameObject.transform.GetChild(0).GetComponent<Text>().text = "Snap";
+				gameObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+				var button = gameObject.GetComponent<Button>();
+				button.onClick.ClearAll();
+				button.onClick.AddListener(delegate ()
+				{
+					foreach (var timelineObject in SelectedKeyframes)
+                    {
+						if (timelineObject.Index != 0)
+							timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+
+						RenderTimelineObject(timelineObject);
+                    }
+				});
 			}
 			catch (Exception ex)
             {
@@ -1279,19 +1306,17 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (float.TryParse(val, out float num))
                     {
-
 						num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 
 						foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0 && x.Type == __instance.currentEventType))
 						{
 							kf.GetData<EventKeyframe>().eventTime = num;
+							RenderTimelineObject(kf);
 						}
 
 						UpdateEventOrder();
-						RenderEventObjects();
+						//RenderEventObjects();
 						EventManager.inst.updateEvents();
-
-						//__instance.SetEventStartTime(float.Parse(val));
 					}
                     else
                         LogIncorrectFormat(val);
@@ -1300,7 +1325,7 @@ namespace EditorManagement.Functions.Editors
 				TriggerHelper.IncreaseDecreaseButtons(timeTime, 0.1f, 10f, t: time);
 				TriggerHelper.AddEventTrigger(time.gameObject, new List<EventTrigger.Entry>
 				{
-					TriggerHelper.ScrollDelta(timeTime, max: 1f)
+					TriggerHelper.ScrollDelta(timeTime, min: 0.001f, max: AudioManager.inst.CurrentAudioSource.clip.length)
 				});
 			}
 
