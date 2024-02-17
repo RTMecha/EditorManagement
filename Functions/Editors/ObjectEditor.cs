@@ -571,7 +571,7 @@ namespace EditorManagement.Functions.Editors
 
                     if (ids.ContainsKey(beatmapObject.parent))
                         beatmapObjectCopy.parent = ids[beatmapObject.parent];
-                    else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
+                    else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1 && beatmapObjectCopy.parent != "CAMERA_PARENT")
                         beatmapObjectCopy.parent = "";
 
                     beatmapObjectCopy.prefabID = beatmapObject.prefabID;
@@ -594,6 +594,9 @@ namespace EditorManagement.Functions.Editors
 
                     beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
                     DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
+                    if (Updater.levelProcessor && Updater.levelProcessor.converter != null && !Updater.levelProcessor.converter.beatmapObjects.ContainsKey(beatmapObjectCopy.id))
+                        Updater.levelProcessor.converter.beatmapObjects.Add(beatmapObjectCopy.id, beatmapObjectCopy);
+
                     pastedObjects.Add(beatmapObjectCopy);
 
                     var timelineObject = new TimelineObject(beatmapObjectCopy);
@@ -1584,6 +1587,8 @@ namespace EditorManagement.Functions.Editors
             set => objectUIElements = value;
         }
 
+        public static bool HideVisualElementsWhenObjectIsEmpty { get; set; }
+
         /// <summary>
         /// Refreshes the Object Editor to the specified BeatmapObject, allowing for any object to be edited from anywhere.
         /// </summary>
@@ -1612,7 +1617,7 @@ namespace EditorManagement.Functions.Editors
 
                 inst.RenderEmpty(beatmapObject);
 
-                if (!RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value || beatmapObject.objectType != ObjectType.Empty)
+                if (!HideVisualElementsWhenObjectIsEmpty || beatmapObject.objectType != ObjectType.Empty)
                 {
                     inst.RenderOrigin(beatmapObject);
                     inst.RenderShape(beatmapObject);
@@ -1646,7 +1651,7 @@ namespace EditorManagement.Functions.Editors
 
         public void RenderEmpty(BeatmapObject beatmapObject)
         {
-            var active = !RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value || beatmapObject.objectType != ObjectType.Empty;
+            var active = !HideVisualElementsWhenObjectIsEmpty || beatmapObject.objectType != ObjectType.Empty;
             var shapeTF = (Transform)ObjectUIElements["Shape"];
             shapeTF.parent.GetChild(shapeTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
             shapeTF.gameObject.SetActive(active);
@@ -2120,13 +2125,16 @@ namespace EditorManagement.Functions.Editors
                     var tog = _p.GetChild(2).GetComponent<Toggle>();
                     tog.onValueChanged.RemoveAllListeners();
                     tog.isOn = beatmapObject.GetParentType(i);
+                    tog.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
                     tog.onValueChanged.AddListener(delegate (bool _value)
                     {
                         beatmapObject.SetParentType(index, _value);
 
                         // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
-                        if (UpdateObjects)
-                            Updater.UpdateProcessor(beatmapObject, "Parent Type");
+                        if (UpdateObjects && !string.IsNullOrEmpty(beatmapObject.parent) && beatmapObject.parent != "CAMERA_PARENT")
+                            Updater.UpdateProcessor(beatmapObject.GetParent());
+                        else if (UpdateObjects && beatmapObject.parent == "CAMERA_PARENT")
+                            Updater.UpdateProcessor(beatmapObject);
                     });
 
                     var pif = _p.GetChild(3).GetComponent<InputField>();
@@ -2139,30 +2147,19 @@ namespace EditorManagement.Functions.Editors
                             beatmapObject.SetParentOffset(index, num);
 
                             // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject, "Parent Offset");
+                            if (UpdateObjects && !string.IsNullOrEmpty(beatmapObject.parent) && beatmapObject.parent != "CAMERA_PARENT")
+                                Updater.UpdateProcessor(beatmapObject.GetParent());
+                            else if (UpdateObjects && beatmapObject.parent == "CAMERA_PARENT")
+                                Updater.UpdateProcessor(beatmapObject);
                         }
                     });
 
                     TriggerHelper.AddEventTrigger(pif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pif) });
 
-                    //if (_p.transform.Find("<<"))
-                    //    Destroy(_p.transform.Find("<<"));
-
-                    //if (_p.transform.Find("<"))
-                    //    Destroy(_p.transform.Find("<"));
-
-                    //if (_p.transform.Find(">"))
-                    //    Destroy(_p.transform.Find(">"));
-
-                    //if (_p.transform.Find(">>"))
-                    //    Destroy(_p.transform.Find(">>"));
-
-                    //TriggerHelper.IncreaseDecreaseButtons(pif, t: _p.transform);
-
                     var additive = _p.GetChild(4).GetComponent<Toggle>();
                     additive.onValueChanged.ClearAll();
                     additive.isOn = beatmapObject.parentAdditive[i] == '1';
+                    additive.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
                     additive.onValueChanged.AddListener(delegate (bool _val)
                     {
                         beatmapObject.SetParentAdditive(index, _val);
@@ -2276,6 +2273,9 @@ namespace EditorManagement.Functions.Editors
             layoutElement.preferredWidth = 1000f;
         }
 
+        bool updatedShapes = false;
+        public List<Toggle> shapeToggles = new List<Toggle>();
+        public List<List<Toggle>> shapeOptionToggles = new List<List<Toggle>>();
         /// <summary>
         /// Renders the Shape ToggleGroup.
         /// </summary>
@@ -2290,53 +2290,123 @@ namespace EditorManagement.Functions.Editors
             shapeGLG.constraintCount = 1;
             shapeGLG.spacing = new Vector2(7.6f, 0f);
 
-            // Initial removing
-            //Debug.Log($"{ObjEditor.inst.className}Adding shapes to list for removal...");
-            DestroyImmediate(shape.GetComponent<ToggleGroup>());
-            //var toggleGroup = shape.GetComponent<ToggleGroup>();
-            //var toggles = (List<Toggle>)toggleGroup.GetType().GetField("m_Toggles", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(toggleGroup);
-            //toggles.Clear();
-
-            //ShapeUI.SetupSprites();
-
-            var toDestroy = new List<GameObject>();
-
-            for (int i = 0; i < shape.childCount; i++)
+            if (!updatedShapes)
             {
-                toDestroy.Add(shape.GetChild(i).gameObject);
-            }
+                // Initial removing
+                DestroyImmediate(shape.GetComponent<ToggleGroup>());
 
-            //Debug.Log($"{ObjEditor.inst.className}Adding shape settings to list for removal...");
-            for (int i = 0; i < shapeSettings.childCount; i++)
-            {
-                if (i != 4 && i != 6)
-                    for (int j = 0; j < shapeSettings.GetChild(i).childCount; j++)
-                    {
-                        toDestroy.Add(shapeSettings.GetChild(i).GetChild(j).gameObject);
-                    }
-            }
+                var toDestroy = new List<GameObject>();
 
-            //Debug.Log($"{ObjEditor.inst.className}Removing all...");
-            foreach (var obj in toDestroy)
-                DestroyImmediate(obj);
-
-            toDestroy = null;
-
-            // Re-add everything
-            for (int i = 0; i < ShapeManager.inst.Shapes2D.Count; i++)
-            {
-                var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
-                if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-                    image.sprite = ShapeManager.inst.Shapes2D[i][0].Icon;
-
-                if (i != 4 && i != 6)
+                for (int i = 0; i < shape.childCount; i++)
                 {
-                    if (!shapeSettings.Find((i + 1).ToString()))
+                    toDestroy.Add(shape.GetChild(i).gameObject);
+                }
+
+                for (int i = 0; i < shapeSettings.childCount; i++)
+                {
+                    if (i != 4 && i != 6)
+                        for (int j = 0; j < shapeSettings.GetChild(i).childCount; j++)
+                        {
+                            toDestroy.Add(shapeSettings.GetChild(i).GetChild(j).gameObject);
+                        }
+                }
+
+                foreach (var obj in toDestroy)
+                    DestroyImmediate(obj);
+
+                toDestroy = null;
+
+                for (int i = 0; i < ShapeManager.inst.Shapes2D.Count; i++)
+                {
+                    var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
+                    if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+                        image.sprite = ShapeManager.inst.Shapes2D[i][0].Icon;
+
+                    if (!obj.GetComponent<HoverUI>())
                     {
-                        shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString());
+                        var hoverUI = obj.AddComponent<HoverUI>();
+                        hoverUI.animatePos = false;
+                        hoverUI.animateSca = true;
+                        hoverUI.size = 1.1f;
                     }
+
+                    shapeToggles.Add(obj.GetComponent<Toggle>());
+
+                    shapeOptionToggles.Add(new List<Toggle>());
+
+                    if (i != 4 && i != 6)
+                    {
+                        if (!shapeSettings.Find((i + 1).ToString()))
+                        {
+                            shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString());
+                        }
+
+                        var so = shapeSettings.Find((i + 1).ToString());
+
+                        var rect = (RectTransform)so;
+                        if (!so.GetComponent<ScrollRect>())
+                        {
+                            var scroll = so.gameObject.AddComponent<ScrollRect>();
+                            so.gameObject.AddComponent<Mask>();
+                            var ad = so.gameObject.AddComponent<Image>();
+
+                            scroll.horizontal = true;
+                            scroll.vertical = false;
+                            scroll.content = rect;
+                            scroll.viewport = rect;
+                            ad.color = new Color(1f, 1f, 1f, 0.01f);
+                        }
+
+                        for (int j = 0; j < ShapeManager.inst.Shapes2D[i].Count; j++)
+                        {
+                            var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
+                            if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
+                                image1.sprite = ShapeManager.inst.Shapes2D[i][j].Icon;
+
+                            if (!opt.GetComponent<HoverUI>())
+                            {
+                                var hoverUI = opt.AddComponent<HoverUI>();
+                                hoverUI.animatePos = false;
+                                hoverUI.animateSca = true;
+                                hoverUI.size = 1.1f;
+                            }
+
+                            shapeOptionToggles[i].Add(opt.GetComponent<Toggle>());
+
+                            var layoutElement = opt.AddComponent<LayoutElement>();
+                            layoutElement.layoutPriority = 1;
+                            layoutElement.minWidth = 32f;
+
+                            ((RectTransform)opt.transform).sizeDelta = new Vector2(32f, 32f);
+
+                            if (!opt.GetComponent<HoverUI>())
+                            {
+                                var he = opt.AddComponent<HoverUI>();
+                                he.animatePos = false;
+                                he.animateSca = true;
+                                he.size = 1.1f;
+                            }
+                        }
+
+                        LastGameObject(shapeSettings.GetChild(i));
+                    }
+                }
+
+                if (ObjectManager.inst.objectPrefabs.Count > 9)
+                {
+                    var playerSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png");
+                    int i = shape.childCount;
+                    var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString());
+                    if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+                        image.sprite = playerSprite;
 
                     var so = shapeSettings.Find((i + 1).ToString());
+
+                    if (!so)
+                    {
+                        so = shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString()).transform;
+                        LSHelpers.DeleteChildren(so, true);
+                    }
 
                     var rect = (RectTransform)so;
                     if (!so.GetComponent<ScrollRect>())
@@ -2352,11 +2422,11 @@ namespace EditorManagement.Functions.Editors
                         ad.color = new Color(1f, 1f, 1f, 0.01f);
                     }
 
-                    for (int j = 0; j < ShapeManager.inst.Shapes2D[i].Count; j++)
+                    for (int j = 0; j < ObjectManager.inst.objectPrefabs[9].options.Count; j++)
                     {
                         var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
                         if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
-                            image1.sprite = ShapeManager.inst.Shapes2D[i][j].Icon;
+                            image1.sprite = playerSprite;
 
                         var layoutElement = opt.AddComponent<LayoutElement>();
                         layoutElement.layoutPriority = 1;
@@ -2375,60 +2445,31 @@ namespace EditorManagement.Functions.Editors
 
                     LastGameObject(shapeSettings.GetChild(i));
                 }
-            }
 
-            if (ObjectManager.inst.objectPrefabs.Count > 9)
-            {
-                var playerSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_player.png");
-                int i = shape.childCount;
-                var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString());
-                if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-                    image.sprite = playerSprite;
+                // Create Selection (RTFunctions 1.10.0 implementation)
+                //{
+                //    var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
 
-                var so = shapeSettings.Find((i + 1).ToString());
+                //    var imageBar = shapeSettings.Find("7");
 
-                if (!so)
-                {
-                    so = shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString()).transform;
-                    LSHelpers.DeleteChildren(so);
-                }
+                //    GameObject setImageData;
 
-                var rect = (RectTransform)so;
-                if (!so.GetComponent<ScrollRect>())
-                {
-                    var scroll = so.gameObject.AddComponent<ScrollRect>();
-                    so.gameObject.AddComponent<Mask>();
-                    var ad = so.gameObject.AddComponent<Image>();
+                //    if (!imageBar.Find("set"))
+                //    {
+                //        setImageData = eventButton.Duplicate(imageBar, "set");
+                //        setImageData.GetComponent<LayoutElement>().minWidth = 120f;
+                //        setImageData.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+                //    }
+                //    else
+                //    {
+                //        setImageData = imageBar.Find("set").gameObject;
+                //    }
+                //    var setImageDataText = setImageData.transform.GetChild(0).GetComponent<Text>();
+                //    setImageDataText.fontSize = 18;
+                //    setImageDataText.text = beatmapObject.text == null ? "Set Image Data" : "Clear Image Data";
+                //}
 
-                    scroll.horizontal = true;
-                    scroll.vertical = false;
-                    scroll.content = rect;
-                    scroll.viewport = rect;
-                    ad.color = new Color(1f, 1f, 1f, 0.01f);
-                }
-
-                for (int j = 0; j < ObjectManager.inst.objectPrefabs[9].options.Count; j++)
-                {
-                    var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
-                    if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
-                        image1.sprite = playerSprite;
-
-                    var layoutElement = opt.AddComponent<LayoutElement>();
-                    layoutElement.layoutPriority = 1;
-                    layoutElement.minWidth = 32f;
-
-                    ((RectTransform)opt.transform).sizeDelta = new Vector2(32f, 32f);
-
-                    if (!opt.GetComponent<HoverUI>())
-                    {
-                        var he = opt.AddComponent<HoverUI>();
-                        he.animatePos = false;
-                        he.animateSca = true;
-                        he.size = 1.1f;
-                    }
-                }
-
-                LastGameObject(shapeSettings.GetChild(i));
+                updatedShapes = true;
             }
 
             LSHelpers.SetActiveChildren(shapeSettings, false);
@@ -2446,80 +2487,120 @@ namespace EditorManagement.Functions.Editors
 
             if (beatmapObject.shape == 4)
             {
-                //Debug.Log($"{ObjEditor.inst.className}Shape is text, so we make the size larger for better readability.");
-                shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
+                shapeSettings.AsRT().sizeDelta = new Vector2(351f, 74f);
                 var child = shapeSettings.GetChild(4);
-                child.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
+                child.AsRT().sizeDelta = new Vector2(351f, 74f);
                 child.Find("Text").GetComponent<Text>().alignment = TextAnchor.UpperLeft;
                 child.Find("Placeholder").GetComponent<Text>().alignment = TextAnchor.UpperLeft;
                 child.GetComponent<InputField>().lineType = InputField.LineType.MultiLineNewline;
             }
             else
             {
-                //Debug.Log($"{ObjEditor.inst.className}Shape is not text so we reset size.");
-                shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
-                shapeSettings.GetChild(4).GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
+                shapeSettings.AsRT().sizeDelta = new Vector2(351f, 32f);
+                shapeSettings.GetChild(4).AsRT().sizeDelta = new Vector2(351f, 32f);
             }
 
-            //Debug.Log($"{ObjEditor.inst.className}Set the shape option as active.");
             shapeSettings.GetChild(beatmapObject.shape).gameObject.SetActive(true);
-            for (int i = 1; i <= ObjectManager.inst.objectPrefabs.Count; i++)
+
+            int num = 0;
+            foreach (var toggle in shapeToggles)
             {
-                int buttonTmp = i - 1;
-
-                if (shape.Find(i.ToString()))
+                int index = num;
+                toggle.onValueChanged.ClearAll();
+                toggle.isOn = beatmapObject.shape == index;
+                toggle.onValueChanged.AddListener(delegate (bool _val)
                 {
-                    var shoggle = shape.Find(i.ToString()).GetComponent<Toggle>();
-                    shoggle.onValueChanged.ClearAll();
-                    shoggle.isOn = beatmapObject.shape == buttonTmp;
-                    shoggle.onValueChanged.AddListener(delegate (bool _value)
-                    {
-                        if (_value)
-                        {
-                            beatmapObject.shape = buttonTmp;
-                            beatmapObject.shapeOption = 0;
+                    beatmapObject.shape = index;
+                    beatmapObject.shapeOption = 0;
+                    beatmapObject.text = "";
 
-                            // Since shape has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject, "Shape");
+                    // Since shape has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "Shape");
 
-                            RenderShape(beatmapObject);
-                        }
-                    });
+                    RenderShape(beatmapObject);
+                });
 
-                    if (!shape.Find(i.ToString()).GetComponent<HoverUI>())
-                    {
-                        var hoverUI = shape.Find(i.ToString()).gameObject.AddComponent<HoverUI>();
-                        hoverUI.animatePos = false;
-                        hoverUI.animateSca = true;
-                        hoverUI.size = 1.1f;
-                    }
-                }
+                num++;
             }
+
+            //for (int i = 1; i <= ObjectManager.inst.objectPrefabs.Count; i++)
+            //{
+            //    int buttonTmp = i - 1;
+
+            //    if (shape.Find(i.ToString()))
+            //    {
+            //        var shoggle = shape.Find(i.ToString()).GetComponent<Toggle>();
+            //        shoggle.onValueChanged.ClearAll();
+            //        shoggle.isOn = beatmapObject.shape == buttonTmp;
+            //        shoggle.onValueChanged.AddListener(delegate (bool _value)
+            //        {
+            //            if (_value)
+            //            {
+            //                beatmapObject.shape = buttonTmp;
+            //                beatmapObject.shapeOption = 0;
+
+            //                Since shape has no affect on the timeline object, we will only need to update the physical object.
+            //                if (UpdateObjects)
+            //                    Updater.UpdateProcessor(beatmapObject, "Shape");
+
+            //                RenderShape(beatmapObject);
+            //            }
+            //        });
+
+            //        if (!shape.Find(i.ToString()).GetComponent<HoverUI>())
+            //        {
+            //            var hoverUI = shape.Find(i.ToString()).gameObject.AddComponent<HoverUI>();
+            //            hoverUI.animatePos = false;
+            //            hoverUI.animateSca = true;
+            //            hoverUI.size = 1.1f;
+            //        }
+            //    }
+            //}
 
             if (beatmapObject.shape != 4 && beatmapObject.shape != 6)
             {
-                for (int i = 0; i < shapeSettings.GetChild(beatmapObject.shape).childCount - 1; i++)
+                num = 0;
+                foreach (var toggle in shapeOptionToggles[beatmapObject.shape])
                 {
-                    int buttonTmp = i;
-                    var shoggle = shapeSettings.GetChild(beatmapObject.shape).GetChild(i).GetComponent<Toggle>();
-
-                    shoggle.onValueChanged.RemoveAllListeners();
-                    shoggle.isOn = beatmapObject.shapeOption == i;
-                    shoggle.onValueChanged.AddListener(delegate (bool _value)
+                    int index = num;
+                    toggle.onValueChanged.ClearAll();
+                    toggle.isOn = beatmapObject.shapeOption == index;
+                    toggle.onValueChanged.AddListener(delegate (bool _val)
                     {
-                        if (_value)
-                        {
-                            beatmapObject.shapeOption = buttonTmp;
+                        beatmapObject.shapeOption = index;
 
-                            // Since shape has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject, "Shape");
+                        // Since shape has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Shape");
 
-                            RenderShape(beatmapObject);
-                        }
+                        RenderShape(beatmapObject);
                     });
+
+                    num++;
                 }
+
+                //for (int i = 0; i < shapeSettings.GetChild(beatmapObject.shape).childCount - 1; i++)
+                //{
+                //    int buttonTmp = i;
+                //    var shoggle = shapeSettings.GetChild(beatmapObject.shape).GetChild(i).GetComponent<Toggle>();
+
+                //    shoggle.onValueChanged.RemoveAllListeners();
+                //    shoggle.isOn = beatmapObject.shapeOption == i;
+                //    shoggle.onValueChanged.AddListener(delegate (bool _value)
+                //    {
+                //        if (_value)
+                //        {
+                //            beatmapObject.shapeOption = buttonTmp;
+
+                //            // Since shape has no affect on the timeline object, we will only need to update the physical object.
+                //            if (UpdateObjects)
+                //                Updater.UpdateProcessor(beatmapObject, "Shape");
+
+                //            RenderShape(beatmapObject);
+                //        }
+                //    });
+                //}
             }
             else if (beatmapObject.shape == 4)
             {
