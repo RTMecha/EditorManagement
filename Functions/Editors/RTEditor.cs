@@ -3206,29 +3206,26 @@ namespace EditorManagement.Functions.Editors
 
                 action("time", "Enter time...", true, delegate ()
                 {
-                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField)
+                        && float.TryParse(inputField.text, out float num))
                     {
-                        if (float.TryParse(inputField.text, out float num))
+                        float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                         {
-                            float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+                            timelineObject.Time = AudioManager.inst.CurrentAudioSource.time - first + timelineObject.Time + num;
+                            if (timelineObject.IsBeatmapObject)
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                            if (timelineObject.IsPrefabObject)
+                                Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
 
-                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                            {
-                                timelineObject.Time = AudioManager.inst.CurrentAudioSource.time - first + timelineObject.Time + num;
-                                if (timelineObject.IsBeatmapObject)
-                                    Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
-                                if (timelineObject.IsPrefabObject)
-                                    Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
-
-                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
-                            }
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         }
                     }
                 }, delegate ()
                 {
                     if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
-                        inputField.text = "0";
                         TriggerHelper.AddEventTrigger(parent.Find("time").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
 
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
@@ -3244,22 +3241,82 @@ namespace EditorManagement.Functions.Editors
                     }
                 }, delegate ()
                 {
-                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
+                    if (parent.Find("time") && parent.Find("time").GetChild(0).gameObject.TryGetComponent(out InputField inputField)
+                        && float.TryParse(inputField.text, out float num))
                     {
-                        if (int.TryParse(inputField.text, out int num))
+                        float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
                         {
-                            float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+                            timelineObject.Time = AudioManager.inst.CurrentAudioSource.time - first + timelineObject.Time - num;
+                            if (timelineObject.IsBeatmapObject)
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                            if (timelineObject.IsPrefabObject)
+                                Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
 
-                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
+                    }
+                });
+            }
+
+            // Autokill Offset
+            {
+                labelGenerator("Set Autokill Offset");
+
+                action("autokill offset", "Enter autokill...", true, delegate ()
+                {
+                    if (parent.Find("autokill offset") && parent.Find("autokill offset").GetChild(0).gameObject.TryGetComponent(out InputField inputField)
+                    && float.TryParse(inputField.text, out float num))
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
                             {
-                                timelineObject.Time = AudioManager.inst.CurrentAudioSource.time - first + timelineObject.Time - num;
-                                if (timelineObject.IsBeatmapObject)
-                                    Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
-                                if (timelineObject.IsPrefabObject)
-                                    Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
-
-                                ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                bm.autoKillOffset -= num;
+                                Updater.UpdateProcessor(bm, "Autokill");
                             }
+
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("autokill offset") && parent.Find("autokill offset").GetChild(0).gameObject.TryGetComponent(out InputField inputField)
+                        && float.TryParse(inputField.text, out float num))
+                    {
+                        TriggerHelper.AddEventTrigger(parent.Find("autokill offset").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
+
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                bm.autoKillOffset = num;
+                                Updater.UpdateProcessor(bm, "Autokill");
+                            }
+
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
+                    }
+                }, delegate ()
+                {
+                    if (parent.Find("autokill offset") && parent.Find("autokill offset").GetChild(0).gameObject.TryGetComponent(out InputField inputField)
+                        && float.TryParse(inputField.text, out float num))
+                    {
+                        float first = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
+
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                bm.autoKillOffset += num;
+                                Updater.UpdateProcessor(bm, "Autokill");
+                            }
+
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         }
                     }
                 });
@@ -3426,7 +3483,24 @@ namespace EditorManagement.Functions.Editors
                         bm.autoKillOffset = AudioManager.inst.CurrentAudioSource.time;
 
                         ObjectEditor.inst.RenderTimelineObject(timelineObject);
-                        Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "StartTime");
+                        Updater.UpdateProcessor(bm, "Autokill");
+                    }
+                });
+            }
+            
+            // No Autokill
+            {
+                labelGenerator("Set to No Autokill");
+
+                buttonGenerator("set no autokill", "Set", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+                        bm.autoKillType = AutoKillType.OldStyleNoAutokill;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        Updater.UpdateProcessor(bm, "Autokill");
                     }
                 });
             }
@@ -3887,6 +3961,301 @@ namespace EditorManagement.Functions.Editors
                         });
                     });
                 }
+            }
+
+            // Replace Name
+            {
+                labelGenerator("Replace Name");
+
+                var replaceName = new GameObject("replace name");
+                replaceName.transform.SetParent(parent);
+                replaceName.transform.localScale = Vector3.one;
+
+                var multiSyncRT = replaceName.AddComponent<RectTransform>();
+                multiSyncRT.sizeDelta = new Vector2(390f, 32f);
+                var multiSyncGLG = replaceName.AddComponent<GridLayoutGroup>();
+                multiSyncGLG.spacing = new Vector2(8f, 8f);
+                multiSyncGLG.cellSize = new Vector2(124f, 32f);
+
+                var oldName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "old name");
+
+                Destroy(oldName.GetComponent<EventTrigger>());
+                var oldNameIF = oldName.GetComponent<InputField>();
+                oldNameIF.characterValidation = InputField.CharacterValidation.None;
+                oldNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                oldNameIF.textComponent.fontSize = 16;
+                oldNameIF.text = "Old Name";
+                ((Text)oldNameIF.placeholder).text = "Enter old name...";
+                ((Text)oldNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)oldNameIF.placeholder).fontSize = 16;
+                ((Text)oldNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                oldNameIF.onValueChanged.RemoveAllListeners();
+
+                var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
+                oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
+
+                var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new name");
+
+                Destroy(newName.GetComponent<EventTrigger>());
+                var newNameIF = newName.GetComponent<InputField>();
+                newNameIF.characterValidation = InputField.CharacterValidation.None;
+                newNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                newNameIF.textComponent.fontSize = 16;
+                newNameIF.text = "New Name";
+                ((Text)newNameIF.placeholder).text = "Enter new name...";
+                ((Text)newNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)newNameIF.placeholder).fontSize = 16;
+                ((Text)newNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                newNameIF.onValueChanged.RemoveAllListeners();
+
+                var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
+                newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
+
+                var replace = eventButton.Duplicate(replaceName.transform, "replace");
+                replace.transform.localScale = Vector3.one;
+                replace.transform.AsRT().sizeDelta = new Vector2(66f, 32f);
+                replace.GetComponent<LayoutElement>().minWidth = 32f;
+
+                replace.transform.GetChild(0).GetComponent<Text>().text = "Replace";
+                replace.GetComponent<Image>().color = bcol;
+
+                var button = replace.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+                        bm.name = bm.name.Replace(oldNameIF.text, newNameIF.text);
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
+            
+            // Replace Tags
+            {
+                labelGenerator("Replace Tags");
+
+                var replaceName = new GameObject("replace tags");
+                replaceName.transform.SetParent(parent);
+                replaceName.transform.localScale = Vector3.one;
+
+                var multiSyncRT = replaceName.AddComponent<RectTransform>();
+                multiSyncRT.sizeDelta = new Vector2(390f, 32f);
+                var multiSyncGLG = replaceName.AddComponent<GridLayoutGroup>();
+                multiSyncGLG.spacing = new Vector2(8f, 8f);
+                multiSyncGLG.cellSize = new Vector2(124f, 32f);
+
+                var oldName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "old tag");
+
+                Destroy(oldName.GetComponent<EventTrigger>());
+                var oldNameIF = oldName.GetComponent<InputField>();
+                oldNameIF.characterValidation = InputField.CharacterValidation.None;
+                oldNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                oldNameIF.textComponent.fontSize = 16;
+                oldNameIF.text = "Old Tag";
+                ((Text)oldNameIF.placeholder).text = "Enter old tag...";
+                ((Text)oldNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)oldNameIF.placeholder).fontSize = 16;
+                ((Text)oldNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                oldNameIF.onValueChanged.RemoveAllListeners();
+
+                var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
+                oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
+
+                var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new tag");
+
+                Destroy(newName.GetComponent<EventTrigger>());
+                var newNameIF = newName.GetComponent<InputField>();
+                newNameIF.characterValidation = InputField.CharacterValidation.None;
+                newNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                newNameIF.textComponent.fontSize = 16;
+                newNameIF.text = "New Tag";
+                ((Text)newNameIF.placeholder).text = "Enter new tag...";
+                ((Text)newNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)newNameIF.placeholder).fontSize = 16;
+                ((Text)newNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                newNameIF.onValueChanged.RemoveAllListeners();
+
+                var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
+                newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
+
+                var replace = eventButton.Duplicate(replaceName.transform, "replace");
+                replace.transform.localScale = Vector3.one;
+                replace.transform.AsRT().sizeDelta = new Vector2(66f, 32f);
+                replace.GetComponent<LayoutElement>().minWidth = 32f;
+
+                replace.transform.GetChild(0).GetComponent<Text>().text = "Replace";
+                replace.GetComponent<Image>().color = bcol;
+
+                var button = replace.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+                        for (int i = 0; i < bm.tags.Count; i++)
+                        {
+                            bm.tags[i] = bm.tags[i].Replace(oldNameIF.text, newNameIF.text);
+                        }
+                    }
+                });
+            }
+            
+            // Replace Text
+            {
+                labelGenerator("Replace Text");
+
+                var replaceName = new GameObject("replace text");
+                replaceName.transform.SetParent(parent);
+                replaceName.transform.localScale = Vector3.one;
+
+                var multiSyncRT = replaceName.AddComponent<RectTransform>();
+                multiSyncRT.sizeDelta = new Vector2(390f, 32f);
+                var multiSyncGLG = replaceName.AddComponent<GridLayoutGroup>();
+                multiSyncGLG.spacing = new Vector2(8f, 8f);
+                multiSyncGLG.cellSize = new Vector2(124f, 32f);
+
+                var oldName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "old text");
+
+                Destroy(oldName.GetComponent<EventTrigger>());
+                var oldNameIF = oldName.GetComponent<InputField>();
+                oldNameIF.characterValidation = InputField.CharacterValidation.None;
+                oldNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                oldNameIF.textComponent.fontSize = 16;
+                oldNameIF.text = "Old Text";
+                ((Text)oldNameIF.placeholder).text = "Enter old text...";
+                ((Text)oldNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)oldNameIF.placeholder).fontSize = 16;
+                ((Text)oldNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                oldNameIF.onValueChanged.RemoveAllListeners();
+
+                var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
+                oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
+
+                var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new text");
+
+                Destroy(newName.GetComponent<EventTrigger>());
+                var newNameIF = newName.GetComponent<InputField>();
+                newNameIF.characterValidation = InputField.CharacterValidation.None;
+                newNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                newNameIF.textComponent.fontSize = 16;
+                newNameIF.text = "New Text";
+                ((Text)newNameIF.placeholder).text = "Enter new text...";
+                ((Text)newNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)newNameIF.placeholder).fontSize = 16;
+                ((Text)newNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                newNameIF.onValueChanged.RemoveAllListeners();
+
+                var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
+                newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
+
+                var replace = eventButton.Duplicate(replaceName.transform, "replace");
+                replace.transform.localScale = Vector3.one;
+                replace.transform.AsRT().sizeDelta = new Vector2(66f, 32f);
+                replace.GetComponent<LayoutElement>().minWidth = 32f;
+
+                replace.transform.GetChild(0).GetComponent<Text>().text = "Replace";
+                replace.GetComponent<Image>().color = bcol;
+
+                var button = replace.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+                        bm.text = bm.text.Replace(oldNameIF.text, newNameIF.text);
+                        Updater.UpdateProcessor(bm, "Shape");
+                    }
+                });
+            }
+
+            // Replace Modifier
+            if (ModCompatibility.ObjectModifiersInstalled)
+            {
+                labelGenerator("Replace Modifier Values");
+
+                var replaceName = new GameObject("replace modifier");
+                replaceName.transform.SetParent(parent);
+                replaceName.transform.localScale = Vector3.one;
+
+                var multiSyncRT = replaceName.AddComponent<RectTransform>();
+                multiSyncRT.sizeDelta = new Vector2(390f, 32f);
+                var multiSyncGLG = replaceName.AddComponent<GridLayoutGroup>();
+                multiSyncGLG.spacing = new Vector2(8f, 8f);
+                multiSyncGLG.cellSize = new Vector2(124f, 32f);
+
+                var oldName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "old modifier");
+
+                Destroy(oldName.GetComponent<EventTrigger>());
+                var oldNameIF = oldName.GetComponent<InputField>();
+                oldNameIF.characterValidation = InputField.CharacterValidation.None;
+                oldNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                oldNameIF.textComponent.fontSize = 16;
+                oldNameIF.text = "Old Modifier";
+                ((Text)oldNameIF.placeholder).text = "Enter old modifier...";
+                ((Text)oldNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)oldNameIF.placeholder).fontSize = 16;
+                ((Text)oldNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                oldNameIF.onValueChanged.RemoveAllListeners();
+
+                var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
+                oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
+
+                var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new modifier");
+
+                Destroy(newName.GetComponent<EventTrigger>());
+                var newNameIF = newName.GetComponent<InputField>();
+                newNameIF.characterValidation = InputField.CharacterValidation.None;
+                newNameIF.textComponent.alignment = TextAnchor.MiddleLeft;
+                newNameIF.textComponent.fontSize = 16;
+                newNameIF.text = "New Modifier";
+                ((Text)newNameIF.placeholder).text = "Enter new modifier...";
+                ((Text)newNameIF.placeholder).alignment = TextAnchor.MiddleLeft;
+                ((Text)newNameIF.placeholder).fontSize = 16;
+                ((Text)newNameIF.placeholder).color = new Color(0f, 0f, 0f, 0.3f);
+
+                newNameIF.onValueChanged.RemoveAllListeners();
+
+                var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
+                newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
+
+                var replace = eventButton.Duplicate(replaceName.transform, "replace");
+                replace.transform.localScale = Vector3.one;
+                replace.transform.AsRT().sizeDelta = new Vector2(66f, 32f);
+                replace.GetComponent<LayoutElement>().minWidth = 32f;
+
+                replace.transform.GetChild(0).GetComponent<Text>().text = "Replace";
+                replace.GetComponent<Image>().color = bcol;
+
+                var button = replace.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var bm = timelineObject.GetData<BeatmapObject>();
+
+                        foreach (var modifier in bm.modifiers)
+                        {
+                            for (int i = 1; i < modifier.commands.Count; i++)
+                            {
+                                modifier.commands[i] = modifier.commands[i].Replace(oldNameIF.text, newNameIF.text);
+                            }
+
+                            modifier.value = modifier.value.Replace(oldNameIF.text, newNameIF.text);
+                        }
+                    }
+                });
             }
 
             EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
@@ -7294,8 +7663,6 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.ClearDialogs();
             EditorManager.inst.ShowDialog("File Info Popup");
-
-            //var fileInfo = EditorManager.inst.GetDialog("File Info Popup").Dialog.transform.Find("text").GetComponent<Text>();
 
             if (EditorManager.inst.hasLoadedLevel && RTFile.DirectoryExists(GameManager.inst.path.Replace("/level.lsb", "")))
             {
