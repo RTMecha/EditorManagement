@@ -350,15 +350,8 @@ namespace EditorManagement.Patchers
             TriggerHelper.AddEventTriggerParams(input.gameObject,
                 TriggerHelper.ScrollDelta(input, 1f));
 
-            try
-            {
-                RenderMarkerColors();
-                RenderLayerColors();
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError(ex);
-            }
+            RenderMarkerColors();
+            RenderLayerColors();
 
             return false;
         }
@@ -392,11 +385,16 @@ namespace EditorManagement.Patchers
 
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
+                input.onEndEdit.ClearAll();
                 input.text = LSColors.ColorToHex(markerColor);
                 input.onValueChanged.AddListener(delegate (string _val)
                 {
                     MarkerEditor.inst.markerColors[index] = _val.Length == 6 ? LSColors.HexToColor(_val) : LSColors.pink500;
                     image.color = MarkerEditor.inst.markerColors[index];
+                });
+                input.onEndEdit.AddListener(delegate (string _val)
+                {
+                    RTEditor.inst.SaveGlobalSettings();
                 });
 
                 var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
@@ -405,6 +403,7 @@ namespace EditorManagement.Patchers
                 {
                     MarkerEditor.inst.markerColors.RemoveAt(index);
                     RenderMarkerColors();
+                    RTEditor.inst.SaveGlobalSettings();
                 });
 
                 num++;
@@ -440,11 +439,16 @@ namespace EditorManagement.Patchers
 
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
+                input.onEndEdit.ClearAll();
                 input.text = LSColors.ColorToHex(layerColor);
                 input.onValueChanged.AddListener(delegate (string _val)
                 {
                     EditorManager.inst.layerColors[index] = _val.Length == 6 ? LSColors.HexToColor(_val) : LSColors.pink500;
                     image.color = EditorManager.inst.layerColors[index];
+                });
+                input.onEndEdit.AddListener(delegate (string _val)
+                {
+                    RTEditor.inst.SaveGlobalSettings();
                 });
 
                 var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
@@ -453,6 +457,7 @@ namespace EditorManagement.Patchers
                 {
                     EditorManager.inst.layerColors.RemoveAt(index);
                     RenderLayerColors();
+                    RTEditor.inst.SaveGlobalSettings();
                 });
 
                 num++;
