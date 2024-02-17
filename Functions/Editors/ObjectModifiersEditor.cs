@@ -253,6 +253,7 @@ namespace EditorManagement.Functions.Editors
                 {
                     int index = num;
                     var gameObject = modifierCardPrefab.Duplicate(content, modifier.commands[0]);
+                    gameObject.transform.localScale = Vector3.one;
                     gameObject.transform.Find("Label/Text").GetComponent<Text>().text = modifier.commands[0];
 
                     var delete = gameObject.transform.Find("Label/Delete").GetComponent<Button>();
@@ -270,6 +271,7 @@ namespace EditorManagement.Functions.Editors
                     var layout = gameObject.transform.Find("Layout");
 
                     var constant = booleanBar.Duplicate(layout, "Constant");
+                    constant.transform.localScale = Vector3.one;
 
                     constant.transform.Find("Text").GetComponent<Text>().text = "Constant";
 
@@ -285,6 +287,7 @@ namespace EditorManagement.Functions.Editors
                     if (modifier.type == BeatmapObject.Modifier.Type.Trigger)
                     {
                         var not = booleanBar.Duplicate(layout, "Not");
+                        not.transform.localScale = Vector3.one;
                         not.transform.Find("Text").GetComponent<Text>().text = "Not";
 
                         var notToggle = not.transform.Find("Toggle").GetComponent<Toggle>();
@@ -300,6 +303,7 @@ namespace EditorManagement.Functions.Editors
                     Action<string, int, float> singleGenerator = delegate (string label, int type, float defaultValue)
                     {
                         var single = numberInput.Duplicate(layout, label);
+                        single.transform.localScale = Vector3.one;
                         single.transform.Find("Text").GetComponent<Text>().text = label;
 
                         var inputField = single.transform.Find("Input").GetComponent<InputField>();
@@ -326,6 +330,7 @@ namespace EditorManagement.Functions.Editors
                     Action<string, int, int> integerGenerator = delegate (string label, int type, int defaultValue)
                     {
                         var single = numberInput.Duplicate(layout, label);
+                        single.transform.localScale = Vector3.one;
                         single.transform.Find("Text").GetComponent<Text>().text = label;
 
                         var inputField = single.transform.Find("Input").GetComponent<InputField>();
@@ -352,6 +357,7 @@ namespace EditorManagement.Functions.Editors
                     Action<string, int, bool> boolGenerator = delegate (string label, int type, bool defaultValue)
                     {
                         var global = booleanBar.Duplicate(layout, label);
+                        global.transform.localScale = Vector3.one;
                         global.transform.Find("Text").GetComponent<Text>().text = label;
 
                         var globalToggle = global.transform.Find("Toggle").GetComponent<Toggle>();
@@ -370,6 +376,7 @@ namespace EditorManagement.Functions.Editors
                     Action<string, int> stringGenerator = delegate (string label, int type)
                     {
                         var path = stringInput.Duplicate(layout, label);
+                        path.transform.localScale = Vector3.one;
                         path.transform.Find("Text").GetComponent<Text>().text = label;
 
                         var pathInputField = path.transform.Find("Input").GetComponent<InputField>();
@@ -389,6 +396,7 @@ namespace EditorManagement.Functions.Editors
                     Action<string, int> colorGenerator = delegate (string label, int type)
                     {
                         var startColorBase = numberInput.Duplicate(layout, label);
+                        startColorBase.transform.localScale = Vector3.one;
 
                         startColorBase.transform.Find("Text").GetComponent<Text>().text = label;
 
@@ -415,6 +423,7 @@ namespace EditorManagement.Functions.Editors
                     Action<string, int, List<string>> dropdownGenerator = delegate (string label, int type, List<string> options)
                     {
                         var dd = dropdownBar.Duplicate(layout, label);
+                        dd.transform.localScale = Vector3.one;
                         dd.transform.Find("Text").GetComponent<Text>().text = label;
 
                         Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
@@ -458,6 +467,16 @@ namespace EditorManagement.Functions.Editors
 
                                 if (cmd == "setAlphaOther")
                                     stringGenerator("Object Group", 1);
+
+                                if (cmd == "blackHole")
+                                {
+                                    if (modifier.commands.Count < 2)
+                                    {
+                                        modifier.commands.Add("False");
+                                    }
+
+                                    boolGenerator("Use Opacity", 1, false);
+                                }
 
                                 break;
                             }
@@ -508,6 +527,7 @@ namespace EditorManagement.Functions.Editors
                         case "objectCollide":
                         case "setImage":
                         case "setImageOther":
+                        case "code":
                             {
                                 if (cmd == "setTextOther" || cmd == "addTextOther" || cmd == "setImageOther")
                                 {
@@ -518,7 +538,20 @@ namespace EditorManagement.Functions.Editors
                                 if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther" || cmd == "objectCollide")
                                     stringGenerator("Object Group", 0);
                                 else if (cmd != "setTextOther" && cmd != "addTextOther" && cmd != "setImageOther")
-                                    stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : "Path", 0);
+                                    stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : cmd == "code" ? "Code" : "Path", 0);
+
+                                if (cmd == "code")
+                                {
+                                    var clickable = layout.Find("Code").gameObject.GetComponent<Clickable>() ?? layout.Find("Code").gameObject.AddComponent<Clickable>();
+
+                                    clickable.onDown = delegate (PointerEventData pointerEventData)
+                                    {
+                                        RTEditor.inst.RefreshREPLEditor(modifier.value, delegate (string _val)
+                                        {
+                                            modifier.value = _val;
+                                        });
+                                    };
+                                }
 
                                 break;
                             }
@@ -1234,14 +1267,25 @@ namespace EditorManagement.Functions.Editors
                                 break;
                             }
                         case "copyAxis":
+                        case "copyPlayerAxis":
                             {
                                 if (modifier.commands.Count < 6)
                                     modifier.commands.Add("0");
                                 
                                 if (modifier.commands.Count < 7)
                                     modifier.commands.Add("1");
+                                
+                                if (modifier.commands.Count < 8)
+                                    modifier.commands.Add("0");
 
-                                stringGenerator("Object Group", 0);
+                                if (modifier.commands.Count < 9)
+                                    modifier.commands.Add("-99999");
+
+                                if (modifier.commands.Count < 10)
+                                    modifier.commands.Add("99999");
+
+                                if (cmd == "copyAxis")
+                                    stringGenerator("Object Group", 0);
 
                                 dropdownGenerator("From Type", 1, new List<string> { "Position", "Scale", "Rotation", "Color" });
                                 dropdownGenerator("From Axis", 2, new List<string> { "X", "Y", "Z" });
@@ -1249,8 +1293,34 @@ namespace EditorManagement.Functions.Editors
                                 dropdownGenerator("To Type", 3, new List<string> { "Position", "Scale", "Rotation", "Color" });
                                 dropdownGenerator("To Axis (3D)", 4, new List<string> { "X", "Y", "Z" });
 
-                                singleGenerator("Delay", 5, 0f);
+                                if (cmd == "copyAxis")
+                                    singleGenerator("Delay", 5, 0f);
+
                                 singleGenerator("Multiply", 6, 1f);
+                                singleGenerator("Offset", 7, 0f);
+                                singleGenerator("Min", 8, -99999f);
+                                singleGenerator("Max", 9, 99999f);
+
+                                break;
+                            }
+                        case "axisEquals":
+                        case "axisLesserEquals":
+                        case "axisGreaterEquals":
+                        case "axisLesser":
+                        case "axisGreater":
+                            {
+                                stringGenerator("Object Group", 0);
+
+                                dropdownGenerator("Type", 1, new List<string> { "Position", "Scale", "Rotation" });
+                                dropdownGenerator("Axis", 2, new List<string> { "X", "Y", "Z" });
+
+                                singleGenerator("Delay", 3, 0f);
+                                singleGenerator("Multiply", 4, 1f);
+                                singleGenerator("Offset", 5, 0f);
+                                singleGenerator("Min", 6, -99999f);
+                                singleGenerator("Max", 7, 99999f);
+                                singleGenerator("Equals", 8, 1f);
+                                boolGenerator("Use Visual", 9, false);
 
                                 break;
                             }
