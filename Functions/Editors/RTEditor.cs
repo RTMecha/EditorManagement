@@ -988,6 +988,13 @@ namespace EditorManagement.Functions.Editors
         public float timelineGridUnrenderSize = 6f;
         public void SetTimelineGridSize()
         {
+            if (!AudioManager.inst || !AudioManager.inst.CurrentAudioSource || !AudioManager.inst.CurrentAudioSource.clip)
+            {
+                if (timelineGridRenderer)
+                    timelineGridRenderer.enabled = false;
+                return;
+            }
+
             var clipLength = AudioManager.inst.CurrentAudioSource.clip.length;
 
             float x = SettingEditor.inst.SnapBPM / 60f;
@@ -1095,6 +1102,7 @@ namespace EditorManagement.Functions.Editors
                     jn["marker_colors"][i] = LSColors.ColorToHex(MarkerEditor.inst.markerColors[i]);
                 }
 
+                EditorManager.inst.layerColors.RemoveAt(5);
                 for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
                 {
                     jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
@@ -1190,11 +1198,17 @@ namespace EditorManagement.Functions.Editors
         public void SetWatcherPaths()
         {
             PrefabWatcher.EnableRaisingEvents = false;
-            PrefabWatcher.Path = RTFile.ApplicationDirectory + prefabListPath;
-            PrefabWatcher.EnableRaisingEvents = true;
+            if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+            {
+                PrefabWatcher.Path = RTFile.ApplicationDirectory + prefabListPath;
+                PrefabWatcher.EnableRaisingEvents = true;
+            }
             ThemeWatcher.EnableRaisingEvents = false;
-            ThemeWatcher.Path = RTFile.ApplicationDirectory + themeListPath;
-            ThemeWatcher.EnableRaisingEvents = true;
+            if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+            {
+                ThemeWatcher.Path = RTFile.ApplicationDirectory + themeListPath;
+                ThemeWatcher.EnableRaisingEvents = true;
+            }
         }
 
         public void OnPrefabPathChanged(object sender, FileSystemEventArgs e)
@@ -2316,7 +2330,6 @@ namespace EditorManagement.Functions.Editors
                 editorPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     EditorPath = _val;
-                    SaveGlobalSettings();
                 });
 
                 editorPathIF.onEndEdit.ClearAll();
@@ -2326,6 +2339,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
                     }
+                    SaveGlobalSettings();
                 });
 
                 var clickable = editorPathGO.AddComponent<Clickable>();
@@ -2411,7 +2425,6 @@ namespace EditorManagement.Functions.Editors
                 themePathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     ThemePath = _val;
-                    SaveGlobalSettings();
                 });
 
                 themePathIF.onEndEdit.ClearAll();
@@ -2421,6 +2434,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
                     }
+                    SaveGlobalSettings();
                 });
 
                 var clickable = themePathGO.AddComponent<Clickable>();
@@ -2504,7 +2518,6 @@ namespace EditorManagement.Functions.Editors
                 prefabPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
-                    SaveGlobalSettings();
                 });
 
                 prefabPathIF.onEndEdit.ClearAll();
@@ -2514,6 +2527,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
                     }
+                    SaveGlobalSettings();
                 });
 
                 var clickable = prefabPathGO.AddComponent<Clickable>();
@@ -2992,13 +3006,9 @@ namespace EditorManagement.Functions.Editors
 
             dataLeft.GetChild(1).gameObject.name = "label layer";
 
-            //dataLeft.GetChild(1).GetChild(0).gameObject.GetComponent<Text>().text = "Set Group Layer";
-
             dataLeft.GetChild(3).gameObject.SetActive(true);
 
             dataLeft.GetChild(3).gameObject.name = "label depth";
-
-            //dataLeft.GetChild(3).GetChild(0).gameObject.GetComponent<Text>().text = "Set Group Depth";
 
             dataLeft.GetChild(1).SetParent(parent);
 
@@ -3008,7 +3018,7 @@ namespace EditorManagement.Functions.Editors
             var textHolderText = textHolder.GetComponent<Text>();
             textHolderText.text = textHolderText.text.Replace(
                 "The current version of the editor doesn't support any editing functionality.",
-                "On the left you'll see all the multi object editor tools you'll need.");
+                "On the left you'll see all the Multi Object Editor tools you'll need.");
 
             textHolderText.fontSize = 22;
 
@@ -3152,6 +3162,7 @@ namespace EditorManagement.Functions.Editors
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 bm.Depth -= num;
+                                Updater.UpdateProcessor(bm, "Depth");
                             }
                         }
                     }
@@ -3168,6 +3179,7 @@ namespace EditorManagement.Functions.Editors
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 bm.Depth = num;
+                                Updater.UpdateProcessor(bm, "Depth");
                             }
                         }
                     }
@@ -3181,6 +3193,7 @@ namespace EditorManagement.Functions.Editors
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 bm.Depth += num;
+                                Updater.UpdateProcessor(bm, "Depth");
                             }
                         }
                     }
@@ -3589,6 +3602,27 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
+            // Clear Modifiers
+            if (ModCompatibility.ObjectModifiersInstalled)
+            {
+                labelGenerator("Clear Modifiers");
+
+                buttonGenerator("clear modifiers", "Clear", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        if (timelineObject.IsBeatmapObject)
+                        {
+                            var bm = timelineObject.GetData<BeatmapObject>();
+
+                            bm.modifiers.Clear();
+
+                            Updater.UpdateProcessor(bm);
+                        }
+                    }
+                });
+            }
+
             // Sync object selection
             {
                 labelGenerator("Sync to specific object");
@@ -3821,10 +3855,33 @@ namespace EditorManagement.Functions.Editors
                         {
                             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
                             {
-                                for (int i = 0; i < timelineObject.GetData<BeatmapObject>().events.Count; i++)
-                                    timelineObject.GetData<BeatmapObject>().events[i] = beatmapObject.events[i].Clone();
+                                var bm = timelineObject.GetData<BeatmapObject>();
 
-                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Keyframes");
+                                for (int i = 0; i < bm.events.Count; i++)
+                                    bm.events[i] = beatmapObject.events[i].Clone();
+
+                                Updater.UpdateProcessor(bm, "Keyframes");
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+
+                // Modifiers
+                if (ModCompatibility.ObjectModifiersInstalled)
+                {
+                    buttonGenerator("keyframes", "MOD", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+
+                                bm.modifiers.AddRange(beatmapObject.modifiers.Select(x => BeatmapObject.Modifier.DeepCopy(x, bm)));
+
+                                Updater.UpdateProcessor(bm);
                             }
                             EditorManager.inst.HideDialog("Object Search Popup");
                         });
@@ -7728,7 +7785,7 @@ namespace EditorManagement.Functions.Editors
                 __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
                 __instance.LoadedPrefabsFiles.Add(file);
 
-                StartCoroutine(PrefabEditorManager.inst.CreatePrefabButton(prefab, num, PrefabDialog.External, false, hoverSize,
+                StartCoroutine(PrefabEditorManager.inst.CreatePrefabButton(prefab, num, PrefabDialog.External, file, false, hoverSize,
                          nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
                          typeHorizontalOverflow, typeVerticalOverflow, typeFontSize,
                          deleteAnchoredPosition, deleteSizeDelta));
@@ -9453,9 +9510,9 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Saving Saves Beatmap Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Update Prefab List on Files Changed", true, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
+                Config.Bind("Data", "Update Prefab List on Files Changed", false, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Update Theme List on Files Changed", true, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
+                Config.Bind("Data", "Update Theme List on Files Changed", false, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Show Levels Without Cover Notification", false, "Sends an error notification for what levels don't have covers.")),
             new EditorProperty(EditorProperty.ValueType.String,
