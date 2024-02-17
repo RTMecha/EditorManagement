@@ -1744,6 +1744,9 @@ namespace EditorManagement.Functions.Editors
                     beatmapObject.tags[index] = _val;
                 });
 
+                var inputFieldSwapper = gameObject.AddComponent<InputFieldSwapper>();
+                inputFieldSwapper.Init(input, InputFieldSwapper.Type.String);
+
                 var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
                 delete.onClick.ClearAll();
                 delete.onClick.AddListener(delegate ()
