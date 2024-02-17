@@ -23,7 +23,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.3.4")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.3.5")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -64,6 +64,7 @@ namespace EditorManagement
 			SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
 			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
 			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
+			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value;
 			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
 			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
 
@@ -82,6 +83,9 @@ namespace EditorManagement
             RTEditor.GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().SettingChanged += TimelineGridChanged;
             RTEditor.GetEditorProperty("BPM Snap Divisions").GetConfigEntry<float>().SettingChanged += TimelineGridChanged;
 			RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().SettingChanged += DragUIChanged;
+
+            RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().SettingChanged += ObjectEditorChanged;
+
 			RTEditor.GetEditorProperty("Theme Template Name").GetConfigEntry<string>().SettingChanged += ThemeTemplateChanged;
 			RTEditor.GetEditorProperty("Theme Template GUI").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
 			RTEditor.GetEditorProperty("Theme Template Tail").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
@@ -138,6 +142,11 @@ namespace EditorManagement
 
 				}
 			}
+		}
+
+        void ObjectEditorChanged(object sender, EventArgs e)
+        {
+			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value;
 		}
 
         void TimelineGridChanged(object sender, EventArgs e)
