@@ -18,6 +18,8 @@ using Crosstales.FB;
 using CielaSpike;
 
 using RTFunctions.Functions;
+using RTFunctions.Functions.Animation;
+using RTFunctions.Functions.Animation.Keyframe;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Data.Player;
@@ -852,6 +854,95 @@ namespace EditorManagement.Patchers
             EventManager.inst.camPer.rect = new Rect(0f, 0f, 1f, 1f);
             return false;
         }
+
+        //public static List<string> DialogAnimationDictionary { get; set; } = new List<string>
+        //{
+        //    "Open File Popup",
+        //    "New File Popup",
+        //    "Save As Popup",
+        //    "Quick Actions Popup",
+        //    "Parent Selector",
+        //    "Prefab Popup",
+        //    "Object Options Popup",
+        //    "BG Options Popup",
+        //    "Browser Popup",
+        //    "Object Search Popup",
+        //    "Warning Popup",
+        //    "REPL Editor Popup",
+        //    "Editor Properties Popup",
+        //    "Documentation Popup",
+        //    "Debugger Popup",
+        //    "Autosaves Popup",
+        //    "Default Modifiers Popup",
+        //    "Keybind List Popup",
+        //};
+
+        //[HarmonyPatch("SetDialogStatus")]
+        //[HarmonyPrefix]
+        //static bool SetDialogStatusPrefix(string __0, bool __1, bool __2 = true)
+        //{
+        //    if (Instance.EditorDialogsDictionary.ContainsKey(__0))
+        //    {
+        //        if (DialogAnimationDictionary.Contains(__0) && Instance.EditorDialogsDictionary[__0].Dialog.gameObject.activeSelf != __1)
+        //        {
+        //            var animation = new AnimationManager.Animation("Popup Open");
+        //            animation.floatAnimations = new List<AnimationManager.Animation.AnimationObject<float>>
+        //            {
+        //                new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+        //                {
+        //                    new FloatKeyframe(0f, __1 ? 0f : 1f, Ease.Linear),
+        //                    new FloatKeyframe(0.2f, __1 ? 1f : 0f, __1 ? Ease.CircOut : Ease.CircIn),
+        //                    new FloatKeyframe(0.21f, __1 ? 1f : 0f, __1 ? Ease.CircOut : Ease.CircIn),
+        //                }, delegate (float x)
+        //                {
+        //                    Instance.EditorDialogsDictionary[__0].Dialog.gameObject.transform.localScale = new Vector3(x, x, 1f);
+        //                }),
+        //            };
+
+        //            animation.onComplete = delegate ()
+        //            {
+        //                Instance.EditorDialogsDictionary[__0].Dialog.gameObject.SetActive(__1);
+        //                AnimationManager.inst.RemoveID(animation.id);
+        //            };
+
+        //            AnimationManager.inst.Play(animation);
+        //        }
+
+
+        //        if (!DialogAnimationDictionary.Contains(__0) || __1)
+        //            Instance.EditorDialogsDictionary[__0].Dialog.gameObject.SetActive(__1);
+
+        //        if (__1)
+        //        {
+        //            if (__2)
+        //            {
+        //                Instance.currentDialog = Instance.EditorDialogsDictionary[__0];
+        //            }
+        //            if (!Instance.ActiveDialogs.Contains(Instance.EditorDialogsDictionary[__0]))
+        //            {
+        //                Instance.ActiveDialogs.Add(Instance.EditorDialogsDictionary[__0]);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            Instance.ActiveDialogs.Remove(Instance.EditorDialogsDictionary[__0]);
+        //            if (Instance.currentDialog == Instance.EditorDialogsDictionary[__0] && __2)
+        //            {
+        //                if (Instance.ActiveDialogs.Count > 0)
+        //                {
+        //                    Instance.currentDialog = Instance.ActiveDialogs.Last();
+        //                    return false;
+        //                }
+        //                Instance.currentDialog = new EditorManager.EditorDialog();
+        //            }
+        //        }
+        //    }
+        //    else
+        //    {
+        //        Debug.LogErrorFormat("{0}Can't load dialog [{1}].", new object[] { Instance.className, __0 });
+        //    }
+        //    return false;
+        //}
 
         [HarmonyPatch("GetSprite")]
         [HarmonyPrefix]
