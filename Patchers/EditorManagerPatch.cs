@@ -944,6 +944,23 @@ namespace EditorManagement.Patchers
         //    return false;
         //}
 
+        [HarmonyPatch("GetTimelineTime")]
+        [HarmonyPrefix]
+        static bool GetTimelineTimePrefix(ref float __result, float __0)
+        {
+            __result = GetTimelineTime(__0);
+            return false;
+        }
+
+        public static float GetTimelineTime(float _offset = 0f)
+        {
+            float num = Input.mousePosition.x;
+            num += Mathf.Abs(Instance.timeline.transform.AsRT().position.x);
+            if (SettingEditor.inst.SnapActive && !Input.GetKey(KeyCode.LeftAlt))
+                return Instance.SnapToBPM(num * Instance.ScreenScaleInverse / Instance.Zoom);
+            return num * Instance.ScreenScaleInverse / Instance.Zoom + _offset;
+        }
+
         [HarmonyPatch("GetSprite")]
         [HarmonyPrefix]
         static bool GetSpritePrefix(ref IEnumerator __result, string __0, EditorManager.SpriteLimits __1, Action<Sprite> __2, Action<string> __3)

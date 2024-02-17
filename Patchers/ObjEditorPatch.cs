@@ -1037,17 +1037,13 @@ namespace EditorManagement.Patchers
 					if (timelineObject.Index != 0)
 					{
 						float timeOffset = timeCalc() + timelineObject.timeOffset + __instance.mouseOffsetXForKeyframeDrag;
-						//timeOffset = Mathf.Clamp(timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
-						//timeOffset = Mathf.Round(timeOffset * 1000f) / 1000f;
-
-						//float calc = Mathf.Clamp(timeOffset, 0f, beatmapObject.GetObjectLifeLength(__instance.ObjectLengthOffset));
 
 						float calc = Mathf.Clamp(Mathf.Round(Mathf.Clamp(timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f, 0f, beatmapObject.GetObjectLifeLength(__instance.ObjectLengthOffset));
 
 						float st = beatmapObject.StartTime;
 
 						beatmapObject.events[timelineObject.Type][timelineObject.Index].eventTime =
-							SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes ? -(st - RTEditor.SnapToBPM(st + calc)) : calc;
+							SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes && !Input.GetKey(KeyCode.LeftAlt) ? -(st - RTEditor.SnapToBPM(st + calc)) : calc;
 
 						float timePosition = posCalc(calc);
 
