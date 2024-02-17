@@ -830,7 +830,7 @@ namespace EditorManagement.Functions.Editors
 
         public void OpenDialog()
         {
-            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            EditorManager.inst.ClearDialogs();
             EditorManager.inst.ShowDialog("Prefab Editor");
             PrefabEditor.inst.dialog = EditorManager.inst.GetDialog("Prefab Editor").Dialog;
 
@@ -893,48 +893,6 @@ namespace EditorManagement.Functions.Editors
             ReloadSelectionContent();
 
             ((RectTransform)PrefabEditor.inst.dialog.Find("data/type/Show Type Editor")).sizeDelta = new Vector2(260f, 34f);
-
-            //PrefabEditor.inst.dialog.Find("data/offset/<").GetComponent<Button>().onClick.RemoveAllListeners();
-            //PrefabEditor.inst.dialog.Find("data/offset/<").GetComponent<Button>().onClick.AddListener(delegate ()
-            //{
-            //    PrefabEditor.inst.NewPrefabOffset += 0.1f;
-            //    PrefabEditor.inst.dialog.Find("data/offset/input").GetComponent<InputField>().text = PrefabEditor.inst.NewPrefabOffset.ToString();
-            //    PrefabEditor.inst.dialog.Find("data/offset/slider").GetComponent<Slider>().value = PrefabEditor.inst.NewPrefabOffset;
-            //});
-            //PrefabEditor.inst.dialog.Find("data/offset/>").GetComponent<Button>().onClick.RemoveAllListeners();
-            //PrefabEditor.inst.dialog.Find("data/offset/>").GetComponent<Button>().onClick.AddListener(delegate ()
-            //{
-            //    PrefabEditor.inst.NewPrefabOffset -= 0.1f;
-            //    PrefabEditor.inst.dialog.Find("data/offset/input").GetComponent<InputField>().text = PrefabEditor.inst.NewPrefabOffset.ToString();
-            //    PrefabEditor.inst.dialog.Find("data/offset/slider").GetComponent<Slider>().value = PrefabEditor.inst.NewPrefabOffset;
-            //});
-            //PrefabEditor.inst.dialog.Find("data/type/types/col_" + PrefabEditor.inst.NewPrefabType).GetComponent<Toggle>().isOn = true;
-            //for (int i = 0; i < DataManager.inst.PrefabTypes.Count; i++)
-            //{
-            //    int index = i;
-            //    PrefabEditor.inst.dialog.Find("data/type/types/col_" + i + "/text").GetComponent<Text>().text = DataManager.inst.PrefabTypes[i].Name;
-            //    PrefabEditor.inst.dialog.Find("data/type/types/col_" + i + "/Background").GetComponent<Image>().color = DataManager.inst.PrefabTypes[i].Color;
-            //    PrefabEditor.inst.dialog.Find("data/type/types/col_" + i).GetComponent<Toggle>().onValueChanged.RemoveAllListeners();
-            //    PrefabEditor.inst.dialog.Find("data/type/types/col_" + i).GetComponent<Toggle>().onValueChanged.AddListener(delegate (bool val)
-            //    {
-            //        int tmpIndex = index;
-            //        PrefabEditor.inst.NewPrefabType = tmpIndex;
-            //    });
-            //}
-            //PrefabEditor.inst.dialog.Find("data/type/types/<").GetComponent<Button>().onClick.RemoveAllListeners();
-            //PrefabEditor.inst.dialog.Find("data/type/types/<").GetComponent<Button>().onClick.AddListener(delegate ()
-            //{
-            //    PrefabEditor.inst.NewPrefabType--;
-            //    PrefabEditor.inst.NewPrefabType = Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, 9);
-            //    PrefabEditor.inst.dialog.Find("data/type/types/col_" + PrefabEditor.inst.NewPrefabType).GetComponent<Toggle>().isOn = true;
-            //});
-            //PrefabEditor.inst.dialog.Find("data/type/types/>").GetComponent<Button>().onClick.RemoveAllListeners();
-            //PrefabEditor.inst.dialog.Find("data/type/types/>").GetComponent<Button>().onClick.AddListener(delegate ()
-            //{
-            //    PrefabEditor.inst.NewPrefabType++;
-            //    PrefabEditor.inst.NewPrefabType = Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, 9);
-            //    PrefabEditor.inst.dialog.Find("data/type/types/col_" + PrefabEditor.inst.NewPrefabType).GetComponent<Toggle>().isOn = true;
-            //});
         }
 
         public void UpdateCurrentPrefab(BasePrefab __0)
