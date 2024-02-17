@@ -1115,6 +1115,8 @@ namespace EditorManagement.Functions.Editors
             ResetIntegerVariables, // 58
             ToggleProjectPlanner, // 59
             ForceSnapBPM, // 60
+            AddLayer, // 61
+            ParentPicker, // 62
         };
 
         public static void CustomCode(Keybind keybind)
@@ -1898,6 +1900,23 @@ namespace EditorManagement.Functions.Editors
                 }
         }
 
+        public static void AddLayer(Keybind keybind)
+        {
+            if (keybind.settings.ContainsKey("Layer") && int.TryParse(keybind.settings["Layer"], out int num))
+            {
+                RTEditor.inst.SetLayer(RTEditor.inst.Layer + num);
+            }
+        }
+
+        public static void ParentPicker(Keybind keybind)
+        {
+            if (!ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                return;
+
+            RTEditor.inst.parentPickerEnabled = true;
+            RTEditor.inst.objectToParent = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+        }
+
         #endregion
 
         #region Settings
@@ -2004,6 +2023,11 @@ namespace EditorManagement.Functions.Editors
             null, // 58
             null, // 59
             null, // 60
+            new Dictionary<string, string>
+            {
+                { "Layer", "1" }
+            }, // 61
+            null, // 62
         };
 
         #endregion
