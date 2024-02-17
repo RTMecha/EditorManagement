@@ -715,27 +715,27 @@ namespace EditorManagement.Functions.Helpers
 			return eventEndDragTrigger;
 		}
 
-		public static EventTrigger.Entry CreateEventStartDragTrigger(int type, int index)
+		public static EventTrigger.Entry CreateEventStartDragTrigger(TimelineObject kf)
 		{
 			var startDragTrigger = new EventTrigger.Entry();
 			startDragTrigger.eventID = EventTriggerType.BeginDrag;
 			startDragTrigger.callback.AddListener(eventData =>
 			{
-				if (index != 0)
+				if (kf.Index != 0)
 				{
-					if (RTEventEditor.inst.SelectedKeyframes.FindIndex(x => x.Type == type && x.Index == index) != -1)
+					if (RTEventEditor.inst.SelectedKeyframes.FindIndex(x => x.Type == kf.Type && x.Index == kf.Index) != -1)
 					{
 						foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
                         {
-							timelineObject.timeOffset = timelineObject.Type == type && timelineObject.Index == index ? 0f :
-							timelineObject.Time - DataManager.inst.gameData.eventObjects.allEvents[type][index].eventTime;
+							timelineObject.timeOffset = timelineObject.Type == kf.Type && timelineObject.Index == kf.Index ? 0f :
+							timelineObject.Time - DataManager.inst.gameData.eventObjects.allEvents[kf.Type][kf.Index].eventTime;
                         }
 					}
 					else
-						EventEditor.inst.SetCurrentEvent(type, index);
+						EventEditor.inst.SetCurrentEvent(kf.Type, kf.Index);
 
 					float timelineTime = EditorManager.inst.GetTimelineTime();
-					EventEditor.inst.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[type][index].eventTime - timelineTime;
+					EventEditor.inst.mouseOffsetXForDrag = DataManager.inst.gameData.eventObjects.allEvents[kf.Type][kf.Index].eventTime - timelineTime;
 					EventEditor.inst.eventDrag = true;
 				}
 				else

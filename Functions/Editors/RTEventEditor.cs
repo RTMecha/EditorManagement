@@ -554,7 +554,7 @@ namespace EditorManagement.Functions.Editors
 
 			TriggerHelper.AddEventTriggerParams(kf.GameObject,
 				TriggerHelper.CreateEventObjectTrigger(kf),
-				TriggerHelper.CreateEventStartDragTrigger(type, index),
+				TriggerHelper.CreateEventStartDragTrigger(kf),
 				TriggerHelper.CreateEventEndDragTrigger(),
 				TriggerHelper.CreateEventSelectTrigger(kf));
 
@@ -1876,14 +1876,6 @@ namespace EditorManagement.Functions.Editors
 
 		public void SetListColor(int value, int index, List<Toggle> toggles, Color defaultColor)
 		{
-			foreach (var kf in SelectedKeyframes.Where(x => x.Type == EventEditor.inst.currentEventType))
-			{
-				kf.GetData<EventKeyframe>().eventValues[index] = value;
-			}
-
-			//DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[index] = value;
-			EventManager.inst.updateEvents();
-
 			int num = 0;
 			foreach (var toggle in toggles)
 			{
@@ -1896,6 +1888,13 @@ namespace EditorManagement.Functions.Editors
 				int tmpIndex = num;
 				toggle.onValueChanged.AddListener(delegate (bool val)
 				{
+					foreach (var kf in SelectedKeyframes.Where(x => x.Type == EventEditor.inst.currentEventType))
+					{
+						kf.GetData<EventKeyframe>().eventValues[index] = value;
+					}
+
+					EventManager.inst.updateEvents();
+
 					SetListColor(tmpIndex, index, toggles, defaultColor);
 				});
 				num++;
@@ -2330,26 +2329,6 @@ namespace EditorManagement.Functions.Editors
 					}
 				}
 			}
-
-
-            //var strs = new List<string>();
-            //foreach (var timelineObject in SelectedKeyframes)
-            //    strs.Add(timelineObject.ID);
-
-            //ClearEventObjects();
-
-            //for (int i = 0; i < AllEvents.Count; i++)
-            //{
-            //    DataManager.inst.gameData.eventObjects.allEvents[i] = DataManager.inst.gameData.eventObjects.allEvents[i].OrderBy(x => x.eventTime).ToList();
-            //}
-
-            //CreateEventObjects();
-
-            //foreach (var timelineObject in RTEditor.inst.timelineKeyframes)
-            //{
-            //    if (strs.Contains(timelineObject.ID))
-            //        timelineObject.selected = true;
-            //}
         }
 
 		void RenderTitles()
