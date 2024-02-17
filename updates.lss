@@ -1,3 +1,7 @@
+2.3.7 > [Feb 17, 2024]
+- Added Parent Picker keybind and AddLayer keybind. Parent Picker acts the same way as the regular one does.
+- Fixed a bug with the Prefab offset line to appearing when multiple objects are selected and at least one of them are Prefab Objects.
+- Added a config for remembering the last selected keyframe type when selecting a new object. This is off by default but can be enabled in Editor Preferences.
 2.3.6 > [Feb 17, 2024]
 - Added some of the new ObjectModifiers stuff.
 - Added string Replace functions to Multi Object Editor, so now you don't need to go through every individual object and rename / regroup / adjust the text of it. + Did some other changes to the Multi Object Editor.
