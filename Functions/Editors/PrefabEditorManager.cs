@@ -384,9 +384,20 @@ namespace EditorManagement.Functions.Editors
 
                     DataManager.inst.PrefabTypes[index].Name = name;
 
-                    if (RTFile.FileExists(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName))
+                    if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName))
                     {
-                        File.Delete(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName);
+                        foreach (var file in Directory.GetFiles(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName, "*", SearchOption.AllDirectories))
+                        {
+                            File.Delete(file);
+                        }
+                        
+                        foreach (var directory in Directory.GetDirectories(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName, "*", SearchOption.AllDirectories))
+                        {
+                            Directory.Delete(directory);
+                        }
+
+                        if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName))
+                            Directory.Delete(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName);
                     }
                 });
                 inputField.onEndEdit.ClearAll();
@@ -420,9 +431,14 @@ namespace EditorManagement.Functions.Editors
 
                     if (RTFile.DirectoryExists(path))
                     {
-                        foreach (var file in Directory.GetFiles(path))
+                        foreach (var file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
                         {
                             File.Delete(file);
+                        }
+
+                        foreach (var directory in Directory.GetDirectories(path, "*", SearchOption.AllDirectories))
+                        {
+                            Directory.Delete(directory);
                         }
 
                         Directory.Delete(path);
@@ -663,27 +679,78 @@ namespace EditorManagement.Functions.Editors
 
         public void SavePrefab(Prefab prefab)
         {
+            RTEditor.inst.canUpdatePrefabs = false;
+            RTEditor.inst.PrefabWatcher.EnableRaisingEvents = false;
+
             EditorManager.inst.DisplayNotification($"Saving Prefab to System [{prefab.Name}]!", 2f, EditorManager.NotificationType.Warning);
             Debug.Log($"{PrefabEditor.inst.className}Saving Prefab to File System!");
 
             prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
-            //prefab.objects.ForEach(x => x.prefabInstanceID = "");
+            int count = PrefabEditor.inst.LoadedPrefabs.Count;
             PrefabEditor.inst.LoadedPrefabs.Add(prefab);
             PrefabEditor.inst.LoadedPrefabsFiles.Add($"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp");
 
+            var hoverSize = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
+
+            var nameHorizontalOverflow = RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+
+            var nameVerticalOverflow = RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+
+            var nameFontSize = RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value;
+
+            var typeHorizontalOverflow = RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+
+            var typeVerticalOverflow = RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+
+            var typeFontSize = RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value;
+
+            var deleteAnchoredPosition = RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value;
+            var deleteSizeDelta = RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value;
+
+            StartCoroutine(CreatePrefabButton(prefab, count, PrefabDialog.External, $"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp",
+                false, hoverSize, nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
+                typeHorizontalOverflow, typeVerticalOverflow, typeFontSize, deleteAnchoredPosition, deleteSizeDelta));
+
             FileManager.inst.SaveJSONFile(RTEditor.prefabListPath, $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp", prefab.ToJSON().ToString());
             EditorManager.inst.DisplayNotification($"Saved prefab [{prefab.Name}]!", 2f, EditorManager.NotificationType.Success);
+
+            if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + RTEditor.prefabListPath))
+            {
+                RTEditor.inst.PrefabWatcher.Path = RTFile.ApplicationDirectory + RTEditor.prefabListPath;
+                RTEditor.inst.PrefabWatcher.EnableRaisingEvents = true;
+            }
+
+            RTEditor.inst.canUpdatePrefabs = true;
         }
 
-        public void DeleteExternalPrefab(int __0)
+        public void DeleteExternalPrefab(PrefabPanel prefabPanel)
         {
-            if (RTFile.FileExists(PrefabEditor.inst.LoadedPrefabsFiles[__0]))
-                FileManager.inst.DeleteFileRaw(PrefabEditor.inst.LoadedPrefabsFiles[__0]);
+            RTEditor.inst.canUpdatePrefabs = false;
+            RTEditor.inst.PrefabWatcher.EnableRaisingEvents = false;
 
-            PrefabEditor.inst.LoadedPrefabs.RemoveAt(__0);
-            PrefabEditor.inst.LoadedPrefabsFiles.RemoveAt(__0);
+            if (RTFile.FileExists(prefabPanel.FilePath))
+                FileManager.inst.DeleteFileRaw(prefabPanel.FilePath);
 
-            PrefabEditor.inst.ReloadExternalPrefabsInPopup(false);
+            PrefabEditor.inst.LoadedPrefabs.RemoveAt(prefabPanel.Index);
+            PrefabEditor.inst.LoadedPrefabsFiles.RemoveAt(prefabPanel.Index);
+
+            Destroy(prefabPanel.GameObject);
+            PrefabPanels.RemoveAt(prefabPanel.Index);
+
+            int num = 0;
+            foreach (var p in PrefabPanels)
+            {
+                p.Index = num;
+                num++;
+            }
+
+            if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + RTEditor.prefabListPath))
+            {
+                RTEditor.inst.PrefabWatcher.Path = RTFile.ApplicationDirectory + RTEditor.prefabListPath;
+                RTEditor.inst.PrefabWatcher.EnableRaisingEvents = true;
+            }
+
+            RTEditor.inst.canUpdatePrefabs = true;
         }
 
         public void DeleteInternalPrefab(int __0)
@@ -1353,7 +1420,7 @@ namespace EditorManagement.Functions.Editors
             foreach (var prefab in DataManager.inst.gameData.prefabs)
             {
                 if (ContainsName(prefab, PrefabDialog.Internal))
-                    list.Add(StartCoroutine(CreatePrefabButton((Prefab)prefab, num, PrefabDialog.Internal, _toggle, hoverSize,
+                    list.Add(StartCoroutine(CreatePrefabButton((Prefab)prefab, num, PrefabDialog.Internal, null, _toggle, hoverSize,
                         nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
                         typeHorizontalOverflow, typeVerticalOverflow, typeFontSize,
                         deleteAnchoredPosition, deleteSizeDelta)));
@@ -1376,86 +1443,10 @@ namespace EditorManagement.Functions.Editors
                 prefabPanel.SetActive(ContainsName(prefabPanel.Prefab, PrefabDialog.External));
             }
 
-            //yield return new WaitForSeconds(0.03f);
-
-            //LSHelpers.DeleteChildren(PrefabEditor.inst.externalContent);
-            //var gameObject = PrefabEditor.inst.CreatePrefab.Duplicate(PrefabEditor.inst.externalContent, "add new prefab");
-            //gameObject.GetComponentInChildren<Text>().text = "New External Prefab";
-
-            //var hoverSize = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
-
-            //var hover = gameObject.AddComponent<HoverUI>();
-            //hover.animateSca = true;
-            //hover.animatePos = false;
-            //hover.size = hoverSize;
-
-            //gameObject.GetComponentAndPerformAction(delegate (Button x)
-            //{
-            //    x.NewOnClickListener(delegate ()
-            //    {
-            //        PrefabEditor.inst.OpenDialog();
-            //        createInternal = false;
-            //    });
-            //});
-
-            //bool isExternal = true;
-
-            //var nameHorizontalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-
-            //var nameVerticalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-
-            //var nameFontSize = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
-
-            //var typeHorizontalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-
-            //var typeVerticalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-
-            //var typeFontSize = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
-
-            //var deleteAnchoredPosition = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
-            //var deleteSizeDelta = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
-
-            //var list = new List<Coroutine>();
-
-            //int num = 0;
-            //foreach (var prefab in PrefabEditor.inst.LoadedPrefabs)
-            //{
-            //    if (ContainsName(prefab, PrefabDialog.External))
-            //    {
-            //        list.Add(StartCoroutine(CreatePrefabButton((Prefab)prefab, num, PrefabDialog.External, _toggle, hoverSize,
-            //            nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
-            //            typeHorizontalOverflow, typeVerticalOverflow, typeFontSize,
-            //            deleteAnchoredPosition, deleteSizeDelta)));
-            //    }
-            //    num++;
-            //}
-
-            //yield return StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate ()
-            //{
-            //    //foreach (object obj in externalContent)
-            //    //    ((Transform)obj).localScale = Vector3.one;
-            //}));
-
             yield break;
         }
 
-        public IEnumerator CreatePrefabButton(Prefab prefab, int index, PrefabDialog dialog, bool _toggle, float hoversize,
+        public IEnumerator CreatePrefabButton(Prefab prefab, int index, PrefabDialog dialog, string file, bool _toggle, float hoversize,
             HorizontalWrapMode nameHorizontalWrapMode, VerticalWrapMode nameVerticalWrapMode, int nameFontSize,
             HorizontalWrapMode typeHorizontalWrapMode, VerticalWrapMode typeVerticalWrapMode, int typeFontSize,
             Vector2 deleteAnchoredPosition, Vector2 deleteSizeDelta)
@@ -1469,11 +1460,6 @@ namespace EditorManagement.Functions.Editors
             hover.animatePos = false;
             hover.size = hoversize;
 
-            //var hover = gameObject.AddComponent<HoverUI>();
-            //hover.animateSca = true;
-            //hover.animatePos = false;
-            //hover.size = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
-
             var name = tf.Find("name").GetComponent<Text>();
             var typeName = tf.Find("type-name").GetComponent<Text>();
             var color = tf.Find("category").GetComponent<Image>();
@@ -1481,22 +1467,9 @@ namespace EditorManagement.Functions.Editors
             var addPrefabObject = gameObject.GetComponent<Button>();
             var delete = tf.Find("delete").GetComponent<Button>();
 
-            PrefabPanels.Add(new PrefabPanel
-            {
-                GameObject = gameObject,
-                Button = addPrefabObject,
-                DeleteButton = delete,
-                Dialog = dialog,
-                Name = name,
-                TypeText = typeName,
-                TypeImage = color,
-                Prefab = prefab
-            });
-
             name.text = prefab.Name;
-            //_p.Type = Mathf.Clamp(_p.Type, 0, DataManager.inst.PrefabTypes.Count - 1);
 
-            var prefabType = prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
+            var prefabType = prefab.Type >= 0 && prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
 
             typeName.text = prefabType.Name;
             color.color = prefabType.Color;
@@ -1508,8 +1481,8 @@ namespace EditorManagement.Functions.Editors
                 "<br>Count: " + prefab.objects.Count + 
                 "<br>Description: " + prefab.description);
 
-            addPrefabObject.onClick.RemoveAllListeners();
-            delete.onClick.RemoveAllListeners();
+            addPrefabObject.onClick.ClearAll();
+            delete.onClick.ClearAll();
 
             name.horizontalOverflow = nameHorizontalWrapMode;
             name.verticalOverflow = nameVerticalWrapMode;
@@ -1521,38 +1494,6 @@ namespace EditorManagement.Functions.Editors
 
             deleteRT.anchoredPosition = deleteAnchoredPosition;
             deleteRT.sizeDelta = deleteSizeDelta;
-
-            // Gonna have to remove these customizations for now until I put the Configs back into their own static class.
-            //name.horizontalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-
-            //name.verticalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-
-            //name.fontSize = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
-
-            //typeName.horizontalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-
-            //typeName.verticalOverflow = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-
-            //typeName.fontSize = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
-
-            //deleteRT.anchoredPosition = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
-            //deleteRT.sizeDelta = isExternal ?
-            //    RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
-            //    RTEditor.GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
 
             if (!isExternal)
             {
@@ -1582,12 +1523,27 @@ namespace EditorManagement.Functions.Editors
             }
             else
             {
+                var prefabPanel = new PrefabPanel
+                {
+                    GameObject = gameObject,
+                    Button = addPrefabObject,
+                    DeleteButton = delete,
+                    Dialog = dialog,
+                    Name = name,
+                    TypeText = typeName,
+                    TypeImage = color,
+                    Prefab = prefab,
+                    Index = index,
+                    FilePath = file
+                };
+                PrefabPanels.Add(prefabPanel);
+
                 delete.onClick.AddListener(delegate ()
                 {
                     EditorManager.inst.ShowDialog("Warning Popup");
                     RTEditor.inst.RefreshWarningPopup("Are you sure you want to delete this prefab? (This is permanent!)", delegate ()
                     {
-                        PrefabEditor.inst.DeleteExternalPrefab(index);
+                        DeleteExternalPrefab(prefabPanel);
                         EditorManager.inst.HideDialog("Warning Popup");
                     }, delegate ()
                     {
@@ -1833,7 +1789,7 @@ namespace EditorManagement.Functions.Editors
 
             var ids = prefab.objects.ToDictionary(x => x.id, x => LSText.randomString(16));
 
-            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            EditorManager.inst.ClearDialogs();
 
             //var beatmapObjects = ExpandBeatmapObjects(ids, audioTime, prefab, prefabObject);
             //DataManager.inst.gameData.beatmapObjects.AddRange(beatmapObjects);
@@ -1854,7 +1810,7 @@ namespace EditorManagement.Functions.Editors
                     beatmapObjectCopy.id = ids[beatmapObject.id];
                 if (ids.ContainsKey(beatmapObject.parent))
                     beatmapObjectCopy.parent = ids[beatmapObject.parent];
-                else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
+                else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1 && beatmapObjectCopy.parent != "CAMERA_PARENT")
                     beatmapObjectCopy.parent = "";
 
                 beatmapObjectCopy.active = false;
@@ -1870,6 +1826,8 @@ namespace EditorManagement.Functions.Editors
 
                 beatmapObjectCopy.prefabInstanceID = prefabObject.ID;
                 DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
+                if (Updater.levelProcessor && Updater.levelProcessor.converter != null && !Updater.levelProcessor.converter.beatmapObjects.ContainsKey(beatmapObjectCopy.id))
+                    Updater.levelProcessor.converter.beatmapObjects.Add(beatmapObjectCopy.id, beatmapObjectCopy);
                 expandedObjects.Add(beatmapObjectCopy);
 
                 if (ObjectEditor.inst != null)
