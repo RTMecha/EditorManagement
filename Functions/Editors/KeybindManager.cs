@@ -785,6 +785,7 @@ namespace EditorManagement.Functions.Editors
                 var settings = Settings;
                 keybind.settings = settings[_val] ?? new Dictionary<string, string>();
                 RefreshKeybindPopup();
+                RefreshKeybindEditor(keybind);
                 Save();
             });
 
@@ -799,8 +800,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var key = new Keybind.Key(Keybind.Key.Type.Down, KeyCode.None);
                 keybind.keys.Add(key);
-                RefreshKeybindEditor(keybind);
                 RefreshKeybindPopup();
+                RefreshKeybindEditor(keybind);
                 Save();
             });
 
@@ -833,8 +834,8 @@ namespace EditorManagement.Functions.Editors
                 delete.onClick.AddListener(delegate ()
                 {
                     keybind.keys.RemoveAt(index);
-                    RefreshKeybindEditor(keybind);
                     RefreshKeybindPopup();
+                    RefreshKeybindEditor(keybind);
                     Save();
                 });
                 num++;
@@ -876,21 +877,19 @@ namespace EditorManagement.Functions.Editors
 
                             var l = label.Duplicate(bar.transform, "", 0);
                             l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
-                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(688f, 20f);
+                            l.transform.AsRT().sizeDelta = new Vector2(688f, 20f);
 
-                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                            {
-                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                            }
+                            l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                            bar.GetComponent<Image>().enabled = true;
-                            bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                            var image = bar.GetComponent<Image>();
+                            image.enabled = true;
+                            image.color = new Color(1f, 1f, 1f, 0.03f);
 
-                            GameObject x = Instantiate(boolInput);
+                            var x = Instantiate(boolInput);
                             x.transform.SetParent(bar.transform);
                             x.transform.localScale = Vector3.one;
 
-                            Toggle xt = x.GetComponent<Toggle>();
+                            var xt = x.GetComponent<Toggle>();
                             xt.onValueChanged.RemoveAllListeners();
                             xt.isOn = Parser.TryParse(setting.Value, false);
                             xt.onValueChanged.AddListener(delegate (bool _val)
@@ -920,17 +919,15 @@ namespace EditorManagement.Functions.Editors
 
                             var l = label.Duplicate(bar.transform, "", 0);
                             l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
-                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(354f, 20f);
+                            l.transform.AsRT().sizeDelta = new Vector2(354f, 20f);
 
-                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                            {
-                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                            }
+                            l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                            bar.GetComponent<Image>().enabled = true;
-                            bar.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                            var image = bar.GetComponent<Image>();
+                            image.enabled = true;
+                            image.color = new Color(1f, 1f, 1f, 0.03f);
 
-                            GameObject x = Instantiate(stringInput);
+                            var x = Instantiate(stringInput);
                             x.transform.SetParent(bar.transform);
                             x.transform.localScale = Vector3.one;
                             Destroy(x.GetComponent<HoverTooltip>());
@@ -956,7 +953,7 @@ namespace EditorManagement.Functions.Editors
                     case "layer":
                     case "index":
                         {
-                            GameObject x = singleInput.Duplicate(settingsContent, "input [INT]");
+                            var x = singleInput.Duplicate(settingsContent, "input [INT]");
 
                             Destroy(x.GetComponent<EventInfo>());
                             Destroy(x.GetComponent<EventTrigger>());
@@ -967,15 +964,13 @@ namespace EditorManagement.Functions.Editors
 
                             var l = label.Duplicate(x.transform, "", 0);
                             l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
-                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+                            l.transform.AsRT().sizeDelta = new Vector2(541f, 20f);
+                            
+                            l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                            {
-                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                            }
-
-                            x.GetComponent<Image>().enabled = true;
-                            x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                            var image = x.GetComponent<Image>();
+                            image.enabled = true;
+                            image.color = new Color(1f, 1f, 1f, 0.03f);
 
                             TooltipHelper.AddTooltip(x, setting.Key, "");
 
@@ -985,7 +980,7 @@ namespace EditorManagement.Functions.Editors
                             xif.onValueChanged.RemoveAllListeners();
                             xif.textComponent = input.Find("Text").GetComponent<Text>();
                             xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
-                            xif.characterValidation = InputField.CharacterValidation.Integer;
+                            xif.characterValidation = InputField.CharacterValidation.None;
                             xif.text = Parser.TryParse(setting.Value, 0).ToString();
                             xif.onValueChanged.AddListener(delegate (string _val)
                             {
@@ -1003,7 +998,7 @@ namespace EditorManagement.Functions.Editors
                         }
                     case "eventamount":
                         {
-                            GameObject x = singleInput.Duplicate(settingsContent, "input [FLOAT]");
+                            var x = singleInput.Duplicate(settingsContent, "input [FLOAT]");
 
                             Destroy(x.GetComponent<EventInfo>());
                             Destroy(x.GetComponent<EventTrigger>());
@@ -1014,15 +1009,13 @@ namespace EditorManagement.Functions.Editors
 
                             var l = label.Duplicate(x.transform, "", 0);
                             l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
-                            l.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(541f, 20f);
+                            l.transform.AsRT().sizeDelta = new Vector2(541f, 20f);
 
-                            var ltextrt = l.transform.GetChild(0).GetComponent<RectTransform>();
-                            {
-                                ltextrt.anchoredPosition = new Vector2(10f, -5f);
-                            }
+                            l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
-                            x.GetComponent<Image>().enabled = true;
-                            x.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.03f);
+                            var image = x.GetComponent<Image>();
+                            image.enabled = true;
+                            image.color = new Color(1f, 1f, 1f, 0.03f);
 
                             TooltipHelper.AddTooltip(x, setting.Key, "");
 
@@ -1032,7 +1025,7 @@ namespace EditorManagement.Functions.Editors
                             xif.onValueChanged.RemoveAllListeners();
                             xif.textComponent = input.Find("Text").GetComponent<Text>();
                             xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
-                            xif.characterValidation = InputField.CharacterValidation.Integer;
+                            xif.characterValidation = InputField.CharacterValidation.None;
                             xif.text = Parser.TryParse(setting.Value, 0f).ToString();
                             xif.onValueChanged.AddListener(delegate (string _val)
                             {
