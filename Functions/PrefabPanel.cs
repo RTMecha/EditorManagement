@@ -29,6 +29,10 @@ namespace EditorManagement.Functions
 
         public Prefab Prefab { get; set; }
 
+        public int Index { get; set; }
+
+        public string FilePath { get; set; }
+
         public void SetActive(bool active) => GameObject?.SetActive(active);
     }
 }
