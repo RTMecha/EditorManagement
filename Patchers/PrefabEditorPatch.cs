@@ -75,11 +75,9 @@ namespace EditorManagement.Patchers
 
             Instance.internalPrefabDialog.Find("Panel/Text").GetComponent<Text>().text = "Internal Prefabs";
 
-            Debug.Log($"{Instance.className}Setting search...");
             Instance.gridSearch = Instance.dialog.Find("data/selection/search-box/search").GetComponent<InputField>();
             Instance.gridContent = Instance.dialog.Find("data/selection/mask/content");
 
-            Debug.Log($"{Instance.className}Destroying VerticalLayoutGroup...");
             if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/type/types", out GameObject gm) && gm.TryGetComponent(out VerticalLayoutGroup component))
             {
                 Destroy(component);
@@ -297,7 +295,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool UpdatePrefix()
         {
-            if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab))
+            if (Instance.dialog && Instance.dialog.gameObject.activeSelf)
             {
                 float num;
                 if (ObjectEditor.inst.SelectedObjects.Count <= 0)
@@ -312,7 +310,7 @@ namespace EditorManagement.Patchers
                 }
                 ((RectTransform)Instance.OffsetLine.transform).anchoredPosition = new Vector2(Instance.posCalc(num - Instance.NewPrefabOffset), 0f);
             }
-            if (((!EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab) && EditorManager.inst.currentDialog.Name != "Prefab Editor") || ObjectEditor.inst.SelectedBeatmapObjects.Count <= 0) && Instance.OffsetLine.activeSelf)
+            if (((!Instance.dialog || !Instance.dialog.gameObject.activeSelf) || ObjectEditor.inst.SelectedBeatmapObjects.Count <= 0) && Instance.OffsetLine.activeSelf)
             {
                 Instance.OffsetLine.SetActive(false);
             }
@@ -458,7 +456,7 @@ namespace EditorManagement.Patchers
         {
             #region Original Code
 
-            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            EditorManager.inst.ClearDialogs();
 
             bool isPrefab = ObjectEditor.inst.CurrentSelection != null && ObjectEditor.inst.CurrentSelection.Data != null && ObjectEditor.inst.CurrentSelection.IsPrefabObject;
             if (!isPrefab)
@@ -909,7 +907,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("OpenDialog")]
         [HarmonyPrefix]
-        static bool PrefabLayout()
+        static bool OpenDialogPrefix()
         {
             PrefabEditorManager.inst.OpenDialog();
 
@@ -918,7 +916,7 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("ImportPrefabIntoLevel")]
         [HarmonyPrefix]
-        static bool ImportPrefabIntoLevel(PrefabEditor __instance, BasePrefab __0)
+        static bool ImportPrefabIntoLevelPrefix(PrefabEditor __instance, BasePrefab __0)
         {
             Debug.LogFormat("{0}Adding Prefab: [{1}]", EditorPlugin.className, __0.Name);
 
