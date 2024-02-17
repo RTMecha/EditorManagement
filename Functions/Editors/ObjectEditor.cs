@@ -164,7 +164,7 @@ namespace EditorManagement.Functions.Editors
         {
             if (CurrentSelection.IsBeatmapObject)
             {
-                EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+                EditorManager.inst.ClearDialogs();
                 EditorManager.inst.ShowDialog("Object Editor", false);
 
                 StartCoroutine(RefreshObjectGUI(beatmapObject));
@@ -3241,7 +3241,12 @@ namespace EditorManagement.Functions.Editors
 
             var timelineObject = GetTimelineObject(beatmapObject);
             if (timelineObject.InternalSelections.Count > 0 && timelineObject.InternalSelections.Where(x => x.selected).Count() == 0)
-                timelineObject.InternalSelections[0].selected = true;
+            {
+                if (RTEditor.GetEditorProperty("Remember Last Keyframe Type").GetConfigEntry<bool>().Value && timelineObject.InternalSelections.TryFind(x => x.Type == ObjEditor.inst.currentKeyframeKind, out TimelineObject kf))
+                    kf.selected = true;
+                else
+                    timelineObject.InternalSelections[0].selected = true;
+            }
         }
 
         public void RenderKeyframe(BeatmapObject beatmapObject, TimelineObject timelineObject)

@@ -9808,6 +9808,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("General", "Allow Editor Keybinds With Editor Cam", true, "Allows keybinds to be used if EventsCore editor camera is on.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Remember Last Keyframe Type", false, "When an object is selected for the first time, it selects the previous objects' keyframe selection type. For example, say you had a color keyframe selected, this newly selected object will select the first color keyframe.")),
 
             #endregion
 
