@@ -1992,7 +1992,7 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (float.TryParse(zoom.text, out float result))
 					{
-						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+						result += Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
 
 						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
@@ -2090,7 +2090,7 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (float.TryParse(zoom.text, out float result))
 					{
-						result -= Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+						result += Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
 
 						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
@@ -2210,7 +2210,7 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (float.TryParse(posX.text, out float result))
 					{
-						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+						result += Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
 
 						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
@@ -2264,7 +2264,7 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (float.TryParse(posY.text, out float result))
 					{
-						result -= Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
+						result += Input.GetKey(KeyCode.LeftAlt) ? num / 10f : Input.GetKey(KeyCode.LeftControl) ? num * 10f : num;
 
 						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
