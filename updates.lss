@@ -1,3 +1,9 @@
+2.3.6 > [Feb 17, 2024]
+- Added some of the new ObjectModifiers stuff.
+- Added string Replace functions to Multi Object Editor, so now you don't need to go through every individual object and rename / regroup / adjust the text of it. + Did some other changes to the Multi Object Editor.
+- Fixed a bug with Event Keyframe editor arrow buttons not adding the amount they're supposed to.
+- Fixed ObjectModifiers editor UI scaling issues.
+- Object Tags can now have left / right words swapped when the scroll wheel is pressed down on the tag.
 2.3.5 > [Feb 17, 2024]
 - Fixed a bug with keybind settings that allowed for decimal points not allowing for decimal point editing.
 - Optimized some Object Editor stuff so selection should be quicker now.
