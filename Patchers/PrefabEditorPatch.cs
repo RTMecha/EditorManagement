@@ -339,7 +339,6 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool DeleteExternalPrefabPrefix(int __0)
         {
-            PrefabEditorManager.inst.DeleteExternalPrefab(__0);
             return false;
         }
         
