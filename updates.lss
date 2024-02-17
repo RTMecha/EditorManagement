@@ -1,3 +1,16 @@
+2.3.5 > [Feb 17, 2024]
+- Fixed a bug with keybind settings that allowed for decimal points not allowing for decimal point editing.
+- Optimized some Object Editor stuff so selection should be quicker now.
+- Pasting objects and expanding prefabs with objects parent as the camera no longer have their parent cleared.
+- Pasting objects and expanding prefabs now properly update parent chains. (Prefab Object updating still doesn't have this fix due to RTFunctions stuff being reworked for ArcadiaCustoms 2.0.0)
+- Fixed Prefab / Theme path setting error caused by the path not existing.
+- Fixed External Prefab deleting / creating not updating the list, though I recommend having Prefab File Watcher off for now.
+- Fixed Prefab Type renaming not removing the folder with the previous name.
+- Edge case fix for Timeline Grid breaking the editor if no audio is playing.
+- Multi Object Editing render depth now properly updates the render depth of each selected object.
+- Added Object Modifiers multi editing to Multi Object Editor.
+- Timeline Keyframe start drag no longer selects and drags different keyframe.
+- Marker and Editor layer colors now properly save when changing colors.
 2.3.4 > [Feb 10, 2024]
 - Fixed a very old issue with pasting a negative value into a Beatmap Object keyframe's values not working.
 2.3.3 > [Feb 10, 2024]
