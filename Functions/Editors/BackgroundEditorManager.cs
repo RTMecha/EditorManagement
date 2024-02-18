@@ -39,16 +39,13 @@ namespace EditorManagement.Functions.Editors
 		{
 			var __instance = BackgroundEditor.inst;
 
-			EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
-			EditorManager.inst.SetDialogStatus("Background Editor", true, true);
-			//__instance.left = __instance.dialog.Find("data/left/Object Scroll View/Viewport/Content");
-			//__instance.right = __instance.dialog.Find("data/right");
+			EditorManager.inst.ClearDialogs();
+			EditorManager.inst.ShowDialog("Background Editor");
 
 			var backgroundObject = (BackgroundObject)DataManager.inst.gameData.backgroundObjects[index];
 
 			__instance.left.Find("name/active").GetComponent<Toggle>().isOn = backgroundObject.active;
 			__instance.left.Find("name/name").GetComponent<InputField>().text = backgroundObject.name;
-			//__instance.left.Find("depth/layer").GetComponent<Slider>().value = (float)backgroundObject.layer;
 
 			SetSingleInputFieldInt(__instance.left, "iterations/x", backgroundObject.depth);
 
@@ -78,7 +75,7 @@ namespace EditorManagement.Functions.Editors
 
 			try
 			{
-				__instance.left.Find("reactive-ranges").GetChild(!backgroundObject.reactive ? (int)(backgroundObject.reactiveType + 1) : 0).GetComponent<Toggle>().isOn = true;
+				__instance.left.Find("reactive-ranges").GetChild(backgroundObject.reactive ? (int)(backgroundObject.reactiveType + 1) : 0).GetComponent<Toggle>().isOn = true;
 			}
 			catch
 			{
@@ -133,7 +130,7 @@ namespace EditorManagement.Functions.Editors
 
 					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						SetColor(__instance, colTmp);
+						SetFadeColor(__instance, colTmp);
 					});
 				}
 
@@ -153,7 +150,7 @@ namespace EditorManagement.Functions.Editors
 
 					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
 					{
-						SetColorReactive(__instance, colTmp);
+						SetReactiveColor(__instance, colTmp);
 					});
 				}
 				num++;
@@ -398,6 +395,12 @@ namespace EditorManagement.Functions.Editors
 
 				etX.triggers.Add(TriggerHelper.ScrollDelta(reactiveX, amount, multiply));
 			}
+
+			if (!reactiveX.GetComponent<InputFieldSwapper>())
+			{
+				var reactiveXSwapper = reactiveX.gameObject.AddComponent<InputFieldSwapper>();
+				reactiveXSwapper.Init(reactiveX);
+			}
 		}
 		
 		void SetSingleInputFieldInt(Transform dialogTmp, string name, int value)
@@ -410,6 +413,12 @@ namespace EditorManagement.Functions.Editors
 				var etX = reactiveX.gameObject.AddComponent<EventTrigger>();
 
 				etX.triggers.Add(TriggerHelper.ScrollDeltaInt(reactiveX, 1));
+			}
+
+			if (!reactiveX.GetComponent<InputFieldSwapper>())
+			{
+				var reactiveXSwapper = reactiveX.gameObject.AddComponent<InputFieldSwapper>();
+				reactiveXSwapper.Init(reactiveX);
 			}
 		}
 		
@@ -438,6 +447,17 @@ namespace EditorManagement.Functions.Editors
 				etY.triggers.Add(TriggerHelper.ScrollDeltaVector2(reactiveX, reactiveY, amount, multiply));
 			}
 
+			if (!reactiveX.GetComponent<InputFieldSwapper>())
+			{
+				var reactiveXSwapper = reactiveX.gameObject.AddComponent<InputFieldSwapper>();
+				reactiveXSwapper.Init(reactiveX);
+			}
+
+			if (!reactiveY.GetComponent<InputFieldSwapper>())
+			{
+				var reactiveYSwapper = reactiveY.gameObject.AddComponent<InputFieldSwapper>();
+				reactiveYSwapper.Init(reactiveY);
+			}
 		}
 
 		void SetVector2InputFieldInt(Transform dialogTmp, string name, Vector2 value)
@@ -452,6 +472,12 @@ namespace EditorManagement.Functions.Editors
 				etX.triggers.Add(TriggerHelper.ScrollDeltaInt(reactiveX, 1));
 			}
 
+			if (!reactiveX.GetComponent<InputFieldSwapper>())
+            {
+				var reactiveXSwapper = reactiveX.gameObject.AddComponent<InputFieldSwapper>();
+				reactiveXSwapper.Init(reactiveX);
+            }
+
 			var reactiveY = dialogTmp.Find($"{name}/y").GetComponent<InputField>();
 			reactiveY.text = value.y.ToString();
 
@@ -461,16 +487,22 @@ namespace EditorManagement.Functions.Editors
 
 				etX.triggers.Add(TriggerHelper.ScrollDeltaInt(reactiveY, 1));
 			}
+
+			if (!reactiveY.GetComponent<InputFieldSwapper>())
+			{
+				var reactiveYSwapper = reactiveY.gameObject.AddComponent<InputFieldSwapper>();
+				reactiveYSwapper.Init(reactiveY);
+			}
 		}
 
-		public void SetColor(BackgroundEditor __instance, int _col)
+		public void SetFadeColor(BackgroundEditor __instance, int _col)
 		{
 			CurrentSelectedBG.FadeColor = _col;
 			__instance.UpdateBackground(__instance.currentObj);
 			UpdateColorList("fade-color");
 		}
 
-		public void SetColorReactive(BackgroundEditor __instance, int _col)
+		public void SetReactiveColor(BackgroundEditor __instance, int _col)
 		{
 			CurrentSelectedBG.reactiveCol = _col;
 			__instance.UpdateBackground(__instance.currentObj);
@@ -484,7 +516,7 @@ namespace EditorManagement.Functions.Editors
 
 			for (int i = 0; i < GameManager.inst.LiveTheme.backgroundColors.Count; i++)
 				if (colorList.childCount > i)
-					colorList.GetChild(i).Find("Image").gameObject.SetActive(bg.reactiveCol == i);
+					colorList.GetChild(i).Find("Image").gameObject.SetActive(name == "fade-color" ? bg.FadeColor == i : bg.reactiveCol == i);
         }
 
 		public void CreateBackgrounds(int _amount)
