@@ -1,46 +1,15 @@
-﻿using System;
-using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-
+﻿using EditorManagement.Functions.Editors;
 using HarmonyLib;
-
+using LSFunctions;
+using RTFunctions.Functions;
+using RTFunctions.Functions.Data;
+using RTFunctions.Functions.IO;
+using System;
+using System.Collections;
+using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using LSFunctions;
-using SimpleJSON;
-using Crosstales.FB;
-using CielaSpike;
-
-using RTFunctions.Functions;
-using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Data;
-using RTFunctions.Functions.Managers;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Patchers;
-
-using EditorManagement.Functions;
-using EditorManagement.Functions.Editors;
-
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
-using EventKeyframe = DataManager.GameData.EventKeyframe;
-using Prefab = DataManager.GameData.Prefab;
-using PrefabObject = DataManager.GameData.PrefabObject;
-using BackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
-using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
-using ObjectKeyframeSelection = ObjEditor.KeyframeSelection;
-using EventKeyframeSelection = EventEditor.KeyframeSelection;
-
-using DGEase = DG.Tweening.Ease;
 
 namespace EditorManagement.Patchers
 {
@@ -314,7 +283,7 @@ namespace EditorManagement.Patchers
 				DataManager.inst.metaData.song.title = _val;
 			});
 
-			var moddedMetadata = DataManager.inst.metaData as Metadata;
+			var moddedMetadata = MetaData.Current;
 
 			var openCreatorURL = content.Find("creator/link/inputs/openurl").GetComponent<Button>();
 			openCreatorURL.onClick.ClearAll();
@@ -377,17 +346,6 @@ namespace EditorManagement.Patchers
 			});
 
 			SetToggleList();
-			//for (int i = 0; i < DataManager.inst.difficulties.Count; i++)
-			//{
-			//	int tmpIndex = i;
-			//	var toggle = content.Find("song/difficulty/toggles").GetChild(i).GetComponent<Toggle>();
-			//	toggle.onValueChanged.RemoveAllListeners();
-			//	toggle.isOn = (DataManager.inst.metaData.song.difficulty == i);
-			//	toggle.onValueChanged.AddListener(delegate (bool _val)
-			//	{
-			//		DataManager.inst.metaData.song.difficulty = tmpIndex;
-			//	});
-			//}
 
 			RenderTags();
 			content.Find("agreement/text").GetComponent<Text>().text = "Currently there is no way to upload to any online service. A custom online arcade is planned, so stay tuned! For now, " +
@@ -429,7 +387,7 @@ namespace EditorManagement.Patchers
 
 					var vg = GameData.Current.ToJSONVG();
 
-					var metadata = ((Metadata)DataManager.inst.metaData).ToJSONVG();
+					var metadata = MetaData.Current.ToJSONVG();
 
 					var path = exportPath + EditorManager.inst.currentLoadedLevel;
 
@@ -495,7 +453,7 @@ namespace EditorManagement.Patchers
 		{
 			var content = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content");
 			var parent = content.Find("creator/tags/Scroll View/Viewport/Content");
-			var moddedMetadata = DataManager.inst.metaData as Metadata;
+			var moddedMetadata = MetaData.Current;
 
 			LSHelpers.DeleteChildren(parent);
 

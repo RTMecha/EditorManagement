@@ -2124,7 +2124,7 @@ namespace EditorManagement.Functions.Editors
 
                                 var metadataVGJN = JSON.Parse(metadataVGJSON);
 
-                                var metadata = Metadata.ParseVG(metadataVGJN);
+                                var metadata = MetaData.ParseVG(metadataVGJN);
 
                                 var metadataJN = metadata.ToJSON();
 
@@ -7496,7 +7496,7 @@ namespace EditorManagement.Functions.Editors
 
                 if (metadataStr != null)
                 {
-                    var metadata = Metadata.Parse(JSON.Parse(metadataStr));
+                    var metadata = MetaData.Parse(JSON.Parse(metadataStr));
 
                     var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(path)}]");
 
@@ -7767,7 +7767,7 @@ namespace EditorManagement.Functions.Editors
             {
                 try
                 {
-                    DataManager.inst.metaData = Metadata.Parse(JSON.Parse(rawMetadataJSON));
+                    DataManager.inst.metaData = MetaData.Parse(JSON.Parse(rawMetadataJSON));
 
                     if (DataManager.inst.metaData.beatmap.game_version != "4.1.16" && DataManager.inst.metaData.beatmap.game_version != "20.4.4")
                         rawJSON = DataManager.inst.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
@@ -7830,7 +7830,7 @@ namespace EditorManagement.Functions.Editors
             if (GenerateWaveform)
             {
                 SetFileInfo($"Assigning Waveform Textures for [ {name} ]");
-                yield return AssignTimelineTexture();
+                StartCoroutine(AssignTimelineTexture());
             }
             else
             {
@@ -8292,7 +8292,7 @@ namespace EditorManagement.Functions.Editors
 
             StartCoroutine(ProjectData.Writer.SaveData(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.lsb", CreateBaseBeatmap()));
             var dataManager = DataManager.inst;
-            var metaData = new Metadata();
+            var metaData = new MetaData();
             metaData.beatmap.game_version = "4.1.16";
             metaData.song.title = __instance.newLevelName;
             metaData.creator.steam_name = SteamWrapper.inst.user.displayName;
@@ -8603,8 +8603,8 @@ namespace EditorManagement.Functions.Editors
                     }
                 case 7:
                     {
-                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => ((Metadata)x.metadata).LevelBeatmap.date_created) :
-                            EditorManager.inst.loadedLevels.OrderByDescending(x => ((Metadata)x.metadata).LevelBeatmap.date_created)).ToList();
+                        EditorManager.inst.loadedLevels = (levelAscend ? EditorManager.inst.loadedLevels.OrderBy(x => ((MetaData)x.metadata).LevelBeatmap.date_created) :
+                            EditorManager.inst.loadedLevels.OrderByDescending(x => ((MetaData)x.metadata).LevelBeatmap.date_created)).ToList();
                         break;
                     }
             }

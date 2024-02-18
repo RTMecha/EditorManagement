@@ -6,7 +6,7 @@ namespace EditorManagement.Functions
 {
     public class EditorWrapper : EditorManager.MetadataWrapper
     {
-        public EditorWrapper(GameObject gameObject, Metadata metadata, string path, Sprite sprite) : base(metadata, path, sprite)
+        public EditorWrapper(GameObject gameObject, MetaData metadata, string path, Sprite sprite) : base(metadata, path, sprite)
         {
             GameObject = gameObject;
         }
