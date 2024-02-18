@@ -89,6 +89,8 @@ namespace EditorManagement.Functions.Editors
 
         public Text intVariable;
 
+        public Toggle ignoreToggle;
+
         public void CreateModifiersOnAwake()
         {
             var bmb = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View");
@@ -100,6 +102,16 @@ namespace EditorManagement.Functions.Editors
                 intVariable = label.transform.GetChild(0).GetComponent<Text>();
                 intVariable.text = "Integer Variable: [ null ]";
                 intVariable.fontSize = 18;
+            }
+
+            {
+                var ignoreGameObject = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+                ignoreGameObject.transform.SetParent(bmb.transform.Find("Viewport/Content"));
+                ignoreGameObject.transform.localScale = Vector3.one;
+                ignoreGameObject.name = "ignore life";
+                ignoreGameObject.transform.Find("Text").GetComponent<Text>().text = "Ignore Lifespan";
+
+                ignoreToggle = ignoreGameObject.GetComponent<Toggle>();
             }
 
             var act = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
@@ -247,6 +259,13 @@ namespace EditorManagement.Functions.Editors
                 LSHelpers.DeleteChildren(content);
 
                 ((RectTransform)content.parent.parent).sizeDelta = new Vector2(351f, 300f * Mathf.Clamp(beatmapObject.modifiers.Count, 1, 5));
+
+                ignoreToggle.onValueChanged.RemoveAllListeners();
+                ignoreToggle.isOn = beatmapObject.ignoreLifespan;
+                ignoreToggle.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    beatmapObject.ignoreLifespan = _val;
+                });
 
                 int num = 0;
                 foreach (var modifier in beatmapObject.modifiers)
