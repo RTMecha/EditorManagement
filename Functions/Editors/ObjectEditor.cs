@@ -92,6 +92,11 @@ namespace EditorManagement.Functions.Editors
             });
 
             StartCoroutine(Wait());
+
+            if (!ModCompatibility.sharedFunctions.ContainsKey("RefreshObjectGUI"))
+                ModCompatibility.sharedFunctions.Add("RefreshObjectGUI", (Action<BeatmapObject>)delegate (BeatmapObject beatmapObject) { StartCoroutine(RefreshObjectGUI(beatmapObject)); });
+            if (ModCompatibility.sharedFunctions.ContainsKey("RefreshObjectGUI"))
+                ModCompatibility.sharedFunctions["RefreshObjectGUI"] = (Action<BeatmapObject>)delegate (BeatmapObject beatmapObject) { StartCoroutine(RefreshObjectGUI(beatmapObject)); };
         }
 
         void Update()
@@ -100,6 +105,11 @@ namespace EditorManagement.Functions.Editors
                 ModCompatibility.sharedFunctions.Add("SelectedObjectCount", SelectedObjectCount);
             else
                 ModCompatibility.sharedFunctions["SelectedObjectCount"] = SelectedObjectCount;
+
+            if (!ModCompatibility.sharedFunctions.ContainsKey("CurrentSelection"))
+                ModCompatibility.sharedFunctions.Add("CurrentSelection", CurrentSelection);
+            if (ModCompatibility.sharedFunctions.ContainsKey("CurrentSelection"))
+                ModCompatibility.sharedFunctions["CurrentSelection"] = CurrentSelection;
         }
 
         public IEnumerator Wait()

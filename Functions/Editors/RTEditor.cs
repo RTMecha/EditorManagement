@@ -170,6 +170,17 @@ namespace EditorManagement.Functions.Editors
             timelineSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
 
             //EditorPlugin.SetTimelineColors();
+
+            if (!ModCompatibility.sharedFunctions.ContainsKey("ParentPickerDisable"))
+                ModCompatibility.sharedFunctions.Add("ParentPickerDisable", (Action)delegate ()
+                {
+                    parentPickerEnabled = false;
+                });
+            if (ModCompatibility.sharedFunctions.ContainsKey("ParentPickerDisable"))
+                ModCompatibility.sharedFunctions["ParentPickerDisable"] = (Action)delegate ()
+                {
+                    parentPickerEnabled = false;
+                };
         }
 
         void Update()
@@ -273,6 +284,11 @@ namespace EditorManagement.Functions.Editors
                 timelinePreviewRightCap.color = GameStorageManager.inst.timelineRightCap.color;
                 timelinePreviewLine.color = GameStorageManager.inst.timelineLine.color;
             }
+
+            if (!ModCompatibility.sharedFunctions.ContainsKey("ParentPickerActive"))
+                ModCompatibility.sharedFunctions.Add("ParentPickerActive", parentPickerEnabled);
+            if (ModCompatibility.sharedFunctions.ContainsKey("ParentPickerActive"))
+                ModCompatibility.sharedFunctions["ParentPickerActive"] = parentPickerEnabled;
         }
 
         #region Variables
