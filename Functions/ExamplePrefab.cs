@@ -16,7 +16,7 @@ using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions;
 
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
+using ObjectType = RTFunctions.Functions.Data.BeatmapObject.ObjectType;
 using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
 
 namespace EditorManagement.Functions
