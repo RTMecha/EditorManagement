@@ -2138,7 +2138,7 @@ namespace EditorManagement.Functions.Editors
 
                                 var levelVGJN = JSON.Parse(levelVGJSON);
 
-                                var level = GameData.ParseVG(levelVGJN);
+                                var level = GameData.ParseVG(levelVGJN, false);
 
                                 StartCoroutine(ProjectData.Writer.SaveData(copyTo + "/level.lsb", level, delegate ()
                                 {
