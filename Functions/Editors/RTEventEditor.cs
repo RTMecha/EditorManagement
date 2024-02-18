@@ -1200,16 +1200,16 @@ namespace EditorManagement.Functions.Editors
 					{
 						var button = GameObject.Find("TimelineBar/GameObject/event");
 						{
-							//if (ModCompatibility.EventsCoreInstalled && i != 4)
-							//{
-							//	var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
-							//	var toggleLabel = di.GetChild(12).gameObject.Duplicate(dialog, "relative-label");
-							//	toggleLabel.transform.GetChild(0).GetComponent<Text>().text = "Value Additive";
-							//	var toggle = di.GetChild(13).gameObject.Duplicate(dialog, "relative");
-							//	toggle.transform.GetChild(1).GetComponent<Text>().text = "Relative";
-							//}
+                            if (ModCompatibility.EventsCoreInstalled && i != 4)
+                            {
+                                var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
+                                var toggleLabel = di.GetChild(12).gameObject.Duplicate(dialog, "relative-label");
+                                toggleLabel.transform.GetChild(0).GetComponent<Text>().text = "Value Additive";
+                                var toggle = di.GetChild(13).gameObject.Duplicate(dialog, "relative");
+                                toggle.transform.GetChild(1).GetComponent<Text>().text = "Relative";
+                            }
 
-							var edit = dialog.Find("edit");
+                            var edit = dialog.Find("edit");
 							DestroyImmediate(edit.Find("spacer").gameObject);
 
 							var copy = button.Duplicate(edit, "copy", 5);
