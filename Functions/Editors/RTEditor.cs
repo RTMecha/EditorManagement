@@ -9740,6 +9740,127 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public void PlayDialogAnimation(string dialogName, bool active)
+        {
+            if (DialogAnimations.Has(x => x.name == dialogName) && EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog.gameObject.activeSelf != active)
+            {
+                var dialogAnimation = DialogAnimations.Find(x => x.name == dialogName);
+                var dialog = EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog;
+
+                var animation = new AnimationManager.Animation("Popup Open");
+                animation.floatAnimations = new List<AnimationManager.Animation.AnimationObject<float>>
+                {
+                    new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+                    {
+                        new FloatKeyframe(0f, active ? dialogAnimation.posStart.x : dialogAnimation.posEnd.x, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.posXStartDuration : dialogAnimation.posXEndDuration, active ? dialogAnimation.posEnd.x : dialogAnimation.posStart.x, active ? Ease.GetEaseFunction(dialogAnimation.posXStartEase) : Ease.GetEaseFunction(dialogAnimation.posXEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.posXStartDuration : dialogAnimation.posXEndDuration + 0.01f, active ? dialogAnimation.posEnd.x : dialogAnimation.posStart.x, Ease.Linear),
+                    }, delegate (float x)
+                    {
+                        var pos = dialog.localPosition;
+                        pos.x = x;
+                        dialog.localPosition = pos;
+                    }),
+                    new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+                    {
+                        new FloatKeyframe(0f, active ? dialogAnimation.posStart.y : dialogAnimation.posEnd.y, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.posYStartDuration : dialogAnimation.posYEndDuration, active ? dialogAnimation.posEnd.y : dialogAnimation.posStart.y, active ? Ease.GetEaseFunction(dialogAnimation.posYStartEase) : Ease.GetEaseFunction(dialogAnimation.posYEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.posYStartDuration : dialogAnimation.posYEndDuration + 0.01f, active ? dialogAnimation.posEnd.y : dialogAnimation.posStart.y, Ease.Linear),
+                    }, delegate (float x)
+                    {
+                        var pos = dialog.localPosition;
+                        pos.y = x;
+                        dialog.localPosition = pos;
+                    }),
+                    new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+                    {
+                        new FloatKeyframe(0f, active ? dialogAnimation.scaStart.x : dialogAnimation.scaEnd.x, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.scaXStartDuration : dialogAnimation.scaXEndDuration, active ? dialogAnimation.scaEnd.x : dialogAnimation.scaStart.x, active ? Ease.GetEaseFunction(dialogAnimation.scaXStartEase) : Ease.GetEaseFunction(dialogAnimation.scaXEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.scaXStartDuration : dialogAnimation.scaXEndDuration + 0.01f, active ? dialogAnimation.scaEnd.x : dialogAnimation.scaStart.x, Ease.Linear),
+                    }, delegate (float x)
+                    {
+                        var pos = dialog.localScale;
+                        pos.x = x;
+                        dialog.localScale = pos;
+                    }),
+                    new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+                    {
+                        new FloatKeyframe(0f, active ? dialogAnimation.scaStart.y : dialogAnimation.scaEnd.y, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.scaYStartDuration : dialogAnimation.scaYEndDuration, active ? dialogAnimation.scaEnd.y : dialogAnimation.scaStart.y, active ? Ease.GetEaseFunction(dialogAnimation.scaYStartEase) : Ease.GetEaseFunction(dialogAnimation.scaYEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.scaYStartDuration : dialogAnimation.scaYEndDuration + 0.01f, active ? dialogAnimation.scaEnd.y : dialogAnimation.scaStart.y, Ease.Linear),
+                    }, delegate (float x)
+                    {
+                        var pos = dialog.localScale;
+                        pos.y = x;
+                        dialog.localScale = pos;
+                    }),
+                    new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
+                    {
+                        new FloatKeyframe(0f, active ? dialogAnimation.rotStart : dialogAnimation.rotEnd, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.rotStartDuration : dialogAnimation.rotEndDuration, active ? dialogAnimation.rotEnd : dialogAnimation.rotStart, active ? Ease.GetEaseFunction(dialogAnimation.rotStartEase) : Ease.GetEaseFunction(dialogAnimation.rotEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.rotStartDuration : dialogAnimation.rotEndDuration + 0.01f, active ? dialogAnimation.rotEnd : dialogAnimation.rotStart, Ease.Linear),
+                    }, delegate (float x)
+                    {
+                        dialog.localRotation = Quaternion.Euler(0f, 0f, x);
+                    }),
+                };
+                animation.id = LSText.randomNumString(16);
+
+                animation.onComplete = delegate ()
+                {
+                    dialog.gameObject.SetActive(active);
+
+                    dialog.localPosition = new Vector3(dialogAnimation.posEnd.x, dialogAnimation.posEnd.y, 0f);
+                    dialog.localScale = new Vector3(dialogAnimation.scaEnd.x, dialogAnimation.scaEnd.y, 1f);
+                    dialog.localRotation = Quaternion.Euler(0f, 0f, dialogAnimation.rotEnd);
+
+                    AnimationManager.inst.RemoveID(animation.id);
+                };
+
+                AnimationManager.inst.Play(animation);
+            }
+
+            if (!DialogAnimations.Has(x => x.name == dialogName) || active)
+                EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog.gameObject.SetActive(active);
+        }
+
+        public void SetDialogStatus(string dialogName, bool active, bool focus = true)
+        {
+            if (EditorManager.inst.EditorDialogsDictionary.ContainsKey(dialogName))
+            {
+                PlayDialogAnimation(dialogName, active);
+
+                if (active)
+                {
+                    if (focus)
+                    {
+                        EditorManager.inst.currentDialog = EditorManager.inst.EditorDialogsDictionary[dialogName];
+                    }
+                    if (!EditorManager.inst.ActiveDialogs.Contains(EditorManager.inst.EditorDialogsDictionary[dialogName]))
+                    {
+                        EditorManager.inst.ActiveDialogs.Add(EditorManager.inst.EditorDialogsDictionary[dialogName]);
+                    }
+                }
+                else
+                {
+                    EditorManager.inst.ActiveDialogs.Remove(EditorManager.inst.EditorDialogsDictionary[dialogName]);
+                    if (EditorManager.inst.currentDialog == EditorManager.inst.EditorDialogsDictionary[dialogName] && focus)
+                    {
+                        if (EditorManager.inst.ActiveDialogs.Count > 0)
+                        {
+                            EditorManager.inst.currentDialog = EditorManager.inst.ActiveDialogs.Last();
+                            return;
+                        }
+                        EditorManager.inst.currentDialog = new EditorManager.EditorDialog();
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogErrorFormat("{0}Can't load dialog [{1}].", new object[] { EditorManager.inst.className, dialogName });
+            }
+        }
+
         #endregion
 
         #region Misc Functions
@@ -10227,6 +10348,98 @@ namespace EditorManagement.Functions.Editors
         #endregion
 
         #region Constructors
+
+        public static List<DialogAnimation> DialogAnimations { get; set; } = new List<DialogAnimation>
+        {
+            new DialogAnimation("Open File Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.2f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.2f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            //"Open File Popup",
+            //"New File Popup",
+            //"Save As Popup",
+            //"Quick Actions Popup",
+            //"Parent Selector",
+            //"Prefab Popup",
+            //"Object Options Popup",
+            //"BG Options Popup",
+            //"Browser Popup",
+            //"Object Search Popup",
+            //"Warning Popup",
+            //"REPL Editor Popup",
+            //"Editor Properties Popup",
+            //"Documentation Popup",
+            //"Debugger Popup",
+            //"Autosaves Popup",
+            //"Default Modifiers Popup",
+            //"Keybind List Popup",
+        };
+
+        public class DialogAnimation : Exists
+        {
+            public DialogAnimation(string name)
+            {
+                this.name = name;
+            }
+
+            public string name;
+
+            public Vector2 posStart;
+            public Vector2 posEnd;
+            public float posXStartDuration;
+            public float posXEndDuration;
+            public string posXStartEase;
+            public string posXEndEase;
+            public float posYStartDuration;
+            public float posYEndDuration;
+            public string posYStartEase;
+            public string posYEndEase;
+
+            public Vector2 scaStart;
+            public Vector2 scaEnd;
+            public float scaXStartDuration;
+            public float scaXEndDuration;
+            public string scaXStartEase;
+            public string scaXEndEase;
+            public float scaYStartDuration;
+            public float scaYEndDuration;
+            public string scaYStartEase;
+            public string scaYEndEase;
+
+            public float rotStart;
+            public float rotEnd;
+            public float rotStartDuration;
+            public float rotEndDuration;
+            public string rotStartEase;
+            public string rotEndEase;
+        }
 
         public class EditorProperty : Exists
         {
