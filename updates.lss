@@ -1,3 +1,8 @@
+2.3.8 > [Feb 18, 2024]
+- Added Copy & Paste buttons to every Event Keyframe editor. Works the exact same way as Beatmap Object keyframes.
+- Event Keyframe relative toggles added, but will not be accesssible until a parsing relative values bug with RTFunctions is fixed.
+- Prefab Object offset values now can have their values flipped.
+- Fixed up the BG editor, so Reactive Type "None" is set if the BG isn't reactive and Fade Color now properly sets the value.
 2.3.7 > [Feb 17, 2024]
 - Added Parent Picker keybind and AddLayer keybind. Parent Picker acts the same way as the regular one does.
 - Fixed a bug with the Prefab offset line to appearing when multiple objects are selected and at least one of them are Prefab Objects.
