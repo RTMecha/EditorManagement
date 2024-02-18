@@ -28,6 +28,7 @@ using RTFunctions.Patchers;
 using BasePrefab = DataManager.GameData.Prefab;
 using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using BasePrefabObject = DataManager.GameData.PrefabObject;
+using EditorManagement.Functions.Components;
 
 namespace EditorManagement.Patchers
 {
@@ -147,18 +148,28 @@ namespace EditorManagement.Patchers
             // Position
             labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "pos", "Position X Offset", "Position Y Offset");
 
-            vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "position");
+            var position = vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "position");
+            var positionX = position.transform.Find("x").gameObject.AddComponent<InputFieldSwapper>();
+            positionX.Init(position.transform.Find("x").GetComponent<InputField>());
+            var positionY = position.transform.Find("y").gameObject.AddComponent<InputFieldSwapper>();
+            positionY.Init(position.transform.Find("y").GetComponent<InputField>());
 
             // Scale
             labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "sca", "Scale X Offset", "Scale Y Offset");
 
-            vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "scale");
+            var scale = vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "scale");
+            var scaleX = scale.transform.Find("x").gameObject.AddComponent<InputFieldSwapper>();
+            scaleX.Init(scale.transform.Find("x").GetComponent<InputField>());
+            var scaleY = scale.transform.Find("y").gameObject.AddComponent<InputFieldSwapper>();
+            scaleY.Init(scale.transform.Find("y").GetComponent<InputField>());
 
             // Rotation
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "rot", "Rotation Offset");
 
             var rot = vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "rotation");
             Destroy(rot.transform.GetChild(1).gameObject);
+            var rotX = rot.transform.Find("x").gameObject.AddComponent<InputFieldSwapper>();
+            rotX.Init(rot.transform.Find("x").GetComponent<InputField>());
 
             // Repeat
             labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "repeat", "Repeat Count", "Repeat Offset Time");
