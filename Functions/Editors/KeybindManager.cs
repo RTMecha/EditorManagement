@@ -26,7 +26,7 @@ using BasePrefab = DataManager.GameData.Prefab;
 using BasePrefabObject = DataManager.GameData.PrefabObject;
 using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
 
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
+using ObjectType = RTFunctions.Functions.Data.BeatmapObject.ObjectType;
 using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
 
 using SelectionType = ObjEditor.ObjectSelection.SelectionType;
