@@ -1189,6 +1189,44 @@ namespace EditorManagement.Functions.Editors
             {
 				Debug.LogError($"{EventEditor.inst.className}{ex}");
 			}
+
+            try
+            {
+				for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
+				{
+					var dialog = EventEditor.inst.dialogRight.GetChild(i);
+
+					// Relative / Copy / Paste
+					{
+						var button = GameObject.Find("TimelineBar/GameObject/event");
+						{
+							//if (ModCompatibility.EventsCoreInstalled && i != 4)
+							//{
+							//	var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
+							//	var toggleLabel = di.GetChild(12).gameObject.Duplicate(dialog, "relative-label");
+							//	toggleLabel.transform.GetChild(0).GetComponent<Text>().text = "Value Additive";
+							//	var toggle = di.GetChild(13).gameObject.Duplicate(dialog, "relative");
+							//	toggle.transform.GetChild(1).GetComponent<Text>().text = "Relative";
+							//}
+
+							var edit = dialog.Find("edit");
+							DestroyImmediate(edit.Find("spacer").gameObject);
+
+							var copy = button.Duplicate(edit, "copy", 5);
+							copy.transform.GetChild(0).GetComponent<Text>().text = "Copy";
+							copy.transform.GetComponent<Image>().color = new Color(0.24f, 0.6792f, 1f);
+							((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
+							var paste = button.Duplicate(edit, "paste", 6);
+							paste.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+							((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
+						}
+					}
+				}
+            }
+            catch (Exception ex)
+            {
+				Debug.LogError($"{EventEditor.inst.className}{ex}");
+            }
         }
 
         #endregion
@@ -1285,7 +1323,7 @@ namespace EditorManagement.Functions.Editors
 			var time = dialogTmp.Find("time");
 			var timeTime = dialogTmp.Find("time/time").GetComponent<InputField>();
 
-			var currentKeyframe = DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent];
+			var currentKeyframe = DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent] as EventKeyframe;
 
 			timeTime.onValueChanged.RemoveAllListeners();
 			timeTime.text = currentKeyframe.eventTime.ToString("f3");
@@ -1871,8 +1909,101 @@ namespace EditorManagement.Functions.Editors
 				});
 			}
 
-			RenderTitles(); // Probably need to change this to only render the singular title since that's all you see.
+			if (dialogTmp.Find("relative"))
+            {
+				var relative = dialogTmp.Find("relative").GetComponent<Toggle>();
+				relative.onValueChanged.ClearAll();
+				relative.isOn = currentKeyframe.relative;
+				relative.onValueChanged.AddListener(delegate (bool _val)
+				{
+					currentKeyframe.relative = _val;
+					EventManager.inst.updateEvents();
+				});
+			}
+
+			if (dialogTmp.Find("edit/copy") && dialogTmp.Find("edit/paste"))
+            {
+				var copy = dialogTmp.Find("edit/copy").GetComponent<Button>();
+				var paste = dialogTmp.Find("edit/paste").GetComponent<Button>();
+
+				copy.onClick.ClearAll();
+				copy.onClick.AddListener(delegate ()
+				{
+					if (copiedKeyframeDatas.Count > __instance.currentEventType)
+					{
+						copiedKeyframeDatas[__instance.currentEventType] = EventKeyframe.DeepCopy(currentKeyframe);
+						EditorManager.inst.DisplayNotification("Copied keyframe data!", 2f, EditorManager.NotificationType.Success);
+					}
+					else
+					{
+						EditorManager.inst.DisplayNotification("Keyframe type does not exist yet.", 2f, EditorManager.NotificationType.Error);
+					}
+				});
+
+				paste.onClick.ClearAll();
+				paste.onClick.AddListener(delegate ()
+				{
+					if (copiedKeyframeDatas.Count > __instance.currentEventType && copiedKeyframeDatas[__instance.currentEventType] != null)
+                    {
+
+						DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent].eventValues = copiedKeyframeDatas[__instance.currentEventType].eventValues.Copy();
+						DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent].eventRandomValues = copiedKeyframeDatas[__instance.currentEventType].eventRandomValues.Copy();
+						DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent].random = copiedKeyframeDatas[__instance.currentEventType].random;
+						((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent]).relative = copiedKeyframeDatas[__instance.currentEventType].relative;
+						RenderEventsDialog();
+						EventManager.inst.updateEvents();
+						EditorManager.inst.DisplayNotification($"Pasted {EventTypes[__instance.currentEventType]} keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+					}
+					else if (copiedKeyframeDatas.Count > __instance.currentEventType)
+					{
+						EditorManager.inst.DisplayNotification($"{EventTypes[__instance.currentEventType]} keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+					}
+					else
+					{
+						EditorManager.inst.DisplayNotification("Keyframe type does not exist yet.", 2f, EditorManager.NotificationType.Error);
+					}
+				});
+			}
+
+			RenderTitle(__instance.currentEventType);
 		}
+
+		public List<EventKeyframe> copiedKeyframeDatas = new List<EventKeyframe>
+		{
+			null, // 0
+			null, // 1
+			null, // 2
+			null, // 3
+			null, // 4
+			null, // 5
+			null, // 6
+			null, // 7
+			null, // 8
+			null, // 9
+			null, // 10
+			null, // 11
+			null, // 12
+			null, // 13
+			null, // 14
+			null, // 15
+			null, // 16
+			null, // 17
+			null, // 18
+			null, // 19
+			null, // 20
+			null, // 21
+			null, // 22
+			null, // 23
+			null, // 24
+			null, // 25
+			null, // 26
+			null, // 27
+			null, // 28
+			null, // 29
+			null, // 30
+			null, // 31
+			null, // 32
+		};
 
 		public void SetListColor(int value, int index, List<Toggle> toggles, Color defaultColor)
 		{
@@ -2330,6 +2461,15 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
         }
+
+		void RenderTitle(int i)
+		{
+			var title = EventEditor.inst.dialogRight.GetChild(i).GetChild(0);
+			var image = title.GetChild(0).GetComponent<Image>();
+			image.color = EventTitles.ElementAt(i).Value;
+			image.rectTransform.sizeDelta = new Vector2(17f, 0f);
+			title.GetChild(1).GetComponent<Text>().text = EventTitles.ElementAt(i).Key;
+		}
 
 		void RenderTitles()
 		{
