@@ -355,7 +355,10 @@ namespace EditorManagement.Patchers
 				opacity.transform.localScale = Vector3.one;
 				opacity.name = "opacity";
 
-				//Triggers.AddTooltip(opacity.gameObject, "Set the opacity percentage here.", "If the color is already slightly transparent or the object is a helper, it will multiply the current opacity value with the helper and/or color alpha values.");
+				var collisionToggle = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored").Duplicate(opacity.transform, "collision");
+
+				collisionToggle.transform.Find("Text").GetComponent<Text>().text = "Collide";
+				opacity.transform.Find("x/input").AsRT().sizeDelta = new Vector2(136f, 32f);
 			}
 
 			// Hue/Sat/Val
@@ -916,6 +919,21 @@ namespace EditorManagement.Patchers
 				}
 
 				ObjEditor.inst.timelineObjectPrefab = gameObject;
+			}
+
+			// Store Image Shape
+			{
+				if (__instance.ObjectView.transform.Find("shapesettings/7"))
+				{
+					var button = GameObject.Find("TimelineBar/GameObject/event");
+					var copy = button.Duplicate(__instance.ObjectView.transform.Find("shapesettings/7"), "set", 5);
+					var text = copy.transform.GetChild(0).GetComponent<Text>();
+					text.text = "Set Data";
+					copy.transform.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+					((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
+
+					copy.GetComponent<LayoutElement>().minWidth = 130f;
+				}
 			}
 
 			__instance.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;

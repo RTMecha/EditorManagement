@@ -1,48 +1,30 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using System.IO;
-using System.Threading.Tasks;
-
-using HarmonyLib;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using SimpleJSON;
-using Crosstales.FB;
-using TMPro;
-using LSFunctions;
-using CielaSpike;
-
+﻿using Crosstales.FB;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
 using EditorManagement.Patchers;
-
+using HarmonyLib;
+using LSFunctions;
 using RTFunctions.Functions;
-using RTFunctions.Functions.Animation;
-using RTFunctions.Functions.Animation.Keyframe;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
-
+using SimpleJSON;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
 using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using BaseEventKeyframe = DataManager.GameData.EventKeyframe;
 using BasePrefab = DataManager.GameData.Prefab;
-using BasePrefabObject = DataManager.GameData.PrefabObject;
-using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
-using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
-using BaseObjectSelection = ObjEditor.ObjectSelection;
-using BaseObjectKeyframeSelection = ObjEditor.KeyframeSelection;
-using EventKeyframeSelection = EventEditor.KeyframeSelection;
+using ObjectType = RTFunctions.Functions.Data.BeatmapObject.ObjectType;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -2536,41 +2518,7 @@ namespace EditorManagement.Functions.Editors
 
                 num++;
             }
-
-            //for (int i = 1; i <= ObjectManager.inst.objectPrefabs.Count; i++)
-            //{
-            //    int buttonTmp = i - 1;
-
-            //    if (shape.Find(i.ToString()))
-            //    {
-            //        var shoggle = shape.Find(i.ToString()).GetComponent<Toggle>();
-            //        shoggle.onValueChanged.ClearAll();
-            //        shoggle.isOn = beatmapObject.shape == buttonTmp;
-            //        shoggle.onValueChanged.AddListener(delegate (bool _value)
-            //        {
-            //            if (_value)
-            //            {
-            //                beatmapObject.shape = buttonTmp;
-            //                beatmapObject.shapeOption = 0;
-
-            //                Since shape has no affect on the timeline object, we will only need to update the physical object.
-            //                if (UpdateObjects)
-            //                    Updater.UpdateProcessor(beatmapObject, "Shape");
-
-            //                RenderShape(beatmapObject);
-            //            }
-            //        });
-
-            //        if (!shape.Find(i.ToString()).GetComponent<HoverUI>())
-            //        {
-            //            var hoverUI = shape.Find(i.ToString()).gameObject.AddComponent<HoverUI>();
-            //            hoverUI.animatePos = false;
-            //            hoverUI.animateSca = true;
-            //            hoverUI.size = 1.1f;
-            //        }
-            //    }
-            //}
-
+            
             if (beatmapObject.shape != 4 && beatmapObject.shape != 6)
             {
                 num = 0;
@@ -2592,28 +2540,6 @@ namespace EditorManagement.Functions.Editors
 
                     num++;
                 }
-
-                //for (int i = 0; i < shapeSettings.GetChild(beatmapObject.shape).childCount - 1; i++)
-                //{
-                //    int buttonTmp = i;
-                //    var shoggle = shapeSettings.GetChild(beatmapObject.shape).GetChild(i).GetComponent<Toggle>();
-
-                //    shoggle.onValueChanged.RemoveAllListeners();
-                //    shoggle.isOn = beatmapObject.shapeOption == i;
-                //    shoggle.onValueChanged.AddListener(delegate (bool _value)
-                //    {
-                //        if (_value)
-                //        {
-                //            beatmapObject.shapeOption = buttonTmp;
-
-                //            // Since shape has no affect on the timeline object, we will only need to update the physical object.
-                //            if (UpdateObjects)
-                //                Updater.UpdateProcessor(beatmapObject, "Shape");
-
-                //            RenderShape(beatmapObject);
-                //        }
-                //    });
-                //}
             }
             else if (beatmapObject.shape == 4)
             {
@@ -2638,6 +2564,41 @@ namespace EditorManagement.Functions.Editors
                     OpenImageSelector(beatmapObject);
                 });
                 shapeSettings.Find("7/text").GetComponent<Text>().text = string.IsNullOrEmpty(beatmapObject.text) ? "No image selected" : beatmapObject.text;
+
+                // Sets Image Data for transfering of Image Objects between levels.
+                var dataText = shapeSettings.Find("7/set/Text").GetComponent<Text>();
+                dataText.text = beatmapObject.ImageData == null ? "Set Data" : "Clear Data";
+                var set = shapeSettings.Find("7/set").GetComponent<Button>();
+                set.onClick.ClearAll();
+                set.onClick.AddListener(delegate ()
+                {
+                    if (beatmapObject.ImageData == null)
+                    {
+                        var regex = new System.Text.RegularExpressions.Regex(@"img\((.*?)\)");
+                        var match = regex.Match(beatmapObject.text);
+
+                        var path = match.Success ? RTFile.BasePath + match.Groups[1].ToString() : RTFile.BasePath + beatmapObject.text;
+
+                        if (RTFile.FileExists(path))
+                        {
+                            beatmapObject.ImageData = File.ReadAllBytes(path);
+                        }
+                        else
+                        {
+                            beatmapObject.ImageData = ArcadeManager.inst.defaultImage.texture.EncodeToPNG();
+                        }
+
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                    else
+                    {
+                        beatmapObject.ImageData = null;
+
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+
+                    dataText.text = beatmapObject.ImageData == null ? "Set Data" : "Clear Data";
+                });
             }
         }
 
@@ -3613,6 +3574,17 @@ namespace EditorManagement.Functions.Editors
                         });
 
                         TriggerHelper.AddEventTrigger(p.Find("opacity").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(opacity, 0.1f, 10f, 0f, 1f) });
+
+                        var collision = p.Find("opacity/collision").GetComponent<Toggle>();
+                        collision.onValueChanged.ClearAll();
+                        collision.isOn = beatmapObject.opacityCollision;
+                        collision.onValueChanged.AddListener(delegate (bool _val)
+                        {
+                            beatmapObject.opacityCollision = _val;
+                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject);
+                        });
                     }
 
                     if (p.Find("huesatval"))
