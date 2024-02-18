@@ -814,7 +814,7 @@ namespace EditorManagement.Functions.Editors
 			return dialog;
 		}
 
-		GameObject SetupColorButtons(string name, string label, Transform parent, int index, List<Toggle> toggles)
+		GameObject SetupColorButtons(string name, string label, Transform parent, int index, List<Toggle> toggles, int colorCount = 19)
 		{
 			var colors = GenerateUIElement(name, "Colors", parent, index, label);
 			var colorsObject = colors["UI"];
@@ -824,7 +824,7 @@ namespace EditorManagement.Functions.Editors
 
 			LSHelpers.DeleteChildren(colorsObject.transform);
 
-			for (int i = 0; i < 19; i++)
+			for (int i = 0; i < colorCount; i++)
 			{
 				GameObject toggle = uiDictionary["Color Button"].Duplicate(colorsObject.transform, (i + 1).ToString());
 
@@ -914,8 +914,8 @@ namespace EditorManagement.Functions.Editors
 			var gradient = GenerateEventDialog("gradient");
             {
 				var intensity = GenerateUIElement("introt", "Vector2", gradient.transform, 8, "Intensity", "Rotation");
-				var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons);
-				var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 12, gradientColor2Buttons);
+				var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons, 20);
+				var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 12, gradientColor2Buttons, 20);
 
 				var modeLabel = intensity["Label"].Duplicate(gradient.transform);
                 GenerateLabels(modeLabel.transform, "Mode");
@@ -993,6 +993,10 @@ namespace EditorManagement.Functions.Editors
 				var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
 
 				var rotation = GenerateUIElement("rotation", "Single", player.transform, 14, "Rotation");
+
+				var outOfBounds = GenerateUIElement("oob", "Bool", player.transform, 16, "Can Exit Bounds");
+				outOfBounds["UI"].transform.Find("Text").GetComponent<Text>().text = "Out of Bounds";
+
 			}
 
 			Log($"{EventEditor.inst.className}Generating Follow Player Event");
@@ -1434,7 +1438,7 @@ namespace EditorManagement.Functions.Editors
 							SetFloatInputField(dialogTmp, "anamorphic ratio/x", 3, min: -1f, max: 1f);
 							
 							// Bloom Color
-							SetListColor((int)currentKeyframe.eventValues[4], 4, bloomColorButtons, Color.white);
+							SetListColor((int)currentKeyframe.eventValues[4], 4, bloomColorButtons, Color.white, Color.black);
 						}
 						break;
 					}
@@ -1457,7 +1461,7 @@ namespace EditorManagement.Functions.Editors
 
 						// Vignette Color
 						if (EventsCore)
-							SetListColor((int)currentKeyframe.eventValues[6], 6, vignetteColorButtons, Color.black);
+							SetListColor((int)currentKeyframe.eventValues[6], 6, vignetteColorButtons, Color.black, Color.black);
 
 						break;
 					}
@@ -1560,10 +1564,10 @@ namespace EditorManagement.Functions.Editors
 						SetVector2InputField(dialogTmp, "introt", 0, 1);
 
 						// Gradient Color Top
-						SetListColor((int)currentKeyframe.eventValues[2], 2, gradientColor1Buttons, new Color(0f, 0.8f, 0.56f, 0.5f));
+						SetListColor((int)currentKeyframe.eventValues[2], 2, gradientColor1Buttons, new Color(0f, 0.8f, 0.56f, 0.5f), Color.black);
 
 						// Gradient Color Bottom
-						SetListColor((int)currentKeyframe.eventValues[3], 3, gradientColor2Buttons, new Color(0.81f, 0.37f, 1f, 0.5f));
+						SetListColor((int)currentKeyframe.eventValues[3], 3, gradientColor2Buttons, new Color(0.81f, 0.37f, 1f, 0.5f), Color.black);
 
 						// Gradient Mode (No separate method required atm)
 						{
@@ -1617,7 +1621,7 @@ namespace EditorManagement.Functions.Editors
 					}
 				case 20: // BG
 					{
-						SetListColor((int)currentKeyframe.eventValues[0], 0, bgColorButtons, GameManager.inst.LiveTheme.backgroundColor);
+						SetListColor((int)currentKeyframe.eventValues[0], 0, bgColorButtons, GameManager.inst.LiveTheme.backgroundColor, Color.black);
 
 						break;
 					}
@@ -1643,7 +1647,7 @@ namespace EditorManagement.Functions.Editors
 						SetFloatInputField(dialogTmp, "rotation/x", 5, 15f, 3f);
 
 						// Timeline Color
-						SetListColor((int)currentKeyframe.eventValues[6], 6, timelineColorButtons, GameManager.inst.LiveTheme.guiColor);
+						SetListColor((int)currentKeyframe.eventValues[6], 6, timelineColorButtons, GameManager.inst.LiveTheme.guiColor, Color.black);
 
 						break;
 					}
@@ -1655,17 +1659,13 @@ namespace EditorManagement.Functions.Editors
 						// Player Moveable
 						SetToggle(dialogTmp, "move", 1, 0, 1);
 
-						//// Player Velocity
-						//SetFloatInputField(dialogTmp, "position/x", 2);
-
-						//// Player Rotation
-						//SetFloatInputField(dialogTmp, "position/y", 3);
-
 						// Player Position
 						SetVector2InputField(dialogTmp, "position", 2, 3);
 
 						// Player Rotation
 						SetFloatInputField(dialogTmp, "rotation/x", 4, 15f, 3f);
+
+						SetToggle(dialogTmp, "oob", 5, 1, 0);
 
 						break;
 					}
@@ -1769,7 +1769,7 @@ namespace EditorManagement.Functions.Editors
 						SetFloatInputField(dialogTmp, "intensity/x", 0);
 						break;
 					}
-				case 29: // Sharpen
+				case 29: // Bars
                     {
 						SetFloatInputField(dialogTmp, "intensity/x", 0);
 
@@ -1787,31 +1787,31 @@ namespace EditorManagement.Functions.Editors
 
 						break;
 					}
-				case 30:
+				case 30: // Danger
 					{
 						SetFloatInputField(dialogTmp, "intensity/x", 0);
 
 						SetFloatInputField(dialogTmp, "size/x", 1);
 
 						// Danger Color
-						SetListColor((int)currentKeyframe.eventValues[2], 2, dangerColorButtons, new Color(0.66f, 0f, 0f));
+						SetListColor((int)currentKeyframe.eventValues[2], 2, dangerColorButtons, new Color(0.66f, 0f, 0f), Color.black);
 
 						break;
-                    } // Danger
-				case 31:
-                    {
+                    }
+				case 31: // 3D Rotation
+					{
 						SetFloatInputField(dialogTmp, "rotation/x", 0, 5f, 3f);
 						SetFloatInputField(dialogTmp, "rotation/y", 1, 5f, 3f);
 
 						break;
-                    } // 3D Rotation
-				case 32:
-                    {
+                    }
+				case 32: // Camera Depth
+					{
 						SetFloatInputField(dialogTmp, "depth/x", 0);
 						SetFloatInputField(dialogTmp, "zoom/x", 1);
 
 						break;
-                    } // Camera Depth
+                    }
 			}
 
 			// Curves
@@ -2005,7 +2005,7 @@ namespace EditorManagement.Functions.Editors
 			null, // 32
 		};
 
-		public void SetListColor(int value, int index, List<Toggle> toggles, Color defaultColor)
+		public void SetListColor(int value, int index, List<Toggle> toggles, Color defaultColor, Color secondaryDefaultColor)
 		{
 			int num = 0;
 			foreach (var toggle in toggles)
@@ -2014,19 +2014,19 @@ namespace EditorManagement.Functions.Editors
 
 				toggle.isOn = num == value;
 
-				toggle.image.color = num < 18 ? RTHelpers.BeatmapTheme.effectColors[num] : defaultColor;
+				toggle.image.color = num < 18 ? RTHelpers.BeatmapTheme.effectColors[num] : num == 19 ? secondaryDefaultColor : defaultColor;
 
 				int tmpIndex = num;
 				toggle.onValueChanged.AddListener(delegate (bool val)
 				{
 					foreach (var kf in SelectedKeyframes.Where(x => x.Type == EventEditor.inst.currentEventType))
 					{
-						kf.GetData<EventKeyframe>().eventValues[index] = value;
+						kf.GetData<EventKeyframe>().eventValues[index] = tmpIndex;
 					}
 
 					EventManager.inst.updateEvents();
 
-					SetListColor(tmpIndex, index, toggles, defaultColor);
+					SetListColor(tmpIndex, index, toggles, defaultColor, secondaryDefaultColor);
 				});
 				num++;
 			}
