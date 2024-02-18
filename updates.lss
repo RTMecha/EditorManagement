@@ -1,3 +1,6 @@
+2.3.9 > [Feb 18, 2024]
+- Fully implemented relative Event Keyframes in editor.
+- Selecting an object in the Preview window while parent picker is active will parent the current selected object to the object you just selected in the Preview.
 2.3.8 > [Feb 18, 2024]
 - Added Copy & Paste buttons to every Event Keyframe editor. Works the exact same way as Beatmap Object keyframes.
 - Event Keyframe relative toggles added, but will not be accesssible until a parsing relative values bug with RTFunctions is fixed.
