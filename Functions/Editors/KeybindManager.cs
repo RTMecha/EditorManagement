@@ -862,6 +862,8 @@ namespace EditorManagement.Functions.Editors
                     case "external":
                     case "useid":
                     case "remove prefab instance id":
+                    case "create keyframe":
+                    case "use nearest":
                         {
                             var bar = Instantiate(singleInput);
                             Destroy(bar.GetComponent<InputField>());
@@ -1842,16 +1844,46 @@ namespace EditorManagement.Functions.Editors
 
         public static void TransformPosition(Keybind keybind)
         {
+            if (keybind.settings.ContainsKey("Create Keyframe") && bool.TryParse(keybind.settings["Create Keyframe"], out bool createKeyframe))
+            {
+                inst.createKeyframe = createKeyframe;
+            }
+
+            if (keybind.settings.ContainsKey("Use Nearest") && bool.TryParse(keybind.settings["Use Nearest"], out bool useNearest))
+            {
+                inst.useNearest = useNearest;
+            }
+
             inst.SetValues(0);
         }
         
         public static void TransformScale(Keybind keybind)
         {
+            if (keybind.settings.ContainsKey("Create Keyframe") && bool.TryParse(keybind.settings["Create Keyframe"], out bool createKeyframe))
+            {
+                inst.createKeyframe = createKeyframe;
+            }
+
+            if (keybind.settings.ContainsKey("Use Nearest") && bool.TryParse(keybind.settings["Use Nearest"], out bool useNearest))
+            {
+                inst.useNearest = useNearest;
+            }
+
             inst.SetValues(1);
         }
         
         public static void TransformRotation(Keybind keybind)
         {
+            if (keybind.settings.ContainsKey("Create Keyframe") && bool.TryParse(keybind.settings["Create Keyframe"], out bool createKeyframe))
+            {
+                inst.createKeyframe = createKeyframe;
+            }
+
+            if (keybind.settings.ContainsKey("Use Nearest") && bool.TryParse(keybind.settings["Use Nearest"], out bool useNearest))
+            {
+                inst.useNearest = useNearest;
+            }
+
             inst.SetValues(2);
         }
 
@@ -2016,9 +2048,21 @@ namespace EditorManagement.Functions.Editors
             null, // 51
             null, // 52
             null, // 53
-            null, // 54
-            null, // 55
-            null, // 56
+            new Dictionary<string, string>
+            {
+                { "Create Keyframe", "True" },
+                { "Use Nearest", "True" },
+            }, // 54
+            new Dictionary<string, string>
+            {
+                { "Create Keyframe", "True" },
+                { "Use Nearest", "True" },
+            }, // 55
+            new Dictionary<string, string>
+            {
+                { "Create Keyframe", "True" },
+                { "Use Nearest", "True" },
+            }, // 56
             null, // 57
             null, // 58
             null, // 59
@@ -2226,24 +2270,33 @@ namespace EditorManagement.Functions.Editors
                 nextIndex = beatmapObject.events[type].Count - 1;
 
             int index;
-            if (beatmapObject.events[type].Has(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f))
+            if (beatmapObject.events[type].Has(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f) && useNearest)
             {
                 selectedKeyframe = (EventKeyframe)beatmapObject.events[type].Find(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f);
                 index = beatmapObject.events[type].FindIndex(x => x.eventTime > timeOffset - 0.1f && x.eventTime < timeOffset + 0.1f);
                 AudioManager.inst.CurrentAudioSource.time = selectedKeyframe.eventTime + beatmapObject.StartTime;
             }
-            else
+            else if (createKeyframe)
             {
                 selectedKeyframe = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[type][nextIndex]);
                 selectedKeyframe.eventTime = timeOffset;
                 index = beatmapObject.events[type].Count;
                 beatmapObject.events[type].Add(selectedKeyframe);
             }
+            else
+            {
+                selectedKeyframe = (EventKeyframe)beatmapObject.events[type][0];
+                index = 0;
+            }
+
             originalValues = selectedKeyframe.eventValues.Copy();
 
             ObjectEditor.inst.RenderKeyframes(beatmapObject);
             ObjectEditor.inst.SetCurrentKeyframe(beatmapObject, type, index, false, false);
         }
+
+        public bool createKeyframe = true;
+        public bool useNearest = true;
 
         public int currentType;
 
@@ -2309,6 +2362,16 @@ namespace EditorManagement.Functions.Editors
                 {
                     if (!dictionary.ContainsKey(jn["settings"][i]))
                         dictionary.Add(jn["settings"][i]["type"], jn["settings"][i]["value"]);
+                }
+
+                var setting = inst.Settings[actionType];
+                if (setting != null)
+                {
+                    foreach (var keyValuePair in setting)
+                    {
+                        if (!dictionary.ContainsKey(keyValuePair.Key))
+                            dictionary.Add(keyValuePair.Key, keyValuePair.Value);
+                    }
                 }
 
                 return new Keybind(id, keys, actionType, dictionary);
