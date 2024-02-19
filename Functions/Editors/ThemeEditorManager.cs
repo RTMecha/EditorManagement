@@ -19,6 +19,7 @@ using RTFunctions.Functions.Managers;
 
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
+using System.IO;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -29,6 +30,8 @@ namespace EditorManagement.Functions.Editors
 		public bool loadingThemes = false;
 
 		public static void Init(ThemeEditor themeEditor) => themeEditor?.gameObject?.AddComponent<ThemeEditorManager>();
+
+		public List<BeatmapTheme> AllThemes => DataManager.inst.AllThemes.Select(x => x as BeatmapTheme).ToList();
 
 		void Awake()
         {
@@ -86,6 +89,7 @@ namespace EditorManagement.Functions.Editors
 				LSHelpers.DeleteChildren(themeContent);
 
 				//StartCoroutine(Wait());
+				CreateThemePopup();
 			}
 			catch (Exception ex)
             {
@@ -93,37 +97,446 @@ namespace EditorManagement.Functions.Editors
             }
 		}
 
+		public GameObject themePopupPanelPrefab;
+
+        public string themeSearch;
+		public int themePage;
+        public Transform themeContent;
+        public void CreateThemePopup()
+		{
+			try
+			{
+				var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+					.Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Theme Popup");
+				objectSearch.transform.localPosition = Vector3.zero;
+
+				var objectSearchRT = (RectTransform)objectSearch.transform;
+				objectSearchRT.sizeDelta = new Vector2(600f, 450f);
+				var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
+				objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
+				objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Beatmap Themes";
+				((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
+				objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 362f);
+
+				var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
+				x.onClick.RemoveAllListeners();
+				x.onClick.AddListener(delegate ()
+				{
+					EditorManager.inst.HideDialog("Theme Popup");
+				});
+
+				var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
+				searchBar.onValueChanged.ClearAll();
+				searchBar.onValueChanged.AddListener(delegate (string _value)
+				{
+					themeSearch = _value;
+					RefreshThemeSearch();
+				});
+				searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for theme...";
+
+				EditorHelper.AddEditorDropdown("View Themes", "", "View", RTEditor.inst.SearchSprite, delegate ()
+				{
+					EditorManager.inst.ShowDialog("Theme Popup");
+					RefreshThemeSearch();
+				});
+
+				themeContent = objectSearch.transform.Find("mask/content");
+
+				EditorHelper.AddEditorPopup("Theme Popup", objectSearch);
+
+
+				var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+
+                {
+					var page = singleInput.Duplicate(objectSearchPanel, "page");
+					page.transform.AsRT().anchoredPosition = new Vector2(340f, 0f);
+
+					Destroy(page.GetComponent<EventInfo>());
+					Destroy(page.GetComponent<EventTrigger>());
+					Destroy(page.GetComponent<InputField>());
+
+					page.transform.localScale = Vector3.one;
+					page.transform.GetChild(0).localScale = Vector3.one;
+
+					var input = page.transform.Find("input");
+
+					var xif = input.gameObject.AddComponent<InputField>();
+					xif.onValueChanged.RemoveAllListeners();
+					xif.textComponent = input.Find("Text").GetComponent<Text>();
+					xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
+					xif.characterValidation = InputField.CharacterValidation.Integer;
+					xif.text = themePage.ToString();
+					xif.onValueChanged.AddListener(delegate (string _val)
+					{
+						if (int.TryParse(_val, out int p))
+                        {
+							themePage = p;
+							RefreshThemeSearch();
+                        }
+					});
+
+					TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif, max: int.MaxValue) });
+
+					TriggerHelper.IncreaseDecreaseButtonsInt(xif, max: int.MaxValue, t: page.transform);
+				}
+
+				// Prefab
+				{
+					themePopupPanelPrefab = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"theme panel");
+
+					var nameText = themePopupPanelPrefab.transform.GetChild(0).GetComponent<Text>();
+					nameText.transform.AsRT().anchoredPosition = new Vector2(2f, 160f);
+					nameText.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+					nameText.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
+					nameText.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+					nameText.text = "theme";
+
+					// Misc Colors
+					{
+						var objectColorsLabel = themePopupPanelPrefab.transform.GetChild(0).gameObject.Duplicate(themePopupPanelPrefab.transform, "label");
+						objectColorsLabel.transform.AsRT().anchoredPosition = new Vector2(2f, 125f);
+						objectColorsLabel.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+						objectColorsLabel.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
+						objectColorsLabel.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+						objectColorsLabel.GetComponent<Text>().text = "Background / GUI / Tail Colors";
+
+						var objectColors = new GameObject("misc colors");
+						objectColors.transform.SetParent(themePopupPanelPrefab.transform);
+						objectColors.transform.localScale = Vector3.one;
+
+						var objectColorsRT = objectColors.AddComponent<RectTransform>();
+						objectColorsRT.anchoredPosition = new Vector2(13f, 90f);
+						objectColorsRT.sizeDelta = new Vector2(600f, 32f);
+						var objectColorsGLG = objectColors.AddComponent<GridLayoutGroup>();
+						objectColorsGLG.cellSize = new Vector2(28f, 28f);
+						objectColorsGLG.spacing = new Vector2(4f, 4f);
+
+						for (int i = 0; i < 3; i++)
+						{
+							var colorSlot = new GameObject($"{i + 1}");
+							colorSlot.transform.SetParent(objectColorsRT);
+							colorSlot.transform.localScale = Vector3.one;
+
+							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
+							var colorSlotImage = colorSlot.AddComponent<Image>();
+						}
+					}
+
+					// Player Colors
+					{
+						var objectColorsLabel = themePopupPanelPrefab.transform.GetChild(0).gameObject.Duplicate(themePopupPanelPrefab.transform, "label");
+						objectColorsLabel.transform.AsRT().anchoredPosition = new Vector2(2f, 65f);
+						objectColorsLabel.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+						objectColorsLabel.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
+						objectColorsLabel.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+						objectColorsLabel.GetComponent<Text>().text = "Player Colors";
+
+						var objectColors = new GameObject("player colors");
+						objectColors.transform.SetParent(themePopupPanelPrefab.transform);
+						objectColors.transform.localScale = Vector3.one;
+
+						var objectColorsRT = objectColors.AddComponent<RectTransform>();
+						objectColorsRT.anchoredPosition = new Vector2(13f, 30f);
+						objectColorsRT.sizeDelta = new Vector2(600f, 32f);
+						var objectColorsGLG = objectColors.AddComponent<GridLayoutGroup>();
+						objectColorsGLG.cellSize = new Vector2(28f, 28f);
+						objectColorsGLG.spacing = new Vector2(4f, 4f);
+
+						for (int i = 0; i < 4; i++)
+						{
+							var colorSlot = new GameObject($"{i + 1}");
+							colorSlot.transform.SetParent(objectColorsRT);
+							colorSlot.transform.localScale = Vector3.one;
+
+							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
+							var colorSlotImage = colorSlot.AddComponent<Image>();
+						}
+					}
+
+					// Object Colors
+					{
+						var objectColorsLabel = themePopupPanelPrefab.transform.GetChild(0).gameObject.Duplicate(themePopupPanelPrefab.transform, "label");
+						objectColorsLabel.transform.AsRT().anchoredPosition = new Vector2(2f, 5f);
+						objectColorsLabel.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+						objectColorsLabel.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
+						objectColorsLabel.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+						objectColorsLabel.GetComponent<Text>().text = "Object Colors";
+
+						var objectColors = new GameObject("object colors");
+						objectColors.transform.SetParent(themePopupPanelPrefab.transform);
+						objectColors.transform.localScale = Vector3.one;
+
+						var objectColorsRT = objectColors.AddComponent<RectTransform>();
+						objectColorsRT.anchoredPosition = new Vector2(13f, -30f);
+						objectColorsRT.sizeDelta = new Vector2(600f, 32f);
+						var objectColorsGLG = objectColors.AddComponent<GridLayoutGroup>();
+						objectColorsGLG.cellSize = new Vector2(28f, 28f);
+						objectColorsGLG.spacing = new Vector2(4f, 4f);
+
+						for (int i = 0; i < 18; i++)
+						{
+							var colorSlot = new GameObject($"{i + 1}");
+							colorSlot.transform.SetParent(objectColorsRT);
+							colorSlot.transform.localScale = Vector3.one;
+
+							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
+							var colorSlotImage = colorSlot.AddComponent<Image>();
+						}
+					}
+
+					// Background Colors
+					{
+						var objectColorsLabel = themePopupPanelPrefab.transform.GetChild(0).gameObject.Duplicate(themePopupPanelPrefab.transform, "label");
+						objectColorsLabel.transform.AsRT().anchoredPosition = new Vector2(2f, -55f);
+						objectColorsLabel.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+						objectColorsLabel.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
+						objectColorsLabel.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+						objectColorsLabel.GetComponent<Text>().text = "Background Colors";
+
+						var objectColors = new GameObject("background colors");
+						objectColors.transform.SetParent(themePopupPanelPrefab.transform);
+						objectColors.transform.localScale = Vector3.one;
+
+						var objectColorsRT = objectColors.AddComponent<RectTransform>();
+						objectColorsRT.anchoredPosition = new Vector2(13f, -90f);
+						objectColorsRT.sizeDelta = new Vector2(600f, 32f);
+						var objectColorsGLG = objectColors.AddComponent<GridLayoutGroup>();
+						objectColorsGLG.cellSize = new Vector2(28f, 28f);
+						objectColorsGLG.spacing = new Vector2(4f, 4f);
+
+						for (int i = 0; i < 9; i++)
+						{
+							var colorSlot = new GameObject($"{i + 1}");
+							colorSlot.transform.SetParent(objectColorsRT);
+							colorSlot.transform.localScale = Vector3.one;
+
+							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
+							var colorSlotImage = colorSlot.AddComponent<Image>();
+						}
+					}
+
+					// Effect Colors
+					{
+						var objectColorsLabel = themePopupPanelPrefab.transform.GetChild(0).gameObject.Duplicate(themePopupPanelPrefab.transform, "label");
+						objectColorsLabel.transform.AsRT().anchoredPosition = new Vector2(2f, -115f);
+						objectColorsLabel.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
+						objectColorsLabel.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
+						objectColorsLabel.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+						objectColorsLabel.GetComponent<Text>().text = "Effect Colors";
+
+						var objectColors = new GameObject("effect colors");
+						objectColors.transform.SetParent(themePopupPanelPrefab.transform);
+						objectColors.transform.localScale = Vector3.one;
+
+						var objectColorsRT = objectColors.AddComponent<RectTransform>();
+						objectColorsRT.anchoredPosition = new Vector2(13f, -150f);
+						objectColorsRT.sizeDelta = new Vector2(600f, 32f);
+						var objectColorsGLG = objectColors.AddComponent<GridLayoutGroup>();
+						objectColorsGLG.cellSize = new Vector2(28f, 28f);
+						objectColorsGLG.spacing = new Vector2(4f, 4f);
+
+						for (int i = 0; i < 18; i++)
+						{
+							var colorSlot = new GameObject($"{i + 1}");
+							colorSlot.transform.SetParent(objectColorsRT);
+							colorSlot.transform.localScale = Vector3.one;
+
+							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
+							var colorSlotImage = colorSlot.AddComponent<Image>();
+						}
+					}
+				}
+
+                // Theme Dialog
+                {
+
+					var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
+					var editorDialogTransform = editorDialogObject.transform;
+					editorDialogObject.name = "ThemeDialog";
+					editorDialogObject.layer = 5;
+					editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
+					editorDialogTransform.localScale = Vector3.one;
+					editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
+					editorDialogTransform.AsRT().sizeDelta = new Vector2(0f, 32f);
+
+					var editorDialogTitle = editorDialogTransform.GetChild(0);
+					editorDialogTitle.GetComponent<Image>().color = new Color(0.2471f, 0.4275f, 0.451f, 1f);
+					var documentationTitle = editorDialogTitle.GetChild(0).GetComponent<Text>();
+					documentationTitle.text = "- Theme View -";
+					documentationTitle.color = new Color(0.9f, 0.9f, 0.9f, 1f);
+
+					var editorDialogSpacer = editorDialogTransform.GetChild(1);
+					editorDialogSpacer.AsRT().sizeDelta = new Vector2(765f, 54f);
+
+					var go1 = editorDialogTransform.GetChild(1).gameObject;
+					var go2 = editorDialogTransform.GetChild(2).gameObject;
+					Destroy(go1);
+					Destroy(go2);
+
+					{
+						var spacer = new GameObject("spacer");
+						spacer.transform.SetParent(editorDialogTransform);
+						spacer.transform.localScale = Vector3.one;
+
+						var spacerRT = spacer.AddComponent<RectTransform>();
+						spacerRT.sizeDelta = new Vector2(765f, 260f);
+					}
+
+					var buttonsBase = new GameObject("buttons base");
+					buttonsBase.transform.SetParent(editorDialogTransform);
+					buttonsBase.transform.localScale = Vector3.one;
+
+					var buttonsBaseRT = buttonsBase.AddComponent<RectTransform>();
+					buttonsBaseRT.sizeDelta = new Vector2(765f, 0f);
+
+					var buttons = new GameObject("buttons");
+					buttons.transform.SetParent(buttonsBaseRT);
+					buttons.transform.localScale = Vector3.one;
+
+					var buttonsHLG = buttons.AddComponent<HorizontalLayoutGroup>();
+					buttonsHLG.spacing = 60f;
+
+					buttons.transform.AsRT().sizeDelta = new Vector2(600f, 32f);
+
+					var tfv = ObjEditor.inst.ObjectView.transform;
+
+					var importPrefab = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform);
+					importPrefab.SetActive(true);
+					importPrefab.name = "use";
+					this.useTheme = importPrefab.GetComponent<Button>();
+					importPrefab.transform.GetChild(0).GetComponent<Text>().text = "Use Theme";
+
+					var exportToVG = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform);
+					exportToVG.SetActive(true);
+					exportToVG.name = "export";
+					this.exportToVG = exportToVG.GetComponent<Button>();
+					exportToVG.transform.GetChild(0).GetComponent<Text>().text = "Convert to VG Format";
+
+					EditorHelper.AddEditorDialog("Theme Dialog", editorDialogObject);
+				}
+			}
+			catch (Exception ex)
+			{
+				Debug.LogError(ex);
+			}
+		}
+
+		public Button useTheme;
+		public Button exportToVG;
+
+		public static int themesPerPage = 10;
+		public void RefreshThemeSearch()
+		{
+			LSHelpers.DeleteChildren(themeContent);
+
+			var layer = themePage + 1;
+
+			int num = 0;
+			foreach (var beatmapTheme in AllThemes)
+			{
+				int max = layer * themesPerPage;
+
+				var name = beatmapTheme.name == null ? "theme" : beatmapTheme.name;
+				if ((string.IsNullOrEmpty(themeSearch) || name.ToLower().Contains(themeSearch.ToLower())))
+				{
+					if (num >= max - themesPerPage && num < max)
+					{
+						var gameObject = themePopupPanelPrefab.Duplicate(themeContent, name);
+						gameObject.transform.localScale = Vector3.one;
+						gameObject.transform.GetChild(0).GetComponent<Text>().text = name;
+
+						gameObject.transform.Find("misc colors").GetChild(0).GetComponent<Image>().color = beatmapTheme.backgroundColor;
+						gameObject.transform.Find("misc colors").GetChild(1).GetComponent<Image>().color = beatmapTheme.guiColor;
+						gameObject.transform.Find("misc colors").GetChild(2).GetComponent<Image>().color = beatmapTheme.guiAccentColor;
+
+						for (int i = 0; i < beatmapTheme.playerColors.Count; i++)
+						{
+							if (gameObject.transform.TryFind($"player colors/{i + 1}", out Transform colorSlot))
+							{
+								colorSlot.GetComponent<Image>().color = beatmapTheme.playerColors[i];
+							}
+						}
+
+						for (int i = 0; i < beatmapTheme.objectColors.Count; i++)
+						{
+							if (gameObject.transform.TryFind($"object colors/{i + 1}", out Transform colorSlot))
+							{
+								colorSlot.GetComponent<Image>().color = beatmapTheme.objectColors[i];
+							}
+						}
+
+						for (int i = 0; i < beatmapTheme.backgroundColors.Count; i++)
+						{
+							if (gameObject.transform.TryFind($"background colors/{i + 1}", out Transform colorSlot))
+							{
+								colorSlot.GetComponent<Image>().color = beatmapTheme.backgroundColors[i];
+							}
+						}
+
+						for (int i = 0; i < beatmapTheme.effectColors.Count; i++)
+						{
+							if (gameObject.transform.TryFind($"effect colors/{i + 1}", out Transform colorSlot))
+							{
+								colorSlot.GetComponent<Image>().color = beatmapTheme.effectColors[i];
+							}
+						}
+
+						var button = gameObject.GetComponent<Button>();
+						button.onClick.ClearAll();
+						button.onClick.AddListener(delegate ()
+						{
+							EditorManager.inst.ShowDialog("Theme Dialog");
+							RenderPrefabExternalDialog(beatmapTheme);
+						});
+					}
+
+					num++;
+				}
+            }
+        }
+
+		public void RenderPrefabExternalDialog(BeatmapTheme beatmapTheme)
+		{
+			useTheme.onClick.ClearAll();
+			useTheme.onClick.AddListener(delegate ()
+			{
+				if (EventEditor.inst.currentEventType == 4 && int.TryParse(beatmapTheme.id, out int id))
+				{
+					DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = id;
+					EventManager.inst.updateEvents();
+				}
+			});
+
+			exportToVG.onClick.ClearAll();
+			exportToVG.onClick.AddListener(delegate ()
+			{
+				var exportPath = RTEditor.GetEditorProperty("Convert Theme LS to VG Export Path").GetConfigEntry<string>().Value;
+
+				if (string.IsNullOrEmpty(exportPath))
+				{
+					if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+						Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+					exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+				}
+
+				if (!string.IsNullOrEmpty(exportPath) && exportPath[exportPath.Length - 1] != '/')
+					exportPath += "/";
+
+				if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+				{
+					EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+					return;
+				}
+
+				var vgjn = beatmapTheme.ToJSONVG();
+
+				RTFile.WriteToFile($"{exportPath}{beatmapTheme.name.ToLower()}.vgt", vgjn.ToString());
+
+				EditorManager.inst.DisplayNotification($"Converted Theme {beatmapTheme.name.ToLower()}.lst from LS format to VG format and saved to {beatmapTheme.name.ToLower()}.vgt!", 4f, EditorManager.NotificationType.Success);
+			});
+		}
+
 		public static int ThemePreviewColorCount => 4;
-		public static int ThemePoolCount => 400;
-        //public IEnumerator Wait()
-        //{
-        //    while (!EventEditor.inst || !EventEditor.inst.dialogRight)
-        //        yield return null;
-
-        //    // Theme Panel adjustments for optimization
-        //    {
-        //        var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
-        //        var parent = dialogTmp.Find("themes/viewport/content");
-        //        LSHelpers.DeleteChildren(parent);
-
-        //        var cr = Instantiate(EventEditor.inst.ThemeAdd);
-        //        cr.name = "Create New";
-        //        var tf = cr.transform;
-        //        tf.SetParent(parent);
-        //        cr.SetActive(true);
-        //        tf.localScale = Vector2.one;
-        //        cr.GetComponent<Button>().onClick.AddListener(delegate ()
-        //        {
-        //            RenderThemeEditor();
-        //        });
-
-        //        for (int i = 0; i < ThemePoolCount; i++)
-        //        {
-        //            GenerateThemePanel(parent);
-        //        }
-        //    }
-        //}
-
         public ThemePanel GenerateThemePanel(Transform parent)
 		{
 			var gameObject = EventEditor.inst.ThemePanel.Duplicate(parent);
@@ -637,7 +1050,7 @@ namespace EditorManagement.Functions.Editors
 			if (string.IsNullOrEmpty(_theme.id))
 				_theme.id = LSText.randomNumString(BeatmapTheme.IDLength);
 
-			GameData.SaveOpacityToThemes = RTEditor.GetEditorProperty("Saving Saves Beatmap Opacity").GetConfigEntry<bool>().Value;
+			GameData.SaveOpacityToThemes = RTEditor.GetEditorProperty("Saving Saves Theme Opacity").GetConfigEntry<bool>().Value;
 			
 			var str = RTEditor.GetEditorProperty("Theme Saves Indents").GetConfigEntry<bool>().Value ? _theme.ToJSON().ToString(3) : _theme.ToJSON().ToString();
 			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst", str);
