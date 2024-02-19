@@ -26,7 +26,7 @@ using RTFunctions.Patchers;
 using BasePrefab = DataManager.GameData.Prefab;
 using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using BasePrefabObject = DataManager.GameData.PrefabObject;
-
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -73,7 +73,6 @@ namespace EditorManagement.Functions.Editors
         void Awake()
         {
             inst = this;
-
         }
 
         void Start()
@@ -179,79 +178,87 @@ namespace EditorManagement.Functions.Editors
             scrollRectSR.content = contentRT;
 
             // Prefab Type Prefab
-            try
-            {
-                prefabTypePrefab = new GameObject("Prefab Type");
-                prefabTypePrefab.transform.localScale = Vector3.one;
-                var rectTransform = prefabTypePrefab.AddComponent<RectTransform>();
-                rectTransform.sizeDelta = new Vector2(400f, 32f);
-                var image = prefabTypePrefab.AddComponent<Image>();
-                image.color = new Color(0.2f, 0.2f, 0.2f);
+            prefabTypePrefab = new GameObject("Prefab Type");
+            prefabTypePrefab.transform.localScale = Vector3.one;
+            var rectTransform = prefabTypePrefab.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(400f, 32f);
+            var image = prefabTypePrefab.AddComponent<Image>();
+            image.color = new Color(0.2f, 0.2f, 0.2f);
 
-                var horizontalLayoutGroup = prefabTypePrefab.AddComponent<HorizontalLayoutGroup>();
-                horizontalLayoutGroup.childControlWidth = false;
-                horizontalLayoutGroup.childForceExpandWidth = false;
-                horizontalLayoutGroup.spacing = 4;
+            var horizontalLayoutGroup = prefabTypePrefab.AddComponent<HorizontalLayoutGroup>();
+            horizontalLayoutGroup.childControlWidth = false;
+            horizontalLayoutGroup.childForceExpandWidth = false;
+            horizontalLayoutGroup.spacing = 4;
 
-                var toggleType = prefabTypeTogglePrefab.Duplicate(rectTransform, "Toggle");
-                toggleType.transform.localScale = Vector3.one;
-                var toggleTypeRT = (RectTransform)toggleType.transform;
-                toggleTypeRT.sizeDelta = new Vector2(32f, 32f);
-                Destroy(toggleTypeRT.Find("text").gameObject);
-                toggleTypeRT.Find("Background/Checkmark").GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f);
+            var toggleType = prefabTypeTogglePrefab.Duplicate(rectTransform, "Toggle");
+            toggleType.transform.localScale = Vector3.one;
+            var toggleTypeRT = (RectTransform)toggleType.transform;
+            toggleTypeRT.sizeDelta = new Vector2(32f, 32f);
+            Destroy(toggleTypeRT.Find("text").gameObject);
+            toggleTypeRT.Find("Background/Checkmark").GetComponent<Image>().color = new Color(0.2f, 0.2f, 0.2f);
 
-                var toggleTog = toggleType.GetComponent<Toggle>();
-                toggleTog.enabled = true;
-                toggleTog.group = null;
+            var toggleTog = toggleType.GetComponent<Toggle>();
+            toggleTog.enabled = true;
+            toggleTog.group = null;
 
-                var icon = new GameObject("Icon");
-                icon.transform.localScale = Vector3.one;
-                icon.transform.SetParent(toggleTypeRT);
-                icon.transform.localScale = Vector3.one;
-                var iconRT = icon.AddComponent<RectTransform>();
-                iconRT.anchoredPosition = Vector2.zero;
-                iconRT.sizeDelta = new Vector2(32f, 32f);
+            var icon = new GameObject("Icon");
+            icon.transform.localScale = Vector3.one;
+            icon.transform.SetParent(toggleTypeRT);
+            icon.transform.localScale = Vector3.one;
+            var iconRT = icon.AddComponent<RectTransform>();
+            iconRT.anchoredPosition = Vector2.zero;
+            iconRT.sizeDelta = new Vector2(32f, 32f);
 
-                var iconImage = icon.AddComponent<Image>();
+            var iconImage = icon.AddComponent<Image>();
 
-                //var spacer = new GameObject("Spacer");
-                //spacer.transform.SetParent(rectTransform);
-                //spacer.transform.localScale = Vector3.one;
-                //var spacerRT = spacer.AddComponent<RectTransform>();
-                //spacerRT.sizeDelta = new Vector2(32f, 32f);
+            var nameGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Name");
+            nameGO.transform.localScale = Vector3.one;
+            var nameRT = nameGO.GetComponent<RectTransform>();
+            nameRT.sizeDelta = new Vector2(132f, 32f);
 
-                var nameGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Name");
-                nameGO.transform.localScale = Vector3.one;
-                var nameRT = nameGO.GetComponent<RectTransform>();
-                nameRT.sizeDelta = new Vector2(163f, 32f);
+            var nameTextRT = (RectTransform)nameRT.Find("Text");
+            nameTextRT.anchoredPosition = new Vector2(0f, 0f);
+            nameTextRT.sizeDelta = new Vector2(0f, 0f);
 
-                var nameTextRT = (RectTransform)nameRT.Find("Text");
-                nameTextRT.anchoredPosition = new Vector2(0f, 0f);
-                nameTextRT.sizeDelta = new Vector2(0f, 0f);
+            nameTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
 
-                nameTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+            var colorGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Color");
+            colorGO.transform.localScale = Vector3.one;
+            var colorRT = colorGO.GetComponent<RectTransform>();
+            colorRT.sizeDelta = new Vector2(90f, 32f);
 
-                var colorGO = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Color");
-                colorGO.transform.localScale = Vector3.one;
-                var colorRT = colorGO.GetComponent<RectTransform>();
-                colorRT.sizeDelta = new Vector2(163f, 32f);
+            var colorTextRT = (RectTransform)colorRT.Find("Text");
+            colorTextRT.anchoredPosition = new Vector2(0f, 0f);
+            colorTextRT.sizeDelta = new Vector2(0f, 0f);
 
-                var colorTextRT = (RectTransform)colorRT.Find("Text");
-                colorTextRT.anchoredPosition = new Vector2(0f, 0f);
-                colorTextRT.sizeDelta = new Vector2(0f, 0f);
+            colorTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
 
-                colorTextRT.GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
+            var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(rectTransform, "Delete");
+            delete.transform.localScale = Vector3.one;
+            ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
 
-                var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(rectTransform, "Delete");
-                delete.transform.localScale = Vector3.one;
-                ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError(ex);
-            }
+            var button = GameObject.Find("TimelineBar/GameObject/event");
+
+            var setIcon = button.Duplicate(rectTransform, "Set Icon");
+            var text = setIcon.transform.GetChild(0).GetComponent<Text>();
+            text.text = "Set Icon";
+            setIcon.transform.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+            ((RectTransform)setIcon.transform).sizeDelta = new Vector2(95f, 32f);
+
+            Destroy(setIcon.GetComponent<LayoutElement>());
 
             EditorHelper.AddEditorPopup("Prefab Types Popup", gameObject);
+
+            EditorHelper.AddEditorDropdown("View Prefab Types", "", "View", RTEditor.inst.SearchSprite, delegate ()
+            {
+                OpenPrefabTypePopup(delegate (int index)
+                {
+                    PrefabEditor.inst.NewPrefabType = index;
+                    if (PrefabEditor.inst.dialog)
+                        PrefabEditor.inst.dialog.Find("data/type/Show Type Editor").GetComponent<Image>().color =
+                            DataManager.inst.PrefabTypes[Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, DataManager.inst.PrefabTypes.Count - 1)].Color;
+                });
+            });
         }
 
         public void SavePrefabTypes()
@@ -268,8 +275,10 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public static bool loadingPrefabTypes = false;
         public IEnumerator LoadPrefabTypes()
         {
+            loadingPrefabTypes = true;
             DataManager.inst.PrefabTypes.Clear();
 
             var directories = Directory.GetDirectories(RTFile.ApplicationDirectory + "beatmaps/prefabtypes");
@@ -280,10 +289,8 @@ namespace EditorManagement.Functions.Editors
                 var jn = JSON.Parse(RTFile.ReadFromFile(folder + "/data.lsp"));
                 var prefabType = PrefabType.Parse(jn);
 
-                StartCoroutine(EditorManager.inst.GetSprite(folder + "/icon.png", new EditorManager.SpriteLimits(), delegate (Sprite sprite)
-                {
-                    prefabType.Icon = sprite;
-                }, delegate (string onError) { }));
+                if (RTFile.FileExists(folder + "/icon.png"))
+                    prefabType.Icon = SpriteManager.LoadSprite(folder + "/icon.png");
 
                 prefabType.Index = jn["index"].AsInt;
 
@@ -293,6 +300,8 @@ namespace EditorManagement.Functions.Editors
             list = list.OrderBy(x => (x as PrefabType).Index).ToList();
 
             DataManager.inst.PrefabTypes.AddRange(list);
+
+            loadingPrefabTypes = false;
 
             yield break;
         }
@@ -457,6 +466,24 @@ namespace EditorManagement.Functions.Editors
 
                     RenderPrefabTypesPopup(onSelect);
                     SavePrefabTypes();
+                });
+
+                var setImage = gameObject.transform.Find("Set Icon").GetComponent<Button>();
+                setImage.onClick.ClearAll();
+                setImage.onClick.AddListener(delegate ()
+                {
+                    EditorManager.inst.ShowDialog("Browser Popup");
+                    RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".png" }, onSelectFile: delegate (string _val)
+                    {
+                        var copyTo = _val.Replace("\\", "/").Replace(Path.GetDirectoryName(_val).Replace("\\", "/"), RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + prefabType.Name).Replace(Path.GetFileName(_val), "icon.png");
+
+                        File.Copy(_val, copyTo, RTFile.FileExists(copyTo));
+
+                        prefabType.Icon = SpriteManager.LoadSprite(copyTo);
+                        icon.sprite = prefabType.Icon;
+
+                        EditorManager.inst.HideDialog("Browser Popup");
+                    });
                 });
 
                 num++;
@@ -1424,13 +1451,16 @@ namespace EditorManagement.Functions.Editors
             var deleteRT = tf.Find("delete").GetComponent<RectTransform>();
             var addPrefabObject = gameObject.GetComponent<Button>();
             var delete = tf.Find("delete").GetComponent<Button>();
+            var typeImage = tf.Find("category/type/type").GetComponent<Image>();
 
             name.text = prefab.Name;
 
-            var prefabType = prefab.Type >= 0 && prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
+            var prefabType = prefab.Type >= 0 && prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
 
             typeName.text = prefabType.Name;
             color.color = prefabType.Color;
+            typeImage.sprite = prefabType.Icon;
+            //typeImage.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(prefabType.Color));
 
             TooltipHelper.AddTooltip(gameObject, 
                 "<#" + LSColors.ColorToHex(color.color) + ">" + prefab.Name + "</color>",
