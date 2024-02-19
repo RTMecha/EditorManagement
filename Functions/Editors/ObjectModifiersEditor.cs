@@ -260,7 +260,7 @@ namespace EditorManagement.Functions.Editors
 
                 ((RectTransform)content.parent.parent).sizeDelta = new Vector2(351f, 300f * Mathf.Clamp(beatmapObject.modifiers.Count, 1, 5));
 
-                ignoreToggle.onValueChanged.RemoveAllListeners();
+                ignoreToggle.onValueChanged.ClearAll();
                 ignoreToggle.isOn = beatmapObject.ignoreLifespan;
                 ignoreToggle.onValueChanged.AddListener(delegate (bool _val)
                 {
