@@ -46,6 +46,37 @@ namespace EditorManagement.Patchers
             else if (Instance != __instance)
                 Destroy(__instance.gameObject);
 
+            // Prefab Type Icon
+            {
+                var gameObject = PrefabEditor.inst.AddPrefab.Duplicate(__instance.transform, PrefabEditor.inst.AddPrefab.name);
+
+                var type = gameObject.transform.Find("category");
+                type.GetComponent<LayoutElement>().minWidth = 32f;
+
+                var b = new GameObject("type");
+                b.transform.SetParent(type);
+                b.transform.localScale = Vector3.one;
+
+                var bRT = b.AddComponent<RectTransform>();
+                bRT.anchoredPosition = Vector2.zero;
+                bRT.sizeDelta = new Vector2(28f, 28f);
+
+                var bImage = b.AddComponent<Image>();
+                bImage.color = new Color(0f, 0f, 0f, 0.45f);
+
+                var icon = new GameObject("type");
+                icon.transform.SetParent(bRT);
+                icon.transform.localScale = Vector3.one;
+
+                var iconRT = icon.AddComponent<RectTransform>();
+                iconRT.anchoredPosition = Vector2.zero;
+                iconRT.sizeDelta = new Vector2(28f, 28f);
+
+                icon.AddComponent<Image>();
+
+                PrefabEditor.inst.AddPrefab = gameObject;
+            }
+
             PrefabEditorManager.Init(__instance);
 
             return false;
@@ -55,6 +86,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool StartPrefix()
         {
+            PrefabEditorManager.loadingPrefabTypes = true;
             Instance.StartCoroutine(RTEditor.inst.LoadPrefabs(Instance));
             Instance.OffsetLine = Instance.OffsetLinePrefab.Duplicate(EditorManager.inst.timeline.transform, "offset line");
             Instance.OffsetLine.transform.AsRT().pivot = Vector2.one;
