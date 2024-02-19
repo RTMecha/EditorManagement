@@ -183,6 +183,7 @@ namespace EditorManagement.Functions.Editors
 				// Prefab
 				{
 					themePopupPanelPrefab = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"theme panel");
+					themePopupPanelPrefab.GetComponent<Image>().color = new Color(0.1647f, 0.1647f, 0.1647f, 1f);
 
 					var nameText = themePopupPanelPrefab.transform.GetChild(0).GetComponent<Text>();
 					nameText.transform.AsRT().anchoredPosition = new Vector2(2f, 160f);
@@ -345,84 +346,47 @@ namespace EditorManagement.Functions.Editors
 							var colorSlotImage = colorSlot.AddComponent<Image>();
 						}
 					}
-				}
-
-                // Theme Dialog
-                {
-
-					var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
-					var editorDialogTransform = editorDialogObject.transform;
-					editorDialogObject.name = "ThemeDialog";
-					editorDialogObject.layer = 5;
-					editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
-					editorDialogTransform.localScale = Vector3.one;
-					editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
-					editorDialogTransform.AsRT().sizeDelta = new Vector2(0f, 32f);
-
-					var editorDialogTitle = editorDialogTransform.GetChild(0);
-					editorDialogTitle.GetComponent<Image>().color = new Color(0.2471f, 0.4275f, 0.451f, 1f);
-					var documentationTitle = editorDialogTitle.GetChild(0).GetComponent<Text>();
-					documentationTitle.text = "- Theme View -";
-					documentationTitle.color = new Color(0.9f, 0.9f, 0.9f, 1f);
-
-					var editorDialogSpacer = editorDialogTransform.GetChild(1);
-					editorDialogSpacer.AsRT().sizeDelta = new Vector2(765f, 54f);
-
-					var go1 = editorDialogTransform.GetChild(1).gameObject;
-					var go2 = editorDialogTransform.GetChild(2).gameObject;
-					Destroy(go1);
-					Destroy(go2);
-
-					{
-						var spacer = new GameObject("spacer");
-						spacer.transform.SetParent(editorDialogTransform);
-						spacer.transform.localScale = Vector3.one;
-
-						var spacerRT = spacer.AddComponent<RectTransform>();
-						spacerRT.sizeDelta = new Vector2(765f, 260f);
-					}
 
 					var buttonsBase = new GameObject("buttons base");
-					buttonsBase.transform.SetParent(editorDialogTransform);
-					buttonsBase.transform.localScale = Vector3.one;
+					buttonsBase.transform.SetParent(themePopupPanelPrefab.transform);
+					buttonsBase.transform.localScale = new Vector3(0.8f, 0.8f, 1f);
 
 					var buttonsBaseRT = buttonsBase.AddComponent<RectTransform>();
-					buttonsBaseRT.sizeDelta = new Vector2(765f, 0f);
+					buttonsBaseRT.anchoredPosition = new Vector2(140f, 160f);
+					buttonsBaseRT.sizeDelta = new Vector2(0f, 0f);
 
 					var buttons = new GameObject("buttons");
 					buttons.transform.SetParent(buttonsBaseRT);
 					buttons.transform.localScale = Vector3.one;
 
 					var buttonsHLG = buttons.AddComponent<HorizontalLayoutGroup>();
-					buttonsHLG.spacing = 60f;
+					buttonsHLG.spacing = 8f;
 
-					buttons.transform.AsRT().sizeDelta = new Vector2(600f, 32f);
+					buttons.transform.AsRT().anchoredPosition = Vector2.zero;
+					buttons.transform.AsRT().sizeDelta = new Vector2(360f, 32f);
 
 					var tfv = ObjEditor.inst.ObjectView.transform;
 
-					var importPrefab = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform);
-					importPrefab.SetActive(true);
-					importPrefab.name = "use";
-					this.useTheme = importPrefab.GetComponent<Button>();
-					importPrefab.transform.GetChild(0).GetComponent<Text>().text = "Use Theme";
+					var useTheme = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform, "use");
+					useTheme.SetActive(true);
+					var useThemeText = useTheme.transform.GetChild(0).GetComponent<Text>();
+					useThemeText.fontSize = 16;
+					useThemeText.text = "Use Theme";
 
-					var exportToVG = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform);
+					var exportToVG = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform, "convert");
 					exportToVG.SetActive(true);
-					exportToVG.name = "export";
-					this.exportToVG = exportToVG.GetComponent<Button>();
-					exportToVG.transform.GetChild(0).GetComponent<Text>().text = "Convert to VG Format";
+					var exportToVGText = exportToVG.transform.GetChild(0).GetComponent<Text>();
+					exportToVGText.fontSize = 16;
+					exportToVGText.text = "Convert to VG Format";
 
-					EditorHelper.AddEditorDialog("Theme Dialog", editorDialogObject);
+					Destroy(themePopupPanelPrefab.GetComponent<Button>());
 				}
-			}
+            }
 			catch (Exception ex)
 			{
 				Debug.LogError(ex);
 			}
 		}
-
-		public Button useTheme;
-		public Button exportToVG;
 
 		public static int themesPerPage = 10;
 		public void RefreshThemeSearch()
@@ -443,7 +407,7 @@ namespace EditorManagement.Functions.Editors
 					{
 						var gameObject = themePopupPanelPrefab.Duplicate(themeContent, name);
 						gameObject.transform.localScale = Vector3.one;
-						gameObject.transform.GetChild(0).GetComponent<Text>().text = name;
+						gameObject.transform.GetChild(0).GetComponent<Text>().text = $"{name} [ ID: {beatmapTheme.id} ]";
 
 						gameObject.transform.Find("misc colors").GetChild(0).GetComponent<Image>().color = beatmapTheme.backgroundColor;
 						gameObject.transform.Find("misc colors").GetChild(1).GetComponent<Image>().color = beatmapTheme.guiColor;
@@ -481,12 +445,56 @@ namespace EditorManagement.Functions.Editors
 							}
 						}
 
-						var button = gameObject.GetComponent<Button>();
-						button.onClick.ClearAll();
-						button.onClick.AddListener(delegate ()
+						var use = gameObject.transform.Find("buttons base/buttons/use").GetComponent<Button>();
+						use.onClick.ClearAll();
+						use.onClick.AddListener(delegate ()
 						{
-							EditorManager.inst.ShowDialog("Theme Dialog");
-							RenderPrefabExternalDialog(beatmapTheme);
+							if (RTEventEditor.inst.SelectedKeyframes.Count > 1 && RTEventEditor.inst.SelectedKeyframes.All(x => x.Type == 4))
+							{
+								foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
+								{
+									timelineObject.GetData<EventKeyframe>().eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+								}
+							}
+							else if (EventEditor.inst.currentEventType == 4)
+							{
+								DataManager.inst.gameData.eventObjects.allEvents[4][EventEditor.inst.currentEvent].eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+							}
+							else if (DataManager.inst.gameData.eventObjects.allEvents[4].Count > 0)
+                            {
+								DataManager.inst.gameData.eventObjects.allEvents[4].FindLast(x => x.eventTime < AudioManager.inst.CurrentAudioSource.time).eventValues[0] = Parser.TryParse(beatmapTheme.id, 0);
+							}
+
+							EventManager.inst.updateEvents();
+						});
+
+						var convert = gameObject.transform.Find("buttons base/buttons/convert").GetComponent<Button>();
+						convert.onClick.ClearAll();
+						convert.onClick.AddListener(delegate ()
+						{
+							var exportPath = RTEditor.GetEditorProperty("Convert Theme LS to VG Export Path").GetConfigEntry<string>().Value;
+
+							if (string.IsNullOrEmpty(exportPath))
+							{
+								if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+									Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+								exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+							}
+
+							if (!string.IsNullOrEmpty(exportPath) && exportPath[exportPath.Length - 1] != '/')
+								exportPath += "/";
+
+							if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+							{
+								EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+								return;
+							}
+
+							var vgjn = beatmapTheme.ToJSONVG();
+
+							RTFile.WriteToFile($"{exportPath}{beatmapTheme.name.ToLower()}.vgt", vgjn.ToString());
+
+							EditorManager.inst.DisplayNotification($"Converted Theme {beatmapTheme.name.ToLower()}.lst from LS format to VG format and saved to {beatmapTheme.name.ToLower()}.vgt!", 4f, EditorManager.NotificationType.Success);
 						});
 					}
 
@@ -494,47 +502,6 @@ namespace EditorManagement.Functions.Editors
 				}
             }
         }
-
-		public void RenderPrefabExternalDialog(BeatmapTheme beatmapTheme)
-		{
-			useTheme.onClick.ClearAll();
-			useTheme.onClick.AddListener(delegate ()
-			{
-				if (EventEditor.inst.currentEventType == 4 && int.TryParse(beatmapTheme.id, out int id))
-				{
-					DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventValues[0] = id;
-					EventManager.inst.updateEvents();
-				}
-			});
-
-			exportToVG.onClick.ClearAll();
-			exportToVG.onClick.AddListener(delegate ()
-			{
-				var exportPath = RTEditor.GetEditorProperty("Convert Theme LS to VG Export Path").GetConfigEntry<string>().Value;
-
-				if (string.IsNullOrEmpty(exportPath))
-				{
-					if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
-						Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
-					exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
-				}
-
-				if (!string.IsNullOrEmpty(exportPath) && exportPath[exportPath.Length - 1] != '/')
-					exportPath += "/";
-
-				if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
-				{
-					EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
-					return;
-				}
-
-				var vgjn = beatmapTheme.ToJSONVG();
-
-				RTFile.WriteToFile($"{exportPath}{beatmapTheme.name.ToLower()}.vgt", vgjn.ToString());
-
-				EditorManager.inst.DisplayNotification($"Converted Theme {beatmapTheme.name.ToLower()}.lst from LS format to VG format and saved to {beatmapTheme.name.ToLower()}.vgt!", 4f, EditorManager.NotificationType.Success);
-			});
-		}
 
 		public static int ThemePreviewColorCount => 4;
         public ThemePanel GenerateThemePanel(Transform parent)
