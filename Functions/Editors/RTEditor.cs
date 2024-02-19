@@ -8157,6 +8157,9 @@ namespace EditorManagement.Functions.Editors
                 GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
                 GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
 
+            while (PrefabEditorManager.loadingPrefabTypes)
+                yield return null;
+
             int num = 0;
             foreach (var file in Directory.GetFiles(RTFile.ApplicationDirectory + prefabListPath, "*.lsp", SearchOption.TopDirectoryOnly))
             {
@@ -10014,7 +10017,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Saving Saves Beatmap Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.")),
+                Config.Bind("Data", "Saving Saves Theme Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Update Prefab List on Files Changed", false, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
@@ -10035,7 +10038,7 @@ namespace EditorManagement.Functions.Editors
             #region Editor GUI
 
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Drag UI", false, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
+                Config.Bind("Editor GUI", "Drag UI", true, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
