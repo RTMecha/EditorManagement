@@ -1645,6 +1645,7 @@ namespace EditorManagement.Functions.Editors
         {
             var active = !HideVisualElementsWhenObjectIsEmpty || beatmapObject.objectType != ObjectType.Empty;
             var shapeTF = (Transform)ObjectUIElements["Shape"];
+            var shapeTFPActive = shapeTF.parent.GetChild(shapeTF.GetSiblingIndex() - 1).gameObject.activeSelf;
             shapeTF.parent.GetChild(shapeTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
             shapeTF.gameObject.SetActive(active);
 
@@ -1661,6 +1662,13 @@ namespace EditorManagement.Functions.Editors
             var originTF = (Transform)ObjectUIElements["Origin"];
             originTF.parent.GetChild(originTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
             originTF.gameObject.SetActive(active);
+
+            if (active && !shapeTFPActive)
+            {
+                RenderOrigin(beatmapObject);
+                RenderShape(beatmapObject);
+                RenderDepth(beatmapObject);
+            }
         }
 
         /// <summary>
@@ -2333,7 +2341,8 @@ namespace EditorManagement.Functions.Editors
                     {
                         if (!shapeSettings.Find((i + 1).ToString()))
                         {
-                            shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString());
+                            var sh = shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString());
+                            LSHelpers.DeleteChildren(sh.transform, true);
                         }
 
                         var so = shapeSettings.Find((i + 1).ToString());
@@ -2440,29 +2449,6 @@ namespace EditorManagement.Functions.Editors
 
                     LastGameObject(shapeSettings.GetChild(i));
                 }
-
-                // Create Selection (RTFunctions 1.10.0 implementation)
-                //{
-                //    var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
-
-                //    var imageBar = shapeSettings.Find("7");
-
-                //    GameObject setImageData;
-
-                //    if (!imageBar.Find("set"))
-                //    {
-                //        setImageData = eventButton.Duplicate(imageBar, "set");
-                //        setImageData.GetComponent<LayoutElement>().minWidth = 120f;
-                //        setImageData.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-                //    }
-                //    else
-                //    {
-                //        setImageData = imageBar.Find("set").gameObject;
-                //    }
-                //    var setImageDataText = setImageData.transform.GetChild(0).GetComponent<Text>();
-                //    setImageDataText.fontSize = 18;
-                //    setImageDataText.text = beatmapObject.text == null ? "Set Image Data" : "Clear Image Data";
-                //}
 
                 updatedShapes = true;
             }
@@ -3574,6 +3560,8 @@ namespace EditorManagement.Functions.Editors
                         });
 
                         TriggerHelper.AddEventTrigger(p.Find("opacity").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(opacity, 0.1f, 10f, 0f, 1f) });
+
+                        TriggerHelper.IncreaseDecreaseButtons(opacity);
 
                         var collision = p.Find("opacity/collision").GetComponent<Toggle>();
                         collision.onValueChanged.ClearAll();
