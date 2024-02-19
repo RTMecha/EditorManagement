@@ -67,6 +67,7 @@ namespace EditorManagement
 			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value;
 			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
 			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
+			ThemeEditorManager.themesPerPage = RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().Value;
 
 			SetupSettingChanged();
 
@@ -142,6 +143,13 @@ namespace EditorManagement
 
 				}
 			}
+
+            RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().SettingChanged += ThemePopupChanged;
+		}
+
+		void ThemePopupChanged(object sender, EventArgs e)
+		{
+			ThemeEditorManager.themesPerPage = RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().Value;
 		}
 
         void ObjectEditorChanged(object sender, EventArgs e)

@@ -10043,6 +10043,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Import Prefabs Directly", false, "When clicking on an External Prefab, instead of importing it directly it'll bring up a Prefab External View Dialog if this config is off.")),
+            new EditorProperty(EditorProperty.ValueType.Int,
+                Config.Bind("Editor GUI", "Themes Per Page", 10, "How many themes are shown per page in the Beatmap Themes popup.")),
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("Editor GUI", "Notification Width", 221f, "Width of the notifications.")),
             new EditorProperty(EditorProperty.ValueType.Float,
