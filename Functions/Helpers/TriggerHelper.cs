@@ -107,7 +107,7 @@ namespace EditorManagement.Functions.Helpers
 						if (pointerEventData.scrollDelta.y > 0f)
 							result += _amount * (Input.GetKey(KeyCode.LeftControl) ? 10 : 1);
 
-						if (min != 0f && max != 0f)
+						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
 
 						_if.text = result.ToString();
@@ -353,7 +353,7 @@ namespace EditorManagement.Functions.Helpers
 				{
 					result -= Input.GetKey(KeyCode.LeftControl) ? _amount * 10 : _amount;
 
-					if (min != 0f && max != 0f)
+					if (min != 0f || max != 0f)
 						result = Mathf.Clamp(result, min, max);
 
 					_if.text = result.ToString();
@@ -367,7 +367,7 @@ namespace EditorManagement.Functions.Helpers
 				{
 					result += Input.GetKey(KeyCode.LeftControl) ? _amount * 10 : _amount;
 
-					if (min != 0f && max != 0f)
+					if (min != 0f || max != 0f)
 						result = Mathf.Clamp(result, min, max);
 
 					_if.text = result.ToString();
