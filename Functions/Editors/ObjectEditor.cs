@@ -418,16 +418,16 @@ namespace EditorManagement.Functions.Editors
             DeselectAllObjects();
             EditorManager.inst.DisplayNotification("Pasting objects, please wait.", 1f, EditorManager.NotificationType.Success);
 
-            BasePrefab pr = null;
+            Prefab pr = null;
 
             if (RTFile.FileExists(Application.persistentDataPath + "/copied_objects.lsp"))
             {
-                pr = Prefab.Parse(JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp")));
+                pr = Prefab.Parse(JSON.Parse(RTFile.ReadFromFile(Application.persistentDataPath + "/copied_objects.lsp")));
 
                 ObjEditor.inst.hasCopiedObject = true;
             }
 
-            StartCoroutine(AddPrefabExpandedToLevel(pr ?? ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
+            StartCoroutine(AddPrefabExpandedToLevel(pr ?? (Prefab)ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
 
             //if (pr == null)
             //    inst.StartCoroutine(AddPrefabExpandedToLevel(ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
@@ -516,7 +516,7 @@ namespace EditorManagement.Functions.Editors
         /// <param name="regen"></param>
         /// <param name="dictionary"></param>
         /// <returns></returns>
-        public IEnumerator AddPrefabExpandedToLevel(BasePrefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false)
+        public IEnumerator AddPrefabExpandedToLevel(Prefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false)
         {
             RTEditor.inst.ienumRunning = true;
             float delay = 0f;
@@ -531,7 +531,7 @@ namespace EditorManagement.Functions.Editors
                 ClearKeyframes(CurrentSelection.GetData<BeatmapObject>());
             }
 
-            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            EditorManager.inst.ClearDialogs();
 
             //Objects
             {
@@ -583,6 +583,11 @@ namespace EditorManagement.Functions.Editors
                     beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
                     if (offset != 0.0)
                         ++beatmapObjectCopy.editorData.Bin;
+
+                    if (!AssetManager.SpriteAssets.ContainsKey(beatmapObject.text) && prefab.SpriteAssets.ContainsKey(beatmapObject.text))
+                    {
+                        AssetManager.SpriteAssets.Add(beatmapObject.text, prefab.SpriteAssets[beatmapObject.text]);
+                    }
 
                     beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
                     DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
@@ -1542,6 +1547,7 @@ namespace EditorManagement.Functions.Editors
                     objectUIElements.Add("Parent Info", tfv.Find("parent/text").GetComponent<HoverTooltip>());
                     objectUIElements.Add("Parent More B", tfv.Find("parent/more").GetComponent<Button>());
                     objectUIElements.Add("Parent More", tfv.Find("parent_more"));
+                    objectUIElements.Add("Parent Spawn Once", tfv.Find("parent_more/spawn_once").GetComponent<Toggle>());
                     objectUIElements.Add("Parent Search Open", tfv.Find("parent/parent").GetComponent<Button>());
                     objectUIElements.Add("Parent Clear", tfv.Find("parent/clear parent").GetComponent<Button>());
                     objectUIElements.Add("Parent Picker", tfv.Find("parent/parent picker").GetComponent<Button>());
@@ -2117,6 +2123,15 @@ namespace EditorManagement.Functions.Editors
                 });
                 parent_more.gameObject.SetActive(ObjEditor.inst.advancedParent);
 
+                var spawnOnce = (Toggle)ObjectUIElements["Parent Spawn Once"];
+                spawnOnce.onValueChanged.ClearAll();
+                spawnOnce.isOn = beatmapObject.spawnOnce;
+                spawnOnce.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    beatmapObject.spawnOnce = _val;
+                    Updater.UpdateProcessor(beatmapObject);
+                });
+
                 for (int i = 0; i < 3; i++)
                 {
                     var _p = (Transform)ObjectUIElements[$"Parent Offset {i + 1}"];
@@ -2553,12 +2568,12 @@ namespace EditorManagement.Functions.Editors
 
                 // Sets Image Data for transfering of Image Objects between levels.
                 var dataText = shapeSettings.Find("7/set/Text").GetComponent<Text>();
-                dataText.text = beatmapObject.ImageData == null ? "Set Data" : "Clear Data";
+                dataText.text = !AssetManager.SpriteAssets.ContainsKey(beatmapObject.text) ? "Set Data" : "Clear Data";
                 var set = shapeSettings.Find("7/set").GetComponent<Button>();
                 set.onClick.ClearAll();
                 set.onClick.AddListener(delegate ()
                 {
-                    if (beatmapObject.ImageData == null)
+                    if (!AssetManager.SpriteAssets.ContainsKey(beatmapObject.text))
                     {
                         var regex = new System.Text.RegularExpressions.Regex(@"img\((.*?)\)");
                         var match = regex.Match(beatmapObject.text);
@@ -2567,23 +2582,41 @@ namespace EditorManagement.Functions.Editors
 
                         if (RTFile.FileExists(path))
                         {
-                            beatmapObject.ImageData = File.ReadAllBytes(path);
+                            var imageData = File.ReadAllBytes(path);
+
+                            var texture2d = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+                            texture2d.LoadImage(imageData);
+
+                            texture2d.wrapMode = TextureWrapMode.Clamp;
+                            texture2d.filterMode = FilterMode.Point;
+                            texture2d.Apply();
+
+                            AssetManager.SpriteAssets.Add(beatmapObject.text, SpriteManager.CreateSprite(texture2d));
                         }
                         else
                         {
-                            beatmapObject.ImageData = ArcadeManager.inst.defaultImage.texture.EncodeToPNG();
+                            var imageData = ArcadeManager.inst.defaultImage.texture.EncodeToPNG();
+
+                            var texture2d = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+                            texture2d.LoadImage(imageData);
+
+                            texture2d.wrapMode = TextureWrapMode.Clamp;
+                            texture2d.filterMode = FilterMode.Point;
+                            texture2d.Apply();
+
+                            AssetManager.SpriteAssets.Add(beatmapObject.text, SpriteManager.CreateSprite(texture2d));
                         }
 
                         Updater.UpdateProcessor(beatmapObject);
                     }
                     else
                     {
-                        beatmapObject.ImageData = null;
+                        AssetManager.SpriteAssets.Remove(beatmapObject.text);
 
                         Updater.UpdateProcessor(beatmapObject);
                     }
 
-                    dataText.text = beatmapObject.ImageData == null ? "Set Data" : "Clear Data";
+                    dataText.text = !AssetManager.SpriteAssets.ContainsKey(beatmapObject.text) ? "Set Data" : "Clear Data";
                 });
             }
         }
