@@ -58,6 +58,8 @@ namespace EditorManagement
 				Logger.LogError("Mod Error" + ex.ToString());
             }
 
+			EditorThemeManager.Init();
+
 			SetPreviewConfig();
 			UpdateDefaultThemeValues();
 

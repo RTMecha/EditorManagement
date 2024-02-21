@@ -159,7 +159,6 @@ namespace EditorManagement.Patchers
             KeybindManager.Init(__instance);
 
             ThemeEditorManager.Init(ThemeEditor.inst);
-            EditorThemeManager.Init();
 
             // New Level Name input field contains text but newLevelName does not, so people might end up making an empty named level if they don't name it anything else.
             __instance.newLevelName = "New Awesome Beatmap";

@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 using UnityEngine;
 using UnityEngine.UI;
+
+using LSFunctions;
+
+using RTFunctions.Functions;
+
+using EditorManagement.Functions;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -26,14 +30,14 @@ namespace EditorManagement.Functions.Editors
                 Clear();
         }
 
-        public static void Clear()
+        public void Clear()
         {
-            inst = null;
+            EditorGUIElements.Clear();
         }
 
         public void RenderElements()
         {
-            var theme = EditorThemes[currentTheme];
+            var theme = CurrentTheme;
 
             foreach (var element in EditorGUIElements)
             {
@@ -44,11 +48,57 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public EditorTheme CurrentTheme => EditorThemes[Mathf.Clamp(currentTheme, 0, EditorThemes.Count - 1)];
+
         public int currentTheme;
+
+        public void AddElement(Element element)
+        {
+            var theme = CurrentTheme;
+
+            if (theme.ColorGroups.ContainsKey(element.group))
+            {
+                if (!element.isButton)
+                    element.SetColor(theme.ColorGroups[element.group]);
+                else
+                {
+                    var colorBlock = new ColorBlock();
+
+                    if (theme.ColorGroups.ContainsKey(element.group + " Highlight"))
+                    {
+                        colorBlock.highlightedColor = theme.ColorGroups[element.group + " Highlight"];
+                    }
+
+                    if (theme.ColorGroups.ContainsKey(element.group + " Selected"))
+                    {
+                        colorBlock.selectedColor = theme.ColorGroups[element.group + " Selected"];
+                    }
+
+                    if (theme.ColorGroups.ContainsKey(element.group + " Pressed"))
+                    {
+                        colorBlock.pressedColor = theme.ColorGroups[element.group + " Pressed"];
+                    }
+
+                    if (theme.ColorGroups.ContainsKey(element.group + " Disabled"))
+                    {
+                        colorBlock.disabledColor = theme.ColorGroups[element.group + " Disabled"];
+                    }
+
+                    element.SetColor(theme.ColorGroups[element.group], colorBlock);
+                }
+            }
+        }
 
         public List<Element> EditorGUIElements { get; set; } = new List<Element>();
 
-        public List<EditorTheme> EditorThemes { get; set; } = new List<EditorTheme>();
+        public List<EditorTheme> EditorThemes { get; set; } = new List<EditorTheme>
+        {
+            new EditorTheme("Legacy", new Dictionary<string, Color>
+            {
+                { "Background", LSColors.HexToColorAlpha("212121FF") },
+                { "Scrollbar Handle", LSColors.HexToColorAlpha("C8C8C8FF") },
+            }),
+        };
 
         public class EditorTheme
         {
@@ -86,17 +136,34 @@ namespace EditorManagement.Functions.Editors
 
             public Action<Element, Color> onSetColor;
 
+            public bool isButton = false;
+
+            bool rounded = false;
+            public bool Rounded { get; set; }
+            public bool canSetRounded = false;
+
             public void SetColor(Color color)
             {
                 foreach (var component in Components)
                 {
-                    if (component is Image)
-                        ((Image)component).color = color;
-                    if (component is Text)
-                        ((Text)component).color = color;
+                    if (component is Image image)
+                        image.color = color;
+                    if (component is Text text)
+                        text.color = color;
                 }
 
                 onSetColor?.Invoke(this, color);
+            }
+
+            public void SetColor(Color color, ColorBlock colorBlock)
+            {
+                foreach (var component in Components)
+                {
+                    if (component is Image image)
+                        image.color = color;
+                    if (component is Button button)
+                        button.colors = colorBlock;
+                }
             }
         }
     }
