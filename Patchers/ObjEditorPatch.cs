@@ -50,105 +50,20 @@ namespace EditorManagement.Patchers
     public class ObjEditorPatch : MonoBehaviour
     {
         static ObjEditor Instance { get => ObjEditor.inst; set => ObjEditor.inst = value; }
-		static Type Type { get; set; }
-
-		#region Patches
-
-		[HarmonyPatch("SetMainTimelineZoom")]
-		[HarmonyPrefix]
-		static bool SetMainTimelineZoom(float __0, bool __1 = true)
-		{
-			var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
-			if (__1)
-			{
-				ObjectEditor.inst.ResizeKeyframeTimeline(beatmapObject);
-				ObjectEditor.inst.RenderKeyframes(beatmapObject);
-			}
-			float f = ObjEditor.inst.objTimelineSlider.value;
-			if (AudioManager.inst.CurrentAudioSource.clip != null)
-            {
-				float time = -beatmapObject.StartTime + AudioManager.inst.CurrentAudioSource.time;
-				float objectLifeLength = beatmapObject.GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset);
-
-				f = time / objectLifeLength;
-			}
-
-			Instance.StartCoroutine(UpdateTimelineScrollRect(0f, f));
-
-			return false;
-		}
-
-		public static IEnumerator UpdateTimelineScrollRect(float _delay, float _val)
-		{
-			yield return new WaitForSeconds(_delay);
-			if (ObjectEditor.inst.timelinePosScrollbar)
-				ObjectEditor.inst.timelinePosScrollbar.value = _val;
-
-			yield break;
-		}
-
-		[HarmonyPatch("SetCurrentObj")]
-		[HarmonyPrefix]
-		static bool SetCurrentObjPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("UpdateHighlightedKeyframe")]
-		[HarmonyPrefix]
-		static bool UpdateHighlightedKeyframePrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("DeRenderObject")]
-		[HarmonyPrefix]
-		static bool DeRenderObjectPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("RenderTimelineObject")]
-		[HarmonyPrefix]
-		static bool RenderTimelineObjectPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("RenderTimelineObjects")]
-		[HarmonyPrefix]
-		static bool RenderTimelineObjectsPrefix()
-        {
-			ObjectEditor.inst.RenderTimelineObjects();
-			return false;
-        }
-		
-		[HarmonyPatch("DeleteObject")]
-		[HarmonyPrefix]
-		static bool DeleteObjectPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("DeleteObjects")]
-		[HarmonyPrefix]
-		static bool DeleteObjectsPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("AddPrefabExpandedToLevel")]
-		[HarmonyPrefix]
-		static bool AddPrefabExpandedToLevelPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("AddSelectedObject")]
-		[HarmonyPrefix]
-		static bool AddSelectedObjectPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("AddSelectedObjectOnly")]
-		[HarmonyPrefix]
-		static bool AddSelectedObjectOnlyPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("ContainedInSelectedObjects")]
-		[HarmonyPrefix]
-		static bool ContainedInSelectedObjectsPrefix() => EditorPlugin.DontRun();
-		
-		[HarmonyPatch("RefreshParentGUI")]
-		[HarmonyPrefix]
-		static bool RefreshParentGUIPrefix() => EditorPlugin.DontRun();
 
 		[HarmonyPatch("Awake")]
 		[HarmonyPrefix]
-        static bool AwakePrefix(ObjEditor __instance)
+		static bool AwakePrefix(ObjEditor __instance)
 		{
 			//og code
 			{
 				if (!Instance)
 					Instance = __instance;
 				else if (Instance != __instance)
+				{
 					Destroy(__instance.gameObject);
+					return false;
+				}
 
 				__instance.timelineKeyframes.Add(new List<GameObject>());
 				__instance.timelineKeyframes.Add(new List<GameObject>());
@@ -159,12 +74,10 @@ namespace EditorManagement.Patchers
 				beginDragTrigger.eventID = EventTriggerType.BeginDrag;
 				beginDragTrigger.callback.AddListener(delegate (BaseEventData eventData)
 				{
-					//Debug.Log("START DRAG");
 					PointerEventData pointerEventData = (PointerEventData)eventData;
 					__instance.SelectionBoxImage.gameObject.SetActive(true);
 					__instance.DragStartPos = pointerEventData.position * EditorManager.inst.ScreenScaleInverse;
 					__instance.SelectionRect = default(Rect);
-					//Debug.Log("Start Drag");
 				});
 
 				var dragTrigger = new EventTrigger.Entry();
@@ -229,24 +142,24 @@ namespace EditorManagement.Patchers
 
 			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
 
-            try
-            {
-                var todDropdown = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+			try
+			{
+				var todDropdown = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
 				var hide = todDropdown.GetComponent<HideDropdownOptions>();
 				hide.DisabledOptions[0] = false;
 				hide.remove = true;
 				var template = todDropdown.transform.Find("Template/Viewport/Content").gameObject;
 				var vlg = template.AddComponent<VerticalLayoutGroup>();
 				vlg.childControlHeight = false;
-                vlg.childForceExpandHeight = false;
+				vlg.childForceExpandHeight = false;
 
 				var csf = template.AddComponent<ContentSizeFitter>();
 				csf.verticalFit = ContentSizeFitter.FitMode.MinSize;
 			}
-            catch (Exception ex)
-            {
+			catch (Exception ex)
+			{
 				Debug.LogError(ex);
-            }
+			}
 
 			GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name").GetComponent<InputField>().characterLimit = 0;
 
@@ -512,11 +425,11 @@ namespace EditorManagement.Patchers
 
 				var resetParent = close.Duplicate(parent.transform, "clear parent", 1);
 
-                var resetParentButton = resetParent.GetComponent<Button>();
+				var resetParentButton = resetParent.GetComponent<Button>();
 
-                resetParentButton.onClick.ClearAll();
-                resetParentButton.onClick.AddListener(delegate ()
-                {
+				resetParentButton.onClick.ClearAll();
+				resetParentButton.onClick.AddListener(delegate ()
+				{
 					var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 
 					bm.parent = "";
@@ -524,19 +437,19 @@ namespace EditorManagement.Patchers
 					ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(bm));
 
 					Updater.UpdateProcessor(bm);
-                });
+				});
 
-                var parentPicker = close.Duplicate(parent.transform, "parent picker", 2);
+				var parentPicker = close.Duplicate(parent.transform, "parent picker", 2);
 
 				var parentPickerButton = parentPicker.GetComponent<Button>();
 
-                parentPickerButton.onClick.ClearAll();
-                parentPickerButton.onClick.AddListener(delegate ()
-                {
-                    RTEditor.inst.parentPickerEnabled = true;
-                });
+				parentPickerButton.onClick.ClearAll();
+				parentPickerButton.onClick.AddListener(delegate ()
+				{
+					RTEditor.inst.parentPickerEnabled = true;
+				});
 
-                var cb = parentPickerButton.colors;
+				var cb = parentPickerButton.colors;
 				cb.normalColor = new Color(0.0569f, 0.4827f, 0.9718f, 1f);
 				parentPickerButton.colors = cb;
 
@@ -602,8 +515,8 @@ namespace EditorManagement.Patchers
 				}
 			}
 
-            // Homing Buttons
-            {
+			// Homing Buttons
+			{
 				var position = ObjEditor.inst.KeyframeDialogs[0].transform;
 				var randomPosition = position.transform.Find("random");
 				randomPosition.Find("interval-input/x").gameObject.SetActive(false);
@@ -656,17 +569,17 @@ namespace EditorManagement.Patchers
 				var randomColorLabel = position.Find("r_label").gameObject.Duplicate(color, "r_label");
 				var randomColor = randomPosition.gameObject.Duplicate(color, "random");
 
-                //int num = randomColor.transform.childCount;
-                //while (num > 4)
-                //{
-                //    Destroy(randomColor.transform.GetChild(1).gameObject);
-                //    num = randomColor.transform.childCount;
-                //}
+				//int num = randomColor.transform.childCount;
+				//while (num > 4)
+				//{
+				//    Destroy(randomColor.transform.GetChild(1).gameObject);
+				//    num = randomColor.transform.childCount;
+				//}
 
-                Destroy(randomColor.transform.Find("normal").gameObject);
-                Destroy(randomColor.transform.Find("toggle").gameObject);
-                Destroy(randomColor.transform.Find("scale").gameObject);
-                Destroy(randomColor.transform.Find("homing-static").gameObject);
+				Destroy(randomColor.transform.Find("normal").gameObject);
+				Destroy(randomColor.transform.Find("toggle").gameObject);
+				Destroy(randomColor.transform.Find("scale").gameObject);
+				Destroy(randomColor.transform.Find("homing-static").gameObject);
 
 				var rAxis = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
 					.Duplicate(position, "r_axis", 14);
@@ -745,8 +658,8 @@ namespace EditorManagement.Patchers
 				scroll.content = tagContentRT;
 			}
 
-            // Render Type
-            {
+			// Render Type
+			{
 				var label = __instance.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(__instance.ObjectView.transform);
 				var index = __instance.ObjectView.transform.Find("depth").GetSiblingIndex() + 1;
 				label.transform.SetSiblingIndex(index);
@@ -830,23 +743,23 @@ namespace EditorManagement.Patchers
 				{
 					var parent = ObjEditor.inst.ObjectView.transform.Find("parent_more").GetChild(i + 1);
 
-                    if (parent.Find("<<"))
-                        Destroy(parent.Find("<<").gameObject);
+					if (parent.Find("<<"))
+						Destroy(parent.Find("<<").gameObject);
 
-                    if (parent.Find("<"))
-                        Destroy(parent.Find("<").gameObject);
+					if (parent.Find("<"))
+						Destroy(parent.Find("<").gameObject);
 
-                    if (parent.Find(">"))
-                        Destroy(parent.Find(">").gameObject);
+					if (parent.Find(">"))
+						Destroy(parent.Find(">").gameObject);
 
-                    if (parent.Find(">>"))
-                        Destroy(parent.Find(">>").gameObject);
+					if (parent.Find(">>"))
+						Destroy(parent.Find(">>").gameObject);
 
-                    var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array}_add");
+					var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array}_add");
 					var parallax = parent.GetChild(3).gameObject.Duplicate(parent, $"{array}_parallax");
 
 					if (parent.Find("text"))
-                    {
+					{
 						parent.Find("text").GetComponent<Text>().fontSize = 19;
 					}
 				}
@@ -868,8 +781,8 @@ namespace EditorManagement.Patchers
 				image.color = new Color(1f, 1f, 1f, 0.01f);
 			}
 
-            // Timeline Object adjustments
-            {
+			// Timeline Object adjustments
+			{
 				var gameObject = ObjEditor.inst.timelineObjectPrefab.Duplicate(null, ObjEditor.inst.timelineObjectPrefab.name);
 				var icons = gameObject.transform.Find("icons");
 
@@ -943,42 +856,42 @@ namespace EditorManagement.Patchers
 			ObjectEditor.inst.shapeButtonPrefab = ObjEditor.inst.ObjectView.transform.Find("shape/1").gameObject.Duplicate(null);
 
 			return false;
-        }
+		}
 
 		[HarmonyPatch("Start")]
 		[HarmonyPrefix]
-		static bool StartPrefix(ObjEditor __instance)
+		static bool StartPrefix()
 		{
-			__instance.colorButtons.Clear();
+			Instance.colorButtons.Clear();
 			for (int i = 1; i <= 18; i++)
 			{
-				__instance.colorButtons.Add(__instance.KeyframeDialogs[3].transform.Find("color/" + i).GetComponent<Toggle>());
+				Instance.colorButtons.Add(Instance.KeyframeDialogs[3].transform.Find("color/" + i).GetComponent<Toggle>());
 			}
 
 			if (RTFile.FileExists(Application.persistentDataPath + "/copied_objects.lsp"))
 			{
-				JSONNode jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp"));
+				var jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp"));
 
-				List<BaseBeatmapObject> _objects = new List<BaseBeatmapObject>();
-				for (int aIndex = 0; aIndex < jn["objects"].Count; ++aIndex)
-					_objects.Add(BaseBeatmapObject.ParseGameObject(jn["objects"][aIndex]));
+				var objects = new List<BaseBeatmapObject>();
+				for (int i = 0; i < jn["objects"].Count; ++i)
+					objects.Add(BaseBeatmapObject.ParseGameObject(jn["objects"][i]));
 
-				List<BasePrefabObject> _prefabObjects = new List<BasePrefabObject>();
-				for (int aIndex = 0; aIndex < jn["prefab_objects"].Count; ++aIndex)
-					_prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jn["prefab_objects"][aIndex]));
+				var prefabObjects = new List<BasePrefabObject>();
+				for (int i = 0; i < jn["prefab_objects"].Count; ++i)
+					prefabObjects.Add(DataManager.inst.gameData.ParsePrefabObject(jn["prefab_objects"][i]));
 
-				__instance.beatmapObjCopy = new BasePrefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, _objects, _prefabObjects);
-				__instance.hasCopiedObject = true;
+				Instance.beatmapObjCopy = new BasePrefab(jn["name"], jn["type"].AsInt, jn["offset"].AsFloat, objects, prefabObjects);
+				Instance.hasCopiedObject = true;
 			}
 
-			__instance.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
+			Instance.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
 			return false;
 		}
 
 		[HarmonyPatch("Update")]
 		[HarmonyPrefix]
 		static bool UpdatePrefix(ObjEditor __instance)
-        {
+		{
 			if (!__instance.changingTime && ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
 			{
 				// Sets new audio time using the Object Keyframe timeline cursor.
@@ -995,13 +908,13 @@ namespace EditorManagement.Patchers
 			}
 
 			if (__instance.beatmapObjectsDrag)
-            {
+			{
 				if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
 				{
 					int binOffset = 14 - Mathf.RoundToInt((float)((Input.mousePosition.y - 25) * EditorManager.inst.ScreenScaleInverse / 20)) + __instance.mouseOffsetYForDrag;
 
 					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                    {
+					{
 						int binCalc = Mathf.Clamp(binOffset + timelineObject.binOffset, 0, 14);
 
 						if (!timelineObject.Locked)
@@ -1009,18 +922,18 @@ namespace EditorManagement.Patchers
 
 						ObjectEditor.inst.RenderTimelineObject(timelineObject);
 						if (timelineObject.IsBeatmapObject)
-                        {
+						{
 							ObjectEditor.inst.RenderBin(timelineObject.GetData<BeatmapObject>());
-                        }
+						}
 					}
 				}
 				else
-                {
+				{
 					float timeOffset = Mathf.Round(Mathf.Clamp(EditorManager.inst.GetTimelineTime() + __instance.mouseOffsetXForDrag,
 						0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f;
 
 					foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                    {
+					{
 						float timeCalc = Mathf.Clamp(timeOffset + timelineObject.timeOffset, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 
 						if (!timelineObject.Locked)
@@ -1037,16 +950,16 @@ namespace EditorManagement.Patchers
 						}
 
 						if (timelineObject.IsPrefabObject)
-                        {
+						{
 							var prefabObject = timelineObject.GetData<PrefabObject>();
 							PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
 							Updater.UpdatePrefab(prefabObject, "Start Time");
-                        }
+						}
 					}
 				}
-            }
+			}
 
-            if (__instance.timelineKeyframesDrag && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+			if (__instance.timelineKeyframesDrag && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
 			{
 				var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 
@@ -1082,6 +995,91 @@ namespace EditorManagement.Patchers
 			}
 			return false;
 		}
+
+		[HarmonyPatch("SetMainTimelineZoom")]
+		[HarmonyPrefix]
+		static bool SetMainTimelineZoom(float __0, bool __1 = true)
+		{
+			var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+			if (__1)
+			{
+				ObjectEditor.inst.ResizeKeyframeTimeline(beatmapObject);
+				ObjectEditor.inst.RenderKeyframes(beatmapObject);
+			}
+			float f = ObjEditor.inst.objTimelineSlider.value;
+			if (AudioManager.inst.CurrentAudioSource.clip != null)
+            {
+				float time = -beatmapObject.StartTime + AudioManager.inst.CurrentAudioSource.time;
+				float objectLifeLength = beatmapObject.GetObjectLifeLength(ObjEditor.inst.ObjectLengthOffset);
+
+				f = time / objectLifeLength;
+			}
+
+			Instance.StartCoroutine(UpdateTimelineScrollRect(0f, f));
+
+			return false;
+		}
+
+		public static IEnumerator UpdateTimelineScrollRect(float _delay, float _val)
+		{
+			yield return new WaitForSeconds(_delay);
+			if (ObjectEditor.inst.timelinePosScrollbar)
+				ObjectEditor.inst.timelinePosScrollbar.value = _val;
+
+			yield break;
+		}
+
+		[HarmonyPatch("SetCurrentObj")]
+		[HarmonyPrefix]
+		static bool SetCurrentObjPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("UpdateHighlightedKeyframe")]
+		[HarmonyPrefix]
+		static bool UpdateHighlightedKeyframePrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("DeRenderObject")]
+		[HarmonyPrefix]
+		static bool DeRenderObjectPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("RenderTimelineObject")]
+		[HarmonyPrefix]
+		static bool RenderTimelineObjectPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("RenderTimelineObjects")]
+		[HarmonyPrefix]
+		static bool RenderTimelineObjectsPrefix()
+        {
+			ObjectEditor.inst.RenderTimelineObjects();
+			return false;
+        }
+		
+		[HarmonyPatch("DeleteObject")]
+		[HarmonyPrefix]
+		static bool DeleteObjectPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("DeleteObjects")]
+		[HarmonyPrefix]
+		static bool DeleteObjectsPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("AddPrefabExpandedToLevel")]
+		[HarmonyPrefix]
+		static bool AddPrefabExpandedToLevelPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("AddSelectedObject")]
+		[HarmonyPrefix]
+		static bool AddSelectedObjectPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("AddSelectedObjectOnly")]
+		[HarmonyPrefix]
+		static bool AddSelectedObjectOnlyPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("ContainedInSelectedObjects")]
+		[HarmonyPrefix]
+		static bool ContainedInSelectedObjectsPrefix() => EditorPlugin.DontRun();
+		
+		[HarmonyPatch("RefreshParentGUI")]
+		[HarmonyPrefix]
+		static bool RefreshParentGUIPrefix() => EditorPlugin.DontRun();
 
 		[HarmonyPatch("CopyAllSelectedEvents")]
 		[HarmonyPrefix]
@@ -1303,8 +1301,6 @@ namespace EditorManagement.Patchers
 				ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
 			return false;
         }
-
-        #endregion
 
         public static float posCalc(float _time) => _time * 14f * Instance.zoomVal + 5f;
 
