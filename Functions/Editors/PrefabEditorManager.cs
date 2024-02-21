@@ -695,6 +695,14 @@ namespace EditorManagement.Functions.Editors
 
             prefab.description = NewPrefabDescription;
 
+            foreach (var beatmapObject in prefab.objects)
+            {
+                if (!prefab.SpriteAssets.ContainsKey(beatmapObject.text) && AssetManager.SpriteAssets.ContainsKey(beatmapObject.text))
+                {
+                    prefab.SpriteAssets.Add(beatmapObject.text, AssetManager.SpriteAssets[beatmapObject.text]);
+                }
+            }
+
             if (createInternal)
                 ImportPrefabIntoLevel(prefab);
             else
@@ -1810,6 +1818,11 @@ namespace EditorManagement.Functions.Editors
                 {
                     beatmapObjectCopy.editorData.layer = prefabObject.editorData.layer;
                     beatmapObjectCopy.editorData.Bin = Mathf.Clamp(beatmapObjectCopy.editorData.Bin, 0, 14);
+                }
+
+                if (!AssetManager.SpriteAssets.ContainsKey(beatmapObject.text) && prefab.SpriteAssets.ContainsKey(beatmapObject.text))
+                {
+                    AssetManager.SpriteAssets.Add(beatmapObject.text, prefab.SpriteAssets[beatmapObject.text]);
                 }
 
                 beatmapObjectCopy.prefabInstanceID = prefabObject.ID;
