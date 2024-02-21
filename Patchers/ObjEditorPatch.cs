@@ -849,6 +849,19 @@ namespace EditorManagement.Patchers
 				}
 			}
 
+            // Parent Follow
+            {
+				var parentMore = ObjEditor.inst.ObjectView.transform.Find("parent_more");
+				var ignoreGameObject = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
+				ignoreGameObject.transform.SetParent(parentMore);
+				ignoreGameObject.transform.SetSiblingIndex(1);
+				ignoreGameObject.transform.localScale = Vector3.one;
+				ignoreGameObject.name = "spawn_once";
+				ignoreGameObject.transform.Find("Text").GetComponent<Text>().text = "Spawn Once";
+
+				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
+			}
+
 			__instance.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
 
 			ObjectEditor.Init(__instance);
