@@ -1402,14 +1402,14 @@ namespace EditorManagement.Functions.Editors
 
             if (RTFile.FileExists(Application.persistentDataPath + "/copied_objects.lsp"))
             {
-                JSONNode jn = JSON.Parse(FileManager.inst.LoadJSONFileRaw(Application.persistentDataPath + "/copied_objects.lsp"));
+                JSONNode jn = JSON.Parse(RTFile.ReadFromFile(Application.persistentDataPath + "/copied_objects.lsp"));
 
                 pr = Prefab.Parse(jn);
 
                 ObjEditor.inst.hasCopiedObject = true;
             }
 
-            StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(pr ?? ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
+            StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(pr ?? (Prefab)ObjEditor.inst.beatmapObjCopy, true, _offsetTime, false, _regen));
         }
 
         public void Delete()
@@ -9932,6 +9932,17 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("General", "BPM Snaps Keyframes", false, "Makes object's keyframes snap if Snap BPM is enabled.")),
             new EditorProperty(EditorProperty.ValueType.Float,
                 Config.Bind("General", "BPM Snap Divisions", 4f, "How many times the snap is divided into. Can be good for songs that don't do 4 divisions.")),
+            new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.IncreasedClipPlanes),
+            new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.DiscordShowLevel),
+            new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.EnableVideoBackground),
+            new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.RunInBackground),
+            new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.Fullscreen),
+            new EditorProperty(EditorProperty.ValueType.Enum, RTFunctions.FunctionsPlugin.Resolution),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, RTFunctions.FunctionsPlugin.MasterVol),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, RTFunctions.FunctionsPlugin.MusicVol),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, RTFunctions.FunctionsPlugin.SFXVol),
+            new EditorProperty(EditorProperty.ValueType.Enum, RTFunctions.FunctionsPlugin.Language),
+            new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.ControllerRumble),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Round To Nearest", true, "If numbers should be rounded up to 3 decimal points (for example, 0.43321245 into 0.433).")),
             new EditorProperty(EditorProperty.ValueType.Bool,
