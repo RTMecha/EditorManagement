@@ -120,24 +120,6 @@ namespace EditorManagement.Patchers
 			Instance.dialogRight = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right");
 			Instance.EventLabels.SetActive(false);
 			Instance.EventHolders.SetActive(false);
-			//int num = 0;
-			//foreach (var list in DataManager.inst.gameData.eventObjects.allEvents)
-			//{
-			//	int typeTmp = num;
-			//	var entry = new EventTrigger.Entry();
-			//	entry.eventID = EventTriggerType.PointerDown;
-			//	entry.callback.AddListener(delegate (BaseEventData eventData)
-			//	{
-			//		Debug.Log("Pointer Down on Position");
-			//		if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
-			//		{
-			//			Debug.Log("Right Clicked Position");
-			//			Instance.NewKeyframeFromTimeline(typeTmp);
-			//		}
-			//	});
-			//	Instance.EventHolders.transform.GetChild(typeTmp).GetComponent<EventTrigger>().triggers.Add(entry);
-			//	num++;
-			//}
 
 			RTEventEditor.Init(Instance);
 
@@ -153,23 +135,22 @@ namespace EditorManagement.Patchers
 
 			if (Instance.eventDrag)
 			{
+				var timelineTime = EditorManager.inst.GetTimelineTime();
 				foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
                 {
 					if (timelineObject.Index != 0)
                     {
-						float num = EditorManager.inst.GetTimelineTime() + Instance.mouseOffsetXForDrag + timelineObject.timeOffset;
+						float num = timelineTime + Instance.mouseOffsetXForDrag + timelineObject.timeOffset;
 						num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
-						if (SettingEditor.inst.SnapActive)
-							num = EditorManager.inst.SnapToBPM(num);
 						DataManager.inst.gameData.eventObjects.allEvents[timelineObject.Type][timelineObject.Index].eventTime = num;
 					}
                 }
 
-				if (preNumber != EditorManager.inst.GetTimelineTime())
+				if (preNumber != timelineTime)
 				{
 					RTEventEditor.inst.RenderEventObjects();
 					RTEventEditor.inst.RenderEventsDialog();
-					preNumber = EditorManager.inst.GetTimelineTime();
+					preNumber = timelineTime;
 				}
 			}
 
