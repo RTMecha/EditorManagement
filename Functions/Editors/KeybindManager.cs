@@ -492,6 +492,18 @@ namespace EditorManagement.Functions.Editors
             editorDialog.Find("title/Text").GetComponent<Text>().text = "- Keybind Editor -";
             Destroy(editorDialog.Find("Text").gameObject);
 
+            var clickable = editorDialog.gameObject.AddComponent<Clickable>();
+            clickable.onEnable = delegate (bool enabled)
+            {
+                if (!enabled)
+                {
+                    RTEditor.inst.selectingKey = false;
+                    RTEditor.inst.setKey = null;
+
+                    RTEditor.inst.onKeySet = null;
+                }
+            };
+
             var data = new GameObject("data");
             data.transform.SetParent(editorDialog);
             data.transform.localScale = Vector3.one;
@@ -622,6 +634,8 @@ namespace EditorManagement.Functions.Editors
 
             // Key Prefab
             {
+                var button = GameObject.Find("TimelineBar/GameObject/event");
+
                 keyPrefab = new GameObject("Key");
                 var rectTransform = keyPrefab.AddComponent<RectTransform>();
                 rectTransform.sizeDelta = new Vector2(400f, 32f);
@@ -636,12 +650,18 @@ namespace EditorManagement.Functions.Editors
                 var keyTypeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
                 .Duplicate(rectTransform, "Key Type");
 
-                ((RectTransform)keyTypeDropdown.transform).sizeDelta = new Vector2(360f, 32f);
+                ((RectTransform)keyTypeDropdown.transform).sizeDelta = new Vector2(220f, 32f);
 
                 var keyTypeDropdownDD = keyTypeDropdown.GetComponent<Dropdown>();
                 keyTypeDropdownDD.onValueChanged.ClearAll();
                 keyTypeDropdownDD.options = Enum.GetNames(typeof(Keybind.Key.Type)).Select(x => new Dropdown.OptionData(x)).ToList();
                 keyTypeDropdownDD.value = 0;
+
+                var watchKey = button.Duplicate(rectTransform, "Key Watcher");
+                var text = watchKey.transform.GetChild(0).GetComponent<Text>();
+                text.text = "Set Key";
+                watchKey.transform.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+                watchKey.transform.AsRT().sizeDelta = new Vector2(140f, 32f);
 
                 var keyCodeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
                 .Duplicate(rectTransform, "Key Code");
@@ -811,22 +831,58 @@ namespace EditorManagement.Functions.Editors
                 int index = num;
                 var gameObject = keyPrefab.Duplicate(keysContent, "Key");
                 var type = gameObject.transform.Find("Key Type").GetComponent<Dropdown>();
+                var watch = gameObject.transform.Find("Key Watcher").GetComponent<Button>();
+                var code = gameObject.transform.Find("Key Code").GetComponent<Dropdown>();
+
+                var text = gameObject.transform.Find("Key Watcher").GetChild(0).GetComponent<Text>();
+                text.text = "Set Key";
+
+                type.onValueChanged.ClearAll();
                 type.value = (int)key.InteractType;
                 type.onValueChanged.AddListener(delegate (int _val)
                 {
                     key.InteractType = (Keybind.Key.Type)_val;
                     RefreshKeybindPopup();
                     Save();
+                    text.text = "Set Key";
                 });
 
-                var code = gameObject.transform.Find("Key Code").GetComponent<Dropdown>();
+                watch.onClick.ClearAll();
+                watch.onClick.AddListener(delegate ()
+                {
+                    RTEditor.inst.selectingKey = true;
+                    RTEditor.inst.setKey = delegate (KeyCode keyCode)
+                    {
+                        key.KeyCode = keyCode;
+                        RefreshKeybindPopup();
+                        Save();
+                        text.text = "Set Key";
+                    };
 
+                    RTEditor.inst.onKeySet = delegate()
+                    {
+                        code.onValueChanged.ClearAll();
+                        code.value = (int)key.KeyCode;
+                        code.onValueChanged.AddListener(delegate (int _val)
+                        {
+                            key.KeyCode = (KeyCode)_val;
+                            RefreshKeybindPopup();
+                            Save();
+                            text.text = "Set Key";
+                        });
+                    };
+
+                    text.text = "Watching Key";
+                });
+
+                code.onValueChanged.ClearAll();
                 code.value = (int)key.KeyCode;
                 code.onValueChanged.AddListener(delegate (int _val)
                 {
                     key.KeyCode = (KeyCode)_val;
                     RefreshKeybindPopup();
                     Save();
+                    text.text = "Set Key";
                 });
 
                 var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
@@ -1922,6 +1978,19 @@ namespace EditorManagement.Functions.Editors
                     ObjectEditor.inst.RenderTimelineObject(timelineObject);
                 }
 
+            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject && ObjectEditor.inst.CurrentSelection.InternalSelections.Count > 0 && ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected).Count() > 0)
+            {
+                foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections)
+                {
+                    timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+                }
+
+                var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
+                Updater.UpdateProcessor(bm, "Keyframes");
+                ObjectEditor.inst.RenderKeyframes(bm);
+            }
+
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events && RTEventEditor.inst.SelectedKeyframes.Count > 0)
                 foreach (var timelineObject in RTEventEditor.inst.SelectedKeyframes)
                 {
@@ -1936,7 +2005,8 @@ namespace EditorManagement.Functions.Editors
         {
             if (keybind.settings.ContainsKey("Layer") && int.TryParse(keybind.settings["Layer"], out int num))
             {
-                RTEditor.inst.SetLayer(RTEditor.inst.Layer + num);
+                RTEditor.inst.Layer += num;
+                RTEditor.inst.SetLayer(RTEditor.inst.Layer);
             }
         }
 
@@ -2097,11 +2167,12 @@ namespace EditorManagement.Functions.Editors
 
         public static KeyCode WatchKeyCode()
         {
-            var keyCodes = Enum.GetNames(typeof(KeyCode));
+            var keyCodes = Enum.GetValues(typeof(KeyCode));
             for (int i = 0; i < keyCodes.Length; i++)
             {
-                if (Input.GetKeyDown(keyCodes[i]))
-                    return (KeyCode)Enum.Parse(typeof(KeyCode), keyCodes[i]);
+                var name = Enum.GetName(typeof(KeyCode), i);
+                if (!string.IsNullOrEmpty(name) && name.ToLower() != "none" && Input.GetKeyDown((KeyCode)i))
+                    return (KeyCode)i;
             }
 
             return KeyCode.None;
