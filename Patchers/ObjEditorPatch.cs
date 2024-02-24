@@ -142,24 +142,17 @@ namespace EditorManagement.Patchers
 
 			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
 
-			try
-			{
-				var todDropdown = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
-				var hide = todDropdown.GetComponent<HideDropdownOptions>();
-				hide.DisabledOptions[0] = false;
-				hide.remove = true;
-				var template = todDropdown.transform.Find("Template/Viewport/Content").gameObject;
-				var vlg = template.AddComponent<VerticalLayoutGroup>();
-				vlg.childControlHeight = false;
-				vlg.childForceExpandHeight = false;
+			var todDropdown = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+			var hide = todDropdown.GetComponent<HideDropdownOptions>();
+			hide.DisabledOptions[0] = false;
+			hide.remove = true;
+			var template = todDropdown.transform.Find("Template/Viewport/Content").gameObject;
+			var vlg = template.AddComponent<VerticalLayoutGroup>();
+			vlg.childControlHeight = false;
+			vlg.childForceExpandHeight = false;
 
-				var csf = template.AddComponent<ContentSizeFitter>();
-				csf.verticalFit = ContentSizeFitter.FitMode.MinSize;
-			}
-			catch (Exception ex)
-			{
-				Debug.LogError(ex);
-			}
+			var csf = template.AddComponent<ContentSizeFitter>();
+			csf.verticalFit = ContentSizeFitter.FitMode.MinSize;
 
 			GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name").GetComponent<InputField>().characterLimit = 0;
 
@@ -857,7 +850,7 @@ namespace EditorManagement.Patchers
 				ignoreGameObject.transform.SetSiblingIndex(1);
 				ignoreGameObject.transform.localScale = Vector3.one;
 				ignoreGameObject.name = "spawn_once";
-				ignoreGameObject.transform.Find("Text").GetComponent<Text>().text = "Spawn Once";
+				ignoreGameObject.transform.Find("Text").GetComponent<Text>().text = "Spawn / Set Once";
 
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}
