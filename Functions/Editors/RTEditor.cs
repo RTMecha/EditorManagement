@@ -1950,7 +1950,9 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.GetDialog("Save As Popup").Dialog.Find("New File Popup/level-name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/name/input").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
-            GameObject.Find("Editor GUI/sizer/main/Popups/New File Popup/Browser Popup").SetActive(true);
+
+            // This needs to be changed to something like dev branch.
+            //GameObject.Find("Editor GUI/sizer/main/Popups/New File Popup/Browser Popup").SetActive(true);
 
             if (ModCompatibility.ArcadiaCustomsInstalled)
                 EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
@@ -1961,7 +1963,7 @@ namespace EditorManagement.Functions.Editors
                         DG.Tweening.DOTween.Clear();
                         Updater.UpdateObjects(false);
                         DataManager.inst.gameData = null;
-                        DataManager.inst.gameData = new DataManager.GameData();
+                        DataManager.inst.gameData = new GameData();
 
                         ArcadeManager.inst.skippedLoad = false;
                         ArcadeManager.inst.forcedSkip = false;
@@ -1978,15 +1980,22 @@ namespace EditorManagement.Functions.Editors
             {
                 if (EditorManager.inst.hasLoadedLevel)
                 {
-                    LevelManager.OnLevelEnd = delegate ()
+                    EditorManager.inst.ShowDialog("Warning Popup");
+                    RefreshWarningPopup("Are you sure you want to switch to Arcade Mode?", delegate ()
                     {
-                        DG.Tweening.DOTween.Clear();
-                        DataManager.inst.gameData = null;
-                        DataManager.inst.gameData = new GameData();
-                        Updater.OnLevelEnd();
-                        SceneManager.inst.LoadScene("Editor");
-                    };
-                    LevelManager.Load(GameManager.inst.basePath + "level.lsb", false);
+                        LevelManager.OnLevelEnd = delegate ()
+                        {
+                            DG.Tweening.DOTween.Clear();
+                            DataManager.inst.gameData = null;
+                            DataManager.inst.gameData = new GameData();
+                            Updater.OnLevelEnd();
+                            SceneManager.inst.LoadScene("Editor");
+                        };
+                        LevelManager.Load(GameManager.inst.basePath + "level.lsb", false);
+                    }, delegate ()
+                    {
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    });
                 }
                 else
                 {
@@ -2203,6 +2212,18 @@ namespace EditorManagement.Functions.Editors
                     File.Copy(_val, destination, RTFile.FileExists(destination));
                 });
             }, 5);
+
+            EditorHelper.AddEditorDropdown("Clear Sprite Data", "", "Edit", null, delegate ()
+            {
+                EditorManager.inst.ShowDialog("Warning Popup");
+                RefreshWarningPopup("Are you sure you want to clear sprite data? Any Image Shapes that use a stored image will have their images cleared and you will need to set them again.", delegate ()
+                {
+                    AssetManager.SpriteAssets.Clear();
+                }, delegate ()
+                {
+                    EditorManager.inst.HideDialog("Warning Popup");
+                });
+            });
 
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
             {
@@ -10212,6 +10233,18 @@ namespace EditorManagement.Functions.Editors
 
             #region Fields
             
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Fields", "Scrollwheel Large Amount Key", KeyCode.LeftControl, "If this key is being held while you are scrolling over a number field, the number will change by a large amount. If the key is set to None, you will not need to hold a key.")),
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Fields", "Scrollwheel Small Amount Key", KeyCode.LeftAlt, "If this key is being held while you are scrolling over a number field, the number will change by a small amount. If the key is set to None, you will not need to hold a key.")),
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Fields", "Scrollwheel Regular Amount Key", KeyCode.None, "If this key is being held while you are scrolling over a number field, the number will change by the regular amount. If the key is set to None, you will not need to hold a key.")),
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Fields", "Scrollwheel Vector2 Large Amount Key", KeyCode.LeftControl, "If this key is being held while you are scrolling over a number field, the number will change by a large amount. If the key is set to None, you will not need to hold a key.")),
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Fields", "Scrollwheel Vector2 Small Amount Key", KeyCode.LeftAlt, "If this key is being held while you are scrolling over a number field, the number will change by a small amount. If the key is set to None, you will not need to hold a key.")),
+            new EditorProperty(EditorProperty.ValueType.Enum,
+                Config.Bind("Fields", "Scrollwheel Vector2 Regular Amount Key", KeyCode.None, "If this key is being held while you are scrolling over a number field, the number will change by the regular amount. If the key is set to None, you will not need to hold a key.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Fields", "Show Modified Colors", true, "Keyframe colors show any modifications done (such as hue, saturation and value).")),
             new EditorProperty(EditorProperty.ValueType.String,
