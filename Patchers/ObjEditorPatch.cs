@@ -842,7 +842,7 @@ namespace EditorManagement.Patchers
 				}
 			}
 
-            // Parent Follow
+            // Parent Desync
             {
 				var parentMore = ObjEditor.inst.ObjectView.transform.Find("parent_more");
 				var ignoreGameObject = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
@@ -850,7 +850,7 @@ namespace EditorManagement.Patchers
 				ignoreGameObject.transform.SetSiblingIndex(1);
 				ignoreGameObject.transform.localScale = Vector3.one;
 				ignoreGameObject.name = "spawn_once";
-				ignoreGameObject.transform.Find("Text").GetComponent<Text>().text = "Spawn / Set Once";
+				ignoreGameObject.transform.Find("Text").GetComponent<Text>().text = "Parent Desync";
 
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}

@@ -2181,10 +2181,10 @@ namespace EditorManagement.Functions.Editors
 
                 var spawnOnce = (Toggle)ObjectUIElements["Parent Spawn Once"];
                 spawnOnce.onValueChanged.ClearAll();
-                spawnOnce.isOn = beatmapObject.spawnOnce;
+                spawnOnce.isOn = beatmapObject.desync;
                 spawnOnce.onValueChanged.AddListener(delegate (bool _val)
                 {
-                    beatmapObject.spawnOnce = _val;
+                    beatmapObject.desync = _val;
                     Updater.UpdateProcessor(beatmapObject);
                 });
 
