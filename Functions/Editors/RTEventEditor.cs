@@ -1194,43 +1194,22 @@ namespace EditorManagement.Functions.Editors
 				Debug.LogError($"{EventEditor.inst.className}{ex}");
 			}
 
-            try
-            {
-				for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
-				{
-					var dialog = EventEditor.inst.dialogRight.GetChild(i);
+			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
+			{
+				var dialog = EventEditor.inst.dialogRight.GetChild(i);
 
-					// Relative / Copy / Paste
-					{
-						var button = GameObject.Find("TimelineBar/GameObject/event");
-						{
-                            if (ModCompatibility.EventsCoreInstalled && i != 4)
-                            {
-                                var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
-                                var toggleLabel = di.GetChild(12).gameObject.Duplicate(dialog, "relative-label");
-                                toggleLabel.transform.GetChild(0).GetComponent<Text>().text = "Value Additive";
-                                var toggle = di.GetChild(13).gameObject.Duplicate(dialog, "relative");
-                                toggle.transform.GetChild(1).GetComponent<Text>().text = "Relative";
-                            }
+				var button = GameObject.Find("TimelineBar/GameObject/event");
+                var edit = dialog.Find("edit");
+				DestroyImmediate(edit.Find("spacer").gameObject);
 
-                            var edit = dialog.Find("edit");
-							DestroyImmediate(edit.Find("spacer").gameObject);
-
-							var copy = button.Duplicate(edit, "copy", 5);
-							copy.transform.GetChild(0).GetComponent<Text>().text = "Copy";
-							copy.transform.GetComponent<Image>().color = new Color(0.24f, 0.6792f, 1f);
-							((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
-							var paste = button.Duplicate(edit, "paste", 6);
-							paste.transform.GetChild(0).GetComponent<Text>().text = "Paste";
-							((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
-						}
-					}
-				}
-            }
-            catch (Exception ex)
-            {
-				Debug.LogError($"{EventEditor.inst.className}{ex}");
-            }
+				var copy = button.Duplicate(edit, "copy", 5);
+				copy.transform.GetChild(0).GetComponent<Text>().text = "Copy";
+				copy.transform.GetComponent<Image>().color = new Color(0.24f, 0.6792f, 1f);
+				((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
+				var paste = button.Duplicate(edit, "paste", 6);
+				paste.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+				((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
+			}
         }
 
         #endregion
@@ -1906,18 +1885,6 @@ namespace EditorManagement.Functions.Editors
 				editDelete.onClick.AddListener(delegate ()
 				{
 					__instance.DeleteEvent(__instance.currentEventType, __instance.currentEvent);
-				});
-			}
-
-			if (dialogTmp.Find("relative"))
-            {
-				var relative = dialogTmp.Find("relative").GetComponent<Toggle>();
-				relative.onValueChanged.ClearAll();
-				relative.isOn = currentKeyframe.relative;
-				relative.onValueChanged.AddListener(delegate (bool _val)
-				{
-					currentKeyframe.relative = _val;
-					EventManager.inst.updateEvents();
 				});
 			}
 
