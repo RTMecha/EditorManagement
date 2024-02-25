@@ -101,6 +101,7 @@ namespace EditorManagement.Functions.Editors
             SetupTimelinePreview();
             SetupTimelineElements();
             SetupTimelineGrid();
+            SetupNewFilePopup();
             CreateObjectSearch();
             CreateWarningPopup();
             CreateREPLEditor();
@@ -2801,6 +2802,64 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
             }
+        }
+
+        public void SetupNewFilePopup()
+        {
+            var newFilePopupBase = EditorManager.inst.GetDialog("New File Popup").Dialog;
+
+            var newFilePopup = newFilePopupBase.Find("New File Popup");
+
+            var openFilePopupSelect = newFilePopup.gameObject.AddComponent<SelectGUI>();
+            openFilePopupSelect.target = newFilePopup;
+            openFilePopupSelect.ogPos = newFilePopup.position;
+
+            var pather = newFilePopup.Find("GameObject");
+            var spacer = newFilePopup.GetChild(6);
+
+            var path = pather.Find("song-filename").GetComponent<InputField>();
+
+            spacer.gameObject.Duplicate(newFilePopup, "spacer", 7);
+
+            var browseBase = pather.gameObject.Duplicate(newFilePopup, "browse", 7);
+
+            Destroy(browseBase.transform.GetChild(0).gameObject);
+            Destroy(pather.GetChild(1).gameObject);
+
+            var browseLocal = browseBase.transform.Find("browse");
+            browseLocal.Find("Text").GetComponent<Text>().text = "Local Browser";
+            var browseLocalButton = browseLocal.GetComponent<Button>();
+            browseLocalButton.onClick.ClearAll();
+            browseLocalButton.onClick.AddListener(delegate ()
+            {
+                string text = FileBrowser.OpenSingleFile("Select a song to use!", RTFile.ApplicationDirectory, "ogg", "wav", "mp3");
+                if (!string.IsNullOrEmpty(text))
+                {
+                    path.text = text;
+                }
+            });
+
+            var browseInternal = browseLocal.gameObject.Duplicate(browseBase.transform, "internal browse");
+            browseInternal.transform.Find("Text").GetComponent<Text>().text = "In-game Browser";
+            var browseInternalButton = browseInternal.GetComponent<Button>();
+            browseInternalButton.onClick.ClearAll();
+            browseInternalButton.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.ShowDialog("Browser Popup");
+                RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".ogg", ".wav", ".mp3" }, onSelectFile: delegate (string _val)
+                {
+                    if (!string.IsNullOrEmpty(_val))
+                    {
+                        EditorManager.inst.HideDialog("Browser Popup");
+                        path.text = _val;
+                    }
+                });
+            });
+
+            var hlg = browseBase.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 8f;
+
+            pather.gameObject.AddComponent<HorizontalLayoutGroup>();
         }
 
         public void CreateObjectSearch()
@@ -8278,9 +8337,9 @@ namespace EditorManagement.Functions.Editors
         public void CreateNewLevel()
         {
             var __instance = EditorManager.inst;
-            if (!__instance.newAudioFile.ToLower().Contains(".ogg"))
+            if (!__instance.newAudioFile.ToLower().Contains(".ogg") && !__instance.newAudioFile.ToLower().Contains(".wav") && !__instance.newAudioFile.ToLower().Contains(".mp3"))
             {
-                __instance.DisplayNotification("The file you are trying to load doesn't appear to be a .ogg file.", 2f, EditorManager.NotificationType.Error, false);
+                __instance.DisplayNotification("The file you are trying to load doesn't appear to be a song file.", 2f, EditorManager.NotificationType.Error, false);
                 return;
             }
             if (!RTFile.FileExists(__instance.newAudioFile))
@@ -8308,9 +8367,20 @@ namespace EditorManagement.Functions.Editors
                 return;
             }
             Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName);
+
             if (__instance.newAudioFile.ToLower().Contains(".ogg"))
             {
                 string destFileName = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.ogg";
+                File.Copy(__instance.newAudioFile, destFileName, true);
+            }
+            if (__instance.newAudioFile.ToLower().Contains(".wav"))
+            {
+                string destFileName = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.wav";
+                File.Copy(__instance.newAudioFile, destFileName, true);
+            }
+            if (__instance.newAudioFile.ToLower().Contains(".mp3"))
+            {
+                string destFileName = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.mp3";
                 File.Copy(__instance.newAudioFile, destFileName, true);
             }
 
