@@ -6,10 +6,12 @@ using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using System;
 using System.Collections;
+using System.IO.Compression;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using RTFunctions.Functions.Managers.Networking;
 
 namespace EditorManagement.Patchers
 {
@@ -47,38 +49,30 @@ namespace EditorManagement.Patchers
 			LSHelpers.DeleteChildren(content.Find("song/difficulty/toggles"));
 			Destroy(content.Find("song/difficulty/toggles").GetComponent<ToggleGroup>());
 
-			// Button
+			if (!content.Find("artist/link/inputs/openurl"))
 			{
-				if (!content.Find("artist/link/inputs/openurl"))
-				{
-					var openLink = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x").gameObject.Duplicate(content.Find("artist/link/inputs"), "openurl", 0);
-					openLink.transform.Find("Image").gameObject.GetComponent<Image>().sprite = EditorManager.inst.DropdownMenus[3].transform.Find("Open Workshop").Find("Image").gameObject.GetComponent<Image>().sprite;
+				var openLink = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x").gameObject.Duplicate(content.Find("artist/link/inputs"), "openurl", 0);
+				openLink.transform.Find("Image").gameObject.GetComponent<Image>().sprite = EditorManager.inst.DropdownMenus[3].transform.Find("Open Workshop").Find("Image").gameObject.GetComponent<Image>().sprite;
 
-					var openLinkRT = (RectTransform)openLink.transform;
-					var openLinkLE = openLink.AddComponent<LayoutElement>();
-					var openLinkButton = openLink.GetComponent<Button>();
+				var openLinkRT = (RectTransform)openLink.transform;
+				var openLinkLE = openLink.AddComponent<LayoutElement>();
+				var openLinkButton = openLink.GetComponent<Button>();
 
-					openLinkLE.minWidth = 32f;
-					openLinkButton.onClick.RemoveAllListeners();
-					//openLinkButton.onClick.AddListener(delegate ()
-					//{
-					//	Application.OpenURL(DataManager.inst.metaData.artist.getUrl());
-					//});
+				openLinkLE.minWidth = 32f;
+				openLinkButton.onClick.RemoveAllListeners();
 
-					var cb = openLinkButton.colors;
-					cb.normalColor = new Color(0f, 0.5f, 1f, 1f);
-					cb.pressedColor = new Color(0.6f, 0.9f, 1f, 1f);
-					cb.highlightedColor = new Color(0.3f, 0.6f, 1f, 1f);
-					cb.selectedColor = new Color(0f, 0.5f, 1f, 1f);
-					openLinkButton.colors = cb;
-				}
+				var cb = openLinkButton.colors;
+				cb.normalColor = new Color(0f, 0.5f, 1f, 1f);
+				cb.pressedColor = new Color(0.6f, 0.9f, 1f, 1f);
+				cb.highlightedColor = new Color(0.3f, 0.6f, 1f, 1f);
+				cb.selectedColor = new Color(0f, 0.5f, 1f, 1f);
+				openLinkButton.colors = cb;
 			}
 
 			if (!content.Find("creator/link"))
-			{
-				var gameObject = content.Find("artist/link").gameObject.Duplicate(content.Find("creator"), "link", 3);
-			}
+				content.Find("artist/link").gameObject.Duplicate(content.Find("creator"), "link", 3);
 
+			// Tag Prefab
             {
 				var tagParent = content.Find("creator/description (1)");
 				tagParent.name = "tags";
@@ -96,8 +90,6 @@ namespace EditorManagement.Patchers
 				var tagScrollViewRT = tagScrollView.AddComponent<RectTransform>();
 				tagScrollViewRT.sizeDelta = new Vector2(522f, 40f);
 				var scroll = tagScrollView.AddComponent<ScrollRect>();
-				//layout.AddComponent<Mask>();
-				//var image = layout.AddComponent<Image>();
 
 				scroll.horizontal = true;
 				scroll.vertical = false;
@@ -153,6 +145,41 @@ namespace EditorManagement.Patchers
 				var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
 				((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
 			}
+
+			var submitBase = content.Find("submit");
+			var convert = submitBase.Find("submit").gameObject;
+			convert.name = "convert";
+
+			var bcol = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+			var convertImage = convert.GetComponent<Image>();
+            convertImage.sprite = null;
+			convertImage.color = bcol;
+
+			convert.transform.AsRT().anchoredPosition = new Vector2(-240f, 0f);
+			convert.transform.AsRT().sizeDelta = new Vector2(230f, 48f);
+			var convertText = convert.transform.Find("Text").GetComponent<Text>();
+			convertText.fontSize = 18;
+			convertText.text = "Convert to VG Format";
+			convertText.color = new Color(0.1f, 0.1f, 0.1f);
+
+			var upload = convert.Duplicate(submitBase, "upload");
+
+			upload.transform.AsRT().anchoredPosition = new Vector2(0f, 0f);
+			upload.transform.AsRT().sizeDelta = new Vector2(230f, 48f);
+			var uploadText = upload.transform.Find("Text").GetComponent<Text>();
+			uploadText.fontSize = 18;
+			uploadText.text = "Upload to Server";
+			uploadText.color = new Color(0.1f, 0.1f, 0.1f);
+
+			var zip = convert.Duplicate(submitBase, "zip");
+
+			zip.transform.AsRT().anchoredPosition = new Vector2(240f, 0f);
+			zip.transform.AsRT().sizeDelta = new Vector2(230f, 48f);
+			var zipText = zip.transform.Find("Text").GetComponent<Text>();
+			zipText.fontSize = 18;
+			zipText.text = "ZIP Level";
+			zipText.color = new Color(0.1f, 0.1f, 0.1f);
 		}
 
 		static void SetToggleList()
@@ -180,11 +207,8 @@ namespace EditorManagement.Patchers
 				toggle.isOn = DataManager.inst.metaData.song.difficulty == num;
 				toggle.onValueChanged.AddListener(delegate (bool _val)
 				{
-					if (_val)
-                    {
-						DataManager.inst.metaData.song.difficulty = index;
-						SetToggleList();
-                    }
+					DataManager.inst.metaData.song.difficulty = index;
+					SetToggleList();
 				});
 
 				num++;
@@ -195,9 +219,9 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool Render()
 		{
-			Debug.Log($"{Instance.className}Render the Metadata Editor!");
+			Debug.Log($"{Instance.className}Render the Metadata Editor");
 
-            var content = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content");
+			var content = EditorManager.inst.GetDialog("Metadata Editor").Dialog.Find("Scroll View/Viewport/Content");
 
 			((RectTransform)content.Find("spacer (1)")).sizeDelta = new Vector2(732f, 80f);
 
@@ -229,20 +253,20 @@ namespace EditorManagement.Patchers
 			var artistLink = content.Find("artist/link/inputs/input").GetComponent<InputField>();
 			artistLink.onEndEdit.RemoveAllListeners();
 			artistLink.text = DataManager.inst.metaData.artist.Link;
-            artistLink.onEndEdit.AddListener(delegate (string _val)
-            {
-                string oldVal = DataManager.inst.metaData.artist.Link;
-                DataManager.inst.metaData.artist.Link = _val;
-                EditorManager.inst.history.Add(new History.Command("Change Artist Link", delegate ()
-                {
-                    DataManager.inst.metaData.artist.Link = _val;
+			artistLink.onEndEdit.AddListener(delegate (string _val)
+			{
+				string oldVal = DataManager.inst.metaData.artist.Link;
+				DataManager.inst.metaData.artist.Link = _val;
+				EditorManager.inst.history.Add(new History.Command("Change Artist Link", delegate ()
+				{
+					DataManager.inst.metaData.artist.Link = _val;
 					Instance.Render();
-                }, delegate ()
-                {
-                    DataManager.inst.metaData.artist.Link = oldVal;
+				}, delegate ()
+				{
+					DataManager.inst.metaData.artist.Link = oldVal;
 					Instance.Render();
-                }), false);
-            });
+				}), false);
+			});
 
 			var artistLinkTypes = content.Find("artist/link/inputs/dropdown").GetComponent<Dropdown>();
 			artistLinkTypes.options.Clear();
@@ -324,7 +348,7 @@ namespace EditorManagement.Patchers
 			{
 				int oldVal = moddedMetadata.LevelCreator.linkType;
 				moddedMetadata.LevelCreator.linkType = _val;
-				EditorManager.inst.history.Add(new History.Command("Change Artist Link", delegate ()
+				EditorManager.inst.history.Add(new History.Command("Change Creator Link", delegate ()
 				{
 					moddedMetadata.LevelCreator.linkType = _val;
 					Instance.Render();
@@ -348,103 +372,190 @@ namespace EditorManagement.Patchers
 			SetToggleList();
 
 			RenderTags();
-			content.Find("agreement/text").GetComponent<Text>().text = "Currently there is no way to upload to any online service. A custom online arcade is planned, so stay tuned! For now, " +
-				"you can convert the level to the current level format for vanilla PA and upload it to the workshop. Beware any modded features not in current PA will not be saved.";
-			for (int i = 5; i < 9; i++)
-            {
-				content.GetChild(i).gameObject.SetActive(false);
-            }
-
-            try
-            {
-				content.Find("spacer").gameObject.SetActive(true);
-				content.Find("submit").gameObject.SetActive(true);
-				var button = content.Find("submit/submit").GetComponent<Button>();
-				button.GetComponent<Image>().sprite = null;
-				content.Find("submit/submit").AsRT().sizeDelta = new Vector2(300f, 48f);
-				content.Find("submit/submit/Text").GetComponent<Text>().text = "Convert to VG Format";
-
-				button.onClick.ClearAll();
-				button.onClick.AddListener(delegate ()
-				{
-					var exportPath = RTEditor.GetEditorProperty("Convert Level LS to VG Export Path").GetConfigEntry<string>().Value;
-
-					if (string.IsNullOrEmpty(exportPath))
-					{
-						if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
-							Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
-						exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
-					}
-
-					if (exportPath[exportPath.Length - 1] != '/')
-						exportPath += "/";
-
-					if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
-                    {
-						EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
-						return;
-                    }
-
-					var vg = GameData.Current.ToJSONVG();
-
-					var metadata = MetaData.Current.ToJSONVG();
-
-					var path = exportPath + EditorManager.inst.currentLoadedLevel;
-
-					if (!RTFile.DirectoryExists(path))
-						Directory.CreateDirectory(path);
-
-					var ogPath = GameManager.inst.path.Replace("/level.lsb", "");
-
-					if (RTFile.FileExists(ogPath + "/level.ogg"))
-                    {
-						File.Copy(ogPath + "/level.ogg", path + "/audio.ogg", RTFile.FileExists(path + "/audio.ogg"));
-                    }
-
-					if (RTFile.FileExists(ogPath + "/level.jpg"))
-                    {
-						File.Copy(ogPath + "/level.jpg", path + "/cover.jpg", RTFile.FileExists(path + "/cover.jpg"));
-                    }
-
-					try
-					{
-						RTFile.WriteToFile(path + "/metadata.vgm", metadata.ToString());
-					}
-					catch (Exception ex)
-					{
-						Debug.LogError($"{Instance.className}Convert to VG error (MetaData) {ex}");
-					}
-
-					try
-					{
-						RTFile.WriteToFile(path + "/level.vgd", vg.ToString());
-					}
-                    catch (Exception ex)
-                    {
-						Debug.LogError($"{Instance.className}Convert to VG error (GameData) {ex}");
-					}
-
-					EditorManager.inst.DisplayNotification($"Converted Level \"{EditorManager.inst.currentLoadedLevel}\" from LS format to VG format and saved to {Path.GetFileName(path)}.", 4f,
-						EditorManager.NotificationType.Success);
-				});
-			}
-			catch (Exception ex)
-            {
-				Debug.LogError(ex);
-            }
-
-			//bool hasID = DataManager.inst.metaData.beatmap.workshop_id != -1;
-			//content.Find("id/id").GetComponent<Text>().text = hasID ? ("ID: " + DataManager.inst.metaData.beatmap.workshop_id.ToString()) : "Upload to get more info!";
-			//content.Find("id/revisions").gameObject.SetActive(hasID);
-			//content.Find("id/revisions").GetComponent<Text>().text = hasID ? ("Version: " + DataManager.inst.metaData.beatmap.version_number.ToString()) : "";
-			//content.Find("submit/submit").GetComponentInChildren<Text>().text = hasID ? "Update" : "Upload";
-
-			//var uploadButton = content.Find("submit/submit").GetComponent<Button>();
-			//uploadButton.onClick.RemoveAllListeners();
-			//uploadButton.onClick.AddListener(delegate ()
+			content.Find("agreement/text").GetComponent<Text>().text = "If you want to upload to the Steam Workshop, you can convert the level to the current level format for vanilla PA and upload it to the workshop. Beware any modded features not in current PA will not be saved. " +
+				"However, if you want to include modded features, then it's recommended to upload to the arcade server or zip the level.";
+			//for (int i = 5; i < 9; i++)
 			//{
-			//	Instance.StartCoroutine(Instance.Upload());
-			//});
+			//    content.GetChild(i).gameObject.SetActive(false);
+			//}
+
+			bool hasID = !string.IsNullOrEmpty(moddedMetadata.serverID);
+			content.Find("id/id").GetComponent<Text>().text = hasID ? $"ID: {moddedMetadata.serverID}" : "Upload to get more info!";
+			content.Find("id/revisions").gameObject.SetActive(hasID);
+			if (hasID)
+				content.Find("id/revisions").GetComponent<Text>().text = "Version: " + DataManager.inst.metaData.beatmap.version_number.ToString();
+
+			var uploadText = content.Find("submit/upload/Text").GetComponent<Text>();
+			uploadText.text = hasID ? "Update" : "Upload";
+
+			var submitBase = content.Find("submit");
+
+			content.Find("spacer").gameObject.SetActive(true);
+			submitBase.gameObject.SetActive(true);
+
+			var convert = submitBase.Find("convert").GetComponent<Button>();
+			convert.onClick.ClearAll();
+			convert.onClick.AddListener(delegate ()
+			{
+				var exportPath = RTEditor.GetEditorProperty("Convert Level LS to VG Export Path").GetConfigEntry<string>().Value;
+
+				if (string.IsNullOrEmpty(exportPath))
+				{
+					if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+						Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+					exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+				}
+
+				if (exportPath[exportPath.Length - 1] != '/')
+					exportPath += "/";
+
+				if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+				{
+					EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+					return;
+				}
+
+				var vg = GameData.Current.ToJSONVG();
+
+				var metadata = MetaData.Current.ToJSONVG();
+
+				var path = exportPath + EditorManager.inst.currentLoadedLevel;
+
+				if (!RTFile.DirectoryExists(path))
+					Directory.CreateDirectory(path);
+
+				var ogPath = GameManager.inst.path.Replace("/level.lsb", "");
+
+				if (RTFile.FileExists(ogPath + "/level.ogg"))
+				{
+					File.Copy(ogPath + "/level.ogg", path + "/audio.ogg", RTFile.FileExists(path + "/audio.ogg"));
+				}
+
+				if (RTFile.FileExists(ogPath + "/level.jpg"))
+				{
+					File.Copy(ogPath + "/level.jpg", path + "/cover.jpg", RTFile.FileExists(path + "/cover.jpg"));
+				}
+
+				try
+				{
+					RTFile.WriteToFile(path + "/metadata.vgm", metadata.ToString());
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError($"{Instance.className}Convert to VG error (MetaData) {ex}");
+				}
+
+				try
+				{
+					RTFile.WriteToFile(path + "/level.vgd", vg.ToString());
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError($"{Instance.className}Convert to VG error (GameData) {ex}");
+				}
+
+				EditorManager.inst.DisplayNotification($"Converted Level \"{EditorManager.inst.currentLoadedLevel}\" from LS format to VG format and saved to {Path.GetFileName(path)}.", 4f,
+					EditorManager.NotificationType.Success);
+			});
+
+			bool active = false;
+
+			var upload = submitBase.Find("upload").GetComponent<Button>();
+			upload.onClick.ClearAll();
+			upload.onClick.AddListener(delegate ()
+			{
+				if (!active)
+				{
+					EditorManager.inst.DisplayNotification("Not implemented yet!", 2f, EditorManager.NotificationType.Warning);
+					return;
+				}
+
+
+				var exportPath = RTEditor.GetEditorProperty("ZIP Level Export Path").GetConfigEntry<string>().Value;
+
+				if (string.IsNullOrEmpty(exportPath))
+				{
+					if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+						Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+					exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+				}
+
+				if (exportPath[exportPath.Length - 1] != '/')
+					exportPath += "/";
+
+				if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+				{
+					EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+					return;
+				}
+
+				var path = exportPath + EditorManager.inst.currentLoadedLevel + "-server-upload.zip";
+
+				try
+				{
+					if (RTFile.FileExists(path))
+						File.Delete(path);
+
+					ZipFile.CreateFromDirectory(GameManager.inst.basePath, path);
+
+					Instance.StartCoroutine(AlephNetworkManager.UploadBytes("", File.ReadAllBytes(path), delegate (string id)
+					{
+						MetaData.Current.serverID = id;
+						DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb", MetaData.Current);
+
+						if (RTFile.FileExists(path))
+							File.Delete(path);
+
+						Instance.Render();
+
+					}, delegate (string onError)
+					{
+						EditorManager.inst?.DisplayNotification("Upload failed.", 2f, EditorManager.NotificationType.Error);
+					}));
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError($"{Instance.className}There was an error in creating the ZIP file.\n{ex}");
+				}
+			});
+
+			var zip = submitBase.Find("zip").GetComponent<Button>();
+			zip.onClick.ClearAll();
+			zip.onClick.AddListener(delegate ()
+			{
+				var exportPath = RTEditor.GetEditorProperty("ZIP Level Export Path").GetConfigEntry<string>().Value;
+
+				if (string.IsNullOrEmpty(exportPath))
+				{
+					if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/exports"))
+						Directory.CreateDirectory(RTFile.ApplicationDirectory + "beatmaps/exports");
+					exportPath = RTFile.ApplicationDirectory + "beatmaps/exports/";
+				}
+
+				if (exportPath[exportPath.Length - 1] != '/')
+					exportPath += "/";
+
+				if (!RTFile.DirectoryExists(Path.GetDirectoryName(exportPath)))
+				{
+					EditorManager.inst.DisplayNotification("Directory does not exist.", 2f, EditorManager.NotificationType.Error);
+					return;
+				}
+
+				var path = exportPath + EditorManager.inst.currentLoadedLevel + ".zip";
+
+				try
+				{
+					if (RTFile.FileExists(path))
+						File.Delete(path);
+
+					ZipFile.CreateFromDirectory(GameManager.inst.basePath, path);
+					EditorManager.inst.DisplayNotification($"Sucessfully created {EditorManager.inst.currentLoadedLevel}.zip.", 2f, EditorManager.NotificationType.Success);
+				}
+				catch (Exception ex)
+				{
+					Debug.LogError($"{Instance.className}There was an error in creating the ZIP file.\n{ex}");
+				}
+			});
 
 			return false;
 		}
