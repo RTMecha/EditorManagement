@@ -1101,32 +1101,37 @@ namespace EditorManagement.Functions.Editors
 
         public void CreateGlobalSettings()
         {
-            if (!RTFile.FileExists(EditorSettingsPath))
+            if (RTFile.FileExists(EditorSettingsPath))
+                return;
+
+            var jn = JSON.Parse("{}");
+
+            EditorPath = "editor";
+            jn["paths"]["editor"] = EditorPath;
+
+            ThemePath = "themes";
+            jn["paths"]["themes"] = ThemePath;
+
+            PrefabPath = "prefabs";
+            jn["paths"]["prefabs"] = PrefabPath;
+
+            for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
             {
-                var jn = JSON.Parse("{}");
-
-                EditorPath = "editor";
-                jn["paths"]["editor"] = EditorPath;
-
-                ThemePath = "themes";
-                jn["paths"]["themes"] = ThemePath;
-
-                PrefabPath = "prefabs";
-                jn["paths"]["prefabs"] = PrefabPath;
-
-                for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
-                {
-                    jn["marker_colors"][i] = LSColors.ColorToHex(MarkerEditor.inst.markerColors[i]);
-                }
-
-                EditorManager.inst.layerColors.RemoveAt(5);
-                for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
-                {
-                    jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
-                }
-
-                RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
+                jn["marker_colors"][i] = LSColors.ColorToHex(MarkerEditor.inst.markerColors[i]);
             }
+
+            EditorManager.inst.layerColors.RemoveAt(5);
+            for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
+            {
+                jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
+            }
+
+            for (int i = 0; i < DialogAnimations.Count; i++)
+            {
+                jn["dialog_anims"][i] = DialogAnimations[i].ToJSON();
+            }
+
+            RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
         }
 
         public void LoadGlobalSettings()
@@ -1187,6 +1192,26 @@ namespace EditorManagement.Functions.Editors
 
                 RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
             }
+
+            if (jn["dialog_anims"] != null && jn["dialog_anims"].Count == DialogAnimations.Count)
+            {
+                DialogAnimations.Clear();
+                for (int i = 0; i < jn["dialog_anims"].Count; i++)
+                {
+                    var dialogAnimation = DialogAnimation.Parse(jn["dialog_anims"][i]);
+                    if (dialogAnimation != null)
+                        DialogAnimations.Add(dialogAnimation);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < DialogAnimations.Count; i++)
+                {
+                    jn["dialog_anims"][i] = DialogAnimations[i].ToJSON();
+                }
+
+                RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
+            }
         }
 
         public void SaveGlobalSettings()
@@ -1207,6 +1232,11 @@ namespace EditorManagement.Functions.Editors
             for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
             {
                 jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
+            }
+
+            for (int i = 0; i < DialogAnimations.Count; i++)
+            {
+                jn["dialog_anims"][i] = DialogAnimations[i].ToJSON();
             }
 
             RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
@@ -2369,17 +2399,7 @@ namespace EditorManagement.Functions.Editors
                 {
                     EditorPath = _val;
                 });
-
-                editorPathIF.onEndEdit.ClearAll();
-                editorPathIF.onEndEdit.AddListener(delegate (string _val)
-                {
-                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
-                    {
-                        Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
-                    }
-                    SaveGlobalSettings();
-                });
-
+                
                 var clickable = editorPathGO.AddComponent<Clickable>();
                 clickable.onDown = delegate (PointerEventData pointerEventData)
                 {
@@ -2419,22 +2439,24 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
+                    if (editorListPath[editorListPath.Length - 1] == '/')
+                        return;
+
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
+
+                    SaveGlobalSettings();
+
                     EditorManager.inst.GetLevelList();
                 });
 
-                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+                string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
-                if (RTFile.FileExists(jpgFileLocation))
+                if (RTFile.FileExists(refreshImage))
                 {
                     var spriteReloader = levelListReloader.GetComponent<Image>();
 
-                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-                    {
-                        spriteReloader.sprite = cover;
-                    }, delegate (string errorFile)
-                    {
-                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-                    }));
+                    spriteReloader.sprite = SpriteManager.LoadSprite(refreshImage);
                 }
             }
 
@@ -2463,16 +2485,6 @@ namespace EditorManagement.Functions.Editors
                 themePathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     ThemePath = _val;
-                });
-
-                themePathIF.onEndEdit.ClearAll();
-                themePathIF.onEndEdit.AddListener(delegate (string _val)
-                {
-                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
-                    {
-                        Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
-                    }
-                    SaveGlobalSettings();
                 });
 
                 var clickable = themePathGO.AddComponent<Clickable>();
@@ -2513,23 +2525,22 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
+
+                    SaveGlobalSettings();
+
                     StartCoroutine(LoadThemes(true));
                     EventEditor.inst.RenderEventsDialog();
                 });
 
-                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+                string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
-                if (RTFile.FileExists(jpgFileLocation))
+                if (RTFile.FileExists(refreshImage))
                 {
                     var spriteReloader = themePathReloader.GetComponent<Image>();
 
-                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-                    {
-                        spriteReloader.sprite = cover;
-                    }, delegate (string errorFile)
-                    {
-                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-                    }));
+                    spriteReloader.sprite = SpriteManager.LoadSprite(refreshImage);
                 }
             }
 
@@ -2556,16 +2567,6 @@ namespace EditorManagement.Functions.Editors
                 prefabPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
-                });
-
-                prefabPathIF.onEndEdit.ClearAll();
-                prefabPathIF.onEndEdit.AddListener(delegate (string _val)
-                {
-                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
-                    {
-                        Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
-                    }
-                    SaveGlobalSettings();
                 });
 
                 var clickable = prefabPathGO.AddComponent<Clickable>();
@@ -2607,22 +2608,20 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
+                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+                        Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+                    SaveGlobalSettings();
+
                     StartCoroutine(UpdatePrefabs());
                 });
 
-                string jpgFileLocation = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+                string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
-                if (RTFile.FileExists(jpgFileLocation))
+                if (RTFile.FileExists(refreshImage))
                 {
                     var spriteReloader = levelListReloader.GetComponent<Image>();
 
-                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-                    {
-                        spriteReloader.sprite = cover;
-                    }, delegate (string errorFile)
-                    {
-                        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-                    }));
+                    spriteReloader.sprite = SpriteManager.LoadSprite(refreshImage);
                 }
             }
 
@@ -7853,9 +7852,6 @@ namespace EditorManagement.Functions.Editors
                         rawJSON = DataManager.inst.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
 
                     DataManager.inst.gameData = GameData.Parse(JSON.Parse(rawJSON), false);
-
-                    if (DataManager.inst.metaData.beatmap.workshop_id == -1)
-                        DataManager.inst.metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
                 }
                 catch (Exception ex)
                 {
@@ -8391,8 +8387,6 @@ namespace EditorManagement.Functions.Editors
             metaData.song.title = __instance.newLevelName;
             metaData.creator.steam_name = SteamWrapper.inst.user.displayName;
             metaData.creator.steam_id = SteamWrapper.inst.user.id;
-            metaData.beatmap.workshop_id = UnityEngine.Random.Range(0, int.MaxValue);
-            metaData.id = LSText.randomNumString(16);
 
             dataManager.metaData = metaData;
 
@@ -9851,9 +9845,12 @@ namespace EditorManagement.Functions.Editors
                         new FloatKeyframe(active ? dialogAnimation.posXStartDuration : dialogAnimation.posXEndDuration + 0.01f, active ? dialogAnimation.posEnd.x : dialogAnimation.posStart.x, Ease.Linear),
                     }, delegate (float x)
                     {
-                        var pos = dialog.localPosition;
-                        pos.x = x;
-                        dialog.localPosition = pos;
+                        if (dialogAnimation.posActive)
+                        {
+                            var pos = dialog.localPosition;
+                            pos.x = x;
+                            dialog.localPosition = pos;
+                        }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
@@ -9862,9 +9859,12 @@ namespace EditorManagement.Functions.Editors
                         new FloatKeyframe(active ? dialogAnimation.posYStartDuration : dialogAnimation.posYEndDuration + 0.01f, active ? dialogAnimation.posEnd.y : dialogAnimation.posStart.y, Ease.Linear),
                     }, delegate (float x)
                     {
-                        var pos = dialog.localPosition;
-                        pos.y = x;
-                        dialog.localPosition = pos;
+                        if (dialogAnimation.posActive)
+                        {
+                            var pos = dialog.localPosition;
+                            pos.y = x;
+                            dialog.localPosition = pos;
+                        }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
@@ -9873,9 +9873,12 @@ namespace EditorManagement.Functions.Editors
                         new FloatKeyframe(active ? dialogAnimation.scaXStartDuration : dialogAnimation.scaXEndDuration + 0.01f, active ? dialogAnimation.scaEnd.x : dialogAnimation.scaStart.x, Ease.Linear),
                     }, delegate (float x)
                     {
-                        var pos = dialog.localScale;
-                        pos.x = x;
-                        dialog.localScale = pos;
+                        if (dialogAnimation.scaActive)
+                        {
+                            var pos = dialog.localScale;
+                            pos.x = x;
+                            dialog.localScale = pos;
+                        }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
@@ -9884,9 +9887,12 @@ namespace EditorManagement.Functions.Editors
                         new FloatKeyframe(active ? dialogAnimation.scaYStartDuration : dialogAnimation.scaYEndDuration + 0.01f, active ? dialogAnimation.scaEnd.y : dialogAnimation.scaStart.y, Ease.Linear),
                     }, delegate (float x)
                     {
-                        var pos = dialog.localScale;
-                        pos.y = x;
-                        dialog.localScale = pos;
+                        if (dialogAnimation.scaActive)
+                        {
+                            var pos = dialog.localScale;
+                            pos.y = x;
+                            dialog.localScale = pos;
+                        }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
@@ -9895,7 +9901,10 @@ namespace EditorManagement.Functions.Editors
                         new FloatKeyframe(active ? dialogAnimation.rotStartDuration : dialogAnimation.rotEndDuration + 0.01f, active ? dialogAnimation.rotEnd : dialogAnimation.rotStart, Ease.Linear),
                     }, delegate (float x)
                     {
-                        dialog.localRotation = Quaternion.Euler(0f, 0f, x);
+                        if (dialogAnimation.rotActive)
+                        {
+                            dialog.localRotation = Quaternion.Euler(0f, 0f, x);
+                        }
                     }),
                 };
                 animation.id = LSText.randomNumString(16);
@@ -9904,9 +9913,12 @@ namespace EditorManagement.Functions.Editors
                 {
                     dialog.gameObject.SetActive(active);
 
-                    dialog.localPosition = new Vector3(dialogAnimation.posEnd.x, dialogAnimation.posEnd.y, 0f);
-                    dialog.localScale = new Vector3(dialogAnimation.scaEnd.x, dialogAnimation.scaEnd.y, 1f);
-                    dialog.localRotation = Quaternion.Euler(0f, 0f, dialogAnimation.rotEnd);
+                    if (dialogAnimation.posActive)
+                        dialog.localPosition = new Vector3(dialogAnimation.posEnd.x, dialogAnimation.posEnd.y, 0f);
+                    if (dialogAnimation.scaActive)
+                        dialog.localScale = new Vector3(dialogAnimation.scaEnd.x, dialogAnimation.scaEnd.y, 1f);
+                    if (dialogAnimation.rotActive)
+                        dialog.localRotation = Quaternion.Euler(0f, 0f, dialogAnimation.rotEnd);
 
                     AnimationManager.inst.RemoveID(animation.id);
                 };
@@ -9920,38 +9932,26 @@ namespace EditorManagement.Functions.Editors
 
         public void SetDialogStatus(string dialogName, bool active, bool focus = true)
         {
-            if (EditorManager.inst.EditorDialogsDictionary.ContainsKey(dialogName))
+            if (!EditorManager.inst.EditorDialogsDictionary.ContainsKey(dialogName))
             {
-                PlayDialogAnimation(dialogName, active);
+                Debug.LogError($"{EditorManager.inst.className}Can't load dialog [{dialogName}].");
+                return;
+            }
 
-                if (active)
-                {
-                    if (focus)
-                    {
-                        EditorManager.inst.currentDialog = EditorManager.inst.EditorDialogsDictionary[dialogName];
-                    }
-                    if (!EditorManager.inst.ActiveDialogs.Contains(EditorManager.inst.EditorDialogsDictionary[dialogName]))
-                    {
-                        EditorManager.inst.ActiveDialogs.Add(EditorManager.inst.EditorDialogsDictionary[dialogName]);
-                    }
-                }
-                else
-                {
-                    EditorManager.inst.ActiveDialogs.Remove(EditorManager.inst.EditorDialogsDictionary[dialogName]);
-                    if (EditorManager.inst.currentDialog == EditorManager.inst.EditorDialogsDictionary[dialogName] && focus)
-                    {
-                        if (EditorManager.inst.ActiveDialogs.Count > 0)
-                        {
-                            EditorManager.inst.currentDialog = EditorManager.inst.ActiveDialogs.Last();
-                            return;
-                        }
-                        EditorManager.inst.currentDialog = new EditorManager.EditorDialog();
-                    }
-                }
+            PlayDialogAnimation(dialogName, active);
+
+            if (active)
+            {
+                if (focus)
+                    EditorManager.inst.currentDialog = EditorManager.inst.EditorDialogsDictionary[dialogName];
+                if (!EditorManager.inst.ActiveDialogs.Contains(EditorManager.inst.EditorDialogsDictionary[dialogName]))
+                    EditorManager.inst.ActiveDialogs.Add(EditorManager.inst.EditorDialogsDictionary[dialogName]);
             }
             else
             {
-                Debug.LogErrorFormat("{0}Can't load dialog [{1}].", new object[] { EditorManager.inst.className, dialogName });
+                EditorManager.inst.ActiveDialogs.Remove(EditorManager.inst.EditorDialogsDictionary[dialogName]);
+                if (EditorManager.inst.currentDialog == EditorManager.inst.EditorDialogsDictionary[dialogName] && focus)
+                    EditorManager.inst.currentDialog = EditorManager.inst.ActiveDialogs.Count > 0 ? EditorManager.inst.ActiveDialogs.Last() : new EditorManager.EditorDialog();
             }
         }
 
@@ -10126,6 +10126,8 @@ namespace EditorManagement.Functions.Editors
                 Config.Bind("Data", "Update Theme List on Files Changed", false, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Data", "Show Levels Without Cover Notification", false, "Sends an error notification for what levels don't have covers.")),
+            new EditorProperty(EditorProperty.ValueType.String,
+                Config.Bind("Data", "ZIP Level Export Path", "", "The custom path to export a zipped level to. If no path is set then it will export to beatmaps/exports.")),
             new EditorProperty(EditorProperty.ValueType.String,
                 Config.Bind("Data", "Convert Level LS to VG Export Path", "", "The custom path to export a level to. If no path is set then it will export to beatmaps/exports.")),
             new EditorProperty(EditorProperty.ValueType.String,
@@ -10486,11 +10488,11 @@ namespace EditorManagement.Functions.Editors
                 scaStart = Vector2.zero,
                 scaEnd = Vector2.one,
                 scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.2f,
+                scaXEndDuration = 0.1f,
                 scaXStartEase = "OutElastic",
                 scaXEndEase = "InCirc",
                 scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.2f,
+                scaYEndDuration = 0.1f,
                 scaYStartEase = "OutElastic",
                 scaYEndEase = "InCirc",
 
@@ -10501,24 +10503,597 @@ namespace EditorManagement.Functions.Editors
                 rotStartEase = "Linear",
                 rotEndEase = "Linear",
             },
-            //"Open File Popup",
-            //"New File Popup",
-            //"Save As Popup",
-            //"Quick Actions Popup",
-            //"Parent Selector",
-            //"Prefab Popup",
-            //"Object Options Popup",
-            //"BG Options Popup",
-            //"Browser Popup",
-            //"Object Search Popup",
-            //"Warning Popup",
-            //"REPL Editor Popup",
-            //"Editor Properties Popup",
-            //"Documentation Popup",
-            //"Debugger Popup",
-            //"Autosaves Popup",
-            //"Default Modifiers Popup",
-            //"Keybind List Popup",
+            new DialogAnimation("New File Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Save As Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Quick Actions Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Parent Selector")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Prefab Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Object Options Popup")
+            {
+                posActive = true,
+                posStart = new Vector2(-35f, 22f),
+                posEnd = new Vector2(-35f, 57f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "OutElastic",
+                posXEndEase = "InCirc",
+                posYStartDuration = 0.6f,
+                posYEndDuration = 0.1f,
+                posYStartEase = "OutElastic",
+                posYEndEase = "InCirc",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("BG Options Popup")
+            {
+                posActive = true,
+                posStart = new Vector2(0f, 22f),
+                posEnd = new Vector2(0f, 57f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "OutElastic",
+                posXEndEase = "InCirc",
+                posYStartDuration = 0.6f,
+                posYEndDuration = 0.1f,
+                posYStartEase = "OutElastic",
+                posYEndEase = "InCirc",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Browser Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Object Search Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Warning Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("REPL Editor Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Editor Properties Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Documentation Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Debugger Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Autosaves Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Default Modifiers Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Keybind List Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Theme Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Prefab Types Popup")
+            {
+                posStart = Vector2.zero,
+                posEnd = Vector2.zero,
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = Vector2.zero,
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutElastic",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
         };
 
         public class DialogAnimation : Exists
@@ -10529,7 +11104,9 @@ namespace EditorManagement.Functions.Editors
             }
 
             public string name;
+            public bool active = true;
 
+            public bool posActive = false;
             public Vector2 posStart;
             public Vector2 posEnd;
             public float posXStartDuration;
@@ -10541,6 +11118,7 @@ namespace EditorManagement.Functions.Editors
             public string posYStartEase;
             public string posYEndEase;
 
+            public bool scaActive = true;
             public Vector2 scaStart;
             public Vector2 scaEnd;
             public float scaXStartDuration;
@@ -10552,12 +11130,137 @@ namespace EditorManagement.Functions.Editors
             public string scaYStartEase;
             public string scaYEndEase;
 
+            public bool rotActive = false;
             public float rotStart;
             public float rotEnd;
             public float rotStartDuration;
             public float rotEndDuration;
             public string rotStartEase;
             public string rotEndEase;
+
+            public static DialogAnimation Parse(JSONNode jn)
+            {
+                if (jn["name"] == null)
+                    return null;
+
+                var dialogAnimation = new DialogAnimation(jn["name"]);
+
+                if (jn["active"]["all"] != null)
+                    dialogAnimation.active = jn["active"]["all"].AsBool;
+                
+                if (jn["active"]["pos"] != null && jn["active"]["pos"] != null)
+                    dialogAnimation.posActive = jn["active"]["pos"].AsBool;
+                
+                if (jn["active"]["sca"] != null && jn["active"]["sca"] != null)
+                    dialogAnimation.scaActive = jn["active"]["sca"].AsBool;
+                
+                if (jn["active"]["rot"] != null && jn["active"]["rot"] != null)
+                    dialogAnimation.rotActive = jn["active"]["rot"].AsBool;
+
+                if (jn["open"] != null)
+                {
+                    if (jn["open"]["pos"] != null)
+                    {
+                        dialogAnimation.posStart = new Vector2(jn["open"]["pos"]["x"]["val"].AsFloat, jn["open"]["pos"]["y"]["val"].AsFloat);
+                        dialogAnimation.posXStartDuration = jn["open"]["pos"]["x"]["t"].AsFloat;
+                        dialogAnimation.posYStartDuration = jn["open"]["pos"]["y"]["t"].AsFloat;
+                        dialogAnimation.posXStartEase = jn["open"]["pos"]["x"]["ct"];
+                        dialogAnimation.posYStartEase = jn["open"]["pos"]["y"]["ct"];
+                    }
+                    if (jn["open"]["sca"] != null)
+                    {
+                        dialogAnimation.scaStart = new Vector2(jn["open"]["sca"]["x"]["val"].AsFloat, jn["open"]["sca"]["y"]["val"].AsFloat);
+                        dialogAnimation.scaXStartDuration = jn["open"]["sca"]["x"]["t"].AsFloat;
+                        dialogAnimation.scaYStartDuration = jn["open"]["sca"]["y"]["t"].AsFloat;
+                        dialogAnimation.scaXStartEase = jn["open"]["sca"]["x"]["ct"];
+                        dialogAnimation.scaYStartEase = jn["open"]["sca"]["y"]["ct"];
+                    }
+                    if (jn["open"]["rot"] != null)
+                    {
+                        dialogAnimation.rotStart = jn["open"]["rot"]["x"]["val"].AsFloat;
+                        dialogAnimation.rotStartDuration = jn["open"]["rot"]["x"]["t"].AsFloat;
+                        dialogAnimation.rotStartEase = jn["open"]["rot"]["x"]["ct"];
+                    }
+                }
+                
+                if (jn["close"] != null)
+                {
+                    if (jn["close"]["pos"] != null)
+                    {
+                        dialogAnimation.posEnd = new Vector2(jn["close"]["pos"]["x"]["val"].AsFloat, jn["close"]["pos"]["y"]["val"].AsFloat);
+                        dialogAnimation.posXEndDuration = jn["close"]["pos"]["x"]["t"].AsFloat;
+                        dialogAnimation.posYEndDuration = jn["close"]["pos"]["y"]["t"].AsFloat;
+                        dialogAnimation.posXEndEase = jn["close"]["pos"]["x"]["ct"];
+                        dialogAnimation.posYEndEase = jn["close"]["pos"]["y"]["ct"];
+                    }
+                    if (jn["close"]["sca"] != null)
+                    {
+                        dialogAnimation.scaEnd = new Vector2(jn["close"]["sca"]["x"]["val"].AsFloat, jn["close"]["sca"]["y"]["val"].AsFloat);
+                        dialogAnimation.scaXEndDuration = jn["close"]["sca"]["x"]["t"].AsFloat;
+                        dialogAnimation.scaYEndDuration = jn["close"]["sca"]["y"]["t"].AsFloat;
+                        dialogAnimation.scaXEndEase = jn["close"]["sca"]["x"]["ct"];
+                        dialogAnimation.scaYEndEase = jn["close"]["sca"]["y"]["ct"];
+                    }
+                    if (jn["close"]["rot"] != null)
+                    {
+                        dialogAnimation.rotEnd = jn["close"]["rot"]["x"]["val"].AsFloat;
+                        dialogAnimation.rotEndDuration = jn["close"]["rot"]["x"]["t"].AsFloat;
+                        dialogAnimation.rotEndEase = jn["close"]["rot"]["x"]["ct"];
+                    }
+                }
+
+                return dialogAnimation;
+            }
+
+            public JSONNode ToJSON()
+            {
+                var jn = JSON.Parse("{}");
+
+                jn["name"] = name;
+
+                jn["active"]["all"] = active.ToString();
+                jn["active"]["pos"] = posActive.ToString();
+                jn["active"]["sca"] = scaActive.ToString();
+                jn["active"]["rot"] = rotActive.ToString();
+
+                jn["open"]["pos"]["x"]["val"] = posStart.x.ToString();
+                jn["open"]["pos"]["y"]["val"] = posStart.y.ToString();
+                jn["open"]["pos"]["x"]["t"] = posXStartDuration.ToString();
+                jn["open"]["pos"]["y"]["t"] = posYStartDuration.ToString();
+                jn["open"]["pos"]["x"]["ct"] = posXStartEase;
+                jn["open"]["pos"]["y"]["ct"] = posYStartEase;
+
+                jn["open"]["sca"]["x"]["val"] = scaStart.x.ToString();
+                jn["open"]["sca"]["y"]["val"] = scaStart.y.ToString();
+                jn["open"]["sca"]["x"]["t"] = scaXStartDuration.ToString();
+                jn["open"]["sca"]["y"]["t"] = scaYStartDuration.ToString();
+                jn["open"]["sca"]["x"]["ct"] = scaXStartEase;
+                jn["open"]["sca"]["y"]["ct"] = scaYStartEase;
+                
+                jn["open"]["rot"]["x"]["val"] = rotStart.ToString();
+                jn["open"]["rot"]["x"]["t"] = rotStartDuration.ToString();
+                jn["open"]["rot"]["x"]["ct"] = rotStartEase;
+                
+                jn["close"]["pos"]["x"]["val"] = posEnd.x.ToString();
+                jn["close"]["pos"]["y"]["val"] = posEnd.y.ToString();
+                jn["close"]["pos"]["x"]["t"] = posXEndDuration.ToString();
+                jn["close"]["pos"]["y"]["t"] = posYEndDuration.ToString();
+                jn["close"]["pos"]["x"]["ct"] = posXEndEase;
+                jn["close"]["pos"]["y"]["ct"] = posYEndEase;
+
+                jn["close"]["sca"]["x"]["val"] = scaEnd.x.ToString();
+                jn["close"]["sca"]["y"]["val"] = scaEnd.y.ToString();
+                jn["close"]["sca"]["x"]["t"] = scaXEndDuration.ToString();
+                jn["close"]["sca"]["y"]["t"] = scaYEndDuration.ToString();
+                jn["close"]["sca"]["x"]["ct"] = scaXEndEase;
+                jn["close"]["sca"]["y"]["ct"] = scaYEndEase;
+                
+                jn["close"]["rot"]["x"]["val"] = rotEnd.ToString();
+                jn["close"]["rot"]["x"]["t"] = rotEndDuration.ToString();
+                jn["close"]["rot"]["x"]["ct"] = rotEndEase;
+
+                return jn;
+            }
         }
 
         public class EditorProperty : Exists
