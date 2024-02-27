@@ -572,7 +572,7 @@ namespace EditorManagement.Functions.Editors
         /// <param name="regen"></param>
         /// <param name="dictionary"></param>
         /// <returns></returns>
-        public IEnumerator AddPrefabExpandedToLevel(Prefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false)
+        public IEnumerator AddPrefabExpandedToLevel(Prefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false, bool retainID = false)
         {
             RTEditor.inst.ienumRunning = true;
             float delay = 0f;
@@ -614,12 +614,12 @@ namespace EditorManagement.Functions.Editors
                     yield return new WaitForSeconds(delay);
                     var beatmapObjectCopy = BeatmapObject.DeepCopy((BeatmapObject)beatmapObject, false);
 
-                    if (ids.ContainsKey(beatmapObject.id))
+                    if (ids.ContainsKey(beatmapObject.id) && !retainID)
                         beatmapObjectCopy.id = ids[beatmapObject.id];
 
-                    if (ids.ContainsKey(beatmapObject.parent))
+                    if (ids.ContainsKey(beatmapObject.parent) && !retainID)
                         beatmapObjectCopy.parent = ids[beatmapObject.parent];
-                    else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1 && beatmapObjectCopy.parent != "CAMERA_PARENT")
+                    else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1 && beatmapObjectCopy.parent != "CAMERA_PARENT" && !retainID)
                         beatmapObjectCopy.parent = "";
 
                     beatmapObjectCopy.prefabID = beatmapObject.prefabID;
@@ -1575,6 +1575,7 @@ namespace EditorManagement.Functions.Editors
                         objectUIElements = new Dictionary<string, object>();
                     objectUIElements.Clear();
 
+                    objectUIElements.Add("ID Base", tfv.Find("id"));
                     objectUIElements.Add("ID Text", tfv.Find("id/text").GetComponent<Text>());
                     objectUIElements.Add("LDM Toggle", tfv.Find("id/ldm/toggle").GetComponent<Toggle>());
 
@@ -1718,18 +1719,31 @@ namespace EditorManagement.Functions.Editors
             depthTf.gameObject.SetActive(active);
 
             var renderTypeTF = (Transform)ObjectUIElements["Render Type T"];
-            renderTypeTF.parent.GetChild(renderTypeTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
-            renderTypeTF.gameObject.SetActive(active);
+            renderTypeTF.parent.GetChild(renderTypeTF.GetSiblingIndex() - 1).gameObject.SetActive(active && RTEditor.ShowModdedUI || RTEditor.ShowModdedUI);
+            renderTypeTF.gameObject.SetActive(active && RTEditor.ShowModdedUI || RTEditor.ShowModdedUI);
 
             var originTF = (Transform)ObjectUIElements["Origin"];
             originTF.parent.GetChild(originTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
             originTF.gameObject.SetActive(active);
+
+            var tagsParent = ObjEditor.inst.ObjectView.transform.Find("Tags Scroll View");
+            tagsParent.parent.GetChild(tagsParent.GetSiblingIndex() - 1).gameObject.SetActive(RTEditor.ShowModdedUI);
+            bool tagsActive = tagsParent.gameObject.activeSelf;
+            tagsParent.gameObject.SetActive(RTEditor.ShowModdedUI);
+
+            ((Transform)ObjectUIElements["ID Base"]).Find("ldm").gameObject.SetActive(RTEditor.ShowModdedUI);
 
             if (active && !shapeTFPActive)
             {
                 RenderOrigin(beatmapObject);
                 RenderShape(beatmapObject);
                 RenderDepth(beatmapObject);
+            }
+
+            if (RTEditor.ShowModdedUI && !tagsActive)
+            {
+                RenderIDLDM(beatmapObject);
+                RenderName(beatmapObject);
             }
         }
 
@@ -1790,46 +1804,49 @@ namespace EditorManagement.Functions.Editors
 
             var tagsParent = (Transform)ObjectUIElements["Tags Content"];
 
-            LSHelpers.DeleteChildren(tagsParent);
-
-            int num = 0;
-            foreach (var tag in beatmapObject.tags)
+            if (RTEditor.ShowModdedUI)
             {
-                int index = num;
-                var gameObject = tagPrefab.Duplicate(tagsParent, index.ToString());
-                gameObject.transform.localScale = Vector3.one;
-                var input = gameObject.transform.Find("Input").GetComponent<InputField>();
-                input.onValueChanged.ClearAll();
-                input.text = tag;
-                input.onValueChanged.AddListener(delegate (string _val)
-                {
-                    beatmapObject.tags[index] = _val;
-                });
+                LSHelpers.DeleteChildren(tagsParent);
 
-                var inputFieldSwapper = gameObject.AddComponent<InputFieldSwapper>();
-                inputFieldSwapper.Init(input, InputFieldSwapper.Type.String);
-
-                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
-                delete.onClick.ClearAll();
-                delete.onClick.AddListener(delegate ()
+                int num = 0;
+                foreach (var tag in beatmapObject.tags)
                 {
-                    beatmapObject.tags.RemoveAt(index);
+                    int index = num;
+                    var gameObject = tagPrefab.Duplicate(tagsParent, index.ToString());
+                    gameObject.transform.localScale = Vector3.one;
+                    var input = gameObject.transform.Find("Input").GetComponent<InputField>();
+                    input.onValueChanged.ClearAll();
+                    input.text = tag;
+                    input.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        beatmapObject.tags[index] = _val;
+                    });
+
+                    var inputFieldSwapper = gameObject.AddComponent<InputFieldSwapper>();
+                    inputFieldSwapper.Init(input, InputFieldSwapper.Type.String);
+
+                    var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
+                    delete.onClick.ClearAll();
+                    delete.onClick.AddListener(delegate ()
+                    {
+                        beatmapObject.tags.RemoveAt(index);
+                        RenderName(beatmapObject);
+                    });
+
+                    num++;
+                }
+
+                var add = PrefabEditor.inst.CreatePrefab.Duplicate(tagsParent, "Add");
+                add.transform.localScale = Vector3.one;
+                add.transform.Find("Text").GetComponent<Text>().text = "Add Tag";
+                var addButton = add.GetComponent<Button>();
+                addButton.onClick.ClearAll();
+                addButton.onClick.AddListener(delegate ()
+                {
+                    beatmapObject.tags.Add("New Tag");
                     RenderName(beatmapObject);
                 });
-
-                num++;
             }
-
-            var add = PrefabEditor.inst.CreatePrefab.Duplicate(tagsParent, "Add");
-            add.transform.localScale = Vector3.one;
-            add.transform.Find("Text").GetComponent<Text>().text = "Add Tag";
-            var addButton = add.GetComponent<Button>();
-            addButton.onClick.ClearAll();
-            addButton.onClick.AddListener(delegate ()
-            {
-                beatmapObject.tags.Add("New Tag");
-                RenderName(beatmapObject);
-            });
         }
 
         bool setTypes;
@@ -2115,16 +2132,63 @@ namespace EditorManagement.Functions.Editors
             var parentText = (Button)ObjectUIElements["Parent Select"];
             var parentMore = (Button)ObjectUIElements["Parent More B"];
             var parent_more = (Transform)ObjectUIElements["Parent More"];
-
             var parentParent = (Button)ObjectUIElements["Parent Search Open"];
+            var parentClear = (Button)ObjectUIElements["Parent Clear"];
+            var parentPicker = (Button)ObjectUIElements["Parent Picker"];
+
+            parentText.transform.AsRT().sizeDelta = new Vector2(!string.IsNullOrEmpty(parent) ? 201f : 241f, 32f);
+
             parentParent.onClick.RemoveAllListeners();
             parentParent.onClick.AddListener(delegate ()
             {
                 EditorManager.inst.OpenParentPopup();
             });
 
-            var parentClear = (Button)ObjectUIElements["Parent Clear"];
             parentClear.onClick.RemoveAllListeners();
+
+            parentPicker.onClick.RemoveAllListeners();
+            parentPicker.onClick.AddListener(delegate ()
+            {
+                RTEditor.inst.parentPickerEnabled = true;
+                RTEditor.inst.objectToParent = beatmapObject;
+            });
+
+            parentClear.gameObject.SetActive(!string.IsNullOrEmpty(parent));
+
+            parent_more.AsRT().sizeDelta = new Vector2(351f, RTEditor.ShowModdedUI ? 152f : 112f);
+
+            if (string.IsNullOrEmpty(parent))
+            {
+                parentText.interactable = false;
+                parentMore.interactable = false;
+                parent_more.gameObject.SetActive(false);
+                parentTextText.text = "No Parent Object";
+
+                ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = string.IsNullOrEmpty(parent) ? "Object not parented." : "No parent found.";
+                parentText.onClick.RemoveAllListeners();
+                parentMore.onClick.RemoveAllListeners();
+
+                return;
+            }
+
+            string p = null;
+
+            if (DataManager.inst.gameData.beatmapObjects.Has(x => x.id == parent))
+            {
+                p = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent).name;
+                ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = string.Format("Parent chain count: [{0}]\n(Inclusive)", beatmapObject.GetParentChain().Count);
+            }
+            else if (parent == "CAMERA_PARENT")
+            {
+                p = "[CAMERA]";
+                ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = "Object parented to the camera.";
+            }
+
+            parentText.interactable = !string.IsNullOrEmpty(p);
+            parentMore.interactable = !string.IsNullOrEmpty(p);
+
+            parent_more.gameObject.SetActive(!string.IsNullOrEmpty(p) && ObjEditor.inst.advancedParent);
+
             parentClear.onClick.AddListener(delegate ()
             {
                 beatmapObject.parent = "";
@@ -2136,102 +2200,109 @@ namespace EditorManagement.Functions.Editors
                 RenderParent(beatmapObject);
             });
 
-            var parentPicker = (Button)ObjectUIElements["Parent Picker"];
-            parentPicker.onClick.RemoveAllListeners();
-            parentPicker.onClick.AddListener(delegate ()
+            if (string.IsNullOrEmpty(p))
             {
-                RTEditor.inst.parentPickerEnabled = true;
-                RTEditor.inst.objectToParent = beatmapObject;
+                parentTextText.text = "No Parent Object";
+                ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = string.IsNullOrEmpty(parent) ? "Object not parented." : "No parent found.";
+                parentText.onClick.RemoveAllListeners();
+                parentMore.onClick.RemoveAllListeners();
+
+                return;
+            }
+
+            parentTextText.text = p;
+
+            parentText.onClick.RemoveAllListeners();
+            parentText.onClick.AddListener(delegate ()
+            {
+                if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null &&
+                parent != "CAMERA_PARENT" &&
+                RTEditor.inst.timelineObjects.TryFind(x => x.ID == parent, out TimelineObject timelineObject))
+                    SetCurrentObject(timelineObject);
+                else if (parent == "CAMERA_PARENT")
+                {
+                    RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
+                    EventEditor.inst.SetCurrentEvent(0, RTExtensions.ClosestEventKeyframe(0));
+                }
             });
 
-            if (!string.IsNullOrEmpty(parent))
+            parentMore.onClick.RemoveAllListeners();
+            parentMore.onClick.AddListener(delegate ()
             {
-                BaseBeatmapObject beatmapObjectParent = null;
-                if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null)
-                {
-                    beatmapObjectParent = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent);
-                    parentTextText.text = beatmapObjectParent.name;
-                    ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = string.Format("Parent chain count: [{0}]\n(Inclusive)", beatmapObject.GetParentChain().Count);
-                }
-                else if (parent == "CAMERA_PARENT")
-                    parentTextText.text = "[CAMERA]";
-
-                parentText.interactable = true;
-                parentText.onClick.RemoveAllListeners();
-                parentText.onClick.AddListener(delegate ()
-                {
-                    if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null &&
-                    parent != "CAMERA_PARENT" &&
-                    RTEditor.inst.timelineObjects.TryFind(x => x.ID == parent, out TimelineObject timelineObject))
-                        SetCurrentObject(timelineObject);
-                    else if (parent == "CAMERA_PARENT")
-                    {
-                        RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
-                        EventEditor.inst.SetCurrentEvent(0, RTExtensions.ClosestEventKeyframe(0));
-                    }
-                });
-                parentMore.onClick.RemoveAllListeners();
-                parentMore.interactable = true;
-                parentMore.onClick.AddListener(delegate ()
-                {
-                    ObjEditor.inst.advancedParent = !ObjEditor.inst.advancedParent;
-                    parent_more.gameObject.SetActive(ObjEditor.inst.advancedParent);
-                });
+                ObjEditor.inst.advancedParent = !ObjEditor.inst.advancedParent;
                 parent_more.gameObject.SetActive(ObjEditor.inst.advancedParent);
+            });
+            parent_more.gameObject.SetActive(ObjEditor.inst.advancedParent);
 
-                var spawnOnce = (Toggle)ObjectUIElements["Parent Spawn Once"];
-                spawnOnce.onValueChanged.ClearAll();
+            var spawnOnce = (Toggle)ObjectUIElements["Parent Spawn Once"];
+            spawnOnce.onValueChanged.ClearAll();
+            spawnOnce.gameObject.SetActive(RTEditor.ShowModdedUI);
+            if (RTEditor.ShowModdedUI)
+            {
                 spawnOnce.isOn = beatmapObject.desync;
                 spawnOnce.onValueChanged.AddListener(delegate (bool _val)
                 {
                     beatmapObject.desync = _val;
                     Updater.UpdateProcessor(beatmapObject);
                 });
+            }
 
-                for (int i = 0; i < 3; i++)
+            for (int i = 0; i < 3; i++)
+            {
+                var _p = (Transform)ObjectUIElements[$"Parent Offset {i + 1}"];
+
+                var parentOffset = beatmapObject.getParentOffset(i);
+
+                var index = i;
+
+                // Parent Type
+                var tog = _p.GetChild(2).GetComponent<Toggle>();
+                tog.onValueChanged.RemoveAllListeners();
+                tog.isOn = beatmapObject.GetParentType(i);
+                tog.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
+                tog.onValueChanged.AddListener(delegate (bool _value)
                 {
-                    var _p = (Transform)ObjectUIElements[$"Parent Offset {i + 1}"];
+                    beatmapObject.SetParentType(index, _value);
 
-                    var parentOffset = beatmapObject.getParentOffset(i);
+                    // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects && !string.IsNullOrEmpty(beatmapObject.parent) && beatmapObject.parent != "CAMERA_PARENT")
+                        Updater.UpdateProcessor(beatmapObject.GetParent());
+                    else if (UpdateObjects && beatmapObject.parent == "CAMERA_PARENT")
+                        Updater.UpdateProcessor(beatmapObject);
+                });
 
-                    var index = i;
-
-                    var tog = _p.GetChild(2).GetComponent<Toggle>();
-                    tog.onValueChanged.RemoveAllListeners();
-                    tog.isOn = beatmapObject.GetParentType(i);
-                    tog.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                    tog.onValueChanged.AddListener(delegate (bool _value)
+                // Parent Offset
+                var pif = _p.GetChild(3).GetComponent<InputField>();
+                var lel = _p.GetChild(3).GetComponent<LayoutElement>();
+                lel.minWidth = RTEditor.ShowModdedUI ? 64f : 128f;
+                lel.preferredWidth = RTEditor.ShowModdedUI ? 64f : 128f;
+                pif.onValueChanged.RemoveAllListeners();
+                pif.text = parentOffset.ToString();
+                pif.onValueChanged.AddListener(delegate (string _value)
+                {
+                    if (float.TryParse(_value, out float num))
                     {
-                        beatmapObject.SetParentType(index, _value);
+                        beatmapObject.SetParentOffset(index, num);
 
                         // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
                         if (UpdateObjects && !string.IsNullOrEmpty(beatmapObject.parent) && beatmapObject.parent != "CAMERA_PARENT")
                             Updater.UpdateProcessor(beatmapObject.GetParent());
                         else if (UpdateObjects && beatmapObject.parent == "CAMERA_PARENT")
                             Updater.UpdateProcessor(beatmapObject);
-                    });
+                    }
+                });
 
-                    var pif = _p.GetChild(3).GetComponent<InputField>();
-                    pif.onValueChanged.RemoveAllListeners();
-                    pif.text = parentOffset.ToString();
-                    pif.onValueChanged.AddListener(delegate (string _value)
-                    {
-                        if (float.TryParse(_value, out float num))
-                        {
-                            beatmapObject.SetParentOffset(index, num);
+                TriggerHelper.AddEventTrigger(pif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pif) });
 
-                            // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects && !string.IsNullOrEmpty(beatmapObject.parent) && beatmapObject.parent != "CAMERA_PARENT")
-                                Updater.UpdateProcessor(beatmapObject.GetParent());
-                            else if (UpdateObjects && beatmapObject.parent == "CAMERA_PARENT")
-                                Updater.UpdateProcessor(beatmapObject);
-                        }
-                    });
+                var additive = _p.GetChild(4).GetComponent<Toggle>();
+                additive.onValueChanged.ClearAll();
+                additive.gameObject.SetActive(RTEditor.ShowModdedUI);
+                var parallax = _p.GetChild(5).GetComponent<InputField>();
+                parallax.onValueChanged.RemoveAllListeners();
+                parallax.gameObject.SetActive(RTEditor.ShowModdedUI);
 
-                    TriggerHelper.AddEventTrigger(pif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pif) });
-
-                    var additive = _p.GetChild(4).GetComponent<Toggle>();
-                    additive.onValueChanged.ClearAll();
+                if (RTEditor.ShowModdedUI)
+                {
                     additive.isOn = beatmapObject.parentAdditive[i] == '1';
                     additive.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
                     additive.onValueChanged.AddListener(delegate (bool _val)
@@ -2240,9 +2311,6 @@ namespace EditorManagement.Functions.Editors
                         if (UpdateObjects)
                             Updater.UpdateProcessor(beatmapObject);
                     });
-
-                    var parallax = _p.GetChild(5).GetComponent<InputField>();
-                    parallax.onValueChanged.RemoveAllListeners();
                     parallax.text = beatmapObject.parallaxSettings[index].ToString();
                     parallax.onValueChanged.AddListener(delegate (string _value)
                     {
@@ -2258,15 +2326,6 @@ namespace EditorManagement.Functions.Editors
 
                     TriggerHelper.AddEventTrigger(parallax.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(parallax) });
                 }
-            }
-            else
-            {
-                parentTextText.text = "No Parent Object";
-                parentText.interactable = false;
-                parentText.onClick.RemoveAllListeners();
-                parentMore.onClick.RemoveAllListeners();
-                parentMore.interactable = false;
-                parent_more.gameObject.SetActive(false);
             }
         }
 
@@ -2350,6 +2409,16 @@ namespace EditorManagement.Functions.Editors
         bool updatedShapes = false;
         public List<Toggle> shapeToggles = new List<Toggle>();
         public List<List<Toggle>> shapeOptionToggles = new List<List<Toggle>>();
+        public static int[] UnmoddedShapeCounts => new int[]
+        {
+            3,
+            9,
+            4,
+            2,
+            1,
+            6
+        };
+
         /// <summary>
         /// Renders the Shape ToggleGroup.
         /// </summary>
@@ -2497,11 +2566,17 @@ namespace EditorManagement.Functions.Editors
                         ad.color = new Color(1f, 1f, 1f, 0.01f);
                     }
 
+                    shapeToggles.Add(obj.GetComponent<Toggle>());
+
+                    shapeOptionToggles.Add(new List<Toggle>());
+
                     for (int j = 0; j < ObjectManager.inst.objectPrefabs[9].options.Count; j++)
                     {
                         var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
                         if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
                             image1.sprite = playerSprite;
+
+                        shapeOptionToggles[i].Add(opt.GetComponent<Toggle>());
 
                         var layoutElement = opt.AddComponent<LayoutElement>();
                         layoutElement.layoutPriority = 1;
@@ -2560,18 +2635,22 @@ namespace EditorManagement.Functions.Editors
                 int index = num;
                 toggle.onValueChanged.ClearAll();
                 toggle.isOn = beatmapObject.shape == index;
-                toggle.onValueChanged.AddListener(delegate (bool _val)
-                {
-                    beatmapObject.shape = index;
-                    beatmapObject.shapeOption = 0;
-                    beatmapObject.text = "";
+                toggle.gameObject.SetActive(RTEditor.ShowModdedUI || index < UnmoddedShapeCounts.Length);
 
-                    // Since shape has no affect on the timeline object, we will only need to update the physical object.
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "Shape");
+                if (RTEditor.ShowModdedUI || index < UnmoddedShapeCounts.Length)
+                    toggle.onValueChanged.AddListener(delegate (bool _val)
+                    {
+                        beatmapObject.shape = index;
+                        beatmapObject.shapeOption = 0;
+                        beatmapObject.text = "";
 
-                    RenderShape(beatmapObject);
-                });
+                        // Since shape has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Shape");
+
+                        RenderShape(beatmapObject);
+                    });
+
 
                 num++;
             }
@@ -2584,16 +2663,19 @@ namespace EditorManagement.Functions.Editors
                     int index = num;
                     toggle.onValueChanged.ClearAll();
                     toggle.isOn = beatmapObject.shapeOption == index;
-                    toggle.onValueChanged.AddListener(delegate (bool _val)
-                    {
-                        beatmapObject.shapeOption = index;
+                    toggle.gameObject.SetActive(RTEditor.ShowModdedUI || index < UnmoddedShapeCounts[beatmapObject.shape]);
 
-                        // Since shape has no affect on the timeline object, we will only need to update the physical object.
-                        if (UpdateObjects)
-                            Updater.UpdateProcessor(beatmapObject, "Shape");
+                    if (RTEditor.ShowModdedUI || index < UnmoddedShapeCounts[beatmapObject.shape])
+                        toggle.onValueChanged.AddListener(delegate (bool _val)
+                        {
+                            beatmapObject.shapeOption = index;
 
-                        RenderShape(beatmapObject);
-                    });
+                            // Since shape has no affect on the timeline object, we will only need to update the physical object.
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Shape");
+
+                            RenderShape(beatmapObject);
+                        });
 
                     num++;
                 }
@@ -3127,53 +3209,6 @@ namespace EditorManagement.Functions.Editors
             var rectTransform = keyframeEnd.transform.AsRT();
             rectTransform.sizeDelta = new Vector2(4f, 122f);
             rectTransform.anchoredPosition = new Vector2(beatmapObject.GetObjectLifeLength() * ObjEditor.inst.Zoom * 14f, 0f);
-
-            //ObjEditor.inst.objTimelineSlider.onValueChanged.RemoveAllListeners();
-            //ObjEditor.inst.objTimelineSlider.onValueChanged.AddListener(delegate (float _val)
-            //{
-            //    if (ObjEditor.inst.changingTime)
-            //    {
-            //        ObjEditor.inst.newTime = _val;
-            //        AudioManager.inst.SetMusicTime(Mathf.Clamp(_val, 0f, AudioManager.inst.CurrentAudioSource.clip.length));
-            //    }
-            //});
-
-            //for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
-            //{
-            //    int tmpIndex = i;
-            //    var entry = new EventTrigger.Entry();
-            //    entry.eventID = EventTriggerType.PointerUp;
-            //    entry.callback.AddListener(delegate (BaseEventData eventData)
-            //    {
-            //        if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
-            //        {
-            //            float timeTmp = ObjEditorPatch.timeCalc();
-
-            //            int index = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime <= timeTmp);
-            //            var eventKeyfame = AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
-            //            UpdateKeyframeOrder(beatmapObject);
-
-            //            RenderKeyframes(beatmapObject);
-
-            //            int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == eventKeyfame.eventTime);
-            //            if (keyframe < 0)
-            //                keyframe = 0;
-
-            //            SetCurrentKeyframe(beatmapObject, tmpIndex, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
-            //            ResizeKeyframeTimeline(beatmapObject);
-
-            //            RenderKeyframeDialog(beatmapObject);
-
-            //            // Keyframes affect both physical object and timeline object.
-            //            RenderTimelineObject(new TimelineObject(beatmapObject));
-            //            if (UpdateObjects)
-            //                Updater.UpdateProcessor(beatmapObject, "Keyframes");
-            //        }
-            //    });
-            //    var comp = ObjEditor.inst.TimelineParents[tmpIndex].GetComponent<EventTrigger>();
-            //    comp.triggers.RemoveAll(x => x.eventID == EventTriggerType.PointerUp);
-            //    comp.triggers.Add(entry);
-            //}
         }
 
         public void ClearKeyframes(BeatmapObject beatmapObject)
@@ -3458,7 +3493,7 @@ namespace EditorManagement.Functions.Editors
                     Action<int> action = delegate (int randomType)
                     {
                         if (type != 2 && p.Find("r_axis"))
-                            p.Find("r_axis").gameObject.SetActive(randomType == 5 || randomType == 6);
+                            p.Find("r_axis").gameObject.SetActive(RTEditor.ShowModdedUI && (randomType == 5 || randomType == 6));
 
                         p.GetChild(10).gameObject.SetActive(randomType != 0 && randomType != 5);
                         p.GetChild(11).gameObject.SetActive(randomType != 0 && randomType != 5);
@@ -3470,10 +3505,14 @@ namespace EditorManagement.Functions.Editors
 
                         if (p.Find("relative-label"))
                         {
-                            p.Find("relative-label").GetChild(0).GetComponent<Text>().text =
-                                randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
-                            p.Find("relative").GetChild(1).GetComponent<Text>().text =
-                                randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
+                            p.Find("relative-label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                            if (RTEditor.ShowModdedUI)
+                            {
+                                p.Find("relative-label").GetChild(0).GetComponent<Text>().text =
+                                    randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
+                                p.Find("relative").GetChild(1).GetComponent<Text>().text =
+                                    randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
+                            }
                         }
 
                         randomValue.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
@@ -3490,10 +3529,13 @@ namespace EditorManagement.Functions.Editors
                     for (int n = 0; n <= (type == 0 ? 5 : type == 2 ? 4 : 3); n++)
                     {
                         int buttonTmp = (n >= 2 && (type != 2 || n < 3)) ? (n + 1) : (n > 2 && type == 2) ? n + 2 : n;
-                        var child = p.Find("random").GetChild(n).GetComponent<Toggle>();
-                        child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
+
+                        p.Find("random").GetChild(n).gameObject.SetActive(buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI);
+
+                        if (buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI)
                         {
-                            if (_val)
+                            var child = p.Find("random").GetChild(n).GetComponent<Toggle>();
+                            child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
                             {
                                 keyframe.random = buttonTmp;
 
@@ -3502,15 +3544,14 @@ namespace EditorManagement.Functions.Editors
                                 // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
                                 if (UpdateObjects)
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
-
+                            });
+                            if (!child.GetComponent<HoverUI>())
+                            {
+                                var hoverUI = child.gameObject.AddComponent<HoverUI>();
+                                hoverUI.animatePos = false;
+                                hoverUI.animateSca = true;
+                                hoverUI.size = 1.1f;
                             }
-                        });
-                        if (!child.GetComponent<HoverUI>())
-                        {
-                            var hoverUI = child.gameObject.AddComponent<HoverUI>();
-                            hoverUI.animatePos = false;
-                            hoverUI.animateSca = true;
-                            hoverUI.size = 1.1f;
                         }
                     }
 
@@ -3583,17 +3624,21 @@ namespace EditorManagement.Functions.Editors
                         }
                     }
 
-                    var relative = p.Find("relative").GetComponent<Toggle>();
-                    relative.onValueChanged.ClearAll();
-                    relative.isOn = keyframe.relative;
-                    relative.onValueChanged.AddListener(delegate (bool _val)
+                    RTEditor.SetActive(p.Find("relative").gameObject, RTEditor.ShowModdedUI);
+                    if (RTEditor.ShowModdedUI)
                     {
-                        keyframe.relative = _val;
+                        var relative = p.Find("relative").GetComponent<Toggle>();
+                        relative.onValueChanged.ClearAll();
+                        relative.isOn = keyframe.relative;
+                        relative.onValueChanged.AddListener(delegate (bool _val)
+                        {
+                            keyframe.relative = _val;
 
-                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                        if (UpdateObjects)
-                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                    });
+                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        });
+                    }
                 }
                 else
                 {
@@ -3603,6 +3648,8 @@ namespace EditorManagement.Functions.Editors
                     {
                         toggle.onValueChanged.RemoveAllListeners();
                         int tmpIndex = index;
+
+                        toggle.gameObject.SetActive(RTEditor.ShowModdedUI || tmpIndex < 9);
 
                         toggle.NewValueChangedListener(index == keyframe.eventValues[0], delegate (bool _val)
                         {
@@ -3632,7 +3679,24 @@ namespace EditorManagement.Functions.Editors
                         index++;
                     }
 
-                    if (p.Find("opacity"))
+                    p.Find("opacity_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    p.Find("opacity").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    
+                    p.Find("huesatval_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    p.Find("huesatval").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    
+                    p.Find("r_color_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    p.Find("r_color").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    
+                    p.Find("r_color_target_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    p.Find("r_color_target").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    
+                    p.Find("r_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    p.Find("random").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                    p.Find("shift").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                    if (p.Find("opacity") && RTEditor.ShowModdedUI)
                     {
                         p.Find("color").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 78f);
 
@@ -3668,7 +3732,7 @@ namespace EditorManagement.Functions.Editors
                         });
                     }
 
-                    if (p.Find("huesatval"))
+                    if (p.Find("huesatval") && RTEditor.ShowModdedUI)
                     {
                         var hue = p.Find("huesatval/x").GetComponent<InputField>();
 
@@ -3734,7 +3798,7 @@ namespace EditorManagement.Functions.Editors
                         TriggerHelper.IncreaseDecreaseButtons(val, 0.1f, 10f);
                     }
 
-                    if (p.Find("r_color"))
+                    if (p.Find("r_color") && RTEditor.ShowModdedUI)
                     {
                         var rColor = p.Find("r_color");
 
@@ -3782,7 +3846,7 @@ namespace EditorManagement.Functions.Editors
                         }
                     }
 
-                    if (p.Find("r_color_target"))
+                    if (p.Find("r_color_target") && RTEditor.ShowModdedUI)
                     {
                         p.Find("r_color_target_label").gameObject.SetActive(keyframe.random != 0);
 
@@ -3828,7 +3892,7 @@ namespace EditorManagement.Functions.Editors
                         }
                     }
 
-                    if (p.Find("random"))
+                    if (p.Find("random") && RTEditor.ShowModdedUI)
                     {
                         p.Find("r_label/interval").gameObject.SetActive(keyframe.random != 0);
                         p.Find("r_label/interval").GetComponent<Text>().text = keyframe.random == 6 ? "Speed" : "Random Interval";

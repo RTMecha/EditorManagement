@@ -498,8 +498,6 @@ namespace EditorManagement.Functions.Editors
 			AddSelectedEvent(type, index);
 			EventEditor.inst.currentEventType = type;
 			EventEditor.inst.currentEvent = index;
-			//RenderEventObjects();
-			//OpenDialog();
 		}
 
 		#endregion
@@ -1375,6 +1373,13 @@ namespace EditorManagement.Functions.Editors
 						// Shake Intensity X / Y
 						if (EventsCore)
                         {
+							RTEditor.SetActive(dialogTmp.Find("direction").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("interpolation").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("speed").gameObject, RTEditor.ShowModdedUI);
+
+							if (!RTEditor.ShowModdedUI)
+								break;
+
 							SetVector2InputField(dialogTmp, "direction", 1, 2, -10f, 10f);
 							SetFloatInputField(dialogTmp, "interpolation/x", 3, max: 999f, allowNegative: false);
 							SetFloatInputField(dialogTmp, "speed/x", 4, min: 0.001f, max: 9999f, allowNegative: false);
@@ -1407,6 +1412,14 @@ namespace EditorManagement.Functions.Editors
 
 						if (EventsCore)
 						{
+							RTEditor.SetActive(dialogTmp.Find("diffusion").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("threshold").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("anamorphic ratio").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("colors").gameObject, RTEditor.ShowModdedUI);
+
+							if (!RTEditor.ShowModdedUI)
+								break;
+
 							// Bloom Diffusion
 							SetFloatInputField(dialogTmp, "diffusion/x", 1, min: 1f, max: float.PositiveInfinity, allowNegative: false);
 
@@ -1440,7 +1453,11 @@ namespace EditorManagement.Functions.Editors
 
 						// Vignette Color
 						if (EventsCore)
-							SetListColor((int)currentKeyframe.eventValues[6], 6, vignetteColorButtons, Color.black, Color.black);
+                        {
+							RTEditor.SetActive(dialogTmp.Find("colors").gameObject, RTEditor.ShowModdedUI);
+							if (RTEditor.ShowModdedUI)
+								SetListColor((int)currentKeyframe.eventValues[6], 6, vignetteColorButtons, Color.black, Color.black);
+						}
 
 						break;
 					}
@@ -1451,6 +1468,13 @@ namespace EditorManagement.Functions.Editors
 
 						if (EventsCore)
 						{
+							RTEditor.SetActive(dialogTmp.Find("center").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("intensity").gameObject, RTEditor.ShowModdedUI);
+							RTEditor.SetActive(dialogTmp.Find("scale").gameObject, RTEditor.ShowModdedUI);
+
+							if (!RTEditor.ShowModdedUI)
+								break;
+
 							// Lens Center X / Y
 							SetVector2InputField(dialogTmp, "center", 1, 2);
 
@@ -2462,7 +2486,7 @@ namespace EditorManagement.Functions.Editors
 			for (int i = 0; i < AllEvents.Count; i++)
 			{
 				int t = i % EventLimit;
-				int num = layer * EventLimit;
+				int num = Mathf.Clamp(layer * EventLimit, 0, (RTEditor.ShowModdedUI ? EventTypes.Length : 10));
 
 				var text = eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>();
 

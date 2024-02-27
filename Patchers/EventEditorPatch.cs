@@ -72,8 +72,8 @@ namespace EditorManagement.Patchers
 			{
 				var img = Instance.EventLabels.transform.GetChild(i).GetComponent<Image>();
 				img.color = RTEventEditor.EventLayerColors[i];
-				img.enabled = i < (EventsCore ? 14 : 10);
-				Instance.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>().enabled = i < (EventsCore ? 14 : 10);
+				img.enabled = i < (EventsCore && RTEditor.ShowModdedUI ? 14 : 10);
+				Instance.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>().enabled = i < (EventsCore && RTEditor.ShowModdedUI ? 14 : 10);
 			}
 
 			for (int i = 0; i < 9; i++)

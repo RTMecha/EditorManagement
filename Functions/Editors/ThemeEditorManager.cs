@@ -52,7 +52,7 @@ namespace EditorManagement.Functions.Editors
 				guiAccent.transform.Find("text").GetComponent<Text>().text = "Tail";
 				themeParent.Find("gui/text").GetComponent<Text>().text = "GUI";
 
-				var label = themeParent.GetChild(0).gameObject.Duplicate(themeParent, "label");
+				var label = themeParent.GetChild(0).gameObject.Duplicate(themeParent, "effect_label");
 				label.transform.Find("text").GetComponent<Text>().text = "Effects" + (!ModCompatibility.mods.ContainsKey("EventsCore") ? " (Requires EventsCore)" : "");
 
 				for (int i = 0; i < 18; i++)
@@ -621,7 +621,9 @@ namespace EditorManagement.Functions.Editors
 			Instance.showTheme = true;
 			var themeContent = theme.Find("theme/viewport/content");
 			var actions = theme.Find("actions");
-			theme.Find("theme").localRotation = Quaternion.Euler(Vector3.zero);
+
+			if (!RTHelpers.AprilFools)
+				theme.Find("theme").localRotation = Quaternion.Euler(Vector3.zero);
 
 			if (!RTHelpers.AprilFools)
 				foreach (var child in themeContent)
@@ -950,6 +952,7 @@ namespace EditorManagement.Functions.Editors
 
 			RenderColorList(themeContent, "background", 9, PreviewTheme.backgroundColors, false);
 
+			themeContent.Find("effect_label").gameObject.SetActive(RTEditor.ShowModdedUI);
 			RenderColorList(themeContent, "effect", 18, PreviewTheme.effectColors);
 		}
 
@@ -960,28 +963,40 @@ namespace EditorManagement.Functions.Editors
 				if (!themeContent.Find($"{name}{i}"))
 					return;
 
-				themeContent.Find($"{name}{i}").transform.localRotation = Quaternion.Euler(Vector3.zero);
-				var hex = themeContent.Find($"{name}{i}/hex").GetComponent<InputField>();
-				var preview = themeContent.Find($"{name}{i}/preview").GetComponent<Image>();
-				var previewET = themeContent.Find($"{name}{i}/preview").GetComponent<EventTrigger>();
-				var dropper = themeContent.Find($"{name}{i}/preview").GetChild(0).GetComponent<Image>();
-				int indexTmp = i;
-				hex.onValueChanged.RemoveAllListeners();
-				hex.characterLimit = 8;
-				hex.characterValidation = InputField.CharacterValidation.None;
-				hex.contentType = InputField.ContentType.Standard;
-				hex.text = allowAlpha ? RTHelpers.ColorToHex(colors[indexTmp]) : LSColors.ColorToHex(colors[indexTmp]);
-				preview.color = colors[indexTmp];
-				hex.onValueChanged.AddListener(delegate (string val)
+				var p = themeContent.Find($"{name}{i}");
+
+				// We have to rotate the element due to the rotation being off in unmodded.
+				if (!RTHelpers.AprilFools)
+					p.transform.localRotation = Quaternion.Euler(Vector3.zero);
+
+				bool active = RTEditor.ShowModdedUI || !name.Contains("effect") && i < 9;
+				p.gameObject.SetActive(active);
+
+				if (active)
 				{
-					var color = val.Length == 8 && allowAlpha ? LSColors.HexToColorAlpha(val) : val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
-					preview.color = color;
-					colors[indexTmp] = color;
+					var hex = p.Find("hex").GetComponent<InputField>();
+					var preview = p.Find("preview").GetComponent<Image>();
+					var previewET = p.Find("preview").GetComponent<EventTrigger>();
+					var dropper = p.Find("preview").GetChild(0).GetComponent<Image>();
+
+					int indexTmp = i;
+					hex.onValueChanged.RemoveAllListeners();
+					hex.characterLimit = 8;
+					hex.characterValidation = InputField.CharacterValidation.None;
+					hex.contentType = InputField.ContentType.Standard;
+					hex.text = allowAlpha ? RTHelpers.ColorToHex(colors[indexTmp]) : LSColors.ColorToHex(colors[indexTmp]);
+					preview.color = colors[indexTmp];
+					hex.onValueChanged.AddListener(delegate (string val)
+					{
+						var color = val.Length == 8 && allowAlpha ? LSColors.HexToColorAlpha(val) : val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
+						preview.color = color;
+						colors[indexTmp] = color;
+
+						SetDropper(dropper, preview, hex, previewET, colors[indexTmp]);
+					});
 
 					SetDropper(dropper, preview, hex, previewET, colors[indexTmp]);
-				});
-
-				SetDropper(dropper, preview, hex, previewET, colors[indexTmp]);
+				}
 			}
 		}
 

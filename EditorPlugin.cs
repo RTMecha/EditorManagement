@@ -163,9 +163,35 @@ namespace EditorManagement
         void ModdedEditorChanged(object sender, EventArgs e)
 		{
 			RTEditor.ShowModdedUI = RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().Value;
+
+			AdjustPositionInputsChanged?.Invoke();
+
+			if (ObjectEditor.inst && ObjectEditor.inst.SelectedObjectCount == 1 && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+            {
+				StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<RTFunctions.Functions.Data.BeatmapObject>()));
+            }
+
+			if (RTEditor.inst && RTEditor.inst.layerType == RTEditor.LayerType.Events)
+            {
+				RTEventEditor.inst.RenderLayerBins();
+			}
+
+			if (RTEventEditor.inst)
+			{
+				for (int i = 0; i < 14; i++)
+				{
+					var img = EventEditor.inst.EventLabels.transform.GetChild(i).GetComponent<Image>();
+					img.color = RTEventEditor.EventLayerColors[i];
+					img.enabled = i < (ModCompatibility.EventsCoreInstalled && RTEditor.ShowModdedUI ? 14 : 10);
+					EventEditor.inst.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>().enabled = i < (ModCompatibility.EventsCoreInstalled && RTEditor.ShowModdedUI ? 14 : 10);
+				}
+
+				if (EventEditor.inst.dialogRight.gameObject.activeInHierarchy)
+					RTEventEditor.inst.RenderEventsDialog();
+			}
 		}
 
-        void DraggingChanged(object sender, EventArgs e)
+		void DraggingChanged(object sender, EventArgs e)
         {
 			RTEditor.DraggingPlaysSound = RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().Value;
 			RTEditor.DraggingPlaysSoundBPM = RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().Value;

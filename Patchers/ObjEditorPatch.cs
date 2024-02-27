@@ -260,7 +260,7 @@ namespace EditorManagement.Patchers
 				opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
 				opacityLabel.transform.localScale = Vector3.one;
 				opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Opacity";
-				opacityLabel.name = "label";
+				opacityLabel.name = "opacity_label";
 
 				var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
 				opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
@@ -277,7 +277,7 @@ namespace EditorManagement.Patchers
 			{
 				var opacityLabel = __instance.KeyframeDialogs[2].transform.Find("label").gameObject.Duplicate(__instance.KeyframeDialogs[3].transform);
 				opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Hue";
-				opacityLabel.name = "label";
+				opacityLabel.name = "huesatval_label";
 
 				opacityLabel.AddComponent<HorizontalLayoutGroup>();
 
@@ -357,7 +357,10 @@ namespace EditorManagement.Patchers
 
 				EditorPlugin.AdjustPositionInputsChanged = delegate ()
 				{
-					bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value;
+					if (!ObjectEditor.inst)
+						return;
+
+					bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value && RTEditor.ShowModdedUI;
 					positionBase.AsRT().sizeDelta = new Vector2(553f, adjusted ? 32f : 64f);
 					grp.cellSize = new Vector2(adjusted ? 122f : 183f, 40f);
 
@@ -368,9 +371,11 @@ namespace EditorManagement.Patchers
 					posZLabel.gameObject.SetActive(adjusted);
 					positionBase.gameObject.SetActive(false);
 					positionBase.gameObject.SetActive(true);
+
+					posZ.gameObject.SetActive(RTEditor.ShowModdedUI);
 				};
 
-				bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value;
+				bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value && RTEditor.ShowModdedUI;
 				positionBase.AsRT().sizeDelta = new Vector2(553f, adjusted ? 32f : 64f);
 				grp.cellSize = new Vector2(adjusted ? 122f : 183f, 40f);
 
@@ -379,6 +384,8 @@ namespace EditorManagement.Patchers
 				yLayout.minWidth = minWidth;
 				zLayout.minWidth = minWidth;
 				posZLabel.gameObject.SetActive(adjusted);
+
+				posZ.gameObject.SetActive(RTEditor.ShowModdedUI);
 			}
 
 			// Layers
@@ -593,7 +600,7 @@ namespace EditorManagement.Patchers
 
 			// Object Tags
 			{
-				var label = objectView.ChildList().First(x => x.name == "label").gameObject.Duplicate(objectView);
+				var label = objectView.ChildList().First(x => x.name == "label").gameObject.Duplicate(objectView, "tags_label");
 				var index = objectView.Find("name").GetSiblingIndex() + 1;
 				label.transform.SetSiblingIndex(index);
 
@@ -651,7 +658,7 @@ namespace EditorManagement.Patchers
 
 			// Render Type
 			{
-				var label = objectView.ChildList().First(x => x.name == "label").gameObject.Duplicate(objectView);
+				var label = objectView.ChildList().First(x => x.name == "label").gameObject.Duplicate(objectView, "rendertype_label");
 				var index = objectView.Find("depth").GetSiblingIndex() + 1;
 				label.transform.SetSiblingIndex(index);
 
@@ -746,8 +753,8 @@ namespace EditorManagement.Patchers
 					if (parent.Find(">>"))
 						Destroy(parent.Find(">>").gameObject);
 
-					var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array}_add");
-					var parallax = parent.GetChild(3).gameObject.Duplicate(parent, $"{array}_parallax");
+					var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array[i]}_add");
+					var parallax = parent.GetChild(3).gameObject.Duplicate(parent, $"{array[i]}_parallax");
 
 					if (parent.Find("text"))
 					{
