@@ -749,6 +749,7 @@ namespace EditorManagement.Functions.Editors
         #region Timeline Textures
 
         public static bool GenerateWaveform => GetEditorProperty("Waveform Generate").GetConfigEntry<bool>().Value;
+        public static bool ReRenderWaveform => GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().Value;
 
         public static WaveformType WaveformMode => GetEditorProperty("Waveform Mode").GetConfigEntry<WaveformType>().Value;
         public static Color WaveformBGColor => GetEditorProperty("Waveform BG Color").GetConfigEntry<Color>().Value;
@@ -758,8 +759,8 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator AssignTimelineTexture()
         {
-            if (!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading && !RTFile.FileExists($"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png") ||
-                !RTFile.FileExists(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png"))
+            if ((!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading && !RTFile.FileExists($"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png") ||
+                !RTFile.FileExists(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png")) && !ReRenderWaveform || ReRenderWaveform)
             {
                 int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
                 Texture2D waveform = null;

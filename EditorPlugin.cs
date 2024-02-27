@@ -88,6 +88,7 @@ namespace EditorManagement
 			RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().SettingChanged += DragUIChanged;
 
             RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().SettingChanged += ObjectEditorChanged;
+			RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().SettingChanged += ObjectEditorChanged;
 
 			RTEditor.GetEditorProperty("Theme Template Name").GetConfigEntry<string>().SettingChanged += ThemeTemplateChanged;
 			RTEditor.GetEditorProperty("Theme Template GUI").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
@@ -147,6 +148,16 @@ namespace EditorManagement
 			}
 
             RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().SettingChanged += ThemePopupChanged;
+
+            RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().SettingChanged += TimelineWaveformChanged;
+		}
+
+        void TimelineWaveformChanged(object sender, EventArgs e)
+		{
+			if (RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().Value)
+			{
+				RTEditor.inst.StartCoroutine(RTEditor.inst.AssignTimelineTexture());
+			}
 		}
 
 		void ThemePopupChanged(object sender, EventArgs e)
@@ -157,6 +168,13 @@ namespace EditorManagement
         void ObjectEditorChanged(object sender, EventArgs e)
         {
 			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value;
+
+			if (ObjEditor.inst)
+            {
+				ObjEditor.inst.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
+				ObjEditor.inst.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
+				ObjEditor.inst.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
+			}
 		}
 
         void TimelineGridChanged(object sender, EventArgs e)
@@ -188,17 +206,10 @@ namespace EditorManagement
             {
 				SetNotificationProperties();
 				EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
-				ObjEditor.inst.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
-
-				if (RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().Value)
-                {
-					RTEditor.inst.StartCoroutine(RTEditor.inst.AssignTimelineTexture());
-                }
 
 				SetTimelineColors();
 				AdjustPositionInputsChanged?.Invoke();
 
-				ObjEditor.inst.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
 				if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 {
 					RTEventEditor.inst.RenderLayerBins();
@@ -287,8 +298,6 @@ namespace EditorManagement
 				else
 					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
 			}
-
-			ObjEditor.inst.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
         }
 
 		public static void SetNotificationProperties()
