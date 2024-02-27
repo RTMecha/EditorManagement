@@ -959,7 +959,11 @@ namespace EditorManagement.Functions.Editors
 			var bg = GenerateEventDialog("bg");
             {
 				var colors = SetupColorButtons("colors", "Colors", bg.transform, 8, bgColorButtons);
-            }
+
+				var active = GenerateUIElement("active", "Bool", bg.transform, 10, "Background Objects Active");
+				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Active";
+
+			}
 
 			Log($"{EventEditor.inst.className}Generating Invert Event");
 			var invert = GenerateEventDialog("invert");
@@ -1625,6 +1629,8 @@ namespace EditorManagement.Functions.Editors
 				case 20: // BG
 					{
 						SetListColor((int)currentKeyframe.eventValues[0], 0, bgColorButtons, GameManager.inst.LiveTheme.backgroundColor, Color.black);
+
+						SetToggle(dialogTmp, "active", 1, 0, 1);
 
 						break;
 					}
@@ -2486,7 +2492,7 @@ namespace EditorManagement.Functions.Editors
 			for (int i = 0; i < AllEvents.Count; i++)
 			{
 				int t = i % EventLimit;
-				int num = Mathf.Clamp(layer * EventLimit, 0, (RTEditor.ShowModdedUI ? EventTypes.Length : 10));
+				int num = Mathf.Clamp(layer * EventLimit, 0, (RTEditor.ShowModdedUI ? layer * EventLimit : 10));
 
 				var text = eventLabels.transform.GetChild(t).GetChild(0).GetComponent<Text>();
 
@@ -2501,6 +2507,11 @@ namespace EditorManagement.Functions.Editors
 					text.text = NoEventLabel;
 
 				text.alignment = renderLeft ? TextAnchor.MiddleLeft : TextAnchor.MiddleRight;
+
+				if (!RTEditor.ShowModdedUI && RTEditor.inst.Layer > 0)
+                {
+					text.text = "No Event";
+                }
 			}
 		}
 
