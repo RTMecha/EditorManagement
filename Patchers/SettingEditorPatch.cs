@@ -20,7 +20,7 @@ using EditorManagement.Functions.Helpers;
 namespace EditorManagement.Patchers
 {
     [HarmonyPatch(typeof(SettingEditor))]
-    public class SettingEditorPatch
+    public class SettingEditorPatch : MonoBehaviour
     {
         static SettingEditor Instance { get => SettingEditor.inst; set => SettingEditor.inst = value; }
 
@@ -33,10 +33,22 @@ namespace EditorManagement.Patchers
         static GameObject colorPrefab;
 
         [HarmonyPatch("Awake")]
-        [HarmonyPostfix]
-        static void AwakePostfix()
+        [HarmonyPrefix]
+        static bool AwakePostfix(SettingEditor __instance)
         {
-            //var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
+            if (Instance == null)
+                Instance = __instance;
+            else if (Instance != __instance)
+            {
+                Destroy(__instance.gameObject);
+                return false;
+            }
+
+            Debug.Log($"{__instance.className}" +
+                $"---------------------------------------------------------------------\n" +
+                $"---------------------------- INITIALIZED ----------------------------\n" +
+                $"---------------------------------------------------------------------\n");
+
             var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
 
             var slider = transform.Find("snap/bpm/slider").gameObject.GetComponent<Slider>();
@@ -171,6 +183,8 @@ namespace EditorManagement.Patchers
             }
 
             Instance.StartCoroutine(Wait());
+
+            return false;
         }
 
         static IEnumerator Wait()

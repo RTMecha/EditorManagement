@@ -17,7 +17,29 @@ namespace EditorManagement.Patchers
 {
     [HarmonyPatch(typeof(CheckpointEditor))]
     public class CheckpointEditorPatch : MonoBehaviour
-    {
+	{
+		public static CheckpointEditor Instance { get => CheckpointEditor.inst; set => CheckpointEditor.inst = value; }
+
+		[HarmonyPatch("Awake")]
+		[HarmonyPrefix]
+		static bool AwakePrefix(CheckpointEditor __instance)
+		{
+			if (Instance == null)
+				Instance = __instance;
+			else if (Instance != __instance)
+			{
+				Destroy(__instance.gameObject);
+				return false;
+			}
+
+			Debug.Log($"{__instance.className}" +
+				$"---------------------------------------------------------------------\n" +
+				$"---------------------------- INITIALIZED ----------------------------\n" +
+				$"---------------------------------------------------------------------\n");
+
+			return false;
+		}
+
 		[HarmonyPatch("CreateNewCheckpoint", new Type[] { typeof(float), typeof(Vector2) })]
 		[HarmonyPrefix]
 		static bool CreateNewCheckpointPrefix(CheckpointEditor __instance, float __0, Vector2 __1)

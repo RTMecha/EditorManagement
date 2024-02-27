@@ -54,7 +54,15 @@ namespace EditorManagement.Patchers
 			if (Instance == null)
 				Instance = __instance;
 			else if (Instance != __instance)
+			{
 				Destroy(__instance.gameObject);
+				return false;
+			}
+
+			Debug.Log($"{__instance.className}" +
+				$"---------------------------------------------------------------------\n" +
+				$"---------------------------- INITIALIZED ----------------------------\n" +
+				$"---------------------------------------------------------------------\n");
 
 			// Regular Legacy only allows for using the first 10 event rows, EventsCore adds the rest.
 			for (int i = 0; i < (EventsCore ? 14 : 10); i++)

@@ -28,6 +28,8 @@ namespace EditorManagement.Patchers
 
 		static List<DataManager.GameData.BeatmapData.Marker> Markers => DataManager.inst.gameData.beatmapData.markers;
 
+		static string className = "[<color=#FFAF38>MarkerEditor</color>] \n";
+
 		[HarmonyPatch("Awake")]
 		[HarmonyPrefix]
 		static bool AwakePostfix(MarkerEditor __instance)
@@ -39,6 +41,11 @@ namespace EditorManagement.Patchers
                 Destroy(__instance.gameObject);
 				return false;
 			}
+
+			Debug.Log($"{className}" +
+				$"---------------------------------------------------------------------\n" +
+				$"---------------------------- INITIALIZED ----------------------------\n" +
+				$"---------------------------------------------------------------------\n");
 
 			Instance.StartCoroutine(Wait());
 			return false;

@@ -21,11 +21,28 @@ namespace EditorManagement.Patchers
     {
         public static ThemeEditor Instance { get => ThemeEditor.inst; set => ThemeEditor.inst = value; }
 
+        public static string className = "[<color=#3E6D73>ThemeEditor</color>] \n";
+
         [HarmonyPatch("Awake")]
-        [HarmonyPostfix]
-        static void AwakePostfix(ThemeEditor __instance)
+        [HarmonyPrefix]
+        static bool AwakePrefix(ThemeEditor __instance)
         {
+            if (Instance == null)
+                Instance = __instance;
+            else if (Instance != __instance)
+            {
+                Destroy(__instance.gameObject);
+                return false;
+            }
+
+            Debug.Log($"{className}" +
+                $"---------------------------------------------------------------------\n" +
+                $"---------------------------- INITIALIZED ----------------------------\n" +
+                $"---------------------------------------------------------------------\n");
+
             Destroy(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/theme/themes/viewport/content").GetComponent<VerticalLayoutGroup>());
+
+            return false;
         }
 
         [HarmonyPatch("Start")]

@@ -44,7 +44,15 @@ namespace EditorManagement.Patchers
             if (Instance == null)
                 Instance = __instance;
             else if (Instance != __instance)
+            {
                 Destroy(__instance.gameObject);
+                return false;
+            }
+
+            Debug.Log($"{__instance.className}" +
+                $"---------------------------------------------------------------------\n" +
+                $"---------------------------- INITIALIZED ----------------------------\n" +
+                $"---------------------------------------------------------------------\n");
 
             // Prefab Type Icon
             {

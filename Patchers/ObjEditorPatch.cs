@@ -55,7 +55,7 @@ namespace EditorManagement.Patchers
 		[HarmonyPrefix]
 		static bool AwakePrefix(ObjEditor __instance)
 		{
-			//og code
+			// og code
 			{
 				if (!Instance)
 					Instance = __instance;
@@ -64,6 +64,11 @@ namespace EditorManagement.Patchers
 					Destroy(__instance.gameObject);
 					return false;
 				}
+
+				Debug.Log($"{__instance.className}" +
+					$"---------------------------------------------------------------------\n" +
+					$"---------------------------- INITIALIZED ----------------------------\n" +
+					$"---------------------------------------------------------------------\n");
 
 				__instance.timelineKeyframes.Add(new List<GameObject>());
 				__instance.timelineKeyframes.Add(new List<GameObject>());
@@ -74,7 +79,7 @@ namespace EditorManagement.Patchers
 				beginDragTrigger.eventID = EventTriggerType.BeginDrag;
 				beginDragTrigger.callback.AddListener(delegate (BaseEventData eventData)
 				{
-					PointerEventData pointerEventData = (PointerEventData)eventData;
+					var pointerEventData = (PointerEventData)eventData;
 					__instance.SelectionBoxImage.gameObject.SetActive(true);
 					__instance.DragStartPos = pointerEventData.position * EditorManager.inst.ScreenScaleInverse;
 					__instance.SelectionRect = default(Rect);
@@ -113,7 +118,7 @@ namespace EditorManagement.Patchers
 				endDragTrigger.eventID = EventTriggerType.EndDrag;
 				endDragTrigger.callback.AddListener(delegate (BaseEventData eventData)
 				{
-					PointerEventData pointerEventData = (PointerEventData)eventData;
+					var pointerEventData = (PointerEventData)eventData;
 					__instance.DragEndPos = pointerEventData.position;
 					__instance.SelectionBoxImage.gameObject.SetActive(false);
 
@@ -128,10 +133,11 @@ namespace EditorManagement.Patchers
 				}
 			}
 
-			//Add spacer
-			var contentParent = GameObject.Find("GameObjectDialog/data/left/Scroll View/Viewport/Content").transform;
+			var objectView = ObjEditor.inst.ObjectView.transform;
+
+			// Add spacer
 			var spacer = new GameObject("spacer");
-			spacer.transform.parent = contentParent;
+			spacer.transform.SetParent(objectView);
 			spacer.transform.SetSiblingIndex(15);
 
 			var spRT = spacer.AddComponent<RectTransform>();
@@ -142,7 +148,7 @@ namespace EditorManagement.Patchers
 
 			var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
 
-			var todDropdown = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+			var todDropdown = objectView.Find("autokill/tod-dropdown");
 			var hide = todDropdown.GetComponent<HideDropdownOptions>();
 			hide.DisabledOptions[0] = false;
 			hide.remove = true;
@@ -154,7 +160,7 @@ namespace EditorManagement.Patchers
 			var csf = template.AddComponent<ContentSizeFitter>();
 			csf.verticalFit = ContentSizeFitter.FitMode.MinSize;
 
-			GameObject.Find("Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/name/name").GetComponent<InputField>().characterLimit = 0;
+			objectView.Find("name/name").GetComponent<InputField>().characterLimit = 0;
 
 			// Depth
 			{
@@ -162,25 +168,25 @@ namespace EditorManagement.Patchers
 				depth.transform.SetParent(spacer.transform);
 				depth.transform.localScale = Vector3.one;
 				depth.name = "depth";
-				depth.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
+				depth.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(depth.GetComponent<EventInfo>());
 
 				var depthif = depth.GetComponent<InputField>();
 				depthif.onValueChanged.RemoveAllListeners();
 
-				var sliderObject = ObjEditor.inst.ObjectView.transform.Find("depth/depth").gameObject;
+				var sliderObject = objectView.Find("depth/depth").gameObject;
 
-				Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/<").gameObject);
-				Destroy(ObjEditor.inst.ObjectView.transform.Find("depth/>").gameObject);
+				Destroy(objectView.Find("depth/<").gameObject);
+				Destroy(objectView.Find("depth/>").gameObject);
 
-				sliderObject.GetComponent<RectTransform>().sizeDelta = new Vector2(352f, 32f);
-				ObjEditor.inst.ObjectView.transform.Find("depth").GetComponent<RectTransform>().sizeDelta = new Vector2(261f, 32f);
+				sliderObject.transform.AsRT().sizeDelta = new Vector2(352f, 32f);
+				objectView.Find("depth").AsRT().sizeDelta = new Vector2(261f, 32f);
 			}
 
 			// Lock
 			{
-				var timeParent = ObjEditor.inst.ObjectView.transform.Find("time");
+				var timeParent = objectView.Find("time");
 
 				var locker = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle"));
 				locker.transform.SetParent(timeParent.transform);
@@ -192,18 +198,18 @@ namespace EditorManagement.Patchers
 				timeLayout.childControlWidth = false;
 				timeLayout.childForceExpandWidth = false;
 
-				locker.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				locker.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
 
 				var time = timeParent.Find("time");
-				time.GetComponent<RectTransform>().sizeDelta = new Vector2(151, 32f);
+				time.AsRT().sizeDelta = new Vector2(151, 32f);
 
 				locker.transform.Find("Background/Checkmark").GetComponent<Image>().sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
 
-				timeParent.Find("<<").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-				timeParent.Find("<").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
-				timeParent.Find("|").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
-				timeParent.Find(">").GetComponent<RectTransform>().sizeDelta = new Vector2(16f, 32f);
-				timeParent.Find(">>").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				timeParent.Find("<<").AsRT().sizeDelta = new Vector2(32f, 32f);
+				timeParent.Find("<").AsRT().sizeDelta = new Vector2(16f, 32f);
+				timeParent.Find("|").AsRT().sizeDelta = new Vector2(16f, 32f);
+				timeParent.Find(">").AsRT().sizeDelta = new Vector2(16f, 32f);
+				timeParent.Find(">>").AsRT().sizeDelta = new Vector2(32f, 32f);
 			}
 
 			// Colors
@@ -220,7 +226,7 @@ namespace EditorManagement.Patchers
 
 			// Origin X / Y
 			{
-				var contentOriginTF = ObjEditor.inst.ObjectView.transform.Find("origin").transform;
+				var contentOriginTF = objectView.transform.Find("origin").transform;
 
 				contentOriginTF.Find("origin-x").gameObject.SetActive(false);
 				contentOriginTF.Find("origin-y").gameObject.SetActive(false);
@@ -229,7 +235,7 @@ namespace EditorManagement.Patchers
 				xo.transform.SetParent(contentOriginTF.transform);
 				xo.transform.localScale = Vector3.one;
 				xo.name = "x";
-				xo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
+				xo.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(xo.GetComponent<EventInfo>());
 
@@ -240,7 +246,7 @@ namespace EditorManagement.Patchers
 				yo.transform.SetParent(contentOriginTF.transform);
 				yo.transform.localScale = Vector3.one;
 				yo.name = "y";
-				yo.transform.Find("input").GetComponent<RectTransform>().sizeDelta = new Vector2(110f, 32f);
+				yo.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(yo.GetComponent<EventInfo>());
 
@@ -267,7 +273,7 @@ namespace EditorManagement.Patchers
 				opacity.transform.Find("x/input").AsRT().sizeDelta = new Vector2(136f, 32f);
 			}
 
-			// Hue/Sat/Val
+			// Hue / Sat / Val
 			{
 				var opacityLabel = __instance.KeyframeDialogs[2].transform.Find("label").gameObject.Duplicate(__instance.KeyframeDialogs[3].transform);
 				opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Hue";
@@ -311,7 +317,7 @@ namespace EditorManagement.Patchers
 					}
 
 					var horizontal = opacity.transform.GetChild(i).GetComponent<HorizontalLayoutGroup>();
-					var input = opacity.transform.GetChild(i).Find("input").GetComponent<RectTransform>();
+					var input = opacity.transform.GetChild(i).Find("input").AsRT();
 
 					horizontal.childControlWidth = false;
 
@@ -377,39 +383,32 @@ namespace EditorManagement.Patchers
 
 			// Layers
 			{
-				if (ObjEditor.inst.ObjectView.transform.Find("spacer"))
-					ObjEditor.inst.ObjectView.transform.GetChild(17).GetChild(1).gameObject.SetActive(true);
-				else
-					ObjEditor.inst.ObjectView.transform.GetChild(16).GetChild(1).gameObject.SetActive(true);
+				objectView.GetChild(objectView.Find("spacer") ? 17 : 16).GetChild(1).gameObject.SetActive(true);
 
-				//ObjEditor.inst.ObjectView.transform.Find("editor/bin").gameObject.SetActive(true);
+				Destroy(objectView.Find("editor/layer").gameObject);
 
-				Destroy(ObjEditor.inst.ObjectView.transform.Find("editor/layer").gameObject);
+				var layers = Instantiate(objectView.Find("time/time").gameObject);
 
-				GameObject layers = Instantiate(ObjEditor.inst.ObjectView.transform.Find("time/time").gameObject);
-
-				layers.transform.SetParent(ObjEditor.inst.ObjectView.transform.Find("editor"));
+				layers.transform.SetParent(objectView.transform.Find("editor"));
 				layers.name = "layers";
 				layers.transform.SetSiblingIndex(0);
-				RectTransform layersRT = layers.GetComponent<RectTransform>();
-				InputField layersIF = layers.GetComponent<InputField>();
-				Image layersImage = layers.GetComponent<Image>();
+				var layersIF = layers.GetComponent<InputField>();
 
 				layersIF.characterValidation = InputField.CharacterValidation.Integer;
 
-				HorizontalLayoutGroup edhlg = ObjEditor.inst.ObjectView.transform.Find("editor").GetComponent<HorizontalLayoutGroup>();
+				var edhlg = objectView.transform.Find("editor").GetComponent<HorizontalLayoutGroup>();
 				edhlg.childControlWidth = false;
 				edhlg.childForceExpandWidth = false;
 
-				layersRT.sizeDelta = new Vector2(100f, 32f);
-				ObjEditor.inst.ObjectView.transform.Find("editor/bin").GetComponent<RectTransform>().sizeDelta = new Vector2(237f, 32f);
+				layers.transform.AsRT().sizeDelta = new Vector2(100f, 32f);
+				objectView.Find("editor/bin").AsRT().sizeDelta = new Vector2(237f, 32f);
 			}
 
 			// Clear Parent
 			{
 				var close = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x");
 
-				var parent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/parent");
+				var parent = objectView.Find("parent");
 				var hlg = parent.GetComponent<HorizontalLayoutGroup>();
 				hlg.childControlWidth = false;
 				hlg.spacing = 4f;
@@ -452,19 +451,20 @@ namespace EditorManagement.Patchers
 					&& dropper.TryGetComponent(out Image dropperImage))
 					parentPicker.transform.GetChild(0).GetComponent<Image>().sprite = dropperImage.sprite;
 
-				parent.transform.Find("parent").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-				parent.transform.Find("more").GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
+				parent.transform.Find("parent").AsRT().sizeDelta = new Vector2(32f, 32f);
+				parent.transform.Find("more").AsRT().sizeDelta = new Vector2(32f, 32f);
 			}
 
 			// ID & LDM
 			{
-				var id = __instance.ObjectView.transform.GetChild(0).gameObject.Duplicate(__instance.ObjectView.transform, "id", 0);
+				var id = objectView.GetChild(0).gameObject.Duplicate(objectView, "id", 0);
 				Destroy(id.transform.GetChild(1).gameObject);
 
 				((RectTransform)id.transform).sizeDelta = new Vector2(515, 32f);
 				((RectTransform)id.transform.GetChild(0)).sizeDelta = new Vector2(188f, 32f);
 
 				var text = id.transform.GetChild(0).GetComponent<Text>();
+				text.fontSize = 18;
 				text.text = "ID:";
 				text.alignment = TextAnchor.MiddleLeft;
 				text.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -593,8 +593,8 @@ namespace EditorManagement.Patchers
 
 			// Object Tags
 			{
-				var label = __instance.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(__instance.ObjectView.transform);
-				var index = __instance.ObjectView.transform.Find("name").GetSiblingIndex() + 1;
+				var label = objectView.ChildList().First(x => x.name == "label").gameObject.Duplicate(objectView);
+				var index = objectView.Find("name").GetSiblingIndex() + 1;
 				label.transform.SetSiblingIndex(index);
 
 				Destroy(label.transform.GetChild(1).gameObject);
@@ -602,15 +602,13 @@ namespace EditorManagement.Patchers
 
 				// Tags Scroll View/Viewport/Content
 				var tagScrollView = new GameObject("Tags Scroll View");
-				tagScrollView.transform.SetParent(__instance.ObjectView.transform);
+				tagScrollView.transform.SetParent(objectView);
 				tagScrollView.transform.SetSiblingIndex(index + 1);
 				tagScrollView.transform.localScale = Vector3.one;
 
 				var tagScrollViewRT = tagScrollView.AddComponent<RectTransform>();
 				tagScrollViewRT.sizeDelta = new Vector2(522f, 40f);
 				var scroll = tagScrollView.AddComponent<ScrollRect>();
-				//layout.AddComponent<Mask>();
-				//var image = layout.AddComponent<Image>();
 
 				scroll.horizontal = true;
 				scroll.vertical = false;
@@ -653,15 +651,15 @@ namespace EditorManagement.Patchers
 
 			// Render Type
 			{
-				var label = __instance.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(__instance.ObjectView.transform);
-				var index = __instance.ObjectView.transform.Find("depth").GetSiblingIndex() + 1;
+				var label = objectView.ChildList().First(x => x.name == "label").gameObject.Duplicate(objectView);
+				var index = objectView.Find("depth").GetSiblingIndex() + 1;
 				label.transform.SetSiblingIndex(index);
 
 				Destroy(label.transform.GetChild(1).gameObject);
 				label.transform.GetChild(0).GetComponent<Text>().text = "Render Type";
 
-				var renderType = ObjEditor.inst.ObjectView.transform.Find("autokill/tod-dropdown").gameObject
-					.Duplicate(__instance.ObjectView.transform, "rendertype", index + 1);
+				var renderType = objectView.Find("autokill/tod-dropdown").gameObject
+					.Duplicate(objectView, "rendertype", index + 1);
 				var renderTypeDD = renderType.GetComponent<Dropdown>();
 				renderTypeDD.options.Clear();
 				renderTypeDD.options = new List<Dropdown.OptionData>
@@ -734,7 +732,7 @@ namespace EditorManagement.Patchers
 				};
 				for (int i = 0; i < 3; i++)
 				{
-					var parent = ObjEditor.inst.ObjectView.transform.Find("parent_more").GetChild(i + 1);
+					var parent = objectView.Find("parent_more").GetChild(i + 1);
 
 					if (parent.Find("<<"))
 						Destroy(parent.Find("<<").gameObject);
@@ -761,7 +759,7 @@ namespace EditorManagement.Patchers
 
 			// Make Shape list scrollable, for any more shapes I decide to add.
 			{
-				var shape = ObjEditor.inst.ObjectView.transform.Find("shape");
+				var shape = objectView.Find("shape");
 				var rect = (RectTransform)shape;
 				var scroll = shape.gameObject.AddComponent<ScrollRect>();
 				shape.gameObject.AddComponent<Mask>();
@@ -829,10 +827,10 @@ namespace EditorManagement.Patchers
 
 			// Store Image Shape
 			{
-				if (__instance.ObjectView.transform.Find("shapesettings/7"))
+				if (objectView.Find("shapesettings/7"))
 				{
 					var button = GameObject.Find("TimelineBar/GameObject/event");
-					var copy = button.Duplicate(__instance.ObjectView.transform.Find("shapesettings/7"), "set", 5);
+					var copy = button.Duplicate(objectView.Find("shapesettings/7"), "set", 5);
 					var text = copy.transform.GetChild(0).GetComponent<Text>();
 					text.text = "Set Data";
 					copy.transform.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
@@ -844,7 +842,7 @@ namespace EditorManagement.Patchers
 
             // Parent Desync
             {
-				var parentMore = ObjEditor.inst.ObjectView.transform.Find("parent_more");
+				var parentMore = objectView.Find("parent_more");
 				var ignoreGameObject = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored"));
 				ignoreGameObject.transform.SetParent(parentMore);
 				ignoreGameObject.transform.SetSiblingIndex(1);
@@ -855,6 +853,7 @@ namespace EditorManagement.Patchers
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}
 
+			__instance.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
 			__instance.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
 
 			ObjectEditor.Init(__instance);
