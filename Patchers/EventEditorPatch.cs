@@ -139,7 +139,10 @@ namespace EditorManagement.Patchers
 		static bool UpdatePrefix()
 		{
 			if (Input.GetMouseButtonUp(0))
+			{
 				Instance.eventDrag = false;
+				RTEditor.inst.dragOffset = -1f;
+			}
 
 			if (Instance.eventDrag)
 			{
@@ -154,11 +157,15 @@ namespace EditorManagement.Patchers
 					}
                 }
 
-				if (preNumber != timelineTime)
+				if (RTEditor.inst.dragOffset != timelineTime + Instance.mouseOffsetXForDrag)
 				{
+					if (RTEditor.DraggingPlaysSound && (SettingEditor.inst.SnapActive || !RTEditor.DraggingPlaysSoundBPM))
+						SoundManager.inst.PlaySound("LeftRight", SettingEditor.inst.SnapActive ? 0.6f : 0.1f, 0.8f);
+
+					RTEditor.inst.dragOffset = timelineTime + Instance.mouseOffsetXForDrag;
+
 					RTEventEditor.inst.RenderEventObjects();
 					RTEventEditor.inst.RenderEventsDialog();
-					preNumber = timelineTime;
 				}
 			}
 
