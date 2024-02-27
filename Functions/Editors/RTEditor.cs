@@ -220,13 +220,17 @@ namespace EditorManagement.Functions.Editors
                 {
                     int limit = timelineObject.Type / RTEventEditor.EventLimit;
                     bool isCurrentLayer = limit == Layer && layerType == LayerType.Events;
+                    bool active = isCurrentLayer && (ShowModdedUI || timelineObject.Type < 10);
 
-                    timelineObject.GameObject.SetActive(isCurrentLayer);
+                    timelineObject.GameObject.SetActive(active);
 
-                    var color = EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
-                    color.a = 1f;
+                    if (active)
+                    {
+                        var color = EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
+                        color.a = 1f;
 
-                    timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : color;
+                        timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : color;
+                    }
                 }
             }
 
@@ -1224,7 +1228,7 @@ namespace EditorManagement.Functions.Editors
 
         public void SaveGlobalSettings()
         {
-            var jn = JSON.Parse(RTFile.ReadFromFile(EditorSettingsPath));
+            var jn = JSON.Parse("{}");
 
             jn["paths"]["editor"] = EditorPath;
             jn["paths"]["themes"] = ThemePath;
@@ -1400,25 +1404,29 @@ namespace EditorManagement.Functions.Editors
 
         public void Paste(float _offsetTime = 0f, bool _regen = true)
         {
-            if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object)) || (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab)) || (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Prefab)))
+            if (isOverMainTimeline && layerType == LayerType.Objects)
             {
                 PasteObject(_offsetTime, _regen);
             }
-            if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Event)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Event))
+
+            if (isOverMainTimeline && layerType == LayerType.Events)
             {
                 RTEventEditor.inst.PasteEvents();
                 EditorManager.inst.DisplayNotification("Pasted Event Object", 1f, EditorManager.NotificationType.Success);
             }
-            if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object))
+
+            if (!isOverMainTimeline && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object))
             {
                 ObjEditor.inst.PasteKeyframes();
                 EditorManager.inst.DisplayNotification("Pasted Object Keyframe", 1f, EditorManager.NotificationType.Success);
             }
-            if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Checkpoint)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Checkpoint))
+
+            if ((isOverMainTimeline && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Checkpoint)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Checkpoint))
             {
                 CheckpointEditor.inst.PasteCheckpoint();
                 EditorManager.inst.DisplayNotification("Pasted Checkpoint Object", 1f, EditorManager.NotificationType.Success);
             }
+
             if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Background))
             {
                 BackgroundEditor.inst.PasteBackground();
@@ -1441,7 +1449,7 @@ namespace EditorManagement.Functions.Editors
 
             if (RTFile.FileExists(Application.persistentDataPath + "/copied_objects.lsp"))
             {
-                JSONNode jn = JSON.Parse(RTFile.ReadFromFile(Application.persistentDataPath + "/copied_objects.lsp"));
+                var jn = JSON.Parse(RTFile.ReadFromFile(Application.persistentDataPath + "/copied_objects.lsp"));
 
                 pr = Prefab.Parse(jn);
 
@@ -1453,7 +1461,7 @@ namespace EditorManagement.Functions.Editors
 
         public void Delete()
         {
-            if (IsObjectDialog)
+            if (!isOverMainTimeline && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object))
             {
                 if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
                     if (ObjEditor.inst.currentKeyframe != 0)
@@ -1465,19 +1473,19 @@ namespace EditorManagement.Functions.Editors
 
                         EditorManager.inst.history.Add(new History.Command("Delete Keyframes", delegate ()
                         {
-                            inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
+                            StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
                         }, delegate ()
                         {
                             ObjectEditor.inst.PasteKeyframes(beatmapObject, list, false);
                         }));
 
-                        inst.StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
+                        StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
                     }
                 else
-                    EditorManager.inst.DisplayNotification("Can't Delete First Keyframe.", 1f, EditorManager.NotificationType.Error);
+                    EditorManager.inst.DisplayNotification("Can't delete first keyframe.", 1f, EditorManager.NotificationType.Error);
                 return;
             }
-            if (IsTimeline)
+            if (isOverMainTimeline && layerType == LayerType.Objects)
             {
                 if (DataManager.inst.gameData.beatmapObjects.Count > 1 && ObjectEditor.inst.SelectedObjectCount != DataManager.inst.gameData.beatmapObjects.Count)
                 {
@@ -1489,7 +1497,7 @@ namespace EditorManagement.Functions.Editors
 
                     float startTime = 0f;
 
-                    List<float> startTimeList = new List<float>();
+                    var startTimeList = new List<float>();
                     foreach (var bm in list)
                         startTimeList.Add(bm.Time);
 
@@ -1509,16 +1517,16 @@ namespace EditorManagement.Functions.Editors
                     }, delegate ()
                     {
                         ObjectEditor.inst.DeselectAllObjects();
-                        StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true));
+                        StartCoroutine(ObjectEditor.inst.AddPrefabExpandedToLevel(prefab, true, 0f, true, retainID: true));
                     }));
 
                     StartCoroutine(ObjectEditor.inst.DeleteObjects());
                 }
                 else
-                    EditorManager.inst.DisplayNotification("Can't Delete Only Beatmap Object", 1f, EditorManager.NotificationType.Error);
+                    EditorManager.inst.DisplayNotification("Can't delete only Beatmap Object", 1f, EditorManager.NotificationType.Error);
                 return;
             }
-            if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Event))
+            if (isOverMainTimeline && layerType == LayerType.Events)
             {
                 if (RTEventEditor.inst.SelectedKeyframes.Count > 0 && !RTEventEditor.inst.SelectedKeyframes.Has(x => x.Index == 0))
                 {
@@ -1542,11 +1550,13 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.DisplayNotification("Can't delete first Event Keyframe.", 1f, EditorManager.NotificationType.Error);
                 return;
             }
+
             if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Background))
             {
                 BackgroundEditor.inst.DeleteBackground(BackgroundEditor.inst.currentObj);
                 return;
             }
+
             if (EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Checkpoint))
             {
                 if (CheckpointEditor.inst.currentObj != 0)
@@ -1852,36 +1862,33 @@ namespace EditorManagement.Functions.Editors
             tltrig.triggers.Add(isNotOver);
             tltrig.triggers.Add(TriggerHelper.EndDragTrigger());
 
-            if (DataManager.inst != null)
+            for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
             {
-                for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
+                var et = EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>();
+                et.triggers.Clear();
+                et.triggers.Add(isOver);
+                et.triggers.Add(isNotOver);
+                et.triggers.Add(TriggerHelper.StartDragTrigger());
+                et.triggers.Add(TriggerHelper.DragTrigger());
+                et.triggers.Add(TriggerHelper.EndDragTrigger());
+
+                int typeTmp = i;
+                var eventKeyframeCreation = new EventTrigger.Entry();
+                eventKeyframeCreation.eventID = EventTriggerType.PointerDown;
+                eventKeyframeCreation.callback.AddListener(delegate (BaseEventData eventData)
                 {
-                    var et = EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>();
-                    et.triggers.Clear();
-                    et.triggers.Add(isOver);
-                    et.triggers.Add(isNotOver);
-                    et.triggers.Add(TriggerHelper.StartDragTrigger());
-                    et.triggers.Add(TriggerHelper.DragTrigger());
-                    et.triggers.Add(TriggerHelper.EndDragTrigger());
+                    var layer = Layer + 1;
+                    int max = RTEventEditor.EventLimit * layer;
+                    int min = max - RTEventEditor.EventLimit;
 
-                    int typeTmp = i;
-                    var entry3 = new EventTrigger.Entry();
-                    entry3.eventID = EventTriggerType.PointerDown;
-                    entry3.callback.AddListener(delegate (BaseEventData eventData)
+                    Debug.Log($"{EditorPlugin.className}EventHolder: {typeTmp}\nMax: {max}\nMin: {min}\nCurrent Event: {min + typeTmp}");
+                    if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
                     {
-                        var layer = Layer + 1;
-                        int max = RTEventEditor.EventLimit * layer;
-                        int min = max - RTEventEditor.EventLimit;
-
-                        Debug.Log($"{EditorPlugin.className}EventHolder: {typeTmp}\nMax: {max}\nMin: {min}\nCurrent Event: {min + typeTmp}");
-                        if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
-                        {
-                            if (RTEventEditor.EventTypes.Length > min + typeTmp && DataManager.inst.gameData.eventObjects.allEvents.Count > min + typeTmp)
-                                RTEventEditor.inst.NewKeyframeFromTimeline(min + typeTmp);
-                        }
-                    });
-                    et.triggers.Add(entry3);
-                }
+                        if (RTEventEditor.EventTypes.Length > min + typeTmp && (ShowModdedUI && DataManager.inst.gameData.eventObjects.allEvents.Count > min + typeTmp || 10 > min + typeTmp))
+                            RTEventEditor.inst.NewKeyframeFromTimeline(min + typeTmp);
+                    }
+                });
+                et.triggers.Add(eventKeyframeCreation);
             }
         }
 
@@ -4367,7 +4374,7 @@ namespace EditorManagement.Functions.Editors
 
         public void CreatePropertiesWindow()
         {
-            GameObject editorProperties = Instantiate(EditorManager.inst.GetDialog("Object Selector").Dialog.gameObject);
+            var editorProperties = Instantiate(EditorManager.inst.GetDialog("Object Selector").Dialog.gameObject);
             editorProperties.name = "Editor Properties Popup";
             editorProperties.layer = 5;
             editorProperties.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform);
@@ -4396,7 +4403,9 @@ namespace EditorManagement.Functions.Editors
 
             //Sort Layout
             {
-                editorProperties.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(750f, 32f);
+                editorProperties.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(737f, 32f);
+                editorProperties.transform.Find("mask/content").AsRT().anchorMin = new Vector2(0.01f, 1f);
+                editorProperties.transform.Find("mask/content").AsRT().anchorMax = new Vector2(0.01f, 1f);
                 editorProperties.GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 450f);
                 editorProperties.transform.Find("Panel").GetComponent<RectTransform>().sizeDelta = new Vector2(782f, 32f);
                 editorProperties.transform.Find("search-box").GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 32f);
@@ -8895,6 +8904,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -8937,6 +8947,7 @@ namespace EditorManagement.Functions.Editors
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -9001,6 +9012,7 @@ namespace EditorManagement.Functions.Editors
                                 l.transform.SetParent(x.transform);
                                 l.transform.SetAsFirstSibling();
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -9220,6 +9232,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -9271,6 +9284,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -9355,6 +9369,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -9453,6 +9468,7 @@ namespace EditorManagement.Functions.Editors
                                 var l = Instantiate(label);
                                 l.transform.SetParent(bar.transform);
                                 l.transform.localScale = Vector3.one;
+                                l.SetActive(true);
                                 var text = l.transform.GetChild(0).GetComponent<Text>();
                                 text.alignment = TextAnchor.MiddleLeft;
                                 text.text = prop.name;
@@ -10007,6 +10023,12 @@ namespace EditorManagement.Functions.Editors
         }
 
         public static float SnapToBPM(float _time) => Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / BPMSnapDivisions)) * (SettingEditor.inst.BPMMulti / BPMSnapDivisions);
+
+        public static void SetActive(GameObject gameObject, bool active)
+        {
+            gameObject.SetActive(active);
+            gameObject.transform.parent.GetChild(gameObject.transform.GetSiblingIndex() - 1).gameObject.SetActive(active);
+        }
 
         #endregion
 
