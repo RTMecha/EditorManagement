@@ -294,6 +294,13 @@ namespace EditorManagement.Functions.Editors
 
         #region Variables
 
+        public float dragOffset = -1f;
+        public int dragBinOffset = -100;
+
+        public static bool DraggingPlaysSound { get; set; }
+        public static bool DraggingPlaysSoundBPM { get; set; }
+        public static bool ShowModdedUI { get; set; }
+
         public static bool RoundToNearest => GetEditorProperty("Round To Nearest").GetConfigEntry<bool>().Value;
         public static bool ShowModifiedColors => GetEditorProperty("Show Modified Colors").GetConfigEntry<bool>().Value;
         public static float BPMSnapDivisions => GetEditorProperty("BPM Snap Divisions").GetConfigEntry<float>().Value;
@@ -10036,6 +10043,10 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, RTFunctions.FunctionsPlugin.Language),
             new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.ControllerRumble),
             new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Dragging Plays Sound", true, "If dragging an object plays a sound.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("General", "Dragging Plays Sound Only With BPM", true, "If dragging an object plays a sound ONLY when BPM Snap is active.")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Round To Nearest", true, "If numbers should be rounded up to 3 decimal points (for example, 0.43321245 into 0.433).")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.")),
@@ -10144,6 +10155,8 @@ namespace EditorManagement.Functions.Editors
 
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Drag UI", true, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Editor GUI", "Show Modded Features in Editor", true, "Z axis, 10-18 color slots, homing keyframes, etc get set active / inactive with this on / off respectively")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.")),
             new EditorProperty(EditorProperty.ValueType.Bool,

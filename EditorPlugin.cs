@@ -70,6 +70,9 @@ namespace EditorManagement
 			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
 			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
 			ThemeEditorManager.themesPerPage = RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().Value;
+			RTEditor.DraggingPlaysSound = RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().Value;
+			RTEditor.DraggingPlaysSoundBPM = RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().Value;
+			RTEditor.ShowModdedUI = RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().Value;
 
 			SetupSettingChanged();
 
@@ -150,6 +153,22 @@ namespace EditorManagement
             RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().SettingChanged += ThemePopupChanged;
 
             RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().SettingChanged += TimelineWaveformChanged;
+
+            RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().SettingChanged += DraggingChanged;
+            RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().SettingChanged += DraggingChanged;
+
+            RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().SettingChanged += ModdedEditorChanged;
+		}
+
+        void ModdedEditorChanged(object sender, EventArgs e)
+		{
+			RTEditor.ShowModdedUI = RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().Value;
+		}
+
+        void DraggingChanged(object sender, EventArgs e)
+        {
+			RTEditor.DraggingPlaysSound = RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().Value;
+			RTEditor.DraggingPlaysSoundBPM = RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().Value;
 		}
 
         void TimelineWaveformChanged(object sender, EventArgs e)
