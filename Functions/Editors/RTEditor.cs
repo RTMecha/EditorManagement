@@ -182,6 +182,47 @@ namespace EditorManagement.Functions.Editors
                 {
                     parentPickerEnabled = false;
                 };
+
+            if (ModCompatibility.sharedFunctions.ContainsKey("EventsCoreConfigs") && ModCompatibility.sharedFunctions["EventsCoreConfigs"] is List<ConfigEntryBase> configs)
+            {
+                foreach (var config in configs)
+                {
+                    if (otherProperties.Has(x => x.name == config.Definition.Key))
+                        continue;
+
+                    var editorProperty = EditorProperty.ValueType.Bool;
+
+                    switch (config.Definition.Key)
+                    {
+                        case "Editor Camera Offset":
+                        case "Players & GUI Active":
+                        case "Show Intro":
+                        case "Show Effects":
+                        case "Editor Camera Use Keys":
+                        case "Editor Camera Reset Values":
+                            {
+                                editorProperty = EditorProperty.ValueType.Bool;
+                                break;
+                            }
+                        case "Editor Camera Speed":
+                        case "Editor Camera Slow Speed":
+                        case "Editor Camera Fast Speed":
+                            {
+                                editorProperty = EditorProperty.ValueType.Float;
+                                break;
+                            }
+                        case "Editor Camera Toggle Key":
+                        case "Players & GUI Toggle Key":
+                        case "Shake Mode":
+                            {
+                                editorProperty = EditorProperty.ValueType.Enum;
+                                break;
+                            }
+                    }
+
+                    otherProperties.Add(new EditorProperty(editorProperty, config));
+                }
+            }
         }
 
         void Update()
@@ -8881,7 +8922,7 @@ namespace EditorManagement.Functions.Editors
 
             LSHelpers.DeleteChildren(editorDialog.Find("mask/content"));
 
-            foreach (var prop in EditorProperties)
+            foreach (var prop in EditorProperties.Union(otherProperties))
             {
                 if (currentCategory == prop.propCategory && (string.IsNullOrEmpty(propertiesSearch) || prop.name.ToLower().Contains(propertiesSearch.ToLower())))
                 {
@@ -9859,6 +9900,8 @@ namespace EditorManagement.Functions.Editors
                 var dialogAnimation = DialogAnimations.Find(x => x.name == dialogName);
                 var dialog = EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog;
 
+                var scrollbar = dialog.GetComponentInChildren<Scrollbar>();
+
                 var animation = new AnimationManager.Animation("Popup Open");
                 animation.floatAnimations = new List<AnimationManager.Animation.AnimationObject<float>>
                 {
@@ -9902,6 +9945,8 @@ namespace EditorManagement.Functions.Editors
                             var pos = dialog.localScale;
                             pos.x = x;
                             dialog.localScale = pos;
+                            if (scrollbar && active)
+                                scrollbar.value = 1f;
                         }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
@@ -9916,6 +9961,8 @@ namespace EditorManagement.Functions.Editors
                             var pos = dialog.localScale;
                             pos.y = x;
                             dialog.localScale = pos;
+                            if (scrollbar && active)
+                                scrollbar.value = 1f;
                         }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
@@ -10501,6 +10548,8 @@ namespace EditorManagement.Functions.Editors
 
             #endregion
         };
+
+        public List<EditorProperty> otherProperties = new List<EditorProperty>();
 
         #endregion
 
@@ -11309,7 +11358,10 @@ namespace EditorManagement.Functions.Editors
             {
                 name = _configEntry.Definition.Key;
                 valueType = _valueType;
-                propCategory = PropCategories.Find(x => x.ToString() == _configEntry.Definition.Section.Replace(" ", ""));
+
+                var p = PropCategories.FindIndex(x => x.ToString() == _configEntry.Definition.Section.Replace(" ", ""));
+
+                propCategory = p >= 0 ? PropCategories[p] : EditorPropCategory.General;
                 configEntry = _configEntry;
                 description = _configEntry.Description.Description;
             }
