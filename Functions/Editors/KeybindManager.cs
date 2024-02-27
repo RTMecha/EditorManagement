@@ -1978,7 +1978,9 @@ namespace EditorManagement.Functions.Editors
                     ObjectEditor.inst.RenderTimelineObject(timelineObject);
                 }
 
-            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject && ObjectEditor.inst.CurrentSelection.InternalSelections.Count > 0 && ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected).Count() > 0)
+            if (ObjEditor.inst.ObjectView.activeInHierarchy
+                && ObjectEditor.inst.CurrentSelection.IsBeatmapObject
+                && ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected).Count() > 0)
             {
                 foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections)
                 {
