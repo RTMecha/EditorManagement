@@ -1165,7 +1165,7 @@ namespace EditorManagement.Functions.Editors
             Delete, // 50
             ToggleObjectDragger, // 51
             ToggleZenMode, // 52
-            CycleGameDifficulty, // 53
+            CycleGameMode, // 53
             TransformPosition, //54
             TransformScale, //55
             TransformRotation, //56
@@ -1874,15 +1874,16 @@ namespace EditorManagement.Functions.Editors
 
         public static void ToggleZenMode(Keybind keybind)
         {
-            RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value = !RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value;
-            EditorManager.inst.DisplayNotification($"Set Zen Mode {(RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
+            var config = RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>();
+            config.Value = !config.Value;
+            EditorManager.inst.DisplayNotification($"Set Zen Mode {(config.Value ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
         }
 
-        public static void CycleGameDifficulty(Keybind keybind)
+        public static void CycleGameMode(Keybind keybind)
         {
             var num = DataManager.inst.GetSettingEnum("ArcadeDifficulty", 1);
             num++;
-            if (num > 3)
+            if (num > 4)
                 num = 0;
             DataManager.inst.UpdateSettingEnum("ArcadeDifficulty", num);
 
@@ -1890,11 +1891,12 @@ namespace EditorManagement.Functions.Editors
             {
                 "Zen",
                 "Normal",
-                "1Life",
-                "1Hit",
+                "1 Life",
+                "1 Hit",
+                "Practice",
             };
 
-            EditorManager.inst.DisplayNotification($"Set Game Difficulty to {modes[num]}!", 2f, EditorManager.NotificationType.Success);
+            EditorManager.inst.DisplayNotification($"Set Game Mode to {modes[num]} Mode!", 2f, EditorManager.NotificationType.Success);
             SaveManager.inst.UpdateSettingsFile(false);
         }
 
