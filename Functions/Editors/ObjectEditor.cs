@@ -2483,6 +2483,16 @@ namespace EditorManagement.Functions.Editors
                         {
                             var sh = shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString());
                             LSHelpers.DeleteChildren(sh.transform, true);
+
+                            var d = new List<GameObject>();
+                            for (int j = 0; j < sh.transform.childCount; j++)
+                            {
+                                d.Add(sh.transform.GetChild(j).gameObject);
+                            }
+                            foreach (var go in d)
+                                DestroyImmediate(go);
+                            d.Clear();
+                            d = null;
                         }
 
                         var so = shapeSettings.Find((i + 1).ToString());
