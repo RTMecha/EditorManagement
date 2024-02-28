@@ -9893,12 +9893,21 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void PlayDialogAnimation(string dialogName, bool active)
+        public void PlayDialogAnimation(GameObject gameObject, string dialogName, bool active)
         {
-            if (DialogAnimations.Has(x => x.name == dialogName) && EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog.gameObject.activeSelf != active)
+            var play = GetEditorProperty("Play Editor Animations").GetConfigEntry<bool>().Value;
+            if (play && DialogAnimations.Has(x => x.name == dialogName) && gameObject.activeSelf != active)
             {
                 var dialogAnimation = DialogAnimations.Find(x => x.name == dialogName);
-                var dialog = EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog;
+
+                if (!dialogAnimation.active)
+                {
+                    gameObject.SetActive(active);
+
+                    return;
+                }
+
+                var dialog = gameObject.transform;
 
                 var scrollbar = dialog.GetComponentInChildren<Scrollbar>();
 
@@ -9997,8 +10006,8 @@ namespace EditorManagement.Functions.Editors
                 AnimationManager.inst.Play(animation);
             }
 
-            if (!DialogAnimations.Has(x => x.name == dialogName) || active)
-                EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog.gameObject.SetActive(active);
+            if (!play || !DialogAnimations.Has(x => x.name == dialogName) || active)
+                gameObject.SetActive(active);
         }
 
         public void SetDialogStatus(string dialogName, bool active, bool focus = true)
@@ -10009,7 +10018,7 @@ namespace EditorManagement.Functions.Editors
                 return;
             }
 
-            PlayDialogAnimation(dialogName, active);
+            PlayDialogAnimation(EditorManager.inst.EditorDialogsDictionary[dialogName].Dialog.gameObject, dialogName, active);
 
             if (active)
             {
@@ -10224,6 +10233,8 @@ namespace EditorManagement.Functions.Editors
 
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Drag UI", true, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
+            new EditorProperty(EditorProperty.ValueType.Bool,
+                Config.Bind("Editor GUI", "Play Editor Animations", true, "If popups should be animated.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Show Modded Features in Editor", true, "Z axis, 10-18 color slots, homing keyframes, etc get set active / inactive with this on / off respectively")),
             new EditorProperty(EditorProperty.ValueType.Bool,
@@ -11170,6 +11181,161 @@ namespace EditorManagement.Functions.Editors
                 scaYStartDuration = 0.6f,
                 scaYEndDuration = 0.1f,
                 scaYStartEase = "OutElastic",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("File Dropdown")
+            {
+                posStart = new Vector2(-37.5f, -16f),
+                posEnd = new Vector2(-37.5f, -16f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutBounce",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutBounce",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Edit Dropdown")
+            {
+                posStart = new Vector2(-37.5f, -16f),
+                posEnd = new Vector2(-37.5f, -16f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutBounce",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutBounce",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("View Dropdown")
+            {
+                posStart = new Vector2(-37.5f, -16f),
+                posEnd = new Vector2(-37.5f, -16f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutBounce",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutBounce",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Steam Dropdown")
+            {
+                posStart = new Vector2(-37.5f, -16f),
+                posEnd = new Vector2(-37.5f, -16f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutBounce",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutBounce",
+                scaYEndEase = "InCirc",
+
+                rotStart = 0f,
+                rotEnd = 0f,
+                rotStartDuration = 0f,
+                rotEndDuration = 0f,
+                rotStartEase = "Linear",
+                rotEndEase = "Linear",
+            },
+            new DialogAnimation("Help Dropdown")
+            {
+                posStart = new Vector2(-37.5f, -16f),
+                posEnd = new Vector2(-37.5f, -16f),
+                posXStartDuration = 0f,
+                posXEndDuration = 0f,
+                posXStartEase = "Linear",
+                posXEndEase = "Linear",
+                posYStartDuration = 0f,
+                posYEndDuration = 0f,
+                posYStartEase = "Linear",
+                posYEndEase = "Linear",
+
+                scaStart = new Vector2(1f, 0f),
+                scaEnd = Vector2.one,
+                scaXStartDuration = 0.6f,
+                scaXEndDuration = 0.1f,
+                scaXStartEase = "OutBounce",
+                scaXEndEase = "InCirc",
+                scaYStartDuration = 0.6f,
+                scaYEndDuration = 0.1f,
+                scaYStartEase = "OutBounce",
                 scaYEndEase = "InCirc",
 
                 rotStart = 0f,

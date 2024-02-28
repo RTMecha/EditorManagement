@@ -880,18 +880,45 @@ namespace EditorManagement.Patchers
                 {
                     if (editorDialog.Type != EditorManager.EditorDialog.DialogType.Timeline)
                     {
-                        RTEditor.inst.PlayDialogAnimation(editorDialog.Name, false);
+                        RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
                         Instance.ActiveDialogs.Remove(editorDialog);
                     }
                 }
                 else if (__0.Contains(editorDialog.Type))
                 {
-                    RTEditor.inst.PlayDialogAnimation(editorDialog.Name, false);
+                    RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
                     Instance.ActiveDialogs.Remove(editorDialog);
                 }
             }
             Instance.currentDialog = Instance.ActiveDialogs.Last();
 
+            return false;
+        }
+
+        [HarmonyPatch("ToggleDropdown")]
+        [HarmonyPrefix]
+        static bool ToggleDropdownPrefix(GameObject __0)
+        {
+            bool flag = !__0.activeSelf;
+            foreach (var gameObject in Instance.DropdownMenus)
+            {
+                RTEditor.inst.PlayDialogAnimation(gameObject, gameObject.name, false);
+            }
+
+            RTEditor.inst.PlayDialogAnimation(__0, __0.name, flag);
+
+            return false;
+        }
+
+        [HarmonyPatch("HideAllDropdowns")]
+        [HarmonyPrefix]
+        static bool HideAllDropdownsPrefix()
+        {
+            foreach (var gameObject in Instance.DropdownMenus)
+            {
+                RTEditor.inst.PlayDialogAnimation(gameObject, gameObject.name, false);
+            }
+            EventSystem.current.SetSelectedGameObject(null);
             return false;
         }
 
