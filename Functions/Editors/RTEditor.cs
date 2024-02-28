@@ -512,6 +512,8 @@ namespace EditorManagement.Functions.Editors
 
             prevLayer = EditorManager.inst.layer;
             prevLayerType = layerType;
+
+            SetTimelineGridSize();
         }
 
         #endregion
@@ -2045,7 +2047,7 @@ namespace EditorManagement.Functions.Editors
                 EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
                 {
                     EditorManager.inst.ShowDialog("Warning Popup");
-                    RefreshWarningPopup("Are you sure you want to quit to the arcade?", delegate ()
+                    RefreshWarningPopup("Are you sure you want to quit to the arcade? Any unsaved progress will be lost!", delegate ()
                     {
                         DG.Tweening.DOTween.Clear();
                         Updater.UpdateObjects(false);
@@ -2068,7 +2070,7 @@ namespace EditorManagement.Functions.Editors
                 if (EditorManager.inst.hasLoadedLevel)
                 {
                     EditorManager.inst.ShowDialog("Warning Popup");
-                    RefreshWarningPopup("Are you sure you want to switch to Arcade Mode?", delegate ()
+                    RefreshWarningPopup("Are you sure you want to switch to Arcade Mode? Any unsaved progress will be lost!", delegate ()
                     {
                         LevelManager.OnLevelEnd = delegate ()
                         {
@@ -2088,7 +2090,6 @@ namespace EditorManagement.Functions.Editors
                 {
                     EditorManager.inst.DisplayNotification("Load a level before switching to Arcade Mode!", 2f, EditorManager.NotificationType.Error);
                 }
-
             }, 7);
             
             EditorHelper.AddEditorDropdown("Open Level Browser", "", "File", titleBar.Find("File/File Dropdown/Open/Image").GetComponent<Image>().sprite, delegate ()

@@ -802,24 +802,68 @@ namespace EditorManagement.Patchers
 
         [HarmonyPatch("QuitToMenu")]
         [HarmonyPrefix]
-        static bool QuitToMenuPrefix(EditorManager __instance)
+        static bool QuitToMenuPrefix()
         {
-            if (__instance.savingBeatmap)
+            if (Instance.savingBeatmap)
             {
-                __instance.DisplayNotification("Please wait till the beatmap finishes saving!", 2f, EditorManager.NotificationType.Error);
+                Instance.DisplayNotification("Please wait until the beatmap finishes saving!", 2f, EditorManager.NotificationType.Error);
                 return false;
             }
 
-            DG.Tweening.DOTween.KillAll(false);
-            DG.Tweening.DOTween.Clear(true);
-            __instance.loadedLevels.Clear();
-            DataManager.inst.gameData = null;
-            DataManager.inst.gameData = new GameData();
-            DiscordController.inst.OnIconChange("");
-            DiscordController.inst.OnStateChange("");
-            Debug.Log($"{__instance.className}Quit to Main Menu");
-            InputDataManager.inst.players.Clear();
-            SceneManager.inst.LoadScene("Main Menu");
+            EditorManager.inst.ShowDialog("Warning Popup");
+            RTEditor.inst.RefreshWarningPopup("Are you sure you want to quit to the main menu? Any unsaved progress will be lost!", delegate ()
+            {
+                if (Instance.savingBeatmap)
+                {
+                    Instance.DisplayNotification("Please wait until the beatmap finishes saving!", 2f, EditorManager.NotificationType.Error);
+                    return;
+                }
+
+                DG.Tweening.DOTween.KillAll(false);
+                DG.Tweening.DOTween.Clear(true);
+                Instance.loadedLevels.Clear();
+                DataManager.inst.gameData = null;
+                DataManager.inst.gameData = new GameData();
+                DiscordController.inst.OnIconChange("");
+                DiscordController.inst.OnStateChange("");
+                Debug.Log($"{Instance.className}Quit to Main Menu");
+                InputDataManager.inst.players.Clear();
+                SceneManager.inst.LoadScene("Main Menu");
+            }, delegate ()
+            {
+                EditorManager.inst.HideDialog("Warning Popup");
+            });
+
+            return false;
+        }
+
+        [HarmonyPatch("QuitGame")]
+        [HarmonyPrefix]
+        static bool QuitGamePrefix()
+        {
+            if (Instance.savingBeatmap)
+            {
+                Instance.DisplayNotification("Please wait until the beatmap finishes saving!", 2f, EditorManager.NotificationType.Error, false);
+                return false;
+            }
+            EditorManager.inst.ShowDialog("Warning Popup");
+            RTEditor.inst.RefreshWarningPopup("Are you sure you want to quit the game? Any unsaved progress will be lost!", delegate ()
+            {
+                if (Instance.savingBeatmap)
+                {
+                    Instance.DisplayNotification("Please wait until the beatmap finishes saving!", 2f, EditorManager.NotificationType.Error);
+                    return;
+                }
+
+                DiscordController.inst.OnIconChange("");
+                DiscordController.inst.OnStateChange("");
+                Debug.Log($"{Instance.className}Quit Game");
+                Application.Quit();
+            }, delegate ()
+            {
+                EditorManager.inst.HideDialog("Warning Popup");
+            });
+
             return false;
         }
 
