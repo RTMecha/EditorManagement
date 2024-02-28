@@ -10235,7 +10235,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Drag UI", true, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
             new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Play Editor Animations", true, "If popups should be animated.")),
+                Config.Bind("Editor GUI", "Play Editor Animations", false, "If popups should be animated.")),
             new EditorProperty(EditorProperty.ValueType.Bool,
                 Config.Bind("Editor GUI", "Show Modded Features in Editor", true, "Z axis, 10-18 color slots, homing keyframes, etc get set active / inactive with this on / off respectively")),
             new EditorProperty(EditorProperty.ValueType.Bool,
