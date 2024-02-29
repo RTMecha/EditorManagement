@@ -64,6 +64,13 @@ namespace EditorManagement.Functions.Editors
 
             try
             {
+                if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
+                if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+                if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
+
                 PrefabWatcher = new FileSystemWatcher
                 {
                     Path = RTFile.ApplicationDirectory + prefabListPath,
