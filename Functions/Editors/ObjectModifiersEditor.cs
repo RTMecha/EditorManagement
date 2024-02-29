@@ -1431,6 +1431,26 @@ namespace EditorManagement.Functions.Editors
 
                                 break;
                             }
+                        case "enableObjectTree":
+                        case "disableObjectTree":
+                            {
+                                if (modifier.value == "0")
+                                    modifier.value = "False";
+
+                                boolGenerator("Use Self", 0, true);
+
+                                break;
+                            }
+                        case "levelRankEquals":
+                        case "levelRankLesserEquals":
+                        case "levelRankGreaterEquals":
+                        case "levelRankLesser":
+                        case "levelRankGreater":
+                            {
+                                dropdownGenerator("Rank", 0, DataManager.inst.levelRanks.Select(x => x.name).ToList());
+
+                                break;
+                            }
                     }
 
                     /* List of modifiers that have no values:
