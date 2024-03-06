@@ -539,6 +539,7 @@ namespace EditorManagement.Functions.Editors
                         case "copyColorOther":
                         case "loadLevel":
                         case "loadLevelInternal":
+                        case "loadLevelID":
                         case "setText":
                         case "setTextOther":
                         case "addText":
