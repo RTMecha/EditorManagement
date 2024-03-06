@@ -384,20 +384,35 @@ namespace EditorManagement.Functions.Editors
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.G)
-            }, 54));
+            }, 54, new Dictionary<string, string>
+            {
+                { "Create Keyframe", "True" },
+                { "Use Nearest", "True" },
+                { "Use Previous", "False" },
+            }));
             
             // TransformScale
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Y)
-            }, 55));
+            }, 55, new Dictionary<string, string>
+            {
+                { "Create Keyframe", "True" },
+                { "Use Nearest", "True" },
+                { "Use Previous", "False" },
+            }));
             
             // TransformRotation
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.R),
                 new Keybind.Key(Keybind.Key.Type.NotPressed, KeyCode.LeftControl),
-            }, 56));
+            }, 56, new Dictionary<string, string>
+            {
+                { "Create Keyframe", "True" },
+                { "Use Nearest", "True" },
+                { "Use Previous", "False" },
+            }));
             
             // ToggleProjectPlanner
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
@@ -467,7 +482,10 @@ namespace EditorManagement.Functions.Editors
 
             }));
 
+            popup.transform.Find("Panel/Text").GetComponent<Text>().text = "Edit a Keybind";
+
             var search = popup.transform.Find("search-box/search").GetComponent<InputField>();
+            ((Text)search.placeholder).text = "Search for keybind...";
             search.onValueChanged.ClearAll();
             search.onValueChanged.AddListener(delegate (string _val)
             {
@@ -725,9 +743,11 @@ namespace EditorManagement.Functions.Editors
             {
                 int index = num;
 
-                if (string.IsNullOrEmpty(searchTerm) || keybind.Name.Contains(searchTerm))
+                var name = keybind.Name;
+
+                if (string.IsNullOrEmpty(searchTerm) || name.ToLower().Contains(searchTerm.ToLower()))
                 {
-                    var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, keybind.Name);
+                    var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, name);
                     var button = gameObject.transform.Find("Image").gameObject.AddComponent<Button>();
                     button.onClick.AddListener(delegate ()
                     {
@@ -751,8 +771,6 @@ namespace EditorManagement.Functions.Editors
                     var image = ed1.AddComponent<Image>();
                     image.sprite = editSprite;
                     image.color = Color.black;
-
-                    var name = keybind.Name;
 
                     if (keybind.keys != null && keybind.keys.Count > 0)
                     {
@@ -1912,6 +1930,11 @@ namespace EditorManagement.Functions.Editors
                 inst.useNearest = useNearest;
             }
 
+            if (keybind.settings.ContainsKey("Use Previous") && bool.TryParse(keybind.settings["Use Previous"], out bool usePrevious))
+            {
+                inst.usePrevious = usePrevious;
+            }
+
             inst.SetValues(0);
         }
         
@@ -1927,6 +1950,11 @@ namespace EditorManagement.Functions.Editors
                 inst.useNearest = useNearest;
             }
 
+            if (keybind.settings.ContainsKey("Use Previous") && bool.TryParse(keybind.settings["Use Previous"], out bool usePrevious))
+            {
+                inst.usePrevious = usePrevious;
+            }
+
             inst.SetValues(1);
         }
         
@@ -1940,6 +1968,11 @@ namespace EditorManagement.Functions.Editors
             if (keybind.settings.ContainsKey("Use Nearest") && bool.TryParse(keybind.settings["Use Nearest"], out bool useNearest))
             {
                 inst.useNearest = useNearest;
+            }
+
+            if (keybind.settings.ContainsKey("Use Previous") && bool.TryParse(keybind.settings["Use Previous"], out bool usePrevious))
+            {
+                inst.usePrevious = usePrevious;
             }
 
             inst.SetValues(2);
@@ -2132,16 +2165,19 @@ namespace EditorManagement.Functions.Editors
             {
                 { "Create Keyframe", "True" },
                 { "Use Nearest", "True" },
+                { "Use Previous", "False" },
             }, // 54
             new Dictionary<string, string>
             {
                 { "Create Keyframe", "True" },
                 { "Use Nearest", "True" },
+                { "Use Previous", "False" },
             }, // 55
             new Dictionary<string, string>
             {
                 { "Create Keyframe", "True" },
                 { "Use Nearest", "True" },
+                { "Use Previous", "False" },
             }, // 56
             null, // 57
             null, // 58
@@ -2364,6 +2400,11 @@ namespace EditorManagement.Functions.Editors
                 index = beatmapObject.events[type].Count;
                 beatmapObject.events[type].Add(selectedKeyframe);
             }
+            else if (usePrevious)
+            {
+                selectedKeyframe = (EventKeyframe)beatmapObject.events[type].FindLast(x => x.eventTime < timeOffset);
+                index = beatmapObject.events[type].FindLastIndex(x => x.eventTime < timeOffset);
+            }
             else
             {
                 selectedKeyframe = (EventKeyframe)beatmapObject.events[type][0];
@@ -2378,6 +2419,7 @@ namespace EditorManagement.Functions.Editors
 
         public bool createKeyframe = true;
         public bool useNearest = true;
+        public bool usePrevious = false;
 
         public int currentType;
 
