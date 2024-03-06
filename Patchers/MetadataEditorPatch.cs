@@ -478,7 +478,6 @@ namespace EditorManagement.Patchers
 					return;
 				}
 
-
 				var exportPath = RTEditor.GetEditorProperty("ZIP Level Export Path").GetConfigEntry<string>().Value;
 
 				if (string.IsNullOrEmpty(exportPath))
@@ -501,6 +500,11 @@ namespace EditorManagement.Patchers
 
 				try
 				{
+					MetaData.Current.LevelBeatmap.date_published = DateTime.Now.ToString("yyyy-MM-dd_HH.mm.ss");
+
+					var jn = MetaData.Current.ToJSON();
+					RTFile.WriteToFile(GameManager.inst.basePath + "metadata.lsb", jn.ToString());
+
 					if (RTFile.FileExists(path))
 						File.Delete(path);
 
@@ -509,7 +513,10 @@ namespace EditorManagement.Patchers
 					Instance.StartCoroutine(AlephNetworkManager.UploadBytes("", File.ReadAllBytes(path), delegate (string id)
 					{
 						MetaData.Current.serverID = id;
-						DataManager.inst.SaveMetadata(GameManager.inst.basePath + "metadata.lsb", MetaData.Current);
+						MetaData.Current.beatmap.version_number++;
+
+						var jn = MetaData.Current.ToJSON();
+						RTFile.WriteToFile(GameManager.inst.basePath + "metadata.lsb", jn.ToString());
 
 						if (RTFile.FileExists(path))
 							File.Delete(path);
@@ -518,6 +525,10 @@ namespace EditorManagement.Patchers
 
 					}, delegate (string onError)
 					{
+						MetaData.Current.LevelBeatmap.date_published = "";
+						var jn = MetaData.Current.ToJSON();
+						RTFile.WriteToFile(GameManager.inst.basePath + "metadata.lsb", jn.ToString());
+
 						EditorManager.inst?.DisplayNotification("Upload failed.", 2f, EditorManager.NotificationType.Error);
 					}));
 				}
