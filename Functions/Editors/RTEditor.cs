@@ -190,6 +190,22 @@ namespace EditorManagement.Functions.Editors
                     parentPickerEnabled = false;
                 };
 
+            Action<string, UnityAction, UnityAction, string, string> showWarningPopup = delegate (string warning, UnityAction confirmDelegate, UnityAction cancelDelegate, string confirm, string cancel)
+            {
+                EditorManager.inst.ShowDialog("Warning Popup");
+                RefreshWarningPopup(warning, confirmDelegate, cancelDelegate, confirm, cancel);
+            };
+
+
+            if (!ModCompatibility.sharedFunctions.ContainsKey("ShowWarningPopup"))
+            {
+                ModCompatibility.sharedFunctions.Add("ShowWarningPopup", showWarningPopup);
+            }
+            else
+            {
+                ModCompatibility.sharedFunctions["ShowWarningPopup"] = showWarningPopup;
+            }
+
             if (ModCompatibility.sharedFunctions.ContainsKey("EventsCoreConfigs") && ModCompatibility.sharedFunctions["EventsCoreConfigs"] is List<ConfigEntryBase> configs)
             {
                 foreach (var config in configs)
@@ -2046,9 +2062,6 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.GetDialog("Save As Popup").Dialog.Find("New File Popup/level-name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/name/input").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
-
-            // This needs to be changed to something like dev branch.
-            //GameObject.Find("Editor GUI/sizer/main/Popups/New File Popup/Browser Popup").SetActive(true);
 
             if (ModCompatibility.ArcadiaCustomsInstalled)
                 EditorHelper.AddEditorDropdown("Quit to Arcade", "", "File", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
@@ -7914,6 +7927,12 @@ namespace EditorManagement.Functions.Editors
                 {
                     DataManager.inst.metaData = MetaData.Parse(JSON.Parse(rawMetadataJSON));
 
+                    if (MetaData.Current.arcadeID == null || MetaData.Current.arcadeID == "0" || MetaData.Current.arcadeID == "-1")
+                    {
+                        MetaData.Current.arcadeID = LSText.randomNumString(16);
+                        DataManager.inst.SaveMetadata(fullPath + "/metadata.lsb");
+                    }
+
                     if (DataManager.inst.metaData.beatmap.game_version != "4.1.16" && DataManager.inst.metaData.beatmap.game_version != "20.4.4")
                         rawJSON = DataManager.inst.gameData.UpdateBeatmap(rawJSON, DataManager.inst.metaData.beatmap.game_version);
 
@@ -8450,6 +8469,7 @@ namespace EditorManagement.Functions.Editors
             var dataManager = DataManager.inst;
             var metaData = new MetaData();
             metaData.beatmap.game_version = "4.1.16";
+            metaData.arcadeID = LSText.randomNumString(16);
             metaData.song.title = __instance.newLevelName;
             metaData.creator.steam_name = SteamWrapper.inst.user.displayName;
             metaData.creator.steam_id = SteamWrapper.inst.user.id;
