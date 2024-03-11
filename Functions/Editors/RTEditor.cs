@@ -396,7 +396,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public Toggle layerToggle;
+        Toggle layerToggle;
         public Toggle LayerToggle
         {
             get
@@ -418,7 +418,6 @@ namespace EditorManagement.Functions.Editors
 
         public GameObject replBase;
         public InputField replEditor;
-        //public Text replText;
 
         public Transform titleBar;
 
@@ -802,7 +801,6 @@ namespace EditorManagement.Functions.Editors
 
         public List<TimelineObject> timelineObjects = new List<TimelineObject>();
         public List<TimelineObject> timelineKeyframes = new List<TimelineObject>();
-        //public List<TimelineObject> timelineBeatmapObjectKeyframes = new List<TimelineObject>();
 
         public List<TimelineObject> TimelineBeatmapObjects => timelineObjects.Where(x => x.IsBeatmapObject).ToList();
         public List<TimelineObject> TimelinePrefabObjects => timelineObjects.Where(x => x.IsPrefabObject).ToList();
@@ -1704,17 +1702,20 @@ namespace EditorManagement.Functions.Editors
                 {
                     case LayerType.Objects:
                         {
-                            ObjectEditor.inst.RenderTimelineObjects();
+                            ObjectEditor.inst.RenderTimelineObjectsPositions();
 
-                            if (CheckpointEditor.inst.checkpoints.Count > 0)
+                            if (prevLayerType != layerType)
                             {
-                                foreach (var obj2 in CheckpointEditor.inst.checkpoints)
-                                    Destroy(obj2);
+                                if (CheckpointEditor.inst.checkpoints.Count > 0)
+                                {
+                                    foreach (var obj2 in CheckpointEditor.inst.checkpoints)
+                                        Destroy(obj2);
 
-                                CheckpointEditor.inst.checkpoints.Clear();
+                                    CheckpointEditor.inst.checkpoints.Clear();
+                                }
+
+                                CheckpointEditor.inst.CreateGhostCheckpoints();
                             }
-
-                            CheckpointEditor.inst.CreateGhostCheckpoints();
 
                             LayerToggle?.SetIsOn(false);
 
@@ -7550,6 +7551,84 @@ namespace EditorManagement.Functions.Editors
                     });
                     gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
                 }
+
+                // Inspect LevelProcessor
+                {
+                    string name = "LevelProcessor";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "LevelProcessor is the main handler for updating object animation and spawning / despawning objects.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { Updater.levelProcessor, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect GameData
+                {
+                    string name = "GameData";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "GameData stores all the level data.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { GameData.Current, null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                // Inspect Current Event Keyframe
+                {
+                    string name = "Current Event Keyframe";
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Inspect {name}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"Inspect {name}";
+                    levelTip.hint = "The current selected Event Keyframe. Based on the type and index number.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        if (EventEditor.inst.currentEventType >= GameData.Current.eventObjects.allEvents.Count || EventEditor.inst.currentEvent >= GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType].Count )
+                            return;
+
+                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                        .Invoke(inspector, new object[] { GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent], null });
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
             }
         }
 
@@ -8011,7 +8090,8 @@ namespace EditorManagement.Functions.Editors
             SetFileInfo($"Updating states for [ {name} ]");
             RTFunctions.FunctionsPlugin.UpdateDiscordStatus($"Editing: {DataManager.inst.metaData.song.title}", "In Editor", "editor");
 
-            ObjectManager.inst.updateObjects();
+            StartCoroutine(Updater.IUpdateObjects(true));
+
             EventEditor.inst.CreateEventObjects();
             BackgroundManager.inst.UpdateBackgrounds();
             GameManager.inst.UpdateTheme();
@@ -10074,36 +10154,34 @@ namespace EditorManagement.Functions.Editors
 
             if (beatmapObject.TryGetGameObject(out GameObject gameObject) && gameObject.TryGetComponent(out Renderer renderer))
             {
-                Color color = Color.white;
-                if (AudioManager.inst.CurrentAudioSource.time < beatmapObject.StartTime)
-                    color = GameManager.inst.LiveTheme.objectColors[(int)beatmapObject.events[3][0].eventValues[0]];
-                else if (AudioManager.inst.CurrentAudioSource.time > beatmapObject.StartTime + beatmapObject.GetObjectLifeLength() && beatmapObject.autoKillType != AutoKillType.OldStyleNoAutokill)
-                    color = GameManager.inst.LiveTheme.objectColors[(int)beatmapObject.events[3][beatmapObject.events[3].Count - 1].eventValues[0]];
-                else if (renderer.material.HasProperty("_Color"))
-                    color = renderer.material.color;
+                //Color color = Color.white;
+                //if (AudioManager.inst.CurrentAudioSource.time < beatmapObject.StartTime)
+                //    color = RTHelpers.BeatmapTheme.GetObjColor((int)beatmapObject.events[3][0].eventValues[0]);
+                //else if (AudioManager.inst.CurrentAudioSource.time > beatmapObject.StartTime + beatmapObject.GetObjectLifeLength() && beatmapObject.autoKillType != AutoKillType.OldStyleNoAutokill)
+                //    color = RTHelpers.BeatmapTheme.GetObjColor((int)beatmapObject.events[3][beatmapObject.events[3].Count - 1].eventValues[0]);
+                //else if (renderer.material.HasProperty("_Color"))
+                //    color = renderer.material.color;
+
+                var color = AudioManager.inst.CurrentAudioSource.time < beatmapObject.StartTime ? RTHelpers.BeatmapTheme.GetObjColor((int)beatmapObject.events[3][0].eventValues[0])
+                    : AudioManager.inst.CurrentAudioSource.time > beatmapObject.StartTime + beatmapObject.GetObjectLifeLength() && beatmapObject.autoKillType != AutoKillType.OldStyleNoAutokill
+                    ? RTHelpers.BeatmapTheme.GetObjColor((int)beatmapObject.events[3][beatmapObject.events[3].Count - 1].eventValues[0])
+                    : renderer.material.HasProperty("_Color") ? renderer.material.color : Color.white;
+
                 if (ignoreTransparency)
                     color.a = 1f;
+
                 return color;
             }
 
             return Color.white;
         }
 
-        public static void DeleteLevelFunction(string _levelName)
+        public static void DeleteLevelFunction(string level)
         {
             if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + "recycling"))
-            {
                 Directory.CreateDirectory(RTFile.ApplicationDirectory + "recycling");
-            }
-            Directory.Move(RTFile.ApplicationDirectory + editorListSlash + _levelName, RTFile.ApplicationDirectory + "recycling/" + _levelName);
 
-            string[] directories = Directory.GetDirectories(RTFile.ApplicationDirectory + "recycling", "*", SearchOption.AllDirectories);
-            directories.ToList().Sort();
-            foreach (var directory in directories)
-            {
-                string[] filesDir = Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories);
-                filesDir.ToList().Sort();
-            }
+            Directory.Move(RTFile.ApplicationDirectory + editorListSlash + level, RTFile.ApplicationDirectory + "recycling/" + level);
         }
 
         public static float SnapToBPM(float _time) => Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / BPMSnapDivisions)) * (SettingEditor.inst.BPMMulti / BPMSnapDivisions);
