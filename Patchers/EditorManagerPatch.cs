@@ -788,7 +788,7 @@ namespace EditorManagement.Patchers
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 EventEditor.inst.RenderEventObjects();
             else
-                ObjEditor.inst.RenderTimelineObjects();
+                ObjectEditor.inst.RenderTimelineObjectsPositions();
 
             CheckpointEditor.inst.RenderCheckpoints();
             MarkerEditor.inst.RenderMarkers();
@@ -918,22 +918,51 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool ClearDialogsPrefix(params EditorManager.EditorDialog.DialogType[] __0)
         {
-            foreach (var editorDialog in Instance.EditorDialogs)
+            var play = RTEditor.GetEditorProperty("Play Editor Animations").GetConfigEntry<bool>().Value;
+
+            var editorDialogs = Instance.EditorDialogs;
+            for (int i = 0; i < editorDialogs.Count; i++)
             {
+                var editorDialog = editorDialogs[i];
                 if (__0.Length == 0)
                 {
                     if (editorDialog.Type != EditorManager.EditorDialog.DialogType.Timeline)
                     {
-                        RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
+                        if (play)
+                            RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
+                        else
+                            editorDialog.Dialog.gameObject.SetActive(false);
+
                         Instance.ActiveDialogs.Remove(editorDialog);
                     }
                 }
                 else if (__0.Contains(editorDialog.Type))
                 {
-                    RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
+                    if (play)
+                        RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
+                    else
+                        editorDialog.Dialog.gameObject.SetActive(false);
+
                     Instance.ActiveDialogs.Remove(editorDialog);
                 }
             }
+
+            //foreach (var editorDialog in Instance.EditorDialogs)
+            //{
+            //    if (__0.Length == 0)
+            //    {
+            //        if (editorDialog.Type != EditorManager.EditorDialog.DialogType.Timeline)
+            //        {
+            //            RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
+            //            Instance.ActiveDialogs.Remove(editorDialog);
+            //        }
+            //    }
+            //    else if (__0.Contains(editorDialog.Type))
+            //    {
+            //        RTEditor.inst.PlayDialogAnimation(editorDialog.Dialog.gameObject, editorDialog.Name, false);
+            //        Instance.ActiveDialogs.Remove(editorDialog);
+            //    }
+            //}
             Instance.currentDialog = Instance.ActiveDialogs.Last();
 
             return false;
