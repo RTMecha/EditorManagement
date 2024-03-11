@@ -576,9 +576,26 @@ namespace EditorManagement.Functions.Editors
                                 break;
                             }
                         case "blur":
+                        case "blurOther":
+                        case "blurVariable":
+                        case "blurVariableOther":
                             {
                                 singleGenerator("Amount", 0, 0.5f);
-                                boolGenerator("Use Opacity", 1, false);
+
+                                if (cmd == "blur")
+                                {
+                                    boolGenerator("Use Opacity", 1, false);
+
+                                    if (modifier.commands.Count < 3)
+                                    {
+                                        modifier.commands.Add("False");
+                                    }
+                                }
+
+                                if (cmd == "blurVariableOther" || cmd == "blurOther")
+                                    stringGenerator("Object Group", 1);
+
+                                boolGenerator("Set Back to Normal", cmd != "blurVariable" ? 2 : 1, false);
 
                                 break;
                             }
