@@ -539,10 +539,12 @@ namespace EditorManagement.Functions.Editors
                 var prefabObject = ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>();
                 string id = prefabObject.ID;
 
-                EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+                EditorManager.inst.ClearDialogs();
 
+                Debug.Log($"{PrefabEditor.inst.className}Expanding Prefab Object.");
                 StartCoroutine(AddExpandedPrefabToLevel(prefabObject));
 
+                Debug.Log($"{PrefabEditor.inst.className}Removing Prefab Object's spawned objects.");
                 Updater.UpdatePrefab(prefabObject, false);
 
                 RTEditor.inst.RemoveTimelineObject(RTEditor.inst.timelineObjects.Find(x => x.ID == id));
@@ -590,16 +592,6 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.ClearDialogs();
 
-            //var beatmapObjects = ExpandBeatmapObjects(ids, audioTime, prefab, prefabObject);
-            //DataManager.inst.gameData.beatmapObjects.AddRange(beatmapObjects);
-
-            //foreach (var beatmapObject in beatmapObjects)
-            //{
-            //    Updater.UpdateProcessor(beatmapObject);
-            //}
-
-            //yield return StartCoroutine(ObjectEditor.inst.ToTimelineObjects(beatmapObjects, true));
-
             var expandedObjects = new List<BeatmapObject>();
             foreach (var beatmapObject in prefab.objects)
             {
@@ -632,6 +624,7 @@ namespace EditorManagement.Functions.Editors
                 DataManager.inst.gameData.beatmapObjects.Add(beatmapObjectCopy);
                 if (Updater.levelProcessor && Updater.levelProcessor.converter != null && !Updater.levelProcessor.converter.beatmapObjects.ContainsKey(beatmapObjectCopy.id))
                     Updater.levelProcessor.converter.beatmapObjects.Add(beatmapObjectCopy.id, beatmapObjectCopy);
+
                 expandedObjects.Add(beatmapObjectCopy);
 
                 if (ObjectEditor.inst != null)
