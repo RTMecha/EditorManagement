@@ -938,6 +938,7 @@ namespace EditorManagement.Functions.Editors
                     case "remove prefab instance id":
                     case "create keyframe":
                     case "use nearest":
+                    case "use previous":
                         {
                             var bar = Instantiate(singleInput);
                             Destroy(bar.GetComponent<InputField>());
@@ -1118,7 +1119,6 @@ namespace EditorManagement.Functions.Editors
                             break;
                         }
                 }
-
 
                 num++;
             }
