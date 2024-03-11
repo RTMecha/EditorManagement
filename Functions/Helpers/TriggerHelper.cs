@@ -529,15 +529,6 @@ namespace EditorManagement.Functions.Helpers
 				var pointerEventData = (PointerEventData)eventData;
 				if (!ObjEditor.inst.beatmapObjectsDrag)
 				{
-					//if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
-					//{
-					//	ObjEditor.inst.AddSelectedObject(_obj);
-					//}
-					//else
-					//{
-					//	ObjEditor.inst.SetCurrentObj(_obj);
-					//}
-
 					if (!RTEditor.inst.parentPickerEnabled)
 					{
 						if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
