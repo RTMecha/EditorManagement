@@ -212,8 +212,11 @@ namespace EditorManagement.Functions.Editors
         {
             if (CurrentSelection.IsBeatmapObject)
             {
-                EditorManager.inst.ClearDialogs();
-                EditorManager.inst.ShowDialog("Object Editor", false);
+                if (EditorManager.inst.ActiveDialogs.Count > 2 || !EditorManager.inst.ActiveDialogs.Has(x => x.Name == "Object Editor"))
+                {
+                    EditorManager.inst.ClearDialogs();
+                    EditorManager.inst.ShowDialog("Object Editor");
+                }
 
                 StartCoroutine(RefreshObjectGUI(beatmapObject));
                 StartCoroutine(RememberTimeline());
@@ -587,7 +590,8 @@ namespace EditorManagement.Functions.Editors
                 ClearKeyframes(CurrentSelection.GetData<BeatmapObject>());
             }
 
-            EditorManager.inst.ClearDialogs();
+            if (prefab.objects.Count > 1 || prefab.prefabObjects.Count > 1)
+                EditorManager.inst.ClearDialogs();
 
             //Objects
             {
@@ -1377,7 +1381,7 @@ namespace EditorManagement.Functions.Editors
 
         public void RenderTimelineObjectVoid(TimelineObject timelineObject) => RenderTimelineObject(timelineObject);
 
-        public GameObject RenderTimelineObject(TimelineObject timelineObject)
+        public GameObject RenderTimelineObject(TimelineObject timelineObject, bool ignoreLayer = true)
         {
             GameObject gameObject = null;
 
@@ -1388,7 +1392,7 @@ namespace EditorManagement.Functions.Editors
 
             gameObject = !timelineObject.GameObject ? CreateTimelineObject(timelineObject) : timelineObject.GameObject;
 
-            if (RTEditor.inst.Layer == timelineObject.Layer)
+            if (ignoreLayer || RTEditor.inst.Layer == timelineObject.Layer)
             {
                 bool locked = false;
                 bool collapsed = false;
@@ -1480,7 +1484,7 @@ namespace EditorManagement.Functions.Editors
 
                 var rectTransform = (RectTransform)gameObject.transform;
                 rectTransform.sizeDelta = new Vector2(offset, 20f);
-                rectTransform.anchoredPosition = new Vector2(startTime * EditorManager.inst.Zoom, (-20 * Mathf.Clamp(bin, 0, 14)));
+                rectTransform.anchoredPosition = new Vector2(startTime * zoom, (-20 * Mathf.Clamp(bin, 0, 14)));
                 if (timelineObject.Hover)
                     timelineObject.Hover.size = TimelineObjectHoverSize;
                 gameObject.SetActive(true);
@@ -1493,6 +1497,43 @@ namespace EditorManagement.Functions.Editors
         {
             foreach (var timelineObject in RTEditor.inst.timelineObjects.FindAll(x => !x.IsEventKeyframe))
                 RenderTimelineObject(timelineObject);
+        }
+
+        public void RenderTimelineObjectPosition(TimelineObject timelineObject)
+        {
+            float offset = 0f;
+
+            if (timelineObject.IsBeatmapObject)
+            {
+                var beatmapObject = timelineObject.GetData<BeatmapObject>();
+                offset = beatmapObject.GetObjectLifeLength(_takeCollapseIntoConsideration: true);
+            }
+
+            if (timelineObject.IsPrefabObject)
+            {
+                var prefabObject = timelineObject.GetData<PrefabObject>();
+                var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
+
+                offset = prefab.GetPrefabLifeLength(prefabObject, true);
+            }
+
+            float zoom = EditorManager.inst.Zoom;
+
+            offset = offset <= 0.4f ? 0.4f * zoom : offset * zoom;
+
+            var rectTransform = (RectTransform)timelineObject.GameObject.transform;
+            rectTransform.sizeDelta = new Vector2(offset, 20f);
+            rectTransform.anchoredPosition = new Vector2(timelineObject.Time * zoom, (-20 * Mathf.Clamp(timelineObject.Bin, 0, 14)));
+            if (timelineObject.Hover)
+                timelineObject.Hover.size = TimelineObjectHoverSize;
+        }
+
+        public void RenderTimelineObjectsPositions()
+        {
+            foreach (var timelineObject in RTEditor.inst.timelineObjects.FindAll(x => !x.IsEventKeyframe && RTEditor.inst.Layer == x.Layer))
+            {
+                RenderTimelineObjectPosition(timelineObject);
+            }
         }
 
         public GameObject CreateTimelineObject(TimelineObject timelineObject)
@@ -2560,6 +2601,16 @@ namespace EditorManagement.Functions.Editors
                     {
                         so = shapeSettings.Find("6").gameObject.Duplicate(shapeSettings, (i + 1).ToString()).transform;
                         LSHelpers.DeleteChildren(so, true);
+
+                        var d = new List<GameObject>();
+                        for (int j = 0; j < so.transform.childCount; j++)
+                        {
+                            d.Add(so.transform.GetChild(j).gameObject);
+                        }
+                        foreach (var go in d)
+                            DestroyImmediate(go);
+                        d.Clear();
+                        d = null;
                     }
 
                     var rect = (RectTransform)so;
