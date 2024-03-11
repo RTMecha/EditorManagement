@@ -972,6 +972,7 @@ namespace EditorManagement.Functions.Editors
                             xt.onValueChanged.AddListener(delegate (bool _val)
                             {
                                 keybind.settings[setting.Key] = _val.ToString();
+                                Save();
                             });
 
                             break;
@@ -1013,6 +1014,7 @@ namespace EditorManagement.Functions.Editors
 
                             var xif = x.GetComponent<InputField>();
                             xif.onValueChanged.RemoveAllListeners();
+                            xif.onEndEdit.ClearAll();
                             xif.characterValidation = InputField.CharacterValidation.None;
                             xif.characterLimit = 0;
                             xif.text = setting.Value;
@@ -1020,6 +1022,10 @@ namespace EditorManagement.Functions.Editors
                             xif.onValueChanged.AddListener(delegate (string _val)
                             {
                                 keybind.settings[setting.Key] = _val;
+                            });
+                            xif.onEndEdit.AddListener(delegate (string _val)
+                            {
+                                Save();
                             });
 
                             break;
@@ -1055,6 +1061,7 @@ namespace EditorManagement.Functions.Editors
 
                             var xif = input.gameObject.AddComponent<InputField>();
                             xif.onValueChanged.RemoveAllListeners();
+                            xif.onEndEdit.ClearAll();
                             xif.textComponent = input.Find("Text").GetComponent<Text>();
                             xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
                             xif.characterValidation = InputField.CharacterValidation.None;
@@ -1065,6 +1072,10 @@ namespace EditorManagement.Functions.Editors
                                 {
                                     keybind.settings[setting.Key] = result.ToString();
                                 }
+                            });
+                            xif.onEndEdit.AddListener(delegate (string _val)
+                            {
+                                Save();
                             });
 
                             TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif) });
@@ -1100,6 +1111,7 @@ namespace EditorManagement.Functions.Editors
 
                             var xif = input.gameObject.AddComponent<InputField>();
                             xif.onValueChanged.RemoveAllListeners();
+                            xif.onEndEdit.ClearAll();
                             xif.textComponent = input.Find("Text").GetComponent<Text>();
                             xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
                             xif.characterValidation = InputField.CharacterValidation.None;
@@ -1110,6 +1122,10 @@ namespace EditorManagement.Functions.Editors
                                 {
                                     keybind.settings[setting.Key] = result.ToString();
                                 }
+                            });
+                            xif.onEndEdit.AddListener(delegate (string _val)
+                            {
+                                Save();
                             });
 
                             TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
