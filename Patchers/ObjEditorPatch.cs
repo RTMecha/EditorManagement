@@ -941,7 +941,7 @@ namespace EditorManagement.Patchers
 							}
 
 							timelineObject.Bin = binCalc;
-							ObjectEditor.inst.RenderTimelineObject(timelineObject);
+							ObjectEditor.inst.RenderTimelineObjectPosition(timelineObject);
 							if (timelineObject.IsBeatmapObject && ObjectEditor.inst.SelectedObjects.Count == 1)
 							{
 								ObjectEditor.inst.RenderBin(timelineObject.GetData<BeatmapObject>());
@@ -977,7 +977,7 @@ namespace EditorManagement.Patchers
 						if (!timelineObject.Locked)
 							timelineObject.Time = timeCalc;
 
-						ObjectEditor.inst.RenderTimelineObject(timelineObject);
+						ObjectEditor.inst.RenderTimelineObjectPosition(timelineObject);
 
 						if (timelineObject.IsBeatmapObject)
 						{
