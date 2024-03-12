@@ -1303,6 +1303,24 @@ namespace EditorManagement.Functions.Editors
 
                                 break;
                             }
+                        case "animateVariableOther":
+                            {
+                                stringGenerator("Object Group", 0);
+
+                                dropdownGenerator("From Type", 1, new List<string> { "Position", "Scale", "Rotation" });
+                                dropdownGenerator("From Axis", 2, new List<string> { "X", "Y", "Z" });
+
+                                singleGenerator("Delay", 3, 0f);
+
+                                singleGenerator("Multiply", 4, 1f);
+                                singleGenerator("Offset", 5, 0f);
+                                singleGenerator("Min", 6, -99999f);
+                                singleGenerator("Max", 7, 99999f);
+
+                                singleGenerator("Loop", 8, 99999f);
+
+                                break;
+                            }
                         case "copyAxis":
                         case "copyPlayerAxis":
                             {
@@ -1322,7 +1340,12 @@ namespace EditorManagement.Functions.Editors
                                     modifier.commands.Add("99999");
 
                                 if (cmd == "copyAxis")
+                                {
+                                    if (modifier.commands.Count < 11)
+                                        modifier.commands.Add("9999");
+
                                     stringGenerator("Object Group", 0);
+                                }
 
                                 dropdownGenerator("From Type", 1, new List<string> { "Position", "Scale", "Rotation", "Color" });
                                 dropdownGenerator("From Axis", 2, new List<string> { "X", "Y", "Z" });
@@ -1338,6 +1361,9 @@ namespace EditorManagement.Functions.Editors
                                 singleGenerator("Min", 8, -99999f);
                                 singleGenerator("Max", 9, 99999f);
 
+                                if (cmd == "copyAxis")
+                                    singleGenerator("Loop", 10, 99999f);
+
                                 break;
                             }
                         case "axisEquals":
@@ -1346,6 +1372,11 @@ namespace EditorManagement.Functions.Editors
                         case "axisLesser":
                         case "axisGreater":
                             {
+                                if (modifier.commands.Count < 11)
+                                {
+                                    modifier.commands.Add("9999");
+                                }
+
                                 stringGenerator("Object Group", 0);
 
                                 dropdownGenerator("Type", 1, new List<string> { "Position", "Scale", "Rotation" });
@@ -1358,6 +1389,7 @@ namespace EditorManagement.Functions.Editors
                                 singleGenerator("Max", 7, 99999f);
                                 singleGenerator("Equals", 8, 1f);
                                 boolGenerator("Use Visual", 9, false);
+                                singleGenerator("Loop", 10, 99999f);
 
                                 break;
                             }
