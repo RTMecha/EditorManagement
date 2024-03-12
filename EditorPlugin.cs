@@ -23,7 +23,7 @@ using RTFunctions.Functions.Managers;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.4.0")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.4.1")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
