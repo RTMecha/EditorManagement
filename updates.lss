@@ -1,3 +1,5 @@
+2.4.1 > [Mar 12, 2024]
+- Added new modifiers.
 2.4.0 > [Mar 12, 2024]
 - Added a Theme Popup with a new page system so there hopefully won't be as much freezing when opening it. Each item shows a lot more detail about the theme and allows for the theme to be used and converted to VG.
 - Added RTFunctions and EventsCore configs to the Editor Preferences Popup.
