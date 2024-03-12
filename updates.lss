@@ -1,3 +1,23 @@
+2.4.0 > [Mar 12, 2024]
+- Added a Theme Popup with a new page system so there hopefully won't be as much freezing when opening it. Each item shows a lot more detail about the theme and allows for the theme to be used and converted to VG.
+- Added RTFunctions and EventsCore configs to the Editor Preferences Popup.
+- Added a Set Key button to the keybind editor. Clicking it will watch for the next key you press.
+- Implemented all the new features' UI, such as Parent Desync for parent settings and Opacity Collision for color keyframes. (Opacity Collision is NOT animatable, but it's still in the Color Keyframe editor due to it fitting there the best.)
+- Added Prefab Type icons to the Prefab Popups.
+- Prefab Types can now have their icons set via the "Set Icon" button in the Prefab Type editor.
+- The Prefab Type editor can be accessed via the View dropdown.
+- Added some new settings to the transform keybinds so you can now properly model characters without needing to create a keyframe or move the audio time to the beginning of the object.
+- Reimplemented the popup animation system from the old modding days / dev branch.
+- Started work on Editor Themes.
+- Added dragging object sounds. This is configurable, of course.
+- Added a ZIP Level button to the Metadata Editor / Uploader window that when clicked, automatically zips the current level folder and places it in whatever path you set it as (or if the config for Level zips is empty, then it'll send to beatmaps/exports).
+- Added an Upload to Server button. This uploads the current level to the Online Arcade server and allows others to play it.
+- You can now select .wav and .mp3 for level creation.
+- Removed relative toggle from Event Keyframe editors due to it overflowing the UI in some cases. The feature still technically exists, it's just not accessible in the editor for now.
+- Added a config for setting modded features in the editor active / inactive.
+- Fixed a bug with the extra shape settings that would show the hexagon shapes for some reason.
+- Qutting the game / quitting to the main menu now shows a warning popup.
+- Optimized level loading, timeline object dragging and layer changing.
 2.3.9 > [Feb 18, 2024]
 - Fully implemented relative Event Keyframes in editor.
 - Selecting an object in the Preview window while parent picker is active will parent the current selected object to the object you just selected in the Preview.
