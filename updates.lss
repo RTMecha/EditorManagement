@@ -1,3 +1,6 @@
+2.4.2 > [Mar 14, 2024]
+- Fixed a few UI issues with the ObjectModifiers editor.
+- Added LDM Swap / Toggle to the Multi Object Editor.
 2.4.1 > [Mar 12, 2024]
 - Added new modifiers.
 2.4.0 > [Mar 12, 2024]
