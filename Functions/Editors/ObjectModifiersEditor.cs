@@ -182,7 +182,7 @@ namespace EditorManagement.Functions.Editors
             mcpTextRT.anchorMax = Vector2.one;
             mcpTextRT.anchorMin = Vector2.zero;
             mcpTextRT.pivot = new Vector2(0f, 1f);
-            mcpTextRT.sizeDelta = new Vector2(312f, 32f);
+            mcpTextRT.sizeDelta = new Vector2(300f, 32f);
 
             var mcpTextText = mcpText.AddComponent<Text>();
             mcpTextText.alignment = TextAnchor.MiddleLeft;
@@ -958,6 +958,7 @@ namespace EditorManagement.Functions.Editors
                             }
                         case "addColor":
                         case "addColorOther":
+                        case "addColorPlayerDistance":
                         case "lerpColor":
                         case "lerpColorOther":
                             {
@@ -1270,31 +1271,33 @@ namespace EditorManagement.Functions.Editors
                         case "animateObjectOther":
                             {
                                 singleGenerator("Time", 0, 1f);
-                                integerGenerator("Type (Pos/Sca/Rot)", 1, 0);
+                                dropdownGenerator("Type", 1, new List<string> { "Position", "Scale", "Rotation" });
                                 singleGenerator("X", 2, 0f);
                                 singleGenerator("Y", 3, 0f);
                                 singleGenerator("Z", 4, 0f);
                                 boolGenerator("Relative", 5, true);
 
-                                var dd = dropdownBar.Duplicate(layout, "Easing");
-                                dd.transform.Find("Text").GetComponent<Text>().text = "Easing";
+                                dropdownGenerator("Easing", 6, EditorManager.inst.CurveOptions.Select(x => x.name).ToList());
 
-                                Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
-                                Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+                                //var dd = dropdownBar.Duplicate(layout, "Easing");
+                                //dd.transform.Find("Text").GetComponent<Text>().text = "Easing";
 
-                                var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
-                                d.onValueChanged.RemoveAllListeners();
-                                d.options.Clear();
+                                //Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                                //Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
 
-                                d.options = EditorManager.inst.CurveOptions.Select(x => new Dropdown.OptionData(x.name, x.icon)).ToList();
+                                //var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                                //d.onValueChanged.RemoveAllListeners();
+                                //d.options.Clear();
 
-                                var curveIndex = EditorManager.inst.CurveOptions.FindIndex(x => modifier.commands[6] == x.name);
-                                d.value = curveIndex < 0 ? 0 : curveIndex;
+                                //d.options = EditorManager.inst.CurveOptions.Select(x => new Dropdown.OptionData(x.name, x.icon)).ToList();
 
-                                d.onValueChanged.AddListener(delegate (int _val)
-                                {
-                                    modifier.commands[6] = EditorManager.inst.CurveOptions[EditorManager.inst.CurveOptions.Count > _val ? _val : 0].name;
-                                });
+                                //var curveIndex = EditorManager.inst.CurveOptions.FindIndex(x => modifier.commands[6] == x.name);
+                                //d.value = curveIndex < 0 ? 0 : curveIndex;
+
+                                //d.onValueChanged.AddListener(delegate (int _val)
+                                //{
+                                //    modifier.commands[6] = EditorManager.inst.CurveOptions[EditorManager.inst.CurveOptions.Count > _val ? _val : 0].name;
+                                //});
 
                                 if (cmd == "animateObjectOther")
                                 {
@@ -1475,9 +1478,9 @@ namespace EditorManagement.Functions.Editors
                                 if (cmd == "gravityOther")
                                     stringGenerator("Object Group", 0);
 
-                                singleGenerator("Gravity X", 1, -1f);
-                                singleGenerator("Gravity Y", 2, 0f);
-                                singleGenerator("Gravity Time", 3, 0.1f);
+                                singleGenerator("X", 1, -1f);
+                                singleGenerator("Y", 2, 0f);
+                                singleGenerator("Time", 3, 0.1f);
 
                                 break;
                             }
@@ -1646,16 +1649,24 @@ namespace EditorManagement.Functions.Editors
                     butt.onClick.RemoveAllListeners();
                     butt.onClick.AddListener(delegate ()
                     {
-                        if (beatmapObject.shape == 4 && defaultModifiers[tmpIndex].commands[0] == "setText" || defaultModifiers[tmpIndex].commands[0] != "setText")
+                        var cmd = defaultModifiers[tmpIndex].commands[0];
+                        if (cmd.Contains("Text") && !cmd.Contains("Other") && beatmapObject.shape != 4)
                         {
-                            var modifier = BeatmapObject.Modifier.DeepCopy(defaultModifiers[tmpIndex]);
-                            modifier.modifierObject = beatmapObject;
-                            beatmapObject.modifiers.Add(modifier);
-                            RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
-                            EditorManager.inst.HideDialog("Default Modifiers Popup");
+                            EditorManager.inst.DisplayNotification("Cannot add modifier to object because the object needs to be a Text Object.", 2f, EditorManager.NotificationType.Error);
+                            return;
                         }
-                        else
-                            EditorManager.inst.DisplayNotification("Cannot add modifier to object because the object needs to be a text object.", 2f, EditorManager.NotificationType.Error);
+
+                        if (cmd.Contains("Image") && !cmd.Contains("Other") && beatmapObject.shape != 6)
+                        {
+                            EditorManager.inst.DisplayNotification("Cannot add modifier to object because the object needs to be an Image Object.", 2f, EditorManager.NotificationType.Error);
+                            return;
+                        }
+
+                        var modifier = BeatmapObject.Modifier.DeepCopy(defaultModifiers[tmpIndex]);
+                        modifier.modifierObject = beatmapObject;
+                        beatmapObject.modifiers.Add(modifier);
+                        RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+                        EditorManager.inst.HideDialog("Default Modifiers Popup");
                     });
                 }
             }
