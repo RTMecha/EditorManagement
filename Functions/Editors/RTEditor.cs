@@ -3813,6 +3813,37 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
+            // LDM Swap
+            {
+                labelGenerator("Swap each object's LDM");
+
+                buttonGenerator("ldm swap", "Swap LDM", parent, delegate ()
+                {
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.LDM = !beatmapObject.LDM;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                });
+            }
+
+            // LDM Toggle
+            {
+                labelGenerator("Toggle all object's LDM");
+
+                bool doggle = false;
+
+                buttonGenerator("ldm toggle", "Toggle LDM", parent, delegate ()
+                {
+                    doggle = !doggle;
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.LDM = doggle;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                });
+            }
+
             // Clear Animations
             {
                 labelGenerator("Clear Animations");
@@ -8037,7 +8068,7 @@ namespace EditorManagement.Functions.Editors
                     SetFileInfo($"metadata.lsb is empty or corrupt.");
 
                 if (string.IsNullOrEmpty(rawJSON) && string.IsNullOrEmpty(rawMetadataJSON))
-                    SetFileInfo($"Both level.lsb and metadata.lsb are corrupt.");
+                    SetFileInfo($"Both level.lsb and metadata.lsb are empty or corrupt.");
 
                 EditorManager.inst.DisplayNotification("Level could not load.", 3f, EditorManager.NotificationType.Error);
 
@@ -8052,15 +8083,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             SetFileInfo($"Loading Themes for [ {name} ]");
-            yield return StartCoroutine(LoadThemes());
-
-            // For some reason loading themes doesn't hold the enumerator so instead we check for themesLoading.
-            float delayTheme = 0f;
-            while (themesLoading)
-            {
-                yield return new WaitForSeconds(delayTheme);
-                delayTheme += 0.0001f;
-            }
+            /*yield return */StartCoroutine(LoadThemes());
 
             Debug.Log($"{EditorPlugin.className}Music is null: {song == null}");
 
@@ -8440,10 +8463,6 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.CancelInvoke("AutoSaveLevel");
             CancelInvoke("AutoSaveLevel");
             InvokeRepeating("AutoSaveLevel", AutoSaveLoopTime, AutoSaveLoopTime);
-
-            //var t = Time.time - timeInEditorOffset;
-            //if (t % AutoSaveLoopTime - 0.1f > AutoSaveLoopTime - 0.1f && !autoSaving)
-            //    AutoSaveLevel();
         }
 
         public void AutoSaveLevel()
