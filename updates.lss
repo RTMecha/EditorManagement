@@ -1,3 +1,5 @@
+2.4.3 > [Mar 15, 2024]
+- Reworked Config Storage system so it's not weird hopefully.
 2.4.2 > [Mar 14, 2024]
 - Fixed a few UI issues with the ObjectModifiers editor.
 - Added LDM Swap / Toggle to the Multi Object Editor.
