@@ -360,7 +360,7 @@ namespace EditorManagement.Patchers
 					if (!ObjectEditor.inst)
 						return;
 
-					bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value && RTEditor.ShowModdedUI;
+					bool adjusted = EditorConfig.Instance.AdjustPositionInputs.Value && RTEditor.ShowModdedUI;
 					positionBase.AsRT().sizeDelta = new Vector2(553f, adjusted ? 32f : 64f);
 					grp.cellSize = new Vector2(adjusted ? 122f : 183f, 40f);
 
@@ -375,7 +375,7 @@ namespace EditorManagement.Patchers
 					posZ.gameObject.SetActive(RTEditor.ShowModdedUI);
 				};
 
-				bool adjusted = RTEditor.GetEditorProperty("Adjust Position Inputs").GetConfigEntry<bool>().Value && RTEditor.ShowModdedUI;
+				bool adjusted = EditorConfig.Instance.AdjustPositionInputs.Value && RTEditor.ShowModdedUI;
 				positionBase.AsRT().sizeDelta = new Vector2(553f, adjusted ? 32f : 64f);
 				grp.cellSize = new Vector2(adjusted ? 122f : 183f, 40f);
 
@@ -860,12 +860,12 @@ namespace EditorManagement.Patchers
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}
 
-			__instance.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
-			__instance.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
+			__instance.SelectedColor = EditorConfig.Instance.ObjectSelectionColor.Value;
+			__instance.ObjectLengthOffset = EditorConfig.Instance.KeyframeEndLengthOffset.Value;
 
 			ObjectEditor.Init(__instance);
 
-			ObjectEditor.inst.shapeButtonPrefab = ObjEditor.inst.ObjectView.transform.Find("shape/1").gameObject.Duplicate(null);
+			ObjectEditor.inst.shapeButtonPrefab = __instance.ObjectView.transform.Find("shape/1").gameObject.Duplicate(null);
 
 			return false;
 		}
@@ -896,7 +896,7 @@ namespace EditorManagement.Patchers
 				Instance.hasCopiedObject = true;
 			}
 
-			Instance.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
+			Instance.zoomBounds = EditorConfig.Instance.KeyframeZoomBounds.Value;
 			return false;
 		}
 
@@ -1005,7 +1005,7 @@ namespace EditorManagement.Patchers
 			{
 				var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 
-				var snap = RTEditor.BPMSnapKeyframes;
+				var snap = EditorConfig.Instance.BPMSnapsKeyframes.Value;
 
 				foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected))
 				{

@@ -1,45 +1,18 @@
-﻿using System;
-using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Helpers;
 using HarmonyLib;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
 using LSFunctions;
-
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
-using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Patchers;
-
-using EditorManagement.Functions;
-using EditorManagement.Functions.Editors;
-using EditorManagement.Functions.Helpers;
-
-using BeatmapObject = DataManager.GameData.BeatmapObject;
-using EventKeyframe = DataManager.GameData.EventKeyframe;
-using Prefab = DataManager.GameData.Prefab;
-using PrefabObject = DataManager.GameData.PrefabObject;
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
 using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
-using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
-using ObjectKeyframeSelection = ObjEditor.KeyframeSelection;
-using EventKeyframeSelection = EventEditor.KeyframeSelection;
 
 namespace EditorManagement.Patchers
 {
-	[HarmonyPatch(typeof(BackgroundEditor))]
+    [HarmonyPatch(typeof(BackgroundEditor))]
     public class BackgroundEditorPatch : MonoBehaviour
     {
 		public static BackgroundEditor Instance { get => BackgroundEditor.inst; set => BackgroundEditor.inst = value; }

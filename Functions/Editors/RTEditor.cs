@@ -369,11 +369,6 @@ namespace EditorManagement.Functions.Editors
         public static bool DraggingPlaysSoundBPM { get; set; }
         public static bool ShowModdedUI { get; set; }
 
-        public static bool RoundToNearest => GetEditorProperty("Round To Nearest").GetConfigEntry<bool>().Value;
-        public static bool ShowModifiedColors => GetEditorProperty("Show Modified Colors").GetConfigEntry<bool>().Value;
-        public static float BPMSnapDivisions => GetEditorProperty("BPM Snap Divisions").GetConfigEntry<float>().Value;
-        public static bool BPMSnapKeyframes => GetEditorProperty("BPM Snaps Keyframes").GetConfigEntry<bool>().Value;
-
         public bool ienumRunning;
         public bool parentPickerEnabled = false;
 
@@ -526,7 +521,7 @@ namespace EditorManagement.Functions.Editors
             {
                 if (jn["misc"]["sn"] != null)
                     SettingEditor.inst.SnapActive = jn["misc"]["sn"].AsBool;
-                if (jn["misc"]["t"] != null && LevelLoadsSavedTime)
+                if (jn["misc"]["t"] != null && EditorConfig.Instance.LevelLoadsLastTime.Value)
                     AudioManager.inst.SetMusicTime(jn["misc"]["t"].AsFloat);
 
                 SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
@@ -544,201 +539,76 @@ namespace EditorManagement.Functions.Editors
 
         public List<string> notifications = new List<string>();
 
-        public IEnumerator FixHelp(string _text, float _time)
+        public void DisplayNotification(string name, string text, float time, EditorManager.NotificationType type)
         {
-            EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(true);
-            EditorManager.inst.notification.transform.Find("info/text").GetComponent<TextMeshProUGUI>().text = _text;
-            LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info/text").GetComponent<RectTransform>());
-            LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info").GetComponent<RectTransform>());
-            LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.GetComponent<RectTransform>());
-            yield return new WaitForSeconds(_time);
-            EditorManager.inst.notification.transform.Find("info").gameObject.SetActive(EditorManager.inst.showHelp);
-            if (EditorManager.inst.showHelp)
-            {
-                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info/text").GetComponent<RectTransform>());
-                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info").GetComponent<RectTransform>());
-            }
-            LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.GetComponent<RectTransform>());
-        }
-
-        public IEnumerator DisplayDefaultNotification(string _text, float _time, EditorManager.NotificationType _type)
-        {
-            if (!GetEditorProperty("Debug").GetConfigEntry<bool>().Value)
-            {
-                Debug.LogFormat("{0}Notification:\nText: " + _text + "\nTime: " + _time + "\nType: " + _type, EditorPlugin.className);
-            }
-            if (notifications.Count < 20)
-            {
-                switch (_type)
-                {
-                    case EditorManager.NotificationType.Info:
-                        {
-                            GameObject gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject, _time);
-                            gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = _text;
-                            gameObject.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject.transform.SetAsFirstSibling();
-                            }
-                            gameObject.transform.localScale = Vector3.one;
-                            break;
-                        }
-                    case EditorManager.NotificationType.Success:
-                        {
-                            GameObject gameObject1 = Instantiate(EditorManager.inst.notificationPrefabs[1], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject1, _time);
-                            gameObject1.transform.Find("text").GetComponent<Text>().text = _text;
-                            gameObject1.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject1.transform.SetAsFirstSibling();
-                            }
-                            gameObject1.transform.localScale = Vector3.one;
-                            break;
-                        }
-                    case EditorManager.NotificationType.Error:
-                        {
-                            GameObject gameObject2 = Instantiate(EditorManager.inst.notificationPrefabs[2], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject2, _time);
-                            gameObject2.transform.Find("text").GetComponent<Text>().text = _text;
-                            gameObject2.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject2.transform.SetAsFirstSibling();
-                            }
-                            gameObject2.transform.localScale = Vector3.one;
-                            break;
-                        }
-                    case EditorManager.NotificationType.Warning:
-                        {
-                            GameObject gameObject3 = Instantiate(EditorManager.inst.notificationPrefabs[3], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject3, _time);
-                            gameObject3.transform.Find("text").GetComponent<Text>().text = _text;
-                            gameObject3.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject3.transform.SetAsFirstSibling();
-                            }
-                            gameObject3.transform.localScale = Vector3.one;
-                            break;
-                        }
-                }
-            }
-
-            yield break;
-        }
-
-        public void DisplayNotification(string _name, string _text, float _time, EditorManager.NotificationType _type)
-        {
-            inst.StartCoroutine(DisplayNotificationLoop(_name, _text, _time, _type));
+            StartCoroutine(DisplayNotificationLoop(name, text, time, type));
         }
 
         public void DisplayCustomNotification(string _name, string _text, float _time, Color _base, Color _top, Color _icCol, string _title, Sprite _icon = null)
         {
-            inst.StartCoroutine(DisplayCustomNotificationLoop(_name, _text, _time, _base, _top, _icCol, _title, _icon));
+            StartCoroutine(DisplayCustomNotificationLoop(_name, _text, _time, _base, _top, _icCol, _title, _icon));
         }
 
-        public IEnumerator DisplayNotificationLoop(string _name, string _text, float _time, EditorManager.NotificationType _type)
+        public IEnumerator DisplayNotificationLoop(string name, string text, float time, EditorManager.NotificationType type)
         {
-            if (!GetEditorProperty("Debug").GetConfigEntry<bool>().Value)
-            {
-                Debug.Log("<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>\nNotification: " + _name + "\nText: " + _text + "\nTime: " + _time + "\nType: " + _type);
-            }
-            if (!notifications.Contains(_name) && notifications.Count < 20 && GetEditorProperty("Notifications Display").GetConfigEntry<bool>().Value)
-            {
-                notifications.Add(_name);
-                switch (_type)
-                {
-                    case EditorManager.NotificationType.Info:
-                        {
-                            GameObject gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject, _time);
-                            gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = _text;
-                            gameObject.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject.transform.SetAsFirstSibling();
-                            }
-                            gameObject.transform.localScale = Vector3.one;
-                            break;
-                        }
-                    case EditorManager.NotificationType.Success:
-                        {
-                            GameObject gameObject1 = Instantiate(EditorManager.inst.notificationPrefabs[1], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject1, _time);
-                            gameObject1.transform.Find("text").GetComponent<Text>().text = _text;
-                            gameObject1.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject1.transform.SetAsFirstSibling();
-                            }
-                            gameObject1.transform.localScale = Vector3.one;
-                            break;
-                        }
-                    case EditorManager.NotificationType.Error:
-                        {
-                            GameObject gameObject2 = Instantiate(EditorManager.inst.notificationPrefabs[2], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject2, _time);
-                            gameObject2.transform.Find("text").GetComponent<Text>().text = _text;
-                            gameObject2.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject2.transform.SetAsFirstSibling();
-                            }
-                            gameObject2.transform.localScale = Vector3.one;
-                            break;
-                        }
-                    case EditorManager.NotificationType.Warning:
-                        {
-                            GameObject gameObject3 = Instantiate(EditorManager.inst.notificationPrefabs[3], Vector3.zero, Quaternion.identity);
-                            Destroy(gameObject3, _time);
-                            gameObject3.transform.Find("text").GetComponent<Text>().text = _text;
-                            gameObject3.transform.SetParent(EditorManager.inst.notification.transform);
-                            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                            {
-                                gameObject3.transform.SetAsFirstSibling();
-                            }
-                            gameObject3.transform.localScale = Vector3.one;
-                            break;
-                        }
-                }
+            var config = EditorConfig.Instance;
 
-                yield return new WaitForSeconds(_time);
-                notifications.Remove(_name);
+            if (!config.Debug.Value)
+                Debug.Log("<color=#F6AC1A>Editor</color><color=#2FCBD6>Management</color>\nNotification: " + name + "\nText: " + text + "\nTime: " + time + "\nType: " + type);
+
+            if (!notifications.Contains(name) && notifications.Count < 20 && config.NotificationsDisplay.Value)
+            {
+                var notif = Instantiate(EditorManager.inst.notificationPrefabs[(int)type], Vector3.zero, Quaternion.identity);
+                Destroy(notif, time);
+                notif.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
+                notif.transform.SetParent(EditorManager.inst.notification.transform);
+                if (config.NotificationDirection.Value == Direction.Down)
+                    notif.transform.SetAsFirstSibling();
+                notif.transform.localScale = Vector3.one;
+
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info/text").AsRT());
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info").AsRT());
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.AsRT());
+
+                notifications.Add(name);
+
+                yield return new WaitForSeconds(time);
+                notifications.Remove(name);
             }
             yield break;
         }
 
-        public IEnumerator DisplayCustomNotificationLoop(string _name, string _text, float _time, Color _base, Color _top, Color _icCol, string _title, Sprite _icon = null)
+        public IEnumerator DisplayCustomNotificationLoop(string name, string text, float time, Color baseColor, Color topColor, Color iconCOlor, string _title, Sprite _icon = null)
         {
-            if (!notifications.Contains(_name) && notifications.Count < 20 && GetEditorProperty("Notifications Display").GetConfigEntry<bool>().Value)
+            var config = EditorConfig.Instance;
+
+            if (!notifications.Contains(name) && notifications.Count < 20 && config.NotificationsDisplay.Value)
             {
-                notifications.Add(_name);
-                GameObject gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
-                Destroy(gameObject, _time);
-                gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = _text;
+                notifications.Add(name);
+                var gameObject = Instantiate(EditorManager.inst.notificationPrefabs[0], Vector3.zero, Quaternion.identity);
+                Destroy(gameObject, time);
+                gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
                 gameObject.transform.SetParent(EditorManager.inst.notification.transform);
-                if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
-                {
+                if (config.NotificationDirection.Value == Direction.Down)
                     gameObject.transform.SetAsFirstSibling();
-                }
                 gameObject.transform.localScale = Vector3.one;
 
-                gameObject.GetComponent<Image>().color = _base;
+                gameObject.GetComponent<Image>().color = baseColor;
                 var bg = gameObject.transform.Find("bg");
                 var img = bg.Find("Image").GetComponent<Image>();
-                bg.Find("bg").GetComponent<Image>().color = _top;
+                bg.Find("bg").GetComponent<Image>().color = topColor;
                 if (_icon != null)
-                {
                     img.sprite = _icon;
-                }
 
-                img.color = _icCol;
+                img.color = iconCOlor;
                 bg.Find("title").GetComponent<Text>().text = _title;
 
-                yield return new WaitForSeconds(_time);
-                notifications.Remove(_name);
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info/text").AsRT());
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info").AsRT());
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.AsRT());
+
+                yield return new WaitForSeconds(time);
+                notifications.Remove(name);
             }
 
             yield break;
@@ -746,18 +616,21 @@ namespace EditorManagement.Functions.Editors
 
         public void SetupNotificationValues()
         {
+            var config = EditorConfig.Instance;
+
             var notifyRT = EditorManager.inst.notification.GetComponent<RectTransform>();
             var notifyGroup = EditorManager.inst.notification.GetComponent<VerticalLayoutGroup>();
-            notifyRT.sizeDelta = new Vector2(GetEditorProperty("Notification Width").GetConfigEntry<float>().Value, 632f);
+            notifyRT.sizeDelta = new Vector2(config.NotificationWidth.Value, 632f);
             EditorManager.inst.notification.transform.localScale =
-                new Vector3(GetEditorProperty("Notification Size").GetConfigEntry<float>().Value, GetEditorProperty("Notification Size").GetConfigEntry<float>().Value, 1f);
+                new Vector3(config.NotificationSize.Value, config.NotificationSize.Value, 1f);
 
-            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Down)
+            if (config.NotificationDirection.Value == Direction.Down)
             {
                 notifyRT.anchoredPosition = new Vector2(8f, 408f);
                 notifyGroup.childAlignment = TextAnchor.LowerLeft;
             }
-            if (GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value == Direction.Up)
+
+            if (config.NotificationDirection.Value == Direction.Up)
             {
                 notifyRT.anchoredPosition = new Vector2(8f, 410f);
                 notifyGroup.childAlignment = TextAnchor.UpperLeft;
@@ -823,31 +696,24 @@ namespace EditorManagement.Functions.Editors
 
         #region Timeline Textures
 
-        public static bool GenerateWaveform => GetEditorProperty("Waveform Generate").GetConfigEntry<bool>().Value;
-        public static bool ReRenderWaveform => GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().Value;
-
-        public static WaveformType WaveformMode => GetEditorProperty("Waveform Mode").GetConfigEntry<WaveformType>().Value;
-        public static Color WaveformBGColor => GetEditorProperty("Waveform BG Color").GetConfigEntry<Color>().Value;
-        public static Color WaveformTopColor => GetEditorProperty("Waveform Top Color").GetConfigEntry<Color>().Value;
-        public static Color WaveformBottomColor => GetEditorProperty("Waveform Bottom Color").GetConfigEntry<Color>().Value;
-        public static TextureFormat WaveformFormat => GetEditorProperty("Waveform Texture Format").GetConfigEntry<TextureFormat>().Value;
-
         public IEnumerator AssignTimelineTexture()
         {
-            if ((!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading && !RTFile.FileExists($"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png") ||
-                !RTFile.FileExists(GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png")) && !ReRenderWaveform || ReRenderWaveform)
+            var config = EditorConfig.Instance;
+
+            if ((!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading && !RTFile.FileExists($"{RTFile.ApplicationDirectory}settings/waveform-{config.WaveformMode.Value.ToString().ToLower()}.png") ||
+                !RTFile.FileExists(GameManager.inst.basePath + $"waveform-{config.WaveformMode.Value.ToString().ToLower()}.png")) && !config.WaveformRerender.Value || config.WaveformRerender.Value)
             {
                 int num = Mathf.Clamp((int)AudioManager.inst.CurrentAudioSource.clip.length * 48, 100, 15000);
                 Texture2D waveform = null;
 
-                if (WaveformMode == WaveformType.Legacy)
-                    StartCoroutine(Legacy(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
-                if (WaveformMode == WaveformType.Beta)
-                    StartCoroutine(Beta(AudioManager.inst.CurrentAudioSource.clip, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
-                if (WaveformMode == WaveformType.BetaFast)
-                    StartCoroutine(BetaFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, delegate (Texture2D _tex) { waveform = _tex; }));
-                if (WaveformMode == WaveformType.LegacyFast)
-                    StartCoroutine(LegacyFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, WaveformBGColor, WaveformTopColor, WaveformBottomColor, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (config.WaveformMode.Value == WaveformType.Legacy)
+                    StartCoroutine(Legacy(AudioManager.inst.CurrentAudioSource.clip, num, 300, config.WaveformBGColor.Value, config.WaveformTopColor.Value, config.WaveformBottomColor.Value, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (config.WaveformMode.Value == WaveformType.Beta)
+                    StartCoroutine(Beta(AudioManager.inst.CurrentAudioSource.clip, num, 300, config.WaveformBGColor.Value, config.WaveformTopColor.Value, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (config.WaveformMode.Value == WaveformType.BetaFast)
+                    StartCoroutine(BetaFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, config.WaveformBGColor.Value, config.WaveformTopColor.Value, delegate (Texture2D _tex) { waveform = _tex; }));
+                if (config.WaveformMode.Value == WaveformType.LegacyFast)
+                    StartCoroutine(LegacyFast(AudioManager.inst.CurrentAudioSource.clip, 1f, num, 300, config.WaveformBGColor.Value, config.WaveformTopColor.Value, config.WaveformBottomColor.Value, delegate (Texture2D _tex) { waveform = _tex; }));
 
                 while (waveform == null)
                     yield return null;
@@ -859,15 +725,15 @@ namespace EditorManagement.Functions.Editors
             else
             {
                 var waveSprite = SpriteManager.LoadSprite(!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading ?
-                    $"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png" :
-                    GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
+                    $"{RTFile.ApplicationDirectory}settings/waveform-{config.WaveformMode.Value.ToString().ToLower()}.png" :
+                    GameManager.inst.basePath + $"waveform-{config.WaveformMode.Value.ToString().ToLower()}.png");
                 TimelineImage.sprite = waveSprite;
                 TimelineOverlayImage.sprite = TimelineImage.sprite;
             }
 
             TimelineImage.sprite.Save(!EditorManager.inst.hasLoadedLevel && !EditorManager.inst.loading ?
-                    $"{RTFile.ApplicationDirectory}settings/waveform-{WaveformMode.ToString().ToLower()}.png" :
-                    GameManager.inst.basePath + $"waveform-{WaveformMode.ToString().ToLower()}.png");
+                    $"{RTFile.ApplicationDirectory}settings/waveform-{config.WaveformMode.Value.ToString().ToLower()}.png" :
+                    GameManager.inst.basePath + $"waveform-{config.WaveformMode.Value.ToString().ToLower()}.png");
 
             SetTimelineGridSize();
 
@@ -878,8 +744,8 @@ namespace EditorManagement.Functions.Editors
         {
             Debug.LogFormat("{0}Generating Beta Waveform", EditorPlugin.className);
             int num = 100;
-            Texture2D texture2D = new Texture2D(textureWidth, textureHeight, WaveformFormat, false);
-            Color[] array = new Color[texture2D.width * texture2D.height];
+            var texture2D = new Texture2D(textureWidth, textureHeight, EditorConfig.Instance.WaveformTextureFormat.Value, false);
+            var array = new Color[texture2D.width * texture2D.height];
             for (int i = 0; i < array.Length; i++)
             {
                 array[i] = background;
@@ -919,7 +785,7 @@ namespace EditorManagement.Functions.Editors
             Debug.LogFormat("{0}Generating Legacy Waveform", EditorPlugin.className);
             int num = 160;
             num = clip.frequency / num;
-            Texture2D texture2D = new Texture2D(textureWidth, textureHeight, WaveformFormat, false);
+            var texture2D = new Texture2D(textureWidth, textureHeight, EditorConfig.Instance.WaveformTextureFormat.Value, false);
             Color[] array = new Color[texture2D.width * texture2D.height];
             for (int i = 0; i < array.Length; i++)
             {
@@ -992,7 +858,7 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator BetaFast(AudioClip audio, float saturation, int width, int height, Color background, Color col, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Beta Waveform (Fast)", EditorPlugin.className);
-            Texture2D tex = new Texture2D(width, height, WaveformFormat, false);
+            var tex = new Texture2D(width, height, EditorConfig.Instance.WaveformTextureFormat.Value, false);
             float[] samples = new float[audio.samples * audio.channels];
             float[] waveform = new float[width];
             audio.GetData(samples, 0);
@@ -1029,7 +895,7 @@ namespace EditorManagement.Functions.Editors
         public IEnumerator LegacyFast(AudioClip audio, float saturation, int width, int height, Color background, Color colTop, Color colBot, Action<Texture2D> action)
         {
             Debug.LogFormat("{0}Generating Legacy Waveform (Fast)", EditorPlugin.className);
-            Texture2D tex = new Texture2D(width, height, WaveformFormat, false);
+            var tex = new Texture2D(width, height, EditorConfig.Instance.WaveformTextureFormat.Value, false);
             
             float[] samples = new float[audio.samples * audio.channels];
             float[] waveform = new float[width];
@@ -1069,9 +935,7 @@ namespace EditorManagement.Functions.Editors
         {
             var invertedColorSum = Color.black;
             foreach (var color in colors)
-            {
                 invertedColorSum += Color.white - color;
-            }
 
             return Color.white - invertedColorSum / colors.Count;
         }
@@ -1097,8 +961,8 @@ namespace EditorManagement.Functions.Editors
             var unrender = timelineGridUnrenderSize * x;
 
             var bpm = EditorManager.inst.Zoom > closer ? SettingEditor.inst.SnapBPM : EditorManager.inst.Zoom > close ? SettingEditor.inst.SnapBPM / 2f : SettingEditor.inst.SnapBPM / 4f;
-            var snapDivisions = BPMSnapDivisions * 2f;
-            if (timelineGridRenderer && EditorManager.inst.Zoom > unrender && GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().Value)
+            var snapDivisions = EditorConfig.Instance.BPMSnapDivisions.Value * 2f;
+            if (timelineGridRenderer && EditorManager.inst.Zoom > unrender && EditorConfig.Instance.TimelineGridEnabled.Value)
             {
                 timelineGridRenderer.enabled = false;
                 timelineGridRenderer.gridCellSize.x = ((int)bpm / (int)snapDivisions) * (int)clipLength;
@@ -1202,11 +1066,6 @@ namespace EditorManagement.Functions.Editors
                 jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
             }
 
-            for (int i = 0; i < DialogAnimations.Count; i++)
-            {
-                jn["dialog_anims"][i] = DialogAnimations[i].ToJSON();
-            }
-
             RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
         }
 
@@ -1268,26 +1127,6 @@ namespace EditorManagement.Functions.Editors
 
                 RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
             }
-
-            if (jn["dialog_anims"] != null && jn["dialog_anims"].Count == DialogAnimations.Count)
-            {
-                DialogAnimations.Clear();
-                for (int i = 0; i < jn["dialog_anims"].Count; i++)
-                {
-                    var dialogAnimation = DialogAnimation.Parse(jn["dialog_anims"][i]);
-                    if (dialogAnimation != null)
-                        DialogAnimations.Add(dialogAnimation);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < DialogAnimations.Count; i++)
-                {
-                    jn["dialog_anims"][i] = DialogAnimations[i].ToJSON();
-                }
-
-                RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
-            }
         }
 
         public void SaveGlobalSettings()
@@ -1308,11 +1147,6 @@ namespace EditorManagement.Functions.Editors
             for (int i = 0; i < EditorManager.inst.layerColors.Count; i++)
             {
                 jn["layer_colors"][i] = LSColors.ColorToHex(EditorManager.inst.layerColors[i]);
-            }
-
-            for (int i = 0; i < DialogAnimations.Count; i++)
-            {
-                jn["dialog_anims"][i] = DialogAnimations[i].ToJSON();
             }
 
             RTFile.WriteToFile(EditorSettingsPath, jn.ToString(3));
@@ -1336,7 +1170,7 @@ namespace EditorManagement.Functions.Editors
 
         public void OnPrefabPathChanged(object sender, FileSystemEventArgs e)
         {
-            if (canUpdatePrefabs && WatchPrefabFiles)
+            if (canUpdatePrefabs && EditorConfig.Instance.UpdatePrefabListOnFilesChanged.Value)
             {
                 StartCoroutine(UpdatePrefabs());
             }
@@ -1344,14 +1178,11 @@ namespace EditorManagement.Functions.Editors
 
         public void OnThemePathChanged(object sender, FileSystemEventArgs e)
         {
-            if (canUpdateThemes && WatchThemeFiles)
+            if (canUpdateThemes && EditorConfig.Instance.UpdateThemeListOnFilesChanged.Value)
             {
                 StartCoroutine(LoadThemes(EventEditor.inst.dialogRight.GetChild(4).gameObject.activeInHierarchy));
             }
         }
-
-        public static bool WatchPrefabFiles { get; set; } = GetEditorProperty("Update Prefab List on Files Changed").GetConfigEntry<bool>().Value;
-        public static bool WatchThemeFiles { get; set; } = GetEditorProperty("Update Theme List on Files Changed").GetConfigEntry<bool>().Value;
 
         public FileSystemWatcher PrefabWatcher { get; set; }
         public FileSystemWatcher ThemeWatcher { get; set; }
@@ -2390,8 +2221,10 @@ namespace EditorManagement.Functions.Editors
             var sortList = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
                 .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
+            var config = EditorConfig.Instance;
+
             var sortListRT = sortList.GetComponent<RectTransform>();
-            sortListRT.anchoredPosition = GetEditorProperty("Open Level Dropdown Position").GetConfigEntry<Vector2>().Value;
+            sortListRT.anchoredPosition = config.OpenLevelDropdownPosition.Value;
             var sortListTip = sortList.GetComponent<HoverTooltip>();
             {
                 sortListTip.tooltipLangauges[0].desc = "Sort the order of your levels.";
@@ -2430,7 +2263,7 @@ namespace EditorManagement.Functions.Editors
                 .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
             var checkDesRT = checkDes.GetComponent<RectTransform>();
-            checkDesRT.anchoredPosition = GetEditorProperty("Open Level Toggle Position").GetConfigEntry<Vector2>().Value;
+            checkDesRT.anchoredPosition = config.OpenLevelTogglePosition.Value;
 
             checkDes.transform.Find("title").GetComponent<Text>().enabled = false;
             var titleRT = checkDes.transform.Find("title").GetComponent<RectTransform>();
@@ -2454,8 +2287,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var editorPathGO = GameObject.Find("TimelineBar/GameObject/Time Input")
                     .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "editor path");
-                ((RectTransform)editorPathGO.transform).anchoredPosition = GetEditorProperty("Open Level Editor Path Pos").GetConfigEntry<Vector2>().Value;
-                ((RectTransform)editorPathGO.transform).sizeDelta = new Vector2(GetEditorProperty("Open Level Editor Path Length").GetConfigEntry<float>().Value, 34f);
+                ((RectTransform)editorPathGO.transform).anchoredPosition = config.OpenLevelEditorPathPos.Value;
+                ((RectTransform)editorPathGO.transform).sizeDelta = new Vector2(config.OpenLevelEditorPathLength.Value, 34f);
 
                 var levelListTip = editorPathGO.GetComponent<HoverTooltip>();
                 if (!levelListTip)
@@ -2502,7 +2335,7 @@ namespace EditorManagement.Functions.Editors
 
                 var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
                     .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "reload");
-                ((RectTransform)levelListReloader.transform).anchoredPosition = GetEditorProperty("Open Level List Refresh Position").GetConfigEntry<Vector2>().Value;
+                ((RectTransform)levelListReloader.transform).anchoredPosition = config.OpenLevelListRefreshPosition.Value;
                 ((RectTransform)levelListReloader.transform).sizeDelta = new Vector2(32f, 32f);
 
                 var levelListRTip = levelListReloader.AddComponent<HoverTooltip>();
@@ -2626,8 +2459,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var prefabPathGO = timeIF.gameObject.Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "prefabs path");
 
-                ((RectTransform)prefabPathGO.transform).anchoredPosition = GetEditorProperty("Prefab External Prefab Path Pos").GetConfigEntry<Vector2>().Value;
-                ((RectTransform)prefabPathGO.transform).sizeDelta = new Vector2(GetEditorProperty("Prefab External Prefab Path Length").GetConfigEntry<float>().Value, 34f);
+                ((RectTransform)prefabPathGO.transform).anchoredPosition = config.PrefabExternalPrefabPathPos.Value;
+                ((RectTransform)prefabPathGO.transform).sizeDelta = new Vector2(config.PrefabExternalPrefabPathLength.Value, 34f);
 
                 var levelListTip = prefabPathGO.AddComponent<HoverTooltip>();
                 var llTip = new HoverTooltip.Tooltip();
@@ -2671,7 +2504,7 @@ namespace EditorManagement.Functions.Editors
 
                 var levelListReloader = GameObject.Find("TimelineBar/GameObject/play")
                     .Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "reload prefabs");
-                ((RectTransform)levelListReloader.transform).anchoredPosition = GetEditorProperty("Prefab External Prefab Refresh Pos").GetConfigEntry<Vector2>().Value;
+                ((RectTransform)levelListReloader.transform).anchoredPosition = config.PrefabExternalPrefabRefreshPos.Value;
                 ((RectTransform)levelListReloader.transform).sizeDelta = new Vector2(32f, 32f);
 
                 var levelListRTip = levelListReloader.AddComponent<HoverTooltip>();
@@ -2776,51 +2609,26 @@ namespace EditorManagement.Functions.Editors
         public void SetupTimelineElements()
         {
             Debug.Log($"{EditorPlugin.className}Setting Timeline Cursor Colors");
+
+            var config = EditorConfig.Instance;
+
             try
             {
-                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle", out GameObject gm) && gm.TryGetComponent(out Image image))
-                {
-                    timelineSliderHandle = image;
-                    timelineSliderHandle.color = GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
-                }
-                else
-                {
-                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
-                }
+                timelineSliderHandle = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image/Handle").GetComponent<Image>();
+                timelineSliderHandle.color = config.TimelineCursorColor.Value;
 
-                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image", out GameObject gm1) && gm1.TryGetComponent(out Image image1))
-                {
-                    timelineSliderRuler = image1;
-                    timelineSliderRuler.color = GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
-                }
-                else
-                {
-                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
-                }
+                timelineSliderRuler = GameObject.Find("Editor Systems/Editor GUI/sizer/main/whole-timeline/Slider_Parent/Slider/Handle Slide Area/Image").GetComponent<Image>();
+                timelineSliderRuler.color = config.TimelineCursorColor.Value;
 
-                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image", out GameObject gm2) && gm2.TryGetComponent(out Image image2))
-                {
-                    keyframeTimelineSliderHandle = image2;
-                    keyframeTimelineSliderHandle.color = GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
-                }
-                else
-                {
-                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
-                }
+                keyframeTimelineSliderHandle = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle/Image").GetComponent<Image>();
+                keyframeTimelineSliderHandle.color = config.KeyframeCursorColor.Value;
 
-                if (RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle", out GameObject gm3) && gm3.TryGetComponent(out Image image3))
-                {
-                    keyframeTimelineSliderRuler = image3;
-                    keyframeTimelineSliderRuler.color = GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
-                }
-                else
-                {
-                    Debug.LogError($"{EditorPlugin.className}Whoooops you gotta put this CD up your-");
-                }
+                keyframeTimelineSliderRuler = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/timeline/Scroll View/Viewport/Content/time_slider/Handle Slide Area/Handle").GetComponent<Image>();
+                keyframeTimelineSliderRuler.color = config.KeyframeCursorColor.Value;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"{EditorPlugin.className}Error {ex}");
+                Debug.LogError($"{EditorPlugin.className}SetupTimelineElements Error {ex}");
             }
         }
 
@@ -2847,10 +2655,12 @@ namespace EditorManagement.Functions.Editors
 
             timelineGridRenderer = grid.AddComponent<GridRenderer>();
 
-            timelineGridRenderer.color = GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().Value;
-            timelineGridRenderer.thickness = GetEditorProperty("Timeline Grid Thickness").GetConfigEntry<float>().Value;
+            var config = EditorConfig.Instance;
 
-            timelineGridRenderer.enabled = GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().Value;
+            timelineGridRenderer.color = config.TimelineGridColor.Value;
+            timelineGridRenderer.thickness = config.TimelineGridThickness.Value;
+
+            timelineGridRenderer.enabled = config.TimelineGridEnabled.Value;
 
             var gridCanvasGroup = grid.AddComponent<CanvasGroup>();
             gridCanvasGroup.blocksRaycasts = false;
@@ -7710,20 +7520,18 @@ namespace EditorManagement.Functions.Editors
 
         public bool autoSaving = false;
 
-        public static bool LevelLoadsSavedTime => GetEditorProperty("Level Loads Last Time").GetConfigEntry<bool>().Value;
-        public static bool LevelPausesOnStart => GetEditorProperty("Level Pauses on Start").GetConfigEntry<bool>().Value;
-        
         public IEnumerator LoadLevels()
         {
             EditorManager.inst.loadedLevels.Clear();
 
-            // We get level editor properties before iterating level list.
-            var olfnm = GetEditorProperty("Open Level Folder Name Max").GetConfigEntry<int>();
-            var olsnm = GetEditorProperty("Open Level Song Name Max").GetConfigEntry<int>();
-            var olanm = GetEditorProperty("Open Level Artist Name Max").GetConfigEntry<int>();
-            var olcnm = GetEditorProperty("Open Level Creator Name Max").GetConfigEntry<int>();
-            var oldem = GetEditorProperty("Open Level Description Max").GetConfigEntry<int>();
-            var oldam = GetEditorProperty("Open Level Date Max").GetConfigEntry<int>();
+            var config = EditorConfig.Instance;
+
+            var olfnm = config.OpenLevelFolderNameMax;
+            var olsnm = config.OpenLevelSongNameMax;
+            var olanm = config.OpenLevelArtistNameMax;
+            var olcnm = config.OpenLevelCreatorNameMax;
+            var oldem = config.OpenLevelDescriptionMax;
+            var oldam = config.OpenLevelDateMax;
 
             int foldClamp = olfnm.Value < 3 ? olfnm.Value : (int)olfnm.DefaultValue;
             int songClamp = olsnm.Value < 3 ? olsnm.Value : (int)olsnm.DefaultValue;
@@ -7735,16 +7543,16 @@ namespace EditorManagement.Functions.Editors
             var transform = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("mask/content");
             var close = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x");
 
-            var horizontalOverflow = GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-            var verticalOverflow = GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-            var fontSize = GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
-            var format = GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
-            var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+            var horizontalOverflow = config.OpenLevelTextHorizontalWrap.Value;
+            var verticalOverflow = config.OpenLevelTextVerticalWrap.Value;
+            var fontSize = config.OpenLevelTextFontSize.Value;
+            var format = config.OpenLevelTextFormatting.Value;
+            var buttonHoverSize = config.OpenLevelButtonHoverSize.Value;
 
-            var iconPosition = GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
-            var iconScale = GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+            var iconPosition = config.OpenLevelCoverPosition.Value;
+            var iconScale = config.OpenLevelCoverScale.Value;
 
-            var showDeleteButton = GetEditorProperty("Open Level Show Delete Button").GetConfigEntry<bool>().Value;
+            var showDeleteButton = config.OpenLevelShowDeleteButton.Value;
 
             LSHelpers.DeleteChildren(transform);
 
@@ -7879,7 +7687,7 @@ namespace EditorManagement.Functions.Editors
             if (list.Count >= 1)
                 yield return StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate
                 {
-                    if (anyFailed && GetEditorProperty("Show Levels Without Cover Notification").GetConfigEntry<bool>().Value)
+                    if (anyFailed && config.ShowLevelsWithoutCoverNotification.Value)
                         EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
                     if (EditorManager.inst.loadedLevels.Count > 0)
                         EditorManager.inst.OpenBeatmapPopup();
@@ -7888,7 +7696,7 @@ namespace EditorManagement.Functions.Editors
                 }));
             else
             {
-                if (anyFailed && GetEditorProperty("Show Levels Without Cover Notification").GetConfigEntry<bool>().Value)
+                if (anyFailed && config.ShowLevelsWithoutCoverNotification.Value)
                     EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
                 if (EditorManager.inst.loadedLevels.Count > 0)
                     EditorManager.inst.OpenBeatmapPopup();
@@ -8090,7 +7898,7 @@ namespace EditorManagement.Functions.Editors
             SetFileInfo($"Playing Music for [ {name} ]\n\nIf it doesn't, then something went wrong!");
             AudioManager.inst.PlayMusic(null, song, true, 0f, true);
             StartCoroutine(EditorManager.inst.SpawnPlayersWithDelay(0.2f));
-            if (GenerateWaveform)
+            if (EditorConfig.Instance.WaveformGenerate.Value)
             {
                 SetFileInfo($"Assigning Waveform Textures for [ {name} ]");
                 StartCoroutine(AssignTimelineTexture());
@@ -8160,7 +7968,7 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.autosaves.Add(file);
                 }
 
-                SetAutosave();
+                SetAutoSave();
             }
 
             TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
@@ -8168,7 +7976,7 @@ namespace EditorManagement.Functions.Editors
             // Load Settings like timeline position, editor layer, bpm active, etc
             LoadSettings();
 
-            if (LevelPausesOnStart)
+            if (EditorConfig.Instance.LevelPausesOnStart.Value)
             {
                 AudioManager.inst.CurrentAudioSource.Pause();
                 EditorManager.inst.UpdatePlayButton();
@@ -8372,7 +8180,9 @@ namespace EditorManagement.Functions.Editors
             var gameObject = PrefabEditor.inst.CreatePrefab.Duplicate(PrefabEditor.inst.externalContent, "add new prefab");
             gameObject.GetComponentInChildren<Text>().text = "New External Prefab";
 
-            var hoverSize = GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
+            var config = EditorConfig.Instance;
+
+            var hoverSize = config.PrefabButtonHoverSize.Value;
 
             var hover = gameObject.AddComponent<HoverUI>();
             hover.animateSca = true;
@@ -8390,36 +8200,20 @@ namespace EditorManagement.Functions.Editors
 
             bool isExternal = true;
 
-            var nameHorizontalOverflow = isExternal ?
-                GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-                GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var nameHorizontalOverflow = isExternal ? config.PrefabExternalNameHorizontalWrap.Value : config.PrefabInternalNameHorizontalWrap.Value;
 
-            var nameVerticalOverflow = isExternal ?
-                GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-                GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            var nameVerticalOverflow = isExternal ? config.PrefabExternalNameVerticalWrap.Value : config.PrefabInternalNameVerticalWrap.Value;
 
-            var nameFontSize = isExternal ?
-                GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
-                GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
+            var nameFontSize = isExternal ? config.PrefabExternalNameFontSize.Value : config.PrefabInternalNameFontSize.Value;
 
-            var typeHorizontalOverflow = isExternal ?
-                GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-                GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var typeHorizontalOverflow = isExternal ? config.PrefabExternalTypeHorizontalWrap.Value : config.PrefabInternalTypeHorizontalWrap.Value;
 
-            var typeVerticalOverflow = isExternal ?
-                GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-                GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            var typeVerticalOverflow = isExternal ? config.PrefabExternalTypeVerticalWrap.Value : config.PrefabInternalTypeVerticalWrap.Value;
 
-            var typeFontSize = isExternal ?
-                GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
-                GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
+            var typeFontSize = isExternal ? config.PrefabExternalTypeFontSize.Value : config.PrefabInternalTypeFontSize.Value;
 
-            var deleteAnchoredPosition = isExternal ?
-                GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
-                GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
-            var deleteSizeDelta = isExternal ?
-                GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
-                GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
+            var deleteAnchoredPosition = isExternal ? config.PrefabExternalDeleteButtonPos.Value : config.PrefabInternalDeleteButtonPos.Value;
+            var deleteSizeDelta = isExternal ? config.PrefabExternalDeleteButtonSca.Value : config.PrefabInternalDeleteButtonSca.Value;
 
             while (PrefabEditorManager.loadingPrefabTypes)
                 yield return null;
@@ -8431,7 +8225,6 @@ namespace EditorManagement.Functions.Editors
 
                 var prefab = Prefab.Parse(jn);
                 prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
-                //prefab.objects.ForEach(x => x.prefabInstanceID = "");
                 __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
                 __instance.LoadedPrefabsFiles.Add(file);
 
@@ -8458,11 +8251,11 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public void SetAutosave()
+        public void SetAutoSave()
         {
             EditorManager.inst.CancelInvoke("AutoSaveLevel");
             CancelInvoke("AutoSaveLevel");
-            InvokeRepeating("AutoSaveLevel", AutoSaveLoopTime, AutoSaveLoopTime);
+            InvokeRepeating("AutoSaveLevel", EditorConfig.Instance.AutosaveLoopTime.Value, EditorConfig.Instance.AutosaveLoopTime.Value);
         }
 
         public void AutoSaveLevel()
@@ -8493,7 +8286,7 @@ namespace EditorManagement.Functions.Editors
 
             EditorManager.inst.autosaves.Add(autosavePath);
 
-            while (EditorManager.inst.autosaves.Count > AutoSaveLimit)
+            while (EditorManager.inst.autosaves.Count > EditorConfig.Instance.AutosaveLimit.Value)
             {
                 var first = EditorManager.inst.autosaves[0];
                 if (RTFile.FileExists(first))
@@ -8508,9 +8301,6 @@ namespace EditorManagement.Functions.Editors
 
             autoSaving = false;
         }
-
-        public static int AutoSaveLimit => GetEditorProperty("Autosave Limit").GetConfigEntry<int>().Value;
-        public static float AutoSaveLoopTime => GetEditorProperty("Autosave Loop Time").GetConfigEntry<float>().Value;
 
         public static float timeSinceAutosaved;
 
@@ -9956,7 +9746,7 @@ namespace EditorManagement.Functions.Editors
 
             var backupPrefab = timelineBar.transform.Find("event");
 
-            var buttonHoverSize = GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+            var buttonHoverSize = EditorConfig.Instance.OpenLevelButtonHoverSize.Value;
 
             LSHelpers.DeleteChildren(autosaveContent);
 
@@ -10022,7 +9812,7 @@ namespace EditorManagement.Functions.Editors
 
         public void PlayDialogAnimation(GameObject gameObject, string dialogName, bool active)
         {
-            var play = GetEditorProperty("Play Editor Animations").GetConfigEntry<bool>().Value;
+            var play = EditorConfig.Instance.PlayEditorAnimations.Value;
             if (play && DialogAnimations.Has(x => x.name == dialogName) && gameObject.activeSelf != active)
             {
                 var dialogAnimation = DialogAnimations.Find(x => x.name == dialogName);
@@ -10203,7 +9993,7 @@ namespace EditorManagement.Functions.Editors
             Directory.Move(RTFile.ApplicationDirectory + editorListSlash + level, RTFile.ApplicationDirectory + "recycling/" + level);
         }
 
-        public static float SnapToBPM(float _time) => Mathf.RoundToInt(_time / (SettingEditor.inst.BPMMulti / BPMSnapDivisions)) * (SettingEditor.inst.BPMMulti / BPMSnapDivisions);
+        public static float SnapToBPM(float time) => Mathf.RoundToInt(time / (SettingEditor.inst.BPMMulti / EditorConfig.Instance.BPMSnapDivisions.Value)) * (SettingEditor.inst.BPMMulti / EditorConfig.Instance.BPMSnapDivisions.Value);
 
         public static void SetActive(GameObject gameObject, bool active)
         {
@@ -10215,25 +10005,16 @@ namespace EditorManagement.Functions.Editors
 
         #region Editor Properties
 
-        public static AcceptableValueRange<int> FontSizeLimit { get; } = new AcceptableValueRange<int>(1, 40);
-        public static AcceptableValueRange<float> HoverScaleLimit { get; } = new AcceptableValueRange<float>(0.7f, 1.4f);
-
-        public static ConfigFile Config => EditorPlugin.inst.Config;
-
-        public static EditorProperty GetEditorProperty(string name) => EditorProperties.Find(x => x.name == name);
+        //public static EditorProperty GetEditorProperty(string name) => EditorProperties.Find(x => x.name == name);
 
         public static List<EditorProperty> EditorProperties => new List<EditorProperty>()
         {
             #region General
 
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Debug", false, "If enabled, specific debugging functions for the editor will be enabled.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Editor Zen Mode", false, "If on, the player will not take damage in Preview Mode.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "BPM Snaps Keyframes", false, "Makes object's keyframes snap if Snap BPM is enabled.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("General", "BPM Snap Divisions", 4f, "How many times the snap is divided into. Can be good for songs that don't do 4 divisions.")),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.Debug),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditorZenMode),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BPMSnapsKeyframes),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BPMSnapDivisions),
             new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.IncreasedClipPlanes),
             new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.DiscordShowLevel),
             new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.EnableVideoBackground),
@@ -10245,405 +10026,219 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.IntSlider, RTFunctions.FunctionsPlugin.SFXVol),
             new EditorProperty(EditorProperty.ValueType.Enum, RTFunctions.FunctionsPlugin.Language),
             new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.ControllerRumble),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Dragging Plays Sound", true, "If dragging an object plays a sound.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Dragging Plays Sound Only With BPM", true, "If dragging an object plays a sound ONLY when BPM Snap is active.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Round To Nearest", true, "If numbers should be rounded up to 3 decimal points (for example, 0.43321245 into 0.433).")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Paste Offset", false, "When enabled objects that are pasted will be pasted at an offset based on the distance between the audio time and the copied object. Otherwise, the objects will be pasted at the earliest objects start time.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Bring To Selection", false, "When an object is selected (whether it be a regular object, a marker, etc), it will move the layer and audio time to that object.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Create Objects at Camera Center", true, "When an object is created, its position will be set to that of the camera's.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Create Objects Scale Parent Default", true, "The default value for new Beatmap Objects' Scale Parent.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Allow Editor Keybinds With Editor Cam", true, "Allows keybinds to be used if EventsCore editor camera is on.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Rotation Event Keyframe Resets", true, "When an Event / Check rotation keyframe is created, it resets the value to 0.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("General", "Remember Last Keyframe Type", false, "When an object is selected for the first time, it selects the previous objects' keyframe selection type. For example, say you had a color keyframe selected, this newly selected object will select the first color keyframe.")),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingPlaysSound),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingPlaysSoundOnlyWithBPM),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.RoundToNearest),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabExampleTemplate),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PasteOffset),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BringToSelection),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.CreateObjectsatCameraCenter),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.CreateObjectsScaleParentDefault),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AllowEditorKeybindsWithEditorCam),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.RotationEventKeyframeResets),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.RememberLastKeyframeType),
 
             #endregion
 
             #region Timeline
 
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Dragging main Cursor Pauses Level", true, "If dragging the cursor pauses the level.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Timeline Cursor Color", new Color(0.251f, 0.4627f, 0.8745f, 1f), "Color of the main timeline cursor.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Keyframe Cursor Color", new Color(0.251f, 0.4627f, 0.8745f, 1f), "Color of the object timeline cursor.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Object Selection Color", new Color(0.251f, 0.4627f, 0.8745f, 1f), "Color of selected objects.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Timeline", "Main Zoom Bounds", new Vector2(16f, 512f), "The limits of the main timeline zoom.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Timeline", "Keyframe Zoom Bounds", new Vector2(1f, 512f), "The limits of the keyframe timeline zoom.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Timeline", "Main Zoom Amount", 0.05f, "Sets the zoom in & out amount for the main timeline.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Timeline", "Keyframe Zoom Amount", 0.05f, "Sets the zoom in & out amount for the keyframe timeline.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Timeline", "Keyframe End Length Offset", 2f, "Sets the amount of space you have after the last keyframe in an object.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Event Labels Render Left", false, "If the Event Layer labels should render on the left side or not.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Waveform Generate", true, "Allows the timeline waveform to generate. (Waveform might not show on some devices and will increase level load times)")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Waveform Re-render", false, "If the timeline waveform should update when a value is changed.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Timeline", "Waveform Mode", WaveformType.Legacy, "The mode of the timeline waveform.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Waveform BG Color", Color.clear, "Color of the background for the waveform.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Waveform Top Color", LSColors.red300, "If waveform mode is Legacy, this will be the top color. Otherwise, it will be the regular color.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Waveform Bottom Color", LSColors.blue300, "If waveform is Legacy, this will be the bottom color. Otherwise, it will be unused.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Timeline", "Waveform Texture Format", TextureFormat.ARGB32, "What format the waveform's texture should render under.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Timeline Grid Enabled", true, "If the timeline grid renders.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Timeline", "Timeline Grid Color", new Color(0.2157f, 0.2157f, 0.2196f, 1f), "The color of the timeline grid.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Timeline", "Timeline Grid Thickness", 2f, "The size of each line of the timeline grid.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Timeline", "Marker Loop Active", false, "If the marker should loop between markers.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Timeline", "Marker Loop Begin", 0, "Audio time gets set to this marker.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Timeline", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.")),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingMainCursorPausesLevel),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.TimelineCursorColor),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.KeyframeCursorColor),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ObjectSelectionColor),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.MainZoomBounds),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeyframeZoomBounds),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.MainZoomAmount),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeyframeZoomAmount),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeyframeEndLengthOffset),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.TimelineObjectPrefabTypeIcon),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EventLabelsRenderLeft),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WaveformGenerate),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WaveformRerender),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WaveformMode),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.WaveformBGColor),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.WaveformTopColor),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.WaveformBottomColor),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WaveformTextureFormat),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.TimelineGridEnabled),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.TimelineGridColor),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.TimelineGridThickness),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.MarkerLoopActive),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerLoopBegin),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerLoopEnd),
 
             #endregion
 
             #region Data
 
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Data", "Autosave Limit", 7, "If autosave count reaches this number, delete the first autosave.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Data", "Autosave Loop Time", 600f, "The repeat time of autosave.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Level Loads Last Time", true, "Sets the editor position (audio time, layer, etc) to the last saved editor position on level load.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Saving Saves Theme Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Update Prefab List on Files Changed", false, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Update Theme List on Files Changed", false, "When you add a theme to your theme path, the editor will automatically update the theme list for you.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Show Levels Without Cover Notification", false, "Sends an error notification for what levels don't have covers.")),
-            new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Data", "ZIP Level Export Path", "", "The custom path to export a zipped level to. If no path is set then it will export to beatmaps/exports.")),
-            new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Data", "Convert Level LS to VG Export Path", "", "The custom path to export a level to. If no path is set then it will export to beatmaps/exports.")),
-            new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Data", "Convert Prefab LS to VG Export Path", "", "The custom path to export a prefab to. If no path is set then it will export to beatmaps/exports.")),
-            new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Data", "Convert Theme LS to VG Export Path", "", "The custom path to export a prefab to. If no path is set then it will export to beatmaps/exports.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Data", "Theme Saves Indents", false, "If .lst files should save with multiple lines and indents.")),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.AutosaveLimit),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosaveLoopTime),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.LevelLoadsLastTime),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.LevelPausesOnStart),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SavingSavesThemeOpacity),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.UpdatePrefabListOnFilesChanged),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.UpdateThemeListOnFilesChanged),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowLevelsWithoutCoverNotification),
+            new EditorProperty(EditorProperty.ValueType.String, EditorPlugin.EditorConfig.ZIPLevelExportPath),
+            new EditorProperty(EditorProperty.ValueType.String, EditorPlugin.EditorConfig.ConvertLevelLSToVGExportPath),
+            new EditorProperty(EditorProperty.ValueType.String, EditorPlugin.EditorConfig.ConvertPrefabLSToVGExportPath),
+            new EditorProperty(EditorProperty.ValueType.String, EditorPlugin.EditorConfig.ConvertThemeLSToVGExportPath),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ThemeSavesIndents),
 
             #endregion
 
             #region Editor GUI
 
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Drag UI", true, "Specific UI popups can be dragged around (such as the parent selector, etc).")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Play Editor Animations", false, "If popups should be animated.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Show Modded Features in Editor", true, "Z axis, 10-18 color slots, homing keyframes, etc get set active / inactive with this on / off respectively")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Import Prefabs Directly", false, "When clicking on an External Prefab, instead of importing it directly it'll bring up a Prefab External View Dialog if this config is off.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Themes Per Page", 10, "How many themes are shown per page in the Beatmap Themes popup.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Editor GUI", "Notification Width", 221f, "Width of the notifications.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Editor GUI", "Notification Size", 1f, "Total size of the notifications.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Notification Direction", Direction.Down, "Direction the notifications popup from.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Notifications Display", true, "If the notifications should display. Does not include the help box.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Adjust Position Inputs", true, "If position keyframe input fields should be adjusted so they're in a proper row rather than having Z Axis below X Axis without a label. Drawback with doing this is it makes the fields smaller than normal.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Hide Visual Elements When Object Is Empty", true, "If the Beatmap Object is empty, anything related to the visuals of the object doesn't show.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Position", Vector2.zero, "The position of the Open Level popup.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Scale", new Vector2(600f, 400f), "The size of the Open Level popup.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Editor Path Pos", new Vector2(275f, 16f), "The position of the editor path input field.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Editor GUI", "Open Level Editor Path Length", 104f, "The length of the editor path input field.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level List Refresh Position", new Vector2(330f, 432f), "The position of the refresh button.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Toggle Position", new Vector2(600f, 16f), "The position of the descending toggle.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Dropdown Position", new Vector2(501f, 416f), "The position of the sort dropdown.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Cell Size", new Vector2(584f, 32f), "Size of each cell.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Open Level Cell Constraint Type", GridLayoutGroup.Constraint.FixedColumnCount, "How the cells are layed out.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Cell Constraint Count", 1, "How many rows / columns there are, depending on Constraint Type.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Cell Spacing", new Vector2(0f, 8f), "The space between each cell.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Open Level Text Horizontal Wrap", HorizontalWrapMode.Wrap, "Horizontal Wrap Mode of the folder button text.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Open Level Text Vertical Wrap", VerticalWrapMode.Truncate, "Vertical Wrap Mode of the folder button text.")),
-            new EditorProperty(EditorProperty.ValueType.IntSlider,
-                Config.Bind("Editor GUI", "Open Level Text Font Size", 20, new ConfigDescription("Font size of the folder button text.", FontSizeLimit))),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DragUI),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PlayEditorAnimations),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowModdedFeaturesInEditor),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HoverUIPlaySound),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ImportPrefabsDirectly),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.ThemesPerPage),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NotificationWidth),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NotificationSize),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NotificationDirection),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NotificationsDisplay),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AdjustPositionInputs),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HideVisualElementsWhenObjectIsEmpty),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelPosition),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelScale),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelEditorPathPos),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenLevelEditorPathLength),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelListRefreshPosition),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelTogglePosition),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelDropdownPosition),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelCellSize),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenLevelCellConstraintType),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelCellConstraintCount),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelCellSpacing),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenLevelTextHorizontalWrap),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenLevelTextVerticalWrap),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, EditorPlugin.EditorConfig.OpenLevelTextFontSize),
 
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Folder Name Max", 14, "Limited length of the folder name.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Song Name Max", 22, "Limited length of the song name.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Artist Name Max", 16, "Limited length of the artist name.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Creator Name Max", 16, "Limited length of the creator name.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Description Max", 16, "Limited length of the description.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Open Level Date Max", 16, "Limited length of the date.")),
-            new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Editor GUI", "Open Level Text Formatting", ".  /{0} : {1} by {2}",
-                    "The way the text is formatted for each level. {0} is folder, {1} is song, {2} is artist, {3} is creator, {4} is difficulty, {5} is description and {6} is last edited.")),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelFolderNameMax),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelSongNameMax),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelArtistNameMax),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelCreatorNameMax),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelDescriptionMax),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.OpenLevelDateMax),
+            new EditorProperty(EditorProperty.ValueType.String, EditorPlugin.EditorConfig.OpenLevelTextFormatting),
 
-            new EditorProperty(EditorProperty.ValueType.FloatSlider,
-                Config.Bind("Editor GUI", "Open Level Button Hover Size", 1f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Cover Position", new Vector2(-276f, 0f), "Position of the level cover.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Open Level Cover Scale", new Vector2(26f, 26f), "Size of the level cover.")),
+            new EditorProperty(EditorProperty.ValueType.FloatSlider, EditorPlugin.EditorConfig.OpenLevelButtonHoverSize),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelCoverPosition),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenLevelCoverScale),
 
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Changes Refresh Level List", false, "If the level list reloads whenever a change is made.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Open Level Show Delete Button", false, "Shows a delete button that can be used to move levels to a recycling folder.")),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ChangesRefreshLevelList),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenLevelShowDeleteButton),
 
-            new EditorProperty(EditorProperty.ValueType.FloatSlider,
-                Config.Bind("Editor GUI", "Timeline Object Hover Size", 1f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
-            new EditorProperty(EditorProperty.ValueType.FloatSlider,
-                Config.Bind("Editor GUI", "Keyframe Hover Size", 1f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
-            new EditorProperty(EditorProperty.ValueType.FloatSlider,
-                Config.Bind("Editor GUI", "Timeline Bar Buttons Hover Size", 1.05f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
-            new EditorProperty(EditorProperty.ValueType.FloatSlider,
-                Config.Bind("Editor GUI", "Prefab Button Hover Size", 1.05f, new ConfigDescription("How big the button gets when hovered.", HoverScaleLimit))),
+            new EditorProperty(EditorProperty.ValueType.FloatSlider, EditorPlugin.EditorConfig.TimelineObjectHoverSize),
+            new EditorProperty(EditorProperty.ValueType.FloatSlider, EditorPlugin.EditorConfig.KeyframeHoverSize),
+            new EditorProperty(EditorProperty.ValueType.FloatSlider, EditorPlugin.EditorConfig.TimelineBarButtonsHoverSize),
+            new EditorProperty(EditorProperty.ValueType.FloatSlider, EditorPlugin.EditorConfig.PrefabButtonHoverSize),
 
             // Prefab Internal
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab Internal Popup Pos", new Vector2(0f, -16f), "Position of the internal prefabs popup.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab Internal Popup Size", new Vector2(400f, -32f), "Scale of the internal prefabs popup.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Prefab Internal Horizontal Scroll", false, "If you can scroll left / right or not.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab Internal Cell Size", new Vector2(383f, 32f), "Size of each Prefab Item.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab Internal Constraint Mode", GridLayoutGroup.Constraint.FixedColumnCount, "Which direction the prefab list goes.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Prefab Internal Constraint", 1, "How many columns the prefabs are divided into.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab Internal Spacing", new Vector2(8f, 8f), "Distance between each Prefab Cell.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab Internal Start Axis", GridLayoutGroup.Axis.Horizontal, "Start axis of the prefab list.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab Internal Delete Button Pos", new Vector2(367f, -16f), "Position of the Delete Button.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab Internal Delete Button Sca", new Vector2(32f, 32f), "Scale of the Delete Button.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab Internal Name Horizontal Wrap", HorizontalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab Internal Name Vertical Wrap", VerticalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.IntSlider,
-                Config.Bind("Editor GUI", "Prefab Internal Name Font Size", 20, new ConfigDescription("Size of the text font.", FontSizeLimit))),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab Internal Type Horizontal Wrap", HorizontalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab Internal Type Vertical Wrap", VerticalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.IntSlider,
-                Config.Bind("Editor GUI", "Prefab Internal Type Font Size", 20, new ConfigDescription("Size of the text font.", FontSizeLimit))),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabInternalPopupPos),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabInternalPopupSize),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabInternalHorizontalScroll),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabInternalCellSize),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabInternalConstraintMode),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.PrefabInternalConstraint),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabInternalSpacing),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabInternalStartAxis),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabInternalDeleteButtonPos),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabInternalDeleteButtonSca),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabInternalNameHorizontalWrap),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabInternalNameVerticalWrap),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, EditorPlugin.EditorConfig.PrefabInternalNameFontSize),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabInternalTypeHorizontalWrap),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabInternalTypeVerticalWrap),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, EditorPlugin.EditorConfig.PrefabInternalTypeFontSize),
 
             // Prefab External
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Popup Pos", new Vector2(0f, -16f), "Position of the external prefabs popup.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Popup Size", new Vector2(400f, -32f), "Scale of the external prefabs popup.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Prefab Path Pos", new Vector2(325f, 15f), "Position of the prefab path input field.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Editor GUI", "Prefab External Prefab Path Length", 150f, "Length of the prefab path input field.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Prefab Refresh Pos", new Vector2(210f, 450f), "Position of the prefab refresh button.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Editor GUI", "Prefab External Horizontal Scroll", false, "If you can scroll left / right or not.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Cell Size", new Vector2(383f, 32f), "Size of each Prefab Item.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab External Constraint Mode", GridLayoutGroup.Constraint.FixedColumnCount, "Which direction the prefab list goes.")),
-            new EditorProperty(EditorProperty.ValueType.Int,
-                Config.Bind("Editor GUI", "Prefab External Constraint", 1, "How many columns the prefabs are divided into.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Spacing", new Vector2(8f, 8f), "Distance between each Prefab Cell.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab External Start Axis", GridLayoutGroup.Axis.Horizontal, "Start axis of the prefab list.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Delete Button Pos", new Vector2(367f, -16f), "Position of the Delete Button.")),
-            new EditorProperty(EditorProperty.ValueType.Vector2,
-                Config.Bind("Editor GUI", "Prefab External Delete Button Sca", new Vector2(32f, 32f), "Scale of the Delete Button.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab External Name Horizontal Wrap", HorizontalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab External Name Vertical Wrap", VerticalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.IntSlider,
-                Config.Bind("Editor GUI", "Prefab External Name Font Size", 20, new ConfigDescription("Size of the text font.", FontSizeLimit))),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab External Type Horizontal Wrap", HorizontalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Editor GUI", "Prefab External Type Vertical Wrap", VerticalWrapMode.Overflow, "If the text overflows into another line or keeps going.")),
-            new EditorProperty(EditorProperty.ValueType.IntSlider,
-                Config.Bind("Editor GUI", "Prefab External Type Font Size", 20, new ConfigDescription("Size of the text font.", FontSizeLimit))),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalPopupPos),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalPopupSize),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalPrefabPathPos),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabExternalPrefabPathLength),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalPrefabRefreshPos),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabExternalHorizontalScroll),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalCellSize),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabExternalConstraintMode),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.PrefabExternalConstraint),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalSpacing),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabExternalStartAxis),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalDeleteButtonPos),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabExternalDeleteButtonSca),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabExternalNameHorizontalWrap),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabExternalNameVerticalWrap),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, EditorPlugin.EditorConfig.PrefabExternalNameFontSize),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabExternalTypeHorizontalWrap),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabExternalTypeVerticalWrap),
+            new EditorProperty(EditorProperty.ValueType.IntSlider, EditorPlugin.EditorConfig.PrefabExternalTypeFontSize),
 
             #endregion
 
             #region Fields
             
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Fields", "Scrollwheel Large Amount Key", KeyCode.LeftControl, "If this key is being held while you are scrolling over a number field, the number will change by a large amount. If the key is set to None, you will not need to hold a key.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Fields", "Scrollwheel Small Amount Key", KeyCode.LeftAlt, "If this key is being held while you are scrolling over a number field, the number will change by a small amount. If the key is set to None, you will not need to hold a key.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Fields", "Scrollwheel Regular Amount Key", KeyCode.None, "If this key is being held while you are scrolling over a number field, the number will change by the regular amount. If the key is set to None, you will not need to hold a key.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Fields", "Scrollwheel Vector2 Large Amount Key", KeyCode.LeftControl, "If this key is being held while you are scrolling over a number field, the number will change by a large amount. If the key is set to None, you will not need to hold a key.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Fields", "Scrollwheel Vector2 Small Amount Key", KeyCode.LeftAlt, "If this key is being held while you are scrolling over a number field, the number will change by a small amount. If the key is set to None, you will not need to hold a key.")),
-            new EditorProperty(EditorProperty.ValueType.Enum,
-                Config.Bind("Fields", "Scrollwheel Vector2 Regular Amount Key", KeyCode.None, "If this key is being held while you are scrolling over a number field, the number will change by the regular amount. If the key is set to None, you will not need to hold a key.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Fields", "Show Modified Colors", true, "Keyframe colors show any modifications done (such as hue, saturation and value).")),
-            new EditorProperty(EditorProperty.ValueType.String,
-                Config.Bind("Fields", "Theme Template Name", "New Theme", "Name of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template GUI", LSColors.white, "GUI Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Tail", LSColors.white, "Tail Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG", LSColors.gray900, "BG Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 1", LSColors.HexToColor("E57373"), "Player 1 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 2", LSColors.HexToColor("64B5F6"), "Player 2 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 3", LSColors.HexToColor("81C784"), "Player 3 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template Player 4", LSColors.HexToColor("FFB74D"), "Player 4 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 1", LSColors.gray100, "OBJ 1 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 2", LSColors.gray200, "OBJ 2 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 3", LSColors.gray300, "OBJ 3 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 4", LSColors.gray400, "OBJ 4 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 5", LSColors.gray500, "OBJ 5 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 6", LSColors.gray600, "OBJ 6 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 7", LSColors.gray700, "OBJ 7 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 8", LSColors.gray800, "OBJ 8 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 9", LSColors.gray900, "OBJ 9 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 10", LSColors.gray100, "OBJ 10 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 11", LSColors.gray200, "OBJ 11 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 12", LSColors.gray300, "OBJ 12 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 13", LSColors.gray400, "OBJ 13 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 14", LSColors.gray500, "OBJ 14 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 15", LSColors.gray600, "OBJ 15 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 16", LSColors.gray700, "OBJ 16 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 17", LSColors.gray800, "OBJ 17 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template OBJ 18", LSColors.gray900, "OBJ 18 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 1", LSColors.pink100, "BG 1 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 2", LSColors.pink200, "BG 2 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 3", LSColors.pink300, "BG 3 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 4", LSColors.pink400, "BG 4 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 5", LSColors.pink500, "BG 5 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 6", LSColors.pink600, "BG 6 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 7", LSColors.pink700, "BG 7 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 8", LSColors.pink800, "BG 8 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template BG 9", LSColors.pink900, "BG 9 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 1", LSColors.gray100, "FX 1 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 2", LSColors.gray200, "FX 2 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 3", LSColors.gray300, "FX 3 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 4", LSColors.gray400, "FX 4 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 5", LSColors.gray500, "FX 5 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 6", LSColors.gray600, "FX 6 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 7", LSColors.gray700, "FX 7 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 8", LSColors.gray800, "FX 8 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 9", LSColors.gray900, "FX 9 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 10", LSColors.gray100, "FX 10 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 11", LSColors.gray200, "FX 11 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 12", LSColors.gray300, "FX 12 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 13", LSColors.gray400, "FX 13 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 14", LSColors.gray500, "FX 14 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 15", LSColors.gray600, "FX 15 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 16", LSColors.gray700, "FX 16 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 17", LSColors.gray800, "FX 17 Color of the template theme.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Fields", "Theme Template FX 18", LSColors.gray900, "FX 18 Color of the template theme.")),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ScrollwheelLargeAmountKey),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ScrollwheelSmallAmountKey),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ScrollwheelRegularAmountKey),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ScrollwheelVector2LargeAmountKey),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ScrollwheelVector2SmallAmountKey),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ScrollwheelVector2RegularAmountKey),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowModifiedColors),
+            new EditorProperty(EditorProperty.ValueType.String, EditorPlugin.EditorConfig.ThemeTemplateName),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateGUI),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateTail),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplatePlayer1),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplatePlayer2),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplatePlayer3),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplatePlayer4),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ1),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ2),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ3),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ4),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ5),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ6),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ7),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ8),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ9),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ10),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ11),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ12),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ13),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ14),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ15),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ16),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ17),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateOBJ18),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG1),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG2),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG3),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG4),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG5),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG6),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG7),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG8),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateBG9),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX1),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX2),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX3),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX4),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX5),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX6),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX7),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX8),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX9),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX10),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX11),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX12),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX13),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX14),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX15),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX16),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX17),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ThemeTemplateFX18),
 
             #endregion
 
@@ -10659,28 +10254,17 @@ namespace EditorManagement.Functions.Editors
 
             #region Preview
 
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Preview", "Only Objects on Current Layer Visible", false, "If enabled, all objects not on current layer will be set to transparent")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Visible object opacity", 0.2f, "Opacity of the objects not on the current layer.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Preview", "Show Empties", false, "If enabled, show all objects that are set to the empty object type.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Preview", "Only Show Damagable", false, "If enabled, only objects that can damage the player will be shown.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Preview", "Highlight Objects", true, "If enabled and if cursor hovers over an object, it will be highlighted.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Preview", "Object Highlight Amount", new Color(0.1f, 0.1f, 0.1f), "If an object is hovered, it adds this amount of color to the hovered object.")),
-            new EditorProperty(EditorProperty.ValueType.Color,
-                Config.Bind("Preview", "Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to the hovered object.")),
-            new EditorProperty(EditorProperty.ValueType.Bool,
-                Config.Bind("Preview", "Object Dragger Enabled", false, "If an object can be dragged around.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Object Dragger Rotator Radius", 22f, "The size of the Object Draggers' rotation ring.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Object Dragger Scaler Offset", 6f, "The distance of the Object Draggers' scale arrows.")),
-            new EditorProperty(EditorProperty.ValueType.Float,
-                Config.Bind("Preview", "Object Dragger Scaler Scale", 1.6f, "The size of the Object Draggers' scale arrows.")),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OnlyObjectsOnCurrentLayerVisible),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.VisibleObjectOpacity),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowEmpties),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OnlyShowDamagable),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HighlightObjects),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ObjectHighlightAmount),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ObjectHighlightDoubleAmount),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectDraggerEnabled),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectDraggerRotatorRadius),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectDraggerScalerOffset),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectDraggerScalerScale),
 
             #endregion
         };

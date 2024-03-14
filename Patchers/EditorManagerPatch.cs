@@ -1,36 +1,23 @@
-﻿using System;
-using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.IO;
-
-using HarmonyLib;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using LSFunctions;
-using SimpleJSON;
+﻿using CielaSpike;
 using Crosstales.FB;
-using CielaSpike;
-
-using RTFunctions.Functions;
-using RTFunctions.Functions.Animation;
-using RTFunctions.Functions.Animation.Keyframe;
-using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Data;
-using RTFunctions.Functions.Data.Player;
-using RTFunctions.Functions.Managers;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Patchers;
-
 using EditorManagement.Functions;
 using EditorManagement.Functions.Editors;
-using EditorManagement.Functions.Helpers;
-
+using HarmonyLib;
+using LSFunctions;
+using RTFunctions.Functions;
+using RTFunctions.Functions.Data;
+using RTFunctions.Functions.Data.Player;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using DGEase = DG.Tweening.Ease;
 
 namespace EditorManagement.Patchers
@@ -179,10 +166,8 @@ namespace EditorManagement.Patchers
         static bool StartPrefix()
         {
             Instance.GetLevelList();
-            DiscordController.inst.OnStateChange("");
-            DiscordController.inst.OnArtChange("pa_logo_white");
-            DiscordController.inst.OnIconChange("editor");
-            DiscordController.inst.OnDetailsChange("In Editor");
+
+            RTFunctions.FunctionsPlugin.UpdateDiscordStatus("", "In Editor", "editor");
 
             Instance.SetDialogStatus("Timeline", true, true);
 
@@ -223,7 +208,7 @@ namespace EditorManagement.Patchers
             Instance.notification.transform.Find("info").gameObject.SetActive(true);
 
             //Set Editor Zoom cap
-            Instance.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
+            Instance.zoomBounds = EditorConfig.Instance.MainZoomBounds.Value;
 
             return false;
         }
@@ -498,6 +483,8 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool handleViewShortcutsPrefix()
         {
+            var config = EditorConfig.Instance;
+
             if (Instance.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object)
                 && Instance.IsOverObjTimeline
                 && !LSHelpers.IsUsingInputField()
@@ -510,9 +497,9 @@ namespace EditorManagement.Patchers
                     multiply = 0.1f;
 
                 if (InputDataManager.inst.editorActions.ZoomIn.WasPressed)
-                    ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + RTEditor.GetEditorProperty("Keyframe Zoom Amount").GetConfigEntry<float>().Value * multiply;
+                    ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat + config.KeyframeZoomAmount.Value * multiply;
                 if (InputDataManager.inst.editorActions.ZoomOut.WasPressed)
-                    ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - RTEditor.GetEditorProperty("Keyframe Zoom Amount").GetConfigEntry<float>().Value * multiply;
+                    ObjEditor.inst.Zoom = ObjEditor.inst.zoomFloat - config.KeyframeZoomAmount.Value * multiply;
             }
 
             if (!Instance.IsOverObjTimeline && RTEditor.inst.isOverMainTimeline)
@@ -524,9 +511,9 @@ namespace EditorManagement.Patchers
                     multiply = 0.1f;
 
                 if (InputDataManager.inst.editorActions.ZoomIn.WasPressed)
-                    Instance.Zoom = Instance.zoomFloat + RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
+                    Instance.Zoom = Instance.zoomFloat + config.MainZoomAmount.Value * multiply;
                 if (InputDataManager.inst.editorActions.ZoomOut.WasPressed)
-                    Instance.Zoom = Instance.zoomFloat - RTEditor.GetEditorProperty("Main Zoom Amount").GetConfigEntry<float>().Value * multiply;
+                    Instance.Zoom = Instance.zoomFloat - config.MainZoomAmount.Value * multiply;
             }
 
             return false;
@@ -553,7 +540,7 @@ namespace EditorManagement.Patchers
                 Instance.wasDraggingPointer = true;
                 if (Mathf.Abs(Instance.audioTimeForSlider / Instance.Zoom - Instance.prevAudioTime) < 2f)
                 {
-                    if (RTEditor.GetEditorProperty("Dragging main Cursor Pauses Level").GetConfigEntry<bool>().Value)
+                    if (EditorConfig.Instance.DraggingMainCursorPausesLevel.Value)
                     {
                         AudioManager.inst.CurrentAudioSource.Pause();
                         Instance.UpdatePlayButton();
@@ -712,6 +699,8 @@ namespace EditorManagement.Patchers
             Instance.RenderOpenBeatmapPopup();
             Instance.ShowDialog("Open File Popup");
 
+            var config = EditorConfig.Instance;
+
             try
             {
                 //Create Local Variables
@@ -721,14 +710,14 @@ namespace EditorManagement.Patchers
                 var openGridLVL = openTLevel.Find("mask/content").GetComponent<GridLayoutGroup>();
 
                 //Set Open File Popup RectTransform
-                openRTLevel.anchoredPosition = RTEditor.GetEditorProperty("Open Level Position").GetConfigEntry<Vector2>().Value;
-                openRTLevel.sizeDelta = RTEditor.GetEditorProperty("Open Level Scale").GetConfigEntry<Vector2>().Value;
+                openRTLevel.anchoredPosition = config.OpenLevelPosition.Value;
+                openRTLevel.sizeDelta = config.OpenLevelScale.Value;
 
                 //Set Open FIle Popup content GridLayoutGroup
-                openGridLVL.cellSize = RTEditor.GetEditorProperty("Open Level Cell Size").GetConfigEntry<Vector2>().Value;
-                openGridLVL.constraint = RTEditor.GetEditorProperty("Open Level Cell Constraint Type").GetConfigEntry<GridLayoutGroup.Constraint>().Value;
-                openGridLVL.constraintCount = RTEditor.GetEditorProperty("Open Level Cell Constraint Count").GetConfigEntry<int>().Value;
-                openGridLVL.spacing = RTEditor.GetEditorProperty("Open Level Cell Spacing").GetConfigEntry<Vector2>().Value;
+                openGridLVL.cellSize = config.OpenLevelCellSize.Value;
+                openGridLVL.constraint = config.OpenLevelCellConstraintType.Value;
+                openGridLVL.constraintCount = config.OpenLevelCellConstraintCount.Value;
+                openGridLVL.spacing = config.OpenLevelCellSpacing.Value;
             }
             catch (Exception ex)
             {
@@ -918,7 +907,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool ClearDialogsPrefix(params EditorManager.EditorDialog.DialogType[] __0)
         {
-            var play = RTEditor.GetEditorProperty("Play Editor Animations").GetConfigEntry<bool>().Value;
+            var play = EditorConfig.Instance.PlayEditorAnimations.Value;
 
             var editorDialogs = Instance.EditorDialogs;
             for (int i = 0; i < editorDialogs.Count; i++)

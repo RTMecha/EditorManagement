@@ -20,10 +20,11 @@ using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Components.Player;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Data;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.4.2")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.4.3")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -31,6 +32,8 @@ namespace EditorManagement
         readonly Harmony harmony = new Harmony("EditorManagement");
 
 		public static List<int> allLayers = new List<int>();
+
+		public static EditorConfig EditorConfig { get; set; }
 
         void Awake()
         {
@@ -55,7 +58,18 @@ namespace EditorManagement
 			}
 			catch (Exception ex)
             {
-				Logger.LogError("Mod Error" + ex.ToString());
+				Logger.LogError($"Mod failed to register to the ModCompatibility. \nException: {ex}");
+				throw;
+            }
+
+            try
+            {
+				EditorConfig = new EditorConfig(Config);
+			}
+            catch (Exception ex)
+            {
+				Logger.LogError($"Mod failed to initialize configs.\nException: {ex}");
+				throw;
             }
 
 			EditorThemeManager.Init();
@@ -63,16 +77,16 @@ namespace EditorManagement
 			SetPreviewConfig();
 			UpdateDefaultThemeValues();
 
-			SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
-			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
-			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
-			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value;
-			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
-			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
-			ThemeEditorManager.themesPerPage = RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().Value;
-			RTEditor.DraggingPlaysSound = RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().Value;
-			RTEditor.DraggingPlaysSoundBPM = RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().Value;
-			RTEditor.ShowModdedUI = RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().Value;
+			SelectGUI.DragGUI = EditorConfig.DragUI.Value;
+			ObjectEditor.RenderPrefabTypeIcon = EditorConfig.TimelineObjectPrefabTypeIcon.Value;
+			ObjectEditor.TimelineObjectHoverSize = EditorConfig.TimelineObjectHoverSize.Value;
+			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = EditorConfig.HideVisualElementsWhenObjectIsEmpty.Value;
+			KeybindManager.AllowKeys = EditorConfig.AllowEditorKeybindsWithEditorCam.Value;
+			PrefabEditorManager.ImportPrefabsDirectly = EditorConfig.ImportPrefabsDirectly.Value;
+			ThemeEditorManager.themesPerPage = EditorConfig.ThemesPerPage.Value;
+			RTEditor.DraggingPlaysSound = EditorConfig.DraggingPlaysSound.Value;
+			RTEditor.DraggingPlaysSoundBPM = EditorConfig.DraggingPlaysSoundOnlyWithBPM.Value;
+			RTEditor.ShowModdedUI = EditorConfig.ShowModdedFeaturesInEditor.Value;
 
 			SetupSettingChanged();
 
@@ -84,85 +98,87 @@ namespace EditorManagement
 
 		void SetupSettingChanged()
 		{
-            RTEditor.GetEditorProperty("Timeline Grid Enabled").GetConfigEntry<bool>().SettingChanged += TimelineGridChanged;
-            RTEditor.GetEditorProperty("Timeline Grid Thickness").GetConfigEntry<float>().SettingChanged += TimelineGridChanged;
-            RTEditor.GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().SettingChanged += TimelineGridChanged;
-            RTEditor.GetEditorProperty("BPM Snap Divisions").GetConfigEntry<float>().SettingChanged += TimelineGridChanged;
-			RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().SettingChanged += DragUIChanged;
+			EditorConfig.TimelineGridEnabled.SettingChanged += TimelineGridChanged;
+			EditorConfig.TimelineGridThickness.SettingChanged += TimelineGridChanged;
+			EditorConfig.TimelineGridColor.SettingChanged += TimelineGridChanged;
 
-            RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().SettingChanged += ObjectEditorChanged;
-			RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().SettingChanged += ObjectEditorChanged;
+			EditorConfig.BPMSnapDivisions.SettingChanged += TimelineGridChanged;
+			EditorConfig.DragUI.SettingChanged += DragUIChanged;
 
-			RTEditor.GetEditorProperty("Theme Template Name").GetConfigEntry<string>().SettingChanged += ThemeTemplateChanged;
-			RTEditor.GetEditorProperty("Theme Template GUI").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
-			RTEditor.GetEditorProperty("Theme Template Tail").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
-			RTEditor.GetEditorProperty("Theme Template BG").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
+			EditorConfig.HideVisualElementsWhenObjectIsEmpty.SettingChanged += ObjectEditorChanged;
+			EditorConfig.KeyframeZoomBounds.SettingChanged += ObjectEditorChanged;
 
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultPlayerColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template Player {i + 1}"))
-						RTEditor.GetEditorProperty($"Theme Template Player {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
-				}
-				catch
-				{
+			EditorConfig.ThemeTemplateName.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateGUI.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateTail.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG.SettingChanged += ThemeTemplateChanged;
 
-				}
-			}
+			EditorConfig.ThemeTemplatePlayer1.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplatePlayer2.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplatePlayer3.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplatePlayer4.SettingChanged += ThemeTemplateChanged;
 
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultObjectColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template OBJ {i + 1}"))
-						RTEditor.GetEditorProperty($"Theme Template OBJ {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
-				}
-				catch
-				{
+			EditorConfig.ThemeTemplateOBJ1.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ2.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ3.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ4.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ5.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ6.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ7.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ8.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ9.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ10.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ11.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ12.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ13.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ14.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ15.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ16.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ17.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateOBJ18.SettingChanged += ThemeTemplateChanged;
 
-				}
-			}
+			EditorConfig.ThemeTemplateBG1.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG2.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG3.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG4.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG5.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG6.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG7.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG8.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateBG9.SettingChanged += ThemeTemplateChanged;
 
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaulBackgroundColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template BG {i + 1}"))
-						RTEditor.GetEditorProperty($"Theme Template BG {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
-				}
-				catch
-				{
+			EditorConfig.ThemeTemplateFX1.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX2.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX3.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX4.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX5.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX6.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX7.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX8.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX9.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX10.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX11.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX12.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX13.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX14.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX15.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX16.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX17.SettingChanged += ThemeTemplateChanged;
+			EditorConfig.ThemeTemplateFX18.SettingChanged += ThemeTemplateChanged;
 
-				}
-			}
+            EditorConfig.ThemesPerPage.SettingChanged += ThemePopupChanged;
 
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultEffectColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template FX {i + 1}"))
-						RTEditor.GetEditorProperty($"Theme Template FX {i + 1}").GetConfigEntry<Color>().SettingChanged += ThemeTemplateChanged;
-				}
-				catch
-				{
+            EditorConfig.WaveformRerender.SettingChanged += TimelineWaveformChanged;
 
-				}
-			}
+            EditorConfig.DraggingPlaysSound.SettingChanged += DraggingChanged;
+            EditorConfig.DraggingPlaysSoundOnlyWithBPM.SettingChanged += DraggingChanged;
 
-            RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().SettingChanged += ThemePopupChanged;
-
-            RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().SettingChanged += TimelineWaveformChanged;
-
-            RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().SettingChanged += DraggingChanged;
-            RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().SettingChanged += DraggingChanged;
-
-            RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().SettingChanged += ModdedEditorChanged;
+            EditorConfig.ShowModdedFeaturesInEditor.SettingChanged += ModdedEditorChanged;
 		}
 
         void ModdedEditorChanged(object sender, EventArgs e)
 		{
-			RTEditor.ShowModdedUI = RTEditor.GetEditorProperty("Show Modded Features in Editor").GetConfigEntry<bool>().Value;
+			RTEditor.ShowModdedUI = EditorConfig.ShowModdedFeaturesInEditor.Value;
 
 			AdjustPositionInputsChanged?.Invoke();
 
@@ -193,13 +209,13 @@ namespace EditorManagement
 
 		void DraggingChanged(object sender, EventArgs e)
         {
-			RTEditor.DraggingPlaysSound = RTEditor.GetEditorProperty("Dragging Plays Sound").GetConfigEntry<bool>().Value;
-			RTEditor.DraggingPlaysSoundBPM = RTEditor.GetEditorProperty("Dragging Plays Sound Only With BPM").GetConfigEntry<bool>().Value;
+			RTEditor.DraggingPlaysSound = EditorConfig.DraggingPlaysSound.Value;
+			RTEditor.DraggingPlaysSoundBPM = EditorConfig.DraggingPlaysSoundOnlyWithBPM.Value;
 		}
 
         void TimelineWaveformChanged(object sender, EventArgs e)
 		{
-			if (RTEditor.GetEditorProperty("Waveform Re-render").GetConfigEntry<bool>().Value)
+			if (EditorConfig.WaveformRerender.Value)
 			{
 				RTEditor.inst.StartCoroutine(RTEditor.inst.AssignTimelineTexture());
 			}
@@ -207,18 +223,18 @@ namespace EditorManagement
 
 		void ThemePopupChanged(object sender, EventArgs e)
 		{
-			ThemeEditorManager.themesPerPage = RTEditor.GetEditorProperty("Themes Per Page").GetConfigEntry<int>().Value;
+			ThemeEditorManager.themesPerPage = EditorConfig.ThemesPerPage.Value;
 		}
 
         void ObjectEditorChanged(object sender, EventArgs e)
         {
-			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = RTEditor.GetEditorProperty("Hide Visual Elements When Object Is Empty").GetConfigEntry<bool>().Value;
+			ObjectEditor.HideVisualElementsWhenObjectIsEmpty = EditorConfig.HideVisualElementsWhenObjectIsEmpty.Value;
 
 			if (ObjEditor.inst)
             {
-				ObjEditor.inst.zoomBounds = RTEditor.GetEditorProperty("Keyframe Zoom Bounds").GetConfigEntry<Vector2>().Value;
-				ObjEditor.inst.ObjectLengthOffset = RTEditor.GetEditorProperty("Keyframe End Length Offset").GetConfigEntry<float>().Value;
-				ObjEditor.inst.SelectedColor = RTEditor.GetEditorProperty("Object Selection Color").GetConfigEntry<Color>().Value;
+				ObjEditor.inst.zoomBounds = EditorConfig.KeyframeZoomBounds.Value;
+				ObjEditor.inst.ObjectLengthOffset = EditorConfig.KeyframeEndLengthOffset.Value;
+				ObjEditor.inst.SelectedColor = EditorConfig.ObjectSelectionColor.Value;
 			}
 		}
 
@@ -226,15 +242,15 @@ namespace EditorManagement
         {
 			RTEditor.inst.timelineGridRenderer.enabled = false;
 
-			RTEditor.inst.timelineGridRenderer.color = RTEditor.GetEditorProperty("Timeline Grid Color").GetConfigEntry<Color>().Value;
-			RTEditor.inst.timelineGridRenderer.thickness = RTEditor.GetEditorProperty("Timeline Grid Thickness").GetConfigEntry<float>().Value;
+			RTEditor.inst.timelineGridRenderer.color = EditorConfig.TimelineGridColor.Value;
+			RTEditor.inst.timelineGridRenderer.thickness = EditorConfig.TimelineGridThickness.Value;
 
 			RTEditor.inst.SetTimelineGridSize();
 		}
 
 		void ThemeTemplateChanged(object sender, EventArgs e) => UpdateDefaultThemeValues();
 
-		void DragUIChanged(object sender, EventArgs e) => SelectGUI.DragGUI = RTEditor.GetEditorProperty("Drag UI").GetConfigEntry<bool>().Value;
+		void DragUIChanged(object sender, EventArgs e) => SelectGUI.DragGUI = EditorConfig.DragUI.Value;
 
 		public static Action AdjustPositionInputsChanged { get; set; }
 
@@ -242,15 +258,15 @@ namespace EditorManagement
 		{
 			SetPreviewConfig();
 
-			KeybindManager.AllowKeys = RTEditor.GetEditorProperty("Allow Editor Keybinds With Editor Cam").GetConfigEntry<bool>().Value;
-			ObjectEditor.RenderPrefabTypeIcon = RTEditor.GetEditorProperty("Timeline Object Prefab Type Icon").GetConfigEntry<bool>().Value;
-			ObjectEditor.TimelineObjectHoverSize = RTEditor.GetEditorProperty("Timeline Object Hover Size").GetConfigEntry<float>().Value;
-			PrefabEditorManager.ImportPrefabsDirectly = RTEditor.GetEditorProperty("Import Prefabs Directly").GetConfigEntry<bool>().Value;
+			KeybindManager.AllowKeys = EditorConfig.AllowEditorKeybindsWithEditorCam.Value;
+			ObjectEditor.RenderPrefabTypeIcon = EditorConfig.TimelineObjectPrefabTypeIcon.Value;
+			ObjectEditor.TimelineObjectHoverSize = EditorConfig.TimelineObjectHoverSize.Value;
+			PrefabEditorManager.ImportPrefabsDirectly = EditorConfig.ImportPrefabsDirectly.Value;
 
 			if (EditorManager.inst)
             {
 				SetNotificationProperties();
-				EditorManager.inst.zoomBounds = RTEditor.GetEditorProperty("Main Zoom Bounds").GetConfigEntry<Vector2>().Value;
+				EditorManager.inst.zoomBounds = EditorConfig.MainZoomBounds.Value;
 
 				SetTimelineColors();
 				AdjustPositionInputsChanged?.Invoke();
@@ -266,49 +282,21 @@ namespace EditorManagement
 		{
 			try
 			{
-				//if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightColor"))
-				//	ModCompatibility.sharedFunctions.Add("HighlightColor", RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value);
-				//else
-				//	ModCompatibility.sharedFunctions["HighlightColor"] = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
-				//if (!ModCompatibility.sharedFunctions.ContainsKey("HighlightDoubleColor"))
-				//	ModCompatibility.sharedFunctions.Add("HighlightDoubleColor", RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value);
-				//else
-				//	ModCompatibility.sharedFunctions["HighlightDoubleColor"] = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
-				//if (!ModCompatibility.sharedFunctions.ContainsKey("CanHightlightObjects"))
-				//	ModCompatibility.sharedFunctions.Add("CanHightlightObjects", RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value);
-				//else
-				//	ModCompatibility.sharedFunctions["CanHightlightObjects"] = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
+				ModCompatibility.sharedFunctions.AddSet("ShowEmpties", EditorConfig.ShowEmpties.Value);
+				ModCompatibility.sharedFunctions.AddSet("ShowDamagable", EditorConfig.OnlyShowDamagable.Value);
 
-				//if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsAlpha"))
-				//	ModCompatibility.sharedFunctions.Add("ShowObjectsAlpha", RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value);
-				//else
-				//	ModCompatibility.sharedFunctions["ShowObjectsAlpha"] = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
-				//if (!ModCompatibility.sharedFunctions.ContainsKey("ShowObjectsOnLayer"))
-				//	ModCompatibility.sharedFunctions.Add("ShowObjectsOnLayer", RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value);
-				//else
-				//	ModCompatibility.sharedFunctions["ShowObjectsOnLayer"] = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
+                RTObject.Enabled = EditorConfig.ObjectDraggerEnabled.Value;
+				RTObject.HighlightColor = EditorConfig.ObjectHighlightAmount.Value;
+				RTObject.HighlightDoubleColor = EditorConfig.ObjectHighlightDoubleAmount.Value;
+				RTObject.HighlightObjects = EditorConfig.HighlightObjects.Value;
+				RTObject.ShowObjectsOnlyOnLayer = EditorConfig.OnlyObjectsOnCurrentLayerVisible.Value;
+				RTObject.LayerOpacity = EditorConfig.VisibleObjectOpacity.Value;
 
-				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowEmpties"))
-					ModCompatibility.sharedFunctions.Add("ShowEmpties", RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value);
-				else
-					ModCompatibility.sharedFunctions["ShowEmpties"] = RTEditor.GetEditorProperty("Show Empties").GetConfigEntry<bool>().Value;
-				if (!ModCompatibility.sharedFunctions.ContainsKey("ShowDamagable"))
-					ModCompatibility.sharedFunctions.Add("ShowDamagable", RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value);
-				else
-					ModCompatibility.sharedFunctions["ShowDamagable"] = RTEditor.GetEditorProperty("Only Show Damagable").GetConfigEntry<bool>().Value;
+				RTRotator.RotatorRadius = EditorConfig.ObjectDraggerRotatorRadius.Value;
+                RTScaler.ScalerOffset = EditorConfig.ObjectDraggerScalerOffset.Value;
+                RTScaler.ScalerScale = EditorConfig.ObjectDraggerScalerScale.Value;
 
-                RTObject.Enabled = RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value;
-				RTObject.HighlightColor = RTEditor.GetEditorProperty("Object Highlight Amount").GetConfigEntry<Color>().Value;
-				RTObject.HighlightDoubleColor = RTEditor.GetEditorProperty("Object Highlight Double Amount").GetConfigEntry<Color>().Value;
-				RTObject.HighlightObjects = RTEditor.GetEditorProperty("Highlight Objects").GetConfigEntry<bool>().Value;
-				RTObject.ShowObjectsOnlyOnLayer = RTEditor.GetEditorProperty("Only Objects on Current Layer Visible").GetConfigEntry<bool>().Value;
-				RTObject.LayerOpacity = RTEditor.GetEditorProperty("Visible object opacity").GetConfigEntry<float>().Value;
-
-				RTRotator.RotatorRadius = RTEditor.GetEditorProperty("Object Dragger Rotator Radius").GetConfigEntry<float>().Value;
-                RTScaler.ScalerOffset = RTEditor.GetEditorProperty("Object Dragger Scaler Offset").GetConfigEntry<float>().Value;
-                RTScaler.ScalerScale = RTEditor.GetEditorProperty("Object Dragger Scaler Scale").GetConfigEntry<float>().Value;
-
-				RTPlayer.ZenModeInEditor = RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>().Value;
+				RTPlayer.ZenModeInEditor = EditorConfig.EditorZenMode.Value;
 			}
 			catch (Exception ex)
 			{
@@ -317,47 +305,29 @@ namespace EditorManagement
 		}
 
 		public static void SetTimelineColors()
-        {
-			Debug.LogFormat($"{className}Setting Timeline Cursor Colors");
-			{
-				var timelineCursorColor = RTEditor.GetEditorProperty("Timeline Cursor Color").GetConfigEntry<Color>().Value;
-				var KeyframeCursorColor = RTEditor.GetEditorProperty("Keyframe Cursor Color").GetConfigEntry<Color>().Value;
+		{
+			var timelineCursorColor = EditorConfig.TimelineCursorColor.Value;
+			var KeyframeCursorColor = EditorConfig.KeyframeCursorColor.Value;
 
-				if (RTEditor.inst.timelineSliderHandle)
-					RTEditor.inst.timelineSliderHandle.color = timelineCursorColor;
-				else
-					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
+			RTEditor.inst.timelineSliderHandle.color = timelineCursorColor;
 
-				if (RTEditor.inst.timelineSliderRuler)
-					RTEditor.inst.timelineSliderRuler.color = timelineCursorColor;
-				else
-					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
+			RTEditor.inst.timelineSliderRuler.color = timelineCursorColor;
 
-				if (RTEditor.inst.keyframeTimelineSliderHandle)
-					RTEditor.inst.keyframeTimelineSliderHandle.color = KeyframeCursorColor;
-				else
-					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
-
-				if (RTEditor.inst.keyframeTimelineSliderRuler)
-					RTEditor.inst.keyframeTimelineSliderRuler.color = KeyframeCursorColor;
-				else
-					Debug.LogError($"{className}Whoooops you gotta put this CD up your-");
-			}
-        }
+			RTEditor.inst.keyframeTimelineSliderHandle.color = KeyframeCursorColor;
+			RTEditor.inst.keyframeTimelineSliderRuler.color = KeyframeCursorColor;
+		}
 
 		public static void SetNotificationProperties()
 		{
 			Debug.Log($"{className}Setting Notification values");
-			var notifyRT = EditorManager.inst.notification.GetComponent<RectTransform>();
+			var notifyRT = EditorManager.inst.notification.transform.AsRT();
 			var notifyGroup = EditorManager.inst.notification.GetComponent<VerticalLayoutGroup>();
-			notifyRT.sizeDelta = new Vector2(RTEditor.GetEditorProperty("Notification Width").GetConfigEntry<float>().Value, 632f);
+			notifyRT.sizeDelta = new Vector2(EditorConfig.NotificationWidth.Value, 632f);
 			EditorManager.inst.notification.transform.localScale =
-				new Vector3(
-					RTEditor.GetEditorProperty("Notification Size").GetConfigEntry<float>().Value,
-					RTEditor.GetEditorProperty("Notification Size").GetConfigEntry<float>().Value,
+				new Vector3(EditorConfig.NotificationSize.Value, EditorConfig.NotificationSize.Value,
 					1f);
 
-			var direction = RTEditor.GetEditorProperty("Notification Direction").GetConfigEntry<Direction>().Value;
+			var direction = EditorConfig.NotificationDirection.Value;
 
 			notifyRT.anchoredPosition = new Vector2(8f, direction == Direction.Up ? 408f : 410f);
 			notifyGroup.childAlignment = direction != Direction.Up ? TextAnchor.LowerLeft : TextAnchor.UpperLeft;
@@ -365,62 +335,70 @@ namespace EditorManagement
 
 		public static void UpdateDefaultThemeValues()
         {
-			RTFunctions.Functions.Data.BeatmapTheme.DefaultName = RTEditor.GetEditorProperty("Theme Template Name").GetConfigEntry<string>().Value;
-			RTFunctions.Functions.Data.BeatmapTheme.DefaultGUIColor = RTEditor.GetEditorProperty("Theme Template GUI").GetConfigEntry<Color>().Value;
-			RTFunctions.Functions.Data.BeatmapTheme.DefaultTailColor = RTEditor.GetEditorProperty("Theme Template Tail").GetConfigEntry<Color>().Value;
-			RTFunctions.Functions.Data.BeatmapTheme.DefaultBGColor = RTEditor.GetEditorProperty("Theme Template BG").GetConfigEntry<Color>().Value;
+            BeatmapTheme.DefaultName = EditorConfig.ThemeTemplateName.Value;
+            BeatmapTheme.DefaultGUIColor = EditorConfig.ThemeTemplateGUI.Value;
+            BeatmapTheme.DefaultTailColor = EditorConfig.ThemeTemplateTail.Value;
+            BeatmapTheme.DefaultBGColor = EditorConfig.ThemeTemplateBG.Value;
 
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultPlayerColors.Count; i++)
+            try
 			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template Player {i + 1}"))
-						RTFunctions.Functions.Data.BeatmapTheme.DefaultPlayerColors[i] = RTEditor.GetEditorProperty($"Theme Template Player {i + 1}").GetConfigEntry<Color>().Value;
-				}
-				catch (Exception ex)
-				{
+				BeatmapTheme.DefaultPlayerColors[0] = EditorConfig.ThemeTemplatePlayer1.Value;
+				BeatmapTheme.DefaultPlayerColors[1] = EditorConfig.ThemeTemplatePlayer2.Value;
+				BeatmapTheme.DefaultPlayerColors[2] = EditorConfig.ThemeTemplatePlayer3.Value;
+				BeatmapTheme.DefaultPlayerColors[3] = EditorConfig.ThemeTemplatePlayer4.Value;
 
-				}
-			}
+				BeatmapTheme.DefaultObjectColors[0] = EditorConfig.ThemeTemplateOBJ1.Value;
+				BeatmapTheme.DefaultObjectColors[1] = EditorConfig.ThemeTemplateOBJ2.Value;
+				BeatmapTheme.DefaultObjectColors[2] = EditorConfig.ThemeTemplateOBJ3.Value;
+				BeatmapTheme.DefaultObjectColors[3] = EditorConfig.ThemeTemplateOBJ4.Value;
+				BeatmapTheme.DefaultObjectColors[4] = EditorConfig.ThemeTemplateOBJ5.Value;
+				BeatmapTheme.DefaultObjectColors[5] = EditorConfig.ThemeTemplateOBJ6.Value;
+				BeatmapTheme.DefaultObjectColors[6] = EditorConfig.ThemeTemplateOBJ7.Value;
+				BeatmapTheme.DefaultObjectColors[7] = EditorConfig.ThemeTemplateOBJ8.Value;
+				BeatmapTheme.DefaultObjectColors[8] = EditorConfig.ThemeTemplateOBJ9.Value;
+				BeatmapTheme.DefaultObjectColors[9] = EditorConfig.ThemeTemplateOBJ10.Value;
+				BeatmapTheme.DefaultObjectColors[10] = EditorConfig.ThemeTemplateOBJ11.Value;
+				BeatmapTheme.DefaultObjectColors[11] = EditorConfig.ThemeTemplateOBJ12.Value;
+				BeatmapTheme.DefaultObjectColors[12] = EditorConfig.ThemeTemplateOBJ13.Value;
+				BeatmapTheme.DefaultObjectColors[13] = EditorConfig.ThemeTemplateOBJ14.Value;
+				BeatmapTheme.DefaultObjectColors[14] = EditorConfig.ThemeTemplateOBJ15.Value;
+				BeatmapTheme.DefaultObjectColors[15] = EditorConfig.ThemeTemplateOBJ16.Value;
+				BeatmapTheme.DefaultObjectColors[16] = EditorConfig.ThemeTemplateOBJ17.Value;
+				BeatmapTheme.DefaultObjectColors[17] = EditorConfig.ThemeTemplateOBJ18.Value;
 
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultObjectColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template OBJ {i + 1}"))
-						RTFunctions.Functions.Data.BeatmapTheme.DefaultObjectColors[i] = RTEditor.GetEditorProperty($"Theme Template OBJ {i + 1}").GetConfigEntry<Color>().Value;
-				}
-				catch (Exception ex)
-				{
+				BeatmapTheme.DefaulBackgroundColors[0] = EditorConfig.ThemeTemplateBG1.Value;
+				BeatmapTheme.DefaulBackgroundColors[1] = EditorConfig.ThemeTemplateBG2.Value;
+				BeatmapTheme.DefaulBackgroundColors[2] = EditorConfig.ThemeTemplateBG3.Value;
+				BeatmapTheme.DefaulBackgroundColors[3] = EditorConfig.ThemeTemplateBG4.Value;
+				BeatmapTheme.DefaulBackgroundColors[4] = EditorConfig.ThemeTemplateBG5.Value;
+				BeatmapTheme.DefaulBackgroundColors[5] = EditorConfig.ThemeTemplateBG6.Value;
+				BeatmapTheme.DefaulBackgroundColors[6] = EditorConfig.ThemeTemplateBG7.Value;
+				BeatmapTheme.DefaulBackgroundColors[7] = EditorConfig.ThemeTemplateBG8.Value;
+				BeatmapTheme.DefaulBackgroundColors[8] = EditorConfig.ThemeTemplateBG9.Value;
 
-				}
-			}
-
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaulBackgroundColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template BG {i + 1}"))
-						RTFunctions.Functions.Data.BeatmapTheme.DefaulBackgroundColors[i] = RTEditor.GetEditorProperty($"Theme Template BG {i + 1}").GetConfigEntry<Color>().Value;
-				}
-				catch (Exception ex)
-				{
-
-				}
-			}
-
-			for (int i = 0; i < RTFunctions.Functions.Data.BeatmapTheme.DefaultEffectColors.Count; i++)
-			{
-				try
-				{
-					if (RTEditor.EditorProperties.Has(x => x.name == $"Theme Template FX {i + 1}"))
-						RTFunctions.Functions.Data.BeatmapTheme.DefaultEffectColors[i] = RTEditor.GetEditorProperty($"Theme Template FX {i + 1}").GetConfigEntry<Color>().Value;
-				}
-				catch (Exception ex)
-				{
-
-				}
-			}
+				BeatmapTheme.DefaultEffectColors[0] = EditorConfig.ThemeTemplateFX1.Value;
+				BeatmapTheme.DefaultEffectColors[1] = EditorConfig.ThemeTemplateFX2.Value;
+				BeatmapTheme.DefaultEffectColors[2] = EditorConfig.ThemeTemplateFX3.Value;
+				BeatmapTheme.DefaultEffectColors[3] = EditorConfig.ThemeTemplateFX4.Value;
+				BeatmapTheme.DefaultEffectColors[4] = EditorConfig.ThemeTemplateFX5.Value;
+				BeatmapTheme.DefaultEffectColors[5] = EditorConfig.ThemeTemplateFX6.Value;
+				BeatmapTheme.DefaultEffectColors[6] = EditorConfig.ThemeTemplateFX7.Value;
+				BeatmapTheme.DefaultEffectColors[7] = EditorConfig.ThemeTemplateFX8.Value;
+				BeatmapTheme.DefaultEffectColors[8] = EditorConfig.ThemeTemplateFX9.Value;
+				BeatmapTheme.DefaultEffectColors[9] = EditorConfig.ThemeTemplateFX10.Value;
+				BeatmapTheme.DefaultEffectColors[10] = EditorConfig.ThemeTemplateFX11.Value;
+				BeatmapTheme.DefaultEffectColors[11] = EditorConfig.ThemeTemplateFX12.Value;
+				BeatmapTheme.DefaultEffectColors[12] = EditorConfig.ThemeTemplateFX13.Value;
+				BeatmapTheme.DefaultEffectColors[13] = EditorConfig.ThemeTemplateFX14.Value;
+				BeatmapTheme.DefaultEffectColors[14] = EditorConfig.ThemeTemplateFX15.Value;
+				BeatmapTheme.DefaultEffectColors[15] = EditorConfig.ThemeTemplateFX16.Value;
+				BeatmapTheme.DefaultEffectColors[16] = EditorConfig.ThemeTemplateFX17.Value;
+				BeatmapTheme.DefaultEffectColors[17] = EditorConfig.ThemeTemplateFX18.Value;
+            }
+            catch (Exception ex)
+            {
+				Debug.LogError($"{className}{nameof(UpdateDefaultThemeValues)} had an error! \n{ex}");
+            }
 		}
 
 		public static void ListObjectLayers()

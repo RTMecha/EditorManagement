@@ -12,6 +12,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using RTFunctions.Functions.Managers.Networking;
+using EditorManagement.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -405,7 +406,7 @@ namespace EditorManagement.Patchers
 			convert.onClick.ClearAll();
 			convert.onClick.AddListener(delegate ()
 			{
-				var exportPath = RTEditor.GetEditorProperty("Convert Level LS to VG Export Path").GetConfigEntry<string>().Value;
+				var exportPath = EditorConfig.Instance.ConvertLevelLSToVGExportPath.Value;
 
 				if (string.IsNullOrEmpty(exportPath))
 				{
@@ -478,7 +479,7 @@ namespace EditorManagement.Patchers
 					return;
 				}
 
-				var exportPath = RTEditor.GetEditorProperty("ZIP Level Export Path").GetConfigEntry<string>().Value;
+				var exportPath = EditorConfig.Instance.ZIPLevelExportPath.Value;
 
 				if (string.IsNullOrEmpty(exportPath))
 				{
@@ -542,7 +543,7 @@ namespace EditorManagement.Patchers
 			zip.onClick.ClearAll();
 			zip.onClick.AddListener(delegate ()
 			{
-				var exportPath = RTEditor.GetEditorProperty("ZIP Level Export Path").GetConfigEntry<string>().Value;
+				var exportPath = EditorConfig.Instance.ZIPLevelExportPath.Value;
 
 				if (string.IsNullOrEmpty(exportPath))
 				{

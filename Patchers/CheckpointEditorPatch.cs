@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using HarmonyLib;
-
-using UnityEngine;
-using UnityEngine.UI;
-
-using EditorManagement.Functions.Editors;
-
-using RTFunctions.Functions;
-using UnityEngine.EventSystems;
+﻿using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
+using HarmonyLib;
+using RTFunctions.Functions;
+using System;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace EditorManagement.Patchers
 {

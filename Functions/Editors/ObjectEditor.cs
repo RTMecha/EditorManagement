@@ -745,7 +745,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Create New Objects
 
-        public static bool SetToCenterCam => RTEditor.GetEditorProperty("Create Objects at Camera Center").GetConfigEntry<bool>().Value;
+        public static bool SetToCenterCam => EditorConfig.Instance.CreateObjectsatCameraCenter.Value;
 
         public void CreateNewNormalObject(bool _select = true, bool setHistory = true)
         {
@@ -1077,7 +1077,7 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.autoKillType = AutoKillType.LastKeyframeOffset;
             beatmapObject.autoKillOffset = 5f;
             beatmapObject.editorData.layer = RTEditor.inst.Layer;
-            beatmapObject.parentType = RTEditor.GetEditorProperty("Create Objects Scale Parent Default").GetConfigEntry<bool>().Value ? "111" : "101";
+            beatmapObject.parentType = EditorConfig.Instance.CreateObjectsScaleParentDefault.Value ? "111" : "101";
 
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
@@ -1328,7 +1328,7 @@ namespace EditorManagement.Functions.Editors
         public EventKeyframe AddEvent(BeatmapObject beatmapObject, float time, int type, EventKeyframe _keyframe, bool openDialog)
         {
             var eventKeyframe = EventKeyframe.DeepCopy(_keyframe);
-            var t = SettingEditor.inst.SnapActive && RTEditor.BPMSnapKeyframes ? -(beatmapObject.StartTime - RTEditor.SnapToBPM(beatmapObject.StartTime + time)) : time;
+            var t = SettingEditor.inst.SnapActive && EditorConfig.Instance.BPMSnapsKeyframes.Value ? -(beatmapObject.StartTime - RTEditor.SnapToBPM(beatmapObject.StartTime + time)) : time;
             eventKeyframe.eventTime = t;
 
             if (eventKeyframe.relative)
@@ -3388,7 +3388,7 @@ namespace EditorManagement.Functions.Editors
             var timelineObject = GetTimelineObject(beatmapObject);
             if (timelineObject.InternalSelections.Count > 0 && timelineObject.InternalSelections.Where(x => x.selected).Count() == 0)
             {
-                if (RTEditor.GetEditorProperty("Remember Last Keyframe Type").GetConfigEntry<bool>().Value && timelineObject.InternalSelections.TryFind(x => x.Type == ObjEditor.inst.currentKeyframeKind, out TimelineObject kf))
+                if (EditorConfig.Instance.RememberLastKeyframeType.Value && timelineObject.InternalSelections.TryFind(x => x.Type == ObjEditor.inst.currentKeyframeKind, out TimelineObject kf))
                     kf.selected = true;
                 else
                     timelineObject.InternalSelections[0].selected = true;
@@ -3703,7 +3703,7 @@ namespace EditorManagement.Functions.Editors
                 }
                 else
                 {
-                    bool showModifiedColors = RTEditor.ShowModifiedColors;
+                    bool showModifiedColors = EditorConfig.Instance.ShowModifiedColors.Value;
                     int index = 0;
                     foreach (var toggle in ObjEditor.inst.colorButtons)
                     {
@@ -4062,7 +4062,7 @@ namespace EditorManagement.Functions.Editors
                 if (val < 0f)
                     val = 0f;
 
-                if (RTEditor.RoundToNearest)
+                if (EditorConfig.Instance.RoundToNearest.Value)
                     val = RTMath.RoundToNearestDecimal(val, 3);
 
                 if (updateText)
@@ -4083,10 +4083,10 @@ namespace EditorManagement.Functions.Editors
 
         public void AddKeyframeTime(BeatmapObject beatmapObject, float val, bool updateText)
         {
-            if (RTEditor.RoundToNearest)
+            if (EditorConfig.Instance.RoundToNearest.Value)
                 val = RTMath.RoundToNearestDecimal(val);
 
-            if (RTEditor.RoundToNearest)
+            if (EditorConfig.Instance.RoundToNearest.Value)
                 val = RTMath.RoundToNearestDecimal(beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime + val);
             else
                 val = beatmapObject.events[ObjEditor.inst.currentKeyframeKind][ObjEditor.inst.currentKeyframe].eventTime + val;

@@ -1,29 +1,16 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
+﻿using EditorManagement.Functions.Editors;
+using EditorManagement.Patchers;
 using LSFunctions;
-
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
-
-using EditorManagement.Functions.Editors;
-using EditorManagement.Patchers;
-
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
-using BaseEventKeyframe = DataManager.GameData.EventKeyframe;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace EditorManagement.Functions.Helpers
 {
@@ -69,9 +56,11 @@ namespace EditorManagement.Functions.Helpers
 				{
 					if (!multi || !Input.GetKey(KeyCode.LeftShift))
 					{
-						var largeKey = RTEditor.GetEditorProperty(!multi ? "Scrollwheel Large Amount Key" : "Scrollwheel Vector2 Large Amount Key").GetConfigEntry<KeyCode>().Value;
-						var smallKey = RTEditor.GetEditorProperty(!multi ? "Scrollwheel Small Amount Key" : "Scrollwheel Vector2 Small Amount Key").GetConfigEntry<KeyCode>().Value;
-						var regularKey = RTEditor.GetEditorProperty(!multi ? "Scrollwheel Regular Amount Key" : "Scrollwheel Vector2 Regular Amount Key").GetConfigEntry<KeyCode>().Value;
+						var config = EditorConfig.Instance;
+
+						var largeKey = !multi ? config.ScrollwheelLargeAmountKey.Value : config.ScrollwheelVector2LargeAmountKey.Value;
+						var smallKey = !multi ? config.ScrollwheelSmallAmountKey.Value : config.ScrollwheelVector2SmallAmountKey.Value;
+						var regularKey = !multi ? config.ScrollwheelRegularAmountKey.Value : config.ScrollwheelVector2RegularAmountKey.Value;
 
 						// Large Amount
 						bool large = largeKey == KeyCode.None && !Input.GetKey(smallKey) && !Input.GetKey(regularKey) || Input.GetKey(largeKey);
@@ -109,8 +98,10 @@ namespace EditorManagement.Functions.Helpers
 				{
 					if (!multi || !Input.GetKey(KeyCode.LeftShift))
 					{
-						var largeKey = RTEditor.GetEditorProperty("Scrollwheel Large Amount Key").GetConfigEntry<KeyCode>().Value;
-						var regularKey = RTEditor.GetEditorProperty("Scrollwheel Regular Amount Key").GetConfigEntry<KeyCode>().Value;
+						var config = EditorConfig.Instance;
+
+						var largeKey = !multi ? config.ScrollwheelLargeAmountKey.Value : config.ScrollwheelVector2LargeAmountKey.Value;
+						var regularKey = !multi ? config.ScrollwheelRegularAmountKey.Value : config.ScrollwheelVector2RegularAmountKey.Value;
 
 						// Large Amount
 						bool large = largeKey == KeyCode.None && !Input.GetKey(regularKey) || Input.GetKey(largeKey);
@@ -142,9 +133,11 @@ namespace EditorManagement.Functions.Helpers
 				var pointerEventData = (PointerEventData)eventData;
 				if (Input.GetKey(KeyCode.LeftShift) && float.TryParse(ifx.text, out float x) && float.TryParse(ify.text, out float y))
 				{
-					var largeKey = RTEditor.GetEditorProperty("Scrollwheel Vector2 Large Amount Key").GetConfigEntry<KeyCode>().Value;
-					var smallKey = RTEditor.GetEditorProperty("Scrollwheel Vector2 Small Amount Key").GetConfigEntry<KeyCode>().Value;
-					var regularKey = RTEditor.GetEditorProperty("Scrollwheel Vector2 Regular Amount Key").GetConfigEntry<KeyCode>().Value;
+					var config = EditorConfig.Instance;
+
+					var largeKey = config.ScrollwheelVector2LargeAmountKey.Value;
+					var smallKey = config.ScrollwheelVector2SmallAmountKey.Value;
+					var regularKey = config.ScrollwheelVector2RegularAmountKey.Value;
 
 					// Large Amount
 					bool large = largeKey == KeyCode.None && !Input.GetKey(smallKey) && !Input.GetKey(regularKey) || Input.GetKey(largeKey);
@@ -192,8 +185,10 @@ namespace EditorManagement.Functions.Helpers
 				var pointerEventData = (PointerEventData)eventData;
 				if (Input.GetKey(KeyCode.LeftShift) && int.TryParse(ifx.text, out int x) && int.TryParse(ify.text, out int y))
 				{
-					var largeKey = RTEditor.GetEditorProperty("Scrollwheel Vector2 Large Amount Key").GetConfigEntry<KeyCode>().Value;
-					var regularKey = RTEditor.GetEditorProperty("Scrollwheel Vector2 Regular Amount Key").GetConfigEntry<KeyCode>().Value;
+					var config = EditorConfig.Instance;
+
+					var largeKey = config.ScrollwheelVector2LargeAmountKey.Value;
+					var regularKey = config.ScrollwheelVector2RegularAmountKey.Value;
 
 					// Large Amount
 					bool large = largeKey == KeyCode.None && !Input.GetKey(regularKey) || Input.GetKey(largeKey);

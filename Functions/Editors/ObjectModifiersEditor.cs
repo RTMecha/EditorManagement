@@ -1,29 +1,18 @@
-﻿using System;
-using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
+﻿using EditorManagement.Functions.Helpers;
 using LSFunctions;
-
-using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Helpers;
-using EditorManagement.Functions;
-
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
-
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace EditorManagement.Functions.Editors
 {

@@ -1639,7 +1639,7 @@ namespace EditorManagement.Functions.Editors
                 var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindIndex(x => x.time > AudioManager.inst.CurrentAudioSource.time + 0.005f);
 
                 if (currentMarker >= 0)
-                    SetCurrentMarker(Mathf.Clamp(currentMarker, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
+                    SetCurrentMarker(Mathf.Clamp(currentMarker, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, EditorConfig.Instance.BringToSelection.Value);
             }
         }
         
@@ -1654,7 +1654,7 @@ namespace EditorManagement.Functions.Editors
                 var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindIndex(x => x.time > AudioManager.inst.CurrentAudioSource.time + 0.005f);
 
                 if (currentMarker - 2 >= 0)
-                    SetCurrentMarker(Mathf.Clamp(currentMarker - 2, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
+                    SetCurrentMarker(Mathf.Clamp(currentMarker - 2, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, EditorConfig.Instance.BringToSelection.Value);
             }
         }
 
@@ -1688,7 +1688,7 @@ namespace EditorManagement.Functions.Editors
 
             if (index + 1 < RTEditor.inst.timelineObjects.Count)
             {
-                ObjectEditor.inst.SetCurrentObject(RTEditor.inst.timelineObjects[index + 1], RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
+                ObjectEditor.inst.SetCurrentObject(RTEditor.inst.timelineObjects[index + 1], EditorConfig.Instance.BringToSelection.Value);
             }
         }
         
@@ -1700,7 +1700,7 @@ namespace EditorManagement.Functions.Editors
 
             if (index - 1 >= 0)
             {
-                ObjectEditor.inst.SetCurrentObject(RTEditor.inst.timelineObjects[index - 1], RTEditor.GetEditorProperty("Bring To Selection").GetConfigEntry<bool>().Value);
+                ObjectEditor.inst.SetCurrentObject(RTEditor.inst.timelineObjects[index - 1], EditorConfig.Instance.BringToSelection.Value);
             }
         }
 
@@ -1903,12 +1903,12 @@ namespace EditorManagement.Functions.Editors
 
         public static void ToggleObjectDragger(Keybind keybind)
         {
-            RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value = !RTEditor.GetEditorProperty("Object Dragger Enabled").GetConfigEntry<bool>().Value;
+            EditorConfig.Instance.ObjectDraggerEnabled.Value = !EditorConfig.Instance.ObjectDraggerEnabled.Value;
         }
 
         public static void ToggleZenMode(Keybind keybind)
         {
-            var config = RTEditor.GetEditorProperty("Editor Zen Mode").GetConfigEntry<bool>();
+            var config = EditorConfig.Instance.EditorZenMode;
             config.Value = !config.Value;
             EditorManager.inst.DisplayNotification($"Set Zen Mode {(config.Value ? "On" : "Off")}", 2f, EditorManager.NotificationType.Success);
         }

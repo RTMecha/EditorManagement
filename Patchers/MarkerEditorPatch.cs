@@ -18,6 +18,7 @@ using RTFunctions.Functions.Managers;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
+using EditorManagement.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -99,10 +100,12 @@ namespace EditorManagement.Patchers
 		[HarmonyPostfix]
 		static void UpdatePostfix()
 		{
-			if (RTEditor.GetEditorProperty("Marker Loop Active").GetConfigEntry<bool>().Value && DataManager.inst.gameData.beatmapData.markers.Count > 0)
+			var config = EditorConfig.Instance;
+
+			if (config.MarkerLoopActive.Value && DataManager.inst.gameData.beatmapData.markers.Count > 0)
 			{
-				int markerStart = RTEditor.GetEditorProperty("Marker Loop Begin").GetConfigEntry<int>().Value;
-				int markerEnd = RTEditor.GetEditorProperty("Marker Loop End").GetConfigEntry<int>().Value;
+				int markerStart = config.MarkerLoopBegin.Value;
+				int markerEnd = config.MarkerLoopEnd.Value;
 
 				if (markerStart < 0)
 					markerStart = 0;
@@ -115,9 +118,7 @@ namespace EditorManagement.Patchers
 					markerEnd = DataManager.inst.gameData.beatmapData.markers.Count - 1;
 
 				if (AudioManager.inst.CurrentAudioSource.time > DataManager.inst.gameData.beatmapData.markers[markerEnd].time)
-				{
 					AudioManager.inst.CurrentAudioSource.time = DataManager.inst.gameData.beatmapData.markers[markerStart].time;
-				}
 			}
 		}
 

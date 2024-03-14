@@ -1,40 +1,18 @@
-﻿using System;
+﻿using EditorManagement.Functions.Components;
+using EditorManagement.Functions.Helpers;
+using LSFunctions;
+using RTFunctions.Functions;
+using RTFunctions.Functions.Data;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.IO;
-
-using HarmonyLib;
-
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
-
-using SimpleJSON;
-using Crosstales.FB;
-using TMPro;
-using LSFunctions;
-
-using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Helpers;
-using EditorManagement.Patchers;
-
-using RTFunctions.Functions;
-using RTFunctions.Functions.Animation;
-using RTFunctions.Functions.Animation.Keyframe;
-using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Data;
-using RTFunctions.Functions.Managers;
-using RTFunctions.Functions.Optimization;
-
+using UnityEngine.UI;
 using BaseEventKeyframe = DataManager.GameData.EventKeyframe;
-
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
-using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
-using ObjectKeyframeSelection = ObjEditor.KeyframeSelection;
-using EventKeyframeSelection = EventEditor.KeyframeSelection;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -53,7 +31,7 @@ namespace EditorManagement.Functions.Editors
 		// Timeline will only ever have up to 15 "bins" and since the 15th bin is the checkpoints, we only need the first 14 bins.
 		public const int EventLimit = 14;
 
-		public static bool ResetRotation => RTEditor.GetEditorProperty("Rotation Event Keyframe Resets").GetConfigEntry<bool>().Value;
+		public static bool ResetRotation => EditorConfig.Instance.RotationEventKeyframeResets.Value;
 
 		public List<Toggle> vignetteColorButtons = new List<Toggle>();
 		public List<Toggle> bloomColorButtons = new List<Toggle>();
@@ -2484,7 +2462,7 @@ namespace EditorManagement.Functions.Editors
 
 		public void RenderLayerBins()
         {
-			var renderLeft = RTEditor.GetEditorProperty("Event Labels Render Left").GetConfigEntry<bool>().Value;
+			var renderLeft = EditorConfig.Instance.EventLabelsRenderLeft.Value;
 			var eventLabels = EventEditor.inst.EventLabels;
 
 			var layer = RTEditor.inst.Layer + 1;

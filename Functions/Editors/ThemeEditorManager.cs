@@ -1,25 +1,18 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using SimpleJSON;
+﻿using EditorManagement.Functions.Helpers;
 using LSFunctions;
-
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
-
-using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Helpers;
+using SimpleJSON;
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -472,7 +465,7 @@ namespace EditorManagement.Functions.Editors
 						convert.onClick.ClearAll();
 						convert.onClick.AddListener(delegate ()
 						{
-							var exportPath = RTEditor.GetEditorProperty("Convert Theme LS to VG Export Path").GetConfigEntry<string>().Value;
+							var exportPath = EditorConfig.Instance.ConvertThemeLSToVGExportPath.Value;
 
 							if (string.IsNullOrEmpty(exportPath))
 							{
@@ -1023,20 +1016,22 @@ namespace EditorManagement.Functions.Editors
 			StartCoroutine(SetUpdate(1f, true));
 		}
 
-		public void SaveTheme(BeatmapTheme _theme)
+		public void SaveTheme(BeatmapTheme theme)
 		{
-			Debug.Log($"{EventEditor.inst.className}Saving {_theme.id} ({_theme.name}) to File System!");
+			Debug.Log($"{EventEditor.inst.className}Saving {theme.id} ({theme.name}) to File System!");
 
 			RTEditor.inst.canUpdateThemes = false;
 
-			if (string.IsNullOrEmpty(_theme.id))
-				_theme.id = LSText.randomNumString(BeatmapTheme.IDLength);
+			if (string.IsNullOrEmpty(theme.id))
+				theme.id = LSText.randomNumString(BeatmapTheme.IDLength);
 
-			GameData.SaveOpacityToThemes = RTEditor.GetEditorProperty("Saving Saves Theme Opacity").GetConfigEntry<bool>().Value;
+			var config = EditorConfig.Instance;
+
+			GameData.SaveOpacityToThemes = config.SavingSavesThemeOpacity.Value;
 			
-			var str = RTEditor.GetEditorProperty("Theme Saves Indents").GetConfigEntry<bool>().Value ? _theme.ToJSON().ToString(3) : _theme.ToJSON().ToString();
-			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst", str);
-			EditorManager.inst.DisplayNotification($"Saved theme [{_theme.name}]!", 2f, EditorManager.NotificationType.Success);
+			var str = config.ThemeSavesIndents.Value ? theme.ToJSON().ToString(3) : theme.ToJSON().ToString();
+			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, theme.name.ToLower().Replace(" ", "_") + ".lst", str);
+			EditorManager.inst.DisplayNotification($"Saved theme [{theme.name}]!", 2f, EditorManager.NotificationType.Success);
 
 			StartCoroutine(SetUpdate(1f, true));
 		}

@@ -1,32 +1,22 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Text.RegularExpressions;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using SimpleJSON;
+﻿using EditorManagement.Functions.Helpers;
 using LSFunctions;
-
-using EditorManagement.Functions.Components;
-using EditorManagement.Functions.Helpers;
-using EditorManagement.Functions.Editors;
-
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Patchers;
-
-using BasePrefab = DataManager.GameData.Prefab;
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
-using BasePrefabObject = DataManager.GameData.PrefabObject;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
+using SimpleJSON;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using BasePrefab = DataManager.GameData.Prefab;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -1233,7 +1223,7 @@ namespace EditorManagement.Functions.Editors
             exportToVG.onClick.ClearAll();
             exportToVG.onClick.AddListener(delegate ()
             {
-                var exportPath = RTEditor.GetEditorProperty("Convert Prefab LS to VG Export Path").GetConfigEntry<string>().Value;
+                var exportPath = EditorConfig.Instance.ConvertPrefabLSToVGExportPath.Value;
 
                 if (string.IsNullOrEmpty(exportPath))
                 {
@@ -1314,22 +1304,27 @@ namespace EditorManagement.Functions.Editors
             PrefabEditor.inst.LoadedPrefabs.Add(prefab);
             PrefabEditor.inst.LoadedPrefabsFiles.Add($"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp");
 
-            var hoverSize = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
+            var config = EditorConfig.Instance;
 
-            var nameHorizontalOverflow = RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            if (config.UpdatePrefabListOnFilesChanged.Value)
+                return;
 
-            var nameVerticalOverflow = RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            var hoverSize = config.PrefabButtonHoverSize.Value;
 
-            var nameFontSize = RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value;
+            var nameHorizontalOverflow = config.PrefabExternalNameHorizontalWrap.Value;
 
-            var typeHorizontalOverflow = RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var nameVerticalOverflow = config.PrefabExternalNameVerticalWrap.Value;
 
-            var typeVerticalOverflow = RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            var nameFontSize = config.PrefabExternalNameFontSize.Value;
 
-            var typeFontSize = RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value;
+            var typeHorizontalOverflow = config.PrefabExternalTypeHorizontalWrap.Value;
 
-            var deleteAnchoredPosition = RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value;
-            var deleteSizeDelta = RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value;
+            var typeVerticalOverflow = config.PrefabExternalTypeVerticalWrap.Value;
+
+            var typeFontSize = config.PrefabExternalTypeFontSize.Value;
+
+            var deleteAnchoredPosition = config.PrefabExternalDeleteButtonPos.Value;
+            var deleteSizeDelta = config.PrefabExternalDeleteButtonSca.Value;
 
             StartCoroutine(CreatePrefabButton(prefab, count, PrefabDialog.External, $"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp",
                 false, hoverSize, nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
@@ -1530,8 +1525,10 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator InternalPrefabs(bool _toggle = false)
         {
+            var config = EditorConfig.Instance;
+
             // Here we add the Example prefab provided to you.
-            if (!DataManager.inst.gameData.prefabs.Exists(x => x.ID == "toYoutoYoutoYou") && RTEditor.GetEditorProperty("Prefab Example Template").GetConfigEntry<bool>().Value)
+            if (!DataManager.inst.gameData.prefabs.Exists(x => x.ID == "toYoutoYoutoYou") && config.PrefabExampleTemplate.Value)
                 DataManager.inst.gameData.prefabs.Add(Prefab.DeepCopy(ExamplePrefab.PAExampleM, false));
 
             yield return new WaitForSeconds(0.03f);
@@ -1540,10 +1537,12 @@ namespace EditorManagement.Functions.Editors
             var gameObject = PrefabEditor.inst.CreatePrefab.Duplicate(PrefabEditor.inst.internalContent, "add new prefab");
             gameObject.GetComponentInChildren<Text>().text = "New Internal Prefab";
 
+            var hoverSize = config.PrefabButtonHoverSize.Value;
+
             var hover = gameObject.AddComponent<HoverUI>();
             hover.animateSca = true;
             hover.animatePos = false;
-            hover.size = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
+            hover.size = hoverSize;
 
             gameObject.GetComponentAndPerformAction(delegate (Button x)
             {
@@ -1554,40 +1553,20 @@ namespace EditorManagement.Functions.Editors
                 });
             });
 
-            var hoverSize = RTEditor.GetEditorProperty("Prefab Button Hover Size").GetConfigEntry<float>().Value;
+            var nameHorizontalOverflow = config.PrefabInternalNameHorizontalWrap.Value;
 
-            bool isExternal = false;
+            var nameVerticalOverflow = config.PrefabInternalNameVerticalWrap.Value;
 
-            var nameHorizontalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Name Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var nameFontSize = config.PrefabInternalNameFontSize.Value;
 
-            var nameVerticalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Name Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
+            var typeHorizontalOverflow = config.PrefabInternalTypeHorizontalWrap.Value;
 
-            var nameFontSize = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Name Font Size").GetConfigEntry<int>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Name Font Size").GetConfigEntry<int>().Value;
+            var typeVerticalOverflow = config.PrefabInternalTypeVerticalWrap.Value;
 
-            var typeHorizontalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Type Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
+            var typeFontSize = config.PrefabInternalTypeFontSize.Value;
 
-            var typeVerticalOverflow = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Type Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-
-            var typeFontSize = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Type Font Size").GetConfigEntry<int>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Type Font Size").GetConfigEntry<int>().Value;
-
-            var deleteAnchoredPosition = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Delete Button Pos").GetConfigEntry<Vector2>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Delete Button Pos").GetConfigEntry<Vector2>().Value;
-            var deleteSizeDelta = isExternal ?
-                RTEditor.GetEditorProperty("Prefab External Delete Button Sca").GetConfigEntry<Vector2>().Value :
-                RTEditor.GetEditorProperty("Prefab Internal Delete Button Sca").GetConfigEntry<Vector2>().Value;
+            var deleteAnchoredPosition = config.PrefabInternalDeleteButtonPos.Value;
+            var deleteSizeDelta = config.PrefabInternalDeleteButtonSca.Value;
 
             var list = new List<Coroutine>();
 
@@ -1602,11 +1581,11 @@ namespace EditorManagement.Functions.Editors
                 num++;
             }
 
-            yield return StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate ()
-            {
-                //foreach (object obj in internalContent)
-                //    ((Transform)obj).localScale = Vector3.one;
-            }));
+            //yield return StartCoroutine(LSHelpers.WaitForMultipleCoroutines(list, delegate ()
+            //{
+            //    //foreach (object obj in internalContent)
+            //    //    ((Transform)obj).localScale = Vector3.one;
+            //}));
 
             yield break;
         }

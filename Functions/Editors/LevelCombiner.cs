@@ -198,14 +198,16 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator RenderDialog()
         {
+			var config = EditorConfig.Instance;
+
 			#region Clamping
 
-			var olfnm = RTEditor.GetEditorProperty("Open Level Folder Name Max").GetConfigEntry<int>();
-			var olsnm = RTEditor.GetEditorProperty("Open Level Song Name Max").GetConfigEntry<int>();
-			var olanm = RTEditor.GetEditorProperty("Open Level Artist Name Max").GetConfigEntry<int>();
-			var olcnm = RTEditor.GetEditorProperty("Open Level Creator Name Max").GetConfigEntry<int>();
-			var oldem = RTEditor.GetEditorProperty("Open Level Description Max").GetConfigEntry<int>();
-			var oldam = RTEditor.GetEditorProperty("Open Level Date Max").GetConfigEntry<int>();
+			var olfnm = config.OpenLevelFolderNameMax;
+			var olsnm = config.OpenLevelSongNameMax;
+			var olanm = config.OpenLevelArtistNameMax;
+			var olcnm = config.OpenLevelCreatorNameMax;
+			var oldem = config.OpenLevelDescriptionMax;
+			var oldam = config.OpenLevelDateMax;
 
 			int foldClamp = olfnm.Value < 3 ? olfnm.Value : (int)olfnm.DefaultValue;
 			int songClamp = olsnm.Value < 3 ? olsnm.Value : (int)olsnm.DefaultValue;
@@ -218,19 +220,19 @@ namespace EditorManagement.Functions.Editors
 
 			LSHelpers.DeleteChildren(editorDialogContent);
 
-			var horizontalOverflow = RTEditor.GetEditorProperty("Open Level Text Horizontal Wrap").GetConfigEntry<HorizontalWrapMode>().Value;
-			var verticalOverflow = RTEditor.GetEditorProperty("Open Level Text Vertical Wrap").GetConfigEntry<VerticalWrapMode>().Value;
-			var fontSize = RTEditor.GetEditorProperty("Open Level Text Font Size").GetConfigEntry<int>().Value;
-			var format = RTEditor.GetEditorProperty("Open Level Text Formatting").GetConfigEntry<string>().Value;
-			var buttonHoverSize = RTEditor.GetEditorProperty("Open Level Button Hover Size").GetConfigEntry<float>().Value;
+			var horizontalOverflow = config.OpenLevelTextHorizontalWrap.Value;
+			var verticalOverflow = config.OpenLevelTextVerticalWrap.Value;
+			var fontSize = config.OpenLevelTextFontSize.Value;
+			var format = config.OpenLevelTextFormatting.Value;
+			var buttonHoverSize = config.OpenLevelButtonHoverSize.Value;
 
-			var iconPosition = RTEditor.GetEditorProperty("Open Level Cover Position").GetConfigEntry<Vector2>().Value;
-			var iconScale = RTEditor.GetEditorProperty("Open Level Cover Scale").GetConfigEntry<Vector2>().Value;
+			var iconPosition = config.OpenLevelCoverPosition.Value;
+			var iconScale = config.OpenLevelCoverScale.Value;
 			iconPosition.x += -80f;
 
 			int num = 0;
 			foreach (var editorWrapper in EditorManager.inst.loadedLevels.Select(x => x as EditorWrapper))
-            {
+			{
 				var folder = editorWrapper.folder;
 				var metadata = editorWrapper.metadata;
 
@@ -248,74 +250,72 @@ namespace EditorManagement.Functions.Editors
 
 				DestroyImmediate(editorWrapper.CombinerGameObject);
 
-                {
-					var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(editorDialogContent, $"Folder [{System.IO.Path.GetFileName(editorWrapper.folder)}]");
-					editorWrapper.CombinerGameObject = gameObject;
+				var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(editorDialogContent, $"Folder [{System.IO.Path.GetFileName(editorWrapper.folder)}]");
+				editorWrapper.CombinerGameObject = gameObject;
 
-					var hoverUI = gameObject.AddComponent<HoverUI>();
-					hoverUI.size = buttonHoverSize;
-					hoverUI.animatePos = false;
-					hoverUI.animateSca = true;
+				var hoverUI = gameObject.AddComponent<HoverUI>();
+				hoverUI.size = buttonHoverSize;
+				hoverUI.animatePos = false;
+				hoverUI.animateSca = true;
 
-					var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+				var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-					text.text = string.Format(format,
-						LSText.ClampString(System.IO.Path.GetFileName(editorWrapper.folder), foldClamp),
-						LSText.ClampString(metadata.song.title, songClamp),
-						LSText.ClampString(metadata.artist.Name, artiClamp),
-						LSText.ClampString(metadata.creator.steam_name, creaClamp),
-						metadata.song.difficulty,
-						LSText.ClampString(metadata.song.description, descClamp),
-						LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
+				text.text = string.Format(format,
+					LSText.ClampString(System.IO.Path.GetFileName(editorWrapper.folder), foldClamp),
+					LSText.ClampString(metadata.song.title, songClamp),
+					LSText.ClampString(metadata.artist.Name, artiClamp),
+					LSText.ClampString(metadata.creator.steam_name, creaClamp),
+					metadata.song.difficulty,
+					LSText.ClampString(metadata.song.description, descClamp),
+					LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
 
-					text.horizontalOverflow = horizontalOverflow;
-					text.verticalOverflow = verticalOverflow;
-					text.fontSize = fontSize;
+				text.horizontalOverflow = horizontalOverflow;
+				text.verticalOverflow = verticalOverflow;
+				text.fontSize = fontSize;
 
-					var htt = gameObject.AddComponent<HoverTooltip>();
+				var htt = gameObject.AddComponent<HoverTooltip>();
 
-					var levelTip = new HoverTooltip.Tooltip();
+				var levelTip = new HoverTooltip.Tooltip();
 
-					var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
-						DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
+				var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
+					DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
 
-					levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
-					levelTip.hint = "</color>" + metadata.song.description;
-					htt.tooltipLangauges.Add(levelTip);
+				levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
+				levelTip.hint = "</color>" + metadata.song.description;
+				htt.tooltipLangauges.Add(levelTip);
 
-					Action<Button> action = delegate (Button x)
-					{
-						var cb = x.colors;
-						cb.normalColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
-						cb.selectedColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
-						cb.highlightedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
-						cb.pressedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
-						x.colors = cb;
+				Action<Button> action = delegate (Button x)
+				{
+					var cb = x.colors;
+					cb.normalColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+					cb.selectedColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+					cb.highlightedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
+					cb.pressedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
+					x.colors = cb;
 
-						text.color = editorWrapper.combinerSelected ? new Color(0.1173f, 0.0973f, 0.0973f, 1f) : new Color(0.9373f, 0.9216f, 0.9373f, 1f);
-					};
+					text.color = editorWrapper.combinerSelected ? new Color(0.1173f, 0.0973f, 0.0973f, 1f) : new Color(0.9373f, 0.9216f, 0.9373f, 1f);
+				};
 
-					var button = gameObject.GetComponent<Button>();
-					button.onClick.AddListener(delegate ()
-					{
-						editorWrapper.combinerSelected = !editorWrapper.combinerSelected;
-						action.Invoke(button);
-					});
+				var button = gameObject.GetComponent<Button>();
+				button.onClick.AddListener(delegate ()
+				{
+					editorWrapper.combinerSelected = !editorWrapper.combinerSelected;
 					action.Invoke(button);
+				});
+				action.Invoke(button);
 
-					var icon = new GameObject("icon");
-					icon.transform.SetParent(gameObject.transform);
-					icon.transform.localScale = Vector3.one;
-					icon.layer = 5;
-					var iconRT = icon.AddComponent<RectTransform>();
-					icon.AddComponent<CanvasRenderer>();
-					var iconImage = icon.AddComponent<Image>();
+				var icon = new GameObject("icon");
+				icon.transform.SetParent(gameObject.transform);
+				icon.transform.localScale = Vector3.one;
+				icon.layer = 5;
+				var iconRT = icon.AddComponent<RectTransform>();
+				icon.AddComponent<CanvasRenderer>();
+				var iconImage = icon.AddComponent<Image>();
 
-					iconRT.anchoredPosition = iconPosition;
-					iconRT.sizeDelta = iconScale;
+				iconRT.anchoredPosition = iconPosition;
+				iconRT.sizeDelta = iconScale;
 
-					iconImage.sprite = editorWrapper.albumArt ?? SteamWorkshop.inst.defaultSteamImageSprite;
-				}
+				iconImage.sprite = editorWrapper.albumArt ?? SteamWorkshop.inst.defaultSteamImageSprite;
 
 				string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
@@ -331,7 +331,7 @@ namespace EditorManagement.Functions.Editors
 				editorWrapper.CombinerGameObject.transform.SetSiblingIndex(num);
 
 				num++;
-            }
+			}
 
             yield break;
         }
