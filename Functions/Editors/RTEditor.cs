@@ -1,27 +1,9 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Text.RegularExpressions;
-
-using HarmonyLib;
-using BepInEx.Configuration;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.Events;
-using UnityEngine.EventSystems;
-
-using SimpleJSON;
+﻿using BepInEx.Configuration;
 using Crosstales.FB;
-using TMPro;
-using LSFunctions;
-
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
-using EditorManagement.Patchers;
-
+using HarmonyLib;
+using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Animation;
 using RTFunctions.Functions.Animation.Keyframe;
@@ -30,21 +12,25 @@ using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
-
+using SimpleJSON;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using TMPro;
+using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
+using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
+using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
 using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using BaseEventKeyframe = DataManager.GameData.EventKeyframe;
-using BasePrefab = DataManager.GameData.Prefab;
-using BasePrefabObject = DataManager.GameData.PrefabObject;
-using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
-using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
-using ObjectKeyframeSelection = ObjEditor.KeyframeSelection;
 using EventKeyframeSelection = EventEditor.KeyframeSelection;
-
 using MetadataWrapper = EditorManager.MetadataWrapper;
+using ObjectType = DataManager.GameData.BeatmapObject.ObjectType;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -3005,9 +2991,9 @@ namespace EditorManagement.Functions.Editors
 
             textHolderText.fontSize = 22;
 
-            textHolder.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, -125f);
+            textHolder.AsRT().anchoredPosition = new Vector2(0f, -125f);
 
-            textHolder.GetComponent<RectTransform>().sizeDelta = new Vector2(-68f, 0f);
+            textHolder.AsRT().sizeDelta = new Vector2(-68f, 0f);
 
             var zoom = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/zoom/zoom");
 
@@ -4272,8 +4258,8 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").GetComponent<RectTransform>().sizeDelta = new Vector2(810f, 730.11f);
-            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").GetComponent<RectTransform>().sizeDelta = new Vector2(355f, 730f);
+            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").AsRT().sizeDelta = new Vector2(810f, 730.11f);
+            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").AsRT().sizeDelta = new Vector2(355f, 730f);
         }
 
         public void CreatePropertiesWindow()
@@ -4423,402 +4409,9 @@ namespace EditorManagement.Functions.Editors
                 categoryTabGenerator("Timeline", LSColors.HexToColor("C0ACE1"), EditorProperty.EditorPropCategory.Timeline);
                 categoryTabGenerator("Data", LSColors.HexToColor("F17BB8"), EditorProperty.EditorPropCategory.Data);
                 categoryTabGenerator("Editor GUI", LSColors.HexToColor("2F426D"), EditorProperty.EditorPropCategory.EditorGUI);
-                categoryTabGenerator("Functions", LSColors.HexToColor("4076DF"), EditorProperty.EditorPropCategory.Functions);
+                categoryTabGenerator("Animations", LSColors.HexToColor("4076DF"), EditorProperty.EditorPropCategory.Animations);
                 categoryTabGenerator("Fields", LSColors.HexToColor("6CCBCF"), EditorProperty.EditorPropCategory.Fields);
                 categoryTabGenerator("Preview", LSColors.HexToColor("1B1B1C"), EditorProperty.EditorPropCategory.Preview);
-
-                ////General
-                //{
-                //    var gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "general";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    var rectTransform = (RectTransform)gameObject.transform;
-                //    var image = gameObject.GetComponent<Image>();
-                //    var button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("FFE7E7");
-                //    //categoryColors.Add(LSColors.HexToColor("FFE7E7"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(TooltipHelper.NewTooltip("General Editor Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.General;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    var textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    var textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    var textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "General";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
-
-                ////Timeline
-                //{
-                //    var gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "timeline";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-                //    Image image = gameObject.GetComponent<Image>();
-                //    Button button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("C0ACE1");
-                //    //categoryColors.Add(LSColors.HexToColor("C0ACE1"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Timeline Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.Timeline;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    Text textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "Timeline";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
-
-                ////Data
-                //{
-                //    GameObject gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "saving";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-                //    Image image = gameObject.GetComponent<Image>();
-                //    Button button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("F17BB8");
-                //    //categoryColors.Add(LSColors.HexToColor("F17BB8"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Data Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.Data;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    textGameObject.GetComponent<CanvasRenderer>();
-                //    Text textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "Data";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
-
-                ////Editor GUI
-                //{
-                //    GameObject gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "editorgui";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-                //    Image image = gameObject.GetComponent<Image>();
-                //    Button button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("2F426D");
-                //    //categoryColors.Add(LSColors.HexToColor("2F426D"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("GUI Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.EditorGUI;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    Text textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "Editor GUI";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
-
-                ////Functions
-                //{
-                //    GameObject gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "functions";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-                //    Image image = gameObject.GetComponent<Image>();
-                //    Button button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("4076DF");
-                //    //categoryColors.Add(LSColors.HexToColor("4076DF"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Functions Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.Functions;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    Text textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "Functions";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
-
-                ////Fields
-                //{
-                //    GameObject gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "fields";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-                //    Image image = gameObject.GetComponent<Image>();
-                //    Button button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("6CCBCF");
-                //    //categoryColors.Add(LSColors.HexToColor("6CCBCF"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Fields Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.Fields;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    Text textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "Fields";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
-
-                ////Preview
-                //{
-                //    GameObject gameObject = Instantiate(prefabTMP);
-                //    gameObject.name = "preview";
-                //    gameObject.transform.SetParent(editorProperties.transform.Find("crumbs"));
-                //    gameObject.layer = 5;
-                //    RectTransform rectTransform = gameObject.GetComponent<RectTransform>();
-                //    Image image = gameObject.GetComponent<Image>();
-                //    Button button = gameObject.GetComponent<Button>();
-
-                //    var hoverUI = gameObject.AddComponent<HoverUI>();
-                //    hoverUI.ogPos = gameObject.transform.localPosition;
-                //    hoverUI.animPos = new Vector3(0f, 6f, 0f);
-                //    hoverUI.size = 1f;
-                //    hoverUI.animatePos = true;
-                //    hoverUI.animateSca = false;
-
-                //    rectTransform.sizeDelta = new Vector2(100f, 32f);
-                //    rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                //    image.color = LSColors.HexToColor("1B1B1C");
-                //    //categoryColors.Add(LSColors.HexToColor("1B1B1C"));
-
-                //    ColorBlock cb2 = button.colors;
-                //    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                //    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                //    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                //    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                //    button.colors = cb2;
-
-                //    HoverTooltip hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-                //    hoverTooltip.tooltipLangauges.Clear();
-                //    hoverTooltip.tooltipLangauges.Add(Triggers.NewTooltip("Preview Settings", ""));
-
-                //    button.onClick.ClearAll();
-                //    button.onClick.AddListener(delegate ()
-                //    {
-                //        currentCategory = EditorProperty.EditorPropCategory.Preview;
-                //        RenderPropertiesWindow();
-                //    });
-
-                //    GameObject textGameObject = gameObject.transform.GetChild(0).gameObject;
-                //    textGameObject.transform.SetParent(gameObject.transform);
-                //    textGameObject.layer = 5;
-                //    RectTransform textRectTransform = textGameObject.GetComponent<RectTransform>();
-                //    Text textText = textGameObject.GetComponent<Text>();
-
-                //    textRectTransform.anchoredPosition = Vector2.zero;
-                //    textText.text = "Preview";
-                //    textText.alignment = TextAnchor.MiddleCenter;
-                //    textText.color = new Color(0.95f, 0.95f, 0.95f, 1f);
-                //    textText.font = textFont.font;
-                //    textText.fontSize = 20;
-                //}
             }
 
             EditorHelper.AddEditorDropdown("Preferences", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_preferences-white.png"), delegate ()
@@ -4826,48 +4419,13 @@ namespace EditorManagement.Functions.Editors
                 OpenPropertiesWindow();
             });
 
-            //var propWin = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut"));
-            //propWin.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown").transform);
-            //propWin.transform.localScale = Vector3.one;
-            //propWin.name = "Preferences";
-            //propWin.transform.Find("Text").GetComponent<Text>().text = "Preferences";
-            //propWin.transform.Find("Text 1").GetComponent<Text>().text = "F10";
-
-            //var propWinButton = propWin.GetComponent<Button>();
-            //propWinButton.onClick.ClearAll();
-            //propWinButton.onClick.AddListener(delegate ()
-            //{
-            //    OpenPropertiesWindow();
-            //});
-
-            //propWin.SetActive(true);
-
-
-            //string jpgFileLocation = "BepInEx/plugins/Assets/editor_gui_preferences-white.png";
-
-            //if (RTFile.FileExists(jpgFileLocation))
-            //{
-            //    Image spriteReloader = propWin.transform.Find("Image").GetComponent<Image>();
-
-            //    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(RTFile.ApplicationDirectory + jpgFileLocation, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-            //    {
-            //        spriteReloader.sprite = cover;
-            //    }, delegate (string errorFile)
-            //    {
-            //        spriteReloader.sprite = ArcadeManager.inst.defaultImage;
-            //    }));
-            //}
-
             editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.RemoveAllListeners();
             editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.AddListener(delegate ()
             {
                 ClosePropertiesWindow();
             });
 
-            //Add Editor Properties Popup to EditorDialogsDictionary
-            {
-                EditorHelper.AddEditorPopup("Editor Properties Popup", editorProperties);
-            }
+            EditorHelper.AddEditorPopup("Editor Properties Popup", editorProperties);
         }
 
         public Text documentationTitle;
@@ -8826,7 +8384,11 @@ namespace EditorManagement.Functions.Editors
 
         };
 
-        public void RenderPropertiesWindow()
+        bool generatedPropertiesWindow = false;
+
+        public void RenderPropertiesWindow() => StartCoroutine(IRenderPropertiesWindow());
+
+        IEnumerator IRenderPropertiesWindow()
         {
             var editorDialog = EditorManager.inst.GetDialog("Editor Properties Popup").Dialog;
             var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
@@ -8839,8 +8401,12 @@ namespace EditorManagement.Functions.Editors
 
             LSHelpers.DeleteChildren(editorDialog.Find("mask/content"));
 
-            foreach (var prop in EditorProperties.Union(otherProperties))
+            var list = EditorProperties.Union(otherProperties).ToList();
+
+            for (int i = 0; i < list.Count; i++)
             {
+                var prop = list[i];
+
                 if (currentCategory == prop.propCategory && (string.IsNullOrEmpty(propertiesSearch) || prop.name.ToLower().Contains(propertiesSearch.ToLower())))
                 {
                     switch (prop.valueType)
@@ -9383,13 +8949,13 @@ namespace EditorManagement.Functions.Editors
                                 Type type = prop.configEntry.SettingType;
 
                                 var enums = Enum.GetValues(prop.configEntry.SettingType);
-                                for (int i = 0; i < enums.Length; i++)
+                                for (int j = 0; j < enums.Length; j++)
                                 {
                                     var str = "Invalid Value";
-                                    if (Enum.GetName(prop.configEntry.SettingType, i) != null)
+                                    if (Enum.GetName(prop.configEntry.SettingType, j) != null)
                                     {
                                         hide.DisabledOptions.Add(false);
-                                        str = Enum.GetName(prop.configEntry.SettingType, i);
+                                        str = Enum.GetName(prop.configEntry.SettingType, j);
                                     }
                                     else
                                     {
@@ -9562,6 +9128,9 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
             }
+
+            generatedPropertiesWindow = true;
+            yield break;
         }
 
         public void RefreshFileBrowserLevels()
@@ -9817,7 +9386,7 @@ namespace EditorManagement.Functions.Editors
             {
                 var dialogAnimation = DialogAnimations.Find(x => x.name == dialogName);
 
-                if (!dialogAnimation.active)
+                if (!dialogAnimation.Active)
                 {
                     gameObject.SetActive(active);
 
@@ -9833,12 +9402,12 @@ namespace EditorManagement.Functions.Editors
                 {
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
-                        new FloatKeyframe(0f, active ? dialogAnimation.posStart.x : dialogAnimation.posEnd.x, Ease.Linear),
-                        new FloatKeyframe(active ? dialogAnimation.posXStartDuration : dialogAnimation.posXEndDuration, active ? dialogAnimation.posEnd.x : dialogAnimation.posStart.x, active ? Ease.GetEaseFunction(dialogAnimation.posXStartEase) : Ease.GetEaseFunction(dialogAnimation.posXEndEase)),
-                        new FloatKeyframe(active ? dialogAnimation.posXStartDuration : dialogAnimation.posXEndDuration + 0.01f, active ? dialogAnimation.posEnd.x : dialogAnimation.posStart.x, Ease.Linear),
+                        new FloatKeyframe(0f, active ? dialogAnimation.PosStart.x : dialogAnimation.PosEnd.x, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.PosXStartDuration : dialogAnimation.PosXEndDuration, active ? dialogAnimation.PosEnd.x : dialogAnimation.PosStart.x, active ? Ease.GetEaseFunction(dialogAnimation.PosXStartEase) : Ease.GetEaseFunction(dialogAnimation.PosXEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.PosXStartDuration : dialogAnimation.PosXEndDuration + 0.01f, active ? dialogAnimation.PosEnd.x : dialogAnimation.PosStart.x, Ease.Linear),
                     }, delegate (float x)
                     {
-                        if (dialogAnimation.posActive)
+                        if (dialogAnimation.PosActive)
                         {
                             var pos = dialog.localPosition;
                             pos.x = x;
@@ -9847,12 +9416,12 @@ namespace EditorManagement.Functions.Editors
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
-                        new FloatKeyframe(0f, active ? dialogAnimation.posStart.y : dialogAnimation.posEnd.y, Ease.Linear),
-                        new FloatKeyframe(active ? dialogAnimation.posYStartDuration : dialogAnimation.posYEndDuration, active ? dialogAnimation.posEnd.y : dialogAnimation.posStart.y, active ? Ease.GetEaseFunction(dialogAnimation.posYStartEase) : Ease.GetEaseFunction(dialogAnimation.posYEndEase)),
-                        new FloatKeyframe(active ? dialogAnimation.posYStartDuration : dialogAnimation.posYEndDuration + 0.01f, active ? dialogAnimation.posEnd.y : dialogAnimation.posStart.y, Ease.Linear),
+                        new FloatKeyframe(0f, active ? dialogAnimation.PosStart.y : dialogAnimation.PosEnd.y, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.PosYStartDuration : dialogAnimation.PosYEndDuration, active ? dialogAnimation.PosEnd.y : dialogAnimation.PosStart.y, active ? Ease.GetEaseFunction(dialogAnimation.PosYStartEase) : Ease.GetEaseFunction(dialogAnimation.PosYEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.PosYStartDuration : dialogAnimation.PosYEndDuration + 0.01f, active ? dialogAnimation.PosEnd.y : dialogAnimation.PosStart.y, Ease.Linear),
                     }, delegate (float x)
                     {
-                        if (dialogAnimation.posActive)
+                        if (dialogAnimation.PosActive)
                         {
                             var pos = dialog.localPosition;
                             pos.y = x;
@@ -9861,12 +9430,12 @@ namespace EditorManagement.Functions.Editors
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
-                        new FloatKeyframe(0f, active ? dialogAnimation.scaStart.x : dialogAnimation.scaEnd.x, Ease.Linear),
-                        new FloatKeyframe(active ? dialogAnimation.scaXStartDuration : dialogAnimation.scaXEndDuration, active ? dialogAnimation.scaEnd.x : dialogAnimation.scaStart.x, active ? Ease.GetEaseFunction(dialogAnimation.scaXStartEase) : Ease.GetEaseFunction(dialogAnimation.scaXEndEase)),
-                        new FloatKeyframe(active ? dialogAnimation.scaXStartDuration : dialogAnimation.scaXEndDuration + 0.01f, active ? dialogAnimation.scaEnd.x : dialogAnimation.scaStart.x, Ease.Linear),
+                        new FloatKeyframe(0f, active ? dialogAnimation.ScaStart.x : dialogAnimation.ScaEnd.x, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.ScaXStartDuration : dialogAnimation.ScaXEndDuration, active ? dialogAnimation.ScaEnd.x : dialogAnimation.ScaStart.x, active ? Ease.GetEaseFunction(dialogAnimation.ScaXStartEase) : Ease.GetEaseFunction(dialogAnimation.ScaXEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.ScaXStartDuration : dialogAnimation.ScaXEndDuration + 0.01f, active ? dialogAnimation.ScaEnd.x : dialogAnimation.ScaStart.x, Ease.Linear),
                     }, delegate (float x)
                     {
-                        if (dialogAnimation.scaActive)
+                        if (dialogAnimation.ScaActive)
                         {
                             var pos = dialog.localScale;
                             pos.x = x;
@@ -9877,12 +9446,12 @@ namespace EditorManagement.Functions.Editors
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
-                        new FloatKeyframe(0f, active ? dialogAnimation.scaStart.y : dialogAnimation.scaEnd.y, Ease.Linear),
-                        new FloatKeyframe(active ? dialogAnimation.scaYStartDuration : dialogAnimation.scaYEndDuration, active ? dialogAnimation.scaEnd.y : dialogAnimation.scaStart.y, active ? Ease.GetEaseFunction(dialogAnimation.scaYStartEase) : Ease.GetEaseFunction(dialogAnimation.scaYEndEase)),
-                        new FloatKeyframe(active ? dialogAnimation.scaYStartDuration : dialogAnimation.scaYEndDuration + 0.01f, active ? dialogAnimation.scaEnd.y : dialogAnimation.scaStart.y, Ease.Linear),
+                        new FloatKeyframe(0f, active ? dialogAnimation.ScaStart.y : dialogAnimation.ScaEnd.y, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.ScaYStartDuration : dialogAnimation.ScaYEndDuration, active ? dialogAnimation.ScaEnd.y : dialogAnimation.ScaStart.y, active ? Ease.GetEaseFunction(dialogAnimation.ScaYStartEase) : Ease.GetEaseFunction(dialogAnimation.ScaYEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.ScaYStartDuration : dialogAnimation.ScaYEndDuration + 0.01f, active ? dialogAnimation.ScaEnd.y : dialogAnimation.ScaStart.y, Ease.Linear),
                     }, delegate (float x)
                     {
-                        if (dialogAnimation.scaActive)
+                        if (dialogAnimation.ScaActive)
                         {
                             var pos = dialog.localScale;
                             pos.y = x;
@@ -9893,12 +9462,12 @@ namespace EditorManagement.Functions.Editors
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
                     {
-                        new FloatKeyframe(0f, active ? dialogAnimation.rotStart : dialogAnimation.rotEnd, Ease.Linear),
-                        new FloatKeyframe(active ? dialogAnimation.rotStartDuration : dialogAnimation.rotEndDuration, active ? dialogAnimation.rotEnd : dialogAnimation.rotStart, active ? Ease.GetEaseFunction(dialogAnimation.rotStartEase) : Ease.GetEaseFunction(dialogAnimation.rotEndEase)),
-                        new FloatKeyframe(active ? dialogAnimation.rotStartDuration : dialogAnimation.rotEndDuration + 0.01f, active ? dialogAnimation.rotEnd : dialogAnimation.rotStart, Ease.Linear),
+                        new FloatKeyframe(0f, active ? dialogAnimation.RotStart : dialogAnimation.RotEnd, Ease.Linear),
+                        new FloatKeyframe(active ? dialogAnimation.RotStartDuration : dialogAnimation.RotEndDuration, active ? dialogAnimation.RotEnd : dialogAnimation.RotStart, active ? Ease.GetEaseFunction(dialogAnimation.RotStartEase) : Ease.GetEaseFunction(dialogAnimation.RotEndEase)),
+                        new FloatKeyframe(active ? dialogAnimation.RotStartDuration : dialogAnimation.RotEndDuration + 0.01f, active ? dialogAnimation.RotEnd : dialogAnimation.RotStart, Ease.Linear),
                     }, delegate (float x)
                     {
-                        if (dialogAnimation.rotActive)
+                        if (dialogAnimation.RotActive)
                         {
                             dialog.localRotation = Quaternion.Euler(0f, 0f, x);
                         }
@@ -9910,12 +9479,12 @@ namespace EditorManagement.Functions.Editors
                 {
                     dialog.gameObject.SetActive(active);
 
-                    if (dialogAnimation.posActive)
-                        dialog.localPosition = new Vector3(dialogAnimation.posEnd.x, dialogAnimation.posEnd.y, 0f);
-                    if (dialogAnimation.scaActive)
-                        dialog.localScale = new Vector3(dialogAnimation.scaEnd.x, dialogAnimation.scaEnd.y, 1f);
-                    if (dialogAnimation.rotActive)
-                        dialog.localRotation = Quaternion.Euler(0f, 0f, dialogAnimation.rotEnd);
+                    if (dialogAnimation.PosActive)
+                        dialog.localPosition = new Vector3(dialogAnimation.PosEnd.x, dialogAnimation.PosEnd.y, 0f);
+                    if (dialogAnimation.ScaActive)
+                        dialog.localScale = new Vector3(dialogAnimation.ScaEnd.x, dialogAnimation.ScaEnd.y, 1f);
+                    if (dialogAnimation.RotActive)
+                        dialog.localRotation = Quaternion.Euler(0f, 0f, dialogAnimation.RotEnd);
 
                     AnimationManager.inst.RemoveID(animation.id);
                 };
@@ -10005,12 +9574,30 @@ namespace EditorManagement.Functions.Editors
 
         #region Editor Properties
 
-        //public static EditorProperty GetEditorProperty(string name) => EditorProperties.Find(x => x.name == name);
-
         public static List<EditorProperty> EditorProperties => new List<EditorProperty>()
         {
             #region General
+            
+            new EditorProperty("Reset to Defaults", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Timeline,
+                delegate ()
+                {
+                    EditorManager.inst.ShowDialog("Warning Popup");
+                    inst.RefreshWarningPopup("Are you sure you want to revert every config? THIS CANNOT BE UNDONE!",
+                        delegate ()
+                        {
+                            var list = EditorProperties.Where(x => x.configEntry != null).ToList();
 
+                            for (int i = 0; i < list.Count; i++)
+                            {
+                                list[i].configEntry.BoxedValue = list[i].configEntry.DefaultValue;
+                            }
+
+                        }, delegate ()
+                        {
+
+                        });
+
+                }, "Reverts every config to their default value."),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.Debug),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditorZenMode),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BPMSnapsKeyframes),
@@ -10060,6 +9647,12 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.WaveformTopColor),
             new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.WaveformBottomColor),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WaveformTextureFormat),
+            new EditorProperty("Render Waveform", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Timeline,
+                delegate ()
+                {
+                    inst.StartCoroutine(inst.AssignTimelineTexture());
+                }, "Renders the timeline waveform."),
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.TimelineGridEnabled),
             new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.TimelineGridColor),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.TimelineGridThickness),
@@ -10090,7 +9683,6 @@ namespace EditorManagement.Functions.Editors
             #region Editor GUI
 
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DragUI),
-            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PlayEditorAnimations),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowModdedFeaturesInEditor),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HoverUIPlaySound),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ImportPrefabsDirectly),
@@ -10242,13 +9834,859 @@ namespace EditorManagement.Functions.Editors
 
             #endregion
 
-            #region Functions
+            #region Animations
             
-            //new EditorProperty("Open Keybind Editor", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Functions,
-            //    delegate ()
-            //    {
-            //        KeybindManager.inst.OpenPopup();
-            //    }, "Opens Keybind list"),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PlayEditorAnimations),
+
+            #region OpenFilePopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenFilePopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenFilePopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenFilePopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenFilePopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenFilePopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenFilePopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenFilePopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenFilePopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupRotCloseEase),
+
+            #endregion
+            
+            #region NewFilePopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NewFilePopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NewFilePopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NewFilePopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NewFilePopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NewFilePopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NewFilePopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NewFilePopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NewFilePopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupRotCloseEase),
+
+            #endregion
+            
+            #region SaveAsPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SaveAsPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SaveAsPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SaveAsPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SaveAsPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SaveAsPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SaveAsPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SaveAsPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SaveAsPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupRotCloseEase),
+
+            #endregion
+            
+            #region QuickActionsPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.QuickActionsPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.QuickActionsPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.QuickActionsPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaYCloseEase),
+            
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.QuickActionsPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.QuickActionsPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.QuickActionsPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.QuickActionsPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.QuickActionsPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupRotCloseEase),
+
+            #endregion
+            
+            #region ParentSelectorPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ParentSelectorPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ParentSelectorPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ParentSelectorPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ParentSelectorPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ParentSelectorPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ParentSelectorPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ParentSelectorPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ParentSelectorPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ParentSelectorPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ParentSelectorPopupRotCloseEase),
+
+            #endregion
+            
+            #region PrefabPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabPopupRotCloseEase),
+
+            #endregion
+            
+            #region ObjectOptionsPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectOptionsPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectOptionsPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectOptionsPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectOptionsPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectOptionsPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectOptionsPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectOptionsPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectOptionsPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectOptionsPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectOptionsPopupRotCloseEase),
+
+            #endregion
+            
+            #region BGOptionsPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BGOptionsPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BGOptionsPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BGOptionsPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BGOptionsPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BGOptionsPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BGOptionsPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BGOptionsPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BGOptionsPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BGOptionsPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BGOptionsPopupRotCloseEase),
+
+            #endregion
+            
+            #region BrowserPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BrowserPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BrowserPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BrowserPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.BrowserPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BrowserPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BrowserPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BrowserPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BrowserPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.BrowserPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.BrowserPopupRotCloseEase),
+
+            #endregion
+            
+            #region ObjectSearchPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectSearchPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectSearchPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectSearchPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ObjectSearchPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectSearchPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectSearchPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectSearchPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectSearchPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectSearchPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ObjectSearchPopupRotCloseEase),
+
+            #endregion
+            
+            #region WarningPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WarningPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WarningPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WarningPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.WarningPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WarningPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.WarningPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.WarningPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.WarningPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.WarningPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WarningPopupRotCloseEase),
+
+            #endregion
+            
+            #region REPLEditorPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.REPLEditorPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.REPLEditorPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.REPLEditorPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.REPLEditorPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.REPLEditorPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.REPLEditorPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.REPLEditorPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.REPLEditorPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.REPLEditorPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.REPLEditorPopupRotCloseEase),
+
+            #endregion
+            
+            #region EditorPropertiesPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditorPropertiesPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditorPropertiesPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditorPropertiesPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditorPropertiesPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditorPropertiesPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditorPropertiesPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditorPropertiesPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditorPropertiesPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditorPropertiesPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorPropertiesPopupRotCloseEase),
+
+            #endregion
+            
+            #region DocumentationPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DocumentationPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DocumentationPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DocumentationPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DocumentationPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DocumentationPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DocumentationPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DocumentationPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DocumentationPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DocumentationPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DocumentationPopupRotCloseEase),
+
+            #endregion
+            
+            #region DebuggerPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DebuggerPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DebuggerPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DebuggerPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DebuggerPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DebuggerPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DebuggerPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DebuggerPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DebuggerPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DebuggerPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DebuggerPopupRotCloseEase),
+
+            #endregion
+            
+            #region AutosavesPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AutosavesPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AutosavesPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AutosavesPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.AutosavesPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AutosavesPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosavesPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosavesPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosavesPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosavesPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.AutosavesPopupRotCloseEase),
+
+            #endregion
+            
+            #region DefaultModifiersPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DefaultModifiersPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DefaultModifiersPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DefaultModifiersPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.DefaultModifiersPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DefaultModifiersPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DefaultModifiersPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DefaultModifiersPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DefaultModifiersPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.DefaultModifiersPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.DefaultModifiersPopupRotCloseEase),
+
+            #endregion
+            
+            #region KeybindListPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.KeybindListPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.KeybindListPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.KeybindListPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.KeybindListPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.KeybindListPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeybindListPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeybindListPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeybindListPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeybindListPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.KeybindListPopupRotCloseEase),
+
+            #endregion
+            
+            #region ThemePopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ThemePopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ThemePopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ThemePopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ThemePopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ThemePopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ThemePopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ThemePopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ThemePopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ThemePopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ThemePopupRotCloseEase),
+
+            #endregion
+            
+            #region PrefabTypesPopup
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabTypesPopupActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabTypesPopupPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabTypesPopupScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.PrefabTypesPopupScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabTypesPopupRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabTypesPopupRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabTypesPopupRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabTypesPopupRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.PrefabTypesPopupRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.PrefabTypesPopupRotCloseEase),
+
+            #endregion
+            
+            #region FileDropdown
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.FileDropdownActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.FileDropdownPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.FileDropdownScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.FileDropdownScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.FileDropdownRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.FileDropdownRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.FileDropdownRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.FileDropdownRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.FileDropdownRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.FileDropdownRotCloseEase),
+
+            #endregion
+            
+            #region EditDropdown
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditDropdownActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditDropdownPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditDropdownScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.EditDropdownScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EditDropdownRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditDropdownRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditDropdownRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditDropdownRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.EditDropdownRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditDropdownRotCloseEase),
+
+            #endregion
+            
+            #region ViewDropdown
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ViewDropdownActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ViewDropdownPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ViewDropdownScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.ViewDropdownScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ViewDropdownRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ViewDropdownRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ViewDropdownRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ViewDropdownRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ViewDropdownRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.ViewDropdownRotCloseEase),
+
+            #endregion
+            
+            #region SteamDropdown
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SteamDropdownActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SteamDropdownPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SteamDropdownScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SteamDropdownScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SteamDropdownRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SteamDropdownRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SteamDropdownRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SteamDropdownRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SteamDropdownRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SteamDropdownRotCloseEase),
+
+            #endregion
+            
+            #region HelpDropdown
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HelpDropdownActive),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HelpDropdownPosActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownPosOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownPosClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownPosOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownPosCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownPosXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownPosXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownPosYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownPosYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HelpDropdownScaActive),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownScaOpen),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownScaClose),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownScaOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.HelpDropdownScaCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownScaXOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownScaXCloseEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownScaYOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownScaYCloseEase),
+
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HelpDropdownRotActive),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.HelpDropdownRotOpen),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.HelpDropdownRotClose),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.HelpDropdownRotOpenDuration),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.HelpDropdownRotCloseDuration),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownRotOpenEase),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.HelpDropdownRotCloseEase),
+
+            #endregion
 
             #endregion
 
@@ -10275,784 +10713,807 @@ namespace EditorManagement.Functions.Editors
 
         #region Constructors
 
-        public static List<DialogAnimation> DialogAnimations { get; set; } = new List<DialogAnimation>
+        public List<DialogAnimation> DialogAnimations { get; set; } = new List<DialogAnimation>
         {
             new DialogAnimation("Open File Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.OpenFilePopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
-
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                PosActiveConfig = EditorConfig.Instance.OpenFilePopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.OpenFilePopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.OpenFilePopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.OpenFilePopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.OpenFilePopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.OpenFilePopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.OpenFilePopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.OpenFilePopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.OpenFilePopupPosYCloseEase,
+                
+                ScaActiveConfig = EditorConfig.Instance.OpenFilePopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.OpenFilePopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.OpenFilePopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.OpenFilePopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.OpenFilePopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.OpenFilePopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.OpenFilePopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.OpenFilePopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.OpenFilePopupScaYCloseEase,
+                
+                RotActiveConfig = EditorConfig.Instance.OpenFilePopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.OpenFilePopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.OpenFilePopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.OpenFilePopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.OpenFilePopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.OpenFilePopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.OpenFilePopupRotCloseEase,
             },
             new DialogAnimation("New File Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.NewFilePopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.NewFilePopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.NewFilePopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.NewFilePopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.NewFilePopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.NewFilePopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.NewFilePopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.NewFilePopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.NewFilePopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.NewFilePopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.NewFilePopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.NewFilePopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.NewFilePopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.NewFilePopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.NewFilePopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.NewFilePopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.NewFilePopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.NewFilePopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.NewFilePopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.NewFilePopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.NewFilePopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.NewFilePopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.NewFilePopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.NewFilePopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.NewFilePopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.NewFilePopupRotCloseEase,
             },
             new DialogAnimation("Save As Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.SaveAsPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.SaveAsPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.SaveAsPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.SaveAsPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.SaveAsPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.SaveAsPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.SaveAsPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.SaveAsPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.SaveAsPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.SaveAsPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.SaveAsPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.SaveAsPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.SaveAsPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.SaveAsPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.SaveAsPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.SaveAsPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.SaveAsPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.SaveAsPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.SaveAsPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.SaveAsPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.SaveAsPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.SaveAsPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.SaveAsPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.SaveAsPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.SaveAsPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.SaveAsPopupRotCloseEase,
             },
             new DialogAnimation("Quick Actions Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.NewFilePopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.NewFilePopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.NewFilePopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.NewFilePopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.NewFilePopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.NewFilePopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.NewFilePopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.NewFilePopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.NewFilePopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.NewFilePopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.NewFilePopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.NewFilePopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.NewFilePopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.NewFilePopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.NewFilePopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.NewFilePopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.NewFilePopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.NewFilePopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.NewFilePopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.NewFilePopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.NewFilePopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.NewFilePopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.NewFilePopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.NewFilePopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.NewFilePopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.NewFilePopupRotCloseEase,
             },
             new DialogAnimation("Parent Selector")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.ParentSelectorPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.ParentSelectorPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.ParentSelectorPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.ParentSelectorPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.ParentSelectorPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.ParentSelectorPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.ParentSelectorPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.ParentSelectorPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.ParentSelectorPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.ParentSelectorPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.ParentSelectorPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.ParentSelectorPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.ParentSelectorPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.ParentSelectorPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.ParentSelectorPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.ParentSelectorPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.ParentSelectorPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.ParentSelectorPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.ParentSelectorPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.ParentSelectorPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.ParentSelectorPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.ParentSelectorPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.ParentSelectorPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.ParentSelectorPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.ParentSelectorPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.ParentSelectorPopupRotCloseEase,
             },
             new DialogAnimation("Prefab Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.PrefabPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.PrefabPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.PrefabPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.PrefabPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.PrefabPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.PrefabPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.PrefabPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.PrefabPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.PrefabPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.PrefabPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.PrefabPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.PrefabPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.PrefabPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.PrefabPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.PrefabPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.PrefabPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.PrefabPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.PrefabPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.PrefabPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.PrefabPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.PrefabPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.PrefabPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.PrefabPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.PrefabPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.PrefabPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.PrefabPopupRotCloseEase,
             },
             new DialogAnimation("Object Options Popup")
             {
-                posActive = true,
-                posStart = new Vector2(-35f, 22f),
-                posEnd = new Vector2(-35f, 57f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "OutElastic",
-                posXEndEase = "InCirc",
-                posYStartDuration = 0.6f,
-                posYEndDuration = 0.1f,
-                posYStartEase = "OutElastic",
-                posYEndEase = "InCirc",
+                ActiveConfig = EditorConfig.Instance.NewFilePopupActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.NewFilePopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.NewFilePopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.NewFilePopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.NewFilePopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.NewFilePopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.NewFilePopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.NewFilePopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.NewFilePopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.NewFilePopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.NewFilePopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.NewFilePopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.NewFilePopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.NewFilePopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.NewFilePopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.NewFilePopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.NewFilePopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.NewFilePopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.NewFilePopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.NewFilePopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.NewFilePopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.NewFilePopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.NewFilePopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.NewFilePopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.NewFilePopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.NewFilePopupRotCloseEase,
             },
             new DialogAnimation("BG Options Popup")
             {
-                posActive = true,
-                posStart = new Vector2(0f, 22f),
-                posEnd = new Vector2(0f, 57f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "OutElastic",
-                posXEndEase = "InCirc",
-                posYStartDuration = 0.6f,
-                posYEndDuration = 0.1f,
-                posYStartEase = "OutElastic",
-                posYEndEase = "InCirc",
+                ActiveConfig = EditorConfig.Instance.BGOptionsPopupActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.BGOptionsPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.BGOptionsPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.BGOptionsPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.BGOptionsPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.BGOptionsPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.BGOptionsPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.BGOptionsPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.BGOptionsPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.BGOptionsPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.BGOptionsPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.BGOptionsPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.BGOptionsPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.BGOptionsPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.BGOptionsPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.BGOptionsPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.BGOptionsPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.BGOptionsPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.BGOptionsPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.BGOptionsPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.BGOptionsPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.BGOptionsPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.BGOptionsPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.BGOptionsPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.BGOptionsPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.BGOptionsPopupRotCloseEase,
             },
             new DialogAnimation("Browser Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.BrowserPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.BrowserPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.BrowserPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.BrowserPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.BrowserPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.BrowserPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.BrowserPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.BrowserPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.BrowserPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.BrowserPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.BrowserPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.BrowserPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.BrowserPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.BrowserPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.BrowserPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.BrowserPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.BrowserPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.BrowserPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.BrowserPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.BrowserPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.BrowserPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.BrowserPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.BrowserPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.BrowserPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.BrowserPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.BrowserPopupRotCloseEase,
             },
             new DialogAnimation("Object Search Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.ObjectSearchPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.ObjectSearchPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.ObjectSearchPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.ObjectSearchPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.ObjectSearchPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.ObjectSearchPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.ObjectSearchPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.ObjectSearchPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.ObjectSearchPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.ObjectSearchPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.ObjectSearchPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.ObjectSearchPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.ObjectSearchPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.ObjectSearchPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.ObjectSearchPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.ObjectSearchPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.ObjectSearchPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.ObjectSearchPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.ObjectSearchPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.ObjectSearchPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.ObjectSearchPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.ObjectSearchPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.ObjectSearchPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.ObjectSearchPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.ObjectSearchPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.ObjectSearchPopupRotCloseEase,
             },
             new DialogAnimation("Warning Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.WarningPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.WarningPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.WarningPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.WarningPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.WarningPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.WarningPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.WarningPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.WarningPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.WarningPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.WarningPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.WarningPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.WarningPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.WarningPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.WarningPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.WarningPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.WarningPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.WarningPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.WarningPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.WarningPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.WarningPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.WarningPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.WarningPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.WarningPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.WarningPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.WarningPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.WarningPopupRotCloseEase,
             },
             new DialogAnimation("REPL Editor Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.REPLEditorPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.REPLEditorPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.REPLEditorPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.REPLEditorPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.REPLEditorPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.REPLEditorPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.REPLEditorPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.REPLEditorPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.REPLEditorPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.REPLEditorPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.REPLEditorPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.REPLEditorPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.REPLEditorPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.REPLEditorPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.REPLEditorPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.REPLEditorPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.REPLEditorPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.REPLEditorPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.REPLEditorPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.REPLEditorPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.REPLEditorPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.REPLEditorPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.REPLEditorPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.REPLEditorPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.REPLEditorPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.REPLEditorPopupRotCloseEase,
             },
             new DialogAnimation("Editor Properties Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.EditorPropertiesPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.EditorPropertiesPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.EditorPropertiesPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.EditorPropertiesPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.EditorPropertiesPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.EditorPropertiesPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.EditorPropertiesPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.EditorPropertiesPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.EditorPropertiesPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.EditorPropertiesPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.EditorPropertiesPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.EditorPropertiesPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.EditorPropertiesPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.EditorPropertiesPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.EditorPropertiesPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.EditorPropertiesPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.EditorPropertiesPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.EditorPropertiesPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.EditorPropertiesPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.EditorPropertiesPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.EditorPropertiesPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.EditorPropertiesPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.EditorPropertiesPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.EditorPropertiesPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.EditorPropertiesPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.EditorPropertiesPopupRotCloseEase,
             },
             new DialogAnimation("Documentation Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.DocumentationPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.DocumentationPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.DocumentationPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.DocumentationPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.DocumentationPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.DocumentationPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.DocumentationPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.DocumentationPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.DocumentationPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.DocumentationPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.DocumentationPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.DocumentationPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.DocumentationPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.DocumentationPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.DocumentationPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.DocumentationPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.DocumentationPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.DocumentationPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.DocumentationPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.DocumentationPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.DocumentationPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.DocumentationPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.DocumentationPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.DocumentationPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.DocumentationPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.DocumentationPopupRotCloseEase,
             },
             new DialogAnimation("Debugger Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.DebuggerPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.DebuggerPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.DebuggerPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.DebuggerPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.DebuggerPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.DebuggerPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.DebuggerPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.DebuggerPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.DebuggerPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.DebuggerPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.DebuggerPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.DebuggerPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.DebuggerPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.DebuggerPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.DebuggerPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.DebuggerPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.DebuggerPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.DebuggerPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.DebuggerPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.DebuggerPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.DebuggerPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.DebuggerPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.DebuggerPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.DebuggerPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.DebuggerPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.DebuggerPopupRotCloseEase,
             },
             new DialogAnimation("Autosaves Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.AutosavesPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.AutosavesPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.AutosavesPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.AutosavesPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.AutosavesPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.AutosavesPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.AutosavesPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.AutosavesPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.AutosavesPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.AutosavesPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.AutosavesPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.AutosavesPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.AutosavesPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.AutosavesPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.AutosavesPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.AutosavesPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.AutosavesPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.AutosavesPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.AutosavesPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.AutosavesPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.AutosavesPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.AutosavesPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.AutosavesPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.AutosavesPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.AutosavesPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.AutosavesPopupRotCloseEase,
             },
             new DialogAnimation("Default Modifiers Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.DefaultModifiersPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.DefaultModifiersPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.DefaultModifiersPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.DefaultModifiersPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.DefaultModifiersPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.DefaultModifiersPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.DefaultModifiersPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.DefaultModifiersPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.DefaultModifiersPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.DefaultModifiersPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.DefaultModifiersPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.DefaultModifiersPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.DefaultModifiersPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.DefaultModifiersPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.DefaultModifiersPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.DefaultModifiersPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.DefaultModifiersPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.DefaultModifiersPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.DefaultModifiersPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.DefaultModifiersPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.DefaultModifiersPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.DefaultModifiersPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.DefaultModifiersPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.DefaultModifiersPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.DefaultModifiersPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.DefaultModifiersPopupRotCloseEase,
             },
             new DialogAnimation("Keybind List Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.KeybindListPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.KeybindListPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.KeybindListPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.KeybindListPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.KeybindListPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.KeybindListPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.KeybindListPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.KeybindListPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.KeybindListPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.KeybindListPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.KeybindListPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.KeybindListPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.KeybindListPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.KeybindListPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.KeybindListPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.KeybindListPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.KeybindListPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.KeybindListPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.KeybindListPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.KeybindListPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.KeybindListPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.KeybindListPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.KeybindListPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.KeybindListPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.KeybindListPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.KeybindListPopupRotCloseEase,
             },
             new DialogAnimation("Theme Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.ThemePopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.ThemePopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.ThemePopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.ThemePopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.ThemePopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.ThemePopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.ThemePopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.ThemePopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.ThemePopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.ThemePopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.ThemePopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.ThemePopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.ThemePopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.ThemePopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.ThemePopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.ThemePopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.ThemePopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.ThemePopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.ThemePopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.ThemePopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.ThemePopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.ThemePopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.ThemePopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.ThemePopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.ThemePopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.ThemePopupRotCloseEase,
             },
             new DialogAnimation("Prefab Types Popup")
             {
-                posStart = Vector2.zero,
-                posEnd = Vector2.zero,
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.PrefabTypesPopupActive,
 
-                scaStart = Vector2.zero,
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutElastic",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutElastic",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.PrefabTypesPopupPosActive,
+                PosOpenConfig = EditorConfig.Instance.PrefabTypesPopupPosOpen,
+                PosCloseConfig = EditorConfig.Instance.PrefabTypesPopupPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.PrefabTypesPopupPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.PrefabTypesPopupPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.PrefabTypesPopupPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.PrefabTypesPopupPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.PrefabTypesPopupPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.PrefabTypesPopupPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.PrefabTypesPopupScaActive,
+                ScaOpenConfig = EditorConfig.Instance.PrefabTypesPopupScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.PrefabTypesPopupScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.PrefabTypesPopupScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.PrefabTypesPopupScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.PrefabTypesPopupScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.PrefabTypesPopupScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.PrefabTypesPopupScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.PrefabTypesPopupScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.PrefabTypesPopupRotActive,
+                RotOpenConfig = EditorConfig.Instance.PrefabTypesPopupRotOpen,
+                RotCloseConfig = EditorConfig.Instance.PrefabTypesPopupRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.PrefabTypesPopupRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.PrefabTypesPopupRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.PrefabTypesPopupRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.PrefabTypesPopupRotCloseEase,
             },
             new DialogAnimation("File Dropdown")
             {
-                posStart = new Vector2(-37.5f, -16f),
-                posEnd = new Vector2(-37.5f, -16f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.FileDropdownActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutBounce",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutBounce",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.FileDropdownPosActive,
+                PosOpenConfig = EditorConfig.Instance.FileDropdownPosOpen,
+                PosCloseConfig = EditorConfig.Instance.FileDropdownPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.FileDropdownPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.FileDropdownPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.FileDropdownPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.FileDropdownPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.FileDropdownPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.FileDropdownPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.FileDropdownScaActive,
+                ScaOpenConfig = EditorConfig.Instance.FileDropdownScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.FileDropdownScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.FileDropdownScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.FileDropdownScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.FileDropdownScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.FileDropdownScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.FileDropdownScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.FileDropdownScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.FileDropdownRotActive,
+                RotOpenConfig = EditorConfig.Instance.FileDropdownRotOpen,
+                RotCloseConfig = EditorConfig.Instance.FileDropdownRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.FileDropdownRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.FileDropdownRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.FileDropdownRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.FileDropdownRotCloseEase,
             },
             new DialogAnimation("Edit Dropdown")
             {
-                posStart = new Vector2(-37.5f, -16f),
-                posEnd = new Vector2(-37.5f, -16f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.EditDropdownActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutBounce",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutBounce",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.EditDropdownPosActive,
+                PosOpenConfig = EditorConfig.Instance.EditDropdownPosOpen,
+                PosCloseConfig = EditorConfig.Instance.EditDropdownPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.EditDropdownPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.EditDropdownPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.EditDropdownPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.EditDropdownPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.EditDropdownPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.EditDropdownPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.EditDropdownScaActive,
+                ScaOpenConfig = EditorConfig.Instance.EditDropdownScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.EditDropdownScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.EditDropdownScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.EditDropdownScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.EditDropdownScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.EditDropdownScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.EditDropdownScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.EditDropdownScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.EditDropdownRotActive,
+                RotOpenConfig = EditorConfig.Instance.EditDropdownRotOpen,
+                RotCloseConfig = EditorConfig.Instance.EditDropdownRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.EditDropdownRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.EditDropdownRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.EditDropdownRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.EditDropdownRotCloseEase,
             },
             new DialogAnimation("View Dropdown")
             {
-                posStart = new Vector2(-37.5f, -16f),
-                posEnd = new Vector2(-37.5f, -16f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.ViewDropdownActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutBounce",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutBounce",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.ViewDropdownPosActive,
+                PosOpenConfig = EditorConfig.Instance.ViewDropdownPosOpen,
+                PosCloseConfig = EditorConfig.Instance.ViewDropdownPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.ViewDropdownPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.ViewDropdownPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.ViewDropdownPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.ViewDropdownPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.ViewDropdownPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.ViewDropdownPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.ViewDropdownScaActive,
+                ScaOpenConfig = EditorConfig.Instance.ViewDropdownScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.ViewDropdownScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.ViewDropdownScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.ViewDropdownScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.ViewDropdownScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.ViewDropdownScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.ViewDropdownScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.ViewDropdownScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.ViewDropdownRotActive,
+                RotOpenConfig = EditorConfig.Instance.ViewDropdownRotOpen,
+                RotCloseConfig = EditorConfig.Instance.ViewDropdownRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.ViewDropdownRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.ViewDropdownRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.ViewDropdownRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.ViewDropdownRotCloseEase,
             },
             new DialogAnimation("Steam Dropdown")
             {
-                posStart = new Vector2(-37.5f, -16f),
-                posEnd = new Vector2(-37.5f, -16f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.SteamDropdownActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutBounce",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutBounce",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.SteamDropdownPosActive,
+                PosOpenConfig = EditorConfig.Instance.SteamDropdownPosOpen,
+                PosCloseConfig = EditorConfig.Instance.SteamDropdownPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.SteamDropdownPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.SteamDropdownPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.SteamDropdownPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.SteamDropdownPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.SteamDropdownPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.SteamDropdownPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.SteamDropdownScaActive,
+                ScaOpenConfig = EditorConfig.Instance.SteamDropdownScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.SteamDropdownScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.SteamDropdownScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.SteamDropdownScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.SteamDropdownScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.SteamDropdownScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.SteamDropdownScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.SteamDropdownScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.SteamDropdownRotActive,
+                RotOpenConfig = EditorConfig.Instance.SteamDropdownRotOpen,
+                RotCloseConfig = EditorConfig.Instance.SteamDropdownRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.SteamDropdownRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.SteamDropdownRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.SteamDropdownRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.SteamDropdownRotCloseEase,
             },
             new DialogAnimation("Help Dropdown")
             {
-                posStart = new Vector2(-37.5f, -16f),
-                posEnd = new Vector2(-37.5f, -16f),
-                posXStartDuration = 0f,
-                posXEndDuration = 0f,
-                posXStartEase = "Linear",
-                posXEndEase = "Linear",
-                posYStartDuration = 0f,
-                posYEndDuration = 0f,
-                posYStartEase = "Linear",
-                posYEndEase = "Linear",
+                ActiveConfig = EditorConfig.Instance.HelpDropdownActive,
 
-                scaStart = new Vector2(1f, 0f),
-                scaEnd = Vector2.one,
-                scaXStartDuration = 0.6f,
-                scaXEndDuration = 0.1f,
-                scaXStartEase = "OutBounce",
-                scaXEndEase = "InCirc",
-                scaYStartDuration = 0.6f,
-                scaYEndDuration = 0.1f,
-                scaYStartEase = "OutBounce",
-                scaYEndEase = "InCirc",
+                PosActiveConfig = EditorConfig.Instance.HelpDropdownPosActive,
+                PosOpenConfig = EditorConfig.Instance.HelpDropdownPosOpen,
+                PosCloseConfig = EditorConfig.Instance.HelpDropdownPosClose,
+                PosOpenDurationConfig = EditorConfig.Instance.HelpDropdownPosOpenDuration,
+                PosCloseDurationConfig = EditorConfig.Instance.HelpDropdownPosCloseDuration,
+                PosXOpenEaseConfig = EditorConfig.Instance.HelpDropdownPosXOpenEase,
+                PosYOpenEaseConfig = EditorConfig.Instance.HelpDropdownPosYOpenEase,
+                PosXCloseEaseConfig = EditorConfig.Instance.HelpDropdownPosXCloseEase,
+                PosYCloseEaseConfig = EditorConfig.Instance.HelpDropdownPosYCloseEase,
 
-                rotStart = 0f,
-                rotEnd = 0f,
-                rotStartDuration = 0f,
-                rotEndDuration = 0f,
-                rotStartEase = "Linear",
-                rotEndEase = "Linear",
+                ScaActiveConfig = EditorConfig.Instance.HelpDropdownScaActive,
+                ScaOpenConfig = EditorConfig.Instance.HelpDropdownScaOpen,
+                ScaCloseConfig = EditorConfig.Instance.HelpDropdownScaClose,
+                ScaOpenDurationConfig = EditorConfig.Instance.HelpDropdownScaOpenDuration,
+                ScaCloseDurationConfig = EditorConfig.Instance.HelpDropdownScaCloseDuration,
+                ScaXOpenEaseConfig = EditorConfig.Instance.HelpDropdownScaXOpenEase,
+                ScaYOpenEaseConfig = EditorConfig.Instance.HelpDropdownScaYOpenEase,
+                ScaXCloseEaseConfig = EditorConfig.Instance.HelpDropdownScaXCloseEase,
+                ScaYCloseEaseConfig = EditorConfig.Instance.HelpDropdownScaYCloseEase,
+
+                RotActiveConfig = EditorConfig.Instance.HelpDropdownRotActive,
+                RotOpenConfig = EditorConfig.Instance.HelpDropdownRotOpen,
+                RotCloseConfig = EditorConfig.Instance.HelpDropdownRotClose,
+                RotOpenDurationConfig = EditorConfig.Instance.HelpDropdownRotOpenDuration,
+                RotCloseDurationConfig = EditorConfig.Instance.HelpDropdownRotCloseDuration,
+                RotOpenEaseConfig = EditorConfig.Instance.HelpDropdownRotOpenEase,
+                RotCloseEaseConfig = EditorConfig.Instance.HelpDropdownRotCloseEase,
             },
         };
 
@@ -11064,163 +11525,77 @@ namespace EditorManagement.Functions.Editors
             }
 
             public string name;
-            public bool active = true;
 
-            public bool posActive = false;
-            public Vector2 posStart;
-            public Vector2 posEnd;
-            public float posXStartDuration;
-            public float posXEndDuration;
-            public string posXStartEase;
-            public string posXEndEase;
-            public float posYStartDuration;
-            public float posYEndDuration;
-            public string posYStartEase;
-            public string posYEndEase;
+            #region Configs
 
-            public bool scaActive = true;
-            public Vector2 scaStart;
-            public Vector2 scaEnd;
-            public float scaXStartDuration;
-            public float scaXEndDuration;
-            public string scaXStartEase;
-            public string scaXEndEase;
-            public float scaYStartDuration;
-            public float scaYEndDuration;
-            public string scaYStartEase;
-            public string scaYEndEase;
+            public ConfigEntry<bool> ActiveConfig { get; set; }
 
-            public bool rotActive = false;
-            public float rotStart;
-            public float rotEnd;
-            public float rotStartDuration;
-            public float rotEndDuration;
-            public string rotStartEase;
-            public string rotEndEase;
+            // Position
+            public ConfigEntry<bool> PosActiveConfig { get; set; }
+            public ConfigEntry<Vector2> PosOpenConfig { get; set; }
+            public ConfigEntry<Vector2> PosCloseConfig { get; set; }
+            public ConfigEntry<Vector2> PosOpenDurationConfig { get; set; }
+            public ConfigEntry<Vector2> PosCloseDurationConfig { get; set; }
+            public ConfigEntry<Easings> PosXOpenEaseConfig { get; set; }
+            public ConfigEntry<Easings> PosXCloseEaseConfig { get; set; }
+            public ConfigEntry<Easings> PosYOpenEaseConfig { get; set; }
+            public ConfigEntry<Easings> PosYCloseEaseConfig { get; set; }
+            
+            // Scale
+            public ConfigEntry<bool> ScaActiveConfig { get; set; }
+            public ConfigEntry<Vector2> ScaOpenConfig { get; set; }
+            public ConfigEntry<Vector2> ScaCloseConfig { get; set; }
+            public ConfigEntry<Vector2> ScaOpenDurationConfig { get; set; }
+            public ConfigEntry<Vector2> ScaCloseDurationConfig { get; set; }
+            public ConfigEntry<Easings> ScaXOpenEaseConfig { get; set; }
+            public ConfigEntry<Easings> ScaXCloseEaseConfig { get; set; }
+            public ConfigEntry<Easings> ScaYOpenEaseConfig { get; set; }
+            public ConfigEntry<Easings> ScaYCloseEaseConfig { get; set; }
+            
+            // Rotation
+            public ConfigEntry<bool> RotActiveConfig { get; set; }
+            public ConfigEntry<float> RotOpenConfig { get; set; }
+            public ConfigEntry<float> RotCloseConfig { get; set; }
+            public ConfigEntry<float> RotOpenDurationConfig { get; set; }
+            public ConfigEntry<float> RotCloseDurationConfig { get; set; }
+            public ConfigEntry<Easings> RotOpenEaseConfig { get; set; }
+            public ConfigEntry<Easings> RotCloseEaseConfig { get; set; }
 
-            public static DialogAnimation Parse(JSONNode jn)
-            {
-                if (jn["name"] == null)
-                    return null;
+            #endregion
 
-                var dialogAnimation = new DialogAnimation(jn["name"]);
+            public bool Active => ActiveConfig.Value;
 
-                if (jn["active"]["all"] != null)
-                    dialogAnimation.active = jn["active"]["all"].AsBool;
-                
-                if (jn["active"]["pos"] != null && jn["active"]["pos"] != null)
-                    dialogAnimation.posActive = jn["active"]["pos"].AsBool;
-                
-                if (jn["active"]["sca"] != null && jn["active"]["sca"] != null)
-                    dialogAnimation.scaActive = jn["active"]["sca"].AsBool;
-                
-                if (jn["active"]["rot"] != null && jn["active"]["rot"] != null)
-                    dialogAnimation.rotActive = jn["active"]["rot"].AsBool;
+            public bool PosActive => PosActiveConfig.Value;
+            public Vector2 PosStart => PosCloseConfig.Value;
+            public Vector2 PosEnd => PosOpenConfig.Value;
+            public float PosXStartDuration => PosOpenDurationConfig.Value.x;
+            public float PosXEndDuration => PosCloseDurationConfig.Value.x;
+            public string PosXStartEase => PosXOpenEaseConfig.Value.ToString();
+            public string PosXEndEase => PosXCloseEaseConfig.Value.ToString();
+            public float PosYStartDuration => PosOpenDurationConfig.Value.y;
+            public float PosYEndDuration => PosCloseDurationConfig.Value.y;
+            public string PosYStartEase => PosYOpenEaseConfig.Value.ToString();
+            public string PosYEndEase => PosYCloseEaseConfig.Value.ToString();
 
-                if (jn["open"] != null)
-                {
-                    if (jn["open"]["pos"] != null)
-                    {
-                        dialogAnimation.posStart = new Vector2(jn["open"]["pos"]["x"]["val"].AsFloat, jn["open"]["pos"]["y"]["val"].AsFloat);
-                        dialogAnimation.posXStartDuration = jn["open"]["pos"]["x"]["t"].AsFloat;
-                        dialogAnimation.posYStartDuration = jn["open"]["pos"]["y"]["t"].AsFloat;
-                        dialogAnimation.posXStartEase = jn["open"]["pos"]["x"]["ct"];
-                        dialogAnimation.posYStartEase = jn["open"]["pos"]["y"]["ct"];
-                    }
-                    if (jn["open"]["sca"] != null)
-                    {
-                        dialogAnimation.scaStart = new Vector2(jn["open"]["sca"]["x"]["val"].AsFloat, jn["open"]["sca"]["y"]["val"].AsFloat);
-                        dialogAnimation.scaXStartDuration = jn["open"]["sca"]["x"]["t"].AsFloat;
-                        dialogAnimation.scaYStartDuration = jn["open"]["sca"]["y"]["t"].AsFloat;
-                        dialogAnimation.scaXStartEase = jn["open"]["sca"]["x"]["ct"];
-                        dialogAnimation.scaYStartEase = jn["open"]["sca"]["y"]["ct"];
-                    }
-                    if (jn["open"]["rot"] != null)
-                    {
-                        dialogAnimation.rotStart = jn["open"]["rot"]["x"]["val"].AsFloat;
-                        dialogAnimation.rotStartDuration = jn["open"]["rot"]["x"]["t"].AsFloat;
-                        dialogAnimation.rotStartEase = jn["open"]["rot"]["x"]["ct"];
-                    }
-                }
-                
-                if (jn["close"] != null)
-                {
-                    if (jn["close"]["pos"] != null)
-                    {
-                        dialogAnimation.posEnd = new Vector2(jn["close"]["pos"]["x"]["val"].AsFloat, jn["close"]["pos"]["y"]["val"].AsFloat);
-                        dialogAnimation.posXEndDuration = jn["close"]["pos"]["x"]["t"].AsFloat;
-                        dialogAnimation.posYEndDuration = jn["close"]["pos"]["y"]["t"].AsFloat;
-                        dialogAnimation.posXEndEase = jn["close"]["pos"]["x"]["ct"];
-                        dialogAnimation.posYEndEase = jn["close"]["pos"]["y"]["ct"];
-                    }
-                    if (jn["close"]["sca"] != null)
-                    {
-                        dialogAnimation.scaEnd = new Vector2(jn["close"]["sca"]["x"]["val"].AsFloat, jn["close"]["sca"]["y"]["val"].AsFloat);
-                        dialogAnimation.scaXEndDuration = jn["close"]["sca"]["x"]["t"].AsFloat;
-                        dialogAnimation.scaYEndDuration = jn["close"]["sca"]["y"]["t"].AsFloat;
-                        dialogAnimation.scaXEndEase = jn["close"]["sca"]["x"]["ct"];
-                        dialogAnimation.scaYEndEase = jn["close"]["sca"]["y"]["ct"];
-                    }
-                    if (jn["close"]["rot"] != null)
-                    {
-                        dialogAnimation.rotEnd = jn["close"]["rot"]["x"]["val"].AsFloat;
-                        dialogAnimation.rotEndDuration = jn["close"]["rot"]["x"]["t"].AsFloat;
-                        dialogAnimation.rotEndEase = jn["close"]["rot"]["x"]["ct"];
-                    }
-                }
+            public bool ScaActive => ScaActiveConfig.Value;
+            public Vector2 ScaStart => ScaCloseConfig.Value;
+            public Vector2 ScaEnd => ScaOpenConfig.Value;
+            public float ScaXStartDuration => ScaOpenDurationConfig.Value.x;
+            public float ScaXEndDuration => ScaCloseDurationConfig.Value.x;
+            public string ScaXStartEase => ScaXOpenEaseConfig.Value.ToString();
+            public string ScaXEndEase => ScaXCloseEaseConfig.Value.ToString();
+            public float ScaYStartDuration => ScaOpenDurationConfig.Value.y;
+            public float ScaYEndDuration => ScaCloseDurationConfig.Value.y;
+            public string ScaYStartEase => ScaYOpenEaseConfig.Value.ToString();
+            public string ScaYEndEase => ScaYCloseEaseConfig.Value.ToString();
 
-                return dialogAnimation;
-            }
-
-            public JSONNode ToJSON()
-            {
-                var jn = JSON.Parse("{}");
-
-                jn["name"] = name;
-
-                jn["active"]["all"] = active.ToString();
-                jn["active"]["pos"] = posActive.ToString();
-                jn["active"]["sca"] = scaActive.ToString();
-                jn["active"]["rot"] = rotActive.ToString();
-
-                jn["open"]["pos"]["x"]["val"] = posStart.x.ToString();
-                jn["open"]["pos"]["y"]["val"] = posStart.y.ToString();
-                jn["open"]["pos"]["x"]["t"] = posXStartDuration.ToString();
-                jn["open"]["pos"]["y"]["t"] = posYStartDuration.ToString();
-                jn["open"]["pos"]["x"]["ct"] = posXStartEase;
-                jn["open"]["pos"]["y"]["ct"] = posYStartEase;
-
-                jn["open"]["sca"]["x"]["val"] = scaStart.x.ToString();
-                jn["open"]["sca"]["y"]["val"] = scaStart.y.ToString();
-                jn["open"]["sca"]["x"]["t"] = scaXStartDuration.ToString();
-                jn["open"]["sca"]["y"]["t"] = scaYStartDuration.ToString();
-                jn["open"]["sca"]["x"]["ct"] = scaXStartEase;
-                jn["open"]["sca"]["y"]["ct"] = scaYStartEase;
-                
-                jn["open"]["rot"]["x"]["val"] = rotStart.ToString();
-                jn["open"]["rot"]["x"]["t"] = rotStartDuration.ToString();
-                jn["open"]["rot"]["x"]["ct"] = rotStartEase;
-                
-                jn["close"]["pos"]["x"]["val"] = posEnd.x.ToString();
-                jn["close"]["pos"]["y"]["val"] = posEnd.y.ToString();
-                jn["close"]["pos"]["x"]["t"] = posXEndDuration.ToString();
-                jn["close"]["pos"]["y"]["t"] = posYEndDuration.ToString();
-                jn["close"]["pos"]["x"]["ct"] = posXEndEase;
-                jn["close"]["pos"]["y"]["ct"] = posYEndEase;
-
-                jn["close"]["sca"]["x"]["val"] = scaEnd.x.ToString();
-                jn["close"]["sca"]["y"]["val"] = scaEnd.y.ToString();
-                jn["close"]["sca"]["x"]["t"] = scaXEndDuration.ToString();
-                jn["close"]["sca"]["y"]["t"] = scaYEndDuration.ToString();
-                jn["close"]["sca"]["x"]["ct"] = scaXEndEase;
-                jn["close"]["sca"]["y"]["ct"] = scaYEndEase;
-                
-                jn["close"]["rot"]["x"]["val"] = rotEnd.ToString();
-                jn["close"]["rot"]["x"]["t"] = rotEndDuration.ToString();
-                jn["close"]["rot"]["x"]["ct"] = rotEndEase;
-
-                return jn;
-            }
+            public bool RotActive => RotActiveConfig.Value;
+            public float RotStart => RotCloseConfig.Value;
+            public float RotEnd => RotOpenConfig.Value;
+            public float RotStartDuration => RotOpenDurationConfig.Value;
+            public float RotEndDuration => RotCloseDurationConfig.Value;
+            public string RotStartEase => RotOpenEaseConfig.Value.ToString();
+            public string RotEndEase => RotCloseEaseConfig.Value.ToString();
         }
 
         public class EditorProperty : Exists
@@ -11292,7 +11667,7 @@ namespace EditorManagement.Functions.Editors
                 EditorPropCategory.Timeline,
                 EditorPropCategory.Data,
                 EditorPropCategory.EditorGUI,
-                EditorPropCategory.Functions,
+                EditorPropCategory.Animations,
                 EditorPropCategory.Fields,
                 EditorPropCategory.Preview,
             };
@@ -11318,7 +11693,7 @@ namespace EditorManagement.Functions.Editors
                 Timeline,
                 Data,
                 EditorGUI,
-                Functions,
+                Animations,
                 Fields,
                 Preview
             }
