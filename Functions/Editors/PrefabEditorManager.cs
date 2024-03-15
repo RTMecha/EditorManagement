@@ -112,8 +112,8 @@ namespace EditorManagement.Functions.Editors
                             if (prefabObject.editorData.layer == EditorManager.inst.layer && prefabObject.prefabID == currentPrefab.prefabID)
                             {
                                 ObjectEditor.inst.RenderTimelineObject(new TimelineObject((PrefabObject)prefabObject));
-                                Updater.UpdatePrefab(prefabObject);
                             }
+                            Updater.UpdatePrefab(prefabObject, "Start Time");
                             num++;
                         }
                     }
@@ -160,7 +160,8 @@ namespace EditorManagement.Functions.Editors
                         if (float.TryParse(_val, out float num))
                         {
                             currentPrefab.autoKillOffset = num;
-                            Updater.UpdatePrefab(currentPrefab, "autokill");
+                            if (currentPrefab.autoKillType != PrefabObject.AutoKillType.Regular)
+                                Updater.UpdatePrefab(currentPrefab, "autokill");
                         }
                     });
 
@@ -180,17 +181,38 @@ namespace EditorManagement.Functions.Editors
 
                 prefabSelectorLeft.Find("time").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
+                    var locked = inputField.transform.Find("lock").GetComponent<Toggle>();
+                    locked.onValueChanged.ClearAll();
+                    locked.isOn = currentPrefab.editorData.locked;
+                    locked.onValueChanged.AddListener(delegate (bool _val)
+                    {
+                        currentPrefab.editorData.locked = _val;
+                        ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                    });
+
+                    var collapse = inputField.transform.Find("collapse").GetComponent<Toggle>();
+                    collapse.onValueChanged.ClearAll();
+                    collapse.isOn = currentPrefab.editorData.collapse;
+                    collapse.onValueChanged.AddListener(delegate (bool _val)
+                    {
+                        currentPrefab.editorData.collapse = _val;
+                        ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                    });
+
                     inputField.NewValueChangedListener(currentPrefab.StartTime.ToString(), delegate (string _val)
                     {
-                        if (float.TryParse(_val, out float n))
+                        if (!currentPrefab.editorData.locked)
                         {
-                            n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
-                            currentPrefab.StartTime = n;
-                            Updater.UpdatePrefab(currentPrefab, "starttime");
-                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                            if (float.TryParse(_val, out float n))
+                            {
+                                n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+                                currentPrefab.StartTime = n;
+                                Updater.UpdatePrefab(currentPrefab, "starttime");
+                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                            }
+                            else
+                                EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
                         }
-                        else
-                            EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
                     });
 
                     TriggerHelper.IncreaseDecreaseButtons(inputField);
@@ -292,6 +314,9 @@ namespace EditorManagement.Functions.Editors
 
                 prefabSelectorLeft.Find("repeat/x").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
+                    inputField.characterValidation = InputField.CharacterValidation.Integer;
+                    inputField.contentType = InputField.ContentType.Standard;
+                    inputField.characterLimit = 5;
                     inputField.NewValueChangedListener(Mathf.Clamp(currentPrefab.RepeatCount, 0, 1000).ToString(), delegate (string _val)
                     {
                         if (int.TryParse(_val, out int num))
@@ -308,13 +333,16 @@ namespace EditorManagement.Functions.Editors
 
                 prefabSelectorLeft.Find("repeat/y").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
+                    inputField.characterValidation = InputField.CharacterValidation.Decimal;
+                    inputField.contentType = InputField.ContentType.Standard;
+                    inputField.characterLimit = 0;
                     inputField.NewValueChangedListener(Mathf.Clamp(currentPrefab.RepeatOffsetTime, 0f, 60f).ToString(), delegate (string _val)
                     {
                         if (float.TryParse(_val, out float num))
                         {
                             num = Mathf.Clamp(num, 0f, 60f);
                             currentPrefab.RepeatOffsetTime = num;
-                            Updater.UpdatePrefab(currentPrefab);
+                            Updater.UpdatePrefab(currentPrefab, "Start Time");
                         }
                     });
 
@@ -324,6 +352,9 @@ namespace EditorManagement.Functions.Editors
 
                 prefabSelectorLeft.Find("speed").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
+                    inputField.characterValidation = InputField.CharacterValidation.Decimal;
+                    inputField.contentType = InputField.ContentType.Standard;
+                    inputField.characterLimit = 0;
                     inputField.NewValueChangedListener(Mathf.Clamp(currentPrefab.speed, 0.1f, Updater.MaxFastSpeed).ToString(), delegate (string _val)
                     {
                         if (float.TryParse(_val, out float num))
@@ -340,7 +371,7 @@ namespace EditorManagement.Functions.Editors
 
                 //Global Settings
                 {
-                    nameIF.onValueChanged.ClearAll();
+                    nameIF.onValueChanged.RemoveAllListeners();
                     nameIF.text = prefab.Name;
                     nameIF.onValueChanged.AddListener(delegate (string _val)
                     {
@@ -467,7 +498,7 @@ namespace EditorManagement.Functions.Editors
 
                     objectCount.text = "Object Count: " + prefab.objects.Count.ToString();
                     prefabObjectCount.text = "Prefab Object Count: " + prefab.prefabObjects.Count;
-                    prefabObjectTimelineCount.text = "Prefab Object (Imported) Count: " + DataManager.inst.gameData.prefabObjects.FindAll(x => x.prefabID == prefab.ID).Count;
+                    prefabObjectTimelineCount.text = "Prefab Object (Timeline) Count: " + DataManager.inst.gameData.prefabObjects.FindAll(x => x.prefabID == prefab.ID).Count;
                 }
             }
 
