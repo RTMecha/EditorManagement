@@ -535,6 +535,20 @@ namespace EditorManagement.Functions.Editors
             StartCoroutine(DisplayCustomNotificationLoop(_name, _text, _time, _base, _top, _icCol, _title, _icon));
         }
 
+        public void RebuildNotificationLayout()
+        {
+            try
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info/text").AsRT());
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info").AsRT());
+                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.AsRT());
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"{EditorPlugin.className}There was some sort of error with rebuilding the layout. {ex}");
+            }
+        }
+
         public IEnumerator DisplayNotificationLoop(string name, string text, float time, EditorManager.NotificationType type)
         {
             var config = EditorConfig.Instance;
@@ -546,15 +560,16 @@ namespace EditorManagement.Functions.Editors
             {
                 var notif = Instantiate(EditorManager.inst.notificationPrefabs[(int)type], Vector3.zero, Quaternion.identity);
                 Destroy(notif, time);
-                notif.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
+                if (type == EditorManager.NotificationType.Info)
+                    notif.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
+                else
+                    notif.transform.Find("text").GetComponent<Text>().text = text;
                 notif.transform.SetParent(EditorManager.inst.notification.transform);
                 if (config.NotificationDirection.Value == Direction.Down)
                     notif.transform.SetAsFirstSibling();
                 notif.transform.localScale = Vector3.one;
 
-                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info/text").AsRT());
-                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.Find("info").AsRT());
-                LayoutRebuilder.ForceRebuildLayoutImmediate(EditorManager.inst.notification.transform.AsRT());
+                RebuildNotificationLayout();
 
                 notifications.Add(name);
 
