@@ -1,3 +1,7 @@
+2.4.6 > [Mar 15, 2024]
+- Fixed Prefab Object Editor not showing.
+- Fixed an issue with dragging a Prefab Object not resulting in the timeline object not showing the proper time offset.
+- Dragging sound should no longer play if all selected objects are locked.
 2.4.5 > [Mar 15, 2024]
 - Notifications not showing bug hotfix.
 2.4.4 > [Mar 15, 2024]
