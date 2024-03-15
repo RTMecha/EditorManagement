@@ -1001,6 +1001,14 @@ namespace EditorManagement.Patchers
             return num * Instance.ScreenScaleInverse / Instance.Zoom + _offset;
         }
 
+        [HarmonyPatch("SetShowHelp")]
+        [HarmonyPostfix]
+        static void SetShowHelpPostfix(bool __0)
+        {
+            if (__0)
+                RTEditor.inst.RebuildNotificationLayout();
+        }
+
         [HarmonyPatch("GetSprite")]
         [HarmonyPrefix]
         static bool GetSpritePrefix(ref IEnumerator __result, string __0, EditorManager.SpriteLimits __1, Action<Sprite> __2, Action<string> __3)
