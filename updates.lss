@@ -1,3 +1,5 @@
+2.4.5 > [Mar 15, 2024]
+- Notifications not showing bug hotfix.
 2.4.4 > [Mar 15, 2024]
 - Reworked Popup Animations to be in the configs and replaced "Functions" tab in Editor Preferences with "Animations". Popup Animations are now fully customizable.
 2.4.3 > [Mar 15, 2024]
