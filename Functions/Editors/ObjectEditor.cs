@@ -1502,6 +1502,7 @@ namespace EditorManagement.Functions.Editors
         public void RenderTimelineObjectPosition(TimelineObject timelineObject)
         {
             float offset = 0f;
+            float timeOffset = 0f;
 
             if (timelineObject.IsBeatmapObject)
             {
@@ -1515,6 +1516,7 @@ namespace EditorManagement.Functions.Editors
                 var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == prefabObject.prefabID);
 
                 offset = prefab.GetPrefabLifeLength(prefabObject, true);
+                timeOffset = prefab.Offset;
             }
 
             float zoom = EditorManager.inst.Zoom;
@@ -1523,7 +1525,7 @@ namespace EditorManagement.Functions.Editors
 
             var rectTransform = (RectTransform)timelineObject.GameObject.transform;
             rectTransform.sizeDelta = new Vector2(offset, 20f);
-            rectTransform.anchoredPosition = new Vector2(timelineObject.Time * zoom, (-20 * Mathf.Clamp(timelineObject.Bin, 0, 14)));
+            rectTransform.anchoredPosition = new Vector2((timelineObject.Time + timeOffset) * zoom, (-20 * Mathf.Clamp(timelineObject.Bin, 0, 14)));
             if (timelineObject.Hover)
                 timelineObject.Hover.size = TimelineObjectHoverSize;
         }
