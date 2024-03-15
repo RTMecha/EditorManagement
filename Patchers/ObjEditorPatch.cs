@@ -949,7 +949,7 @@ namespace EditorManagement.Patchers
 						}
 					}
 
-					if (RTEditor.inst.dragBinOffset != binOffset)
+					if (RTEditor.inst.dragBinOffset != binOffset && !ObjectEditor.inst.SelectedObjects.All(x => x.Locked))
 					{
 						if (hasChanged && RTEditor.DraggingPlaysSound)
 							SoundManager.inst.PlaySound("UpDown", 0.4f, 0.6f);
@@ -962,7 +962,7 @@ namespace EditorManagement.Patchers
 					float timeOffset = Mathf.Round(Mathf.Clamp(EditorManager.inst.GetTimelineTime() + __instance.mouseOffsetXForDrag,
 						0f, AudioManager.inst.CurrentAudioSource.clip.length) * 1000f) / 1000f;
 
-					if (RTEditor.inst.dragOffset != timeOffset)
+					if (RTEditor.inst.dragOffset != timeOffset && !ObjectEditor.inst.SelectedObjects.All(x => x.Locked))
 					{
 						if (RTEditor.DraggingPlaysSound && (SettingEditor.inst.SnapActive || !RTEditor.DraggingPlaysSoundBPM))
 							SoundManager.inst.PlaySound("LeftRight", SettingEditor.inst.SnapActive ? 0.6f : 0.1f, 0.7f);
