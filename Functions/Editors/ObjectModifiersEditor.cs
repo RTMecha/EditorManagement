@@ -703,14 +703,51 @@ namespace EditorManagement.Functions.Editors
                         case "loadLesser":
                         case "loadGreater":
                         case "loadExists":
-                        case "save":
+                        case "saveFloat":
+                        case "saveString":
+                        case "saveText":
                         case "saveVariable":
                             {
+                                if (cmd == "loadEquals" && modifier.commands.Count < 5)
+                                    modifier.commands.Add("0");
+
                                 stringGenerator("Path", 1);
                                 stringGenerator("JSON 1", 2);
                                 stringGenerator("JSON 2", 3);
-                                if (cmd != "saveVariable" && cmd != "loadExists")
-                                    singleGenerator("value", 0, 0f);
+                                if (cmd != "saveVariable" && cmd != "saveText" && cmd != "loadExists" && cmd != "saveString" && (cmd != "loadEquals" || Parser.TryParse(modifier.commands[4], 0) == 0))
+                                    singleGenerator("Value", 0, 0f);
+
+                                if (cmd == "saveString" || cmd == "loadEquals" && Parser.TryParse(modifier.commands[4], 0) == 1)
+                                    stringGenerator("Value", 0);
+
+                                if (cmd == "loadEquals")
+                                {
+                                    var dd = dropdownBar.Duplicate(layout, "Type");
+                                    dd.transform.localScale = Vector3.one;
+                                    dd.transform.Find("Text").GetComponent<Text>().text = "Type";
+
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+                                    Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+                                    var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+                                    d.onValueChanged.RemoveAllListeners();
+                                    d.options.Clear();
+
+                                    d.options = new List<Dropdown.OptionData>
+                                    {
+                                        new Dropdown.OptionData("Number"),
+                                        new Dropdown.OptionData("Text"),
+                                    };
+
+                                    d.value = Parser.TryParse(modifier.commands[4], 0);
+
+                                    d.onValueChanged.AddListener(delegate (int _val)
+                                    {
+                                        modifier.commands[4] = _val.ToString();
+                                        modifier.active = false;
+                                        StartCoroutine(RenderModifiers(beatmapObject));
+                                    });
+                                }
 
                                 break;
                             }
