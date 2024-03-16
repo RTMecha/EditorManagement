@@ -72,7 +72,8 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
-            if (!LSHelpers.IsUsingInputField() && !dragging && EditorManager.inst.isEditing && (AllowKeys || (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"])))
+            if (!LSHelpers.IsUsingInputField() && !dragging && EditorManager.inst.isEditing && Application.isFocused &&
+                (AllowKeys || !ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEditorOffset") || !(bool)ModCompatibility.sharedFunctions["EventsCoreEditorOffset"]))
             {
                 foreach (var keybind in keybinds)
                 {
