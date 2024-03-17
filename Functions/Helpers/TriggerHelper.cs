@@ -98,21 +98,12 @@ namespace EditorManagement.Functions.Helpers
 				{
 					if (!multi || !Input.GetKey(KeyCode.LeftShift))
 					{
-						var config = EditorConfig.Instance;
-
-						var largeKey = !multi ? config.ScrollwheelLargeAmountKey.Value : config.ScrollwheelVector2LargeAmountKey.Value;
-						var regularKey = !multi ? config.ScrollwheelRegularAmountKey.Value : config.ScrollwheelVector2RegularAmountKey.Value;
-
-						// Large Amount
-						bool large = largeKey == KeyCode.None && !Input.GetKey(regularKey) || Input.GetKey(largeKey);
-
-						// Regular Amount
-						bool regular = regularKey == KeyCode.None && !Input.GetKey(largeKey) || Input.GetKey(regularKey);
+						bool large = Input.GetKey(KeyCode.LeftControl);
 
 						if (pointerEventData.scrollDelta.y < 0f)
-							result -= amount * (large ? 10 : regular ? 1 : 0);
+							result -= amount * (large ? 10 : 1);
 						if (pointerEventData.scrollDelta.y > 0f)
-							result += amount * (large ? 10 : regular ? 1 : 0);
+							result += amount * (large ? 10 : 1);
 
 						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
@@ -185,27 +176,18 @@ namespace EditorManagement.Functions.Helpers
 				var pointerEventData = (PointerEventData)eventData;
 				if (Input.GetKey(KeyCode.LeftShift) && int.TryParse(ifx.text, out int x) && int.TryParse(ify.text, out int y))
 				{
-					var config = EditorConfig.Instance;
-
-					var largeKey = config.ScrollwheelVector2LargeAmountKey.Value;
-					var regularKey = config.ScrollwheelVector2RegularAmountKey.Value;
-
-					// Large Amount
-					bool large = largeKey == KeyCode.None && !Input.GetKey(regularKey) || Input.GetKey(largeKey);
-
-					// Regular Amount
-					bool regular = regularKey == KeyCode.None && !Input.GetKey(largeKey) || Input.GetKey(regularKey);
+					bool large = Input.GetKey(KeyCode.LeftControl);
 
 					if (pointerEventData.scrollDelta.y < 0f)
 					{
-						x -= large ? amount * 10 : regular ? amount : 0;
-						y -= large ? amount * 10 : regular ? amount : 0;
+						x -= large ? amount * 10 : amount;
+						y -= large ? amount * 10 : amount;
 					}
 
 					if (pointerEventData.scrollDelta.y > 0f)
 					{
-						x += large ? amount * 10 : regular ? amount : 0;
-						y += large ? amount * 10 : regular ? amount : 0;
+						x += large ? amount * 10 : amount;
+						y += large ? amount * 10 : amount;
 					}
 
 					if (clamp != null)
