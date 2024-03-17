@@ -2097,24 +2097,26 @@ namespace EditorManagement.Functions.Editors
                 akOffset.text = beatmapObject.autoKillOffset.ToString();
                 akOffset.onValueChanged.AddListener(delegate (string _value)
                 {
-                    float num = float.Parse(_value);
-                    if (beatmapObject.autoKillType == AutoKillType.SongTime)
+                    if (float.TryParse(_value, out float num))
                     {
-                        float startTime = beatmapObject.StartTime;
-                        if (num < startTime)
-                            num = startTime + 0.1f;
+                        if (beatmapObject.autoKillType == AutoKillType.SongTime)
+                        {
+                            float startTime = beatmapObject.StartTime;
+                            if (num < startTime)
+                                num = startTime + 0.1f;
+                        }
+
+                        if (num < 0f)
+                            num = 0f;
+
+                        beatmapObject.autoKillOffset = num;
+
+                        // AutoKillType affects both physical object and timeline object.
+                        RenderTimelineObject(new TimelineObject(beatmapObject));
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Autokill");
+                        ResizeKeyframeTimeline(beatmapObject);
                     }
-
-                    if (num < 0f)
-                        num = 0f;
-
-                    beatmapObject.autoKillOffset = num;
-
-                    // AutoKillType affects both physical object and timeline object.
-                    RenderTimelineObject(new TimelineObject(beatmapObject));
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "Autokill");
-                    ResizeKeyframeTimeline(beatmapObject);
                 });
 
                 akset.gameObject.SetActive(true);
@@ -2130,13 +2132,15 @@ namespace EditorManagement.Functions.Editors
                     if (num < 0f)
                         num = 0f;
 
-                    beatmapObject.autoKillOffset = num;
+                    akOffset.text = num.ToString();
 
-                    // AutoKillType affects both physical object and timeline object.
-                    RenderTimelineObject(new TimelineObject(beatmapObject));
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "Autokill");
-                    ResizeKeyframeTimeline(beatmapObject);
+                    //beatmapObject.autoKillOffset = num;
+
+                    //// AutoKillType affects both physical object and timeline object.
+                    //RenderTimelineObject(new TimelineObject(beatmapObject));
+                    //if (UpdateObjects)
+                    //    Updater.UpdateProcessor(beatmapObject, "Autokill");
+                    //ResizeKeyframeTimeline(beatmapObject);
                 });
 
                 // Add Scrolling for easy changing of values.
