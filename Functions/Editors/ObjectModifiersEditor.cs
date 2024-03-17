@@ -149,6 +149,12 @@ namespace EditorManagement.Functions.Editors
             var mcpCSF = modifierCardPrefab.AddComponent<ContentSizeFitter>();
             mcpCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
 
+            var mcpSpacerTop = new GameObject("Spacer Top");
+            mcpSpacerTop.transform.SetParent(mcpRT);
+            mcpSpacerTop.transform.localScale = Vector3.one;
+            var mcpSpacerTopRT = mcpSpacerTop.AddComponent<RectTransform>();
+            mcpSpacerTopRT.sizeDelta = new Vector2(350f, 8f);
+
             var mcpLabel = new GameObject("Label");
             mcpLabel.transform.SetParent(mcpRT);
             mcpLabel.transform.localScale = Vector3.one;
@@ -212,6 +218,12 @@ namespace EditorManagement.Functions.Editors
             var deleteXImage = deleteX.AddComponent<Image>();
             deleteXImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_close.png");
 
+            var mcpSpacerMid = new GameObject("Spacer Middle");
+            mcpSpacerMid.transform.SetParent(mcpRT);
+            mcpSpacerMid.transform.localScale = Vector3.one;
+            var mcpSpacerMidRT = mcpSpacerMid.AddComponent<RectTransform>();
+            mcpSpacerMidRT.sizeDelta = new Vector2(350f, 8f);
+
             var layout = new GameObject("Layout");
             layout.transform.SetParent(mcpRT);
             layout.transform.localScale = Vector3.one;
@@ -225,6 +237,12 @@ namespace EditorManagement.Functions.Editors
 
             var layoutCSF = layout.AddComponent<ContentSizeFitter>();
             layoutCSF.verticalFit = ContentSizeFitter.FitMode.MinSize;
+
+            var mcpSpacerBot = new GameObject("Spacer Botom");
+            mcpSpacerBot.transform.SetParent(mcpRT);
+            mcpSpacerBot.transform.localScale = Vector3.one;
+            var mcpSpacerBotRT = mcpSpacerBot.AddComponent<RectTransform>();
+            mcpSpacerBotRT.sizeDelta = new Vector2(350f, 8f);
 
             modifierAddPrefab = EditorManager.inst.folderButtonPrefab.Duplicate(null, "add modifier");
 
@@ -711,9 +729,13 @@ namespace EditorManagement.Functions.Editors
                                 if (cmd == "loadEquals" && modifier.commands.Count < 5)
                                     modifier.commands.Add("0");
 
+                                if (cmd == "loadEquals" && Parser.TryParse(modifier.commands[4], 0) == 0 && !float.TryParse(modifier.value, out float abcdef))
+                                    modifier.value = "0";
+
                                 stringGenerator("Path", 1);
                                 stringGenerator("JSON 1", 2);
                                 stringGenerator("JSON 2", 3);
+
                                 if (cmd != "saveVariable" && cmd != "saveText" && cmd != "loadExists" && cmd != "saveString" && (cmd != "loadEquals" || Parser.TryParse(modifier.commands[4], 0) == 0))
                                     singleGenerator("Value", 0, 0f);
 
