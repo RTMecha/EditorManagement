@@ -1,3 +1,8 @@
+2.4.7 > [Mar 18, 2024]
+- Added some padding to each modifier card.
+- Applied save / load modifier changes to the UI.
+- Autokill Offset input field now properly updates when the autokill button is clicked.
+- Layer input field is no longer affected by the Scrollwheel configs.
 2.4.6 > [Mar 15, 2024]
 - Fixed Prefab Object Editor not showing.
 - Fixed an issue with dragging a Prefab Object not resulting in the timeline object not showing the proper time offset.
