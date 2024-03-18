@@ -149,6 +149,7 @@ namespace EditorManagement.Functions
             EditorHelper.AddEditorDropdown("Open Project Planner", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_planner.png"), delegate ()
             {
                 Open();
+                EditorManager.inst.HideAllDropdowns();
             });
 
             contentBase = planner.Find("content/recent");
