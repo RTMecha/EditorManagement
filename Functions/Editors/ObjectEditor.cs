@@ -1166,14 +1166,8 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator GroupSelectObjects(bool _add = true)
         {
-            EditorManager.inst.DisplayNotification("Selecting objects, please wait.", 1f, EditorManager.NotificationType.Success);
-            var objEditor = ObjEditor.inst;
-
             if (!_add)
-            {
                 DeselectAllObjects();
-                RenderTimelineObjects();
-            }
 
             var list = RTEditor.inst.timelineObjects;
             list.Where(x => x.Layer == RTEditor.inst.Layer && RTMath.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform)
@@ -1232,7 +1226,7 @@ namespace EditorManagement.Functions.Editors
             {
                 timelineObject.selected = true;
 
-                EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+                EditorManager.inst.ClearDialogs();
                 EditorManager.inst.ShowDialog("Multi Object Editor", false);
 
                 RenderTimelineObject(timelineObject);
