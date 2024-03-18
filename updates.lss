@@ -1,3 +1,5 @@
+2.4.8 > [Mar 18, 2024]
+- Optimized drag selection when there's a lot of objects.
 2.4.7 > [Mar 18, 2024]
 - Added some padding to each modifier card.
 - Applied save / load modifier changes to the UI.
