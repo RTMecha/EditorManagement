@@ -1823,10 +1823,12 @@ namespace EditorManagement.Functions.Editors
         {
             var gameObject = Base("Number");
             var rectTransform = (RectTransform)gameObject.transform;
+            rectTransform.localScale = Vector2.one;
 
             ((RectTransform)rectTransform.Find("Text")).sizeDelta = new Vector2(146f, 32f);
 
             var input = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Input");
+            input.transform.localScale = Vector2.one;
             ((RectTransform)input.transform.Find("Text")).sizeDelta = Vector2.zero;
 
             var buttonL = Button("<", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_left_small.png"));
@@ -1848,12 +1850,13 @@ namespace EditorManagement.Functions.Editors
         {
             var gameObject = Base("String");
             var rectTransform = (RectTransform)gameObject.transform;
+            rectTransform.localScale = Vector2.one;
 
             ((RectTransform)rectTransform.Find("Text")).sizeDelta = new Vector2(146f, 32f);
 
             var input = RTEditor.inst.defaultIF.Duplicate(rectTransform, "Input");
+            input.transform.localScale = Vector2.one;
             ((RectTransform)input.transform).sizeDelta = new Vector2(152f, 32f);
-            //((RectTransform)input.transform.Find("Text")).sizeDelta = new Vector2(142f, 100f);
             ((RectTransform)input.transform.Find("Text")).sizeDelta = Vector2.zero;
 
             return gameObject;
@@ -1863,11 +1866,13 @@ namespace EditorManagement.Functions.Editors
         {
             var gameObject = Base("Dropdown");
             var rectTransform = (RectTransform)gameObject.transform;
+            rectTransform.localScale = Vector2.one;
 
             ((RectTransform)rectTransform.Find("Text")).sizeDelta = new Vector2(146f, 32f);
 
             var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
                 .Duplicate(rectTransform, "Dropdown");
+            dropdownInput.transform.localScale = Vector2.one;
 
             return gameObject;
         }
@@ -1876,6 +1881,8 @@ namespace EditorManagement.Functions.Editors
         {
             var gameObject = new GameObject(name);
             var rectTransform = gameObject.AddComponent<RectTransform>();
+            rectTransform.localScale = Vector2.one;
+
             var image = gameObject.AddComponent<Image>();
             image.color = new Color(0.8784f, 0.8784f, 0.8784f);
             image.sprite = sprite;
