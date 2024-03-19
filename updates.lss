@@ -1,3 +1,6 @@
+2.4.9 > [Mar 19, 2024]
+- Fixed Open Project Planner button in Edit dropdown not hiding the dropdowns.
+- Fixed some ObjectModifiers UI scale issues.
 2.4.8 > [Mar 18, 2024]
 - Optimized drag selection when there's a lot of objects.
 2.4.7 > [Mar 18, 2024]
