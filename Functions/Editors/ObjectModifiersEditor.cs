@@ -488,6 +488,7 @@ namespace EditorManagement.Functions.Editors
                         case "blackHole":
                         case "musicTimeGreater":
                         case "musicTimeLesser":
+                        case "playerSpeed":
                             {
                                 singleGenerator("Value", 0, 1f);
 
@@ -1520,15 +1521,11 @@ namespace EditorManagement.Functions.Editors
                         case "gravity":
                         case "gravityOther":
                             {
-                                if (modifier.commands.Count < 4)
-                                    modifier.commands.Add("0.1");
-
                                 if (cmd == "gravityOther")
                                     stringGenerator("Object Group", 0);
 
                                 singleGenerator("X", 1, -1f);
                                 singleGenerator("Y", 2, 0f);
-                                singleGenerator("Time", 3, 0.1f);
 
                                 break;
                             }
