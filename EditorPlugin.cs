@@ -495,4 +495,21 @@ namespace EditorManagement
 			return false;
 		}
 	}
+
+	[HarmonyPatch(typeof(HoverTooltip))]
+	public class HoverTooltipPatch
+    {
+		[HarmonyPatch("OnPointerEnter")]
+		[HarmonyPrefix]
+		static bool OnPointerEnter(HoverTooltip __instance)
+		{
+			var index = (int)DataManager.inst.GetCurrentLanguageEnum();
+
+			var tooltip = __instance.tooltipLangauges.Find(x => (int)x.language == index);
+			var hasTooltip = tooltip != null;
+
+			EditorManager.inst.SetTooltip(hasTooltip ? tooltip.keys : new List<string>(), hasTooltip ? tooltip.desc : "No tooltip added yet!", hasTooltip ? tooltip.hint : __instance.gameObject.name);
+			return false;
+		}
+	}
 }
