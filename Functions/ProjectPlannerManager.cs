@@ -2601,10 +2601,8 @@ namespace EditorManagement.Functions
             LSHelpers.DeleteChildren(noteEditorColorsParent);
             for (int i = 0; i < MarkerEditor.inst.markerColors.Count; i++)
             {
-                var col = Instantiate(colorBase.Find("1").gameObject);
+                var col = colorBase.Find("1").gameObject.Duplicate(noteEditorColorsParent, (i + 1).ToString());
                 col.transform.localScale = Vector3.one;
-                col.name = (i + 1).ToString();
-                col.transform.SetParent(noteEditorColorsParent);
                 noteEditorColors.Add(col.GetComponent<Toggle>());
             }
 
