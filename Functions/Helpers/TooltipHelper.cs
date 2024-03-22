@@ -7,23 +7,40 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 using RTFunctions.Functions;
+using RTFunctions;
+
+using Language = RTFunctions.ModLanguage;
 
 namespace EditorManagement.Functions.Helpers
 {
     public static class TooltipHelper
 	{
-		// Will need to use this instead of setting tooltips in random places, just so it's easier to access.
-		public static Dictionary<string, HoverTooltip.Tooltip> Tooltips => new Dictionary<string, HoverTooltip.Tooltip>
+		public static Dictionary<string, List<Tooltip>> Tooltips => new Dictionary<string, List<Tooltip>>
 		{
-			{ "EN - ", NewTooltip("", "") },
+			{ "Editor Layer", new List<Tooltip>
+			{
+				NewTooltip("Which layer of the editor timeline you're viewing.",
+					"Scroll on the input field to quickly change between layers or type a number in it to go to that layer. " +
+					"You can also click on the scrollwheel while hovering over it to show a list of layers that have objects.", lanuage: Language.English),
+				NewTooltip("<font=Angsana>hdsajfakdfsanbdk'<pos=12>.",
+					"Roll down ye sea of treasure", lanuage: Language.Thai),
+				NewTooltip("<font=Angsana>Which layarrrggg of me treasure ye be lookin' at.",
+					"Roll down ye barrel of rum for embarking down the many realms of the 7 seas. Shoot ye firearm at ye barrel of rum to unleash the booty.", lanuage: Language.Pirate),
+			} },
 		};
 
-		public static void AddTooltip(GameObject gameObject, string desc, string hint, List<string> keys = null, DataManager.Language language = DataManager.Language.english, bool clear = false)
+		public static void AssignTooltip(HoverTooltip hoverTooltip, string name)
 		{
-			var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
+			if (!Tooltips.ContainsKey(name))
+				return;
 
-			if (!hoverTooltip)
-				hoverTooltip = gameObject.AddComponent<HoverTooltip>();
+			hoverTooltip.tooltipLangauges.Clear();
+			hoverTooltip.tooltipLangauges.AddRange(Tooltips[name]);
+		}
+
+		public static void AddTooltip(GameObject gameObject, string desc, string hint, List<string> keys = null, Language language = Language.English, bool clear = false)
+		{
+			var hoverTooltip = gameObject.GetComponent<HoverTooltip>() ?? gameObject.AddComponent<HoverTooltip>();
 
 			if (clear)
 				hoverTooltip.tooltipLangauges.Clear();
@@ -32,10 +49,7 @@ namespace EditorManagement.Functions.Helpers
 
 		public static void AddTooltip(GameObject gameObject, List<HoverTooltip.Tooltip> tooltips, bool clear = true)
 		{
-			var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
-
-			if (!hoverTooltip)
-				hoverTooltip = gameObject.AddComponent<HoverTooltip>();
+			var hoverTooltip = gameObject.GetComponent<HoverTooltip>() ?? gameObject.AddComponent<HoverTooltip>();
 
 			if (clear)
 				hoverTooltip.tooltipLangauges = tooltips;
@@ -43,23 +57,41 @@ namespace EditorManagement.Functions.Helpers
 				hoverTooltip.tooltipLangauges.AddRange(tooltips);
 		}
 
-		public static HoverTooltip.Tooltip NewTooltip(string desc, string hint, List<string> keys = null, DataManager.Language lanuage = DataManager.Language.english) => new HoverTooltip.Tooltip()
+		public static Tooltip NewTooltip(string desc, string hint, List<string> keys = null, Language lanuage = Language.English) => new Tooltip
 		{
 			desc = desc,
 			hint = hint,
-			keys = keys == null ? new List<string>() : keys,
+			keys = keys ?? new List<string>(),
 			language = lanuage
 		};
 
-		public static void SetTooltip(HoverTooltip.Tooltip _tooltip, string _desc, string _hint, List<string> _keys = null, DataManager.Language _language = DataManager.Language.english)
+		public static HoverTooltip.Tooltip DeepCopy(HoverTooltip.Tooltip tooltip) => new HoverTooltip.Tooltip
 		{
-			_tooltip.desc = _desc;
-			_tooltip.hint = _hint;
-			_tooltip.keys = _keys;
-			_tooltip.language = _language;
+			desc = tooltip.desc,
+			hint = tooltip.hint,
+			keys = tooltip.keys.Clone(),
+			language = tooltip.language
+		};
+	}
+
+	public class Tooltip : HoverTooltip.Tooltip
+    {
+		public Tooltip()
+        {
+
+        }
+
+		public Tooltip(HoverTooltip.Tooltip tooltip)
+		{
+			desc = tooltip.desc;
+			hint = tooltip.hint;
+			keys = tooltip.keys.Clone();
+			language = (Language)tooltip.language;
 		}
 
-		public static HoverTooltip.Tooltip DeepCopy(HoverTooltip.Tooltip tooltip) => new HoverTooltip.Tooltip
+		public new Language language;
+
+		public static Tooltip DeepCopy(Tooltip tooltip) => new Tooltip
 		{
 			desc = tooltip.desc,
 			hint = tooltip.hint,
