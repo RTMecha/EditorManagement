@@ -8,6 +8,7 @@ using RTFunctions.Functions;
 using RTFunctions.Functions.Animation;
 using RTFunctions.Functions.Animation.Keyframe;
 using RTFunctions.Functions.Components;
+using RTFunctions.Functions.Components.Player;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
@@ -121,6 +122,13 @@ namespace EditorManagement.Functions.Editors
                 var gameObject = new GameObject("ObjectModifiersEditor");
                 gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
                 gameObject.AddComponent<ObjectModifiersEditor>();
+            }
+            
+            // Level Modifiers Editor
+            {
+                var gameObject = new GameObject("LevelModifiersEditor");
+                gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
+                gameObject.AddComponent<LevelModifiersEditor>();
             }
 
             // Level Combiner
@@ -7083,11 +7091,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Saving / Loading
 
-        public void SetFileInfo(string text)
-        {
-            if (fileInfoText)
-                fileInfoText.text = text;
-        }
+        public void SetFileInfo(string text) => fileInfoText?.SetText(text);
 
         public bool themesLoading = false;
 
@@ -7308,6 +7312,9 @@ namespace EditorManagement.Functions.Editors
             {
                 LSHelpers.DeleteChildren(ObjEditor.inst.TimelineParents[i]);
             }
+
+            RTPlayer.LockBoost = false;
+            RTPlayer.SpeedMultiplier = 1f;
 
             Updater.UpdateObjects(false);
 
