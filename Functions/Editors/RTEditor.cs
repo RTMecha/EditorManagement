@@ -7267,7 +7267,10 @@ namespace EditorManagement.Functions.Editors
                     if (anyFailed && config.ShowLevelsWithoutCoverNotification.Value)
                         EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
                     if (EditorManager.inst.loadedLevels.Count > 0)
-                        EditorManager.inst.OpenBeatmapPopup();
+                    {
+                        EditorManager.inst.ShowDialog("Open File Popup");
+                        EditorManager.inst.RenderOpenBeatmapPopup();
+                    }
                     else
                         EditorManager.inst.OpenNewLevelPopup();
                 }));
@@ -7276,7 +7279,10 @@ namespace EditorManagement.Functions.Editors
                 if (anyFailed && config.ShowLevelsWithoutCoverNotification.Value)
                     EditorManager.inst.DisplayNotification($"Levels {FontManager.TextTranslater.ArrayToString(failedLevels.ToArray())} do not have covers!", 2f * (failedLevels.Count * 0.10f), EditorManager.NotificationType.Error);
                 if (EditorManager.inst.loadedLevels.Count > 0)
-                    EditorManager.inst.OpenBeatmapPopup();
+                {
+                    EditorManager.inst.ShowDialog("Open File Popup");
+                    EditorManager.inst.RenderOpenBeatmapPopup();
+                }
                 else
                     EditorManager.inst.OpenNewLevelPopup();
             }
