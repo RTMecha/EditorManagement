@@ -174,6 +174,8 @@ namespace EditorManagement.Functions.Editors
 
 			EventEditor.inst.EventColors = EventLayerColors;
 
+			LSHelpers.SetActiveChildren(EventEditor.inst.dialogRight, false);
+
 			SetupCopies();
 		}
 
