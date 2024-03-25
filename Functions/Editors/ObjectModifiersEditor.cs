@@ -556,6 +556,7 @@ namespace EditorManagement.Functions.Editors
                         case "setImage":
                         case "setImageOther":
                         case "code":
+                        case "setWindowTitle":
                             {
                                 if (cmd == "setTextOther" || cmd == "addTextOther" || cmd == "setImageOther")
                                 {
@@ -566,7 +567,7 @@ namespace EditorManagement.Functions.Editors
                                 if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther" || cmd == "objectCollide")
                                     stringGenerator("Object Group", 0);
                                 else if (cmd != "setTextOther" && cmd != "addTextOther" && cmd != "setImageOther")
-                                    stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : cmd == "code" ? "Code" : "Path", 0);
+                                    stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : cmd == "code" ? "Code" : cmd == "setWindowTitle" ? "Title" : "Path", 0);
 
                                 if (cmd == "code")
                                 {
@@ -1546,6 +1547,15 @@ namespace EditorManagement.Functions.Editors
                         case "levelRankGreater":
                             {
                                 dropdownGenerator("Rank", 0, DataManager.inst.levelRanks.Select(x => x.name).ToList());
+
+                                break;
+                            }
+                        case "setDiscordStatus":
+                            {
+                                stringGenerator("State", 0);
+                                stringGenerator("Details", 1);
+                                dropdownGenerator("Sub Icon", 2, new List<string> { "Arcade", "Editor", "Play" });
+                                dropdownGenerator("Icon", 3, new List<string> { "PA Logo White", "PA Logo Black" });
 
                                 break;
                             }
