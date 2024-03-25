@@ -77,6 +77,9 @@ namespace EditorManagement.Functions.Editors
 			"Danger",
 			"3D Rotation",
 			"Camera Depth",
+			"Window Base",
+			"Window Position X",
+			"Window Position Y",
 			//"Player Force",
 			//"Mosaic",
 		};
@@ -118,15 +121,15 @@ namespace EditorManagement.Functions.Editors
 			{ "- Danger Editor -", new Color(0.2705882f, 0.3843138f, 0.4784314f, 1f) }, // 3
 			{ "- 3D Rotation Editor -", new Color(0.1960784f, 0.3607843f, 0.4313726f, 1f) }, // 4
 			{ "- Camera Depth Editor -", new Color(0.2470588f, 0.427451f, 0.4509804f, 1f) }, // 5
-			{ "- Player Force Editor -", new Color(0.1882353f, 0.3372549f, 0.3254902f, 1f) }, // 6
-			{ "- Mosaic Editor -", new Color(0.3137255f, 0.4117647f, 0.3176471f, 1f) }, // 7
-			{ "- ??? 1 Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f) }, // 8
-			{ "- ??? 2 Distort Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f) }, // 9
-			{ "- ??? 3 Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
-			{ "- ??? 4 Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
-			{ "- ??? 5 Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
-			{ "- ??? 6 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
-			{ "- ??? 7 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			{ "- Window Base Editor -", new Color(0.1882353f, 0.3372549f, 0.3254902f, 1f) }, // 6
+			{ "- Window Position X Editor -", new Color(0.3137255f, 0.4117647f, 0.3176471f, 1f) }, // 7
+			{ "- Window Position Y Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f) }, // 8
+			{ "- Player Force Distort Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f) }, // 9
+			{ "- Mosaic Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
+			{ "- ??? 1 Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
+			{ "- ??? 2 Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
+			{ "- ??? 3 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
+			{ "- ??? 4 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
         };
 
 		public static List<Color> EventLayerColors => new List<Color>
@@ -1068,6 +1071,27 @@ namespace EditorManagement.Functions.Editors
 				var depth = GenerateUIElement("depth", "Single", cameraDepth.transform, 8, "Depth");
 				var perspectiveZoom = GenerateUIElement("zoom", "Single", cameraDepth.transform, 10, "Zoom");
 			}
+			
+			var windowBase = GenerateEventDialog("windowbase");
+			{
+				var force = GenerateUIElement("force", "Bool", windowBase.transform, 8, "Force Resolution");
+				force["UI"].transform.Find("Text").GetComponent<Text>().text = "Force";
+
+				var resolution = GenerateUIElement("resolution", "Vector2", windowBase.transform, 10, "Width", "Height");
+
+				var allow = GenerateUIElement("allow", "Bool", windowBase.transform, 12, "Allow Position Events");
+				allow["UI"].transform.Find("Text").GetComponent<Text>().text = "Allow";
+			}
+
+			var windowPositionX = GenerateEventDialog("windowpositionx");
+            {
+				var x = GenerateUIElement("x", "Single", windowPositionX.transform, 8, "Position X (Requires Force Resolution)");
+            }
+			
+			var windowPositionY = GenerateEventDialog("windowpositiony");
+            {
+				var y = GenerateUIElement("y", "Single", windowPositionY.transform, 8, "Position Y (Requires Force Resolution)");
+            }
 
 			try
 			{
@@ -1799,6 +1823,29 @@ namespace EditorManagement.Functions.Editors
 
 						break;
                     }
+				case 33: // Window Base
+					{
+						// Force Resolution
+						SetToggle(dialogTmp, "force", 0, 1, 0);
+
+						SetVector2InputField(dialogTmp, "resolution", 1, 2, max: int.MaxValue, allowNegative: false);
+
+						SetToggle(dialogTmp, "allow", 3, 1, 0);
+
+						break;
+                    }
+				case 34: // Window Position X
+					{
+						SetFloatInputField(dialogTmp, "x/x", 0);
+
+						break;
+                    }
+				case 35: // Window Position Y
+					{
+						SetFloatInputField(dialogTmp, "y/x", 0);
+
+						break;
+                    }
 			}
 
 			// Curves
@@ -1978,6 +2025,8 @@ namespace EditorManagement.Functions.Editors
 			null, // 30
 			null, // 31
 			null, // 32
+			null, // 34
+			null, // 35
 		};
 
 		public void SetListColor(int value, int index, List<Toggle> toggles, Color defaultColor, Color secondaryDefaultColor)
