@@ -3028,7 +3028,7 @@ namespace EditorManagement.Functions.Editors
 
         public void RenderKeyframeDialog(BeatmapObject beatmapObject)
         {
-            if (beatmapObject.timelineObject.InternalSelections.Where(x => x.selected).ToList().Count == 1)
+            if (beatmapObject.timelineObject.InternalSelections.Where(x => x.selected).Count() == 1)
             {
                 var kf = beatmapObject.timelineObject.InternalSelections.Where(x => x.selected).ToList()[0];
 
@@ -3205,6 +3205,8 @@ namespace EditorManagement.Functions.Editors
                 {
                     ObjEditor.inst.KeyframeDialogs[i].SetActive(false);
                 }
+                ObjEditor.inst.KeyframeDialogs[4].transform.AsRT().anchorMax = new Vector2(0f, 1f);
+                ObjEditor.inst.KeyframeDialogs[4].transform.AsRT().anchorMin = new Vector2(0f, 1f);
                 ObjEditor.inst.KeyframeDialogs[4].SetActive(true);
             }
         }
