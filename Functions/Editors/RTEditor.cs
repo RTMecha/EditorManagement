@@ -7322,6 +7322,8 @@ namespace EditorManagement.Functions.Editors
             RTPlayer.LockBoost = false;
             RTPlayer.SpeedMultiplier = 1f;
 
+            WindowController.ResetTitle();
+
             Updater.UpdateObjects(false);
 
             // We stop and play the doggo bop animation in case the user has looked at the settings dialog.
