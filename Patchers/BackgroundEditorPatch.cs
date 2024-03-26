@@ -4,6 +4,7 @@ using HarmonyLib;
 using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
+using RTFunctions.Functions.Managers;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -222,86 +223,6 @@ namespace EditorManagement.Patchers
 			shapeOptionBG.transform.SetSiblingIndex(14);
 			shapeOptionBG.name = "shapesettings";
 			var shapeSettings = shapeOptionBG.transform;
-
-			//try
-			//{
-			//	// Initial removing
-			//	for (int i = 0; i < shapeSettings.childCount; i++)
-			//	{
-			//		for (int j = 1; j < shapeSettings.GetChild(i).childCount - 1; i++)
-			//		{
-			//			if (i != 4 && i != 6)
-			//			{
-			//				Destroy(shapeSettings.GetChild(i).GetChild(j).gameObject);
-			//			}
-			//		}
-			//	}
-
-			//	// Readd everything
-			//	var list = ShapeUI.Dictionary.Values.ToList();
-
-			//	int shapeCount = -1;
-			//	for (int i = 0; i < list.Count; i++)
-			//	{
-			//		if (list[i].shape > shapeCount + 1)
-			//			shapeCount = list[i].shape + 1;
-			//	}
-
-			//	if (shapeCount > 0)
-			//		for (int i = 0; i < shapeCount; i++)
-			//		{
-			//			if (shapeBG.transform.childCount < i)
-			//			{
-			//				var icon = Instantiate(shapeBG.transform.GetChild(shapeBG.transform.childCount - 1).gameObject);
-			//				icon.transform.SetParent(shapeBG.transform);
-			//				icon.transform.localScale = Vector3.one;
-			//				icon.name = (i + 1).ToString();
-			//			}
-
-			//			int shapeOptionCount = -1;
-			//			for (int j = 0; j < list.Count; j++)
-			//			{
-			//				if (list[j].shapeOption > shapeOptionCount + 1)
-			//					shapeOptionCount = list[j].shapeOption + 1;
-			//			}
-
-			//			if (shapeOptionCount > 0)
-			//				for (int j = 0; j < shapeOptionCount; j++)
-			//				{
-			//					var element = ShapeUI.Dictionary.ElementAt(i);
-			//					if (!shapeSettings.Find(element.Key))
-			//					{
-			//						var obj = Instantiate(shapeSettings.GetChild(0).GetChild(0).gameObject);
-			//						obj.transform.SetParent(shapeSettings.GetChild(i));
-			//						obj.transform.SetSiblingIndex(i);
-			//						obj.transform.localScale = Vector3.one;
-			//						obj.name = element.Key;
-			//						if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
-			//							image.sprite = element.Value.sprite;
-			//					}
-			//				}
-			//		}
-
-			//	DestroyImmediate(shapeBG.transform.GetChild(6).gameObject);
-			//	DestroyImmediate(shapeBG.transform.GetChild(4).gameObject);
-
-			//	for (int i = 0; i < shapeBG.transform.childCount; i++)
-			//	{
-			//		shapeBG.transform.GetChild(i).gameObject.name = (i + 1).ToString();
-			//	}
-
-			//	DestroyImmediate(shapeOptionBG.transform.GetChild(6).gameObject);
-			//	DestroyImmediate(shapeOptionBG.transform.GetChild(4).gameObject);
-
-			//	for (int i = 0; i < shapeOptionBG.transform.childCount; i++)
-			//	{
-			//		shapeOptionBG.transform.GetChild(i).gameObject.name = (i + 1).ToString();
-			//	}
-			//}
-			//catch (Exception ex)
-			//{
-
-			//}
 
 			// Depth
 			{
@@ -897,6 +818,47 @@ namespace EditorManagement.Patchers
 
 				TriggerHelper.IncreaseDecreaseButtons(yif, 15f, 3f);
 			}
+
+            try
+			{
+				if (ModCompatibility.ObjectModifiersInstalled)
+				{
+					var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+
+					var iLabel = Instantiate(label);
+					iLabel.transform.SetParent(__instance.left);
+					iLabel.transform.localScale = Vector3.one;
+					iLabel.name = "label";
+					iLabel.transform.GetChild(0).GetComponent<Text>().text = "Modifier Blocks";
+
+					var iterations = Instantiate(__instance.left.Find("position").gameObject);
+					iterations.transform.SetParent(__instance.left);
+					iterations.transform.localScale = Vector3.one;
+					iterations.name = "block";
+					DestroyImmediate(iterations.transform.GetChild(1).gameObject);
+
+					var addBlock = eventButton.Duplicate(iterations.transform.Find("x"), "add");
+					addBlock.transform.localScale = Vector3.one;
+					addBlock.transform.AsRT().sizeDelta = new Vector2(80f, 32f);
+
+					addBlock.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+					addBlock.transform.GetChild(0).GetComponent<Text>().text = "Add";
+					
+					var removeBlock = eventButton.Duplicate(iterations.transform.Find("x"), "del");
+					removeBlock.transform.localScale = Vector3.one;
+					removeBlock.transform.AsRT().sizeDelta = new Vector2(80f, 32f);
+
+					removeBlock.GetComponent<Image>().color = new Color(0.957f, 0.263f, 0.212f, 1f);
+					removeBlock.transform.GetChild(0).GetComponent<Text>().text = "Del";
+
+					BackgroundEditorManager.inst.CreateModifiersOnAwake();
+					BackgroundEditorManager.inst.CreateDefaultModifiersList();
+				}
+			}
+			catch (Exception ex)
+            {
+				Debug.LogException(ex);
+            }
 
 			#endregion
 
