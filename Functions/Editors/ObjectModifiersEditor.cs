@@ -22,15 +22,15 @@ namespace EditorManagement.Functions.Editors
 
         public static bool installed = false;
 
-        public static Transform content;
-        public static Transform scrollView;
-        public static RectTransform scrollViewRT;
+        public Transform content;
+        public Transform scrollView;
+        public RectTransform scrollViewRT;
 
-        public static bool showModifiers;
+        public bool showModifiers;
 
-        public static InputField replEditor;
-        public static GameObject replBase;
-        public static Text replText;
+        public InputField replEditor;
+        public GameObject replBase;
+        public Text replText;
 
         public GameObject modifierCardPrefab;
         public GameObject modifierAddPrefab;
@@ -261,7 +261,7 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator RenderModifiers(BeatmapObject beatmapObject)
         {
-            if (EditorManager.inst.isEditing)
+            if (showModifiers)
             {
                 LSHelpers.DeleteChildren(content);
 
@@ -1607,7 +1607,7 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public static void SetObjectColors(Toggle[] toggles, int index, int i, BeatmapObject.Modifier modifier)
+        public void SetObjectColors(Toggle[] toggles, int index, int i, BeatmapObject.Modifier modifier)
         {
             modifier.commands[index] = i.ToString();
 
@@ -1637,7 +1637,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void OpenREPLEditor(BeatmapObject.Modifier modifier, string value)
+        public void OpenREPLEditor(BeatmapObject.Modifier modifier, string value)
         {
             RTEditor.inst.RefreshREPLEditor(value, delegate (string _val)
             {
@@ -1677,7 +1677,7 @@ namespace EditorManagement.Functions.Editors
             });
         }
 
-        public static string searchTerm;
+        public string searchTerm;
         public void RefreshDefaultModifiersList(BeatmapObject beatmapObject)
         {
             if (ModCompatibility.sharedFunctions.ContainsKey("DefaultModifierList"))
@@ -1744,7 +1744,7 @@ namespace EditorManagement.Functions.Editors
         GameObject Base(string name)
         {
             var gameObject = new GameObject(name);
-            gameObject.transform.SetParent(null);
+            gameObject.transform.SetParent(transform);
             gameObject.transform.localScale = Vector3.one;
 
             var rectTransform = gameObject.AddComponent<RectTransform>();
