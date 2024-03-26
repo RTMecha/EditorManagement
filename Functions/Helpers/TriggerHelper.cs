@@ -108,7 +108,8 @@ namespace EditorManagement.Functions.Helpers
 						if (min != 0f || max != 0f)
 							result = Mathf.Clamp(result, min, max);
 
-						inputField.text = result.ToString();
+						if (inputField.text != result.ToString())
+							inputField.text = result.ToString();
 					}
 				}
 			});
