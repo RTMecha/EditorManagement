@@ -1,3 +1,9 @@
+2.4.10 > [Mar 26, 2024]
+- Added some new Object Modifiers to the editor.
+- Added the new Background Modifiers to the Background Object Editor.
+- Reloading the level list should no longer close the popup.
+- Implemented new Event Keyframes.
+- Fixed Multi Object Keyframe Editor window not displaying. Still no features yet.
 2.4.9 > [Mar 19, 2024]
 - Fixed Open Project Planner button in Edit dropdown not hiding the dropdowns.
 - Fixed some ObjectModifiers UI scale issues.
