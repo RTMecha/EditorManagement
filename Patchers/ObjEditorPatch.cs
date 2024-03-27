@@ -162,6 +162,8 @@ namespace EditorManagement.Patchers
 
 			objectView.Find("name/name").GetComponent<InputField>().characterLimit = 0;
 
+			var labelToCopy = objectView.ChildList().First(x => x.name == "label").gameObject;
+
 			// Depth
 			{
 				var depth = Instantiate(singleInput);
@@ -679,6 +681,10 @@ namespace EditorManagement.Patchers
 			DestroyImmediate(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
 			DestroyImmediate(ObjEditor.inst.KeyframeDialogs[3].transform.GetChild(1).gameObject);
 
+			var multiKF = ObjEditor.inst.KeyframeDialogs[4];
+			multiKF.transform.AsRT().anchorMax = new Vector2(0f, 1f);
+			multiKF.transform.AsRT().anchorMin = new Vector2(0f, 1f);
+
 			// Shift Dialogs
 			{
 				ObjEditor.inst.KeyframeDialogs[0].transform.GetChild(2).gameObject.SetActive(false);
@@ -860,6 +866,196 @@ namespace EditorManagement.Patchers
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}
 
+			int catchPoint = 0;
+
+			try
+			{
+				var move = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move").transform;
+				var multiKeyframeEditor = multiKF.transform;
+
+				catchPoint = 1;
+
+				multiKeyframeEditor.GetChild(1).gameObject.SetActive(false);
+
+				//multiKeyframeEditor.Find("Text").AsRT().sizeDelta = new Vector2(765f, 120f);
+
+				catchPoint = 2;
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "time_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Time";
+				}
+
+				catchPoint = 3;
+
+				var timeBase = new GameObject("time");
+				timeBase.transform.SetParent(multiKeyframeEditor);
+				timeBase.transform.localScale = Vector3.one;
+				var timeBaseRT = timeBase.AddComponent<RectTransform>();
+				timeBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+				catchPoint = 4;
+
+				var time = move.Find("time").gameObject.Duplicate(timeBaseRT, "time");
+				time.transform.AsRT().anchoredPosition = new Vector2(182f, -19f);
+				time.GetComponent<HorizontalLayoutGroup>().spacing = 5f;
+
+				var barButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/time").transform.GetChild(4).gameObject;
+
+				var multiTimeB = barButton
+				.Duplicate(time.transform, "|", 3);
+				multiTimeB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
+
+				catchPoint = 5;
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Ease / Animation Type";
+				}
+
+				catchPoint = 6;
+
+				var curveBase = new GameObject("curves");
+				curveBase.transform.SetParent(multiKeyframeEditor);
+				curveBase.transform.localScale = Vector3.one;
+				var curveBaseRT = curveBase.AddComponent<RectTransform>();
+				curveBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+				catchPoint = 7;
+
+				var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
+				curves.transform.AsRT().anchoredPosition = new Vector2(182f, -19f);
+
+				catchPoint = 8;
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "value index_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Value Index";
+				}
+
+				var valueIndex = singleInput.Duplicate(multiKeyframeEditor, "value index");
+				valueIndex.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
+
+				Destroy(valueIndex.GetComponent<EventInfo>());
+
+				catchPoint = 9;
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "value_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Value";
+				}
+
+				var value = singleInput.Duplicate(multiKeyframeEditor, "value");
+				value.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
+
+				Destroy(value.GetComponent<EventInfo>());
+
+				var multiValueB = barButton
+				.Duplicate(value.transform, "|", 2);
+				multiValueB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
+
+				catchPoint = 10;
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Force Snap Time to BPM";
+				}
+
+				catchPoint = 11;
+
+				var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+
+				var snapToBPMObject = eventButton.Duplicate(multiKeyframeEditor, "snap bpm");
+				snapToBPMObject.transform.localScale = Vector3.one;
+
+				((RectTransform)snapToBPMObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				snapToBPMObject.transform.GetChild(0).GetComponent<Text>().text = "Snap";
+				snapToBPMObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+				catchPoint = 12;
+
+				var snapToBPM = snapToBPMObject.GetComponent<Button>();
+				snapToBPM.onClick.ClearAll();
+				snapToBPM.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected))
+					{
+						if (timelineObject.Index != 0)
+							timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+
+						float st = beatmapObject.StartTime;
+
+						st = -(st - RTEditor.SnapToBPM(st + timelineObject.Time));
+
+						float timePosition = posCalc(st);
+
+						((RectTransform)timelineObject.GameObject.transform).anchoredPosition = new Vector2(timePosition, 0f);
+
+						Updater.UpdateProcessor(beatmapObject, "Keyframes");
+
+						ObjectEditor.inst.RenderKeyframe(beatmapObject, timelineObject);
+					}
+				});
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Align to First Selected";
+				}
+
+				var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
+				snapToBPMObject.transform.localScale = Vector3.one;
+
+				((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
+				alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+				catchPoint = 12;
+
+				var alignToFirst = alignToFirstObject.GetComponent<Button>();
+				alignToFirst.onClick.ClearAll();
+				alignToFirst.onClick.AddListener(delegate ()
+                {
+                    var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected).OrderBy(x => x.Time);
+					var first = list.ElementAt(0);
+
+					foreach (var timelineObject in list)
+					{
+						if (timelineObject.Index != 0)
+							timelineObject.Time = first.Time;
+
+						Updater.UpdateProcessor(beatmapObject, "Keyframes");
+
+						ObjectEditor.inst.RenderKeyframe(beatmapObject, timelineObject);
+					}
+				});
+			}
+			catch (Exception ex)
+			{
+				Debug.LogError($"{__instance.className}Catch point: {catchPoint}\n{ex}");
+			}
+
 			__instance.SelectedColor = EditorConfig.Instance.ObjectSelectionColor.Value;
 			__instance.ObjectLengthOffset = EditorConfig.Instance.KeyframeEndLengthOffset.Value;
 
@@ -1039,7 +1235,7 @@ namespace EditorManagement.Patchers
 					}
 				}
 
-				ObjectEditor.inst.RenderKeyframeDialog(beatmapObject);
+				ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
 
 				ObjectEditor.inst.ResizeKeyframeTimeline(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
 
