@@ -21,6 +21,8 @@ using RTFunctions.Functions.Managers;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
+using RTFunctions.Functions.Managers.Networking;
+using System.Collections;
 
 namespace EditorManagement.Functions
 {
@@ -45,6 +47,10 @@ namespace EditorManagement.Functions
         public TMP_InputField documentInputField;
         public TextMeshProUGUI documentTitle;
 
+        public AudioSource OSTAudioSource { get; set; }
+        public int currentOST;
+        public string currentOSTID;
+
         public List<Toggle> tabs = new List<Toggle>();
 
         public int CurrentTab { get; set; }
@@ -58,6 +64,7 @@ namespace EditorManagement.Functions
             "Timelines",
             "Schedules",
             "Notes",
+            "OST",
         };
 
         public Vector2[] tabCellSizes = new Vector2[]
@@ -68,6 +75,7 @@ namespace EditorManagement.Functions
             new Vector2(1280f, 250f),
             new Vector2(1280f, 64f),
             new Vector2(339f, 150f),
+            new Vector2(1280f, 64f),
         };
 
         public int[] tabConstraintCounts = new int[]
@@ -78,6 +86,7 @@ namespace EditorManagement.Functions
             1,
             1,
             3,
+            1,
         };
 
         public GameObject tagPrefab;
@@ -132,7 +141,7 @@ namespace EditorManagement.Functions
 
             closePrefab = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/Open File Popup/Panel/x").Duplicate(assetsParent, "x");
 
-            Spacer("topbar spacer", topBarBase, new Vector2(435f, 32f));
+            Spacer("topbar spacer", topBarBase, new Vector2(195f, 32f));
 
             var close = closePrefab.Duplicate(topBarBase, "close");
             close.transform.localScale = Vector3.one;
@@ -343,6 +352,22 @@ namespace EditorManagement.Functions
 
                                 break;
                             } // Note
+                        case 6:
+                            {
+                                var ost = new OSTItem();
+                                ost.Name = "Kaixo - Fragments";
+                                ost.Path = "Set this path to wherever you have a song located.";
+                                planners.Add(ost);
+                                GenerateOST(ost);
+
+                                var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).OrderBy(x => x.Index).ToList();
+
+                                ost.Index = list.Count - 1;
+
+                                SaveOST();
+
+                                break;
+                            } // OST
                         default:
                             {
                                 Debug.LogWarning($"{EditorPlugin.className}NHow did you do that...?");
@@ -751,6 +776,36 @@ namespace EditorManagement.Functions
                     tmpNoteText.fontSize = 14;
 
                     //inputField.textComponent = tmpNoteText;
+
+                    prefabs.Add(prefab);
+                }
+
+                // OST
+                {
+                    var prefab = baseCardPrefab.Duplicate(assetsParent, "ost prefab");
+                    var albumArt = prefab.transform.GetChild(0);
+                    var title = prefab.transform.GetChild(1);
+                    var artist = prefab.transform.GetChild(2);
+
+                    Destroy(albumArt.gameObject);
+                    Destroy(artist.gameObject);
+
+                    prefab.GetComponent<Image>().sprite = null;
+
+                    title.name = "text";
+
+                    title.AsRT().anchoredPosition = new Vector2(-20f, 0f);
+                    title.AsRT().sizeDelta = new Vector2(-80f, 64f);
+
+                    var tmp = title.GetComponent<TextMeshProUGUI>();
+                    tmp.alignment = TextAlignmentOptions.Left;
+                    tmp.enableWordWrapping = false;
+                    tmp.text = "Kaixo - Pyrolysis";
+
+                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-32f, -32f);
+                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    delete.transform.AsRT().sizeDelta = new Vector2(38f, 38f);
 
                     prefabs.Add(prefab);
                 }
@@ -1660,6 +1715,146 @@ namespace EditorManagement.Functions
                     g1.SetActive(false);
                     editors.Add(g1);
                 }
+
+                // OST
+                {
+                    var g1 = new GameObject("OST");
+                    g1.transform.SetParent(editorRT);
+                    g1.transform.localScale = Vector3.one;
+
+                    var g1RT = g1.AddComponent<RectTransform>();
+                    g1RT.anchoredPosition = new Vector2(0f, -32f);
+                    g1RT.anchorMax = Vector2.one;
+                    g1RT.anchorMin = Vector2.zero;
+                    g1RT.sizeDelta = new Vector2(0f, -64f);
+
+                    var vlg = g1.AddComponent<VerticalLayoutGroup>();
+                    vlg.childControlHeight = false;
+                    vlg.childForceExpandHeight = false;
+                    vlg.spacing = 4f;
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Path";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text1 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "path");
+                    text1.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text1.gameObject.SetActive(true);
+
+                    ostEditorPath = text1.GetComponent<InputField>();
+                    
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text2 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "name");
+                    text2.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text2.gameObject.SetActive(true);
+
+                    ostEditorName = text2.GetComponent<InputField>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(334.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Start Playing OST From Here";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var tfv = ObjEditor.inst.ObjectView.transform;
+
+                    var reload = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
+                    reload.SetActive(true);
+                    reload.name = "play";
+                    reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    reload.transform.GetChild(0).GetComponent<Text>().text = "Play";
+                    ostEditorPlay = reload.GetComponent<Button>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Stop Playing";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var reload3 = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
+                    reload3.SetActive(true);
+                    reload3.name = "stop";
+                    reload3.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    reload3.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    reload3.transform.GetChild(0).GetComponent<Text>().text = "Stop";
+
+                    ostEditorStop = reload3.GetComponent<Button>();
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Use Global Path";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var reload2 = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
+                    reload2.SetActive(true);
+                    reload2.name = "global";
+                    reload2.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    reload2.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+
+                    ostEditorUseGlobal = reload2.GetComponent<Button>();
+                    ostEditorUseGlobalText = reload2.transform.GetChild(0).GetComponent<Text>();
+                    ostEditorUseGlobalText.text = "False";
+
+                    // Label
+                    {
+                        var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
+                        label.transform.AsRT().pivot = new Vector2(0f, 1f);
+                        label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
+                        label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
+                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Index";
+
+                        if (label.transform.childCount == 2)
+                            Destroy(label.transform.GetChild(1).gameObject);
+                    }
+
+                    var text3 = ObjEditor.inst.ObjectView.transform.Find("shapesettings/5").gameObject.Duplicate(g1RT, "index");
+                    text3.transform.AsRT().sizeDelta = new Vector2(537f, 64f);
+                    text3.gameObject.SetActive(true);
+
+                    ostEditorIndex = text3.GetComponent<InputField>();
+
+                    g1.SetActive(false);
+                    editors.Add(g1);
+                }
             }
 
             RenderTabs();
@@ -1698,6 +1893,14 @@ namespace EditorManagement.Functions
         public Transform colorBase;
         public List<Toggle> noteEditorColors = new List<Toggle>();
         public Button noteEditorReset;
+
+        public InputField ostEditorPath;
+        public InputField ostEditorName;
+        public Button ostEditorPlay;
+        public Button ostEditorUseGlobal;
+        public Text ostEditorUseGlobalText;
+        public Button ostEditorStop;
+        public InputField ostEditorIndex;
 
         public List<GameObject> editors = new List<GameObject>();
 
@@ -1740,6 +1943,16 @@ namespace EditorManagement.Functions
                     note.GameObject.transform.Find("panel/edit").gameObject.SetActive(!PlannerActive || CurrentTab != 5);
                 }
             }
+
+            if (EditorManager.inst.editorState == EditorManager.EditorState.Main)
+                return;
+
+            var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).ToList();
+            if (OSTAudioSource && OSTAudioSource.clip && OSTAudioSource.time > OSTAudioSource.clip.length - 0.1f && currentOST + 1 < list.Count)
+            {
+                list[currentOST].playing = false;
+                list[currentOST + 1].Play();
+            }
         }
 
         #region Save / Load
@@ -1761,6 +1974,7 @@ namespace EditorManagement.Functions
             LoadTimelines();
             LoadSchedules();
             LoadNotes();
+            LoadOST();
 
             if (!RTFile.DirectoryExists(path + "/characters"))
             {
@@ -2033,6 +2247,53 @@ namespace EditorManagement.Functions
             }
         }
 
+        public void SaveOST()
+        {
+            var path = $"{RTFile.ApplicationDirectory}beatmaps/{PlannersPath}";
+            if (string.IsNullOrEmpty(Path.GetFileName(path)) || !RTFile.DirectoryExists(path))
+                return;
+
+            var jn = JSON.Parse("{}");
+
+            var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).ToList();
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                var ost = list[i];
+                ost.Index = i;
+
+                jn["ost"][i]["name"] = ost.Name;
+                jn["ost"][i]["path"] = ost.Path.ToString();
+                jn["ost"][i]["use_global"] = ost.UseGlobal.ToString();
+                jn["ost"][i]["index"] = ost.Index.ToString();
+            }
+
+            RTFile.WriteToFile(path + "/ost.lsn", jn.ToString(3));
+        }
+
+        public void LoadOST()
+        {
+            var path = $"{RTFile.ApplicationDirectory}beatmaps/{PlannersPath}";
+            if (!RTFile.FileExists(path + "/ost.lsn"))
+                return;
+
+            var jn = JSON.Parse(RTFile.ReadFromFile(path + "/ost.lsn"));
+
+            for (int i = 0; i < jn["ost"].Count; i++)
+            {
+                var ost = new OSTItem();
+
+                ost.Name = jn["ost"][i]["name"];
+                ost.Path = jn["ost"][i]["path"];
+                ost.UseGlobal = jn["ost"][i]["use_global"].AsBool;
+                ost.Index = jn["ost"][i]["index"].AsInt;
+
+                GenerateOST(ost);
+
+                planners.Add(ost);
+            }
+        }
+
         #endregion
 
         #region Refresh GUI
@@ -2042,7 +2303,6 @@ namespace EditorManagement.Functions
             contentLayout.cellSize = tabCellSizes[CurrentTab];
             contentLayout.constraintCount = tabConstraintCounts[CurrentTab];
             documentFullView.SetActive(false);
-            //documentFullView.SetActive(DocumentFullViewActive && CurrentTab == (int)PlannerItem.Type.Document);
             int num = 0;
             foreach (var tab in tabs)
             {
@@ -2052,13 +2312,9 @@ namespace EditorManagement.Functions
                 tab.isOn = index == CurrentTab;
                 tab.onValueChanged.AddListener(delegate (bool value)
                 {
-                    //if (value)
-                    //{
-                        //Debug.Log($"{EditorPlugin.className}Set tab to {tabNames[index]}");
-                        CurrentTab = index;
-                        RenderTabs();
-                        RefreshList();
-                    //}
+                    CurrentTab = index;
+                    RenderTabs();
+                    RefreshList();
                 });
 
                 num++;
@@ -2076,7 +2332,8 @@ namespace EditorManagement.Functions
                     plan is CharacterItem character && (!string.IsNullOrEmpty(character.Name) && character.Name.ToLower().Contains(SearchTerm.ToLower()) || !string.IsNullOrEmpty(character.Description) && character.Description.ToLower().Contains(SearchTerm.ToLower())) ||
                     plan is TimelineItem timeline && timeline.Levels.Has(x => x.Name.ToLower().Contains(SearchTerm.ToLower())) ||
                     plan is ScheduleItem schedule && (!string.IsNullOrEmpty(schedule.Description) && schedule.Description.ToLower().Contains(SearchTerm.ToLower()) || schedule.Date.ToLower().Contains(SearchTerm.ToLower())) ||
-                    plan is NoteItem note && !string.IsNullOrEmpty(note.Text) && note.Text.ToLower().Contains(SearchTerm.ToLower())));
+                    plan is NoteItem note && !string.IsNullOrEmpty(note.Text) && note.Text.ToLower().Contains(SearchTerm.ToLower()) ||
+                    plan is OSTItem ost && !string.IsNullOrEmpty(ost.Name) && ost.Name.ToLower().Contains(SearchTerm.ToLower())));
             }
         }
 
@@ -2640,6 +2897,98 @@ namespace EditorManagement.Functions
             }
         }
 
+        public void OpenOSTEditor(OSTItem ost)
+        {
+            editors[7].SetActive(true);
+
+            ostEditorPath.onValueChanged.ClearAll();
+            ostEditorPath.onEndEdit.ClearAll();
+            ostEditorPath.text = ost.Path;
+            ostEditorPath.onValueChanged.AddListener(delegate (string _val)
+            {
+                ost.Path = _val;
+            });
+            ostEditorPath.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveOST();
+            });
+
+            ostEditorName.onValueChanged.ClearAll();
+            ostEditorName.onEndEdit.ClearAll();
+            ostEditorName.text = ost.Name;
+            ostEditorName.onValueChanged.AddListener(delegate (string _val)
+            {
+                ost.Name = _val;
+                ost.TextUI.text = _val;
+            });
+            ostEditorName.onEndEdit.AddListener(delegate (string _val)
+            {
+                SaveOST();
+            });
+
+            ostEditorPlay.onClick.ClearAll();
+            ostEditorPlay.onClick.AddListener(delegate ()
+            {
+                ost.Play();
+            });
+
+            ostEditorStop.onClick.ClearAll();
+            ostEditorStop.onClick.AddListener(delegate ()
+            {
+                StopOST();
+            });
+
+            ostEditorUseGlobal.onClick.ClearAll();
+            ostEditorUseGlobal.onClick.AddListener(delegate ()
+            {
+                ost.UseGlobal = !ost.UseGlobal;
+                ostEditorUseGlobalText.text = ost.UseGlobal.ToString();
+                SaveOST();
+            });
+
+            ostEditorUseGlobalText.text = ost.UseGlobal.ToString();
+
+            ostEditorIndex.onValueChanged.ClearAll();
+            ostEditorIndex.text = ost.Index.ToString();
+            ostEditorIndex.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int num))
+                {
+                    ost.Index = num;
+
+                    var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).OrderBy(x => x.Index).ToList();
+
+                    for (int i = 0; i < list.Count; i++)
+                    {
+                        if (list[i].ID == ost.ID && ostEditorIndex.text != i.ToString())
+                            StartCoroutine(SetIndex(i));
+
+                        list[i].Index = i;
+                        list[i].GameObject.transform.SetSiblingIndex(i);
+                    }
+                }
+            });
+            TriggerHelper.AddEventTriggerParams(ostEditorIndex.gameObject, TriggerHelper.ScrollDeltaInt(ostEditorIndex));
+        }
+
+        IEnumerator SetIndex(int i)
+        {
+            yield return null;
+            ostEditorIndex.text = i.ToString();
+        }
+
+        void StopOST()
+        {
+            Destroy(OSTAudioSource);
+
+            var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).ToList();
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                list[i].playing = false;
+            }
+        }
+
         #endregion
 
         #region Generate UI
@@ -2939,31 +3288,6 @@ namespace EditorManagement.Functions
                 noteDraggableLeft.note = note;
             }
 
-            //var inputField = gameObject.GetComponent<TMP_InputField>();
-            //inputField.onValueChanged.RemoveAllListeners();
-            //inputField.onEndEdit.RemoveAllListeners();
-            //inputField.text = note.Text;
-
-            //inputField.onValueChanged.AddListener(delegate (string _val)
-            //{
-            //    note.Text = _val;
-            //});
-
-            //inputField.onEndEdit.AddListener(delegate (string _val)
-            //{
-            //    SaveNotes();
-            //});
-
-            //var clickable = gameObject.AddComponent<Clickable>();
-            //clickable.onEnter = delegate (UnityEngine.EventSystems.PointerEventData pointerEventData)
-            //{
-            //    inputField.enabled = true;
-            //};
-            //clickable.onExit = delegate (UnityEngine.EventSystems.PointerEventData pointerEventData)
-            //{
-            //    inputField.enabled = false;
-            //};
-
             var edit = gameObject.transform.Find("panel/edit").GetComponent<Button>();
             edit.onClick.ClearAll();
             edit.onClick.AddListener(delegate ()
@@ -3008,6 +3332,38 @@ namespace EditorManagement.Functions
             return gameObject;
         }
 
+        public GameObject GenerateOST(OSTItem ost)
+        {
+            var gameObject = prefabs[6].Duplicate(content, "ost");
+            gameObject.transform.localScale = Vector3.one;
+            ost.GameObject = gameObject;
+
+            var button = gameObject.GetComponent<Button>();
+            button.onClick.ClearAll();
+            button.onClick.AddListener(delegate ()
+            {
+                OpenOSTEditor(ost);
+            });
+
+            ost.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
+            ost.TextUI.text = ost.Name;
+
+            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
+            delete.onClick.ClearAll();
+            delete.onClick.AddListener(delegate ()
+            {
+                planners.RemoveAll(x => x is OSTItem && x.ID == ost.ID);
+                SaveOST();
+
+                if (currentOSTID == ost.ID)
+                    StopOST();
+
+                Destroy(gameObject);
+            });
+
+            return gameObject;
+        }
+
         #endregion
 
         #region Open / Close UI
@@ -3039,6 +3395,9 @@ namespace EditorManagement.Functions
             var editorState = EditorManager.inst.editorState;
             EditorManager.inst.GUIMain.SetActive(editorState == EditorManager.EditorState.Main);
             EditorManager.inst.GUIIntro.SetActive(editorState == EditorManager.EditorState.Intro);
+
+            if (editorState == EditorManager.EditorState.Main)
+                StopOST();
         }
 
         #endregion
@@ -3068,7 +3427,8 @@ namespace EditorManagement.Functions
                 Character,
                 Timeline,
                 Schedule,
-                Note
+                Note,
+                OST
             }
         }
 
@@ -3438,6 +3798,79 @@ namespace EditorManagement.Functions
             public TextMeshProUGUI TextUI { get; set; }
 
             public Color TopColor => Color >= 0 && Color < MarkerEditor.inst.markerColors.Count ? MarkerEditor.inst.markerColors[Color] : LSColors.red700;
+        }
+
+        public class OSTItem : PlannerItem
+        {
+            public OSTItem()
+            {
+                PlannerType = Type.OST;
+            }
+
+            public string Path { get; set; }
+            public bool UseGlobal { get; set; }
+            public string Name { get; set; }
+
+            public int Index { get; set; }
+
+            public TextMeshProUGUI TextUI { get; set; }
+
+            public bool playing;
+
+            public void Play()
+            {
+                var filePath = UseGlobal ? Path : $"{RTFile.ApplicationDirectory}{Path}";
+
+                if (!RTFile.FileExists(filePath))
+                    return;
+
+                var audioType = RTFile.GetAudioType(Path);
+
+                if (audioType == AudioType.UNKNOWN)
+                    return;
+
+                if (audioType == AudioType.MPEG)
+                {
+                    var audioClip = LSAudio.CreateAudioClipUsingMP3File(filePath);
+
+                    inst.StopOST();
+
+                    var audioSource = Camera.main.gameObject.AddComponent<AudioSource>();
+
+                    inst.OSTAudioSource = audioSource;
+                    inst.currentOSTID = ID;
+                    inst.currentOST = Index;
+
+                    audioSource.clip = audioClip;
+                    audioSource.playOnAwake = true;
+                    audioSource.loop = false;
+                    audioSource.volume = DataManager.inst.GetSettingInt("MusicVolume", 9) / 9f * AudioManager.inst.masterVol;
+                    audioSource.Play();
+
+                    playing = true;
+
+                    return;
+                }
+
+                inst.StartCoroutine(AlephNetworkManager.DownloadAudioClip(filePath, audioType, delegate (AudioClip audioClip)
+                {
+                    inst.StopOST();
+
+                    var audioSource = Camera.main.gameObject.AddComponent<AudioSource>();
+
+                    inst.OSTAudioSource = audioSource;
+                    inst.currentOSTID = ID;
+                    inst.currentOST = Index;
+
+                    audioSource.clip = audioClip;
+                    audioSource.playOnAwake = true;
+                    audioSource.loop = false;
+                    audioSource.volume = DataManager.inst.GetSettingInt("MusicVolume", 9) / 9f * AudioManager.inst.masterVol;
+                    audioSource.Play();
+
+                    playing = true;
+                }));
+            }
         }
 
         #endregion
