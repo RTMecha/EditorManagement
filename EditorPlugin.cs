@@ -205,6 +205,16 @@ namespace EditorManagement
 				if (EventEditor.inst.dialogRight.gameObject.activeInHierarchy)
 					RTEventEditor.inst.RenderEventsDialog();
 			}
+
+			if (PrefabEditorManager.inst)
+			{
+				var prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
+
+				if (!prefabSelectorLeft.gameObject.activeInHierarchy)
+					PrefabEditorManager.inst.UpdateModdedVisbility();
+				else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject)
+					PrefabEditorManager.inst.RenderPrefabObjectDialog(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>(), PrefabEditor.inst);
+			}
 		}
 
 		void DraggingChanged(object sender, EventArgs e)

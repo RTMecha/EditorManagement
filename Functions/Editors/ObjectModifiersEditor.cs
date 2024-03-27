@@ -67,7 +67,7 @@ namespace EditorManagement.Functions.Editors
 
             try
             {
-                if (ObjectEditor.inst.SelectedObjectCount == 1 && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                if (RTEditor.ShowModdedUI && ObjectEditor.inst.SelectedObjectCount == 1 && ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
                     intVariable.text = $"Integer Variable: [ {ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().integerVariable} ]";
             }
             catch
@@ -85,7 +85,7 @@ namespace EditorManagement.Functions.Editors
             var bmb = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View");
 
             {
-                var label = ObjEditor.inst.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(ObjEditor.inst.ObjectView.transform);
+                var label = ObjEditor.inst.ObjectView.transform.ChildList().First(x => x.name == "label").gameObject.Duplicate(ObjEditor.inst.ObjectView.transform, "int_variable");
 
                 Destroy(label.transform.GetChild(1).gameObject);
                 intVariable = label.transform.GetChild(0).GetComponent<Text>();

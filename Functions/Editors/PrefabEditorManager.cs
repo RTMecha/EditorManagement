@@ -90,6 +90,22 @@ namespace EditorManagement.Functions.Editors
 
         #region Prefab Objects
 
+        public void UpdateModdedVisbility()
+        {
+            var prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
+
+            if (!prefabSelectorLeft.gameObject.activeInHierarchy)
+                return;
+
+            prefabSelectorLeft.Find("tod-dropdown label").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("tod-dropdown").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("akoffset").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("repeat label").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("repeat").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("speed label").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("speed").gameObject.SetActive(RTEditor.ShowModdedUI);
+        }
+
         public void RenderPrefabObjectDialog(PrefabObject prefabObject, PrefabEditor __instance)
         {
             #region Original Code
@@ -134,8 +150,11 @@ namespace EditorManagement.Functions.Editors
 
             #endregion
 
+            UpdateModdedVisbility();
+
             #region My Code
 
+            if (RTEditor.ShowModdedUI)
             {
                 prefabSelectorLeft.Find("tod-dropdown").GetComponentAndPerformAction(delegate (Dropdown dropdown)
                 {
@@ -178,140 +197,143 @@ namespace EditorManagement.Functions.Editors
                                                        currentPrefab.autoKillType == PrefabObject.AutoKillType.SongTime ? AudioManager.inst.CurrentAudioSource.time : -1f;
                     });
                 });
+            }
 
-                prefabSelectorLeft.Find("time").GetComponentAndPerformAction(delegate (InputField inputField)
+            prefabSelectorLeft.Find("time").GetComponentAndPerformAction(delegate (InputField inputField)
+            {
+                var locked = inputField.transform.Find("lock").GetComponent<Toggle>();
+                locked.onValueChanged.ClearAll();
+                locked.isOn = currentPrefab.editorData.locked;
+                locked.onValueChanged.AddListener(delegate (bool _val)
                 {
-                    var locked = inputField.transform.Find("lock").GetComponent<Toggle>();
-                    locked.onValueChanged.ClearAll();
-                    locked.isOn = currentPrefab.editorData.locked;
-                    locked.onValueChanged.AddListener(delegate (bool _val)
-                    {
-                        currentPrefab.editorData.locked = _val;
-                        ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
-                    });
+                    currentPrefab.editorData.locked = _val;
+                    ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                });
 
-                    var collapse = inputField.transform.Find("collapse").GetComponent<Toggle>();
-                    collapse.onValueChanged.ClearAll();
-                    collapse.isOn = currentPrefab.editorData.collapse;
-                    collapse.onValueChanged.AddListener(delegate (bool _val)
-                    {
-                        currentPrefab.editorData.collapse = _val;
-                        ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
-                    });
+                var collapse = inputField.transform.Find("collapse").GetComponent<Toggle>();
+                collapse.onValueChanged.ClearAll();
+                collapse.isOn = currentPrefab.editorData.collapse;
+                collapse.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    currentPrefab.editorData.collapse = _val;
+                    ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                });
 
-                    inputField.NewValueChangedListener(currentPrefab.StartTime.ToString(), delegate (string _val)
+                inputField.NewValueChangedListener(currentPrefab.StartTime.ToString(), delegate (string _val)
+                {
+                    if (!currentPrefab.editorData.locked)
                     {
-                        if (!currentPrefab.editorData.locked)
+                        if (float.TryParse(_val, out float n))
                         {
-                            if (float.TryParse(_val, out float n))
+                            n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+                            currentPrefab.StartTime = n;
+                            Updater.UpdatePrefab(currentPrefab, "starttime");
+                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                        }
+                        else
+                            EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
+                    }
+                });
+
+                TriggerHelper.IncreaseDecreaseButtons(inputField);
+                TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
+            });
+
+            //Layer
+            {
+                int currentLayer = currentPrefab.editorData.layer;
+
+                prefabSelectorLeft.Find("editor/layers").GetComponentAndPerformAction(delegate (InputField inputField)
+                {
+                    inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(currentPrefab.editorData.layer);
+                    inputField.NewValueChangedListener((currentPrefab.editorData.layer + 1).ToString(), delegate (string _val)
+                    {
+                        if (int.TryParse(_val, out int n))
+                        {
+                            currentLayer = currentPrefab.editorData.layer;
+                            int a = n - 1;
+                            if (a < 0)
                             {
-                                n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
-                                currentPrefab.StartTime = n;
-                                Updater.UpdatePrefab(currentPrefab, "starttime");
-                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                                inputField.text = "1";
                             }
-                            else
-                                EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
+
+                            currentPrefab.editorData.layer = RTEditor.GetLayer(a);
+                            inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(RTEditor.GetLayer(a));
+                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
+                        }
+                        else
+                            EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
+                    });
+
+                    TriggerHelper.IncreaseDecreaseButtons(inputField);
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField, min: 1, max: int.MaxValue));
+                });
+            }
+
+            for (int i = 0; i < 3; i++)
+            {
+                int index = i;
+
+                string[] types = new string[]
+                {
+                        "position",
+                        "scale",
+                        "rotation"
+                };
+
+                string type = types[index];
+                string inx = "/x";
+                string iny = "/y";
+
+                var currentKeyframe = currentPrefab.events[index];
+
+                prefabSelectorLeft.Find(type + inx).GetComponentAndPerformAction(delegate (InputField inputField)
+                {
+                    inputField.onValueChanged.ClearAll();
+                    inputField.text = currentKeyframe.eventValues[0].ToString();
+                    inputField.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        if (float.TryParse(_val, out float num))
+                        {
+                            currentKeyframe.eventValues[0] = num;
+                            Updater.UpdatePrefab(currentPrefab, "offset");
                         }
                     });
 
                     TriggerHelper.IncreaseDecreaseButtons(inputField);
-                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
-                });
 
-                //Layer
-                {
-                    int currentLayer = currentPrefab.editorData.layer;
-
-                    prefabSelectorLeft.Find("editor/layers").GetComponentAndPerformAction(delegate (InputField inputField)
+                    if (index != 2)
                     {
-                        inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(currentPrefab.editorData.layer);
-                        inputField.NewValueChangedListener((currentPrefab.editorData.layer + 1).ToString(), delegate (string _val)
+                        prefabSelectorLeft.Find(type + iny).GetComponentAndPerformAction(delegate (InputField inputField2)
                         {
-                            if (int.TryParse(_val, out int n))
+                            inputField2.onValueChanged.ClearAll();
+                            inputField2.text = currentKeyframe.eventValues[1].ToString();
+                            inputField2.onValueChanged.AddListener(delegate (string _val)
                             {
-                                currentLayer = currentPrefab.editorData.layer;
-                                int a = n - 1;
-                                if (a < 0)
+                                if (float.TryParse(_val, out float num))
                                 {
-                                    inputField.text = "1";
+                                    currentKeyframe.eventValues[1] = num;
+                                    Updater.UpdatePrefab(currentPrefab, "offset");
                                 }
-
-                                currentPrefab.editorData.layer = RTEditor.GetLayer(a);
-                                inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(RTEditor.GetLayer(a));
-                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
-                            }
-                            else
-                                EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
-                        });
-
-                        TriggerHelper.IncreaseDecreaseButtons(inputField);
-                        TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField, min: 1, max: int.MaxValue));
-                    });
-                }
-
-                for (int i = 0; i < 3; i++)
-                {
-                    int index = i;
-
-                    string[] types = new string[]
-                    {
-                        "position",
-                        "scale",
-                        "rotation"
-                    };
-
-                    string type = types[index];
-                    string inx = "/x";
-                    string iny = "/y";
-
-                    var currentKeyframe = currentPrefab.events[index];
-
-                    prefabSelectorLeft.Find(type + inx).GetComponentAndPerformAction(delegate (InputField inputField)
-                    {
-                        inputField.onValueChanged.ClearAll();
-                        inputField.text = currentKeyframe.eventValues[0].ToString();
-                        inputField.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (float.TryParse(_val, out float num))
-                            {
-                                currentKeyframe.eventValues[0] = num;
-                                Updater.UpdatePrefab(currentPrefab, "offset");
-                            }
-                        });
-
-                        TriggerHelper.IncreaseDecreaseButtons(inputField);
-
-                        if (index != 2)
-                        {
-                            prefabSelectorLeft.Find(type + iny).GetComponentAndPerformAction(delegate (InputField inputField2)
-                            {
-                                inputField2.onValueChanged.ClearAll();
-                                inputField2.text = currentKeyframe.eventValues[1].ToString();
-                                inputField2.onValueChanged.AddListener(delegate (string _val)
-                                {
-                                    if (float.TryParse(_val, out float num))
-                                    {
-                                        currentKeyframe.eventValues[1] = num;
-                                        Updater.UpdatePrefab(currentPrefab, "offset");
-                                    }
-                                });
-
-                                TriggerHelper.IncreaseDecreaseButtons(inputField2);
-                                TriggerHelper.AddEventTriggerParams(inputField2.gameObject,
-                                    TriggerHelper.ScrollDelta(inputField2, multi: true),
-                                    TriggerHelper.ScrollDeltaVector2(inputField, inputField2, 0.1f, 10f));
-
-                                TriggerHelper.AddEventTriggerParams(inputField.gameObject,
-                                    TriggerHelper.ScrollDelta(inputField, multi: true),
-                                    TriggerHelper.ScrollDeltaVector2(inputField, inputField2, 0.1f, 10f));
                             });
-                        }
-                        else
-                            TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 15f, 3f));
-                    });
-                }
 
+                            TriggerHelper.IncreaseDecreaseButtons(inputField2);
+                            TriggerHelper.AddEventTriggerParams(inputField2.gameObject,
+                                TriggerHelper.ScrollDelta(inputField2, multi: true),
+                                TriggerHelper.ScrollDeltaVector2(inputField, inputField2, 0.1f, 10f));
+
+                            TriggerHelper.AddEventTriggerParams(inputField.gameObject,
+                                TriggerHelper.ScrollDelta(inputField, multi: true),
+                                TriggerHelper.ScrollDeltaVector2(inputField, inputField2, 0.1f, 10f));
+                        });
+                    }
+                    else
+                        TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 15f, 3f));
+                });
+            }
+
+            if (RTEditor.ShowModdedUI)
+            {
                 prefabSelectorLeft.Find("repeat/x").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
                     inputField.characterValidation = InputField.CharacterValidation.Integer;
@@ -368,138 +390,138 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.IncreaseDecreaseButtons(inputField, min: 0.1f, max: Updater.MaxFastSpeed);
                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, min: 0.1f, max: Updater.MaxFastSpeed));
                 });
+            }
 
-                //Global Settings
+            //Global Settings
+            {
+                nameIF.onValueChanged.RemoveAllListeners();
+                nameIF.text = prefab.Name;
+                nameIF.onValueChanged.AddListener(delegate (string _val)
                 {
-                    nameIF.onValueChanged.RemoveAllListeners();
-                    nameIF.text = prefab.Name;
-                    nameIF.onValueChanged.AddListener(delegate (string _val)
+                    prefab.Name = _val;
+                    foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
                     {
-                        prefab.Name = _val;
-                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        if (prefabObject.prefabID == prefab.ID)
                         {
-                            if (prefabObject.prefabID == prefab.ID)
-                            {
-                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
-                            }
+                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
                         }
-                    });
+                    }
+                });
 
+                SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                typeImage.transform.Find("Text").GetComponent<Text>().color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+
+                currentPrefabType = prefab.Type;
+
+                var entry = new EventTrigger.Entry();
+                entry.eventID = EventTriggerType.Scroll;
+                entry.callback.AddListener(delegate (BaseEventData eventData)
+                {
+                    var pointerEventData = (PointerEventData)eventData;
+
+                    int add = pointerEventData.scrollDelta.y < 0f ? prefab.Type - 1 : pointerEventData.scrollDelta.y > 0f ? prefab.Type + 1 : 0;
+
+                    int num = Mathf.Clamp(add, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+                    prefab.Type = num;
+                    SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                    typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                    currentPrefabType = num;
+
+                    foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                    {
+                        if (prefabObject.prefabID == prefab.ID)
+                        {
+                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
+                        }
+                    }
+                });
+
+                TriggerHelper.AddEventTrigger(typeIF.gameObject, new List<EventTrigger.Entry> { entry });
+
+                var leftButton = typeIF.transform.Find("<").GetComponent<Button>();
+                var rightButton = typeIF.transform.Find(">").GetComponent<Button>();
+
+                leftButton.onClick.ClearAll();
+                leftButton.onClick.AddListener(delegate ()
+                {
+                    int num = Mathf.Clamp(prefab.Type - 1, 0, DataManager.inst.PrefabTypes.Count - 1);
+
+                    prefab.Type = num;
                     SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
                     typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
                     typeImage.transform.Find("Text").GetComponent<Text>().color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+                    currentPrefabType = num;
 
-                    currentPrefabType = prefab.Type;
-
-                    var entry = new EventTrigger.Entry();
-                    entry.eventID = EventTriggerType.Scroll;
-                    entry.callback.AddListener(delegate (BaseEventData eventData)
+                    foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
                     {
-                        var pointerEventData = (PointerEventData)eventData;
-
-                        int add = pointerEventData.scrollDelta.y < 0f ? prefab.Type - 1 : pointerEventData.scrollDelta.y > 0f ? prefab.Type + 1 : 0;
-
-                        int num = Mathf.Clamp(add, 0, DataManager.inst.PrefabTypes.Count - 1);
-
-                        prefab.Type = num;
-                        SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
-                        typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
-                        currentPrefabType = num;
-
-                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        if (prefabObject.prefabID == prefab.ID)
                         {
-                            if (prefabObject.prefabID == prefab.ID)
-                            {
-                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
-                            }
+                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
                         }
-                    });
+                    }
+                });
 
-                    TriggerHelper.AddEventTrigger(typeIF.gameObject, new List<EventTrigger.Entry> { entry });
+                rightButton.onClick.ClearAll();
+                rightButton.onClick.AddListener(delegate ()
+                {
+                    int num = Mathf.Clamp(prefab.Type + 1, 0, DataManager.inst.PrefabTypes.Count - 1);
 
-                    var leftButton = typeIF.transform.Find("<").GetComponent<Button>();
-                    var rightButton = typeIF.transform.Find(">").GetComponent<Button>();
-
-                    leftButton.onClick.ClearAll();
-                    leftButton.onClick.AddListener(delegate ()
+                    prefab.Type = num;
+                    SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
+                    typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
+                    typeImage.transform.Find("Text").GetComponent<Text>().color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
+                    currentPrefabType = num;
+                    foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
                     {
-                        int num = Mathf.Clamp(prefab.Type - 1, 0, DataManager.inst.PrefabTypes.Count - 1);
-
-                        prefab.Type = num;
-                        SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
-                        typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
-                        typeImage.transform.Find("Text").GetComponent<Text>().color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
-                        currentPrefabType = num;
-
-                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        if (prefabObject.prefabID == prefab.ID)
                         {
-                            if (prefabObject.prefabID == prefab.ID)
-                            {
-                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
-                            }
+                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
                         }
-                    });
+                    }
+                });
 
-                    rightButton.onClick.ClearAll();
-                    rightButton.onClick.AddListener(delegate ()
+                var savePrefab = prefabSelectorRight.Find("save prefab").GetComponent<Button>();
+                savePrefab.onClick.ClearAll();
+                savePrefab.onClick.AddListener(delegate ()
+                {
+                    if (__instance.LoadedPrefabs.Find(x => x.Name == prefab.Name) != null)
                     {
-                        int num = Mathf.Clamp(prefab.Type + 1, 0, DataManager.inst.PrefabTypes.Count - 1);
+                        var externalPrefab = __instance.LoadedPrefabs.Find(x => x.Name == prefab.Name);
+                        var index = __instance.LoadedPrefabs.FindIndex(x => x.Name == prefab.Name);
 
-                        prefab.Type = num;
-                        SearchPrefabType(DataManager.inst.PrefabTypes[prefab.Type].Name, prefab);
-                        typeImage.color = DataManager.inst.PrefabTypes[prefab.Type].Color;
-                        typeImage.transform.Find("Text").GetComponent<Text>().color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(DataManager.inst.PrefabTypes[prefab.Type].Color));
-                        currentPrefabType = num;
-                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        Debug.LogFormat("{0}External Prefab: {1}", EditorPlugin.className, externalPrefab.Name);
+                        Debug.LogFormat("{0}External Prefab Index: {1}", EditorPlugin.className, index);
+
+                        if (index >= 0)
                         {
-                            if (prefabObject.prefabID == prefab.ID)
-                            {
-                                ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
-                            }
-                        }
-                    });
+                            FileManager.inst.DeleteFileRaw(__instance.LoadedPrefabsFiles[index]);
+                            Debug.LogFormat("{0}Deleted File", EditorPlugin.className);
+                            __instance.LoadedPrefabs.RemoveAt(index);
+                            Debug.LogFormat("{0}Removed Prefab", EditorPlugin.className);
+                            __instance.LoadedPrefabsFiles.RemoveAt(index);
+                            Debug.LogFormat("{0}Removed Prefab File", EditorPlugin.className);
 
-                    var savePrefab = prefabSelectorRight.Find("save prefab").GetComponent<Button>();
-                    savePrefab.onClick.ClearAll();
-                    savePrefab.onClick.AddListener(delegate ()
-                    {
-                        if (__instance.LoadedPrefabs.Find(x => x.Name == prefab.Name) != null)
-                        {
-                            var externalPrefab = __instance.LoadedPrefabs.Find(x => x.Name == prefab.Name);
-                            var index = __instance.LoadedPrefabs.FindIndex(x => x.Name == prefab.Name);
-
-                            Debug.LogFormat("{0}External Prefab: {1}", EditorPlugin.className, externalPrefab.Name);
-                            Debug.LogFormat("{0}External Prefab Index: {1}", EditorPlugin.className, index);
-
-                            if (index >= 0)
-                            {
-                                FileManager.inst.DeleteFileRaw(__instance.LoadedPrefabsFiles[index]);
-                                Debug.LogFormat("{0}Deleted File", EditorPlugin.className);
-                                __instance.LoadedPrefabs.RemoveAt(index);
-                                Debug.LogFormat("{0}Removed Prefab", EditorPlugin.className);
-                                __instance.LoadedPrefabsFiles.RemoveAt(index);
-                                Debug.LogFormat("{0}Removed Prefab File", EditorPlugin.className);
-
-                                __instance.SavePrefab(prefab);
-                                Debug.LogFormat("{0}Saved Prefab", EditorPlugin.className);
-
-                                if (__instance.externalContent != null)
-                                    __instance.ReloadExternalPrefabsInPopup();
-
-                                EditorManager.inst.DisplayNotification("Applied all changes to external prefab!", 2f, EditorManager.NotificationType.Success);
-                            }
-                        }
-                        else
-                        {
                             __instance.SavePrefab(prefab);
-                            EditorManager.inst.DisplayNotification("External Prefab with same name does not exist!", 2f, EditorManager.NotificationType.Error);
-                        }
-                    });
+                            Debug.LogFormat("{0}Saved Prefab", EditorPlugin.className);
 
-                    objectCount.text = "Object Count: " + prefab.objects.Count.ToString();
-                    prefabObjectCount.text = "Prefab Object Count: " + prefab.prefabObjects.Count;
-                    prefabObjectTimelineCount.text = "Prefab Object (Timeline) Count: " + DataManager.inst.gameData.prefabObjects.FindAll(x => x.prefabID == prefab.ID).Count;
-                }
+                            if (__instance.externalContent != null)
+                                __instance.ReloadExternalPrefabsInPopup();
+
+                            EditorManager.inst.DisplayNotification("Applied all changes to external prefab!", 2f, EditorManager.NotificationType.Success);
+                        }
+                    }
+                    else
+                    {
+                        __instance.SavePrefab(prefab);
+                        EditorManager.inst.DisplayNotification("External Prefab with same name does not exist!", 2f, EditorManager.NotificationType.Error);
+                    }
+                });
+
+                objectCount.text = "Object Count: " + prefab.objects.Count.ToString();
+                prefabObjectCount.text = "Prefab Object Count: " + prefab.prefabObjects.Count;
+                prefabObjectTimelineCount.text = "Prefab Object (Timeline) Count: " + DataManager.inst.gameData.prefabObjects.FindAll(x => x.prefabID == prefab.ID).Count;
             }
 
             #endregion
