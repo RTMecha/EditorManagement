@@ -1,3 +1,5 @@
+2.4.13 > [Mar 28, 2024]
+- Include PrefabObject editor to Show Modded Features in Editor config and also include ObjectModifiers UI with it.
 2.4.12 > [Mar 28, 2024]
 - Cleaned up Object Keyframe code so it's more readable and consistent.
 - Added Multi Object Keyframe Editing. This works the same as Multi Event Keyframe Editing, where selecting multiple of the same keyframe type shows the same editor, whereas having multiple keyframe types in selection shows a new editor.
