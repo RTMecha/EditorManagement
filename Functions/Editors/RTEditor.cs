@@ -1557,8 +1557,6 @@ namespace EditorManagement.Functions.Editors
                                 CheckpointEditor.inst.CreateGhostCheckpoints();
                             }
 
-                            LayerToggle?.SetIsOn(false);
-
                             break;
                         }
                     case LayerType.Events:
@@ -1567,8 +1565,6 @@ namespace EditorManagement.Functions.Editors
                             CheckpointEditor.inst.CreateCheckpoints();
 
                             RTEventEditor.inst.RenderLayerBins();
-
-                            LayerToggle?.SetIsOn(true);
 
                             break;
                         }
@@ -1583,11 +1579,11 @@ namespace EditorManagement.Functions.Editors
             {
                 EditorManager.inst.history.Add(new History.Command("Change Layer", delegate ()
                 {
-                    Debug.LogFormat("{0}Redone layer: {1}", EditorPlugin.className, tmpLayer);
+                    Debug.Log($"{EditorPlugin.className}Redone layer: {tmpLayer}");
                     SetLayer(tmpLayer, false);
                 }, delegate ()
                 {
-                    Debug.LogFormat("{0}Undone layer: {1}", EditorPlugin.className, oldLayer);
+                    Debug.Log($"{EditorPlugin.className}Undone layer: {oldLayer}");
                     SetLayer(oldLayer, false);
                 }), false);
             }

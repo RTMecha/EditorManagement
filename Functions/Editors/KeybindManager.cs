@@ -100,7 +100,7 @@ namespace EditorManagement.Functions.Editors
                 if (selectionType == SelectionType.Object)
                 {
                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                    ObjectEditor.inst.RenderKeyframeDialog(beatmapObject);
+                    ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
                 }
                 if (selectionType == SelectionType.Prefab)
                 {
@@ -118,7 +118,7 @@ namespace EditorManagement.Functions.Editors
             {
                 if (selectionType == SelectionType.Object)
                 {
-                    ObjectEditor.inst.RenderKeyframeDialog(beatmapObject);
+                    ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
                 }
                 if (selectionType == SelectionType.Prefab)
                 {
