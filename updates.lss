@@ -1,3 +1,6 @@
+2.4.12 > [Mar 28, 2024]
+- Cleaned up Object Keyframe code so it's more readable and consistent.
+- Added Multi Object Keyframe Editing. This works the same as Multi Event Keyframe Editing, where selecting multiple of the same keyframe type shows the same editor, whereas having multiple keyframe types in selection shows a new editor.
 2.4.11 > [Mar 27, 2024]
 - Added an OST tab to the Project Planner.
 2.4.10 > [Mar 26, 2024]
