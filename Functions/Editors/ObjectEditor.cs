@@ -49,7 +49,7 @@ namespace EditorManagement.Functions.Editors
                 if (!mod.Methods.ContainsKey("RenderKeyframes"))
                     mod.Methods.Add("RenderKeyframes", (Action<BeatmapObject>)RenderKeyframes);
                 if (!mod.Methods.ContainsKey("RenderKeyframeDialog"))
-                    mod.Methods.Add("RenderKeyframeDialog", (Action<BeatmapObject>)RenderKeyframeDialog);
+                    mod.Methods.Add("RenderKeyframeDialog", (Action<BeatmapObject>)RenderObjectKeyframesDialog);
                 if (!mod.Methods.ContainsKey("RenderTimelineObjectVoid"))
                     mod.Methods.Add("RenderTimelineObjectVoid", (Action<TimelineObject>)RenderTimelineObjectVoid);
 
@@ -108,7 +108,7 @@ namespace EditorManagement.Functions.Editors
                             SetCurrentKeyframe(beatmapObject, tmpIndex, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
                             ResizeKeyframeTimeline(beatmapObject);
 
-                            RenderKeyframeDialog(beatmapObject);
+                            RenderObjectKeyframesDialog(beatmapObject);
 
                             // Keyframes affect both physical object and timeline object.
                             RenderTimelineObject(new TimelineObject(beatmapObject));
@@ -1208,7 +1208,7 @@ namespace EditorManagement.Functions.Editors
             });
 
             var bm = CurrentSelection.GetData<BeatmapObject>();
-            RenderKeyframeDialog(bm);
+            RenderObjectKeyframesDialog(bm);
             RenderKeyframes(bm);
 
             yield break;
@@ -1315,8 +1315,7 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.UpdatePlayButton();
             }
 
-            //RenderKeyframes(beatmapObject);
-            RenderKeyframeDialog(beatmapObject);
+            RenderObjectKeyframesDialog(beatmapObject);
         }
 
         public EventKeyframe AddEvent(BeatmapObject beatmapObject, float time, int type, EventKeyframe _keyframe, bool openDialog)
@@ -1335,7 +1334,7 @@ namespace EditorManagement.Functions.Editors
             if (openDialog)
             {
                 ResizeKeyframeTimeline(beatmapObject);
-                RenderKeyframeDialog(beatmapObject);
+                RenderObjectKeyframesDialog(beatmapObject);
             }
             return eventKeyframe;
         }
@@ -1693,11 +1692,6 @@ namespace EditorManagement.Functions.Editors
                 inst.CurrentSelection = inst.GetTimelineObject(beatmapObject);
                 inst.CurrentSelection.selected = true;
 
-                //if (RTHelpers.AprilFools)
-                //{
-                //    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 10f);
-                //}
-
                 inst.RenderIDLDM(beatmapObject);
                 inst.RenderName(beatmapObject);
                 inst.RenderObjectType(beatmapObject);
@@ -1726,16 +1720,10 @@ namespace EditorManagement.Functions.Editors
                 ((GameObject)inst.ObjectUIElements["Collapse Prefab"]).SetActive(fromPrefab);
 
                 inst.RenderKeyframes(beatmapObject);
-                inst.RenderKeyframeDialog(beatmapObject);
+                inst.RenderObjectKeyframesDialog(beatmapObject);
 
                 if (ObjectModifiersEditor.inst)
                     inst.StartCoroutine(ObjectModifiersEditor.inst.RenderModifiers(beatmapObject));
-
-                // April Fools!
-                //if (RTHelpers.AprilFools)
-                //{
-                //    EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left").localRotation = Quaternion.Euler(0f, 0f, 180f);
-                //}
             }
 
             yield break;
@@ -3026,188 +3014,1238 @@ namespace EditorManagement.Functions.Editors
             });
         }
 
-        public void RenderKeyframeDialog(BeatmapObject beatmapObject)
+        void KeyframeHandler(Transform kfdialog, int type, IEnumerable<TimelineObject> selected, TimelineObject firstKF, BeatmapObject beatmapObject, string typeName, int i, string valueType)
         {
-            if (beatmapObject.timelineObject.InternalSelections.Where(x => x.selected).Count() == 1)
+            var valueBase = kfdialog.Find(typeName);
+            var value = valueBase.Find(valueType);
+
+            if (!value)
             {
-                var kf = beatmapObject.timelineObject.InternalSelections.Where(x => x.selected).ToList()[0];
+                Debug.LogError($"{EditorPlugin.className}Value {valueType} is null.");
+                return;
+            }
 
-                for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
-                {
-                    ObjEditor.inst.KeyframeDialogs[i].SetActive(i == kf.Type);
-                }
+            var valueEventTrigger = typeName != "rotation" ? value.GetComponent<EventTrigger>() : kfdialog.GetChild(9).GetComponent<EventTrigger>();
 
-                //Keyframes
-                {
-                    ObjEditor.inst.currentKeyframeKind = kf.Type;
-                    ObjEditor.inst.currentKeyframe = kf.Index;
-                    var kfdialog = ObjEditor.inst.KeyframeDialogs[kf.Type].transform;
-                    if (beatmapObject.events[kf.Type].Count > 0)
-                        StartCoroutine(IRenderKeyframeDialog(kfdialog, kf, kf.Type, beatmapObject));
+            var valueInputField = value.GetComponent<InputField>();
+            var valueButtonLeft = value.Find("<").GetComponent<Button>();
+            var valueButtonRight = value.Find(">").GetComponent<Button>();
 
-                    var timeDecreaseGreat = kfdialog.Find("time/<<").GetComponent<Button>();
-                    var timeDecrease = kfdialog.Find("time/<").GetComponent<Button>();
-                    var timeIncrease = kfdialog.Find("time/>").GetComponent<Button>();
-                    var timeIncreaseGreat = kfdialog.Find("time/>>").GetComponent<Button>();
-                    var timeSet = kfdialog.Find("time/time").GetComponent<InputField>();
+            if (!value.GetComponent<InputFieldSwapper>())
+            {
+                var ifh = value.gameObject.AddComponent<InputFieldSwapper>();
+                ifh.Init(valueInputField, InputFieldSwapper.Type.Num);
+            }
 
-                    timeDecreaseGreat.interactable = kf.Index != 0;
-                    timeDecrease.interactable = kf.Index != 0;
-                    timeIncrease.interactable = kf.Index != 0;
-                    timeIncreaseGreat.interactable = kf.Index != 0;
-                    timeSet.interactable = kf.Index != 0;
-
-                    var superLeft = kfdialog.Find("edit/<<").GetComponent<Button>();
-
-                    superLeft.onClick.RemoveAllListeners();
-                    superLeft.interactable = kf.Index != 0;
-                    superLeft.onClick.AddListener(delegate ()
-                    {
-                        SetCurrentKeyframe(beatmapObject, 0, true);
-                    });
-
-                    var left = kfdialog.Find("edit/<").GetComponent<Button>();
-
-                    left.onClick.RemoveAllListeners();
-                    left.interactable = ObjEditor.inst.currentKeyframe != 0;
-                    left.onClick.AddListener(delegate ()
-                    {
-                        AddCurrentKeyframe(beatmapObject, -1, true);
-                    });
-
-                    kfdialog.Find("edit/|").GetComponentInChildren<Text>().text = kf.Index == 0 ? "S" : kf.Index == beatmapObject.events[kf.Type].Count - 1 ? "E" : kf.Index.ToString();
-
-                    var right = kfdialog.Find("edit/>").GetComponent<Button>();
-
-                    right.onClick.RemoveAllListeners();
-                    right.interactable = kf.Index < beatmapObject.events[kf.Type].Count - 1;
-                    right.onClick.AddListener(delegate ()
-                    {
-                        AddCurrentKeyframe(beatmapObject, 1, true);
-                    });
-
-                    var superRight = kfdialog.Find("edit/>>").GetComponent<Button>();
-
-                    superRight.onClick.RemoveAllListeners();
-                    superRight.interactable = kf.Index < beatmapObject.events[kf.Type].Count - 1;
-                    superRight.onClick.AddListener(delegate ()
-                    {
-                        AddCurrentKeyframe(beatmapObject, int.MaxValue, true);
-                    });
-
-                    var copy = kfdialog.Find("edit/copy").GetComponent<Button>();
-                    copy.onClick.ClearAll();
-                    copy.onClick.AddListener(delegate ()
-                    {
-                        switch (kf.Type)
-                        {
-                            case 0:
-                                CopiedPositionData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
-                                break;
-                            case 1:
-                                CopiedScaleData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
-                                break;
-                            case 2:
-                                CopiedRotationData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
-                                break;
-                            case 3:
-                                CopiedColorData = EventKeyframe.DeepCopy((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]);
-                                break;
-                        }
-                        EditorManager.inst.DisplayNotification("Copied keyframe data!", 2f, EditorManager.NotificationType.Success);
-                    });
-                    
-                    var paste = kfdialog.Find("edit/paste").GetComponent<Button>();
-                    paste.onClick.ClearAll();
-                    paste.onClick.AddListener(delegate ()
-                    {
-                        var eventKeyframe = beatmapObject.events[kf.Type][kf.Index];
-                        var time = eventKeyframe.eventTime;
-
-                        switch (kf.Type)
-                        {
-                            case 0:
-                                if (CopiedPositionData != null)
-                                {
-                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedPositionData.eventValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedPositionData.eventRandomValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedPositionData.random;
-                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedPositionData.relative;
-                                    RenderKeyframes(beatmapObject);
-                                    RenderKeyframeDialog(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                    EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
-                                }
-                                else
-                                    EditorManager.inst.DisplayNotification("Position keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
-                                break;
-                            case 1:
-                                if (CopiedScaleData != null)
-                                {
-                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedScaleData.eventValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedScaleData.eventRandomValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedScaleData.random;
-                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedScaleData.relative;
-                                    RenderKeyframes(beatmapObject);
-                                    RenderKeyframeDialog(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                    EditorManager.inst.DisplayNotification("Pasted scale keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
-                                }
-                                else
-                                    EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
-                                break;
-                            case 2:
-                                if (CopiedRotationData != null)
-                                {
-                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedRotationData.eventValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedRotationData.eventRandomValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedRotationData.random;
-                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedRotationData.relative;
-                                    RenderKeyframes(beatmapObject);
-                                    RenderKeyframeDialog(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                    EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
-                                }
-                                else
-                                    EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
-                                break;
-                            case 3:
-                                if (CopiedColorData != null)
-                                {
-                                    beatmapObject.events[kf.Type][kf.Index].eventValues = CopiedColorData.eventValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].eventRandomValues = CopiedColorData.eventRandomValues.Copy();
-                                    beatmapObject.events[kf.Type][kf.Index].random = CopiedColorData.random;
-                                    ((EventKeyframe)beatmapObject.events[kf.Type][kf.Index]).relative = CopiedColorData.relative;
-                                    RenderKeyframes(beatmapObject);
-                                    RenderKeyframeDialog(beatmapObject);
-                                    Updater.UpdateProcessor(beatmapObject);
-                                    EditorManager.inst.DisplayNotification("Pasted color keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
-                                }
-                                else
-                                    EditorManager.inst.DisplayNotification("Color keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
-                                break;
-                        }
-                    });
-
-                    var deleteKey = kfdialog.Find("edit/del").GetComponent<Button>();
-
-                    deleteKey.onClick.RemoveAllListeners();
-                    deleteKey.interactable = kf.Index != 0;
-                    deleteKey.onClick.AddListener(delegate ()
-                    {
-                        StartCoroutine(DeleteKeyframes(beatmapObject));
-                    });
-                }
+            valueEventTrigger.triggers.Clear();
+            if (type != 2)
+            {
+                valueEventTrigger.triggers.Add(TriggerHelper.ScrollDelta(valueInputField, multi: true));
+                valueEventTrigger.triggers.Add(TriggerHelper.ScrollDeltaVector2(kfdialog.GetChild(9).GetChild(0).GetComponent<InputField>(), kfdialog.GetChild(9).GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
             }
             else
             {
-                for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
+                valueEventTrigger.triggers.Add(TriggerHelper.ScrollDelta(valueInputField, 15f, 3f));
+            }
+
+            int current = i;
+
+            valueInputField.characterValidation = InputField.CharacterValidation.None;
+            valueInputField.contentType = InputField.ContentType.Standard;
+            valueInputField.keyboardType = TouchScreenKeyboardType.Default;
+
+            valueInputField.onValueChanged.RemoveAllListeners();
+            valueInputField.text = selected.Count() == 1 ? firstKF.GetData<EventKeyframe>().eventValues[i].ToString() : typeName == "rotation" ? "15" : "1";
+            valueInputField.onValueChanged.AddListener(delegate (string _value)
+            {
+                if (float.TryParse(_value, out float num) && selected.Count() == 1)
                 {
-                    ObjEditor.inst.KeyframeDialogs[i].SetActive(false);
+                    firstKF.GetData<EventKeyframe>().eventValues[current] = num;
+
+                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
                 }
-                ObjEditor.inst.KeyframeDialogs[4].transform.AsRT().anchorMax = new Vector2(0f, 1f);
-                ObjEditor.inst.KeyframeDialogs[4].transform.AsRT().anchorMin = new Vector2(0f, 1f);
+            });
+
+            valueButtonLeft.onClick.RemoveAllListeners();
+            valueButtonLeft.onClick.AddListener(delegate ()
+            {
+                if (float.TryParse(valueInputField.text, out float x))
+                {
+                    if (selected.Count() == 1)
+                        valueInputField.text = (x - (typeName == "rotation" ? 5f : 1f)).ToString();
+                    else
+                    {
+                        foreach (var keyframe in selected)
+                        {
+                            keyframe.GetData<EventKeyframe>().eventValues[current] -= x;
+                        }
+
+                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                    }
+                }
+            });
+
+            valueButtonRight.onClick.RemoveAllListeners();
+            valueButtonRight.onClick.AddListener(delegate ()
+            {
+                if (float.TryParse(valueInputField.text, out float x))
+                {
+                    if (selected.Count() == 1)
+                        valueInputField.text = (x + (typeName == "rotation" ? 5f : 1f)).ToString();
+                    else
+                    {
+                        foreach (var keyframe in selected)
+                        {
+                            keyframe.GetData<EventKeyframe>().eventValues[current] += x;
+                        }
+
+                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                    }
+                }
+            });
+        }
+
+        void KeyframeRandomHandler(Transform kfdialog, int type, IEnumerable<TimelineObject> selected, TimelineObject firstKF, BeatmapObject beatmapObject, string typeName)
+        {
+            var randomValueLabel = kfdialog.Find($"r_{typeName}_label");
+            var randomValue = kfdialog.Find($"r_{typeName}");
+
+            int random = firstKF.GetData<EventKeyframe>().random;
+
+            if (kfdialog.Find("r_axis") && kfdialog.Find("r_axis").gameObject.TryGetComponent(out Dropdown rAxis))
+            {
+                rAxis.gameObject.SetActive(random == 5 || random == 6);
+                rAxis.onValueChanged.ClearAll();
+                rAxis.value = Mathf.Clamp((int)firstKF.GetData<EventKeyframe>().eventRandomValues[3], 0, 3);
+                rAxis.onValueChanged.AddListener(delegate (int _val)
+                {
+                    foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                        keyframe.eventRandomValues[3] = _val;
+                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                });
+            }
+
+            Action<int> keyframeRandomHandler = delegate (int randomType)
+            {
+                if (kfdialog.Find("r_axis"))
+                    kfdialog.Find("r_axis").gameObject.SetActive(RTEditor.ShowModdedUI && (randomType == 5 || randomType == 6));
+
+                randomValueLabel.gameObject.SetActive(randomType != 0 && randomType != 5);
+                randomValue.gameObject.SetActive(randomType != 0 && randomType != 5);
+                randomValueLabel.GetChild(0).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Min" : randomType == 6 ? "Minimum Range" : "Random X";
+                randomValueLabel.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
+                randomValueLabel.GetChild(1).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Max" : randomType == 6 ? "Maximum Range" : "Random Y";
+                kfdialog.Find("random/interval-input").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
+                kfdialog.Find("r_label/interval").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
+
+                if (kfdialog.Find("relative-label"))
+                {
+                    kfdialog.Find("relative-label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                    if (RTEditor.ShowModdedUI)
+                    {
+                        kfdialog.Find("relative-label").GetChild(0).GetComponent<Text>().text =
+                            randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
+                        kfdialog.Find("relative").GetChild(1).GetComponent<Text>().text =
+                            randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
+                    }
+                }
+
+                randomValue.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
+
+                randomValue.GetChild(0).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
+                randomValue.GetChild(1).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
+
+                if (randomType != 0 && randomType != 3 && randomType != 5)
+                {
+                    kfdialog.Find("r_label/interval").GetComponent<Text>().text = randomType == 6 ? "Speed" : "Random Interval";
+                }
+            };
+
+            for (int n = 0; n <= (type == 0 ? 5 : type == 2 ? 4 : 3); n++)
+            {
+                // We skip the 2nd random type for compatibility with old PA levels.
+                int buttonTmp = (n >= 2 && (type != 2 || n < 3)) ? (n + 1) : (n > 2 && type == 2) ? n + 2 : n;
+
+                var randomToggles = kfdialog.Find("random");
+
+                randomToggles.GetChild(n).gameObject.SetActive(buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI);
+
+                if (buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI)
+                {
+                    var child = randomToggles.GetChild(n).GetComponent<Toggle>();
+                    child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
+                    {
+                        foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                            keyframe.random = buttonTmp;
+
+                        keyframeRandomHandler?.Invoke(buttonTmp);
+
+                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                    });
+                    if (!child.GetComponent<HoverUI>())
+                    {
+                        var hoverUI = child.gameObject.AddComponent<HoverUI>();
+                        hoverUI.animatePos = false;
+                        hoverUI.animateSca = true;
+                        hoverUI.size = 1.1f;
+                    }
+                }
+            }
+
+            keyframeRandomHandler?.Invoke(random);
+
+            float num = 0f;
+            if (firstKF.GetData<EventKeyframe>().eventRandomValues.Length > 2)
+                num = firstKF.GetData<EventKeyframe>().eventRandomValues[2];
+
+            var randomInterval = kfdialog.Find("random/interval-input");
+            var randomIntervalIF = randomInterval.GetComponent<InputField>();
+            randomIntervalIF.NewValueChangedListener(num.ToString(), delegate (string _val)
+            {
+                if (float.TryParse(_val, out float num))
+                {
+                    foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                        keyframe.eventRandomValues[2] = num;
+
+                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                }
+            });
+
+            TriggerHelper.AddEventTriggerParams(randomIntervalIF.gameObject,
+                TriggerHelper.ScrollDelta(randomIntervalIF, 0.01f));
+
+            if (!randomInterval.GetComponent<InputFieldSwapper>())
+            {
+                var ifh = randomInterval.gameObject.AddComponent<InputFieldSwapper>();
+                ifh.Init(randomIntervalIF, InputFieldSwapper.Type.Num);
+            }
+
+            TriggerHelper.AddEventTrigger(randomInterval.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(randomIntervalIF, max: random == 6 ? 1f : 0f) });
+        }
+
+        void KeyframeRandomValueHandler(Transform kfdialog, int type, IEnumerable<TimelineObject> selected, TimelineObject firstKF, BeatmapObject beatmapObject, string typeName, int i, string valueType)
+        {
+            var randomValueLabel = kfdialog.Find($"r_{typeName}_label");
+            var randomValueBase = kfdialog.Find($"r_{typeName}");
+
+            if (!randomValueBase)
+            {
+                Debug.LogError($"{EditorPlugin.className}Value {valueType} (Base) is null.");
+                return;
+            }
+
+            var randomValue = randomValueBase.Find(valueType);
+
+            if (!randomValue)
+            {
+                Debug.LogError($"{EditorPlugin.className}Value {valueType} is null.");
+                return;
+            }
+
+            var random = firstKF.GetData<EventKeyframe>().random;
+
+            var valueButtonLeft = randomValue.Find("<").GetComponent<Button>();
+            var valueButtonRight = randomValue.Find(">").GetComponent<Button>();
+
+            var randomValueInputField = randomValue.GetComponent<InputField>();
+
+            randomValueInputField.characterValidation = InputField.CharacterValidation.None;
+            randomValueInputField.contentType = InputField.ContentType.Standard;
+            randomValueInputField.keyboardType = TouchScreenKeyboardType.Default;
+
+            randomValueInputField.NewValueChangedListener(selected.Count() == 1 ? firstKF.GetData<EventKeyframe>().eventRandomValues[i].ToString() : typeName == "rotation" ? "15" : "1", delegate (string _val)
+            {
+                if (float.TryParse(_val, out float num) && selected.Count() == 1)
+                {
+                    firstKF.GetData<EventKeyframe>().eventRandomValues[i] = num;
+
+                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                }
+            });
+
+            valueButtonLeft.onClick.RemoveAllListeners();
+            valueButtonLeft.onClick.AddListener(delegate ()
+            {
+                if (float.TryParse(randomValueInputField.text, out float x))
+                {
+                    if (selected.Count() == 1)
+                        randomValueInputField.text = (x - (typeName == "rotation" ? 15f : 1f)).ToString();
+                    else
+                    {
+                        foreach (var keyframe in selected)
+                        {
+                            keyframe.GetData<EventKeyframe>().eventRandomValues[i] -= x;
+                        }
+
+                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                    }
+                }
+            });
+
+            valueButtonRight.onClick.RemoveAllListeners();
+            valueButtonRight.onClick.AddListener(delegate ()
+            {
+                if (float.TryParse(randomValueInputField.text, out float x))
+                {
+                    if (selected.Count() == 1)
+                        randomValueInputField.text = (x + (typeName == "rotation" ? 15f : 1f)).ToString();
+                    else
+                    {
+                        foreach (var keyframe in selected)
+                        {
+                            keyframe.GetData<EventKeyframe>().eventRandomValues[i] += x;
+                        }
+
+                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                    }
+                }
+            });
+
+            TriggerHelper.AddEventTriggerParams(randomValue.gameObject,
+                TriggerHelper.ScrollDelta(randomValueInputField, type == 2 && random != 6 ? 15f : 0.1f, type == 2 && random != 6 ? 3f : 10f, multi: true),
+                TriggerHelper.ScrollDeltaVector2(randomValueInputField, randomValueBase.GetChild(1).GetComponent<InputField>(), type == 2 && random != 6 ? 15f : 0.1f, type == 2 && random != 6 ? 3f : 10f));
+
+            if (!randomValue.GetComponent<InputFieldSwapper>())
+            {
+                var ifh = randomValue.gameObject.AddComponent<InputFieldSwapper>();
+                ifh.Init(randomValueInputField, InputFieldSwapper.Type.Num);
+            }
+        }
+
+        public void RenderObjectKeyframesDialog(BeatmapObject beatmapObject)
+        {
+            var selected = beatmapObject.timelineObject.InternalSelections.Where(x => x.selected);
+
+            if (!(selected.Count() == 1 || selected.All(x => x.Type == selected.Min(y => y.Type))))
+            {
+                for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
+                    ObjEditor.inst.KeyframeDialogs[i].SetActive(false);
                 ObjEditor.inst.KeyframeDialogs[4].SetActive(true);
+
+                try
+                {
+                    var dialog = ObjEditor.inst.KeyframeDialogs[4].transform;
+                    var time = dialog.Find("time/time/time").GetComponent<InputField>();
+                    time.onValueChanged.ClearAll();
+                    if (time.text == "100.000")
+                        time.text = "10";
+
+                    var setTime = dialog.Find("time/time").GetChild(3).GetComponent<Button>();
+                    setTime.onClick.ClearAll();
+                    setTime.onClick.AddListener(delegate ()
+                    {
+                        if (float.TryParse(time.text, out float num))
+                        {
+                            if (num < 0f)
+                                num = 0f;
+
+                            if (EditorConfig.Instance.RoundToNearest.Value)
+                                num = RTMath.RoundToNearestDecimal(num, 3);
+
+                            foreach (var kf in selected.Where(x => x.Index != 0))
+                            {
+                                kf.Time = num;
+                            }
+
+                            ResizeKeyframeTimeline(beatmapObject);
+
+                            RenderKeyframes(beatmapObject);
+
+                            // Keyframe Time affects both physical object and timeline object.
+                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    var decreaseTimeGreat = dialog.Find("time/time/<<").GetComponent<Button>();
+                    var decreaseTime = dialog.Find("time/time/<").GetComponent<Button>();
+                    var increaseTimeGreat = dialog.Find("time/time/>>").GetComponent<Button>();
+                    var increaseTime = dialog.Find("time/time/>").GetComponent<Button>();
+
+                    decreaseTime.onClick.ClearAll();
+                    decreaseTime.onClick.AddListener(delegate ()
+                    {
+                        if (float.TryParse(time.text, out float num))
+                        {
+                            if (num < 0f)
+                                num = 0f;
+
+                            if (EditorConfig.Instance.RoundToNearest.Value)
+                                num = RTMath.RoundToNearestDecimal(num, 3);
+
+                            foreach (var kf in selected.Where(x => x.Index != 0))
+                            {
+                                kf.Time = Mathf.Clamp(kf.Time - num, 0f, float.MaxValue);
+                            }
+
+                            ResizeKeyframeTimeline(beatmapObject);
+
+                            RenderKeyframes(beatmapObject);
+
+                            // Keyframe Time affects both physical object and timeline object.
+                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    increaseTime.onClick.ClearAll();
+                    increaseTime.onClick.AddListener(delegate ()
+                    {
+                        if (float.TryParse(time.text, out float num))
+                        {
+                            if (num < 0f)
+                                num = 0f;
+
+                            if (EditorConfig.Instance.RoundToNearest.Value)
+                                num = RTMath.RoundToNearestDecimal(num, 3);
+
+                            foreach (var kf in selected.Where(x => x.Index != 0))
+                            {
+                                kf.Time = Mathf.Clamp(kf.Time + num, 0f, float.MaxValue);
+                            }
+
+                            ResizeKeyframeTimeline(beatmapObject);
+
+                            RenderKeyframes(beatmapObject);
+
+                            // Keyframe Time affects both physical object and timeline object.
+                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    decreaseTimeGreat.onClick.ClearAll();
+                    decreaseTimeGreat.onClick.AddListener(delegate ()
+                    {
+                        if (float.TryParse(time.text, out float num))
+                        {
+                            if (num < 0f)
+                                num = 0f;
+
+                            if (EditorConfig.Instance.RoundToNearest.Value)
+                                num = RTMath.RoundToNearestDecimal(num, 3);
+
+                            foreach (var kf in selected.Where(x => x.Index != 0))
+                            {
+                                kf.Time = Mathf.Clamp(kf.Time - (num * 10f), 0f, float.MaxValue);
+                            }
+
+                            ResizeKeyframeTimeline(beatmapObject);
+
+                            RenderKeyframes(beatmapObject);
+
+                            // Keyframe Time affects both physical object and timeline object.
+                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    increaseTimeGreat.onClick.ClearAll();
+                    increaseTimeGreat.onClick.AddListener(delegate ()
+                    {
+                        if (float.TryParse(time.text, out float num))
+                        {
+                            if (num < 0f)
+                                num = 0f;
+
+                            if (EditorConfig.Instance.RoundToNearest.Value)
+                                num = RTMath.RoundToNearestDecimal(num, 3);
+
+                            foreach (var kf in selected.Where(x => x.Index != 0))
+                            {
+                                kf.Time = Mathf.Clamp(kf.Time + (num * 10f), 0f, float.MaxValue);
+                            }
+
+                            ResizeKeyframeTimeline(beatmapObject);
+
+                            RenderKeyframes(beatmapObject);
+
+                            // Keyframe Time affects both physical object and timeline object.
+                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    TriggerHelper.AddEventTriggerParams(time.gameObject, TriggerHelper.ScrollDelta(time));
+
+                    var curvesMulti = dialog.Find("curves/curves").GetComponent<Dropdown>();
+                    curvesMulti.onValueChanged.ClearAll();
+                    curvesMulti.onValueChanged.AddListener(delegate (int _val)
+                    {
+                        if (DataManager.inst.AnimationListDictionary.ContainsKey(_val))
+                        {
+                            foreach (var keyframe in selected.Where(x => x.Index != 0).Select(x => x.GetData<EventKeyframe>()))
+                            {
+                                keyframe.curveType = DataManager.inst.AnimationListDictionary[_val];
+                            }
+
+                            ResizeKeyframeTimeline(beatmapObject);
+
+                            RenderKeyframes(beatmapObject);
+
+                            // Keyframe Time affects both physical object and timeline object.
+                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    var valueIndex = dialog.Find("value index").GetComponent<InputField>();
+                    valueIndex.onValueChanged.ClearAll();
+                    if (valueIndex.text == "25.0")
+                        valueIndex.text = "0";
+                    valueIndex.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        if (!int.TryParse(_val, out int n))
+                            valueIndex.text = "0";
+                    });
+
+                    TriggerHelper.IncreaseDecreaseButtonsInt(valueIndex);
+                    TriggerHelper.AddEventTriggerParams(valueIndex.gameObject, TriggerHelper.ScrollDeltaInt(valueIndex));
+
+                    var value = dialog.Find("value").GetComponent<InputField>();
+                    value.onValueChanged.ClearAll();
+                    value.onValueChanged.AddListener(delegate (string _val)
+                    {
+                        if (!float.TryParse(_val, out float n))
+                            value.text = "0";
+                    });
+
+                    var setValue = value.transform.GetChild(2).GetComponent<Button>();
+                    setValue.onClick.ClearAll();
+                    setValue.onClick.AddListener(delegate ()
+                    {
+                        if (float.TryParse(value.text, out float num))
+                        {
+                            foreach (var kf in selected)
+                            {
+                                var keyframe = kf.GetData<EventKeyframe>();
+
+                                var index = Parser.TryParse(valueIndex.text, 0);
+
+                                index = Mathf.Clamp(index, 0, keyframe.eventValues.Length - 1);
+                                if (index >= 0 && index < keyframe.eventValues.Length)
+                                    keyframe.eventValues[index] = kf.Type == 3 ? Mathf.Clamp((int)num, 0, RTHelpers.BeatmapTheme.objectColors.Count - 1) : num;
+                            }
+
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
+                    });
+
+                    TriggerHelper.IncreaseDecreaseButtons(value);
+                    TriggerHelper.AddEventTriggerParams(value.gameObject, TriggerHelper.ScrollDelta(value));
+
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogException(ex);
+                }
+
+                return;
+            }
+
+            var firstKF = selected.ElementAt(0);
+            var type = firstKF.Type;
+
+            for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
+            {
+                ObjEditor.inst.KeyframeDialogs[i].SetActive(i == type);
+            }
+
+            ObjEditor.inst.currentKeyframeKind = type;
+            ObjEditor.inst.currentKeyframe = firstKF.Index;
+
+            var kfdialog = ObjEditor.inst.KeyframeDialogs[type].transform;
+
+            var timeDecreaseGreat = kfdialog.Find("time/<<").GetComponent<Button>();
+            var timeDecrease = kfdialog.Find("time/<").GetComponent<Button>();
+            var timeIncrease = kfdialog.Find("time/>").GetComponent<Button>();
+            var timeIncreaseGreat = kfdialog.Find("time/>>").GetComponent<Button>();
+            var timeSet = kfdialog.Find("time/time").GetComponent<InputField>();
+
+            timeDecreaseGreat.interactable = firstKF.Index != 0;
+            timeDecrease.interactable = firstKF.Index != 0;
+            timeIncrease.interactable = firstKF.Index != 0;
+            timeIncreaseGreat.interactable = firstKF.Index != 0;
+            timeSet.interactable = firstKF.Index != 0;
+
+            var superLeft = kfdialog.Find("edit/<<").GetComponent<Button>();
+
+            superLeft.onClick.RemoveAllListeners();
+            superLeft.interactable = firstKF.Index != 0;
+            superLeft.onClick.AddListener(delegate ()
+            {
+                SetCurrentKeyframe(beatmapObject, 0, true);
+            });
+
+            var left = kfdialog.Find("edit/<").GetComponent<Button>();
+
+            left.onClick.RemoveAllListeners();
+            left.interactable = selected.Count() == 1 && firstKF.Index != 0;
+            left.onClick.AddListener(delegate ()
+            {
+                AddCurrentKeyframe(beatmapObject, -1, true);
+            });
+
+            kfdialog.Find("edit/|").GetComponentInChildren<Text>().text = firstKF.Index == 0 ? "S" : firstKF.Index == beatmapObject.events[firstKF.Type].Count - 1 ? "E" : firstKF.Index.ToString();
+
+            var right = kfdialog.Find("edit/>").GetComponent<Button>();
+
+            right.onClick.RemoveAllListeners();
+            right.interactable = selected.Count() == 1 && firstKF.Index < beatmapObject.events[type].Count - 1;
+            right.onClick.AddListener(delegate ()
+            {
+                AddCurrentKeyframe(beatmapObject, 1, true);
+            });
+
+            var superRight = kfdialog.Find("edit/>>").GetComponent<Button>();
+
+            superRight.onClick.RemoveAllListeners();
+            superRight.interactable = selected.Count() == 1 && firstKF.Index < beatmapObject.events[type].Count - 1;
+            superRight.onClick.AddListener(delegate ()
+            {
+                AddCurrentKeyframe(beatmapObject, int.MaxValue, true);
+            });
+
+            var copy = kfdialog.Find("edit/copy").GetComponent<Button>();
+            copy.onClick.ClearAll();
+            copy.onClick.AddListener(delegate ()
+            {
+                switch (type)
+                {
+                    case 0:
+                        CopiedPositionData = EventKeyframe.DeepCopy(firstKF.GetData<EventKeyframe>());
+                        break;
+                    case 1:
+                        CopiedScaleData = EventKeyframe.DeepCopy(firstKF.GetData<EventKeyframe>());
+                        break;
+                    case 2:
+                        CopiedRotationData = EventKeyframe.DeepCopy(firstKF.GetData<EventKeyframe>());
+                        break;
+                    case 3:
+                        CopiedColorData = EventKeyframe.DeepCopy(firstKF.GetData<EventKeyframe>());
+                        break;
+                }
+                EditorManager.inst.DisplayNotification("Copied keyframe data!", 2f, EditorManager.NotificationType.Success);
+            });
+
+            var paste = kfdialog.Find("edit/paste").GetComponent<Button>();
+            paste.onClick.ClearAll();
+            paste.onClick.AddListener(delegate ()
+            {
+                switch (type)
+                {
+                    case 0:
+                        if (CopiedPositionData != null)
+                        {
+                            foreach (var timelineObject in selected)
+                            {
+                                var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.eventValues = CopiedPositionData.eventValues.Copy();
+                                kf.eventRandomValues = CopiedPositionData.eventRandomValues.Copy();
+                                kf.random = CopiedPositionData.random;
+                                kf.relative = CopiedPositionData.relative;
+                            }
+
+                            RenderKeyframes(beatmapObject);
+                            RenderObjectKeyframesDialog(beatmapObject);
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                        }
+                        else
+                            EditorManager.inst.DisplayNotification("Position keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                        break;
+                    case 1:
+                        if (CopiedScaleData != null)
+                        {
+                            foreach (var timelineObject in selected)
+                            {
+                                var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.eventValues = CopiedScaleData.eventValues.Copy();
+                                kf.eventRandomValues = CopiedScaleData.eventRandomValues.Copy();
+                                kf.random = CopiedScaleData.random;
+                                kf.relative = CopiedScaleData.relative;
+                            }
+
+                            RenderKeyframes(beatmapObject);
+                            RenderObjectKeyframesDialog(beatmapObject);
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            EditorManager.inst.DisplayNotification("Pasted scale keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                        }
+                        else
+                            EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                        break;
+                    case 2:
+                        if (CopiedRotationData != null)
+                        {
+                            foreach (var timelineObject in selected)
+                            {
+                                var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.eventValues = CopiedRotationData.eventValues.Copy();
+                                kf.eventRandomValues = CopiedRotationData.eventRandomValues.Copy();
+                                kf.random = CopiedRotationData.random;
+                                kf.relative = CopiedRotationData.relative;
+                            }
+
+                            RenderKeyframes(beatmapObject);
+                            RenderObjectKeyframesDialog(beatmapObject);
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                        }
+                        else
+                            EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                        break;
+                    case 3:
+                        if (CopiedColorData != null)
+                        {
+                            foreach (var timelineObject in selected)
+                            {
+                                var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.eventValues = CopiedColorData.eventValues.Copy();
+                                kf.eventRandomValues = CopiedColorData.eventRandomValues.Copy();
+                                kf.random = CopiedColorData.random;
+                                kf.relative = CopiedColorData.relative;
+                            }
+
+                            RenderKeyframes(beatmapObject);
+                            RenderObjectKeyframesDialog(beatmapObject);
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            EditorManager.inst.DisplayNotification("Pasted color keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                        }
+                        else
+                            EditorManager.inst.DisplayNotification("Color keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                        break;
+                }
+            });
+
+            var deleteKey = kfdialog.Find("edit/del").GetComponent<Button>();
+
+            deleteKey.onClick.RemoveAllListeners();
+            deleteKey.onClick.AddListener(delegate ()
+            {
+                StartCoroutine(DeleteKeyframes(beatmapObject));
+            });
+
+            var tet = kfdialog.Find("time").GetComponent<EventTrigger>();
+            var tif = kfdialog.Find("time/time").GetComponent<InputField>();
+
+            tet.triggers.Clear();
+            if (selected.Count() == 1 && firstKF.Index != 0 || selected.Count() > 1)
+                tet.triggers.Add(TriggerHelper.ScrollDelta(tif));
+
+            tif.onValueChanged.RemoveAllListeners();
+            tif.text = selected.Count() == 1 ? firstKF.Time.ToString() : "1";
+            tif.onValueChanged.AddListener(delegate (string _value)
+            {
+                if (float.TryParse(_value, out float num) && !ObjEditor.inst.timelineKeyframesDrag && selected.Count() == 1)
+                {
+                    if (num < 0f)
+                        num = 0f;
+
+                    if (EditorConfig.Instance.RoundToNearest.Value)
+                        num = RTMath.RoundToNearestDecimal(num, 3);
+
+                    firstKF.Time = num;
+
+                    ResizeKeyframeTimeline(beatmapObject);
+
+                    RenderKeyframes(beatmapObject);
+
+                    // Keyframe Time affects both physical object and timeline object.
+                    RenderTimelineObject(new TimelineObject(beatmapObject));
+                    if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                }
+            });
+
+            if (selected.Count() == 1)
+                TriggerHelper.IncreaseDecreaseButtons(tif, t: kfdialog.Find("time"));
+            else
+            {
+                var btR = kfdialog.Find("time/<").GetComponent<Button>();
+                var btL = kfdialog.Find("time/>").GetComponent<Button>();
+                var btGR = kfdialog.Find("time/<<").GetComponent<Button>();
+                var btGL = kfdialog.Find("time/>>").GetComponent<Button>();
+
+                btR.onClick.ClearAll();
+                btR.onClick.AddListener(delegate ()
+                {
+                    if (float.TryParse(tif.text, out float result))
+                    {
+                        var num = Input.GetKey(KeyCode.LeftAlt) ? 0.1f / 10f : Input.GetKey(KeyCode.LeftControl) ? 0.1f * 10f : 0.1f;
+                        result -= num;
+
+                        if (selected.Count() == 1)
+                            tif.text = result.ToString();
+                        else
+                        {
+                            foreach (var keyframe in selected)
+                            {
+                                keyframe.Time = Mathf.Clamp(keyframe.Time - num, 0.001f, float.PositiveInfinity);
+                            }
+                        }
+                    }
+                });
+
+                btL.onClick.ClearAll();
+                btL.onClick.AddListener(delegate ()
+                {
+                    if (float.TryParse(tif.text, out float result))
+                    {
+                        var num = Input.GetKey(KeyCode.LeftAlt) ? 0.1f / 10f : Input.GetKey(KeyCode.LeftControl) ? 0.1f * 10f : 0.1f;
+                        result += num;
+
+                        if (selected.Count() == 1)
+                            tif.text = result.ToString();
+                        else
+                        {
+                            foreach (var keyframe in selected)
+                            {
+                                keyframe.Time = Mathf.Clamp(keyframe.Time + num, 0.001f, float.PositiveInfinity);
+                            }
+                        }
+                    }
+                });
+
+                btGR.onClick.ClearAll();
+                btGR.onClick.AddListener(delegate ()
+                {
+                    if (float.TryParse(tif.text, out float result))
+                    {
+                        var num = (Input.GetKey(KeyCode.LeftAlt) ? 0.1f / 10f : Input.GetKey(KeyCode.LeftControl) ? 0.1f * 10f : 0.1f) * 10f;
+                        result -= num;
+
+                        if (selected.Count() == 1)
+                            tif.text = result.ToString();
+                        else
+                        {
+                            foreach (var keyframe in selected)
+                            {
+                                keyframe.Time = Mathf.Clamp(keyframe.Time - num, 0.001f, float.PositiveInfinity);
+                            }
+                        }
+                    }
+                });
+
+                btGL.onClick.ClearAll();
+                btGL.onClick.AddListener(delegate ()
+                {
+                    if (float.TryParse(tif.text, out float result))
+                    {
+                        var num = (Input.GetKey(KeyCode.LeftAlt) ? 0.1f / 10f : Input.GetKey(KeyCode.LeftControl) ? 0.1f * 10f : 0.1f) * 10f;
+                        result += num;
+
+                        if (selected.Count() == 1)
+                            tif.text = result.ToString();
+                        else
+                        {
+                            foreach (var keyframe in selected)
+                            {
+                                keyframe.Time = Mathf.Clamp(keyframe.Time + num, 0.001f, float.PositiveInfinity);
+                            }
+                        }
+                    }
+                });
+            }
+
+            kfdialog.Find("curves_label").gameObject.SetActive(selected.Count() == 1 && firstKF.Index != 0 || selected.Count() > 1);
+            kfdialog.Find("curves").gameObject.SetActive(selected.Count() == 1 && firstKF.Index != 0 || selected.Count() > 1);
+            var curves = kfdialog.Find("curves").GetComponent<Dropdown>();
+            curves.onValueChanged.RemoveAllListeners();
+
+            if (DataManager.inst.AnimationListDictionaryBack.ContainsKey(firstKF.GetData<EventKeyframe>().curveType))
+            {
+                curves.value = DataManager.inst.AnimationListDictionaryBack[firstKF.GetData<EventKeyframe>().curveType];
+            }
+
+            curves.onValueChanged.AddListener(delegate (int _value)
+            {
+                foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                {
+                    keyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
+                }
+
+                    // Since keyframe curve has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects)
+                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                RenderKeyframes(beatmapObject);
+            });
+
+            switch (type)
+            {
+                case 0:
+                    {
+                        KeyframeHandler(kfdialog, type, selected, firstKF, beatmapObject, "position", 0, "x");
+                        KeyframeHandler(kfdialog, type, selected, firstKF, beatmapObject, "position", 1, "y");
+                        KeyframeHandler(kfdialog, type, selected, firstKF, beatmapObject, "position", 2, "z");
+
+                        KeyframeRandomHandler(kfdialog, type, selected, firstKF, beatmapObject, "position");
+                        KeyframeRandomValueHandler(kfdialog, type, selected, firstKF, beatmapObject, "position", 0, "x");
+                        KeyframeRandomValueHandler(kfdialog, type, selected, firstKF, beatmapObject, "position", 1, "y");
+
+                        break;
+                    }
+                case 1:
+                    {
+                        KeyframeHandler(kfdialog, type, selected, firstKF, beatmapObject, "scale", 0, "x");
+                        KeyframeHandler(kfdialog, type, selected, firstKF, beatmapObject, "scale", 1, "y");
+
+                        KeyframeRandomHandler(kfdialog, type, selected, firstKF, beatmapObject, "scale");
+                        KeyframeRandomValueHandler(kfdialog, type, selected, firstKF, beatmapObject, "scale", 0, "x");
+                        KeyframeRandomValueHandler(kfdialog, type, selected, firstKF, beatmapObject, "scale", 1, "y");
+
+                        break;
+                    }
+                case 2:
+                    {
+                        KeyframeHandler(kfdialog, type, selected, firstKF, beatmapObject, "rotation", 0, "x");
+
+                        KeyframeRandomHandler(kfdialog, type, selected, firstKF, beatmapObject, "rotation");
+                        KeyframeRandomValueHandler(kfdialog, type, selected, firstKF, beatmapObject, "rotation", 0, "x");
+                        KeyframeRandomValueHandler(kfdialog, type, selected, firstKF, beatmapObject, "rotation", 1, "y");
+
+                        break;
+                    }
+                case 3:
+                    {
+                        bool showModifiedColors = EditorConfig.Instance.ShowModifiedColors.Value;
+                        int index = 0;
+                        foreach (var toggle in ObjEditor.inst.colorButtons)
+                        {
+                            toggle.onValueChanged.RemoveAllListeners();
+                            int tmpIndex = index;
+
+                            toggle.gameObject.SetActive(RTEditor.ShowModdedUI || tmpIndex < 9);
+
+                            toggle.onValueChanged.ClearAll();
+                            toggle.isOn = index == firstKF.GetData<EventKeyframe>().eventValues[0];
+                            toggle.onValueChanged.AddListener(delegate (bool _val)
+                            {
+                                SetKeyframeColor(beatmapObject, 0, tmpIndex, selected);
+                            });
+
+                            if (showModifiedColors)
+                            {
+                                var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
+
+                                float hueNum = beatmapObject.Interpolate(type, 2);
+                                float satNum = beatmapObject.Interpolate(type, 3);
+                                float valNum = beatmapObject.Interpolate(type, 4);
+
+                                toggle.image.color = RTHelpers.ChangeColorHSV(color, hueNum, satNum, valNum);
+                            }
+                            else
+                                toggle.image.color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
+
+                            if (!toggle.GetComponent<HoverUI>())
+                            {
+                                var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
+                                hoverUI.animatePos = false;
+                                hoverUI.animateSca = true;
+                                hoverUI.size = 1.1f;
+                            }
+                            index++;
+                        }
+
+                        var random = firstKF.GetData<EventKeyframe>().random;
+
+                        kfdialog.Find("opacity_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                        kfdialog.Find("opacity").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                        kfdialog.Find("huesatval_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                        kfdialog.Find("huesatval").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                        kfdialog.Find("r_color_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                        kfdialog.Find("r_color").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                        kfdialog.Find("r_color_target_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                        kfdialog.Find("r_color_target").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                        kfdialog.Find("r_label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                        kfdialog.Find("random").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                        kfdialog.Find("shift").gameObject.SetActive(RTEditor.ShowModdedUI);
+
+                        if (!RTEditor.ShowModdedUI)
+                            break;
+
+                        kfdialog.Find("color").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 78f);
+
+                        var opacity = kfdialog.Find("opacity/x").GetComponent<InputField>();
+
+                        opacity.onValueChanged.RemoveAllListeners();
+                        opacity.text = Mathf.Clamp(-firstKF.GetData<EventKeyframe>().eventValues[1] + 1, 0f, 1f).ToString();
+                        opacity.onValueChanged.AddListener(delegate (string _val)
+                        {
+                            if (float.TryParse(_val, out float n))
+                            {
+                                foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                                    keyframe.eventValues[1] = Mathf.Clamp(-n + 1, 0f, 1f);
+
+                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                    if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            }
+                        });
+
+                        TriggerHelper.AddEventTrigger(kfdialog.Find("opacity").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(opacity, 0.1f, 10f, 0f, 1f) });
+
+                        TriggerHelper.IncreaseDecreaseButtons(opacity);
+
+                        var collision = kfdialog.Find("opacity/collision").GetComponent<Toggle>();
+                        collision.onValueChanged.ClearAll();
+                        collision.isOn = beatmapObject.opacityCollision;
+                        collision.onValueChanged.AddListener(delegate (bool _val)
+                        {
+                            beatmapObject.opacityCollision = _val;
+                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject);
+                        });
+
+                        var hue = kfdialog.Find("huesatval/x").GetComponent<InputField>();
+
+                        hue.onValueChanged.RemoveAllListeners();
+                        hue.text = firstKF.GetData<EventKeyframe>().eventValues[2].ToString();
+                        hue.onValueChanged.AddListener(delegate (string _val)
+                        {
+                            if (float.TryParse(_val, out float n))
+                            {
+                                firstKF.GetData<EventKeyframe>().eventValues[2] = n;
+
+                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                    if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            }
+                        });
+
+                        Destroy(kfdialog.transform.Find("huesatval").GetComponent<EventTrigger>());
+
+                        TriggerHelper.AddEventTrigger(hue.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(hue, 0.1f, 10f) });
+                        TriggerHelper.IncreaseDecreaseButtons(hue, 0.1f, 10f);
+
+                        var sat = kfdialog.Find("huesatval/y").GetComponent<InputField>();
+
+                        sat.onValueChanged.RemoveAllListeners();
+                        sat.text = firstKF.GetData<EventKeyframe>().eventValues[3].ToString();
+                        sat.onValueChanged.AddListener(delegate (string _val)
+                        {
+                            if (float.TryParse(_val, out float n))
+                            {
+                                firstKF.GetData<EventKeyframe>().eventValues[3] = n;
+
+                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                    if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            }
+                        });
+
+                        TriggerHelper.AddEventTrigger(sat.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(sat, 0.1f, 10f) });
+                        TriggerHelper.IncreaseDecreaseButtons(sat, 0.1f, 10f);
+
+                        var val = kfdialog.Find("huesatval/z").GetComponent<InputField>();
+
+                        val.onValueChanged.RemoveAllListeners();
+                        val.text = firstKF.GetData<EventKeyframe>().eventValues[4].ToString();
+                        val.onValueChanged.AddListener(delegate (string _val)
+                        {
+                            if (float.TryParse(_val, out float n))
+                            {
+                                firstKF.GetData<EventKeyframe>().eventValues[4] = n;
+
+                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                    if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            }
+                        });
+
+                        TriggerHelper.AddEventTrigger(val.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(val, 0.1f, 10f) });
+                        TriggerHelper.IncreaseDecreaseButtons(val, 0.1f, 10f);
+
+                        var rColor = kfdialog.Find("r_color");
+
+                        kfdialog.Find("r_color_label").gameObject.SetActive(random != 0);
+                        rColor.gameObject.SetActive(random != 0);
+
+                        kfdialog.Find("r_color_target_label").gameObject.SetActive(random != 0);
+
+                        var randomColorTarget = kfdialog.Find("r_color_target");
+                        randomColorTarget.gameObject.SetActive(random != 0);
+
+                        kfdialog.Find("r_label/interval").gameObject.SetActive(random != 0);
+                        kfdialog.Find("r_label/interval").GetComponent<Text>().text = random == 6 ? "Speed" : "Random Interval";
+                        var rand = kfdialog.Find("random");
+                        var none = rand.Find("none").GetComponent<Toggle>();
+                        var homingDynamic = rand.Find("homing-dynamic").GetComponent<Toggle>();
+
+                        none.onValueChanged.ClearAll();
+                        none.isOn = random == 0;
+                        none.onValueChanged.AddListener(delegate (bool _val)
+                        {
+                            if (_val)
+                            {
+                                foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                                    keyframe.random = 0;
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                RenderObjectKeyframesDialog(beatmapObject);
+                            }
+                        });
+
+                        homingDynamic.onValueChanged.ClearAll();
+                        homingDynamic.isOn = random == 5;
+                        homingDynamic.onValueChanged.AddListener(delegate (bool _val)
+                        {
+                            if (_val)
+                            {
+                                foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                                    keyframe.random = 5;
+                                if (UpdateObjects)
+                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                RenderObjectKeyframesDialog(beatmapObject);
+                            }
+                        });
+
+                        rand.Find("interval-input").gameObject.SetActive(random != 0);
+
+                        if (random != 0)
+                        {
+                            var x = rColor.Find("x").GetComponent<InputField>();
+                            var y = rColor.Find("y").GetComponent<InputField>();
+
+                            x.onValueChanged.ClearAll();
+                            x.text = firstKF.GetData<EventKeyframe>().eventRandomValues[0].ToString();
+                            x.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float n))
+                                {
+                                    firstKF.GetData<EventKeyframe>().eventRandomValues[0] = n;
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                }
+                            });
+
+                            y.onValueChanged.ClearAll();
+                            y.text = firstKF.GetData<EventKeyframe>().eventRandomValues[1].ToString();
+                            y.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float n))
+                                {
+                                    firstKF.GetData<EventKeyframe>().eventRandomValues[1] = n;
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                }
+                            });
+
+                            TriggerHelper.AddEventTriggerParams(x.gameObject,
+                                TriggerHelper.ScrollDelta(x, multi: true),
+                                TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f));
+                            TriggerHelper.AddEventTriggerParams(y.gameObject,
+                                TriggerHelper.ScrollDelta(y, multi: true),
+                                TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f));
+
+                            TriggerHelper.IncreaseDecreaseButtons(x);
+                            TriggerHelper.IncreaseDecreaseButtons(y);
+
+                            var toggles = randomColorTarget.GetComponentsInChildren<Toggle>();
+                            int num6 = 0;
+                            foreach (var toggle in toggles)
+                            {
+                                toggle.onValueChanged.RemoveAllListeners();
+                                int tmpIndex = num6;
+
+                                toggle.NewValueChangedListener(num6 == firstKF.GetData<EventKeyframe>().eventRandomValues[3], delegate (bool _val)
+                                {
+                                    SetKeyframeRandomColorTarget(beatmapObject, 3, tmpIndex, toggles);
+                                });
+
+                                if (showModifiedColors)
+                                {
+                                    var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
+
+                                    float hueNum = beatmapObject.Interpolate(type, 2);
+                                    float satNum = beatmapObject.Interpolate(type, 3);
+                                    float valNum = beatmapObject.Interpolate(type, 4);
+
+                                    toggle.image.color = RTHelpers.ChangeColorHSV(color, hueNum, satNum, valNum);
+                                }
+                                else
+                                    toggle.image.color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
+
+                                if (!toggle.GetComponent<HoverUI>())
+                                {
+                                    var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
+                                    hoverUI.animatePos = false;
+                                    hoverUI.animateSca = true;
+                                    hoverUI.size = 1.1f;
+                                }
+                                num6++;
+                            }
+
+                            var intervalInput = rand.Find("interval-input").GetComponent<InputField>();
+                            intervalInput.onValueChanged.ClearAll();
+                            intervalInput.text = firstKF.GetData<EventKeyframe>().eventRandomValues[2].ToString();
+                            intervalInput.onValueChanged.AddListener(delegate (string _val)
+                            {
+                                if (float.TryParse(_val, out float n))
+                                {
+                                    foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                                        keyframe.eventRandomValues[2] = n;
+                                    if (UpdateObjects)
+                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                }
+                            });
+
+                            TriggerHelper.AddEventTriggerParams(intervalInput.gameObject,
+                                TriggerHelper.ScrollDelta(intervalInput, 0.01f, max: random == 6 ? 1f : 0f));
+                        }
+
+                        break;
+                    }
+            }
+
+            var relativeBase = kfdialog.Find("relative");
+
+            if (!relativeBase)
+                return;
+
+            RTEditor.SetActive(relativeBase.gameObject, RTEditor.ShowModdedUI);
+            if (RTEditor.ShowModdedUI)
+            {
+                var relative = relativeBase.GetComponent<Toggle>();
+                relative.onValueChanged.ClearAll();
+                relative.isOn = firstKF.GetData<EventKeyframe>().relative;
+                relative.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                        keyframe.relative = _val;
+
+                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                        if (UpdateObjects)
+                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                });
             }
         }
 
@@ -3415,608 +4453,6 @@ namespace EditorManagement.Functions.Editors
             rectTransform.anchoredPosition = new Vector2(x, 0f);
         }
 
-        IEnumerator IRenderKeyframeDialog(Transform p, TimelineObject tkf, int type, BeatmapObject beatmapObject)
-        {
-            if (beatmapObject.events[type].Count > 0)
-            {
-                var keyframe = (EventKeyframe)beatmapObject.events[type][tkf.Index];
-                float eventTime = keyframe.eventTime;
-
-                var tet = p.Find("time").GetComponent<EventTrigger>();
-                var tif = p.Find("time/time").GetComponent<InputField>();
-
-                tet.triggers.Clear();
-                if (tkf.Index != 0)
-                    tet.triggers.Add(TriggerHelper.ScrollDelta(tif));
-
-                tif.onValueChanged.RemoveAllListeners();
-                tif.text = keyframe.eventTime.ToString();
-                tif.onValueChanged.AddListener(delegate (string _value)
-                {
-                    if (float.TryParse(_value, out float num))
-                        SetKeyframeTime(beatmapObject, num, false);
-                });
-
-                TriggerHelper.IncreaseDecreaseButtons(tif, t: p.Find("time"));
-
-                p.Find("curves_label").gameObject.SetActive(tkf.Index != 0);
-                p.Find("curves").gameObject.SetActive(tkf.Index != 0);
-                var curves = p.Find("curves").GetComponent<Dropdown>();
-                curves.onValueChanged.RemoveAllListeners();
-                if (DataManager.inst.AnimationListDictionaryBack.ContainsKey(keyframe.curveType))
-                {
-                    curves.value = DataManager.inst.AnimationListDictionaryBack[keyframe.curveType];
-                }
-                curves.onValueChanged.AddListener(delegate (int _value)
-                {
-                    keyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
-
-                    // Since keyframe curve has no affect on the timeline object, we will only need to update the physical object.
-                    if (UpdateObjects)
-                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                    RenderKeyframes(beatmapObject);
-                });
-
-                if (type != 3)
-                {
-                    int limt = 1;
-                    if (type != 2)
-                        limt = keyframe.eventValues.Length;
-                    else
-                        limt = 1;
-
-                    for (int i = 0; i < limt; i++)
-                    {
-                        if (p.GetChild(9).childCount > i && p.GetChild(9).GetChild(i) != null)
-                        {
-                            var pos = p.GetChild(9).GetChild(i);
-
-                            // Checks if type is rotation.
-                            var posET = type != 2 ? pos.GetComponent<EventTrigger>() : p.GetChild(9).GetComponent<EventTrigger>();
-
-                            var posIF = pos.GetComponent<InputField>();
-                            var posLeft = pos.Find("<").GetComponent<Button>();
-                            var posRight = pos.Find(">").GetComponent<Button>();
-
-                            if (!pos.GetComponent<InputFieldSwapper>())
-                            {
-                                var ifh = pos.gameObject.AddComponent<InputFieldSwapper>();
-                                ifh.Init(posIF, InputFieldSwapper.Type.Num);
-                            }
-
-                            posET.triggers.Clear();
-                            if (type != 2)
-                            {
-                                posET.triggers.Add(TriggerHelper.ScrollDelta(posIF, multi: true));
-                                posET.triggers.Add(TriggerHelper.ScrollDeltaVector2(p.GetChild(9).GetChild(0).GetComponent<InputField>(), p.GetChild(9).GetChild(1).GetComponent<InputField>(), 0.1f, 10f));
-                            }
-                            else
-                            {
-                                posET.triggers.Add(TriggerHelper.ScrollDelta(posIF, 15f, 3f));
-                            }
-
-                            int current = i;
-
-                            posIF.characterValidation = InputField.CharacterValidation.None;
-                            posIF.contentType = InputField.ContentType.Standard;
-                            posIF.keyboardType = TouchScreenKeyboardType.Default;
-
-                            posIF.onValueChanged.RemoveAllListeners();
-                            posIF.text = keyframe.eventValues[i].ToString();
-                            posIF.onValueChanged.AddListener(delegate (string _value)
-                            {
-                                if (float.TryParse(_value, out float num))
-                                {
-                                    keyframe.eventValues[current] = num;
-
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-
-                            posLeft.onClick.RemoveAllListeners();
-                            posLeft.onClick.AddListener(delegate ()
-                            {
-                                float x = keyframe.eventValues[current];
-
-                                x -= type != 2 ? 1f : 15f;
-
-                                posIF.text = x.ToString();
-                            });
-
-                            posRight.onClick.RemoveAllListeners();
-                            posRight.onClick.AddListener(delegate ()
-                            {
-                                float x = keyframe.eventValues[current];
-
-                                x += type != 2 ? 1f : 15f;
-
-                                posIF.text = x.ToString();
-                            });
-                        }
-                    }
-
-                    var randomValue = p.GetChild(11);
-
-                    int random = keyframe.random;
-
-                    if (p.Find("r_axis") && p.Find("r_axis").gameObject.TryGetComponent(out Dropdown rAxis))
-                    {
-                        rAxis.gameObject.SetActive(random == 5 || random == 6);
-                        rAxis.onValueChanged.ClearAll();
-                        rAxis.value = Mathf.Clamp((int)keyframe.eventRandomValues[3], 0, 3);
-                        rAxis.onValueChanged.AddListener(delegate (int _val)
-                        {
-                            keyframe.eventRandomValues[3] = _val;
-                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                        });
-                    }
-
-                    Action<int> action = delegate (int randomType)
-                    {
-                        if (type != 2 && p.Find("r_axis"))
-                            p.Find("r_axis").gameObject.SetActive(RTEditor.ShowModdedUI && (randomType == 5 || randomType == 6));
-
-                        p.GetChild(10).gameObject.SetActive(randomType != 0 && randomType != 5);
-                        p.GetChild(11).gameObject.SetActive(randomType != 0 && randomType != 5);
-                        p.GetChild(10).GetChild(0).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Min" : randomType == 6 ? "Minimum Range" : "Random X";
-                        p.GetChild(10).GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
-                        p.GetChild(10).GetChild(1).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Max" : randomType == 6 ? "Maximum Range" : "Random Y";
-                        p.Find("random/interval-input").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
-                        p.Find("r_label/interval").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
-
-                        if (p.Find("relative-label"))
-                        {
-                            p.Find("relative-label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                            if (RTEditor.ShowModdedUI)
-                            {
-                                p.Find("relative-label").GetChild(0).GetComponent<Text>().text =
-                                    randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
-                                p.Find("relative").GetChild(1).GetComponent<Text>().text =
-                                    randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
-                            }
-                        }
-
-                        randomValue.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
-
-                        randomValue.GetChild(0).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
-                        randomValue.GetChild(1).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
-
-                        if (randomType != 0 && randomType != 3 && randomType != 5)
-                        {
-                            p.Find("r_label/interval").GetComponent<Text>().text = randomType == 6 ? "Speed" : "Random Interval";
-                        }
-                    };
-
-                    for (int n = 0; n <= (type == 0 ? 5 : type == 2 ? 4 : 3); n++)
-                    {
-                        int buttonTmp = (n >= 2 && (type != 2 || n < 3)) ? (n + 1) : (n > 2 && type == 2) ? n + 2 : n;
-
-                        p.Find("random").GetChild(n).gameObject.SetActive(buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI);
-
-                        if (buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI)
-                        {
-                            var child = p.Find("random").GetChild(n).GetComponent<Toggle>();
-                            child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
-                            {
-                                keyframe.random = buttonTmp;
-
-                                action?.Invoke(buttonTmp);
-
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            });
-                            if (!child.GetComponent<HoverUI>())
-                            {
-                                var hoverUI = child.gameObject.AddComponent<HoverUI>();
-                                hoverUI.animatePos = false;
-                                hoverUI.animateSca = true;
-                                hoverUI.size = 1.1f;
-                            }
-                        }
-                    }
-
-                    action?.Invoke(random);
-
-                    float num = 0f;
-                    if (keyframe.eventRandomValues.Length > 2)
-                        num = keyframe.eventRandomValues[2];
-
-                    var randomInterval = p.Find("random/interval-input");
-                    var randomIntervalIF = randomInterval.GetComponent<InputField>();
-                    randomIntervalIF.NewValueChangedListener(num.ToString(), delegate (string _val)
-                    {
-                        if (float.TryParse(_val, out float num))
-                        {
-                            keyframe.eventRandomValues[2] = num;
-
-                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                        }
-                    });
-
-                    TriggerHelper.AddEventTriggerParams(randomIntervalIF.gameObject,
-                        TriggerHelper.ScrollDelta(randomIntervalIF, 0.01f));
-
-                    if (!randomInterval.GetComponent<InputFieldSwapper>())
-                    {
-                        var ifh = randomInterval.gameObject.AddComponent<InputFieldSwapper>();
-                        ifh.Init(randomIntervalIF, InputFieldSwapper.Type.Num);
-                    }
-
-                    TriggerHelper.AddEventTrigger(randomInterval.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(randomIntervalIF, max: random == 6 ? 1f : 0f) });
-
-                    for (int kf = 0; kf < keyframe.eventRandomValues.Count() - 1; kf++)
-                    {
-                        if (kf < randomValue.childCount && randomValue.GetChild(kf))
-                        {
-                            int index = kf;
-                            var randomValueX = randomValue.GetChild(index).GetComponent<InputField>();
-
-                            randomValueX.characterValidation = InputField.CharacterValidation.None;
-                            randomValueX.contentType = InputField.ContentType.Standard;
-                            randomValueX.keyboardType = TouchScreenKeyboardType.Default;
-
-                            randomValueX.NewValueChangedListener(keyframe.eventRandomValues[index].ToString(), delegate (string _val)
-                            {
-                                if (float.TryParse(_val, out float num))
-                                {
-                                    keyframe.eventRandomValues[index] = num;
-
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-
-                            TriggerHelper.IncreaseDecreaseButtons(randomValueX, 0.1f, 10f);
-
-                            TriggerHelper.AddEventTriggerParams(randomValue.GetChild(index).gameObject,
-                                TriggerHelper.ScrollDelta(randomValueX, type == 2 && random != 6 ? 15f : 0.1f, type == 2 && random != 6 ? 3f : 10f, multi: true),
-                                TriggerHelper.ScrollDeltaVector2(index == 0 ? randomValueX : randomValue.GetChild(0).GetComponent<InputField>(),
-                                index == 0 ? randomValue.GetChild(1).GetComponent<InputField>() : randomValueX, type == 2 && random != 6 ? 15f : 0.1f, type == 2 && random != 6 ? 3f : 10f));
-
-                            if (!randomValue.GetChild(index).GetComponent<InputFieldSwapper>())
-                            {
-                                var ifh = randomValue.GetChild(index).gameObject.AddComponent<InputFieldSwapper>();
-                                ifh.Init(randomValueX, InputFieldSwapper.Type.Num);
-                            }
-                        }
-                    }
-
-                    RTEditor.SetActive(p.Find("relative").gameObject, RTEditor.ShowModdedUI);
-                    if (RTEditor.ShowModdedUI)
-                    {
-                        var relative = p.Find("relative").GetComponent<Toggle>();
-                        relative.onValueChanged.ClearAll();
-                        relative.isOn = keyframe.relative;
-                        relative.onValueChanged.AddListener(delegate (bool _val)
-                        {
-                            keyframe.relative = _val;
-
-                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                        });
-                    }
-                }
-                else
-                {
-                    bool showModifiedColors = EditorConfig.Instance.ShowModifiedColors.Value;
-                    int index = 0;
-                    foreach (var toggle in ObjEditor.inst.colorButtons)
-                    {
-                        toggle.onValueChanged.RemoveAllListeners();
-                        int tmpIndex = index;
-
-                        toggle.gameObject.SetActive(RTEditor.ShowModdedUI || tmpIndex < 9);
-
-                        toggle.NewValueChangedListener(index == keyframe.eventValues[0], delegate (bool _val)
-                        {
-                            SetKeyframeColor(beatmapObject, 0, tmpIndex);
-                        });
-
-                        if (showModifiedColors)
-                        {
-                            var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
-
-                            float hue = beatmapObject.Interpolate(type, 2);
-                            float sat = beatmapObject.Interpolate(type, 3);
-                            float val = beatmapObject.Interpolate(type, 4);
-
-                            toggle.image.color = RTHelpers.ChangeColorHSV(color, hue, sat, val);
-                        }
-                        else
-                            toggle.image.color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
-
-                        if (!toggle.GetComponent<HoverUI>())
-                        {
-                            var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
-                            hoverUI.animatePos = false;
-                            hoverUI.animateSca = true;
-                            hoverUI.size = 1.1f;
-                        }
-                        index++;
-                    }
-
-                    p.Find("opacity_label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    p.Find("opacity").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    
-                    p.Find("huesatval_label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    p.Find("huesatval").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    
-                    p.Find("r_color_label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    p.Find("r_color").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    
-                    p.Find("r_color_target_label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    p.Find("r_color_target").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    
-                    p.Find("r_label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    p.Find("random").gameObject.SetActive(RTEditor.ShowModdedUI);
-
-                    p.Find("shift").gameObject.SetActive(RTEditor.ShowModdedUI);
-
-                    if (p.Find("opacity") && RTEditor.ShowModdedUI)
-                    {
-                        p.Find("color").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 78f);
-
-                        var opacity = p.Find("opacity/x").GetComponent<InputField>();
-
-                        opacity.onValueChanged.RemoveAllListeners();
-                        opacity.text = Mathf.Clamp(-keyframe.eventValues[1] + 1, 0f, 1f).ToString();
-                        opacity.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (float.TryParse(_val, out float n))
-                            {
-                                keyframe.eventValues[1] = Mathf.Clamp(-n + 1, 0f, 1f);
-
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            }
-                        });
-
-                        TriggerHelper.AddEventTrigger(p.Find("opacity").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(opacity, 0.1f, 10f, 0f, 1f) });
-
-                        TriggerHelper.IncreaseDecreaseButtons(opacity);
-
-                        var collision = p.Find("opacity/collision").GetComponent<Toggle>();
-                        collision.onValueChanged.ClearAll();
-                        collision.isOn = beatmapObject.opacityCollision;
-                        collision.onValueChanged.AddListener(delegate (bool _val)
-                        {
-                            beatmapObject.opacityCollision = _val;
-                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject);
-                        });
-                    }
-
-                    if (p.Find("huesatval") && RTEditor.ShowModdedUI)
-                    {
-                        var hue = p.Find("huesatval/x").GetComponent<InputField>();
-
-                        hue.onValueChanged.RemoveAllListeners();
-                        hue.text = keyframe.eventValues[2].ToString();
-                        hue.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (float.TryParse(_val, out float n))
-                            {
-                                keyframe.eventValues[2] = n;
-
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            }
-                        });
-
-                        Destroy(p.transform.Find("huesatval").GetComponent<EventTrigger>());
-
-                        TriggerHelper.AddEventTrigger(hue.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(hue, 0.1f, 10f) });
-                        TriggerHelper.IncreaseDecreaseButtons(hue, 0.1f, 10f);
-
-                        var sat = p.Find("huesatval/y").GetComponent<InputField>();
-
-                        sat.onValueChanged.RemoveAllListeners();
-                        sat.text = keyframe.eventValues[3].ToString();
-                        sat.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (float.TryParse(_val, out float n))
-                            {
-                                keyframe.eventValues[3] = n;
-
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            }
-                        });
-
-                        //sat.gameObject.AddComponent<InputFieldHelper>();
-
-                        TriggerHelper.AddEventTrigger(sat.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(sat, 0.1f, 10f) });
-                        TriggerHelper.IncreaseDecreaseButtons(sat, 0.1f, 10f);
-
-                        var val = p.Find("huesatval/z").GetComponent<InputField>();
-
-                        val.onValueChanged.RemoveAllListeners();
-                        val.text = keyframe.eventValues[4].ToString();
-                        val.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (float.TryParse(_val, out float n))
-                            {
-                                keyframe.eventValues[4] = n;
-
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            }
-                        });
-
-                        //val.gameObject.AddComponent<InputFieldHelper>();
-
-                        TriggerHelper.AddEventTrigger(val.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(val, 0.1f, 10f) });
-                        TriggerHelper.IncreaseDecreaseButtons(val, 0.1f, 10f);
-                    }
-
-                    if (p.Find("r_color") && RTEditor.ShowModdedUI)
-                    {
-                        var rColor = p.Find("r_color");
-
-                        p.Find("r_color_label").gameObject.SetActive(keyframe.random != 0);
-                        rColor.gameObject.SetActive(keyframe.random != 0);
-
-                        if (keyframe.random != 0)
-                        {
-                            var x = rColor.Find("x").GetComponent<InputField>();
-                            var y = rColor.Find("y").GetComponent<InputField>();
-
-                            x.onValueChanged.ClearAll();
-                            x.text = keyframe.eventRandomValues[0].ToString();
-                            x.onValueChanged.AddListener(delegate (string _val)
-                            {
-                                if (float.TryParse(_val, out float n))
-                                {
-                                    keyframe.eventRandomValues[0] = n;
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-
-                            y.onValueChanged.ClearAll();
-                            y.text = keyframe.eventRandomValues[1].ToString();
-                            y.onValueChanged.AddListener(delegate (string _val)
-                            {
-                                if (float.TryParse(_val, out float n))
-                                {
-                                    keyframe.eventRandomValues[1] = n;
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-
-                            TriggerHelper.AddEventTriggerParams(x.gameObject,
-                                TriggerHelper.ScrollDelta(x, multi: true),
-                                TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f));
-                            TriggerHelper.AddEventTriggerParams(y.gameObject,
-                                TriggerHelper.ScrollDelta(y, multi: true),
-                                TriggerHelper.ScrollDeltaVector2(x, y, 0.1f, 10f));
-
-                            TriggerHelper.IncreaseDecreaseButtons(x);
-                            TriggerHelper.IncreaseDecreaseButtons(y);
-                        }
-                    }
-
-                    if (p.Find("r_color_target") && RTEditor.ShowModdedUI)
-                    {
-                        p.Find("r_color_target_label").gameObject.SetActive(keyframe.random != 0);
-
-                        var randomColorTarget = p.Find("r_color_target");
-                        randomColorTarget.gameObject.SetActive(keyframe.random != 0);
-
-                        if (keyframe.random != 0)
-                        {
-                            var toggles = randomColorTarget.GetComponentsInChildren<Toggle>();
-                            int num6 = 0;
-                            foreach (var toggle in toggles)
-                            {
-                                toggle.onValueChanged.RemoveAllListeners();
-                                int tmpIndex = num6;
-
-                                toggle.NewValueChangedListener(num6 == keyframe.eventRandomValues[3], delegate (bool _val)
-                                {
-                                    SetKeyframeRandomColorTarget(beatmapObject, 3, tmpIndex, toggles);
-                                });
-
-                                if (showModifiedColors)
-                                {
-                                    var color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
-
-                                    float hue = beatmapObject.Interpolate(type, 2);
-                                    float sat = beatmapObject.Interpolate(type, 3);
-                                    float val = beatmapObject.Interpolate(type, 4);
-
-                                    toggle.image.color = RTHelpers.ChangeColorHSV(color, hue, sat, val);
-                                }
-                                else
-                                    toggle.image.color = RTHelpers.BeatmapTheme.GetObjColor(tmpIndex);
-
-                                if (!toggle.GetComponent<HoverUI>())
-                                {
-                                    var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
-                                    hoverUI.animatePos = false;
-                                    hoverUI.animateSca = true;
-                                    hoverUI.size = 1.1f;
-                                }
-                                num6++;
-                            }
-                        }
-                    }
-
-                    if (p.Find("random") && RTEditor.ShowModdedUI)
-                    {
-                        p.Find("r_label/interval").gameObject.SetActive(keyframe.random != 0);
-                        p.Find("r_label/interval").GetComponent<Text>().text = keyframe.random == 6 ? "Speed" : "Random Interval";
-                        var rand = p.Find("random");
-                        var none = rand.Find("none").GetComponent<Toggle>();
-                        var homingDynamic = rand.Find("homing-dynamic").GetComponent<Toggle>();
-
-                        none.onValueChanged.ClearAll();
-                        none.isOn = keyframe.random == 0;
-                        none.onValueChanged.AddListener(delegate (bool _val)
-                        {
-                            if (_val)
-                            {
-                                keyframe.random = 0;
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                RenderKeyframeDialog(beatmapObject);
-                            }
-                        });
-
-                        homingDynamic.onValueChanged.ClearAll();
-                        homingDynamic.isOn = keyframe.random == 5;
-                        homingDynamic.onValueChanged.AddListener(delegate (bool _val)
-                        {
-                            if (_val)
-                            {
-                                keyframe.random = 5;
-                                if (UpdateObjects)
-                                    Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                RenderKeyframeDialog(beatmapObject);
-                            }
-                        });
-
-                        rand.Find("interval-input").gameObject.SetActive(keyframe.random != 0);
-
-                        if (keyframe.random != 0)
-                        {
-                            var intervalInput = rand.Find("interval-input").GetComponent<InputField>();
-                            intervalInput.onValueChanged.ClearAll();
-                            intervalInput.text = keyframe.eventRandomValues[2].ToString();
-                            intervalInput.onValueChanged.AddListener(delegate (string _val)
-                            {
-                                if (float.TryParse(_val, out float n))
-                                {
-                                    keyframe.eventRandomValues[2] = n;
-                                    if (UpdateObjects)
-                                        Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                                }
-                            });
-
-                            TriggerHelper.AddEventTriggerParams(intervalInput.gameObject,
-                                TriggerHelper.ScrollDelta(intervalInput, 0.01f, max: keyframe.random == 6 ? 1f : 0f));
-                        }
-
-                    }
-                }
-            }
-
-            yield break;
-        }
-
         public void UpdateKeyframeOrder(BeatmapObject beatmapObject)
         {
             for (int i = 0; i < beatmapObject.events.Count; i++)
@@ -4187,9 +4623,33 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.events[3][ObjEditor.inst.currentKeyframe].eventValues[index] = (float)value;
 
             // Since keyframe color has no affect on the timeline object, we will only need to update the physical object.
-            //if (UpdateObjects)
-            //    Updater.UpdateProcessor(beatmapObject);
-            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+            if (UpdateObjects)
+                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+
+            int num = 0;
+            foreach (var toggle in ObjEditor.inst.colorButtons)
+            {
+                toggle.onValueChanged.RemoveAllListeners();
+
+                toggle.isOn = num == value;
+
+                int tmpIndex = num;
+                toggle.onValueChanged.AddListener(delegate (bool val)
+                {
+                    SetKeyframeColor(beatmapObject, 0, tmpIndex);
+                });
+                num++;
+            }
+        }
+
+        public void SetKeyframeColor(BeatmapObject beatmapObject, int index, int value, IEnumerable<TimelineObject> selected)
+        {
+            foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                keyframe.eventValues[index] = value;
+
+            // Since keyframe color has no affect on the timeline object, we will only need to update the physical object.
+            if (UpdateObjects)
+                Updater.UpdateProcessor(beatmapObject, "Keyframes");
 
             int num = 0;
             foreach (var toggle in ObjEditor.inst.colorButtons)
