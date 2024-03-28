@@ -9,7 +9,9 @@ using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Data.Player;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Managers.Networking;
 using RTFunctions.Functions.Optimization;
+using SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,6 +28,8 @@ namespace EditorManagement.Patchers
     public class EditorManagerPatch : MonoBehaviour
     {
         static EditorManager Instance { get => EditorManager.inst; set => EditorManager.inst = value; }
+
+        static bool April => RTHelpers.AprilFools;
 
         [HarmonyPatch("Awake")]
         [HarmonyPrefix]
@@ -246,10 +250,10 @@ namespace EditorManagement.Patchers
                             CheckpointEditor.inst.CreateGhostCheckpoints();
                             GameManager.inst.UpdateTimeline();
                             CheckpointEditor.inst.SetCurrentCheckpoint(0);
-                            if (!RTHelpers.AprilFools)
+                            if (!April)
                                 Instance.TogglePlayingSong();
                             else
-                                Instance.DisplayNotification("April Fools!", 6f, EditorManager.NotificationType.Error);
+                                Instance.DisplayNotification("Welcome to the 3.0.0 update!\njk, April Fools!", 6f, EditorManager.NotificationType.Error);
                             Instance.ClearDialogs();
                         }
                         catch (Exception ex)
@@ -331,7 +335,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool TogglePlayingSongPrefix()
         {
-            if (RTHelpers.AprilFools || Instance.hasLoadedLevel)
+            if (April || Instance.hasLoadedLevel)
             {
                 if (AudioManager.inst.CurrentAudioSource.isPlaying)
                     AudioManager.inst.CurrentAudioSource.Pause();
@@ -421,6 +425,24 @@ namespace EditorManagement.Patchers
         static bool LoadBaseLevelPrefix()
         {
             GameManager.inst.ResetCheckpoints(true);
+            if (April)
+            {
+                Instance.StartCoroutine(AlephNetworkManager.DownloadJSONFile("https://drive.google.com/uc?export=download&id=1QJUeviLerCX1tZXW7QxpBC6K1BjtG1KT", delegate (string json)
+                {
+                    DataManager.inst.gameData = GameData.Parse(JSON.Parse(json));
+
+                    Instance.StartCoroutine(AlephNetworkManager.DownloadAudioClip("https://drive.google.com/uc?export=download&id=1BDrRqX1IDk7bKo2hhYDqDqWLncMy7FkP", AudioType.OGGVORBIS, delegate (AudioClip audioClip)
+                    {
+                        AudioManager.inst.PlayMusic(null, audioClip, true, 0f);
+                        GameManager.inst.gameState = GameManager.State.Playing;
+
+                        Instance.StartCoroutine(Updater.IUpdateObjects(true));
+                    }));
+                }));
+
+                return false;
+            }
+
             DataManager.inst.gameData = RTEditor.inst.CreateBaseBeatmap();
             AudioManager.inst.PlayMusic(null, Instance.baseSong, true, 0f);
             GameManager.inst.gameState = GameManager.State.Playing;
