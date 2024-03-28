@@ -77,6 +77,11 @@ namespace EditorManagement.Functions.Editors
             {
                 foreach (var keybind in keybinds)
                 {
+                    if (EditorManager.inst.editorState != EditorManager.EditorState.Main && keybind.Name != "ToggleProjectPlanner"
+                        || !EditorManager.inst.hasLoadedLevel && keybind.Name != "ToggleShowHelp" && keybind.Name != "TogglePlayingSong" && keybind.Name != "OpenBeatmapPopup"
+                        && keybind.Name != "SaveBeatmap" && keybind.Name != "ToggleProjectPlanner")
+                        continue;
+
                     if (!keybind.watchingKeybind)
                         keybind.Activate();
                     else
