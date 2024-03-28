@@ -53,7 +53,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool DeleteThemePrefix(DataManager.BeatmapTheme __0)
         {
-            ThemeEditorManager.inst.DeleteTheme(__0);
+            ThemeEditorManager.inst.DeleteTheme((RTFunctions.Functions.Data.BeatmapTheme)__0);
             return false;
         }
         

@@ -687,7 +687,7 @@ namespace EditorManagement.Functions.Editors
 
 				if (ThemePanels.TryFind(x => x.Theme.id == PreviewTheme.id, out ThemePanel themePanel) && RTFile.FileExists(themePanel.Path))
                 {
-					System.IO.File.Delete(themePanel.Path);
+					File.Delete(themePanel.Path);
                 }
 				else
 				{
@@ -781,7 +781,7 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (ThemePanels.TryFind(x => x.Theme.id == PreviewTheme.id, out ThemePanel themePanel1) && RTFile.FileExists(themePanel1.Path))
 					{
-						System.IO.File.Delete(themePanel1.Path);
+						File.Delete(themePanel1.Path);
 					}
 					else
 					{
@@ -1000,13 +1000,13 @@ namespace EditorManagement.Functions.Editors
 			previewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(preview, dropper, hex, color));
 		}
 
-		public void DeleteTheme(DataManager.BeatmapTheme _theme)
+		public void DeleteTheme(BeatmapTheme theme)
 		{
 			RTEditor.inst.canUpdateThemes = false;
 
-			FileManager.inst.DeleteFile(RTEditor.themeListPath, _theme.name.ToLower().Replace(" ", "_") + ".lst");
+			File.Delete(theme.filePath);
 
-			Predicate<ThemePanel> predicate = x => x.Theme.id == _theme.id;
+			Predicate<ThemePanel> predicate = x => x.Theme.id == theme.id;
 			if (ThemePanels.TryFind(predicate, out ThemePanel themePanel))
             {
 				Destroy(themePanel.GameObject);
@@ -1030,7 +1030,14 @@ namespace EditorManagement.Functions.Editors
 			GameData.SaveOpacityToThemes = config.SavingSavesThemeOpacity.Value;
 			
 			var str = config.ThemeSavesIndents.Value ? theme.ToJSON().ToString(3) : theme.ToJSON().ToString();
-			FileManager.inst.SaveJSONFile(RTEditor.themeListPath, theme.name.ToLower().Replace(" ", "_") + ".lst", str);
+
+			var path = $"{RTFile.ApplicationDirectory}{RTEditor.themeListPath}{theme.name.ToLower().Replace(" ", "_")}_ID-{theme.id}.lst";
+
+			theme.filePath = path;
+
+			RTFile.WriteToFile(path, str);
+
+			//FileManager.inst.SaveJSONFile(RTEditor.themeListPath, $"{theme.name.ToLower().Replace(" ", "_")}_ID-{theme.id}.lst", str);
 			EditorManager.inst.DisplayNotification($"Saved theme [{theme.name}]!", 2f, EditorManager.NotificationType.Success);
 
 			StartCoroutine(SetUpdate(1f, true));
