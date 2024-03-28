@@ -1,3 +1,5 @@
+2.4.14 > [Mar 28, 2024]
+- Most keybinds are now prevented from being active in certain situations, such as when no level has been loaded or in the Project Planner.
 2.4.13 > [Mar 28, 2024]
 - Include PrefabObject editor to Show Modded Features in Editor config and also include ObjectModifiers UI with it.
 2.4.12 > [Mar 28, 2024]
