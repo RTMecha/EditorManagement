@@ -1100,7 +1100,7 @@ namespace EditorManagement.Functions.Editors
 				var move = EventEditor.inst.dialogRight.Find("move");
 				var multiKeyframeEditor = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
 
-				multiKeyframeEditor.Find("Text").AsRT().sizeDelta = new Vector2(765f, 120f);
+				multiKeyframeEditor.Find("Text").gameObject.SetActive(false);
 
 				// Label
 				{
@@ -1190,9 +1190,102 @@ namespace EditorManagement.Functions.Editors
                     {
 						if (timelineObject.Index != 0)
 							timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
-
 						RenderTimelineObject(timelineObject);
-                    }
+					}
+
+					RenderEventsDialog();
+					EventManager.inst.updateEvents();
+					EditorManager.inst.DisplayNotification($"Snapped all keyframes time!", 2f, EditorManager.NotificationType.Success);
+				});
+
+				// Label
+				{
+					var labelBase1 = new GameObject("label base");
+					labelBase1.transform.SetParent(multiKeyframeEditor);
+					labelBase1.transform.localScale = Vector3.one;
+					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+					var l = Instantiate(uiDictionary["Label"]);
+					l.name = "label";
+					l.transform.SetParent(labelBase1RT);
+					l.transform.localScale = Vector3.one;
+					GenerateLabels(l.transform, "Align to First Selected");
+					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+				}
+
+				var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
+				alignToFirstObject.transform.localScale = Vector3.one;
+
+				((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
+				alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+				var alignToFirst = alignToFirstObject.GetComponent<Button>();
+				alignToFirst.onClick.ClearAll();
+				alignToFirst.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = SelectedKeyframes.OrderBy(x => x.Time);
+					var first = list.ElementAt(0);
+
+					foreach (var timelineObject in list)
+					{
+						if (timelineObject.Index != 0)
+							timelineObject.Time = first.Time;
+						RenderTimelineObject(timelineObject);
+					}
+
+					RenderEventsDialog();
+					EventManager.inst.updateEvents();
+					EditorManager.inst.DisplayNotification($"Aligned all keyframes to the first keyframe!", 2f, EditorManager.NotificationType.Success);
+				});
+
+				// Label
+				{
+					var labelBase1 = new GameObject("label base");
+					labelBase1.transform.SetParent(multiKeyframeEditor);
+					labelBase1.transform.localScale = Vector3.one;
+					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+					var l = Instantiate(uiDictionary["Label"]);
+					l.name = "label";
+					l.transform.SetParent(labelBase1RT);
+					l.transform.localScale = Vector3.one;
+					GenerateLabels(l.transform, "Paste All Keyframe Data");
+					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+				}
+
+				var pasteAllObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				pasteAllObject.transform.localScale = Vector3.one;
+
+				((RectTransform)pasteAllObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				pasteAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+
+				var pasteAll = pasteAllObject.GetComponent<Button>();
+				pasteAll.onClick.ClearAll();
+				pasteAll.onClick.AddListener(delegate ()
+				{
+					foreach (var keyframe in SelectedKeyframes)
+					{
+						if (!(copiedKeyframeDatas.Count > keyframe.Type) || copiedKeyframeDatas[keyframe.Type] == null)
+							continue;
+
+						var kf = keyframe.GetData<EventKeyframe>();
+						kf.curveType = copiedKeyframeDatas[keyframe.Type].curveType;
+						kf.eventValues = copiedKeyframeDatas[keyframe.Type].eventValues.Copy();
+						kf.eventRandomValues = copiedKeyframeDatas[keyframe.Type].eventRandomValues.Copy();
+						kf.random = copiedKeyframeDatas[keyframe.Type].random;
+						kf.relative = copiedKeyframeDatas[keyframe.Type].relative;
+						RenderTimelineObject(keyframe);
+					}
+
+					RenderEventsDialog();
+					EventManager.inst.updateEvents();
+					EditorManager.inst.DisplayNotification($"Pasted all keyframe data to current selected keyframes!", 2f, EditorManager.NotificationType.Success);
 				});
 			}
 			catch (Exception ex)
@@ -1969,11 +2062,16 @@ namespace EditorManagement.Functions.Editors
 				{
 					if (copiedKeyframeDatas.Count > __instance.currentEventType && copiedKeyframeDatas[__instance.currentEventType] != null)
                     {
+						foreach (var keyframe in SelectedKeyframes)
+						{
+							var kf = keyframe.GetData<EventKeyframe>();
+							kf.curveType = copiedKeyframeDatas[keyframe.Type].curveType;
+							kf.eventValues = copiedKeyframeDatas[keyframe.Type].eventValues.Copy();
+							kf.eventRandomValues = copiedKeyframeDatas[keyframe.Type].eventRandomValues.Copy();
+							kf.random = copiedKeyframeDatas[keyframe.Type].random;
+							kf.relative = copiedKeyframeDatas[keyframe.Type].relative;
+						}
 
-						DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent].eventValues = copiedKeyframeDatas[__instance.currentEventType].eventValues.Copy();
-						DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent].eventRandomValues = copiedKeyframeDatas[__instance.currentEventType].eventRandomValues.Copy();
-						DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent].random = copiedKeyframeDatas[__instance.currentEventType].random;
-						((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType][__instance.currentEvent]).relative = copiedKeyframeDatas[__instance.currentEventType].relative;
 						RenderEventsDialog();
 						EventManager.inst.updateEvents();
 						EditorManager.inst.DisplayNotification($"Pasted {EventTypes[__instance.currentEventType]} keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
