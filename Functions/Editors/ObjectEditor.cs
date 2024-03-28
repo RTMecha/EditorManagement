@@ -3673,6 +3673,7 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in selected)
                             {
                                 var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.curveType = CopiedPositionData.curveType;
                                 kf.eventValues = CopiedPositionData.eventValues.Copy();
                                 kf.eventRandomValues = CopiedPositionData.eventRandomValues.Copy();
                                 kf.random = CopiedPositionData.random;
@@ -3693,6 +3694,7 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in selected)
                             {
                                 var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.curveType = CopiedScaleData.curveType;
                                 kf.eventValues = CopiedScaleData.eventValues.Copy();
                                 kf.eventRandomValues = CopiedScaleData.eventRandomValues.Copy();
                                 kf.random = CopiedScaleData.random;
@@ -3713,6 +3715,7 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in selected)
                             {
                                 var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.curveType = CopiedRotationData.curveType;
                                 kf.eventValues = CopiedRotationData.eventValues.Copy();
                                 kf.eventRandomValues = CopiedRotationData.eventRandomValues.Copy();
                                 kf.random = CopiedRotationData.random;
@@ -3733,6 +3736,7 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in selected)
                             {
                                 var kf = timelineObject.GetData<EventKeyframe>();
+                                kf.curveType = CopiedColorData.curveType;
                                 kf.eventValues = CopiedColorData.eventValues.Copy();
                                 kf.eventRandomValues = CopiedColorData.eventRandomValues.Copy();
                                 kf.random = CopiedColorData.random;
