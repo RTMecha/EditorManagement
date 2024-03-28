@@ -352,6 +352,8 @@ namespace EditorManagement.Functions.Editors
                 ModCompatibility.sharedFunctions.Add("ParentPickerActive", parentPickerEnabled);
             if (ModCompatibility.sharedFunctions.ContainsKey("ParentPickerActive"))
                 ModCompatibility.sharedFunctions["ParentPickerActive"] = parentPickerEnabled;
+
+            ModCompatibility.sharedFunctions.AddSet("SelectedObjects", ObjectEditor.inst.SelectedObjects);
         }
 
         #region Variables
@@ -1221,6 +1223,7 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.Paste(0f);
                 }
             }
+
             if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Checkpoint)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Checkpoint))
             {
                 if (!_dup)
@@ -1238,10 +1241,11 @@ namespace EditorManagement.Functions.Editors
                 }
                 else
                 {
-                    EditorManager.inst.DisplayNotification("Can't Duplicate Checkpoint", 1f, EditorManager.NotificationType.Error, false);
+                    EditorManager.inst.DisplayNotification("Can't duplicate Checkpoint", 1f, EditorManager.NotificationType.Error, false);
                 }
             }
-            if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object))
+
+            if (!isOverMainTimeline && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object))
             {
                 if (!_dup)
                 {
@@ -1258,10 +1262,11 @@ namespace EditorManagement.Functions.Editors
                 }
                 else
                 {
-                    EditorManager.inst.DisplayNotification("Can't Duplicate Keyframe", 1f, EditorManager.NotificationType.Error, false);
+                    EditorManager.inst.DisplayNotification("Can't duplicate Object Keyframe", 1f, EditorManager.NotificationType.Error, false);
                 }
             }
-            if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Event)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Event))
+
+            if (isOverMainTimeline && layerType == LayerType.Events)
             {
                 if (!_dup)
                 {
@@ -1282,10 +1287,11 @@ namespace EditorManagement.Functions.Editors
                 }
                 else
                 {
-                    EditorManager.inst.DisplayNotification("Can't Duplicate Keyframe", 1f, EditorManager.NotificationType.Error, false);
+                    EditorManager.inst.DisplayNotification("Can't duplicate Event Keyframe", 1f, EditorManager.NotificationType.Error, false);
                 }
             }
-            if ((EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object)) || EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab))
+
+            if (isOverMainTimeline && layerType == LayerType.Objects)
             {
                 var offsetTime = ObjectEditor.inst.SelectedObjects.Min(x => x.Time);
 
@@ -7659,6 +7665,7 @@ namespace EditorManagement.Functions.Editors
             {
                 var jn = JSON.Parse(RTFile.ReadFromFile(file));
                 var orig = BeatmapTheme.Parse(jn);
+                orig.filePath = file.Replace("\\", "/");
                 DataManager.inst.CustomBeatmapThemes.Add(orig);
 
                 if (jn["id"] != null && GameData.Current != null && GameData.Current.beatmapThemes != null && !GameData.Current.beatmapThemes.ContainsKey(jn["id"]))
