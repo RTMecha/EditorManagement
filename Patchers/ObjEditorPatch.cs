@@ -866,20 +866,14 @@ namespace EditorManagement.Patchers
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}
 
-			int catchPoint = 0;
-
 			try
 			{
 				var move = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move").transform;
 				var multiKeyframeEditor = multiKF.transform;
 
-				catchPoint = 1;
-
 				multiKeyframeEditor.GetChild(1).gameObject.SetActive(false);
 
 				//multiKeyframeEditor.Find("Text").AsRT().sizeDelta = new Vector2(765f, 120f);
-
-				catchPoint = 2;
 
 				// Label
 				{
@@ -889,15 +883,11 @@ namespace EditorManagement.Patchers
 					label.transform.GetChild(0).GetComponent<Text>().text = "Time";
 				}
 
-				catchPoint = 3;
-
 				var timeBase = new GameObject("time");
 				timeBase.transform.SetParent(multiKeyframeEditor);
 				timeBase.transform.localScale = Vector3.one;
 				var timeBaseRT = timeBase.AddComponent<RectTransform>();
 				timeBaseRT.sizeDelta = new Vector2(765f, 38f);
-
-				catchPoint = 4;
 
 				var time = move.Find("time").gameObject.Duplicate(timeBaseRT, "time");
 				time.transform.AsRT().anchoredPosition = new Vector2(182f, -19f);
@@ -909,8 +899,6 @@ namespace EditorManagement.Patchers
 				.Duplicate(time.transform, "|", 3);
 				multiTimeB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
 
-				catchPoint = 5;
-
 				// Label
 				{
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
@@ -919,20 +907,14 @@ namespace EditorManagement.Patchers
 					label.transform.GetChild(0).GetComponent<Text>().text = "Ease / Animation Type";
 				}
 
-				catchPoint = 6;
-
 				var curveBase = new GameObject("curves");
 				curveBase.transform.SetParent(multiKeyframeEditor);
 				curveBase.transform.localScale = Vector3.one;
 				var curveBaseRT = curveBase.AddComponent<RectTransform>();
 				curveBaseRT.sizeDelta = new Vector2(765f, 38f);
 
-				catchPoint = 7;
-
 				var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
 				curves.transform.AsRT().anchoredPosition = new Vector2(182f, -19f);
-
-				catchPoint = 8;
 
 				// Label
 				{
@@ -946,8 +928,6 @@ namespace EditorManagement.Patchers
 				valueIndex.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(valueIndex.GetComponent<EventInfo>());
-
-				catchPoint = 9;
 
 				// Label
 				{
@@ -966,8 +946,6 @@ namespace EditorManagement.Patchers
 				.Duplicate(value.transform, "|", 2);
 				multiValueB.GetComponent<Image>().sprite = barButton.GetComponent<Image>().sprite;
 
-				catchPoint = 10;
-
 				// Label
 				{
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
@@ -975,8 +953,6 @@ namespace EditorManagement.Patchers
 					Destroy(label.transform.GetChild(1).gameObject);
 					label.transform.GetChild(0).GetComponent<Text>().text = "Force Snap Time to BPM";
 				}
-
-				catchPoint = 11;
 
 				var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
 
@@ -987,8 +963,6 @@ namespace EditorManagement.Patchers
 
 				snapToBPMObject.transform.GetChild(0).GetComponent<Text>().text = "Snap";
 				snapToBPMObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				catchPoint = 12;
 
 				var snapToBPM = snapToBPMObject.GetComponent<Button>();
 				snapToBPM.onClick.ClearAll();
@@ -1023,14 +997,12 @@ namespace EditorManagement.Patchers
 				}
 
 				var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
-				snapToBPMObject.transform.localScale = Vector3.one;
+				alignToFirstObject.transform.localScale = Vector3.one;
 
 				((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
 
 				alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
 				alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				catchPoint = 12;
 
 				var alignToFirst = alignToFirstObject.GetComponent<Button>();
 				alignToFirst.onClick.ClearAll();
@@ -1050,10 +1022,266 @@ namespace EditorManagement.Patchers
 						ObjectEditor.inst.RenderKeyframe(beatmapObject, timelineObject);
 					}
 				});
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Paste All Keyframe Data";
+				}
+
+				var pasteAllObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				pasteAllObject.transform.localScale = Vector3.one;
+
+				((RectTransform)pasteAllObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				pasteAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+
+				var pasteAll = pasteAllObject.GetComponent<Button>();
+				pasteAll.onClick.ClearAll();
+				pasteAll.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected);
+
+					foreach (var timelineObject in list)
+					{
+						var kf = timelineObject.GetData<EventKeyframe>();
+						switch (timelineObject.Type)
+						{
+							case 0:
+								if (ObjectEditor.inst.CopiedPositionData != null)
+								{
+									kf.curveType = ObjectEditor.inst.CopiedPositionData.curveType;
+									kf.eventValues = ObjectEditor.inst.CopiedPositionData.eventValues.Copy();
+									kf.eventRandomValues = ObjectEditor.inst.CopiedPositionData.eventRandomValues.Copy();
+									kf.random = ObjectEditor.inst.CopiedPositionData.random;
+									kf.relative = ObjectEditor.inst.CopiedPositionData.relative;
+								}
+								break;
+							case 1:
+								if (ObjectEditor.inst.CopiedScaleData != null)
+								{
+									kf.curveType = ObjectEditor.inst.CopiedScaleData.curveType;
+									kf.eventValues = ObjectEditor.inst.CopiedScaleData.eventValues.Copy();
+									kf.eventRandomValues = ObjectEditor.inst.CopiedScaleData.eventRandomValues.Copy();
+									kf.random = ObjectEditor.inst.CopiedScaleData.random;
+									kf.relative = ObjectEditor.inst.CopiedScaleData.relative;
+								}
+								break;
+							case 2:
+								if (ObjectEditor.inst.CopiedRotationData != null)
+								{
+									kf.curveType = ObjectEditor.inst.CopiedRotationData.curveType;
+									kf.eventValues = ObjectEditor.inst.CopiedRotationData.eventValues.Copy();
+									kf.eventRandomValues = ObjectEditor.inst.CopiedRotationData.eventRandomValues.Copy();
+									kf.random = ObjectEditor.inst.CopiedRotationData.random;
+									kf.relative = ObjectEditor.inst.CopiedRotationData.relative;
+								}
+								break;
+							case 3:
+								if (ObjectEditor.inst.CopiedColorData != null)
+								{
+									kf.curveType = ObjectEditor.inst.CopiedColorData.curveType;
+									kf.eventValues = ObjectEditor.inst.CopiedColorData.eventValues.Copy();
+									kf.eventRandomValues = ObjectEditor.inst.CopiedColorData.eventRandomValues.Copy();
+									kf.random = ObjectEditor.inst.CopiedColorData.random;
+									kf.relative = ObjectEditor.inst.CopiedColorData.relative;
+								}
+								break;
+						}
+					}
+
+					ObjectEditor.inst.RenderKeyframes(beatmapObject);
+					ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+					Updater.UpdateProcessor(beatmapObject, "Keyframes");
+					EditorManager.inst.DisplayNotification("Pasted keyframe data to selected keyframes!", 2f, EditorManager.NotificationType.Success);
+				});
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Pos Keyframe Data";
+				}
+
+				var pastePosObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				pastePosObject.transform.localScale = Vector3.one;
+
+				((RectTransform)pastePosObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				pastePosObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Position";
+
+				var pastePos = pastePosObject.GetComponent<Button>();
+				pastePos.onClick.ClearAll();
+				pastePos.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected);
+
+					foreach (var timelineObject in list)
+					{
+						if (timelineObject.Type != 0)
+							continue;
+
+						var kf = timelineObject.GetData<EventKeyframe>();
+
+						if (ObjectEditor.inst.CopiedPositionData != null)
+						{
+							kf.curveType = ObjectEditor.inst.CopiedPositionData.curveType;
+							kf.eventValues = ObjectEditor.inst.CopiedPositionData.eventValues.Copy();
+							kf.eventRandomValues = ObjectEditor.inst.CopiedPositionData.eventRandomValues.Copy();
+							kf.random = ObjectEditor.inst.CopiedPositionData.random;
+							kf.relative = ObjectEditor.inst.CopiedPositionData.relative;
+						}
+					}
+
+					ObjectEditor.inst.RenderKeyframes(beatmapObject);
+					ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+					Updater.UpdateProcessor(beatmapObject, "Keyframes");
+					EditorManager.inst.DisplayNotification("Pasted position keyframe data to selected position keyframes!", 3f, EditorManager.NotificationType.Success);
+				});
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Sca Keyframe Data";
+				}
+
+				var pasteScaObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				pasteScaObject.transform.localScale = Vector3.one;
+
+				((RectTransform)pasteScaObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				pasteScaObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Scale";
+
+				var pasteSca = pasteScaObject.GetComponent<Button>();
+				pasteSca.onClick.ClearAll();
+				pasteSca.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected);
+
+					foreach (var timelineObject in list)
+					{
+						if (timelineObject.Type != 1)
+							continue;
+
+						var kf = timelineObject.GetData<EventKeyframe>();
+
+						if (ObjectEditor.inst.CopiedScaleData != null)
+						{
+							kf.curveType = ObjectEditor.inst.CopiedScaleData.curveType;
+							kf.eventValues = ObjectEditor.inst.CopiedScaleData.eventValues.Copy();
+							kf.eventRandomValues = ObjectEditor.inst.CopiedScaleData.eventRandomValues.Copy();
+							kf.random = ObjectEditor.inst.CopiedScaleData.random;
+							kf.relative = ObjectEditor.inst.CopiedScaleData.relative;
+						}
+					}
+
+					ObjectEditor.inst.RenderKeyframes(beatmapObject);
+					ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+					Updater.UpdateProcessor(beatmapObject, "Keyframes");
+					EditorManager.inst.DisplayNotification("Pasted scale keyframe data to selected scale keyframes!", 3f, EditorManager.NotificationType.Success);
+				});
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Rot Keyframe Data";
+				}
+
+				var pasteRotObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				pasteRotObject.transform.localScale = Vector3.one;
+
+				((RectTransform)pasteRotObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				pasteRotObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Rotation";
+
+				var pasteRot = pasteRotObject.GetComponent<Button>();
+				pasteRot.onClick.ClearAll();
+				pasteRot.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected);
+
+					foreach (var timelineObject in list)
+					{
+						if (timelineObject.Type != 3)
+							continue;
+
+						var kf = timelineObject.GetData<EventKeyframe>();
+
+						if (ObjectEditor.inst.CopiedRotationData != null)
+						{
+							kf.curveType = ObjectEditor.inst.CopiedRotationData.curveType;
+							kf.eventValues = ObjectEditor.inst.CopiedRotationData.eventValues.Copy();
+							kf.eventRandomValues = ObjectEditor.inst.CopiedRotationData.eventRandomValues.Copy();
+							kf.random = ObjectEditor.inst.CopiedRotationData.random;
+							kf.relative = ObjectEditor.inst.CopiedRotationData.relative;
+						}
+					}
+
+					ObjectEditor.inst.RenderKeyframes(beatmapObject);
+					ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+					Updater.UpdateProcessor(beatmapObject, "Keyframes");
+					EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to selected rotation keyframes!", 3f, EditorManager.NotificationType.Success);
+				});
+
+				// Label
+				{
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
+
+					Destroy(label.transform.GetChild(1).gameObject);
+					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Col Keyframe Data";
+				}
+
+				var pasteColObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				pasteColObject.transform.localScale = Vector3.one;
+
+				((RectTransform)pasteColObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+				pasteColObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Color";
+
+				var pasteCol = pasteColObject.GetComponent<Button>();
+				pasteCol.onClick.ClearAll();
+				pasteCol.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected);
+
+					foreach (var timelineObject in list)
+					{
+						if (timelineObject.Type != 4)
+							continue;
+
+						var kf = timelineObject.GetData<EventKeyframe>();
+
+						if (ObjectEditor.inst.CopiedColorData != null)
+						{
+							kf.curveType = ObjectEditor.inst.CopiedColorData.curveType;
+							kf.eventValues = ObjectEditor.inst.CopiedColorData.eventValues.Copy();
+							kf.eventRandomValues = ObjectEditor.inst.CopiedColorData.eventRandomValues.Copy();
+							kf.random = ObjectEditor.inst.CopiedColorData.random;
+							kf.relative = ObjectEditor.inst.CopiedColorData.relative;
+						}
+					}
+
+					ObjectEditor.inst.RenderKeyframes(beatmapObject);
+					ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+					Updater.UpdateProcessor(beatmapObject, "Keyframes");
+					EditorManager.inst.DisplayNotification("Pasted color keyframe data to selected color keyframes!", 3f, EditorManager.NotificationType.Success);
+				});
 			}
 			catch (Exception ex)
 			{
-				Debug.LogError($"{__instance.className}Catch point: {catchPoint}\n{ex}");
+				Debug.LogError($"{__instance.className}{ex}");
 			}
 
 			__instance.SelectedColor = EditorConfig.Instance.ObjectSelectionColor.Value;
