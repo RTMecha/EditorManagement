@@ -1,3 +1,7 @@
+2.4.15 > [Mar 29, 2024]
+- Pasting keyframe data now pastes keyframe easing.
+- Added Paste Keyframe Data buttons to Multi Object Keyframe Editor.
+- Added some functions from the Multi Object Keyframe Editor to the Multi Event Keyframe Editor.
 2.4.14 > [Mar 28, 2024]
 - Most keybinds are now prevented from being active in certain situations, such as when no level has been loaded or in the Project Planner.
 2.4.13 > [Mar 28, 2024]
