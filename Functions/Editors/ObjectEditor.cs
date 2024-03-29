@@ -1758,15 +1758,18 @@ namespace EditorManagement.Functions.Editors
 
             ((Transform)ObjectUIElements["ID Base"]).Find("ldm").gameObject.SetActive(RTEditor.ShowModdedUI);
 
-            ObjEditor.inst.ObjectView.transform.Find("int_variable").gameObject.SetActive(RTEditor.ShowModdedUI);
-            ObjEditor.inst.ObjectView.transform.Find("ignore life").gameObject.SetActive(RTEditor.ShowModdedUI);
+            if (ModCompatibility.ObjectModifiersInstalled)
+            {
+                ObjEditor.inst.ObjectView.transform.Find("int_variable").gameObject.SetActive(RTEditor.ShowModdedUI);
+                ObjEditor.inst.ObjectView.transform.Find("ignore life").gameObject.SetActive(RTEditor.ShowModdedUI);
 
-            var activeModifiers = ObjEditor.inst.ObjectView.transform.Find("active").gameObject;
+                var activeModifiers = ObjEditor.inst.ObjectView.transform.Find("active").gameObject;
 
-            if (!RTEditor.ShowModdedUI)
-                activeModifiers.GetComponent<Toggle>().isOn = false;
+                if (!RTEditor.ShowModdedUI)
+                    activeModifiers.GetComponent<Toggle>().isOn = false;
 
-            activeModifiers.SetActive(RTEditor.ShowModdedUI);
+                activeModifiers.SetActive(RTEditor.ShowModdedUI);
+            }
 
             if (active && !shapeTFPActive)
             {

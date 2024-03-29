@@ -261,18 +261,18 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator RenderModifiers(BeatmapObject beatmapObject)
         {
+            ignoreToggle.onValueChanged.ClearAll();
+            ignoreToggle.isOn = beatmapObject.ignoreLifespan;
+            ignoreToggle.onValueChanged.AddListener(delegate (bool _val)
+            {
+                beatmapObject.ignoreLifespan = _val;
+            });
+
             if (showModifiers)
             {
                 LSHelpers.DeleteChildren(content);
 
                 ((RectTransform)content.parent.parent).sizeDelta = new Vector2(351f, 300f * Mathf.Clamp(beatmapObject.modifiers.Count, 1, 5));
-
-                ignoreToggle.onValueChanged.ClearAll();
-                ignoreToggle.isOn = beatmapObject.ignoreLifespan;
-                ignoreToggle.onValueChanged.AddListener(delegate (bool _val)
-                {
-                    beatmapObject.ignoreLifespan = _val;
-                });
 
                 int num = 0;
                 foreach (var modifier in beatmapObject.modifiers)
