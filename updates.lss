@@ -1,3 +1,5 @@
+2.4.16 > [Mar 29, 2024]
+- Fixed an issue where if the user had not installed ObjectModifiers, the editor would try to disable the non-existent UI from its editors.
 2.4.15 > [Mar 29, 2024]
 - Pasting keyframe data now pastes keyframe easing.
 - Added Paste Keyframe Data buttons to Multi Object Keyframe Editor.
