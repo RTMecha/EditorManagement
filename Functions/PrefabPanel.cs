@@ -25,6 +25,8 @@ namespace EditorManagement.Functions
 
         public Image TypeImage { get; set; }
 
+        public Image TypeIcon { get; set; }
+
         public PrefabDialog Dialog { get; set; }
 
         public Prefab Prefab { get; set; }

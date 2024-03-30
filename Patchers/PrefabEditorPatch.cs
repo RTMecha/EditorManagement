@@ -311,7 +311,7 @@ namespace EditorManagement.Patchers
             prefabTypeButton.onClick.ClearAll();
             prefabTypeButton.onClick.AddListener(delegate ()
             {
-                PrefabEditorManager.inst.OpenPrefabTypePopup(delegate (int index)
+                PrefabEditorManager.inst.OpenPrefabTypePopup(PrefabEditor.inst.NewPrefabType, delegate(int index)
                 {
                     PrefabEditor.inst.NewPrefabType = index;
                     if (PrefabEditor.inst.dialog)

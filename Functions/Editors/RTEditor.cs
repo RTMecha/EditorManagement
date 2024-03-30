@@ -7816,6 +7816,7 @@ namespace EditorManagement.Functions.Editors
 
                 var prefab = Prefab.Parse(jn);
                 prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
+                prefab.filePath = file.Replace("\\", "/");
                 __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
                 __instance.LoadedPrefabsFiles.Add(file);
 

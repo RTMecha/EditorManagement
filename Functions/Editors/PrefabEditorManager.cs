@@ -856,7 +856,7 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorDropdown("View Prefab Types", "", "View", RTEditor.inst.SearchSprite, delegate ()
             {
-                OpenPrefabTypePopup(delegate (int index)
+                OpenPrefabTypePopup(PrefabEditor.inst.NewPrefabType, delegate (int index)
                 {
                     PrefabEditor.inst.NewPrefabType = index;
                     if (PrefabEditor.inst.dialog)
@@ -911,10 +911,10 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public void OpenPrefabTypePopup(Action<int> onSelect)
+        public void OpenPrefabTypePopup(int current, Action<int> onSelect)
         {
             EditorManager.inst.ShowDialog("Prefab Types Popup");
-            RenderPrefabTypesPopup(onSelect);
+            RenderPrefabTypesPopup(current, onSelect);
         }
 
         public void ReorderPrefabTypes()
@@ -927,7 +927,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void RenderPrefabTypesPopup(Action<int> onSelect)
+        public void RenderPrefabTypesPopup(int current, Action<int> onSelect)
         {
             LSHelpers.DeleteChildren(prefabTypeContent);
 
@@ -956,7 +956,7 @@ namespace EditorManagement.Functions.Editors
 
                 SavePrefabTypes();
 
-                RenderPrefabTypesPopup(onSelect);
+                RenderPrefabTypesPopup(current, onSelect);
             });
 
             int num = 0;
@@ -967,11 +967,11 @@ namespace EditorManagement.Functions.Editors
 
                 var toggle = gameObject.transform.Find("Toggle").GetComponent<Toggle>();
                 toggle.onValueChanged.ClearAll();
-                toggle.isOn = PrefabEditor.inst.NewPrefabType == index;
+                toggle.isOn = current == index;
                 toggle.onValueChanged.AddListener(delegate (bool _val)
                 {
                     onSelect?.Invoke(index);
-                    RenderPrefabTypesPopup(onSelect);
+                    RenderPrefabTypesPopup(index, onSelect);
                 });
                 
                 toggle.image.color = prefabType.Color;
@@ -1018,7 +1018,7 @@ namespace EditorManagement.Functions.Editors
                 inputField.onEndEdit.AddListener(delegate (string _val)
                 {
                     SavePrefabTypes();
-                    RenderPrefabTypesPopup(onSelect);
+                    RenderPrefabTypesPopup(index, onSelect);
                 });
 
                 var color = gameObject.transform.Find("Color").GetComponent<InputField>();
@@ -1033,7 +1033,7 @@ namespace EditorManagement.Functions.Editors
                 color.onEndEdit.ClearAll();
                 color.onEndEdit.AddListener(delegate (string _val)
                 {
-                    RenderPrefabTypesPopup(onSelect);
+                    RenderPrefabTypesPopup(index, onSelect);
                     SavePrefabTypes();
                 });
 
@@ -1069,7 +1069,7 @@ namespace EditorManagement.Functions.Editors
 
                     ReorderPrefabTypes();
 
-                    RenderPrefabTypesPopup(onSelect);
+                    RenderPrefabTypesPopup(index, onSelect);
                     SavePrefabTypes();
                 });
 
@@ -1121,13 +1121,14 @@ namespace EditorManagement.Functions.Editors
         #endregion
 
         #region Prefabs
-
-        public Text externalDescription;
+        
         public Button externalType;
         public Image extenalTypeImage;
 
         public Button importPrefab;
         public Button exportToVG;
+
+        public InputField externalDescriptionField;
 
         public void CreatePrefabExternalDialog()
         {
@@ -1167,17 +1168,43 @@ namespace EditorManagement.Functions.Editors
 
             editorDialogTransform.GetChild(1).AsRT().sizeDelta = new Vector2(765f, 24f);
 
-            //{
-            //    var prefabEditorData = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/type");
+            var labelTypeBase = new GameObject("Type Label");
+            labelTypeBase.transform.SetParent(editorDialogTransform);
+            labelTypeBase.transform.localScale = Vector3.one;
 
-            //    var prefabType = prefabEditorData.gameObject.Duplicate(editorDialogTransform, "Show Type Editor");
+            var labelTypeBaseRT = labelTypeBase.AddComponent<RectTransform>();
+            labelTypeBaseRT.sizeDelta = new Vector2(765f, 32f);
 
-            //    ((RectTransform)prefabType.transform).sizeDelta = new Vector2(132f, 34f);
-            //    prefabType.transform.Find("Text").GetComponent<Text>().text = "Open Prefab Type Editor";
-            //    externalType = prefabType.GetComponent<Button>();
-            //    extenalTypeImage = prefabType.GetComponent<Image>();
-            //}
+            var labelType = editorDialogTransform.GetChild(2);
+            labelType.SetParent(labelTypeBaseRT);
+            labelType.localPosition = Vector3.zero;
+            labelType.localScale = Vector3.one;
+            labelType.AsRT().sizeDelta = new Vector2(725f, 32f);
+            var labelTypeText = labelType.GetComponent<Text>();
+            labelTypeText.text = "Type";
+            labelTypeText.alignment = TextAnchor.UpperLeft;
 
+            var prefabTypeBase = new GameObject("Prefab Type Base");
+            prefabTypeBase.transform.SetParent(editorDialogTransform);
+            prefabTypeBase.transform.localScale = Vector3.one;
+
+            var prefabTypeBaseRT = prefabTypeBase.AddComponent<RectTransform>();
+            prefabTypeBaseRT.sizeDelta = new Vector2(765f, 32f);
+
+            var prefabEditorData = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/type/Show Type Editor");
+
+            var prefabType = prefabEditorData.gameObject.Duplicate(prefabTypeBaseRT, "Show Type Editor");
+
+            prefabType.transform.AsRT().anchoredPosition = new Vector2(-250f, 0f);
+            prefabType.transform.AsRT().anchorMax = new Vector2(0.5f, 0.5f);
+            prefabType.transform.AsRT().anchorMin = new Vector2(0.5f, 0.5f);
+            prefabType.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+            prefabType.transform.AsRT().sizeDelta = new Vector2(232f, 34f);
+            prefabType.transform.Find("Text").GetComponent<Text>().text = "Open Prefab Type Editor";
+            externalType = prefabType.GetComponent<Button>();
+            extenalTypeImage = prefabType.GetComponent<Image>();
+
+            // Spacer
             {
                 var spacer = new GameObject("spacer2");
                 spacer.transform.SetParent(editorDialogTransform);
@@ -1187,6 +1214,21 @@ namespace EditorManagement.Functions.Editors
                 spacerRT.sizeDelta = new Vector2(765f, 24f);
             }
 
+            var labelDescriptionBase = new GameObject("Description Label");
+            labelDescriptionBase.transform.SetParent(editorDialogTransform);
+            labelDescriptionBase.transform.localScale = Vector3.one;
+
+            var labelDescriptionBaseRT = labelDescriptionBase.AddComponent<RectTransform>();
+            labelDescriptionBaseRT.sizeDelta = new Vector2(765f, 32f);
+
+            var labelDescription = labelType.gameObject.Duplicate(labelDescriptionBaseRT);
+            labelDescription.transform.localPosition = Vector3.zero;
+            labelDescription.transform.localScale = Vector3.one;
+            labelDescription.transform.AsRT().sizeDelta = new Vector2(725f, 32f);
+            var labelDescriptionText = labelDescription.GetComponent<Text>();
+            labelDescriptionText.text = "Description";
+            labelDescriptionText.alignment = TextAnchor.UpperLeft;
+
             var textBase1 = new GameObject("Text Base 1");
             textBase1.transform.SetParent(editorDialogTransform);
             textBase1.transform.localScale = Vector3.one;
@@ -1194,31 +1236,25 @@ namespace EditorManagement.Functions.Editors
             var textBase1RT = textBase1.AddComponent<RectTransform>();
             textBase1RT.sizeDelta = new Vector2(765f, 300f);
             
-            var textBase2 = new GameObject("Text Base 2");
-            textBase2.transform.SetParent(textBase1RT);
-            textBase2.transform.localScale = Vector3.one;
+            var description = RTEditor.inst.defaultIF.Duplicate(textBase1RT);
+            description.transform.AsRT().anchoredPosition = Vector2.zero;
+            description.transform.AsRT().anchorMax = new Vector2(0.5f, 0.5f);
+            description.transform.AsRT().anchorMin = new Vector2(0.5f, 0.5f);
+            description.transform.AsRT().sizeDelta = new Vector2(740f, 300f);
 
-            var textBase2RT = textBase2.AddComponent<RectTransform>();
-            textBase2RT.sizeDelta = new Vector2(740f, 300f);
-            var textBase2Image = textBase2.AddComponent<Image>();
-            textBase2Image.color = new Color(1f, 1f, 1f, 0.07f);
+            externalDescriptionField = description.GetComponent<InputField>();
+            externalDescriptionField.lineType = InputField.LineType.MultiLineNewline;
+            ((Text)externalDescriptionField.placeholder).text = "Set description...";
+            ((Text)externalDescriptionField.placeholder).color = new Color(0.1961f, 0.1961f, 0.1961f, 0.5f);
 
-            var text = editorDialogTransform.GetChild(2);
-            text.SetParent(textBase2RT);
-            text.localPosition = Vector3.zero;
-            text.localScale = Vector3.one;
-            text.AsRT().sizeDelta = new Vector2(725f, 290f);
-            externalDescription = text.GetComponent<Text>();
-            externalDescription.text = "No description";
-            externalDescription.alignment = TextAnchor.UpperLeft;
-
+            // Spacer
             {
                 var spacer = new GameObject("spacer3");
                 spacer.transform.SetParent(editorDialogTransform);
                 spacer.transform.localScale = Vector3.one;
 
                 var spacerRT = spacer.AddComponent<RectTransform>();
-                spacerRT.sizeDelta = new Vector2(765f, 260f);
+                spacerRT.sizeDelta = new Vector2(765f, 200f);
             }
 
             var buttonsBase = new GameObject("buttons base");
@@ -1254,18 +1290,29 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorDialog("Prefab External Dialog", editorDialogObject);
         }
 
-        public void RenderPrefabExternalDialog(Prefab prefab)
+        public void RenderPrefabExternalDialog(PrefabPanel prefabPanel)
         {
-            //extenalTypeImage.color = prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
-            //externalType.onClick.ClearAll();
-            //externalType.onClick.AddListener(delegate ()
-            //{
-            //    OpenPrefabTypePopup(delegate (int index)
-            //    {
-            //        prefab.Type = index;
-            //        extenalTypeImage.color = prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
-            //    });
-            //});
+            var prefab = prefabPanel.Prefab;
+
+            extenalTypeImage.color = prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
+            externalType.onClick.ClearAll();
+            externalType.onClick.AddListener(delegate ()
+            {
+                OpenPrefabTypePopup(prefab.Type, delegate (int index)
+                {
+                    prefab.Type = index;
+                    var prefabType = prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
+                    var color = prefabType.Color;
+                    extenalTypeImage.color = color;
+
+                    prefabPanel.TypeImage.color = color;
+                    prefabPanel.TypeIcon.sprite = prefabType.Icon;
+                    prefabPanel.TypeText.text = prefabType.Name;
+
+                    if (!string.IsNullOrEmpty(prefab.filePath))
+                        RTFile.WriteToFile(prefab.filePath, prefab.ToJSON().ToString());
+                });
+            });
 
             importPrefab.onClick.ClearAll();
             importPrefab.onClick.AddListener(delegate ()
@@ -1301,7 +1348,18 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.DisplayNotification($"Converted Prefab {prefab.Name.ToLower()}.lsp from LS format to VG format and saved to {prefab.Name.ToLower()}.vgp!", 4f, EditorManager.NotificationType.Success);
             });
 
-            externalDescription.text = prefab.description;
+            externalDescriptionField.onValueChanged.ClearAll();
+            externalDescriptionField.onEndEdit.ClearAll();
+            externalDescriptionField.text = prefab.description;
+            externalDescriptionField.onValueChanged.AddListener(delegate (string _val)
+            {
+                prefab.description = _val;
+            });
+            externalDescriptionField.onEndEdit.AddListener(delegate (string _val)
+            {
+                if (!string.IsNullOrEmpty(prefab.filePath))
+                    RTFile.WriteToFile(prefab.filePath, prefab.ToJSON().ToString());
+            });
         }
 
         public void CreateNewPrefab()
@@ -1354,8 +1412,10 @@ namespace EditorManagement.Functions.Editors
 
             prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
             int count = PrefabEditor.inst.LoadedPrefabs.Count;
+            var file = $"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp";
+            prefab.filePath = file;
             PrefabEditor.inst.LoadedPrefabs.Add(prefab);
-            PrefabEditor.inst.LoadedPrefabsFiles.Add($"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp");
+            PrefabEditor.inst.LoadedPrefabsFiles.Add(file);
 
             var config = EditorConfig.Instance;
 
@@ -1383,7 +1443,8 @@ namespace EditorManagement.Functions.Editors
                 false, hoverSize, nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
                 typeHorizontalOverflow, typeVerticalOverflow, typeFontSize, deleteAnchoredPosition, deleteSizeDelta));
 
-            FileManager.inst.SaveJSONFile(RTEditor.prefabListPath, $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp", prefab.ToJSON().ToString());
+            RTFile.WriteToFile(file, prefab.ToJSON().ToString());
+            //FileManager.inst.SaveJSONFile(RTEditor.prefabListPath, $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp", prefab.ToJSON().ToString());
             EditorManager.inst.DisplayNotification($"Saved prefab [{prefab.Name}]!", 2f, EditorManager.NotificationType.Success);
 
             if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + RTEditor.prefabListPath))
@@ -1742,6 +1803,7 @@ namespace EditorManagement.Functions.Editors
                     Name = name,
                     TypeText = typeName,
                     TypeImage = color,
+                    TypeIcon = typeImage,
                     Prefab = prefab,
                     Index = index,
                     FilePath = file
@@ -1765,7 +1827,7 @@ namespace EditorManagement.Functions.Editors
                     if (!ImportPrefabsDirectly)
                     {
                         EditorManager.inst.ShowDialog("Prefab External Dialog");
-                        RenderPrefabExternalDialog(prefab);
+                        RenderPrefabExternalDialog(prefabPanel);
                     }
                     else
                         ImportPrefabIntoLevel(prefab);
