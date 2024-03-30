@@ -1031,7 +1031,7 @@ namespace EditorManagement.Functions.Editors
 			
 			var str = config.ThemeSavesIndents.Value ? theme.ToJSON().ToString(3) : theme.ToJSON().ToString();
 
-			var path = $"{RTFile.ApplicationDirectory}{RTEditor.themeListPath}{theme.name.ToLower().Replace(" ", "_")}_ID-{theme.id}.lst";
+			var path = $"{RTFile.ApplicationDirectory}{RTEditor.themeListSlash}{theme.name.ToLower().Replace(" ", "_")}_ID-{theme.id}.lst";
 
 			theme.filePath = path;
 
