@@ -1,3 +1,8 @@
+2.4.19 > [Mar 31, 2024]
+- Cleaned up the Multi Object Keyframe Editor.
+- Object Keyframe Editors are no longer displayed if no keyframes are selected.
+- Added Keyframe editing to Multi Object Editor.
+- Added some UI to Object Modifiers editor because I forgot playerBoost triggers.
 2.4.18 > [Mar 30, 2024]
 - External Prefabs can now be edited via the External Prefab Dialog. (Specifically the description and type)
 2.4.17 > [Mar 30, 2024]
