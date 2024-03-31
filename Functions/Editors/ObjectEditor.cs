@@ -3345,10 +3345,16 @@ namespace EditorManagement.Functions.Editors
         {
             var selected = beatmapObject.timelineObject.InternalSelections.Where(x => x.selected);
 
+            for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
+                ObjEditor.inst.KeyframeDialogs[i].SetActive(false);
+
+            if (selected.Count() < 1)
+            {
+                return;
+            }
+
             if (!(selected.Count() == 1 || selected.All(x => x.Type == selected.Min(y => y.Type))))
             {
-                for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
-                    ObjEditor.inst.KeyframeDialogs[i].SetActive(false);
                 ObjEditor.inst.KeyframeDialogs[4].SetActive(true);
 
                 try
@@ -3524,7 +3530,7 @@ namespace EditorManagement.Functions.Editors
                         }
                     });
 
-                    var valueIndex = dialog.Find("value index").GetComponent<InputField>();
+                    var valueIndex = dialog.Find("value base/value index").GetComponent<InputField>();
                     valueIndex.onValueChanged.ClearAll();
                     if (valueIndex.text == "25.0")
                         valueIndex.text = "0";
@@ -3537,7 +3543,7 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.IncreaseDecreaseButtonsInt(valueIndex);
                     TriggerHelper.AddEventTriggerParams(valueIndex.gameObject, TriggerHelper.ScrollDeltaInt(valueIndex));
 
-                    var value = dialog.Find("value").GetComponent<InputField>();
+                    var value = dialog.Find("value base/value").GetComponent<InputField>();
                     value.onValueChanged.ClearAll();
                     value.onValueChanged.AddListener(delegate (string _val)
                     {
@@ -3582,10 +3588,7 @@ namespace EditorManagement.Functions.Editors
             var firstKF = selected.ElementAt(0);
             var type = firstKF.Type;
 
-            for (int i = 0; i < ObjEditor.inst.KeyframeDialogs.Count; i++)
-            {
-                ObjEditor.inst.KeyframeDialogs[i].SetActive(i == type);
-            }
+            ObjEditor.inst.KeyframeDialogs[type].SetActive(true);
 
             ObjEditor.inst.currentKeyframeKind = type;
             ObjEditor.inst.currentKeyframe = firstKF.Index;
@@ -3686,10 +3689,10 @@ namespace EditorManagement.Functions.Editors
                             RenderKeyframes(beatmapObject);
                             RenderObjectKeyframesDialog(beatmapObject);
                             Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                            EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
                         }
                         else
-                            EditorManager.inst.DisplayNotification("Position keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                            EditorManager.inst.DisplayNotification("Position keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
                         break;
                     case 1:
                         if (CopiedScaleData != null)
@@ -3707,10 +3710,10 @@ namespace EditorManagement.Functions.Editors
                             RenderKeyframes(beatmapObject);
                             RenderObjectKeyframesDialog(beatmapObject);
                             Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            EditorManager.inst.DisplayNotification("Pasted scale keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                            EditorManager.inst.DisplayNotification("Pasted scale keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
                         }
                         else
-                            EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                            EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
                         break;
                     case 2:
                         if (CopiedRotationData != null)
@@ -3728,10 +3731,10 @@ namespace EditorManagement.Functions.Editors
                             RenderKeyframes(beatmapObject);
                             RenderObjectKeyframesDialog(beatmapObject);
                             Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                            EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
                         }
                         else
-                            EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                            EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
                         break;
                     case 3:
                         if (CopiedColorData != null)
@@ -3749,10 +3752,10 @@ namespace EditorManagement.Functions.Editors
                             RenderKeyframes(beatmapObject);
                             RenderObjectKeyframesDialog(beatmapObject);
                             Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                            EditorManager.inst.DisplayNotification("Pasted color keyframe data to current selected keyframe!", 2f, EditorManager.NotificationType.Success);
+                            EditorManager.inst.DisplayNotification("Pasted color keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
                         }
                         else
-                            EditorManager.inst.DisplayNotification("Color keyframe data not copied yet!", 2f, EditorManager.NotificationType.Error);
+                            EditorManager.inst.DisplayNotification("Color keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
                         break;
                 }
             });
