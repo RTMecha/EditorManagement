@@ -3014,6 +3014,9 @@ namespace EditorManagement.Functions.Editors
                 "The current version of the editor doesn't support any editing functionality.",
                 "On the left you'll see all the Multi Object Editor tools you'll need.");
 
+            var updateMultiObjectInfo = textHolder.gameObject.AddComponent<UpdateMultiObjectInfo>();
+            updateMultiObjectInfo.Text = textHolderText;
+
             textHolderText.fontSize = 22;
 
             textHolder.AsRT().anchoredPosition = new Vector2(0f, -125f);
@@ -3086,6 +3089,8 @@ namespace EditorManagement.Functions.Editors
                 button.onClick.AddListener(unityAction);
             };
 
+            // man i need to clean this up but aaaa
+
             // Layers
             {
                 labelGenerator("Set Group Layer");
@@ -3110,7 +3115,6 @@ namespace EditorManagement.Functions.Editors
                 {
                     if (parent.Find("layer") && parent.Find("layer").GetChild(0).gameObject.TryGetComponent(out InputField inputField))
                     {
-                        //inputField.text = "1";
                         TriggerHelper.AddEventTrigger(parent.Find("layer").gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField, min: 0) });
 
                         if (int.TryParse(inputField.text, out int num))
@@ -4283,8 +4287,895 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
+            // Assign Colors
+            {
+                labelGenerator("Assign Colors");
+
+                var colorLayout = new GameObject("color layout");
+                colorLayout.transform.SetParent(parent);
+                colorLayout.transform.localScale = Vector3.one;
+
+                var colorLayoutRT = colorLayout.AddComponent<RectTransform>();
+                colorLayoutRT.sizeDelta = new Vector2(390f, 76f);
+                var colorLayoutGLG = colorLayout.AddComponent<GridLayoutGroup>();
+                colorLayoutGLG.spacing = new Vector2(4f, 4f);
+                colorLayoutGLG.cellSize = new Vector2(36f, 36f);
+
+                for (int i = 0; i < 18; i++)
+                {
+                    var index = i;
+                    var colorGUI = EditorManager.inst.colorGUI.Duplicate(colorLayoutRT, (i + 1).ToString());
+                    var assigner = colorGUI.AddComponent<AssignToTheme>();
+                    assigner.Index = i;
+                    var image = colorGUI.GetComponent<Image>();
+                    assigner.Graphic = image;
+
+                    var selected = colorGUI.transform.GetChild(0).gameObject;
+                    selected.SetActive(i == 0);
+
+                    var button = colorGUI.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        currentMultiColorSelection = index;
+                        UpdateMultiColorButtons();
+                    });
+
+                    multiColorButtons.Add(new MultiColorButton
+                    {
+                        Button = button,
+                        Image = image,
+                        Selected = selected
+                    });
+                }
+
+                labelGenerator("Opacity");
+
+                var opacityObject = zoom.Duplicate(parent, "opacity");
+                opacityObject.transform.localScale = Vector3.one;
+                var opacityPlaceholder = opacityObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
+                opacityPlaceholder.text = "Enter value... (Keep me empty to not set)";
+                opacityPlaceholder.fontSize = 13;
+
+                ((RectTransform)opacityObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+                var opacityIF = opacityObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                opacityIF.text = "";
+
+                TriggerHelper.AddEventTriggerParams(opacityObject, TriggerHelper.ScrollDelta(opacityIF, max: 1f));
+                TriggerHelper.IncreaseDecreaseButtons(opacityIF, max: 1f);
+                
+                labelGenerator("Hue");
+
+                var hueObject = zoom.Duplicate(parent, "hue");
+                hueObject.transform.localScale = Vector3.one;
+                var huePlaceholder = hueObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
+                huePlaceholder.text = "Enter value... (Keep me empty to not set)";
+                huePlaceholder.fontSize = 13;
+
+                ((RectTransform)hueObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+                var hueIF = hueObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                hueIF.text = "";
+
+                TriggerHelper.AddEventTriggerParams(hueObject, TriggerHelper.ScrollDelta(hueIF));
+                TriggerHelper.IncreaseDecreaseButtons(hueIF);
+                
+                labelGenerator("Saturation");
+
+                var satObject = zoom.Duplicate(parent, "sat");
+                satObject.transform.localScale = Vector3.one;
+                var satPlaceholder = satObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
+                satPlaceholder.text = "Enter value... (Keep me empty to not set)";
+                satPlaceholder.fontSize = 13;
+
+                ((RectTransform)satObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+                var satIF = satObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                satIF.text = "";
+
+                TriggerHelper.AddEventTriggerParams(satObject, TriggerHelper.ScrollDelta(satIF));
+                TriggerHelper.IncreaseDecreaseButtons(satIF);
+                
+                labelGenerator("Value");
+
+                var valObject = zoom.Duplicate(parent, "sat");
+                valObject.transform.localScale = Vector3.one;
+                var valPlaceholder = valObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
+                valPlaceholder.text = "Enter value... (Keep me empty to not set)";
+                valPlaceholder.fontSize = 13;
+
+                ((RectTransform)valObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+                var valIF = valObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                valIF.text = "";
+
+                TriggerHelper.AddEventTriggerParams(valObject, TriggerHelper.ScrollDelta(valIF));
+                TriggerHelper.IncreaseDecreaseButtons(valIF);
+
+                labelGenerator("Ease Type");
+
+                var curvesObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/position/curves").Duplicate(parent, "curves");
+                var curves = curvesObject.GetComponent<Dropdown>();
+                curves.onValueChanged.ClearAll();
+                curves.options.Insert(0, new Dropdown.OptionData("None (Doesn't Set Easing)"));
+
+                // Assign to All
+                {
+                    labelGenerator("Assign to All Color Keyframes");
+
+                    buttonGenerator("assign to all", "Assign", parent, delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+
+                                for (int i = 0; i < bm.events[3].Count; i++)
+                                {
+                                    var kf = bm.events[3][i];
+                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value + 1))
+                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value + 1];
+                                    kf.eventValues[0] = Mathf.Clamp(currentMultiColorSelection, 0, 18);
+                                    if (!string.IsNullOrEmpty(opacityIF.text))
+                                        kf.eventValues[1] = -Mathf.Clamp(Parser.TryParse(opacityIF.text, 1f), 0f, 1f) + 1f;
+                                    if (!string.IsNullOrEmpty(hueIF.text))
+                                        kf.eventValues[2] = Parser.TryParse(hueIF.text, 0f);
+                                    if (!string.IsNullOrEmpty(satIF.text))
+                                        kf.eventValues[3] = Parser.TryParse(satIF.text, 0f);
+                                    if (!string.IsNullOrEmpty(valIF.text))
+                                        kf.eventValues[4] = Parser.TryParse(valIF.text, 0f);
+                                }
+
+                                Updater.UpdateProcessor(bm, "Keyframes");
+                            }
+                        }
+                    });
+                }
+
+                // Assign to Index
+                {
+                    labelGenerator("Assign to Index");
+
+                    var gameObject = zoom.Duplicate(parent, "index");
+                    gameObject.transform.localScale = Vector3.one;
+                    gameObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
+
+                    ((RectTransform)gameObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+                    var indexIF = gameObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                    indexIF.text = "0";
+
+                    TriggerHelper.AddEventTriggerParams(gameObject, TriggerHelper.ScrollDeltaInt(indexIF));
+                    TriggerHelper.IncreaseDecreaseButtonsInt(indexIF);
+
+                    buttonGenerator("assign to index", "Assign", parent, delegate ()
+                    {
+                        if (int.TryParse(indexIF.text, out int num))
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                            {
+                                if (timelineObject.IsBeatmapObject)
+                                {
+                                    var bm = timelineObject.GetData<BeatmapObject>();
+
+                                    var kf = bm.events[3][Mathf.Clamp(num, 0, bm.events[3].Count - 1)];
+                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value + 1))
+                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value + 1];
+                                    kf.eventValues[0] = Mathf.Clamp(currentMultiColorSelection, 0, 18);
+                                    if (!string.IsNullOrEmpty(opacityIF.text))
+                                        kf.eventValues[1] = -Mathf.Clamp(Parser.TryParse(opacityIF.text, 1f), 0f, 1f) + 1f;
+                                    if (!string.IsNullOrEmpty(hueIF.text))
+                                        kf.eventValues[2] = Parser.TryParse(hueIF.text, 0f);
+                                    if (!string.IsNullOrEmpty(satIF.text))
+                                        kf.eventValues[3] = Parser.TryParse(satIF.text, 0f);
+                                    if (!string.IsNullOrEmpty(valIF.text))
+                                        kf.eventValues[4] = Parser.TryParse(valIF.text, 0f);
+
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Create Color Keyframe
+                {
+                    labelGenerator("Create Color Keyframe");
+
+                    buttonGenerator("create", "Create", parent, delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+
+                                var currentTime = AudioManager.inst.CurrentAudioSource.time;
+
+                                var index = bm.events[3].FindLastIndex(x => currentTime > bm.StartTime + x.eventTime);
+
+                                if (index >= 0 && currentTime > bm.StartTime)
+                                {
+                                    var kf = EventKeyframe.DeepCopy((EventKeyframe)bm.events[3][index]);
+                                    kf.eventTime = currentTime - bm.StartTime;
+                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value + 1))
+                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value + 1];
+
+                                    kf.eventValues[0] = Mathf.Clamp(currentMultiColorSelection, 0, 18);
+                                    if (!string.IsNullOrEmpty(opacityIF.text))
+                                        kf.eventValues[1] = -Mathf.Clamp(Parser.TryParse(opacityIF.text, 1f), 0f, 1f) + 1f;
+                                    if (!string.IsNullOrEmpty(hueIF.text))
+                                        kf.eventValues[2] = Parser.TryParse(hueIF.text, 0f);
+                                    if (!string.IsNullOrEmpty(satIF.text))
+                                        kf.eventValues[3] = Parser.TryParse(satIF.text, 0f);
+                                    if (!string.IsNullOrEmpty(valIF.text))
+                                        kf.eventValues[4] = Parser.TryParse(valIF.text, 0f);
+                                    bm.events[3].Add(kf);
+                                }
+
+                                Updater.UpdateProcessor(bm, "Keyframes");
+                                ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.GetTimelineObject(bm));
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Paste
+            {
+                labelGenerator("Paste Keyframe Data (All Types)");
+
+                // All Types
+                {
+                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
+                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
+                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
+
+                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
+
+                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                    pasteAllTypesToAllIndexIF.text = "0";
+
+                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
+                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
+
+                    var pasteAllTypesBase = new GameObject("paste all types");
+                    pasteAllTypesBase.transform.SetParent(parent);
+                    pasteAllTypesBase.transform.localScale = Vector3.one;
+
+                    var pasteAllTypesBaseRT = pasteAllTypesBase.AddComponent<RectTransform>();
+                    pasteAllTypesBaseRT.sizeDelta = new Vector2(390f, 32f);
+
+                    var pasteAllTypesBaseHLG = pasteAllTypesBase.AddComponent<HorizontalLayoutGroup>();
+                    pasteAllTypesBaseHLG.childControlHeight = false;
+                    pasteAllTypesBaseHLG.childControlWidth = false;
+                    pasteAllTypesBaseHLG.childForceExpandHeight = false;
+                    pasteAllTypesBaseHLG.childForceExpandWidth = false;
+                    pasteAllTypesBaseHLG.spacing = 8f;
+
+                    var pasteAllTypesToAllObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToAllObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToAllObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to All";
+                    //pasteAllTypesToAllObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
+                    pasteAllTypesToAll.onClick.ClearAll();
+                    pasteAllTypesToAll.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedPositionData != null)
+                                    for (int i = 0; i < bm.events[0].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[0][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedPositionData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedPositionData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedPositionData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedPositionData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedPositionData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted position keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Position keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                                if (ObjectEditor.inst.CopiedScaleData != null)
+                                    for (int i = 0; i < bm.events[1].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[1][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedScaleData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedScaleData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedScaleData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedScaleData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedScaleData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted scale keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                                if (ObjectEditor.inst.CopiedRotationData != null)
+                                    for (int i = 0; i < bm.events[2].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[2][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedRotationData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedRotationData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedRotationData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedRotationData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedRotationData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                                if (ObjectEditor.inst.CopiedColorData != null)
+                                    for (int i = 0; i < bm.events[3].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[3][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedColorData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedColorData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedColorData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedColorData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedColorData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted color keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Color keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+
+                    var pasteAllTypesToIndexObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToIndexObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToIndexObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to Index";
+                    //pasteAllTypesToIndexObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
+                    pasteAllTypesToIndex.onClick.ClearAll();
+                    pasteAllTypesToIndex.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedPositionData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[0][Mathf.Clamp(num, 0, bm.events[0].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedPositionData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedPositionData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedPositionData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedPositionData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedPositionData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Position keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                                if (ObjectEditor.inst.CopiedScaleData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[1][Mathf.Clamp(num, 0, bm.events[1].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedScaleData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedScaleData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedScaleData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedScaleData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedScaleData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted scale keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                                if (ObjectEditor.inst.CopiedRotationData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[2][Mathf.Clamp(num, 0, bm.events[2].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedRotationData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedRotationData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedRotationData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedRotationData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedRotationData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                                if (ObjectEditor.inst.CopiedColorData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[3][Mathf.Clamp(num, 0, bm.events[3].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedColorData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedColorData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedColorData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedColorData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedColorData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted color keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Color keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+                }
+
+                labelGenerator("Paste Keyframe Data (Position)");
+
+                // Position
+                {
+                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
+                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
+                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
+
+                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
+
+                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                    pasteAllTypesToAllIndexIF.text = "0";
+
+                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
+                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
+
+                    var pasteAllTypesBase = new GameObject("paste position");
+                    pasteAllTypesBase.transform.SetParent(parent);
+                    pasteAllTypesBase.transform.localScale = Vector3.one;
+
+                    var pasteAllTypesBaseRT = pasteAllTypesBase.AddComponent<RectTransform>();
+                    pasteAllTypesBaseRT.sizeDelta = new Vector2(390f, 32f);
+
+                    var pasteAllTypesBaseHLG = pasteAllTypesBase.AddComponent<HorizontalLayoutGroup>();
+                    pasteAllTypesBaseHLG.childControlHeight = false;
+                    pasteAllTypesBaseHLG.childControlWidth = false;
+                    pasteAllTypesBaseHLG.childForceExpandHeight = false;
+                    pasteAllTypesBaseHLG.childForceExpandWidth = false;
+                    pasteAllTypesBaseHLG.spacing = 8f;
+
+                    var pasteAllTypesToAllObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToAllObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToAllObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to All";
+                    //pasteAllTypesToAllObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
+                    pasteAllTypesToAll.onClick.ClearAll();
+                    pasteAllTypesToAll.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedPositionData != null)
+                                    for (int i = 0; i < bm.events[0].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[0][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedPositionData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedPositionData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedPositionData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedPositionData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedPositionData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Position keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+
+                    var pasteAllTypesToIndexObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToIndexObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToIndexObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to Index";
+                    //pasteAllTypesToIndexObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
+                    pasteAllTypesToIndex.onClick.ClearAll();
+                    pasteAllTypesToIndex.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedPositionData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[0][Mathf.Clamp(num, 0, bm.events[0].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedPositionData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedPositionData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedPositionData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedPositionData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedPositionData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted position keyframe data to current selected keyframe.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Position keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+                }
+
+                labelGenerator("Paste Keyframe Data (Scale)");
+
+                // Scale
+                {
+                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
+                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
+                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
+
+                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
+
+                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                    pasteAllTypesToAllIndexIF.text = "0";
+
+                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
+                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
+
+                    var pasteAllTypesBase = new GameObject("paste scale");
+                    pasteAllTypesBase.transform.SetParent(parent);
+                    pasteAllTypesBase.transform.localScale = Vector3.one;
+
+                    var pasteAllTypesBaseRT = pasteAllTypesBase.AddComponent<RectTransform>();
+                    pasteAllTypesBaseRT.sizeDelta = new Vector2(390f, 32f);
+
+                    var pasteAllTypesBaseHLG = pasteAllTypesBase.AddComponent<HorizontalLayoutGroup>();
+                    pasteAllTypesBaseHLG.childControlHeight = false;
+                    pasteAllTypesBaseHLG.childControlWidth = false;
+                    pasteAllTypesBaseHLG.childForceExpandHeight = false;
+                    pasteAllTypesBaseHLG.childForceExpandWidth = false;
+                    pasteAllTypesBaseHLG.spacing = 8f;
+
+                    var pasteAllTypesToAllObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToAllObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToAllObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to All";
+                    //pasteAllTypesToAllObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
+                    pasteAllTypesToAll.onClick.ClearAll();
+                    pasteAllTypesToAll.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedScaleData != null)
+                                    for (int i = 0; i < bm.events[1].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[1][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedScaleData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedScaleData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedScaleData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedScaleData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedScaleData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted scale keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+
+                    var pasteAllTypesToIndexObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToIndexObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToIndexObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to Index";
+                    //pasteAllTypesToIndexObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
+                    pasteAllTypesToIndex.onClick.ClearAll();
+                    pasteAllTypesToIndex.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedScaleData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[1][Mathf.Clamp(num, 0, bm.events[1].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedScaleData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedScaleData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedScaleData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedScaleData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedScaleData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted scale keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Scale keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+                }
+
+                labelGenerator("Paste Keyframe Data (Rotation)");
+
+                // Rotation
+                {
+                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
+                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
+                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
+
+                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
+
+                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                    pasteAllTypesToAllIndexIF.text = "0";
+
+                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
+                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
+
+                    var pasteAllTypesBase = new GameObject("paste rotation");
+                    pasteAllTypesBase.transform.SetParent(parent);
+                    pasteAllTypesBase.transform.localScale = Vector3.one;
+
+                    var pasteAllTypesBaseRT = pasteAllTypesBase.AddComponent<RectTransform>();
+                    pasteAllTypesBaseRT.sizeDelta = new Vector2(390f, 32f);
+
+                    var pasteAllTypesBaseHLG = pasteAllTypesBase.AddComponent<HorizontalLayoutGroup>();
+                    pasteAllTypesBaseHLG.childControlHeight = false;
+                    pasteAllTypesBaseHLG.childControlWidth = false;
+                    pasteAllTypesBaseHLG.childForceExpandHeight = false;
+                    pasteAllTypesBaseHLG.childForceExpandWidth = false;
+                    pasteAllTypesBaseHLG.spacing = 8f;
+
+                    var pasteAllTypesToAllObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToAllObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToAllObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to All";
+                    //pasteAllTypesToAllObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
+                    pasteAllTypesToAll.onClick.ClearAll();
+                    pasteAllTypesToAll.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedRotationData != null)
+                                    for (int i = 0; i < bm.events[2].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[2][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedRotationData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedRotationData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedRotationData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedRotationData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedRotationData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+
+                    var pasteAllTypesToIndexObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToIndexObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToIndexObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to Index";
+                    //pasteAllTypesToIndexObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
+                    pasteAllTypesToIndex.onClick.ClearAll();
+                    pasteAllTypesToIndex.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedRotationData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[2][Mathf.Clamp(num, 0, bm.events[2].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedRotationData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedRotationData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedRotationData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedRotationData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedRotationData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Rotation keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+                }
+
+                labelGenerator("Paste Keyframe Data (Color)");
+
+                // Color
+                {
+                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
+                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
+                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
+
+                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
+
+                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
+                    pasteAllTypesToAllIndexIF.text = "0";
+
+                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
+                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
+
+                    var pasteAllTypesBase = new GameObject("paste color");
+                    pasteAllTypesBase.transform.SetParent(parent);
+                    pasteAllTypesBase.transform.localScale = Vector3.one;
+
+                    var pasteAllTypesBaseRT = pasteAllTypesBase.AddComponent<RectTransform>();
+                    pasteAllTypesBaseRT.sizeDelta = new Vector2(390f, 32f);
+
+                    var pasteAllTypesBaseHLG = pasteAllTypesBase.AddComponent<HorizontalLayoutGroup>();
+                    pasteAllTypesBaseHLG.childControlHeight = false;
+                    pasteAllTypesBaseHLG.childControlWidth = false;
+                    pasteAllTypesBaseHLG.childForceExpandHeight = false;
+                    pasteAllTypesBaseHLG.childForceExpandWidth = false;
+                    pasteAllTypesBaseHLG.spacing = 8f;
+
+                    var pasteAllTypesToAllObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToAllObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToAllObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to All";
+                    //pasteAllTypesToAllObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
+                    pasteAllTypesToAll.onClick.ClearAll();
+                    pasteAllTypesToAll.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject)
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedColorData != null)
+                                    for (int i = 0; i < bm.events[3].Count; i++)
+                                    {
+                                        var kf = (EventKeyframe)bm.events[3][i];
+                                        kf.curveType = ObjectEditor.inst.CopiedColorData.curveType;
+                                        kf.eventValues = ObjectEditor.inst.CopiedColorData.eventValues.Copy();
+                                        kf.eventRandomValues = ObjectEditor.inst.CopiedColorData.eventRandomValues.Copy();
+                                        kf.random = ObjectEditor.inst.CopiedColorData.random;
+                                        kf.relative = ObjectEditor.inst.CopiedColorData.relative;
+
+                                        ObjectEditor.inst.RenderKeyframes(bm);
+                                        ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                        Updater.UpdateProcessor(bm, "Keyframes");
+                                        EditorManager.inst.DisplayNotification("Pasted color keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                    }
+                                else
+                                    EditorManager.inst.DisplayNotification("Color keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+
+                    var pasteAllTypesToIndexObject = eventButton.Duplicate(pasteAllTypesBaseRT, name);
+                    pasteAllTypesToIndexObject.transform.localScale = Vector3.one;
+
+                    ((RectTransform)pasteAllTypesToIndexObject.transform).sizeDelta = new Vector2(180f, 32f);
+
+                    pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>().text = "Paste to Index";
+                    //pasteAllTypesToIndexObject.GetComponent<Image>().color = bcol;
+
+                    var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
+                    pasteAllTypesToIndex.onClick.ClearAll();
+                    pasteAllTypesToIndex.onClick.AddListener(delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            {
+                                var bm = timelineObject.GetData<BeatmapObject>();
+                                if (ObjectEditor.inst.CopiedColorData != null)
+                                {
+                                    var kf = (EventKeyframe)bm.events[3][Mathf.Clamp(num, 0, bm.events[3].Count - 1)];
+                                    kf.curveType = ObjectEditor.inst.CopiedColorData.curveType;
+                                    kf.eventValues = ObjectEditor.inst.CopiedColorData.eventValues.Copy();
+                                    kf.eventRandomValues = ObjectEditor.inst.CopiedColorData.eventRandomValues.Copy();
+                                    kf.random = ObjectEditor.inst.CopiedColorData.random;
+                                    kf.relative = ObjectEditor.inst.CopiedColorData.relative;
+
+                                    ObjectEditor.inst.RenderKeyframes(bm);
+                                    ObjectEditor.inst.RenderObjectKeyframesDialog(bm);
+                                    Updater.UpdateProcessor(bm, "Keyframes");
+                                    EditorManager.inst.DisplayNotification("Pasted color keyframe data to all keyframes.", 2f, EditorManager.NotificationType.Success);
+                                }
+                                else
+                                    EditorManager.inst.DisplayNotification("Color keyframe data not copied yet.", 2f, EditorManager.NotificationType.Error);
+                            }
+                        }
+                    });
+                }
+            }
+
             EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").AsRT().sizeDelta = new Vector2(810f, 730.11f);
             EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").AsRT().sizeDelta = new Vector2(355f, 730f);
+        }
+
+        List<MultiColorButton> multiColorButtons = new List<MultiColorButton>();
+        class MultiColorButton
+        {
+            public Button Button { get; set; }
+            public Image Image { get; set; }
+            public GameObject Selected { get; set; }
+        }
+
+        int currentMultiColorSelection = 0;
+
+        void UpdateMultiColorButtons()
+        {
+            for (int i = 0; i < multiColorButtons.Count; i++)
+            {
+                var multiColorButton = multiColorButtons[i];
+                multiColorButton.Selected.gameObject.SetActive(currentMultiColorSelection == i);
+            }
         }
 
         public void CreatePropertiesWindow()
