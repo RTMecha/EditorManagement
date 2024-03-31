@@ -783,7 +783,7 @@ namespace EditorManagement.Functions.Editors
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.shape = 1;
             bm.shapeOption = 0;
-            bm.name = "circle";
+            bm.name = RTHelpers.AprilFools ? "<font=Arrhythmia>bro" : "circle";
 
             if (SetToCenterCam)
             {
@@ -816,7 +816,7 @@ namespace EditorManagement.Functions.Editors
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.shape = 2;
             bm.shapeOption = 0;
-            bm.name = "triangle";
+            bm.name = RTHelpers.AprilFools ? "baracuda <i>beat plays</i>" : "triangle";
 
             if (SetToCenterCam)
             {
@@ -849,9 +849,16 @@ namespace EditorManagement.Functions.Editors
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.shape = 4;
             bm.shapeOption = 0;
-            bm.text = "text";
-            bm.name = "text";
+            bm.text = RTHelpers.AprilFools ? "Never gonna give you up<br>" +
+                                            "Never gonna let you down<br>" +
+                                            "Never gonna run around and desert you<br>" +
+                                            "Never gonna make you cry<br>" +
+                                            "Never gonna say goodbye<br>" +
+                                            "Never gonna tell a lie and hurt you" : "text";
+            bm.name = RTHelpers.AprilFools ? "Don't look at my text" : "text";
             bm.objectType = ObjectType.Decoration;
+            if (RTHelpers.AprilFools)
+                bm.StartTime += 1f;
 
             if (SetToCenterCam)
             {
@@ -863,7 +870,9 @@ namespace EditorManagement.Functions.Editors
 
             Updater.UpdateProcessor(bm);
             RenderTimelineObject(timelineObject);
-            OpenDialog(bm);
+
+            if (!RTHelpers.AprilFools)
+                OpenDialog(bm);
 
             if (setHistory)
             {
@@ -884,7 +893,7 @@ namespace EditorManagement.Functions.Editors
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.shape = 5;
             bm.shapeOption = 0;
-            bm.name = "hexagon";
+            bm.name = RTHelpers.AprilFools ? "super" : "hexagon";
 
             if (SetToCenterCam)
             {
@@ -915,8 +924,9 @@ namespace EditorManagement.Functions.Editors
             var timelineObject = CreateNewDefaultObject(_select);
 
             var bm = timelineObject.GetData<BeatmapObject>();
-            bm.name = "helper";
-            bm.objectType = ObjectType.Helper;
+            bm.name = RTHelpers.AprilFools ? "totally not deprecated object" : "helper";
+            bm.objectType = ObjectType.Decoration;
+            bm.events[3][0].eventValues[1] = 0.35f;
 
             if (SetToCenterCam)
             {
@@ -948,7 +958,8 @@ namespace EditorManagement.Functions.Editors
 
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.name = "decoration";
-            bm.objectType = ObjectType.Decoration;
+            if (!RTHelpers.AprilFools)
+                bm.objectType = ObjectType.Decoration;
 
             if (SetToCenterCam)
             {
@@ -980,14 +991,15 @@ namespace EditorManagement.Functions.Editors
 
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.name = "empty";
-            bm.objectType = ObjectType.Empty;
+            if (!RTHelpers.AprilFools)
+                bm.objectType = ObjectType.Empty;
 
             if (SetToCenterCam)
             {
                 var pos = EventManager.inst.cam.transform.position;
 
                 bm.events[0][0].eventValues[0] = pos.x;
-                bm.events[0][0].eventValues[1] = pos.y;
+                bm.events[0][0].eventValues[1] = pos.y + (RTHelpers.AprilFools ? 999f : 0f);
             }
 
             Updater.UpdateProcessor(bm);
@@ -1011,7 +1023,7 @@ namespace EditorManagement.Functions.Editors
             var timelineObject = CreateNewDefaultObject(_select);
 
             var bm = timelineObject.GetData<BeatmapObject>();
-            bm.name = "no autokill";
+            bm.name = RTHelpers.AprilFools ? "dead" : "no autokill";
             bm.autoKillType = AutoKillType.OldStyleNoAutokill;
 
             if (SetToCenterCam)
@@ -1076,7 +1088,9 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.id = LSText.randomString(16);
             beatmapObject.autoKillType = AutoKillType.LastKeyframeOffset;
             beatmapObject.autoKillOffset = 5f;
-            beatmapObject.editorData.layer = RTEditor.inst.Layer;
+
+            if (!RTHelpers.AprilFools)
+                beatmapObject.editorData.layer = RTEditor.inst.Layer;
             beatmapObject.parentType = EditorConfig.Instance.CreateObjectsScaleParentDefault.Value ? "111" : "101";
 
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
@@ -1107,7 +1121,8 @@ namespace EditorManagement.Functions.Editors
             beatmapObject.id = LSText.randomString(16);
             beatmapObject.StartTime = _time;
 
-            beatmapObject.editorData.layer = RTEditor.inst.Layer;
+            if (!RTHelpers.AprilFools)
+                beatmapObject.editorData.layer = RTEditor.inst.Layer;
 
             var positionKeyframe = new EventKeyframe();
             positionKeyframe.eventTime = 0f;
