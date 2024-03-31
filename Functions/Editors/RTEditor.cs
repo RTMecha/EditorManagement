@@ -354,6 +354,36 @@ namespace EditorManagement.Functions.Editors
                 ModCompatibility.sharedFunctions["ParentPickerActive"] = parentPickerEnabled;
 
             ModCompatibility.sharedFunctions.AddSet("SelectedObjects", ObjectEditor.inst.SelectedObjects);
+
+            var random = UnityEngine.Random.Range(0, 10000);
+
+            if (random > 9996)
+            {
+                var array = new string[]
+                {
+                    "BRO",
+                    "Go touch some grass.",
+                    "Hello, hello? I wanted to record this message for you to get you settled in your first night. The animatronic characters DO get a bit quirky at night",
+                    "",
+                    "L + Ratio",
+                    "Hi Diggy",
+                    "Hi KarasuTori",
+                    "Hi MoNsTeR",
+                    "Hi RTMecha",
+                    "Hi Example",
+                    $"Hi {RTFunctions.FunctionsPlugin.displayName}!",
+                    "Kweeble kweeble kweeble",
+                    "Testing... is this thing on?",
+                    "When life gives you lemons, don't make lemonade.",
+                    "AMONGUS",
+                    "I fear no man, but THAT thing, it scares me.",
+                    "/summon minecraft:wither",
+                    "Autobots, transform and roll out.",
+                    "sands undertraveler",
+                };
+
+                EditorManager.inst.DisplayNotification(array[UnityEngine.Random.Range(0, array.Length)], 4f, EditorManager.NotificationType.Info);
+            }
         }
 
         #region Variables
@@ -8481,7 +8511,7 @@ namespace EditorManagement.Functions.Editors
             DataManager.inst.CustomBeatmapThemes.Clear();
             DataManager.inst.BeatmapThemeIDToIndex.Clear();
             DataManager.inst.BeatmapThemeIndexToID.Clear();
-            if (GameData.Current != null)
+            if (DataManager.inst.gameData is GameData)
                 GameData.Current.beatmapThemes.Clear();
 
             var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
@@ -8559,7 +8589,7 @@ namespace EditorManagement.Functions.Editors
                 orig.filePath = file.Replace("\\", "/");
                 DataManager.inst.CustomBeatmapThemes.Add(orig);
 
-                if (jn["id"] != null && GameData.Current != null && GameData.Current.beatmapThemes != null && !GameData.Current.beatmapThemes.ContainsKey(jn["id"]))
+                if (jn["id"] != null && DataManager.inst.gameData is GameData && GameData.Current.beatmapThemes != null && !GameData.Current.beatmapThemes.ContainsKey(jn["id"]))
                     GameData.Current.beatmapThemes.Add(jn["id"], orig);
 
                 if (DataManager.inst.BeatmapThemeIDToIndex.ContainsKey(int.Parse(orig.id)))
