@@ -921,23 +921,28 @@ namespace EditorManagement.Patchers
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "value index_label");
 
 					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Value Index";
+					label.transform.GetChild(0).GetComponent<Text>().text = "Value Index / Value";
 				}
 
-				var valueIndex = singleInput.Duplicate(multiKeyframeEditor, "value index");
+				var valueBase = new GameObject("value base");
+				valueBase.transform.SetParent(multiKeyframeEditor);
+				valueBase.transform.localScale = Vector3.one;
+
+				var valueBaseRT = valueBase.AddComponent<RectTransform>();
+				valueBaseRT.sizeDelta = new Vector2(364f, 32f);
+
+				var valueBaseHLG = valueBase.AddComponent<HorizontalLayoutGroup>();
+				valueBaseHLG.childControlHeight = false;
+				valueBaseHLG.childControlWidth = false;
+				valueBaseHLG.childForceExpandHeight = false;
+				valueBaseHLG.childForceExpandWidth = false;
+
+				var valueIndex = singleInput.Duplicate(valueBaseRT, "value index");
 				valueIndex.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(valueIndex.GetComponent<EventInfo>());
 
-				// Label
-				{
-					var label = labelToCopy.Duplicate(multiKeyframeEditor, "value_label");
-
-					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Value";
-				}
-
-				var value = singleInput.Duplicate(multiKeyframeEditor, "value");
+				var value = singleInput.Duplicate(valueBaseRT, "value");
 				value.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(value.GetComponent<EventInfo>());
@@ -948,7 +953,7 @@ namespace EditorManagement.Patchers
 
 				// Label
 				{
-					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
+					var label = labelToCopy.Duplicate(multiKeyframeEditor, "snap_label");
 
 					Destroy(label.transform.GetChild(1).gameObject);
 					label.transform.GetChild(0).GetComponent<Text>().text = "Force Snap Time to BPM";
@@ -990,45 +995,10 @@ namespace EditorManagement.Patchers
 
 				// Label
 				{
-					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
-
-					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Align to First Selected";
-				}
-
-				var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
-				alignToFirstObject.transform.localScale = Vector3.one;
-
-				((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
-
-				alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
-				alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				var alignToFirst = alignToFirstObject.GetComponent<Button>();
-				alignToFirst.onClick.ClearAll();
-				alignToFirst.onClick.AddListener(delegate ()
-                {
-                    var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
-					var list = ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected).OrderBy(x => x.Time);
-					var first = list.ElementAt(0);
-
-					foreach (var timelineObject in list)
-					{
-						if (timelineObject.Index != 0)
-							timelineObject.Time = first.Time;
-
-						Updater.UpdateProcessor(beatmapObject, "Keyframes");
-
-						ObjectEditor.inst.RenderKeyframe(beatmapObject, timelineObject);
-					}
-				});
-
-				// Label
-				{
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
 
 					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Paste All Keyframe Data";
+					label.transform.GetChild(0).GetComponent<Text>().text = "All Types";
 				}
 
 				var pasteAllObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
@@ -1104,15 +1074,29 @@ namespace EditorManagement.Patchers
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
 
 					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Pos Keyframe Data";
+					label.transform.GetChild(0).GetComponent<Text>().text = "Position / Scale";
 				}
 
-				var pastePosObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				var pastePosScaObject = new GameObject("paste pos sca base");
+				pastePosScaObject.transform.SetParent(multiKeyframeEditor);
+				pastePosScaObject.transform.localScale = Vector3.one;
+
+				var pastePosScaRT = pastePosScaObject.AddComponent<RectTransform>();
+                pastePosScaRT.sizeDelta = new Vector2(364f, 32f);
+
+				var pastePosScaHLG = pastePosScaObject.AddComponent<HorizontalLayoutGroup>();
+				pastePosScaHLG.childControlHeight = false;
+				pastePosScaHLG.childControlWidth = false;
+				pastePosScaHLG.childForceExpandHeight = false;
+				pastePosScaHLG.childForceExpandWidth = false;
+				pastePosScaHLG.spacing = 8f;
+
+				var pastePosObject = eventButton.Duplicate(pastePosScaRT, "paste");
 				pastePosObject.transform.localScale = Vector3.one;
 
-				((RectTransform)pastePosObject.transform).sizeDelta = new Vector2(404f, 32f);
+				((RectTransform)pastePosObject.transform).sizeDelta = new Vector2(180f, 32f);
 
-				pastePosObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Position";
+				pastePosObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Pos";
 
 				var pastePos = pastePosObject.GetComponent<Button>();
 				pastePos.onClick.ClearAll();
@@ -1144,18 +1128,10 @@ namespace EditorManagement.Patchers
 					EditorManager.inst.DisplayNotification("Pasted position keyframe data to selected position keyframes!", 3f, EditorManager.NotificationType.Success);
 				});
 
-				// Label
-				{
-					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
-
-					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Sca Keyframe Data";
-				}
-
-				var pasteScaObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				var pasteScaObject = eventButton.Duplicate(pastePosScaRT, "paste");
 				pasteScaObject.transform.localScale = Vector3.one;
 
-				((RectTransform)pasteScaObject.transform).sizeDelta = new Vector2(404f, 32f);
+				((RectTransform)pasteScaObject.transform).sizeDelta = new Vector2(180f, 32f);
 
 				pasteScaObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Scale";
 
@@ -1194,15 +1170,29 @@ namespace EditorManagement.Patchers
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
 
 					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Rot Keyframe Data";
+					label.transform.GetChild(0).GetComponent<Text>().text = "Rotation / Color";
 				}
 
-				var pasteRotObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				var pasteRotColObject = new GameObject("paste rot col base");
+				pasteRotColObject.transform.SetParent(multiKeyframeEditor);
+				pasteRotColObject.transform.localScale = Vector3.one;
+
+				var pasteRotColObjectRT = pasteRotColObject.AddComponent<RectTransform>();
+				pasteRotColObjectRT.sizeDelta = new Vector2(364f, 32f);
+
+				var pasteRotColObjectHLG = pasteRotColObject.AddComponent<HorizontalLayoutGroup>();
+				pasteRotColObjectHLG.childControlHeight = false;
+				pasteRotColObjectHLG.childControlWidth = false;
+				pasteRotColObjectHLG.childForceExpandHeight = false;
+				pasteRotColObjectHLG.childForceExpandWidth = false;
+				pasteRotColObjectHLG.spacing = 8f;
+
+				var pasteRotObject = eventButton.Duplicate(pasteRotColObjectRT, "paste");
 				pasteRotObject.transform.localScale = Vector3.one;
 
-				((RectTransform)pasteRotObject.transform).sizeDelta = new Vector2(404f, 32f);
+				((RectTransform)pasteRotObject.transform).sizeDelta = new Vector2(180f, 32f);
 
-				pasteRotObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Rotation";
+				pasteRotObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Rot";
 
 				var pasteRot = pasteRotObject.GetComponent<Button>();
 				pasteRot.onClick.ClearAll();
@@ -1234,20 +1224,12 @@ namespace EditorManagement.Patchers
 					EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to selected rotation keyframes!", 3f, EditorManager.NotificationType.Success);
 				});
 
-				// Label
-				{
-					var label = labelToCopy.Duplicate(multiKeyframeEditor, "paste_label");
-
-					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Paste Col Keyframe Data";
-				}
-
-				var pasteColObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+				var pasteColObject = eventButton.Duplicate(pasteRotColObjectRT, "paste");
 				pasteColObject.transform.localScale = Vector3.one;
 
-				((RectTransform)pasteColObject.transform).sizeDelta = new Vector2(404f, 32f);
+				((RectTransform)pasteColObject.transform).sizeDelta = new Vector2(180f, 32f);
 
-				pasteColObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Color";
+				pasteColObject.transform.GetChild(0).GetComponent<Text>().text = "Paste Col";
 
 				var pasteCol = pasteColObject.GetComponent<Button>();
 				pasteCol.onClick.ClearAll();
