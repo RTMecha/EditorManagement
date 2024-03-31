@@ -672,6 +672,11 @@ namespace EditorManagement.Functions.Editors
                         case "removeTextAt":
                         case "removeTextOther":
                         case "removeTextOtherAt":
+                        case "playerBoostEquals":
+                        case "playerBoostLesserEquals":
+                        case "playerBoostGreaterEquals":
+                        case "playerBoostLesser":
+                        case "playerBoostGreater":
                             {
                                 integerGenerator("Value", 0, 0);
 
