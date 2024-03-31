@@ -4415,8 +4415,8 @@ namespace EditorManagement.Functions.Editors
                                 for (int i = 0; i < bm.events[3].Count; i++)
                                 {
                                     var kf = bm.events[3][i];
-                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value + 1))
-                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value + 1];
+                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value - 1))
+                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value - 1];
                                     kf.eventValues[0] = Mathf.Clamp(currentMultiColorSelection, 0, 18);
                                     if (!string.IsNullOrEmpty(opacityIF.text))
                                         kf.eventValues[1] = -Mathf.Clamp(Parser.TryParse(opacityIF.text, 1f), 0f, 1f) + 1f;
@@ -4461,8 +4461,8 @@ namespace EditorManagement.Functions.Editors
                                     var bm = timelineObject.GetData<BeatmapObject>();
 
                                     var kf = bm.events[3][Mathf.Clamp(num, 0, bm.events[3].Count - 1)];
-                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value + 1))
-                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value + 1];
+                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value - 1))
+                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value - 1];
                                     kf.eventValues[0] = Mathf.Clamp(currentMultiColorSelection, 0, 18);
                                     if (!string.IsNullOrEmpty(opacityIF.text))
                                         kf.eventValues[1] = -Mathf.Clamp(Parser.TryParse(opacityIF.text, 1f), 0f, 1f) + 1f;
@@ -4500,8 +4500,8 @@ namespace EditorManagement.Functions.Editors
                                 {
                                     var kf = EventKeyframe.DeepCopy((EventKeyframe)bm.events[3][index]);
                                     kf.eventTime = currentTime - bm.StartTime;
-                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value + 1))
-                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value + 1];
+                                    if (curves.value != 0 && DataManager.inst.AnimationListDictionary.ContainsKey(curves.value - 1))
+                                        kf.curveType = DataManager.inst.AnimationListDictionary[curves.value - 1];
 
                                     kf.eventValues[0] = Mathf.Clamp(currentMultiColorSelection, 0, 18);
                                     if (!string.IsNullOrEmpty(opacityIF.text))
@@ -8867,7 +8867,7 @@ namespace EditorManagement.Functions.Editors
             gameData.eventObjects.allEvents.Clear();
             ProjectData.Reader.ClampEventListValues(gameData.eventObjects.allEvents, GameData.EventCount);
 
-            for (int i = 0; i < 25; i++)
+            for (int i = 0; i < (RTHelpers.AprilFools ? 45 : 25); i++)
             {
                 var backgroundObject = new BackgroundObject();
                 backgroundObject.name = "bg - " + i;
@@ -8901,7 +8901,12 @@ namespace EditorManagement.Functions.Editors
                     backgroundObject.reactiveScale = UnityEngine.Random.Range(0.01f, 0.04f);
                 }
 
-                //backgroundObject.shape = ShapeManager.inst.Shapes3D[UnityEngine.Random.Range(0, ShapeManager.inst.Shapes3D.Count - 1)][0];
+                var randomShape = UnityEngine.Random.Range(0, ShapeManager.inst.Shapes3D.Count - 1);
+                if (RTHelpers.AprilFools)
+                {
+                    if (randomShape != 4 && randomShape != 6)
+                        backgroundObject.shape = ShapeManager.inst.Shapes3D[randomShape][0];
+                }
 
                 gameData.backgroundObjects.Add(backgroundObject);
             }
