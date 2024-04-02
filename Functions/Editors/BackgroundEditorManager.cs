@@ -1057,6 +1057,30 @@ namespace EditorManagement.Functions.Editors
 
 								break;
 							}
+						case "copyAxis":
+                            {
+								if (cmd == "copyAxis")
+									stringGenerator("Object Group", 0);
+
+								dropdownGenerator("From Type", 1, new List<string> { "Position", "Scale", "Rotation" });
+								dropdownGenerator("From Axis", 2, new List<string> { "X", "Y", "Z" });
+
+								dropdownGenerator("To Type", 3, new List<string> { "Position", "Scale", "Rotation" });
+								dropdownGenerator("To Axis (3D)", 4, new List<string> { "X", "Y", "Z" });
+
+								if (cmd == "copyAxis")
+									singleGenerator("Delay", 5, 0f);
+
+								singleGenerator("Multiply", 6, 1f);
+								singleGenerator("Offset", 7, 0f);
+								singleGenerator("Min", 8, -99999f);
+								singleGenerator("Max", 9, 99999f);
+
+								if (cmd == "copyAxis")
+									singleGenerator("Loop", 10, 99999f);
+
+								break;
+							}
 					}
 
                     num++;
