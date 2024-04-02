@@ -203,7 +203,7 @@ namespace EditorManagement.Patchers
 			set.onClick.ClearAll();
 			set.onClick.AddListener(delegate
 			{
-				Instance.left.Find("time/time").GetComponent<InputField>().text = AudioManager.inst.CurrentAudioSource.time.ToString();
+				time.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 			});
 			EditorManager.inst.ShowDialog("Marker Editor");
 			Instance.UpdateMarkerList();
@@ -233,8 +233,15 @@ namespace EditorManagement.Patchers
 				((RectTransform)markerObject.transform).sizeDelta = new Vector2(12f, 12f);
 				((RectTransform)markerObject.transform).anchoredPosition = new Vector2(time * EditorManager.inst.Zoom - 6f, -12f);
 				markerObject.GetComponent<Image>().color = markerColor;
-				markerObject.GetComponentInChildren<Text>().text = marker.name;
+
+				var text = markerObject.transform.Find("Text");
+				text.GetComponent<Text>().text = marker.name;
+				text.transform.AsRT().sizeDelta = new Vector2(EditorConfig.Instance.MarkerTextWidth.Value, 20f);
 				markerObject.SetActive(true);
+
+				var line = markerObject.transform.Find("line");
+				line.GetComponent<Image>().color = EditorConfig.Instance.MarkerLineColor.Value;
+				line.transform.AsRT().sizeDelta = new Vector2(EditorConfig.Instance.MarkerLineWidth.Value, 301f);
 			}
 			return false;
 		}

@@ -69,6 +69,9 @@ namespace EditorManagement.Functions
             TimelineGridEnabled = Config.Bind("Timeline", "Timeline Grid Enabled", true, "If the timeline grid renders.");
             TimelineGridColor = Config.Bind("Timeline", "Timeline Grid Color", new Color(0.2157f, 0.2157f, 0.2196f, 1f), "The color of the timeline grid.");
             TimelineGridThickness = Config.Bind("Timeline", "Timeline Grid Thickness", 2f, "The size of each line of the timeline grid.");
+            MarkerLineColor = Config.Bind("Timeline", "Marker Line Color", new Color(1f, 1f, 1f, 0.7843f), "The color of the marker lines.");
+            MarkerLineWidth = Config.Bind("Timeline", "Marker Line Width", 2f, "The width of the marker lines.");
+            MarkerTextWidth = Config.Bind("Timeline", "Marker Text Width", 64f, "The width of the markers' text. If the text is longer than this width, then it doesn't display the symbols after the width.");
             MarkerLoopActive = Config.Bind("Timeline", "Marker Loop Active", false, "If the marker should loop between markers.");
             MarkerLoopBegin = Config.Bind("Timeline", "Marker Loop Begin", 0, "Audio time gets set to this marker.");
             MarkerLoopEnd = Config.Bind("Timeline", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.");
@@ -1162,6 +1165,9 @@ namespace EditorManagement.Functions
         public ConfigEntry<bool> TimelineGridEnabled { get; set; }
         public ConfigEntry<Color> TimelineGridColor { get; set; }
         public ConfigEntry<float> TimelineGridThickness { get; set; }
+        public ConfigEntry<Color> MarkerLineColor { get; set; }
+        public ConfigEntry<float> MarkerLineWidth { get; set; }
+        public ConfigEntry<float> MarkerTextWidth { get; set; }
         public ConfigEntry<bool> MarkerLoopActive { get; set; }
         public ConfigEntry<int> MarkerLoopBegin { get; set; }
         public ConfigEntry<int> MarkerLoopEnd { get; set; }
