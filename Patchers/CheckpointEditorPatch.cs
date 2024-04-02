@@ -228,5 +228,21 @@ namespace EditorManagement.Patchers
 			}
 			return false;
 		}
+
+		[HarmonyPatch("RenderCheckpoints")]
+		[HarmonyPrefix]
+		static bool RenderCheckpointsPrefix()
+		{
+			if (DataManager.inst.gameData == null || DataManager.inst.gameData.beatmapData == null || DataManager.inst.gameData.beatmapData.checkpoints == null)
+				return false;
+
+			int num = 0;
+			foreach (var checkpoint in DataManager.inst.gameData.beatmapData.checkpoints)
+			{
+				Instance.RenderCheckpoint(num);
+				num++;
+			}
+			return false;
+		}
 	}
 }
