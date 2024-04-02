@@ -354,10 +354,8 @@ namespace EditorManagement.Functions.Editors
                 ModCompatibility.sharedFunctions["ParentPickerActive"] = parentPickerEnabled;
 
             ModCompatibility.sharedFunctions.AddSet("SelectedObjects", ObjectEditor.inst.SelectedObjects);
-
-            var random = UnityEngine.Random.Range(0, 10000);
-
-            if (random > 9996)
+            
+            if (RTHelpers.AprilFools && UnityEngine.Random.Range(0, 10000) > 9996)
             {
                 var array = new string[]
                 {
