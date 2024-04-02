@@ -174,7 +174,16 @@ namespace EditorManagement
             EditorConfig.DraggingPlaysSoundOnlyWithBPM.SettingChanged += DraggingChanged;
 
             EditorConfig.ShowModdedFeaturesInEditor.SettingChanged += ModdedEditorChanged;
+
+            EditorConfig.MarkerLineColor.SettingChanged += MarkerChanged;
+			EditorConfig.MarkerLineWidth.SettingChanged += MarkerChanged;
+			EditorConfig.MarkerTextWidth.SettingChanged += MarkerChanged;
 		}
+
+        void MarkerChanged(object sender, EventArgs e)
+        {
+			MarkerEditor.inst?.RenderMarkers();
+        }
 
         void ModdedEditorChanged(object sender, EventArgs e)
 		{
