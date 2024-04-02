@@ -10,6 +10,7 @@ using LSFunctions;
 using RTFunctions.Functions;
 
 using EditorManagement.Functions;
+using RTFunctions.Functions.Managers;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -41,10 +42,7 @@ namespace EditorManagement.Functions.Editors
 
             foreach (var element in EditorGUIElements)
             {
-                if (theme.ColorGroups.ContainsKey(element.group))
-                {
-                    element.SetColor(theme.ColorGroups[element.group]);
-                }
+                element.ApplyTheme(theme);
             }
         }
 
@@ -54,39 +52,7 @@ namespace EditorManagement.Functions.Editors
 
         public void AddElement(Element element)
         {
-            var theme = CurrentTheme;
-
-            if (theme.ColorGroups.ContainsKey(element.group))
-            {
-                if (!element.isButton)
-                    element.SetColor(theme.ColorGroups[element.group]);
-                else
-                {
-                    var colorBlock = new ColorBlock();
-
-                    if (theme.ColorGroups.ContainsKey(element.group + " Highlight"))
-                    {
-                        colorBlock.highlightedColor = theme.ColorGroups[element.group + " Highlight"];
-                    }
-
-                    if (theme.ColorGroups.ContainsKey(element.group + " Selected"))
-                    {
-                        colorBlock.selectedColor = theme.ColorGroups[element.group + " Selected"];
-                    }
-
-                    if (theme.ColorGroups.ContainsKey(element.group + " Pressed"))
-                    {
-                        colorBlock.pressedColor = theme.ColorGroups[element.group + " Pressed"];
-                    }
-
-                    if (theme.ColorGroups.ContainsKey(element.group + " Disabled"))
-                    {
-                        colorBlock.disabledColor = theme.ColorGroups[element.group + " Disabled"];
-                    }
-
-                    element.SetColor(theme.ColorGroups[element.group], colorBlock);
-                }
-            }
+            element.ApplyTheme(CurrentTheme);
         }
 
         public List<Element> EditorGUIElements { get; set; } = new List<Element>();
@@ -99,6 +65,8 @@ namespace EditorManagement.Functions.Editors
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("C8C8C8FF") },
             }),
         };
+
+        public Dictionary<string, EditorTheme> EditorThemesDictionary => EditorThemes.ToDictionary(x => x.name, x => x);
 
         public class EditorTheme
         {
@@ -119,12 +87,13 @@ namespace EditorManagement.Functions.Editors
 
             }
 
-            public Element(string name, string group, GameObject gameObject, List<Component> components)
+            public Element(string name, string group, GameObject gameObject, List<Component> components, SpriteManager.RoundedSide roundedSide)
             {
                 this.name = name;
                 this.group = group;
                 GameObject = gameObject;
                 Components = components;
+                RoundedSide = roundedSide;
             }
 
             public string name;
@@ -138,9 +107,49 @@ namespace EditorManagement.Functions.Editors
 
             public bool isButton = false;
 
-            bool rounded = false;
-            public bool Rounded { get; set; }
+            int rounded = 0;
+            public int Rounded
+            {
+                get => rounded;
+                set
+                {
+                    if (canSetRounded)
+                        rounded = value;
+                }
+            }
+
+            public SpriteManager.RoundedSide RoundedSide { get; set; } = SpriteManager.RoundedSide.W;
+
             public bool canSetRounded = false;
+
+            public void ApplyTheme(EditorTheme theme)
+            {
+                SetRounded();
+
+                if (theme.ColorGroups.ContainsKey(group))
+                {
+                    if (!isButton)
+                        SetColor(theme.ColorGroups[group]);
+                    else
+                    {
+                        var colorBlock = new ColorBlock();
+
+                        if (theme.ColorGroups.ContainsKey(group + " Highlight"))
+                            colorBlock.highlightedColor = theme.ColorGroups[group + " Highlight"];
+
+                        if (theme.ColorGroups.ContainsKey(group + " Selected"))
+                            colorBlock.selectedColor = theme.ColorGroups[group + " Selected"];
+
+                        if (theme.ColorGroups.ContainsKey(group + " Pressed"))
+                            colorBlock.pressedColor = theme.ColorGroups[group + " Pressed"];
+
+                        if (theme.ColorGroups.ContainsKey(group + " Disabled"))
+                            colorBlock.disabledColor = theme.ColorGroups[group + " Disabled"];
+
+                        SetColor(theme.ColorGroups[group], colorBlock);
+                    }
+                }
+            }
 
             public void SetColor(Color color)
             {
@@ -163,6 +172,20 @@ namespace EditorManagement.Functions.Editors
                         image.color = color;
                     if (component is Button button)
                         button.colors = colorBlock;
+                }
+            }
+
+            public void SetRounded()
+            {
+                if (!canSetRounded)
+                    return;
+
+                foreach (var component in Components)
+                {
+                    if (component is Image image)
+                    {
+                        SpriteManager.SetRoundedSprite(image, Rounded, RoundedSide);
+                    }
                 }
             }
         }
