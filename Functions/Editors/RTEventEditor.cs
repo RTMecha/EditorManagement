@@ -5,6 +5,7 @@ using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using SimpleJSON;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -301,6 +302,7 @@ namespace EditorManagement.Functions.Editors
 				if (DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type][keyframeSelection.Index].eventTime < num)
 					num = DataManager.inst.gameData.eventObjects.allEvents[keyframeSelection.Type][keyframeSelection.Index].eventTime;
 			}
+
 			foreach (var keyframeSelection2 in SelectedKeyframes)
 			{
 				int type = keyframeSelection2.Type;
@@ -309,8 +311,35 @@ namespace EditorManagement.Functions.Editors
 				eventKeyframe.eventTime -= num;
 				var timelineObject = new TimelineObject(eventKeyframe);
 				timelineObject.Type = type;
+				timelineObject.Index = index;
 				copiedEventKeyframes.Add(timelineObject);
 			}
+
+            try
+			{
+				var jn = JSON.Parse("{}");
+
+				for (int i = 0; i < AllEvents.Count; i++)
+				{
+					jn[GameData.EventTypes[i]] = new JSONArray();
+					for (int j = 0; j < AllEvents[i].Count; j++)
+					{
+						int add = 0;
+						if (copiedEventKeyframes.TryFind(x => x.Type == i && x.Index == j, out TimelineObject timelineObject))
+						{
+							jn[GameData.EventTypes[i]][add] = timelineObject.GetData<EventKeyframe>().ToJSON();
+
+							add++;
+						}
+					}
+				}
+
+				RTFile.WriteToFile($"{Application.persistentDataPath}/copied_events.lsev", jn.ToString());
+			}
+            catch (Exception ex)
+            {
+				Debug.LogError($"{EditorPlugin.className}Couldn't save persistent copy.\n{ex}");
+            }
 		}
 
 		public void PasteEvents(bool setTime = true) => PasteEvents(copiedEventKeyframes, setTime);

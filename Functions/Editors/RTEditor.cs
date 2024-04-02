@@ -1349,20 +1349,41 @@ namespace EditorManagement.Functions.Editors
 
             if (isOverMainTimeline && layerType == LayerType.Events)
             {
+                if (RTFile.FileExists($"{Application.persistentDataPath}/copied_events.lsev"))
+                {
+                    var jn = JSON.Parse(RTFile.ReadFromFile($"{Application.persistentDataPath}/copied_events.lsev"));
+
+                    RTEventEditor.inst.copiedEventKeyframes.Clear();
+
+                    for (int i = 0; i < GameData.EventTypes.Length; i++)
+                    {
+                        if (jn[GameData.EventTypes[i]] != null)
+                        {
+                            for (int j = 0; j < jn[GameData.EventTypes[i]].Count; j++)
+                            {
+                                var timelineObject = new TimelineObject(EventKeyframe.Parse(jn[GameData.EventTypes[i]][j], i, GameData.DefaultKeyframes[i].eventValues.Length));
+                                timelineObject.Type = i;
+                                timelineObject.Index = j;
+                                RTEventEditor.inst.copiedEventKeyframes.Add(timelineObject);
+                            }
+                        }
+                    }
+                }
+
                 RTEventEditor.inst.PasteEvents();
-                EditorManager.inst.DisplayNotification("Pasted Event Object", 1f, EditorManager.NotificationType.Success);
+                EditorManager.inst.DisplayNotification($"Pasted Event Keyframe{(RTEventEditor.inst.copiedEventKeyframes.Count > 1 ? "s" : "")}", 1f, EditorManager.NotificationType.Success);
             }
 
             if (!isOverMainTimeline && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object))
             {
                 ObjEditor.inst.PasteKeyframes();
-                EditorManager.inst.DisplayNotification("Pasted Object Keyframe", 1f, EditorManager.NotificationType.Success);
+                EditorManager.inst.DisplayNotification($"Pasted Object Keyframe{(ObjectEditor.inst.copiedObjectKeyframes.Count > 1 ? "s" : "")}", 1f, EditorManager.NotificationType.Success);
             }
 
             if ((isOverMainTimeline && EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Checkpoint)) || EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Checkpoint))
             {
                 CheckpointEditor.inst.PasteCheckpoint();
-                EditorManager.inst.DisplayNotification("Pasted Checkpoint Object", 1f, EditorManager.NotificationType.Success);
+                EditorManager.inst.DisplayNotification("Pasted Checkpoint", 1f, EditorManager.NotificationType.Success);
             }
 
             if (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Background))
@@ -10528,6 +10549,15 @@ namespace EditorManagement.Functions.Editors
             gameObject.transform.parent.GetChild(gameObject.transform.GetSiblingIndex() - 1).gameObject.SetActive(active);
         }
 
+        public void OrderMarkers()
+        {
+            DataManager.inst.gameData.beatmapData.markers = (from x in DataManager.inst.gameData.beatmapData.markers
+                                                             orderby x.time
+                                                             select x).ToList();
+            MarkerEditor.inst.CreateMarkers();
+        }
+
+
         #endregion
 
         #region Editor Properties
@@ -10614,6 +10644,9 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.TimelineGridEnabled),
             new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.TimelineGridColor),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.TimelineGridThickness),
+            new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.MarkerLineColor),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.MarkerLineWidth),
+            new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.MarkerTextWidth),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.MarkerLoopActive),
             new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerLoopBegin),
             new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerLoopEnd),
