@@ -25,7 +25,7 @@ using RTFunctions.Functions.Data;
 namespace EditorManagement
 {
 	// Original version: 2.4.19 (3.0.0 will not be counted, the patch right after 3.0.0 reverts should be 2.4.20)
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "3.0.0")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.4.20")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
