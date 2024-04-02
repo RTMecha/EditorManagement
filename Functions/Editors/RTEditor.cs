@@ -483,6 +483,8 @@ namespace EditorManagement.Functions.Editors
 
         #region Settings
 
+        public float bpmOffset = 0f;
+
         public float timeOffset;
         public float timeEditing;
         public float savedTimeEditng;
@@ -503,6 +505,7 @@ namespace EditorManagement.Functions.Editors
             jn["sort"]["f"] = levelFilter.ToString();
             jn["sort"]["a"] = levelAscend.ToString();
             jn["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
+            jn["misc"]["so"] = bpmOffset.ToString();
             jn["misc"]["t"] = AudioManager.inst.CurrentAudioSource.time;
 
             RTFile.WriteToFile(GameManager.inst.basePath + "editor.lse", jn.ToString(3));
@@ -547,6 +550,10 @@ namespace EditorManagement.Functions.Editors
                     SettingEditor.inst.SnapActive = jn["misc"]["sn"].AsBool;
                 if (jn["misc"]["t"] != null && EditorConfig.Instance.LevelLoadsLastTime.Value)
                     AudioManager.inst.SetMusicTime(jn["misc"]["t"].AsFloat);
+                if (jn["misc"]["so"] != null)
+                    bpmOffset = jn["misc"]["so"].AsFloat;
+                else
+                    bpmOffset = 0f;
 
                 SettingEditor.inst.SnapBPM = DataManager.inst.metaData.song.BPM;
             }
@@ -10541,7 +10548,7 @@ namespace EditorManagement.Functions.Editors
             Directory.Move(RTFile.ApplicationDirectory + editorListSlash + level, RTFile.ApplicationDirectory + "recycling/" + level);
         }
 
-        public static float SnapToBPM(float time) => Mathf.RoundToInt(time / (SettingEditor.inst.BPMMulti / EditorConfig.Instance.BPMSnapDivisions.Value)) * (SettingEditor.inst.BPMMulti / EditorConfig.Instance.BPMSnapDivisions.Value);
+        public static float SnapToBPM(float time) => Mathf.RoundToInt((time + inst.bpmOffset) / (SettingEditor.inst.BPMMulti / EditorConfig.Instance.BPMSnapDivisions.Value)) * (SettingEditor.inst.BPMMulti / EditorConfig.Instance.BPMSnapDivisions.Value);
 
         public static void SetActive(GameObject gameObject, bool active)
         {
