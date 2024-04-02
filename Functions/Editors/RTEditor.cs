@@ -1357,11 +1357,11 @@ namespace EditorManagement.Functions.Editors
 
                     for (int i = 0; i < GameData.EventTypes.Length; i++)
                     {
-                        if (jn[GameData.EventTypes[i]] != null)
+                        if (jn["events"][GameData.EventTypes[i]] != null)
                         {
-                            for (int j = 0; j < jn[GameData.EventTypes[i]].Count; j++)
+                            for (int j = 0; j < jn["events"][GameData.EventTypes[i]].Count; j++)
                             {
-                                var timelineObject = new TimelineObject(EventKeyframe.Parse(jn[GameData.EventTypes[i]][j], i, GameData.DefaultKeyframes[i].eventValues.Length));
+                                var timelineObject = new TimelineObject(EventKeyframe.Parse(jn["events"][GameData.EventTypes[i]][j], i, GameData.DefaultKeyframes[i].eventValues.Length));
                                 timelineObject.Type = i;
                                 timelineObject.Index = j;
                                 RTEventEditor.inst.copiedEventKeyframes.Add(timelineObject);

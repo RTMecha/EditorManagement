@@ -321,13 +321,13 @@ namespace EditorManagement.Functions.Editors
 
 				for (int i = 0; i < AllEvents.Count; i++)
 				{
-					jn[GameData.EventTypes[i]] = new JSONArray();
+					jn["events"][GameData.EventTypes[i]] = new JSONArray();
 					for (int j = 0; j < AllEvents[i].Count; j++)
 					{
 						int add = 0;
 						if (copiedEventKeyframes.TryFind(x => x.Type == i && x.Index == j, out TimelineObject timelineObject))
 						{
-							jn[GameData.EventTypes[i]][add] = timelineObject.GetData<EventKeyframe>().ToJSON();
+							jn["events"][GameData.EventTypes[i]][add] = timelineObject.GetData<EventKeyframe>().ToJSON();
 
 							add++;
 						}
