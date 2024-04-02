@@ -925,8 +925,9 @@ namespace EditorManagement.Functions.Editors
 
             var bm = timelineObject.GetData<BeatmapObject>();
             bm.name = RTHelpers.AprilFools ? "totally not deprecated object" : "helper";
-            bm.objectType = ObjectType.Decoration;
-            bm.events[3][0].eventValues[1] = 0.35f;
+            bm.objectType = RTHelpers.AprilFools ? ObjectType.Decoration : ObjectType.Helper;
+            if (RTHelpers.AprilFools)
+                bm.events[3][0].eventValues[1] = 0.65f;
 
             if (SetToCenterCam)
             {
