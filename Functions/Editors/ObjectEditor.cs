@@ -3206,21 +3206,26 @@ namespace EditorManagement.Functions.Editors
 
                 if (buttonTmp != 5 && buttonTmp != 6 || RTEditor.ShowModdedUI)
                 {
-                    var child = randomToggles.GetChild(n).GetComponent<Toggle>();
-                    child.NewValueChangedListener(random == buttonTmp, delegate (bool _val)
+                    var toggle = randomToggles.GetChild(n).GetComponent<Toggle>();
+                    toggle.onValueChanged.ClearAll();
+                    toggle.isOn = random == buttonTmp;
+                    toggle.onValueChanged.AddListener(delegate (bool _val)
                     {
-                        foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
-                            keyframe.random = buttonTmp;
+                        if (_val)
+                        {
+                            foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
+                                keyframe.random = buttonTmp;
+
+                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                            if (UpdateObjects)
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                        }
 
                         keyframeRandomHandler?.Invoke(buttonTmp);
-
-                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                        if (UpdateObjects)
-                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
                     });
-                    if (!child.GetComponent<HoverUI>())
+                    if (!toggle.GetComponent<HoverUI>())
                     {
-                        var hoverUI = child.gameObject.AddComponent<HoverUI>();
+                        var hoverUI = toggle.gameObject.AddComponent<HoverUI>();
                         hoverUI.animatePos = false;
                         hoverUI.animateSca = true;
                         hoverUI.size = 1.1f;
@@ -3602,6 +3607,8 @@ namespace EditorManagement.Functions.Editors
 
             var firstKF = selected.ElementAt(0);
             var type = firstKF.Type;
+
+            Debug.Log($"{EditorPlugin.className}Selected Keyframe:\nID - {firstKF.ID}\nType: {firstKF.Type}\nIndex {firstKF.Index}");
 
             ObjEditor.inst.KeyframeDialogs[type].SetActive(true);
 
