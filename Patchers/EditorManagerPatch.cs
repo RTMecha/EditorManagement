@@ -172,6 +172,18 @@ namespace EditorManagement.Patchers
                     openFilePopupClose.GetComponent<Image>(),
                     openFilePopupClose.GetComponent<Button>(),
                 }, true, 1, SpriteManager.RoundedSide.W, true));
+                
+                var openFilePopupCloseX = openFilePopupClose.transform.GetChild(0).gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", openFilePopupCloseX, new List<Component>
+                {
+                    openFilePopupCloseX.GetComponent<Image>(),
+                }));
+                
+                var openFilePopupTitle = openFilePopupPanel.transform.Find("Text").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Title", "Light Text", openFilePopupTitle, new List<Component>
+                {
+                    openFilePopupTitle.GetComponent<Text>(),
+                }));
 
                 var openFilePopupScrollbar = openFilePopup.transform.Find("Scrollbar").gameObject;
                 EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", openFilePopupScrollbar, new List<Component>
@@ -781,6 +793,20 @@ namespace EditorManagement.Patchers
             yield break;
         }
 
+        [HarmonyPatch("OpenSaveAs")]
+        [HarmonyPrefix]
+        static bool OpenSaveAsPrefix()
+        {
+            if (Instance.hasLoadedLevel)
+            {
+                Instance.ClearDialogs();
+                Instance.ShowDialog("Save As Popup");
+                return false;
+            }
+            Instance.DisplayNotification("Beatmap can't be saved as until you load a level.", 5f, EditorManager.NotificationType.Error);
+            return false;
+        }
+
         [HarmonyPatch("SaveBeatmapAs", new Type[] { typeof(string) })]
         [HarmonyPrefix]
         static bool SaveBeatmapAsPrefix(string __0)
@@ -808,7 +834,7 @@ namespace EditorManagement.Patchers
                 }));
                 return false;
             }
-            Instance.DisplayNotification("Beatmap can't be saved until you load a level.", 3f, EditorManager.NotificationType.Error);
+            Instance.DisplayNotification("Beatmap can't be saved as until you load a level.", 3f, EditorManager.NotificationType.Error);
             return false;
         }
 
