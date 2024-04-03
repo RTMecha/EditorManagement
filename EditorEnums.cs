@@ -7,8 +7,9 @@
 		Light,
 		Vision,
 		Techno,
-		Alpha,
-		Modern
+		Arrhythmia,
+		Modern,
+		Beats
     }
 
 	public enum WaveformType
