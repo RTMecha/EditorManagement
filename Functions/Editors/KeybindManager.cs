@@ -2037,7 +2037,8 @@ namespace EditorManagement.Functions.Editors
             {
                 foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections)
                 {
-                    timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+                    if (timelineObject.Index != 0)
+                        timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
                 }
 
                 var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
