@@ -85,6 +85,7 @@ namespace EditorManagement
 			RTEditor.DraggingPlaysSound = EditorConfig.DraggingPlaysSound.Value;
 			RTEditor.DraggingPlaysSoundBPM = EditorConfig.DraggingPlaysSoundOnlyWithBPM.Value;
 			RTEditor.ShowModdedUI = EditorConfig.ShowModdedFeaturesInEditor.Value;
+			EditorThemeManager.currentTheme = (int)EditorConfig.EditorTheme.Value;
 
 			SetupSettingChanged();
 
@@ -188,6 +189,7 @@ namespace EditorManagement
 
         void EditorThemeChanged(object sender, EventArgs e)
         {
+			EditorThemeManager.currentTheme = (int)EditorConfig.EditorTheme.Value;
 			EditorThemeManager.RenderElements();
         }
 

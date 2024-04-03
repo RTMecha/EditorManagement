@@ -2826,6 +2826,36 @@ namespace EditorManagement.Functions.Editors
 
             var newFilePopup = newFilePopupBase.Find("New File Popup");
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup", "Background", newFilePopup.gameObject, new List<Component>
+            {
+                newFilePopup.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var newFilePopupPanel = newFilePopup.Find("Panel").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Panel", "Background", newFilePopupPanel, new List<Component>
+            {
+                newFilePopupPanel.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Top));
+
+            var newFilePopupClose = newFilePopupPanel.transform.Find("x").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Close", "Close", newFilePopupClose, new List<Component>
+            {
+                newFilePopupClose.GetComponent<Image>(),
+                newFilePopupClose.GetComponent<Button>(),
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var newFilePopupCloseX = newFilePopupClose.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", newFilePopupCloseX, new List<Component>
+            {
+                newFilePopupCloseX.GetComponent<Image>(),
+            }));
+
+            var newFilePopupTitle = newFilePopupPanel.transform.Find("Title").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Title", "Light Text", newFilePopupTitle, new List<Component>
+            {
+                newFilePopupTitle.GetComponent<TextMeshProUGUI>(),
+            }));
+
             var openFilePopupSelect = newFilePopup.gameObject.AddComponent<SelectGUI>();
             openFilePopupSelect.target = newFilePopup;
             openFilePopupSelect.ogPos = newFilePopup.position;
@@ -2843,7 +2873,8 @@ namespace EditorManagement.Functions.Editors
             Destroy(pather.GetChild(1).gameObject);
 
             var browseLocal = browseBase.transform.Find("browse");
-            browseLocal.Find("Text").GetComponent<Text>().text = "Local Browser";
+            var browseLocalText = browseLocal.Find("Text").GetComponent<Text>();
+            browseLocalText.text = "Local Browser";
             var browseLocalButton = browseLocal.GetComponent<Button>();
             browseLocalButton.onClick.ClearAll();
             browseLocalButton.onClick.AddListener(delegate ()
@@ -2856,7 +2887,8 @@ namespace EditorManagement.Functions.Editors
             });
 
             var browseInternal = browseLocal.gameObject.Duplicate(browseBase.transform, "internal browse");
-            browseInternal.transform.Find("Text").GetComponent<Text>().text = "In-game Browser";
+            var browseInternalText = browseInternal.transform.Find("Text").GetComponent<Text>();
+            browseInternalText.text = "In-game Browser";
             var browseInternalButton = browseInternal.GetComponent<Button>();
             browseInternalButton.onClick.ClearAll();
             browseInternalButton.onClick.AddListener(delegate ()
@@ -2876,6 +2908,72 @@ namespace EditorManagement.Functions.Editors
             hlg.spacing = 8f;
 
             pather.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+            var newFilePopupLabel1 = newFilePopup.Find("Level Name").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Label 1", "Light Text", newFilePopupLabel1, new List<Component>
+            {
+                newFilePopupLabel1.GetComponent<Text>(),
+            }));
+
+            var levelName = newFilePopup.Find("level-name").gameObject;
+            var levelNameImage = levelName.GetComponent<Image>();
+            levelNameImage.fillCenter = true;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Level Name", "Input Field", levelName, new List<Component>
+            {
+                levelNameImage,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var levelNameText = levelName.transform.Find("Text").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Level Name Text", "Input Field Text", levelNameText, new List<Component>
+            {
+                levelNameText.GetComponent<Text>(),
+            }));
+
+            var pathImage = path.GetComponent<Image>();
+            pathImage.fillCenter = true;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Path", "Input Field", path.gameObject, new List<Component>
+            {
+                pathImage,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var pathText = path.transform.Find("Text").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Path Text", "Input Field Text", pathText, new List<Component>
+            {
+                pathText.GetComponent<Text>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Local", "Function 2", browseLocal.gameObject, new List<Component>
+            {
+                browseLocal.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Local Text", "Function 2 Text", browseLocalText.gameObject, new List<Component>
+            {
+                browseLocalText,
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Internal", "Function 2", browseLocal.gameObject, new List<Component>
+            {
+                browseInternal.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Internal Text", "Function 2 Text", browseInternalText.gameObject, new List<Component>
+            {
+                browseInternalText,
+            }));
+
+            var create = newFilePopup.Find("submit").gameObject;
+            Destroy(create.GetComponent<Animator>());
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Create", "Add", create, new List<Component>
+            {
+                create.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var createText = create.transform.Find("text").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Create Text", "Add Text", createText, new List<Component>
+            {
+                createText.GetComponent<Text>(),
+            }));
         }
 
         public void CreateObjectSearch()

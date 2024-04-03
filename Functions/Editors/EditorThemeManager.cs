@@ -13,6 +13,7 @@ using EditorManagement.Functions;
 using RTFunctions.Functions.Managers;
 
 using ThemeSetting = EditorManagement.EditorTheme;
+using TMPro;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -78,7 +79,8 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static EditorTheme CurrentTheme => EditorThemes[Mathf.Clamp((int)EditorConfig.Instance.EditorTheme.Value, 0, EditorThemes.Count - 1)];
+        public static EditorTheme CurrentTheme => EditorThemes[Mathf.Clamp(currentTheme, 0, EditorThemes.Count - 1)];
+        public static int currentTheme = 0;
 
         public static void AddElement(Element element)
         {
@@ -107,14 +109,17 @@ namespace EditorManagement.Functions.Editors
                 { "Close Selected", LSColors.HexToColorAlpha("292929FF") },
                 { "Close Pressed", LSColors.HexToColorAlpha("292929FF") },
                 { "Close Disabled", LSColors.HexToColorAlpha("292929FF") },
+                { "Close X", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Light Text", LSColors.HexToColorAlpha("E5E1E5FF") },
                 { "Function 1", LSColors.HexToColorAlpha("0F7BF8FF") },
-                { "Function 2", LSColors.HexToColorAlpha("0F7BF8FF") },
+                { "Function 1 Text", LSColors.HexToColorAlpha("1B1B1CFF") },
+                { "Function 2", LSColors.HexToColorAlpha("E0E0E0FF") },
                 { "Function 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Function 2 Highlight", LSColors.HexToColorAlpha("E47E7EFF") },
                 { "Function 2 Selected", LSColors.HexToColorAlpha("F5F5F5FF") },
                 { "Function 2 Pressed", LSColors.HexToColorAlpha("C7C7C7FF") },
                 { "Function 2 Disabled", LSColors.HexToColorAlpha("C7C7C780") },
+                { "Function 2 Text", LSColors.HexToColorAlpha("323232FF") },
                 { "List Button 1", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "List Button 1 Normal", LSColors.HexToColorAlpha("2A2A2AFF") },
                 { "List Button 1 Highlight", LSColors.HexToColorAlpha("424242FF") },
@@ -123,6 +128,7 @@ namespace EditorManagement.Functions.Editors
                 { "List Button 1 Disabled", LSColors.HexToColorAlpha("424242FF") },
                 { "Search Field 1", LSColors.HexToColorAlpha("2F2F2FFF") },
                 { "Add", LSColors.HexToColorAlpha("4DB6ACFF") },
+                { "Add Text", LSColors.HexToColorAlpha("202020FF") },
                 { "Prefab", LSColors.HexToColorAlpha("383838FF") },
                 { "Object", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Marker", LSColors.HexToColorAlpha("FFAF38FF") },
@@ -161,7 +167,7 @@ namespace EditorManagement.Functions.Editors
                 { "Title Bar Dropdown Pressed", LSColors.HexToColorAlpha("303030FF") },
                 { "Title Bar Dropdown Disabled", LSColors.HexToColorAlpha("303030FF") },
             }),
-            new EditorTheme("Dark", new Dictionary<string, Color>
+            new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
                 { "Background", LSColors.HexToColorAlpha("0A0A0AFF") },
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
@@ -176,14 +182,17 @@ namespace EditorManagement.Functions.Editors
                 { "Close Selected", LSColors.HexToColorAlpha("292929FF") },
                 { "Close Pressed", LSColors.HexToColorAlpha("292929FF") },
                 { "Close Disabled", LSColors.HexToColorAlpha("292929FF") },
+                { "Close X", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Light Text", LSColors.HexToColorAlpha("E5E1E5FF") },
-                { "Function 1", LSColors.HexToColorAlpha("0F7BF8FF") },
-                { "Function 2", LSColors.HexToColorAlpha("0F7BF8FF") },
+                { "Function 1", LSColors.HexToColorAlpha("076060FF") },
+                { "Function 1 Text", LSColors.HexToColorAlpha("1B1B1CFF") },
+                { "Function 2", LSColors.HexToColorAlpha("3D3D3DFF") },
                 { "Function 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Function 2 Highlight", LSColors.HexToColorAlpha("E47E7EFF") },
                 { "Function 2 Selected", LSColors.HexToColorAlpha("F5F5F5FF") },
                 { "Function 2 Pressed", LSColors.HexToColorAlpha("C7C7C7FF") },
                 { "Function 2 Disabled", LSColors.HexToColorAlpha("C7C7C780") },
+                { "Function 2 Text", LSColors.HexToColorAlpha("C6C6C6FF") },
                 { "List Button 1", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "List Button 1 Normal", LSColors.HexToColorAlpha("111111FF") },
                 { "List Button 1 Highlight", LSColors.HexToColorAlpha("282828FF") },
@@ -191,7 +200,8 @@ namespace EditorManagement.Functions.Editors
                 { "List Button 1 Pressed", LSColors.HexToColorAlpha("282828FF") },
                 { "List Button 1 Disabled", LSColors.HexToColorAlpha("282828FF") },
                 { "Search Field 1", LSColors.HexToColorAlpha("111111FF") },
-                { "Add", LSColors.HexToColorAlpha("4DB6ACFF") },
+                { "Add", LSColors.HexToColorAlpha("06ADADFF") },
+                { "Add Text", LSColors.HexToColorAlpha("011E1EFF") },
                 { "Prefab", LSColors.HexToColorAlpha("383838FF") },
                 { "Object", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Marker", LSColors.HexToColorAlpha("FFAF38FF") },
@@ -234,6 +244,8 @@ namespace EditorManagement.Functions.Editors
 
         public static Dictionary<string, EditorTheme> EditorThemesDictionary => EditorThemes.ToDictionary(x => x.name, x => x);
 
+        public static bool DebugMode { get; set; }
+
         public class EditorTheme
         {
             public EditorTheme(string name, Dictionary<string, Color> colorGroups)
@@ -271,8 +283,6 @@ namespace EditorManagement.Functions.Editors
             public GameObject GameObject { get; set; }
 
             public List<Component> Components { get; set; }
-
-            public Action<Element, Color> onSetColor;
 
             public bool isSelectable = false;
 
@@ -320,6 +330,10 @@ namespace EditorManagement.Functions.Editors
                         SetColor(theme.ColorGroups[group], colorBlock);
                     }
                 }
+                else
+                {
+                    Debug.LogError($"{EditorPlugin.className}Failed to assign theme color to {name}.");
+                }
             }
 
             public void SetColor(Color color)
@@ -330,9 +344,9 @@ namespace EditorManagement.Functions.Editors
                         image.color = color;
                     if (component is Text text)
                         text.color = color;
+                    if (component is TextMeshProUGUI textMeshPro)
+                        textMeshPro.color = color;
                 }
-
-                onSetColor?.Invoke(this, color);
             }
 
             public void SetColor(Color color, ColorBlock colorBlock)
@@ -344,8 +358,6 @@ namespace EditorManagement.Functions.Editors
                     if (component is Selectable button)
                         button.colors = colorBlock;
                 }
-
-                onSetColor?.Invoke(this, color);
             }
 
             public void SetRounded()
@@ -366,6 +378,8 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
             }
+
+            public override string ToString() => name;
         }
     }
 }
