@@ -5,6 +5,7 @@ using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Optimization;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -934,43 +935,11 @@ namespace EditorManagement.Patchers
 		{
 			var backgroundObject = (BackgroundObject)DataManager.inst.gameData.backgroundObjects[__0];
 
-			var bgGameObject = BackgroundManager.inst.backgroundObjects[__0];
-
-			bgGameObject.SetActive(backgroundObject.active);
-			bgGameObject.transform.localPosition = new Vector3(backgroundObject.pos.x, backgroundObject.pos.y, 32f + backgroundObject.layer * 10f);
-			bgGameObject.transform.localScale = new Vector3(backgroundObject.scale.x, backgroundObject.scale.y, 10f);
-			bgGameObject.transform.localRotation = Quaternion.Euler(new Vector3(backgroundObject.rotation.x, backgroundObject.rotation.y, backgroundObject.rot));
-
-			foreach (object obj in bgGameObject.transform)
-				Destroy(((Transform)obj).gameObject);
-
-			backgroundObject.gameObjects.Clear();
-			backgroundObject.transforms.Clear();
-			backgroundObject.renderers.Clear();
-
-			backgroundObject.gameObjects.Add(bgGameObject);
-			backgroundObject.transforms.Add(bgGameObject.transform);
-			backgroundObject.renderers.Add(bgGameObject.GetComponent<Renderer>());
-
-			if (backgroundObject.drawFade)
-			{
-				for (int i = 1; i < backgroundObject.depth - backgroundObject.layer; i++)
-				{
-					var gameObject = Instantiate(BackgroundManager.inst.backgroundFadePrefab, Vector3.zero, Quaternion.identity);
-					gameObject.name = $"{backgroundObject.name} Fade [{i}]";
-					gameObject.transform.SetParent(BackgroundManager.inst.backgroundObjects[__0].transform);
-					gameObject.transform.localPosition = new Vector3(0f, 0f, (float)i);
-					gameObject.transform.localScale = Vector3.one;
-					gameObject.transform.localRotation = Quaternion.Euler(Vector3.zero);
-					gameObject.layer = 9;
-
-					backgroundObject.gameObjects.Add(gameObject);
-					backgroundObject.transforms.Add(gameObject.transform);
-					backgroundObject.renderers.Add(gameObject.GetComponent<Renderer>());
-				}
-			}
-
-			backgroundObject.SetShape(backgroundObject.shape.Type, backgroundObject.shape.Option);
+			if (backgroundObject.BaseObject)
+            {
+				Destroy(backgroundObject.BaseObject);
+            }
+			Updater.CreateBackgroundObject(backgroundObject);
 
 			return false;
 		}
