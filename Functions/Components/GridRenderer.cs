@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using EditorManagement.Functions.Editors;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace EditorManagement.Functions.Components
@@ -46,9 +47,10 @@ namespace EditorManagement.Functions.Components
 			}
 		}
 
+		public static float multi = 154f;
 		void DrawCell(int x, int y, int index, VertexHelper vh)
 		{
-			float posX = cellWidth * x;
+			float posX = cellWidth * x + (RTEditor.inst.bpmOffset * multi);
             float posY = cellHeight * y;
 
             var simpleVert = UIVertex.simpleVert;

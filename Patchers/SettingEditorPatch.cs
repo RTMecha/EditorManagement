@@ -55,15 +55,17 @@ namespace EditorManagement.Patchers
             slider.maxValue = 999f;
             slider.minValue = 0f;
 
-            try
-            {
-                var title1 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
-                title1.transform.Find("title").GetComponent<Text>().text = "Editor Information";
-            }
-            catch
-            {
+            transform.Find("snap/toggle/title").AsRT().sizeDelta = new Vector2(100f, 32f);
+            transform.Find("snap/bpm/title").AsRT().sizeDelta = new Vector2(100f, 32f);
 
-            }
+            var snapOffset = transform.Find("snap/bpm").gameObject.Duplicate(transform.Find("snap"), "bpm offset");
+            snapOffset.transform.Find("title").GetComponent<Text>().text = "BPM Offset";
+            snapOffset.transform.Find("title").AsRT().sizeDelta = new Vector2(100f, 32f);
+
+            transform.Find("snap").AsRT().sizeDelta = new Vector2(765f, 140f);
+
+            var title1 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+            title1.transform.Find("title").GetComponent<Text>().text = "Editor Information";
 
             info.Clear();
             var scrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").gameObject.Duplicate(transform, "Scroll View");
@@ -144,15 +146,8 @@ namespace EditorManagement.Patchers
 
             loadingDoggoLE.ignoreLayout = true;
 
-            try
-            {
-                var title2 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
-                title2.transform.Find("title").GetComponent<Text>().text = "Marker Colors";
-            }
-            catch
-            {
-
-            }
+            var title2 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+            title2.transform.Find("title").GetComponent<Text>().text = "Marker Colors";
 
             // Marker Colors
             {
@@ -163,15 +158,8 @@ namespace EditorManagement.Patchers
                 markerColorsContent = markersScrollView.transform.Find("Viewport/Content");
             }
 
-            try
-            {
-                var title3 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
-                title3.transform.Find("title").GetComponent<Text>().text = "Layer Colors";
-            }
-            catch
-            {
-
-            }
+            var title3 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+            title3.transform.Find("title").GetComponent<Text>().text = "Layer Colors";
 
             // Layer Colors
             {
@@ -330,6 +318,33 @@ namespace EditorManagement.Patchers
             });
         }
 
+        static void SetBPMOffsetSlider(Slider slider, InputField input)
+        {
+            slider.onValueChanged.RemoveAllListeners();
+            slider.value = RTEditor.inst.bpmOffset;
+            slider.onValueChanged.AddListener(delegate (float _val)
+            {
+                RTEditor.inst.bpmOffset = _val;
+                SetBPMOffsetInputField(slider, input);
+                RTEditor.inst.SetTimelineGridSize();
+                RTEditor.inst.SaveSettings();
+            });
+        }
+        
+        static void SetBPMOffsetInputField(Slider slider, InputField input)
+        {
+            input.onValueChanged.RemoveAllListeners();
+            input.text = RTEditor.inst.bpmOffset.ToString();
+            input.onValueChanged.AddListener(delegate (string _val)
+            {
+                var bpm = Parser.TryParse(_val, 0f);
+                RTEditor.inst.bpmOffset = bpm;
+                SetBPMOffsetSlider(slider, input);
+                RTEditor.inst.SetTimelineGridSize();
+                RTEditor.inst.SaveSettings();
+            });
+        }
+
         [HarmonyPatch("Render")]
         [HarmonyPrefix]
         static bool RenderPrefix()
@@ -337,13 +352,13 @@ namespace EditorManagement.Patchers
             EditorManager.inst.CancelInvoke("LoadingIconUpdate");
             EditorManager.inst.InvokeRepeating("LoadingIconUpdate", 0f, UnityEngine.Random.Range(0.01f, 0.4f));
 
-            EditorManager.inst.ClearDialogs(Array.Empty<EditorManager.EditorDialog.DialogType>());
+            EditorManager.inst.ClearDialogs();
             EditorManager.inst.ShowDialog("Settings Editor");
 
             var transform = EditorManager.inst.GetDialog("Settings Editor").Dialog;
             var loadingDoggoRect = transform.Find("loading doggo").GetComponent<RectTransform>();
 
-            loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-300f, -275f));
+            loadingDoggoRect.anchoredPosition = new Vector2(UnityEngine.Random.Range(-320f, 320f), UnityEngine.Random.Range(-310f, -340f));
             float sizeRandom = 64 * UnityEngine.Random.Range(0.5f, 1f);
             loadingDoggoRect.sizeDelta = new Vector2(sizeRandom, sizeRandom);
 
@@ -360,9 +375,18 @@ namespace EditorManagement.Patchers
             SetBPMSlider(slider, input);
             SetBPMInputField(slider, input);
 
-            TriggerHelper.IncreaseDecreaseButtons(input, t: transform.Find("snap/bpm"));
+            TriggerHelper.IncreaseDecreaseButtons(input, amount: 1f, t: transform.Find("snap/bpm"));
             TriggerHelper.AddEventTriggerParams(input.gameObject,
                 TriggerHelper.ScrollDelta(input, 1f));
+            
+            var sliderOffset = transform.Find("snap/bpm offset/slider").GetComponent<Slider>();
+            var inputOffset = transform.Find("snap/bpm offset/input").GetComponent<InputField>();
+            SetBPMOffsetSlider(sliderOffset, inputOffset);
+            SetBPMOffsetInputField(sliderOffset, inputOffset);
+
+            TriggerHelper.IncreaseDecreaseButtons(inputOffset, t: transform.Find("snap/bpm offset"));
+            TriggerHelper.AddEventTriggerParams(inputOffset.gameObject,
+                TriggerHelper.ScrollDelta(inputOffset));
 
             RenderMarkerColors();
             RenderLayerColors();
