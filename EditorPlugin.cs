@@ -72,8 +72,6 @@ namespace EditorManagement
 				throw;
             }
 
-			EditorThemeManager.Init();
-
 			SetPreviewConfig();
 			UpdateDefaultThemeValues();
 
@@ -94,6 +92,11 @@ namespace EditorManagement
 
 			// Plugin startup logic
 			Logger.LogInfo($"Plugin EditorManagement is loaded!");
+        }
+
+		void Update()
+        {
+			EditorThemeManager.Update();
         }
 
 		void SetupSettingChanged()
@@ -178,7 +181,15 @@ namespace EditorManagement
             EditorConfig.MarkerLineColor.SettingChanged += MarkerChanged;
 			EditorConfig.MarkerLineWidth.SettingChanged += MarkerChanged;
 			EditorConfig.MarkerTextWidth.SettingChanged += MarkerChanged;
+
+            EditorConfig.EditorTheme.SettingChanged += EditorThemeChanged;
+            EditorConfig.RoundedUI.SettingChanged += EditorThemeChanged;
 		}
+
+        void EditorThemeChanged(object sender, EventArgs e)
+        {
+			EditorThemeManager.RenderElements();
+        }
 
         void MarkerChanged(object sender, EventArgs e)
         {

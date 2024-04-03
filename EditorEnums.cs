@@ -1,5 +1,16 @@
 ﻿namespace EditorManagement
 {
+	public enum EditorTheme
+    {
+		Legacy,
+		Dark,
+		Light,
+		Vision,
+		Techno,
+		Alpha,
+		Modern
+    }
+
 	public enum WaveformType
 	{
 		Legacy,

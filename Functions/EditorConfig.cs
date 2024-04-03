@@ -99,6 +99,8 @@ namespace EditorManagement.Functions
             #region Editor GUI
 
             DragUI = Config.Bind("Editor GUI", "Drag UI", true, "Specific UI popups can be dragged around (such as the parent selector, etc).");
+            EditorTheme = Config.Bind("Editor GUI", "Editor Theme", EditorManagement.EditorTheme.Legacy, "The current theme the editor uses.");
+            RoundedUI = Config.Bind("Editor GUI", "Rounded UI", false, "If all elements that can be rounded should be so.");
             ShowModdedFeaturesInEditor = Config.Bind("Editor GUI", "Show Modded Features in Editor", true, "Z axis, 10-18 color slots, homing keyframes, etc get set active / inactive with this on / off respectively");
             HoverUIPlaySound = Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.");
             ImportPrefabsDirectly = Config.Bind("Editor GUI", "Import Prefabs Directly", false, "When clicking on an External Prefab, instead of importing it directly it'll bring up a Prefab External View Dialog if this config is off.");
@@ -1195,6 +1197,8 @@ namespace EditorManagement.Functions
         #region Editor GUI
 
         public ConfigEntry<bool> DragUI { get; set; }
+        public ConfigEntry<EditorTheme> EditorTheme { get; set; }
+        public ConfigEntry<bool> RoundedUI { get; set; }
         public ConfigEntry<bool> ShowModdedFeaturesInEditor { get; set; }
         public ConfigEntry<bool> HoverUIPlaySound { get; set; }
         public ConfigEntry<bool> ImportPrefabsDirectly { get; set; }

@@ -151,6 +151,46 @@ namespace EditorManagement.Patchers
                 Updater.levelProcessor = null;
             }
 
+            // Editor Theme Setup
+            try
+            {
+                var openFilePopup = __instance.GetDialog("Open File Popup").Dialog.gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup", "Background", openFilePopup, new List<Component>
+                {
+                    openFilePopup.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+
+                var openFilePopupPanel = openFilePopup.transform.Find("Panel").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Panel", "Background", openFilePopupPanel, new List<Component>
+                {
+                    openFilePopupPanel.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Top));
+
+                var openFilePopupClose = openFilePopupPanel.transform.Find("x").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", openFilePopupClose, new List<Component>
+                {
+                    openFilePopupClose.GetComponent<Image>(),
+                    openFilePopupClose.GetComponent<Button>(),
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                var openFilePopupScrollbar = openFilePopup.transform.Find("Scrollbar").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", openFilePopupScrollbar, new List<Component>
+                {
+                    openFilePopupScrollbar.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+                var openFilePopupScrollbarHandle = openFilePopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar Handle", "Scrollbar Handle", openFilePopupScrollbarHandle, new List<Component>
+                {
+                    openFilePopupScrollbarHandle.GetComponent<Image>(),
+                    openFilePopupScrollbar.GetComponent<Scrollbar>()
+                }, true, 1, SpriteManager.RoundedSide.W));
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"{EditorPlugin.className}Failed to setup Editor Theme elements.\nException: {ex}");
+            }
+
             __instance.hasLoadedLevel = false;
             __instance.loading = false;
 

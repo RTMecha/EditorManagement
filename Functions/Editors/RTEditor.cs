@@ -10681,6 +10681,8 @@ namespace EditorManagement.Functions.Editors
             #region Editor GUI
 
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DragUI),
+            new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.EditorTheme),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.RoundedUI),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowModdedFeaturesInEditor),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HoverUIPlaySound),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ImportPrefabsDirectly),
