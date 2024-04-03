@@ -184,7 +184,72 @@ namespace EditorManagement.Patchers
                 {
                     openFilePopupScrollbarHandle.GetComponent<Image>(),
                     openFilePopupScrollbar.GetComponent<Scrollbar>()
-                }, true, 1, SpriteManager.RoundedSide.W));
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                var openFilePopupSearch = openFilePopup.transform.Find("search-box/search").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Search", "Search Field 1", openFilePopupSearch, new List<Component>
+                {
+                    openFilePopupSearch.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Bottom));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Editor Dialog", "Background", EditorManager.inst.dialogs.gameObject, new List<Component>
+                {
+                    EditorManager.inst.dialogs.GetComponent<Image>(),
+                }));
+
+                var titleBar = EditorManager.inst.GUIMain.transform.Find("TitleBar").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Title Bar Base", "Background", titleBar, new List<Component>
+                {
+                    titleBar.GetComponent<Image>(),
+                }));
+
+                for (int i = 0; i < titleBar.transform.childCount; i++)
+                {
+                    var child = titleBar.transform.GetChild(i).gameObject;
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name}", "Title Bar Button", child, new List<Component>
+                    {
+                        child.GetComponent<Image>(),
+                        child.GetComponent<Button>(),
+                    }, isSelectable: true));
+
+                    var text = child.transform.GetChild(0).gameObject;
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} Text", "Title Bar Text", text, new List<Component>
+                    {
+                        text.GetComponent<Text>(),
+                    }));
+
+                    if (child.transform.childCount > 1)
+                    {
+                        var dropdownBase = child.transform.GetChild(1).gameObject;
+
+                        EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} Dropdown", "Title Bar Dropdown Normal", dropdownBase, new List<Component>
+                        {
+                            dropdownBase.GetComponent<Image>(),
+                        }));
+
+                        for (int j = 0; j < dropdownBase.transform.childCount; j++)
+                        {
+                            var childB = dropdownBase.transform.GetChild(j).gameObject;
+                            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} - {childB.name}", "Title Bar Dropdown", childB, new List<Component>
+                            {
+                                childB.GetComponent<Image>(),
+                                childB.GetComponent<Button>(),
+                            }, isSelectable: true));
+
+                            var text2 = childB.transform.GetChild(0).gameObject;
+                            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} - {childB.name} Text", "Title Bar Text", text2, new List<Component>
+                            {
+                                text2.GetComponent<Text>(),
+                            }));
+
+                            var image = childB.transform.Find("Image").gameObject;
+                            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} - {childB.name} Image", "Title Bar Text", image, new List<Component>
+                            {
+                                image.GetComponent<Image>(),
+                            }));
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {

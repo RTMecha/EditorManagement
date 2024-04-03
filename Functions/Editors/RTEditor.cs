@@ -2288,6 +2288,45 @@ namespace EditorManagement.Functions.Editors
             var sortList = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
                 .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby", "Dropdown 1", sortList, new List<Component>
+            {
+                sortList.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+            
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Text", "Dropdown 1 Overlay", sortList.transform.Find("Label").gameObject, new List<Component>
+            {
+                sortList.transform.Find("Label").gameObject.GetComponent<Text>(),
+            }));
+            
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Arrow", "Dropdown 1 Overlay", sortList.transform.Find("Arrow").gameObject, new List<Component>
+            {
+                sortList.transform.Find("Arrow").gameObject.GetComponent<Image>(),
+            }));
+
+            var template = sortList.transform.Find("Template").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1", template, new List<Component>
+            {
+                template.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
+            
+            var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1 Item", templateItem, new List<Component>
+            {
+                templateItem.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+            
+            var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
+            {
+                templateItemCheckmark.GetComponent<Image>(),
+            }));
+
+            var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
+            {
+                templateItemLabel.GetComponent<Text>(),
+            }));
+
             var config = EditorConfig.Instance;
 
             var sortListRT = sortList.GetComponent<RectTransform>();
@@ -2344,8 +2383,19 @@ namespace EditorManagement.Functions.Editors
                 StartCoroutine(RefreshLevelList());
             });
 
-            if (toggle.gameObject)
-                TooltipHelper.AddTooltip(toggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
+            var toggleB = checkDes.transform.Find("toggle/Background").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Ascend", "Toggle 1", toggleB, new List<Component>
+            {
+                toggleB.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+            
+            var toggleC = toggleB.transform.Find("Checkmark").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Ascend Check", "Toggle 1 Check", toggleC, new List<Component>
+            {
+                toggleC.GetComponent<Image>(),
+            }));
+
+            TooltipHelper.AddTooltip(toggleB, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
 
             CreateGlobalSettings();
             LoadGlobalSettings();
@@ -2356,6 +2406,18 @@ namespace EditorManagement.Functions.Editors
                     .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "editor path");
                 ((RectTransform)editorPathGO.transform).anchoredPosition = config.OpenLevelEditorPathPos.Value;
                 ((RectTransform)editorPathGO.transform).sizeDelta = new Vector2(config.OpenLevelEditorPathLength.Value, 34f);
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Path", "Input Field", editorPathGO, new List<Component>
+                {
+                    editorPathGO.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var text = editorPathGO.transform.Find("Text").gameObject;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Path Text", "Input Field Text", text, new List<Component>
+                {
+                    text.GetComponent<Text>(),
+                }));
 
                 var levelListTip = editorPathGO.GetComponent<HoverTooltip>();
                 if (!levelListTip)
@@ -8135,7 +8197,8 @@ namespace EditorManagement.Functions.Editors
                     levelTip.hint = "</color>" + metadata.song.description;
                     htt.tooltipLangauges.Add(levelTip);
 
-                    gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.AddListener(delegate ()
                     {
                         // If clicking on the level button shows the autosaves popup or not.
                         if (Input.GetKey(KeyCode.LeftShift))
@@ -8187,6 +8250,17 @@ namespace EditorManagement.Functions.Editors
                             });
                         });
                     }
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num}", "List Button 1", gameObject, new List<Component>
+                    {
+                        gameObject.GetComponent<Image>(),
+                        button,
+                    }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num} Text", "Light Text", text.gameObject, new List<Component>
+                    {
+                        text,
+                    }));
 
                     list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
                     {
@@ -9237,6 +9311,18 @@ namespace EditorManagement.Functions.Editors
                 };
 
                 string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num}", "List Button 1", ((EditorWrapper)metadataWrapper).GameObject, new List<Component>
+                {
+                    ((EditorWrapper)metadataWrapper).GameObject.GetComponent<Image>(),
+                    ((EditorWrapper)metadataWrapper).GameObject.GetComponent<Button>(),
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                var text = ((EditorWrapper)metadataWrapper).GameObject.transform.GetChild(0).gameObject;
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num} Text", "Light Text", text, new List<Component>
+                {
+                    text.GetComponent<Text>(),
+                }));
 
                 ((EditorWrapper)metadataWrapper).SetActive((RTFile.FileExists(folder + "/level.ogg") ||
                     RTFile.FileExists(folder + "/level.wav") ||

@@ -61,6 +61,23 @@ namespace EditorManagement.Functions.Helpers
 
             propWin.transform.Find("Image").GetComponent<Image>().sprite = sprite;
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {parent.name} - {name}", "Title Bar Dropdown", propWin, new List<Component>
+            {
+                propWin.GetComponent<Image>(),
+                propWinButton,
+            }, isSelectable: true));
+
+            var text2 = propWin.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {parent.name} - {name} Text", "Title Bar Text", text2, new List<Component>
+            {
+                text2.GetComponent<Text>(),
+            }));
+
+            var image = propWin.transform.Find("Image").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {parent.name} - {name} Image", "Title Bar Text", image, new List<Component>
+            {
+                image.GetComponent<Image>(),
+            }));
         }
     }
 }

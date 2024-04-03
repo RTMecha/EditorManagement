@@ -230,23 +230,23 @@ namespace EditorManagement.Functions.Editors
 			var iconScale = config.OpenLevelCoverScale.Value;
 			iconPosition.x += -80f;
 
+			string[] difficultyNames = new string[]
+			{
+				"easy",
+				"normal",
+				"hard",
+				"expert",
+				"expert+",
+				"master",
+				"animation",
+				"Unknown difficulty",
+			};
+
 			int num = 0;
 			foreach (var editorWrapper in EditorManager.inst.loadedLevels.Select(x => x as EditorWrapper))
 			{
 				var folder = editorWrapper.folder;
 				var metadata = editorWrapper.metadata;
-
-				string[] difficultyNames = new string[]
-				{
-					"easy",
-					"normal",
-					"hard",
-					"expert",
-					"expert+",
-					"master",
-					"animation",
-					"Unknown difficulty",
-				};
 
 				DestroyImmediate(editorWrapper.CombinerGameObject);
 
@@ -317,16 +317,27 @@ namespace EditorManagement.Functions.Editors
 
 				iconImage.sprite = editorWrapper.albumArt ?? SteamWorkshop.inst.defaultSteamImageSprite;
 
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Combiner Button {num}", "List Button 1", gameObject, new List<Component>
+				{
+					gameObject.GetComponent<Image>(),
+					button,
+				}, true, 1, SpriteManager.RoundedSide.W, true));
+
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num} Text", "Light Text", text.gameObject, new List<Component>
+				{
+					text,
+				}));
+
 				string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
 				editorWrapper.CombinerSetActive((RTFile.FileExists(folder + "/level.ogg") ||
 					RTFile.FileExists(folder + "/level.wav") ||
-					RTFile.FileExists(folder + "/level.mp3")) && RTHelpers.SearchString(System.IO.Path.GetFileName(folder), EditorManager.inst.openFileSearch) ||
-						RTHelpers.SearchString(metadata.song.title, EditorManager.inst.openFileSearch) ||
-						RTHelpers.SearchString(metadata.artist.Name, EditorManager.inst.openFileSearch) ||
-						RTHelpers.SearchString(metadata.creator.steam_name, EditorManager.inst.openFileSearch) ||
-						RTHelpers.SearchString(metadata.song.description, EditorManager.inst.openFileSearch) ||
-						RTHelpers.SearchString(difficultyName, EditorManager.inst.openFileSearch));
+					RTFile.FileExists(folder + "/level.mp3")) && RTHelpers.SearchString(System.IO.Path.GetFileName(folder), searchTerm) ||
+						RTHelpers.SearchString(metadata.song.title, searchTerm) ||
+						RTHelpers.SearchString(metadata.artist.Name, searchTerm) ||
+						RTHelpers.SearchString(metadata.creator.steam_name, searchTerm) ||
+						RTHelpers.SearchString(metadata.song.description, searchTerm) ||
+						RTHelpers.SearchString(difficultyName, searchTerm));
 
 				editorWrapper.CombinerGameObject.transform.SetSiblingIndex(num);
 
