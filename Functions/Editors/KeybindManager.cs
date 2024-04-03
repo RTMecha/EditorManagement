@@ -1640,10 +1640,10 @@ namespace EditorManagement.Functions.Editors
             {
                 RTEditor.inst.OrderMarkers();
 
-                var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindLastIndex(x => x.time <= AudioManager.inst.CurrentAudioSource.time);
+                var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindLastIndex(x => x.time <= AudioManager.inst.CurrentAudioSource.time - 0.005f);
 
-                if (currentMarker + 1 >= 0)
-                    SetCurrentMarker(Mathf.Clamp(currentMarker + 1, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, EditorConfig.Instance.BringToSelection.Value);
+                if (currentMarker + 2 >= 0)
+                    SetCurrentMarker(Mathf.Clamp(currentMarker + 2, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, EditorConfig.Instance.BringToSelection.Value);
             }
         }
         
@@ -1653,7 +1653,7 @@ namespace EditorManagement.Functions.Editors
             {
                 RTEditor.inst.OrderMarkers();
 
-                var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindLastIndex(x => x.time < AudioManager.inst.CurrentAudioSource.time);
+                var currentMarker = DataManager.inst.gameData.beatmapData.markers.FindLastIndex(x => x.time < AudioManager.inst.CurrentAudioSource.time - 0.005f);
 
                 if (currentMarker >= 0)
                     SetCurrentMarker(Mathf.Clamp(currentMarker, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, EditorConfig.Instance.BringToSelection.Value);
