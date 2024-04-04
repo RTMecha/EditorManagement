@@ -190,7 +190,7 @@ namespace EditorManagement
         void EditorThemeChanged(object sender, EventArgs e)
         {
 			EditorThemeManager.currentTheme = (int)EditorConfig.EditorTheme.Value;
-			EditorThemeManager.RenderElements();
+			StartCoroutine(EditorThemeManager.RenderElements());
         }
 
         void MarkerChanged(object sender, EventArgs e)
