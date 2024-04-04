@@ -154,6 +154,12 @@ namespace EditorManagement.Patchers
             // Editor Theme Setup
             try
             {
+                var timelineBackground = EditorManager.inst.timeline.transform.parent.Find("Panel 2").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Timeline Background", "Timeline Background", timelineBackground, new List<Component>
+                {
+                    timelineBackground.GetComponent<Image>(),
+                }));
+
                 var openFilePopup = __instance.GetDialog("Open File Popup").Dialog.gameObject;
                 EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup", "Background", openFilePopup, new List<Component>
                 {
@@ -262,6 +268,92 @@ namespace EditorManagement.Patchers
                         }
                     }
                 }
+
+                var saveAsPopup = __instance.GetDialog("Save As Popup").Dialog.GetChild(0).gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup", "Background", saveAsPopup, new List<Component>
+                {
+                    saveAsPopup.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var saveAsPopupPanel = saveAsPopup.transform.Find("Panel").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Panel", "Background", saveAsPopupPanel, new List<Component>
+                {
+                    saveAsPopupPanel.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Top));
+
+                var saveAsPopupClose = saveAsPopupPanel.transform.Find("x").gameObject;
+                Destroy(saveAsPopupClose.GetComponent<Animator>());
+                var saveAsPopupCloseButton = saveAsPopupClose.GetComponent<Button>();
+                saveAsPopupCloseButton.transition = Selectable.Transition.ColorTint;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Close", "Close", saveAsPopupClose, new List<Component>
+                {
+                    saveAsPopupClose.GetComponent<Image>(),
+                    saveAsPopupCloseButton,
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                var saveAsPopupCloseX = openFilePopupClose.transform.GetChild(0).gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Close X", "Close X", saveAsPopupCloseX, new List<Component>
+                {
+                    saveAsPopupCloseX.GetComponent<Image>(),
+                }));
+
+                var saveAsPopupTitle = saveAsPopupPanel.transform.Find("Text").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Title", "Light Text", saveAsPopupTitle, new List<Component>
+                {
+                    saveAsPopupTitle.GetComponent<Text>(),
+                }));
+
+                var saveAsPopupLabel = saveAsPopup.transform.Find("Level Name").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Label", "Light Text", saveAsPopupLabel, new List<Component>
+                {
+                    saveAsPopupLabel.GetComponent<Text>(),
+                }));
+
+                var levelName = saveAsPopup.transform.Find("level-name").gameObject;
+                var levelNameImage = levelName.GetComponent<Image>();
+                levelNameImage.fillCenter = true;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Level Name", "Input Field", levelName, new List<Component>
+                {
+                    levelNameImage,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var levelNameText = levelName.transform.Find("Text").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Level Name Text", "Input Field Text", levelNameText, new List<Component>
+                {
+                    levelNameText.GetComponent<Text>(),
+                }));
+
+                var create = saveAsPopup.transform.Find("submit").gameObject;
+                Destroy(create.GetComponent<Animator>());
+                create.GetComponent<Button>().transition = Selectable.Transition.ColorTint;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Create", "Add", create, new List<Component>
+                {
+                    create.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var createText = create.transform.Find("text").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Create Text", "Add Text", createText, new List<Component>
+                {
+                    createText.GetComponent<Text>(),
+                }));
+
+                var fileInfoPopup = __instance.GetDialog("File Info Popup").Dialog.gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("File Info Popup", "Background", fileInfoPopup, new List<Component>
+                {
+                    fileInfoPopup.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var fileInfoPopupTitle = fileInfoPopup.transform.Find("title").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Title", "Light Text", fileInfoPopupTitle, new List<Component>
+                {
+                    fileInfoPopupTitle.GetComponent<Text>(),
+                }));
+
+                var fileInfoPopupText = fileInfoPopup.transform.Find("text").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Title", "Light Text", fileInfoPopupText, new List<Component>
+                {
+                    fileInfoPopupText.GetComponent<Text>(),
+                }));
             }
             catch (Exception ex)
             {
