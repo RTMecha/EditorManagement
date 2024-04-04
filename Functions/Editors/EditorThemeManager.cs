@@ -14,6 +14,7 @@ using RTFunctions.Functions.Managers;
 
 using ThemeSetting = EditorManagement.EditorTheme;
 using TMPro;
+using System.Collections;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -36,7 +37,7 @@ namespace EditorManagement.Functions.Editors
 
         public static void Clear() => EditorGUIElements.Clear();
 
-        public static void RenderElements()
+        public static IEnumerator RenderElements()
         {
             var theme = CurrentTheme;
 
@@ -77,6 +78,7 @@ namespace EditorManagement.Functions.Editors
                     }));
                 }
             }
+            yield break;
         }
 
         public static EditorTheme CurrentTheme => EditorThemes[Mathf.Clamp(currentTheme, 0, EditorThemes.Count - 1)];
@@ -146,6 +148,7 @@ namespace EditorManagement.Functions.Editors
                 { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
+                { "Timeline Background", LSColors.HexToColorAlpha("1B1B1BFF") },
                 { "Timeline Scrollbar", LSColors.HexToColorAlpha("686868FF") },
                 { "Timeline Scrollbar Normal", LSColors.HexToColorAlpha("676767FF") },
                 { "Timeline Scrollbar Highlight", LSColors.HexToColorAlpha("9E9E9EFF") },
@@ -166,6 +169,8 @@ namespace EditorManagement.Functions.Editors
                 { "Title Bar Dropdown Selected", LSColors.HexToColorAlpha("303030FF") },
                 { "Title Bar Dropdown Pressed", LSColors.HexToColorAlpha("303030FF") },
                 { "Title Bar Dropdown Disabled", LSColors.HexToColorAlpha("303030FF") },
+                { "Warning Confirm", LSColors.HexToColorAlpha("FF3645FF") },
+                { "Warning Cancel", LSColors.HexToColorAlpha("4DB5ABFF") },
             }),
             new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
@@ -219,6 +224,7 @@ namespace EditorManagement.Functions.Editors
                 { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
+                { "Timeline Background", LSColors.HexToColorAlpha("080808FF") },
                 { "Timeline Scrollbar", LSColors.HexToColorAlpha("686868FF") },
                 { "Timeline Scrollbar Normal", LSColors.HexToColorAlpha("676767FF") },
                 { "Timeline Scrollbar Highlight", LSColors.HexToColorAlpha("9E9E9EFF") },
@@ -239,6 +245,8 @@ namespace EditorManagement.Functions.Editors
                 { "Title Bar Dropdown Selected", LSColors.HexToColorAlpha("1E1E1EFF") },
                 { "Title Bar Dropdown Pressed", LSColors.HexToColorAlpha("1E1E1EFF") },
                 { "Title Bar Dropdown Disabled", LSColors.HexToColorAlpha("1E1E1EFF") },
+                { "Warning Confirm", LSColors.HexToColorAlpha("FF3645FF") },
+                { "Warning Cancel", LSColors.HexToColorAlpha("4DB5ABFF") },
             }),
         };
 
