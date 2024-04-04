@@ -1031,13 +1031,12 @@ namespace EditorManagement.Functions.Editors
 			
 			var str = config.ThemeSavesIndents.Value ? theme.ToJSON().ToString(3) : theme.ToJSON().ToString();
 
-			var path = $"{RTFile.ApplicationDirectory}{RTEditor.themeListSlash}{theme.name.ToLower().Replace(" ", "_")}_ID-{theme.id}.lst";
+			var path = $"{RTFile.ApplicationDirectory}{RTEditor.themeListSlash}{theme.name.ToLower().Replace(" ", "_")}.lst";
 
 			theme.filePath = path;
 
 			RTFile.WriteToFile(path, str);
 
-			//FileManager.inst.SaveJSONFile(RTEditor.themeListPath, $"{theme.name.ToLower().Replace(" ", "_")}_ID-{theme.id}.lst", str);
 			EditorManager.inst.DisplayNotification($"Saved theme [{theme.name}]!", 2f, EditorManager.NotificationType.Success);
 
 			StartCoroutine(SetUpdate(1f, true));
