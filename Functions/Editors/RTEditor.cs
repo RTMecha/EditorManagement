@@ -2405,7 +2405,7 @@ namespace EditorManagement.Functions.Editors
                 var editorPathGO = GameObject.Find("TimelineBar/GameObject/Time Input")
                     .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog, "editor path");
                 ((RectTransform)editorPathGO.transform).anchoredPosition = config.OpenLevelEditorPathPos.Value;
-                ((RectTransform)editorPathGO.transform).sizeDelta = new Vector2(config.OpenLevelEditorPathLength.Value, 34f);
+                ((RectTransform)editorPathGO.transform).sizeDelta = new Vector2(config.OpenLevelEditorPathLength.Value, 32f);
 
                 EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Path", "Input Field", editorPathGO, new List<Component>
                 {
@@ -2413,10 +2413,13 @@ namespace EditorManagement.Functions.Editors
                 }, true, 1, SpriteManager.RoundedSide.W));
 
                 var text = editorPathGO.transform.Find("Text").gameObject;
+                var textComponent = text.GetComponent<Text>();
+                textComponent.alignment = TextAnchor.MiddleLeft;
+                textComponent.fontSize = 16;
 
                 EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Path Text", "Input Field Text", text, new List<Component>
                 {
-                    text.GetComponent<Text>(),
+                    textComponent,
                 }));
 
                 var levelListTip = editorPathGO.GetComponent<HoverTooltip>();
@@ -2432,9 +2435,8 @@ namespace EditorManagement.Functions.Editors
 
                 var editorPathIF = editorPathGO.GetComponent<InputField>();
                 editorPathIF.characterValidation = InputField.CharacterValidation.None;
-                editorPathIF.text = EditorPath;
-
                 editorPathIF.onValueChanged.RemoveAllListeners();
+                editorPathIF.text = EditorPath;
                 editorPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     EditorPath = _val;
@@ -2519,9 +2521,8 @@ namespace EditorManagement.Functions.Editors
 
                 var themePathIF = themePathGO.GetComponent<InputField>();
                 themePathIF.characterValidation = InputField.CharacterValidation.None;
-                themePathIF.text = ThemePath;
-
                 themePathIF.onValueChanged.RemoveAllListeners();
+                themePathIF.text = ThemePath;
                 themePathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     ThemePath = _val;
@@ -2601,9 +2602,8 @@ namespace EditorManagement.Functions.Editors
 
                 var prefabPathIF = prefabPathGO.GetComponent<InputField>();
                 prefabPathIF.characterValidation = InputField.CharacterValidation.None;
-                prefabPathIF.text = PrefabPath;
-
                 prefabPathIF.onValueChanged.RemoveAllListeners();
+                prefabPathIF.text = PrefabPath;
                 prefabPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
@@ -2964,6 +2964,7 @@ namespace EditorManagement.Functions.Editors
 
             var create = newFilePopup.Find("submit").gameObject;
             Destroy(create.GetComponent<Animator>());
+            create.GetComponent<Button>().transition = Selectable.Transition.ColorTint;
             EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Create", "Add", create, new List<Component>
             {
                 create.GetComponent<Image>(),
@@ -3051,8 +3052,10 @@ namespace EditorManagement.Functions.Editors
             submit1.name = "submit1";
             submit2.name = "submit2";
 
-            submit1.GetComponent<Image>().color = new Color(1f, 0.2137f, 0.2745f, 1f);
-            submit2.GetComponent<Image>().color = new Color(0.302f, 0.7137f, 0.6745f, 1f);
+            var submit1Image = submit1.GetComponent<Image>();
+            submit1Image.color = new Color(1f, 0.2137f, 0.2745f, 1f);
+            var submit2Image = submit2.GetComponent<Image>();
+            submit2Image.color = new Color(0.302f, 0.7137f, 0.6745f, 1f);
 
             var submit1Button = submit1.GetComponent<Button>();
             var submit2Button = submit2.GetComponent<Button>();
@@ -3074,7 +3077,9 @@ namespace EditorManagement.Functions.Editors
 
             main.Find("Level Name").GetComponent<RectTransform>().sizeDelta = new Vector2(292f, 64f);
 
-            var close = main.Find("Panel/x").GetComponent<Button>();
+            var panel = main.Find("Panel");
+
+            var close = panel.Find("x").GetComponent<Button>();
             close.onClick.ClearAll();
             close.onClick.RemoveAllListeners();
             close.onClick.AddListener(delegate ()
@@ -3082,9 +3087,61 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.HideDialog("Warning Popup");
             });
 
-            main.Find("Panel/Text").GetComponent<Text>().text = "Warning!";
+            var title = panel.Find("Text").GetComponent<Text>();
+            title.text = "Warning!";
 
             EditorHelper.AddEditorPopup("Warning Popup", warningPopup);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup", "Background", main.gameObject, new List<Component>
+            {
+                main.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Panel", "Background", panel.gameObject, new List<Component>
+            {
+                panel.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Top));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Close", "Close", close.gameObject, new List<Component>
+            {
+                close.GetComponent<Image>(),
+                close,
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var warningPopupCloseX = close.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Close X", "Close X", warningPopupCloseX, new List<Component>
+            {
+                warningPopupCloseX.GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Title", "Light Text", title.gameObject, new List<Component>
+            {
+                title,
+            }));
+
+            var warningPopupText = main.Find("Level Name").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Label", "Light Text", warningPopupText, new List<Component>
+            {
+                warningPopupText.GetComponent<Text>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Confirm", "Warning Confirm", submit1Button.gameObject, new List<Component>
+            {
+                submit1Image
+            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Confirm Text", "Add Text", submit1Button.transform.GetChild(0).gameObject, new List<Component>
+            {
+                submit1Button.transform.GetChild(0).GetComponent<Text>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Cancel", "Warning Cancel", submit2Button.gameObject, new List<Component>
+            {
+                submit2Image
+            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Cancel Text", "Add Text", submit2Button.transform.GetChild(0).gameObject, new List<Component>
+            {
+                submit2Button.transform.GetChild(0).GetComponent<Text>(),
+            }));
         }
 
         public void CreateREPLEditor()
@@ -12780,6 +12837,15 @@ namespace EditorManagement.Functions.Editors
             public float RotEndDuration => RotCloseDurationConfig.Value;
             public string RotStartEase => RotOpenEaseConfig.Value.ToString();
             public string RotEndEase => RotCloseEaseConfig.Value.ToString();
+        }
+
+        public List<NewLevelTemplate> NewLevelTemplates { get; set; } = new List<NewLevelTemplate>();
+
+        public class NewLevelTemplate
+        {
+            public GameObject GameObject { get; set; }
+            public string filePath;
+            public Image Preview { get; set; }
         }
 
         public class EditorProperty : Exists
