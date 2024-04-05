@@ -80,61 +80,68 @@ namespace EditorManagement.Functions.Editors
             if (ModCompatibility.sharedFunctions.ContainsKey("RefreshObjectGUI"))
                 ModCompatibility.sharedFunctions["RefreshObjectGUI"] = (Action<BeatmapObject>)delegate (BeatmapObject beatmapObject) { StartCoroutine(RefreshObjectGUI(beatmapObject)); };
 
-            try
+            for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
             {
-                for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
+                int tmpIndex = i;
+                var entry = new EventTrigger.Entry();
+                entry.eventID = EventTriggerType.PointerUp;
+                entry.callback.AddListener(delegate (BaseEventData eventData)
                 {
-                    int tmpIndex = i;
-                    var entry = new EventTrigger.Entry();
-                    entry.eventID = EventTriggerType.PointerUp;
-                    entry.callback.AddListener(delegate (BaseEventData eventData)
+                    if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
                     {
-                        if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
-                        {
-                            float timeTmp = ObjEditorPatch.timeCalc();
+                        float timeTmp = ObjEditorPatch.timeCalc();
 
-                            var beatmapObject = CurrentSelection.GetData<BeatmapObject>();
+                        var beatmapObject = CurrentSelection.GetData<BeatmapObject>();
 
-                            int index = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime <= timeTmp);
-                            var eventKeyfame = AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
-                            UpdateKeyframeOrder(beatmapObject);
+                        int index = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime <= timeTmp);
+                        var eventKeyfame = AddEvent(beatmapObject, timeTmp, tmpIndex, (EventKeyframe)beatmapObject.events[tmpIndex][index], false);
+                        UpdateKeyframeOrder(beatmapObject);
 
-                            RenderKeyframes(beatmapObject);
+                        RenderKeyframes(beatmapObject);
 
-                            int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == eventKeyfame.eventTime);
-                            if (keyframe < 0)
-                                keyframe = 0;
+                        int keyframe = beatmapObject.events[tmpIndex].FindLastIndex(x => x.eventTime == eventKeyfame.eventTime);
+                        if (keyframe < 0)
+                            keyframe = 0;
 
-                            SetCurrentKeyframe(beatmapObject, tmpIndex, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
-                            ResizeKeyframeTimeline(beatmapObject);
+                        SetCurrentKeyframe(beatmapObject, tmpIndex, keyframe, false, InputDataManager.inst.editorActions.MultiSelect.IsPressed);
+                        ResizeKeyframeTimeline(beatmapObject);
 
-                            RenderObjectKeyframesDialog(beatmapObject);
+                        RenderObjectKeyframesDialog(beatmapObject);
 
                             // Keyframes affect both physical object and timeline object.
                             RenderTimelineObject(new TimelineObject(beatmapObject));
-                            if (UpdateObjects)
-                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
-                        }
-                    });
-                    var comp = ObjEditor.inst.TimelineParents[tmpIndex].GetComponent<EventTrigger>();
-                    comp.triggers.RemoveAll(x => x.eventID == EventTriggerType.PointerUp);
-                    comp.triggers.Add(entry);
-                }
-
-                ObjEditor.inst.objTimelineSlider.onValueChanged.RemoveAllListeners();
-                ObjEditor.inst.objTimelineSlider.onValueChanged.AddListener(delegate (float _val)
-                {
-                    if (ObjEditor.inst.changingTime)
-                    {
-                        ObjEditor.inst.newTime = _val;
-                        AudioManager.inst.SetMusicTime(Mathf.Clamp(_val, 0f, AudioManager.inst.CurrentAudioSource.clip.length));
+                        if (UpdateObjects)
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
                     }
                 });
+                var comp = ObjEditor.inst.TimelineParents[tmpIndex].GetComponent<EventTrigger>();
+                comp.triggers.RemoveAll(x => x.eventID == EventTriggerType.PointerUp);
+                comp.triggers.Add(entry);
             }
-            catch (Exception ex)
+
+            ObjEditor.inst.objTimelineSlider.onValueChanged.RemoveAllListeners();
+            ObjEditor.inst.objTimelineSlider.onValueChanged.AddListener(delegate (float _val)
             {
-                Debug.LogError(ex);
-            }
+                if (ObjEditor.inst.changingTime)
+                {
+                    ObjEditor.inst.newTime = _val;
+                    AudioManager.inst.SetMusicTime(Mathf.Clamp(_val, 0f, AudioManager.inst.CurrentAudioSource.clip.length));
+                }
+            });
+
+            var objectKeyframeTimelineEventTrigger = ObjEditor.inst.objTimelineContent.parent.parent.parent.GetComponent<EventTrigger>();
+            ObjEditor.inst.objTimelineContent.GetComponent<EventTrigger>().triggers.AddRange(objectKeyframeTimelineEventTrigger.triggers);
+            objectKeyframeTimelineEventTrigger.triggers.Clear();
+
+            TriggerHelper.AddEventTriggerParams(timelinePosScrollbar.gameObject, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
+            {
+                var pointerEventData = (PointerEventData)baseEventData;
+
+                var scrollBar = timelinePosScrollbar;
+                float multiply = Input.GetKey(KeyCode.LeftAlt) ? 0.1f : Input.GetKey(KeyCode.LeftControl) ? 10f : 1f;
+
+                scrollBar.value = pointerEventData.scrollDelta.y > 0f ? scrollBar.value + (0.005f * multiply) : pointerEventData.scrollDelta.y < 0f ? scrollBar.value - (0.005f * multiply) : 0f;
+            }));
         }
 
         void Update()

@@ -1955,6 +1955,76 @@ namespace EditorManagement.Functions.Editors
             {
                 (Image)eventToggle.graphic,
             }));
+
+            var prefabButton = timelineBar.transform.Find("prefab").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Button", "Prefab", prefabButton, new List<Component>
+            {
+                prefabButton.GetComponent<Image>()
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var prefabButtonText = prefabButton.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Button Text", "Prefab Text", prefabButtonText, new List<Component>
+            {
+                prefabButtonText.GetComponent<Text>()
+            }));
+
+            var objectButton = timelineBar.transform.Find("object").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Button", "Object", objectButton, new List<Component>
+            {
+                objectButton.GetComponent<Image>()
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var objectButtonText = objectButton.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Button Text", "Object Text", objectButtonText, new List<Component>
+            {
+                objectButtonText.GetComponent<Text>()
+            }));
+
+            var markerButton = timelineBar.transform.Find("event").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Marker Button", "Marker", markerButton, new List<Component>
+            {
+                markerButton.GetComponent<Image>()
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var markerButtonText = markerButton.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Marker Button Text", "Marker Text", markerButtonText, new List<Component>
+            {
+                markerButtonText.GetComponent<Text>()
+            }));
+
+            var checkpointButton = timelineBar.transform.Find("checkpoint").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Button", "Checkpoint", markerButton, new List<Component>
+            {
+                checkpointButton.GetComponent<Image>()
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var checkpointButtonText = checkpointButton.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Button Text", "Checkpoint Text", checkpointButtonText, new List<Component>
+            {
+                checkpointButtonText.GetComponent<Text>()
+            }));
+
+            var backgroundButton = timelineBar.transform.Find("background").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Button", "Background Object", markerButton, new List<Component>
+            {
+                backgroundButton.GetComponent<Image>()
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var backgroundButtonText = backgroundButton.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Button Text", "Background Object Text", backgroundButtonText, new List<Component>
+            {
+                backgroundButtonText.GetComponent<Text>()
+            }));
+
+            var playTest = timelineBar.transform.Find("playtest").gameObject;
+            Destroy(playTest.GetComponent<Animator>());
+            var playTestButton = playTest.GetComponent<Button>();
+            playTestButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Play Test Button", "Function 2", playTest, new List<Component>
+            {
+                playTest.GetComponent<Image>(),
+                playTestButton
+            }, isSelectable: true));
         }
 
         public bool isOverMainTimeline;
@@ -2008,6 +2078,16 @@ namespace EditorManagement.Functions.Editors
                 });
                 et.triggers.Add(eventKeyframeCreation);
             }
+
+            TriggerHelper.AddEventTriggerParams(EditorManager.inst.timelineScrollbar, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
+            {
+                var pointerEventData = (PointerEventData)baseEventData;
+
+                var scrollBar = EditorManager.inst.timelineScrollRectBar;
+                float multiply = Input.GetKey(KeyCode.LeftAlt) ? 0.1f : Input.GetKey(KeyCode.LeftControl) ? 10f : 1f;
+
+                scrollBar.value = pointerEventData.scrollDelta.y > 0f ? scrollBar.value + (0.005f * multiply) : pointerEventData.scrollDelta.y < 0f ? scrollBar.value - (0.005f * multiply) : 0f;
+            }));
         }
 
         public void SetupSelectGUI()
@@ -3095,7 +3175,7 @@ namespace EditorManagement.Functions.Editors
                 pathText.GetComponent<Text>(),
             }));
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Local", "Function 2", browseLocal.gameObject, new List<Component>
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Local", "Function 2 Normal", browseLocal.gameObject, new List<Component>
             {
                 browseLocal.GetComponent<Image>(),
             }, true, 1, SpriteManager.RoundedSide.W));
@@ -3105,7 +3185,7 @@ namespace EditorManagement.Functions.Editors
                 browseLocalText,
             }));
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Internal", "Function 2", browseLocal.gameObject, new List<Component>
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Internal", "Function 2 Normal", browseInternal.gameObject, new List<Component>
             {
                 browseInternal.GetComponent<Image>(),
             }, true, 1, SpriteManager.RoundedSide.W));
