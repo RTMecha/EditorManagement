@@ -155,6 +155,18 @@ namespace EditorManagement.Functions
                 Close();
             });
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", close, new List<Component>
+            {
+                close.GetComponent<Image>(),
+                close.GetComponent<Button>(),
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var closeX = close.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", closeX, new List<Component>
+            {
+                closeX.GetComponent<Image>(),
+            }));
+
             EditorHelper.AddEditorDropdown("Open Project Planner", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_planner.png"), delegate ()
             {
                 Open();
@@ -378,6 +390,12 @@ namespace EditorManagement.Functions
                     RefreshList();
                 });
 
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Project Planner Add New Item", "Function 2", addNewItem, new List<Component>
+                {
+                    addNewItem.GetComponent<Image>(),
+                    addNewItemButton
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
                 var reload = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
                 reload.SetActive(true);
                 reload.name = "reload";
@@ -392,6 +410,11 @@ namespace EditorManagement.Functions
                     Load();
                 });
 
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Project Planner Reload", "Function 2", reload, new List<Component>
+                {
+                    reload.GetComponent<Image>(),
+                    reloadButton
+                }, true, 1, SpriteManager.RoundedSide.W, true));
             }
 
             gradientSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "linear_gradient.png");
@@ -1947,6 +1970,9 @@ namespace EditorManagement.Functions
             if (EditorManager.inst.editorState == EditorManager.EditorState.Main)
                 return;
 
+            if (OSTAudioSource)
+                OSTAudioSource.volume = AudioManager.inst.musicVol;
+
             var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).ToList();
             if (OSTAudioSource && OSTAudioSource.clip && OSTAudioSource.time > OSTAudioSource.clip.length - 0.1f && currentOST + 1 < list.Count)
             {
@@ -3010,11 +3036,22 @@ namespace EditorManagement.Functions
         {
             var gameObject = tabPrefab.Duplicate(topBarBase, name);
             gameObject.transform.localScale = Vector3.one;
-            var text = gameObject.transform.Find("Background/Text").GetComponent<Text>();
+
+            var background = gameObject.transform.Find("Background");
+            var text = background.Find("Text").GetComponent<Text>();
+            var image = background.GetComponent<Image>();
+
             text.fontSize = 26;
             text.fontStyle = FontStyle.Bold;
             text.text = name;
+            gameObject.AddComponent<ContrastColors>().Init(text, image);
             tabs.Add(gameObject.GetComponent<Toggle>());
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Project Planner Tab {name}", $"Tab Color {tabs.Count}", gameObject, new List<Component>
+            {
+                image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
             return gameObject;
         }
 
