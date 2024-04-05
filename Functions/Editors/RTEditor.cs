@@ -605,14 +605,51 @@ namespace EditorManagement.Functions.Editors
             {
                 var notif = Instantiate(EditorManager.inst.notificationPrefabs[(int)type], Vector3.zero, Quaternion.identity);
                 Destroy(notif, time);
+
+                Graphic textComponent = type == EditorManager.NotificationType.Info ? notif.transform.Find("text").GetComponent<TextMeshProUGUI>() : notif.transform.Find("text").GetComponent<Text>();
+
                 if (type == EditorManager.NotificationType.Info)
-                    notif.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
+                    ((TextMeshProUGUI)textComponent).text = text;
                 else
-                    notif.transform.Find("text").GetComponent<Text>().text = text;
+                    ((Text)textComponent).text = text;
+
+                //if (type == EditorManager.NotificationType.Info)
+                //    notif.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
+                //else
+                //    notif.transform.Find("text").GetComponent<Text>().text = text;
                 notif.transform.SetParent(EditorManager.inst.notification.transform);
                 if (config.NotificationDirection.Value == Direction.Down)
                     notif.transform.SetAsFirstSibling();
                 notif.transform.localScale = Vector3.one;
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Background", "Notification Background", notif, new List<Component>
+                {
+                    notif.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var notifPanel = notif.transform.Find("bg/bg").gameObject;
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Panel", $"Notification {type}", notifPanel, new List<Component>
+                {
+                    notifPanel.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Top));
+
+                var notifText = notif.transform.Find("text").gameObject;
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Text", "Light Text", notifText, new List<Component>
+                {
+                    textComponent,
+                }));
+
+                var notifIcon = notif.transform.Find("bg/Image").gameObject;
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Icon", "Light Text", notifIcon, new List<Component>
+                {
+                    notifIcon.GetComponent<Image>(),
+                }));
+
+                var notifTitle = notif.transform.Find("bg/title").gameObject;
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Title", "Light Text", notifTitle, new List<Component>
+                {
+                    notifTitle.GetComponent<Text>(),
+                }));
 
                 RebuildNotificationLayout();
 
@@ -681,6 +718,36 @@ namespace EditorManagement.Functions.Editors
                 notifyRT.anchoredPosition = new Vector2(8f, 410f);
                 notifyGroup.childAlignment = TextAnchor.UpperLeft;
             }
+
+            var tooltip = EditorManager.inst.tooltip.transform.parent.gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Background", "Notification Background", tooltip, new List<Component>
+            {
+                tooltip.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var tooltipPanel = tooltip.transform.Find("bg/bg").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Panel", "Notification Info", tooltipPanel, new List<Component>
+            {
+                tooltipPanel.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Top));
+
+            var tooltipText = tooltip.transform.Find("text").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Text", "Light Text", tooltipText, new List<Component>
+            {
+                tooltipText.GetComponent<TextMeshProUGUI>(),
+            }));
+
+            var tooltipIcon = tooltip.transform.Find("bg/Image").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Icon", "Light Text", tooltipIcon, new List<Component>
+            {
+                tooltipIcon.GetComponent<Image>(),
+            }));
+
+            var tooltipTitle = tooltip.transform.Find("bg/title").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Title", "Light Text", tooltipTitle, new List<Component>
+            {
+                tooltipTitle.GetComponent<Text>(),
+            }));
         }
 
         #endregion
@@ -1676,7 +1743,8 @@ namespace EditorManagement.Functions.Editors
                     layerType = LayerType.Objects;
             });
 
-            timelineBar.transform.GetChild(0).gameObject.name = "Time Default";
+            var timeDefault = timelineBar.transform.GetChild(0).gameObject;
+            timeDefault.name = "Time Default";
 
             var t = timelineBar.transform.Find("Time");
             defaultIF = t.gameObject;
@@ -1802,6 +1870,91 @@ namespace EditorManagement.Functions.Editors
 
                 pitchObj.AddComponent<InputFieldSwapper>();
             }
+
+            var timelineBarBase = timelineBar.transform.parent.gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Timeline Bar", "Timeline Bar", timelineBarBase, new List<Component>
+            {
+                timelineBarBase.GetComponent<Image>()
+            }));
+
+            var timeButton = timeDefault.AddComponent<Button>();
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Format Time Button", "List Button 1", timeDefault, new List<Component>
+            {
+                timeDefault.GetComponent<Image>(),
+                timeButton
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Time Input Field", "Input Field", timeObj, new List<Component>
+            {
+                timeIF.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Time Input Field Text", "Input Field Text", timeIF.textComponent.gameObject, new List<Component>
+            {
+                timeIF.textComponent,
+            }));
+
+            var play = timelineBar.transform.Find("play").gameObject;
+            Destroy(play.GetComponent<Animator>());
+            var playButton = play.GetComponent<Button>();
+            playButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Play Button", "Function 2", play, new List<Component>
+            {
+                play.GetComponent<Image>(),
+                playButton
+            }, isSelectable: true));
+
+            var leftPitch = timelineBar.transform.Find("<").gameObject;
+            Destroy(leftPitch.GetComponent<Animator>());
+            var leftPitchButton = leftPitch.GetComponent<Button>();
+            leftPitchButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Left Pitch Button", "Function 2", leftPitch, new List<Component>
+            {
+                leftPitch.GetComponent<Image>(),
+                leftPitchButton
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Pitch Input Field", "Input Field", pitchObj, new List<Component>
+            {
+                pitchIF.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Pitch Input Field Text", "Input Field Text", pitchIF.textComponent.gameObject, new List<Component>
+            {
+                pitchIF.textComponent,
+            }));
+
+            var rightPitch = timelineBar.transform.Find(">").gameObject;
+            Destroy(rightPitch.GetComponent<Animator>());
+            var rightPitchButton = rightPitch.GetComponent<Button>();
+            rightPitchButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Right Pitch Button", "Function 2", rightPitch, new List<Component>
+            {
+                rightPitch.GetComponent<Image>(),
+                rightPitchButton
+            }, isSelectable: true));
+
+            // Leave this group empty since the color is already handled via the custom layer colors. This is only here for the rounded edges.
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Input Field", "", layersObj, new List<Component>
+            {
+                layersIF.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Event Toggle", "Event/Check", eventToggle.gameObject, new List<Component>
+            {
+                eventToggle.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var eventToggleText = eventToggle.transform.Find("Background/Text").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Event Toggle Text", "Event/Check Text", eventToggleText, new List<Component>
+            {
+                eventToggleText.GetComponent<Text>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Event Toggle Checkmark", "Timeline Bar", eventToggle.graphic.gameObject, new List<Component>
+            {
+                (Image)eventToggle.graphic,
+            }));
         }
 
         public bool isOverMainTimeline;
@@ -7912,7 +8065,7 @@ namespace EditorManagement.Functions.Editors
                 objectSearchRT.sizeDelta = new Vector2(600f, 450f);
                 var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
                 objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
-                objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Debugger";
+                objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Debugger (Only use this if you know what you're doing)";
                 ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
                 objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
 
@@ -8216,6 +8369,35 @@ namespace EditorManagement.Functions.Editors
                         .Invoke(inspector, new object[] { GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent], null });
                     });
                     gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+                }
+
+                var functions = RTFile.ApplicationDirectory + "beatmaps/functions";
+                if (!RTFile.DirectoryExists(functions))
+                    return;
+
+                var files = Directory.GetFiles(functions, "*.cs");
+                for (int i = 0; i < files.Length; i++)
+                {
+                    var file = files[i];
+
+                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
+                    debugs.Add($"Custom Code Function: {file}");
+
+                    var htt = gameObject.AddComponent<HoverTooltip>();
+
+                    var levelTip = new HoverTooltip.Tooltip();
+
+                    levelTip.desc = $"{file}";
+                    levelTip.hint = "A custom code file. Make sure you know what you're doing before using this.";
+                    htt.tooltipLangauges.Add(levelTip);
+
+                    var button = gameObject.GetComponent<Button>();
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        RTCode.Evaluate(RTFile.ReadFromFile(file));
+                    });
+                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Custom Code Function: {file}";
                 }
             }
         }
