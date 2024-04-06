@@ -470,7 +470,7 @@ namespace EditorManagement.Patchers
 				Destroy(id.transform.GetChild(1).gameObject);
 
 				((RectTransform)id.transform).sizeDelta = new Vector2(515, 32f);
-				((RectTransform)id.transform.GetChild(0)).sizeDelta = new Vector2(188f, 32f);
+				((RectTransform)id.transform.GetChild(0)).sizeDelta = new Vector2(226f, 32f);
 
 				var text = id.transform.GetChild(0).GetComponent<Text>();
 				text.fontSize = 18;
@@ -486,6 +486,7 @@ namespace EditorManagement.Patchers
 
 				var ldm = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle").Duplicate(id.transform, "ldm");
 
+				ldm.transform.Find("title").AsRT().sizeDelta = new Vector2(44f, 32f);
 				ldm.transform.Find("title").GetComponent<Text>().text = "LDM";
 			}
 
@@ -1271,7 +1272,7 @@ namespace EditorManagement.Patchers
 
 			ObjectEditor.Init(__instance);
 
-			ObjectEditor.inst.shapeButtonPrefab = __instance.ObjectView.transform.Find("shape/1").gameObject.Duplicate(null);
+			ObjectEditor.inst.shapeButtonPrefab = __instance.ObjectView.transform.Find("shape/1").gameObject.Duplicate(__instance.transform);
 
 			return false;
 		}
