@@ -96,6 +96,7 @@ namespace EditorManagement.Functions.Editors
             SetupTimelineElements();
             SetupTimelineGrid();
             SetupNewFilePopup();
+            CreatePreviewCover();
             CreateObjectSearch();
             CreateWarningPopup();
             CreateREPLEditor();
@@ -354,7 +355,7 @@ namespace EditorManagement.Functions.Editors
                 ModCompatibility.sharedFunctions["ParentPickerActive"] = parentPickerEnabled;
 
             ModCompatibility.sharedFunctions.AddSet("SelectedObjects", ObjectEditor.inst.SelectedObjects);
-            
+
             if (RTHelpers.AprilFools && UnityEngine.Random.Range(0, 10000) > 9996)
             {
                 var array = new string[]
@@ -388,6 +389,8 @@ namespace EditorManagement.Functions.Editors
 
         public float dragOffset = -1f;
         public int dragBinOffset = -100;
+
+        public EditorThemeManager.Element PreviewCover { get; set; }
 
         public static bool DraggingPlaysSound { get; set; }
         public static bool DraggingPlaysSoundBPM { get; set; }
@@ -3214,6 +3217,29 @@ namespace EditorManagement.Functions.Editors
             {
                 createText.GetComponent<Text>(),
             }));
+        }
+
+        public void CreatePreviewCover()
+        {
+            var gameObject = new GameObject("Preview Cover");
+            gameObject.transform.SetParent(EditorManager.inst.dialogs.parent);
+            gameObject.transform.localScale = Vector3.one;
+
+            gameObject.transform.SetSiblingIndex(1);
+
+            var rectTransform = gameObject.AddComponent<RectTransform>();
+            var image = gameObject.AddComponent<Image>();
+
+            rectTransform.anchoredPosition = Vector2.zero;
+            rectTransform.sizeDelta = new Vector2(10000f, 10000f);
+
+            PreviewCover = new EditorThemeManager.Element("Preview Cover", "Preview Cover", gameObject, new List<Component>
+            {
+                image,
+            });
+            EditorThemeManager.AddElement(PreviewCover);
+
+            gameObject.SetActive(!RTHelpers.AprilFools);
         }
 
         public void CreateObjectSearch()
@@ -8916,6 +8942,8 @@ namespace EditorManagement.Functions.Editors
 
                 yield break;
             }
+
+            PreviewCover?.GameObject?.SetActive(false);
 
             if (ModCompatibility.CreativePlayersInstalled)
             {
