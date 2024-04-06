@@ -78,7 +78,7 @@ namespace EditorManagement.Functions.Editors
                 Destroy(go);
 
             prefabTypeTogglePrefab = transform.GetChild(0).gameObject;
-            prefabTypeTogglePrefab.transform.SetParent(null);
+            prefabTypeTogglePrefab.transform.SetParent(transform);
 
             CreatePrefabTypesPopup();
             CreatePrefabExternalDialog();

@@ -165,6 +165,7 @@ namespace EditorManagement.Functions.Editors
             try
             {
                 tagPrefab = new GameObject("Tag");
+                tagPrefab.transform.SetParent(transform);
                 var tagPrefabRT = tagPrefab.AddComponent<RectTransform>();
                 var tagPrefabImage = tagPrefab.AddComponent<Image>();
                 tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);

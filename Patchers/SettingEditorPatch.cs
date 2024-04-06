@@ -180,6 +180,7 @@ namespace EditorManagement.Patchers
             yield return new WaitForSeconds(0.4f);
 
             colorPrefab = new GameObject("Color");
+            colorPrefab.transform.SetParent(SettingEditor.inst.transform);
             var tagPrefabRT = colorPrefab.AddComponent<RectTransform>();
             var tagPrefabImage = colorPrefab.AddComponent<Image>();
             tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);

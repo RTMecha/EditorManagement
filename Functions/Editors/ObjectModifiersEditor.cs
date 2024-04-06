@@ -136,6 +136,7 @@ namespace EditorManagement.Functions.Editors
             scrollView.gameObject.SetActive(showModifiers);
 
             modifierCardPrefab = new GameObject("Modifier Prefab");
+            modifierCardPrefab.transform.SetParent(transform);
             var mcpRT = modifierCardPrefab.AddComponent<RectTransform>();
             mcpRT.sizeDelta = new Vector2(336f, 128f);
 
@@ -244,7 +245,7 @@ namespace EditorManagement.Functions.Editors
             var mcpSpacerBotRT = mcpSpacerBot.AddComponent<RectTransform>();
             mcpSpacerBotRT.sizeDelta = new Vector2(350f, 8f);
 
-            modifierAddPrefab = EditorManager.inst.folderButtonPrefab.Duplicate(null, "add modifier");
+            modifierAddPrefab = EditorManager.inst.folderButtonPrefab.Duplicate(transform, "add modifier");
 
             var text = modifierAddPrefab.transform.GetChild(0).GetComponent<Text>();
             text.text = "+";
@@ -557,6 +558,7 @@ namespace EditorManagement.Functions.Editors
                         case "setImageOther":
                         case "code":
                         case "setWindowTitle":
+                        case "realTimeDayWeekEquals":
                             {
                                 if (cmd == "setTextOther" || cmd == "addTextOther" || cmd == "setImageOther")
                                 {
@@ -567,7 +569,12 @@ namespace EditorManagement.Functions.Editors
                                 if (cmd == "updateObject" || cmd == "copyColor" || cmd == "copyColorOther" || cmd == "objectCollide")
                                     stringGenerator("Object Group", 0);
                                 else if (cmd != "setTextOther" && cmd != "addTextOther" && cmd != "setImageOther")
-                                    stringGenerator(cmd == "setText" || cmd == "addText" ? "Text" : cmd == "code" ? "Code" : cmd == "setWindowTitle" ? "Title" : "Path", 0);
+                                    stringGenerator(
+                                        cmd == "setText" || cmd == "addText" ? "Text" :
+                                        cmd == "code" ? "Code" :
+                                        cmd == "setWindowTitle" ? "Title" :
+                                        cmd == "realTimeDayWeekEquals" ? "Day" :
+                                        "Path", 0);
 
                                 if (cmd == "code")
                                 {
@@ -677,6 +684,41 @@ namespace EditorManagement.Functions.Editors
                         case "playerBoostGreaterEquals":
                         case "playerBoostLesser":
                         case "playerBoostGreater":
+                        case "realTimeSecondEquals":
+                        case "realTimeSecondLesserEquals":
+                        case "realTimeSecondGreaterEquals":
+                        case "realTimeSecondLesser":
+                        case "realTimeSecondGreater":
+                        case "realTimeMinuteEquals":
+                        case "realTimeMinuteLesserEquals":
+                        case "realTimeMinuteGreaterEquals":
+                        case "realTimeMinuteLesser":
+                        case "realTimeMinuteGreater":
+                        case "realTime12HourEquals":
+                        case "realTime12HourLesserEquals":
+                        case "realTime12HourGreaterEquals":
+                        case "realTime12HourLesser":
+                        case "realTime12HourGreater":
+                        case "realTime24HourEquals":
+                        case "realTime24HourLesserEquals":
+                        case "realTime24HourGreaterEquals":
+                        case "realTime24HourLesser":
+                        case "realTime24HourGreater":
+                        case "realTimeDayEquals":
+                        case "realTimeDayLesserEquals":
+                        case "realTimeDayGreaterEquals":
+                        case "realTimeDayLesser":
+                        case "realTimeDayGreater":
+                        case "realTimeMonthEquals":
+                        case "realTimeMonthLesserEquals":
+                        case "realTimeMonthGreaterEquals":
+                        case "realTimeMonthLesser":
+                        case "realTimeMonthGreater":
+                        case "realTimeYearEquals":
+                        case "realTimeYearLesserEquals":
+                        case "realTimeYearGreaterEquals":
+                        case "realTimeYearLesser":
+                        case "realTimeYearGreater":
                             {
                                 integerGenerator("Value", 0, 0);
 
@@ -1606,6 +1648,12 @@ namespace EditorManagement.Functions.Editors
                         EditorManager.inst.ShowDialog("Default Modifiers Popup");
                         RefreshDefaultModifiersList(beatmapObject);
                     });
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Add Modifier", "List Button 1", button, new List<Component>
+                    {
+                        button.GetComponent<Image>(),
+                        butt,
+                    }, true, 1, SpriteManager.RoundedSide.W, true));
                 }
             }
 
