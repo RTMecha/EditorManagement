@@ -101,6 +101,7 @@ namespace EditorManagement.Functions.Editors
             new EditorTheme($"{nameof(ThemeSetting.Legacy)}", new Dictionary<string, Color>
             {
                 { "Background", LSColors.HexToColorAlpha("212121FF") },
+                { "Preview Cover", LSColors.HexToColorAlpha("191919FF") },
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("C8C8C8FF") },
                 { "Scrollbar Handle Normal", LSColors.HexToColorAlpha("C7C7C7FF") },
                 { "Scrollbar Handle Highlight", LSColors.HexToColorAlpha("414141FF") },
@@ -197,6 +198,7 @@ namespace EditorManagement.Functions.Editors
             new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
                 { "Background", LSColors.HexToColorAlpha("0A0A0AFF") },
+                { "Preview Cover", LSColors.HexToColorAlpha("060606FF") },
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Scrollbar Handle Normal", LSColors.HexToColorAlpha("4C4C4CFF") },
                 { "Scrollbar Handle Highlight", LSColors.HexToColorAlpha("606060FF") },
