@@ -2728,7 +2728,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         beatmapObject.shape = index;
                         beatmapObject.shapeOption = 0;
-                        beatmapObject.text = "";
+                        //beatmapObject.text = "";
 
                         // Since shape has no affect on the timeline object, we will only need to update the physical object.
                         if (UpdateObjects)
