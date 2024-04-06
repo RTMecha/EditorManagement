@@ -1729,7 +1729,7 @@ namespace EditorManagement.Functions.Editors
             timelineBar = GameObject.Find("TimelineBar/GameObject");
 
             for (int i = 1; i <= 5; i++)
-                timelineBar.transform.Find(i.ToString()).gameObject.SetActive(false);
+                timelineBar.transform.Find(i.ToString()).SetParent(transform);
 
             Destroy(GameObject.Find("TimelineBar/GameObject/6").GetComponent<EventTrigger>());
 
@@ -1749,8 +1749,8 @@ namespace EditorManagement.Functions.Editors
             var t = timelineBar.transform.Find("Time");
             defaultIF = t.gameObject;
             defaultIF.SetActive(true);
-            t.SetParent(null);
-            __instance.speedText.transform.parent.SetParent(null);
+            t.SetParent(transform);
+            __instance.speedText.transform.parent.SetParent(transform);
 
             if (defaultIF.TryGetComponent(out InputField frick))
             {
@@ -1792,7 +1792,7 @@ namespace EditorManagement.Functions.Editors
             {
                 layersObj.transform.SetParent(timelineBar.transform);
                 layersObj.name = "layers";
-                layersObj.transform.SetSiblingIndex(8);
+                layersObj.transform.SetSiblingIndex(7);
                 layersObj.transform.localScale = Vector3.one;
 
                 for (int i = 0; i < layersObj.transform.childCount; i++)
@@ -2726,6 +2726,12 @@ namespace EditorManagement.Functions.Editors
                 });
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Reloader", "Function 2", levelListReloader, new List<Component>
+                {
+                    levelListReloader.GetComponent<Image>(),
+                    levelListRButton
+                }, isSelectable: true));
 
                 if (RTFile.FileExists(refreshImage))
                 {
