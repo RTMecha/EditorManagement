@@ -18,17 +18,19 @@ using System.Collections;
 
 namespace EditorManagement.Functions.Editors
 {
+    /// <summary>
+    /// Class that applies Editor Themes and Rounded setting onto every UI element in the editor.
+    /// </summary>
     public class EditorThemeManager
     {
-        // When working on this, try rounding up the colors. If one color is really similar to another, then include them in the same color group.
+        public static bool DebugMode { get; set; } = true;
 
         public static void Update()
         {
             if (EditorManager.inst == null && EditorGUIElements.Count > 0)
                 Clear();
 
-            // Debug functionality, remove in final build
-            if (EditorManager.inst)
+            if (EditorManager.inst && DebugMode)
             {
                 if (Input.GetKeyDown(KeyCode.G))
                     EditorConfig.Instance.EditorTheme.Value = EditorConfig.Instance.EditorTheme.Value == ThemeSetting.Legacy ? ThemeSetting.Dark : ThemeSetting.Legacy;
@@ -291,8 +293,6 @@ namespace EditorManagement.Functions.Editors
         };
 
         public static Dictionary<string, EditorTheme> EditorThemesDictionary => EditorThemes.ToDictionary(x => x.name, x => x);
-
-        public static bool DebugMode { get; set; }
 
         public class EditorTheme
         {
