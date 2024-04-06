@@ -50,6 +50,7 @@ namespace EditorManagement.Functions
         public AudioSource OSTAudioSource { get; set; }
         public int currentOST;
         public string currentOSTID;
+        public bool playing = false;
 
         public List<Toggle> tabs = new List<Toggle>();
 
@@ -1974,10 +1975,20 @@ namespace EditorManagement.Functions
                 OSTAudioSource.volume = AudioManager.inst.musicVol;
 
             var list = planners.Where(x => x.PlannerType == PlannerItem.Type.OST && x is OSTItem).Select(x => x as OSTItem).ToList();
-            if (OSTAudioSource && OSTAudioSource.clip && OSTAudioSource.time > OSTAudioSource.clip.length - 0.1f && currentOST + 1 < list.Count)
+            if (OSTAudioSource && OSTAudioSource.clip && OSTAudioSource.time > OSTAudioSource.clip.length - 0.1f && playing)
             {
+                int num = 1;
+                // Here we skip any OST where a song file does not exist.
+                while (currentOST + num < list.Count && !list[num].Valid)
+                    num++;
+
                 list[currentOST].playing = false;
-                list[currentOST + 1].Play();
+                playing = false;
+
+                if (currentOST + num >= list.Count)
+                    return;
+
+                list[currentOST + num].Play();
             }
         }
 
@@ -3013,6 +3024,8 @@ namespace EditorManagement.Functions
             {
                 list[i].playing = false;
             }
+
+            playing = false;
         }
 
         #endregion
@@ -3854,6 +3867,8 @@ namespace EditorManagement.Functions
 
             public bool playing;
 
+            public bool Valid => RTFile.FileExists(UseGlobal ? Path : $"{RTFile.ApplicationDirectory}{Path}") && (Path.Contains(".ogg") || Path.Contains(".wav") || Path.Contains(".mp3"));
+
             public void Play()
             {
                 var filePath = UseGlobal ? Path : $"{RTFile.ApplicationDirectory}{Path}";
@@ -3877,6 +3892,7 @@ namespace EditorManagement.Functions
                     inst.OSTAudioSource = audioSource;
                     inst.currentOSTID = ID;
                     inst.currentOST = Index;
+                    inst.playing = true;
 
                     audioSource.clip = audioClip;
                     audioSource.playOnAwake = true;
@@ -3898,6 +3914,7 @@ namespace EditorManagement.Functions
                     inst.OSTAudioSource = audioSource;
                     inst.currentOSTID = ID;
                     inst.currentOST = Index;
+                    inst.playing = true;
 
                     audioSource.clip = audioClip;
                     audioSource.playOnAwake = true;
