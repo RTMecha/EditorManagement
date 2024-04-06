@@ -1237,6 +1237,7 @@ namespace EditorManagement.Functions.Editors
             textBase1RT.sizeDelta = new Vector2(765f, 300f);
             
             var description = RTEditor.inst.defaultIF.Duplicate(textBase1RT);
+            description.transform.localScale = Vector3.one;
             description.transform.AsRT().anchoredPosition = Vector2.zero;
             description.transform.AsRT().anchorMax = new Vector2(0.5f, 0.5f);
             description.transform.AsRT().anchorMin = new Vector2(0.5f, 0.5f);
