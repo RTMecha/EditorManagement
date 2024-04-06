@@ -111,6 +111,7 @@ namespace EditorManagement
 
 			EditorConfig.HideVisualElementsWhenObjectIsEmpty.SettingChanged += ObjectEditorChanged;
 			EditorConfig.KeyframeZoomBounds.SettingChanged += ObjectEditorChanged;
+			EditorConfig.ObjectSelectionColor.SettingChanged += ObjectEditorChanged;
 
 			EditorConfig.ThemeTemplateName.SettingChanged += ThemeTemplateChanged;
 			EditorConfig.ThemeTemplateGUI.SettingChanged += ThemeTemplateChanged;
