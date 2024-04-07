@@ -9134,6 +9134,7 @@ namespace EditorManagement.Functions.Editors
                 num++;
             }
 
+            var search = EventEditor.inst.dialogRight.GetChild(4).Find("theme-search").GetComponent<InputField>().text;
             var files = Directory.GetFiles(RTFile.ApplicationDirectory + themeListPath, "*.lst");
             foreach (var file in files)
             {
@@ -9201,6 +9202,8 @@ namespace EditorManagement.Functions.Editors
                         ThemeEditorManager.inst.DeleteThemeDelegate(orig);
                     });
                     themePanel.Name.text = orig.name;
+
+                    themePanel.SetActive(RTHelpers.SearchString(themePanel.Theme.name, search));
                 }
 
                 if (jn["id"] == null)
