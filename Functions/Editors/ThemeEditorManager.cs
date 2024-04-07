@@ -895,15 +895,15 @@ namespace EditorManagement.Functions.Editors
 			var guiDropper = themeContent.Find("gui/preview/dropper").GetComponent<Image>();
 
 			guiHex.onValueChanged.RemoveAllListeners();
-			guiHex.characterLimit = 8;
+			guiHex.characterLimit = EditorConfig.Instance.SavingSavesThemeOpacity.Value ? 8 : 6;
 			guiHex.characterValidation = InputField.CharacterValidation.None;
 			guiHex.contentType = InputField.ContentType.Standard;
-			guiHex.text = RTHelpers.ColorToHex(PreviewTheme.guiColor);
+			guiHex.text = EditorConfig.Instance.SavingSavesThemeOpacity.Value ? RTHelpers.ColorToHex(PreviewTheme.guiColor) : LSColors.ColorToHex(PreviewTheme.guiColor);
 			guiPreview.color = PreviewTheme.guiColor;
 			guiHex.onValueChanged.AddListener(delegate (string val)
 			{
-				guiPreview.color = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
-				PreviewTheme.guiColor = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
+				guiPreview.color = val.Length == 8 ? LSColors.HexToColorAlpha(val) : val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
+				PreviewTheme.guiColor = val.Length == 8 ? LSColors.HexToColorAlpha(val) : val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
 
 				guiDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.guiColor));
 				guiPreviewET.triggers.Clear();
@@ -920,15 +920,15 @@ namespace EditorManagement.Functions.Editors
 			var guiaccentDropper = themeContent.Find("guiaccent/preview/dropper").GetComponent<Image>();
 
 			guiaccentHex.onValueChanged.RemoveAllListeners();
-			guiaccentHex.characterLimit = 8;
+			guiaccentHex.characterLimit = EditorConfig.Instance.SavingSavesThemeOpacity.Value ? 8 : 6;
 			guiaccentHex.characterValidation = InputField.CharacterValidation.None;
 			guiaccentHex.contentType = InputField.ContentType.Standard;
-			guiaccentHex.text = RTHelpers.ColorToHex(PreviewTheme.guiAccentColor);
+			guiaccentHex.text = EditorConfig.Instance.SavingSavesThemeOpacity.Value ? RTHelpers.ColorToHex(PreviewTheme.guiAccentColor) : LSColors.ColorToHex(PreviewTheme.guiAccentColor);
 			guiaccentPreview.color = PreviewTheme.guiAccentColor;
 			guiaccentHex.onValueChanged.AddListener(delegate (string val)
 			{
-				guiaccentPreview.color = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
-				PreviewTheme.guiAccentColor = val.Length == 8 ? LSColors.HexToColorAlpha(val) : LSColors.pink500;
+				guiaccentPreview.color = val.Length == 8 ? LSColors.HexToColorAlpha(val) : val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
+				PreviewTheme.guiAccentColor = val.Length == 8 ? LSColors.HexToColorAlpha(val) : val.Length == 6 ? LSColors.HexToColor(val) : LSColors.pink500;
 
 				guiaccentDropper.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(PreviewTheme.guiAccentColor));
 				guiaccentPreviewET.triggers.Clear();
@@ -939,9 +939,9 @@ namespace EditorManagement.Functions.Editors
 			guiaccentPreviewET.triggers.Clear();
 			guiaccentPreviewET.triggers.Add(TriggerHelper.CreatePreviewClickTrigger(guiaccentPreview, guiaccentDropper, guiaccentHex, PreviewTheme.guiAccentColor));
 
-			RenderColorList(themeContent, "player", 4, PreviewTheme.playerColors);
+			RenderColorList(themeContent, "player", 4, PreviewTheme.playerColors, EditorConfig.Instance.SavingSavesThemeOpacity.Value);
 
-			RenderColorList(themeContent, "object", 18, PreviewTheme.objectColors);
+			RenderColorList(themeContent, "object", 18, PreviewTheme.objectColors, EditorConfig.Instance.SavingSavesThemeOpacity.Value);
 
 			RenderColorList(themeContent, "background", 9, PreviewTheme.backgroundColors, false);
 
@@ -974,7 +974,7 @@ namespace EditorManagement.Functions.Editors
 
 					int indexTmp = i;
 					hex.onValueChanged.RemoveAllListeners();
-					hex.characterLimit = 8;
+					hex.characterLimit = allowAlpha ? 8 : 6;
 					hex.characterValidation = InputField.CharacterValidation.None;
 					hex.contentType = InputField.ContentType.Standard;
 					hex.text = allowAlpha ? RTHelpers.ColorToHex(colors[indexTmp]) : LSColors.ColorToHex(colors[indexTmp]);
