@@ -26,6 +26,9 @@ namespace EditorManagement.Functions.Editors
 
         #region Variables
 
+        public bool savingToPrefab;
+        public Prefab prefabToSaveFrom;
+
         public string externalSearchStr;
         public string internalSearchStr;
 
@@ -486,37 +489,17 @@ namespace EditorManagement.Functions.Editors
                 savePrefab.onClick.ClearAll();
                 savePrefab.onClick.AddListener(delegate ()
                 {
-                    if (__instance.LoadedPrefabs.Find(x => x.Name == prefab.Name) != null)
-                    {
-                        var externalPrefab = __instance.LoadedPrefabs.Find(x => x.Name == prefab.Name);
-                        var index = __instance.LoadedPrefabs.FindIndex(x => x.Name == prefab.Name);
+                    savingToPrefab = true;
+                    prefabToSaveFrom = (Prefab)prefab;
 
-                        Debug.LogFormat("{0}External Prefab: {1}", EditorPlugin.className, externalPrefab.Name);
-                        Debug.LogFormat("{0}External Prefab Index: {1}", EditorPlugin.className, index);
+                    EditorManager.inst.ShowDialog("Prefab Popup");
+                    var dialog = EditorManager.inst.GetDialog("Prefab Popup").Dialog;
+                    dialog.GetChild(0).gameObject.SetActive(false);
 
-                        if (index >= 0)
-                        {
-                            FileManager.inst.DeleteFileRaw(__instance.LoadedPrefabsFiles[index]);
-                            Debug.LogFormat("{0}Deleted File", EditorPlugin.className);
-                            __instance.LoadedPrefabs.RemoveAt(index);
-                            Debug.LogFormat("{0}Removed Prefab", EditorPlugin.className);
-                            __instance.LoadedPrefabsFiles.RemoveAt(index);
-                            Debug.LogFormat("{0}Removed Prefab File", EditorPlugin.className);
+                    if (__instance.externalContent != null)
+                        __instance.ReloadExternalPrefabsInPopup();
 
-                            __instance.SavePrefab(prefab);
-                            Debug.LogFormat("{0}Saved Prefab", EditorPlugin.className);
-
-                            if (__instance.externalContent != null)
-                                __instance.ReloadExternalPrefabsInPopup();
-
-                            EditorManager.inst.DisplayNotification("Applied all changes to external prefab!", 2f, EditorManager.NotificationType.Success);
-                        }
-                    }
-                    else
-                    {
-                        __instance.SavePrefab(prefab);
-                        EditorManager.inst.DisplayNotification("External Prefab with same name does not exist!", 2f, EditorManager.NotificationType.Error);
-                    }
+                    EditorManager.inst.DisplayNotification("Select an External Prefab to apply changes to.", 2f);
                 });
 
                 objectCount.text = "Object Count: " + prefab.objects.Count.ToString();
@@ -1128,6 +1111,7 @@ namespace EditorManagement.Functions.Editors
         public Button importPrefab;
         public Button exportToVG;
 
+        public InputField externalNameField;
         public InputField externalDescriptionField;
 
         public void CreatePrefabExternalDialog()
@@ -1361,6 +1345,36 @@ namespace EditorManagement.Functions.Editors
                 if (!string.IsNullOrEmpty(prefab.filePath))
                     RTFile.WriteToFile(prefab.filePath, prefab.ToJSON().ToString());
             });
+
+            //externalNameField.onValueChanged.ClearAll();
+            //externalNameField.onEndEdit.ClearAll();
+            //externalNameField.text = prefab.Name;
+            //externalNameField.onValueChanged.AddListener(delegate (string _val)
+            //{
+            //    prefab.Name = _val;
+            //});
+            //externalNameField.onEndEdit.AddListener(delegate (string _val)
+            //{
+            //    RTEditor.inst.canUpdatePrefabs = false;
+            //    RTEditor.inst.PrefabWatcher.EnableRaisingEvents = false;
+
+            //    if (RTFile.FileExists(prefab.filePath))
+            //        File.Delete(prefab.filePath);
+
+            //    var file = $"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp";
+            //    prefab.filePath = file;
+            //    RTFile.WriteToFile(file, prefab.ToJSON().ToString());
+
+            //    prefabPanel.Name.text = prefab.Name;
+
+            //    if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + RTEditor.prefabListPath))
+            //    {
+            //        RTEditor.inst.PrefabWatcher.Path = RTFile.ApplicationDirectory + RTEditor.prefabListPath;
+            //        RTEditor.inst.PrefabWatcher.EnableRaisingEvents = true;
+            //    }
+
+            //    RTEditor.inst.canUpdatePrefabs = true;
+            //});
         }
 
         public void CreateNewPrefab()
@@ -1445,7 +1459,6 @@ namespace EditorManagement.Functions.Editors
                 typeHorizontalOverflow, typeVerticalOverflow, typeFontSize, deleteAnchoredPosition, deleteSizeDelta));
 
             RTFile.WriteToFile(file, prefab.ToJSON().ToString());
-            //FileManager.inst.SaveJSONFile(RTEditor.prefabListPath, $"{prefab.Name.ToLower().Replace(" ", "_")}.lsp", prefab.ToJSON().ToString());
             EditorManager.inst.DisplayNotification($"Saved prefab [{prefab.Name}]!", 2f, EditorManager.NotificationType.Success);
 
             if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + RTEditor.prefabListPath))
@@ -1508,6 +1521,10 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
             EditorManager.inst.ShowDialog("Prefab Popup");
             PrefabEditor.inst.UpdateCurrentPrefab(PrefabEditor.inst.currentPrefab);
+
+            var dialog = EditorManager.inst.GetDialog("Prefab Popup").Dialog;
+            dialog.GetChild(0).gameObject.SetActive(true);
+            dialog.GetChild(1).gameObject.SetActive(true);
 
             var selectToggle = PrefabEditor.inst.internalPrefabDialog.Find("select_prefab/select_toggle").GetComponent<Button>();
             selectToggle.onClick.RemoveAllListeners();
@@ -1744,7 +1761,6 @@ namespace EditorManagement.Functions.Editors
             typeName.text = prefabType.Name;
             color.color = prefabType.Color;
             typeImage.sprite = prefabType.Icon;
-            //typeImage.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue(prefabType.Color));
 
             TooltipHelper.AddTooltip(gameObject,
                 "<#" + LSColors.ColorToHex(color.color) + ">" + prefab.Name + "</color>",
@@ -1825,14 +1841,52 @@ namespace EditorManagement.Functions.Editors
                 });
                 addPrefabObject.onClick.AddListener(delegate ()
                 {
+                    if (savingToPrefab && prefabToSaveFrom != null)
+                    {
+                        savingToPrefab = false;
+
+                        var prefabToSaveTo = prefabPanel.Prefab;
+
+                        prefabToSaveTo.objects = prefabToSaveFrom.objects.Clone();
+                        prefabToSaveTo.prefabObjects = prefabToSaveFrom.prefabObjects.Clone();
+                        prefabToSaveTo.Offset = prefabToSaveFrom.Offset;
+                        prefabToSaveTo.description = prefabToSaveFrom.description;
+                        prefabToSaveTo.Type = prefabToSaveFrom.Type;
+
+                        var prefabType = prefabToSaveTo.Type >= 0 && prefabToSaveTo.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefabToSaveTo.Type] : PrefabType.InvalidType;
+
+                        typeName.text = prefabType.Name;
+                        color.color = prefabType.Color;
+                        typeImage.sprite = prefabType.Icon;
+
+                        TooltipHelper.AddTooltip(gameObject,
+                            "<#" + LSColors.ColorToHex(color.color) + ">" + prefab.Name + "</color>",
+                            "O: " + prefab.Offset +
+                            "<br>T: " + typeName.text +
+                            "<br>Count: " + prefabToSaveTo.objects.Count +
+                            "<br>Description: " + prefabToSaveTo.description);
+
+                        RTFile.WriteToFile(prefabToSaveTo.filePath, prefabToSaveFrom.ToJSON().ToString());
+
+                        EditorManager.inst.HideDialog("Prefab Popup");
+
+                        prefabToSaveFrom = null;
+
+                        EditorManager.inst.DisplayNotification("Applied all changes to External Prefab.", 2f, EditorManager.NotificationType.Success);
+
+                        return;
+                    }
+
                     if (!ImportPrefabsDirectly)
                     {
                         EditorManager.inst.ShowDialog("Prefab External Dialog");
                         RenderPrefabExternalDialog(prefabPanel);
                     }
                     else
-                        ImportPrefabIntoLevel(prefab);
+                        ImportPrefabIntoLevel(prefabPanel.Prefab);
                 });
+
+                prefabPanel.SetActive(ContainsName(prefabPanel.Prefab, PrefabDialog.External));
             }
 
             yield break;

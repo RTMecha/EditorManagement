@@ -258,13 +258,13 @@ namespace EditorManagement.Patchers
             label.name = "save prefab label";
             var applyToAllText = label.transform.GetChild(0).GetComponent<Text>();
             applyToAllText.fontSize = 19;
-            applyToAllText.text = "Apply all changes to external prefabs";
+            applyToAllText.text = "Apply to an External Prefab";
 
             var savePrefab = Instantiate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(1).gameObject);
             savePrefab.transform.SetParent(PrefabEditorManager.inst.prefabSelectorRight);
             savePrefab.transform.localScale = Vector3.one;
             savePrefab.name = "save prefab";
-            savePrefab.transform.GetChild(0).GetComponent<Text>().text = "Save Prefab";
+            savePrefab.transform.GetChild(0).GetComponent<Text>().text = "Select Prefab";
 
             Action<string, string, Action<Text, string>> countGenerator = delegate (string name, string count, Action<Text, string> text)
             {
@@ -517,6 +517,15 @@ namespace EditorManagement.Patchers
         static bool OpenDialogPrefix()
         {
             PrefabEditorManager.inst.OpenDialog();
+
+            return false;
+        }
+        
+        [HarmonyPatch("OpenPopup")]
+        [HarmonyPrefix]
+        static bool OpenPopupPrefix()
+        {
+            PrefabEditorManager.inst.OpenPopup();
 
             return false;
         }
