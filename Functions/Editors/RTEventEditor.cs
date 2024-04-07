@@ -175,7 +175,12 @@ namespace EditorManagement.Functions.Editors
 
 			EventEditor.inst.EventColors = EventLayerColors;
 
-			LSHelpers.SetActiveChildren(EventEditor.inst.dialogRight, false);
+			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
+			{
+				var dialog = EventEditor.inst.dialogRight.GetChild(i);
+				dialog.gameObject.SetActive(false);
+				dialog.Find("curves_label").GetChild(0).GetComponent<Text>().text = "Ease Type";
+			}
 
 			SetupCopies();
 		}
@@ -872,8 +877,25 @@ namespace EditorManagement.Functions.Editors
 			var shake = EventEditor.inst.dialogRight.Find("shake");
             {
 				var direction = GenerateUIElement("direction", "Vector2", shake, 10, "Direction X", "Direction Y");
-				var interpolation = GenerateUIElement("interpolation", "Single", shake, 12, "Interpolation");
-				var speed = GenerateUIElement("speed", "Single", shake, 14, "Speed");
+
+				var labelBase = Instantiate(uiDictionary["Label"]);
+				labelBase.name = "label";
+				labelBase.transform.SetParent(shake);
+				labelBase.transform.localScale = Vector3.one;
+				labelBase.transform.AsRT().sizeDelta = new Vector2(366f, 42f);
+
+				LSHelpers.DeleteChildren(labelBase.transform);
+
+				var label = Instantiate(uiDictionary["Label"].transform.GetChild(0).gameObject);
+				label.name = "label";
+				label.transform.SetParent(labelBase.transform);
+				label.transform.localScale = Vector3.one;
+				label.transform.AsRT().sizeDelta = new Vector2(366f, 42f);
+				var labelText = label.transform.GetComponent<Text>();
+				labelText.text = "FEATURES BELOW ARE WIP & SUBJECT TO CHANGE (Requires Catalyst Shake)";
+
+				var interpolation = GenerateUIElement("interpolation", "Single", shake, 13, "Interpolation");
+				var speed = GenerateUIElement("speed", "Single", shake, 15, "Speed");
             }
 
 			Log($"{EventEditor.inst.className}Modifying Bloom Event");

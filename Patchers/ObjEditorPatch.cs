@@ -905,7 +905,7 @@ namespace EditorManagement.Patchers
 					var label = labelToCopy.Duplicate(multiKeyframeEditor, "curve_label");
 
 					Destroy(label.transform.GetChild(1).gameObject);
-					label.transform.GetChild(0).GetComponent<Text>().text = "Ease / Animation Type";
+					label.transform.GetChild(0).GetComponent<Text>().text = "Ease Type";
 				}
 
 				var curveBase = new GameObject("curves");
