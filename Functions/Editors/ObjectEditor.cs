@@ -2250,10 +2250,10 @@ namespace EditorManagement.Functions.Editors
                 ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = "Object parented to the camera.";
             }
 
-            parentText.interactable = !string.IsNullOrEmpty(p);
-            parentMore.interactable = !string.IsNullOrEmpty(p);
+            parentText.interactable = p != null;
+            parentMore.interactable = p != null;
 
-            parent_more.gameObject.SetActive(!string.IsNullOrEmpty(p) && ObjEditor.inst.advancedParent);
+            parent_more.gameObject.SetActive(p != null && ObjEditor.inst.advancedParent);
 
             parentClear.onClick.AddListener(delegate ()
             {
@@ -3939,8 +3939,8 @@ namespace EditorManagement.Functions.Editors
                     keyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
                 }
 
-                    // Since keyframe curve has no affect on the timeline object, we will only need to update the physical object.
-                    if (UpdateObjects)
+                // Since keyframe curve has no affect on the timeline object, we will only need to update the physical object.
+                if (UpdateObjects)
                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
                 RenderKeyframes(beatmapObject);
             });
