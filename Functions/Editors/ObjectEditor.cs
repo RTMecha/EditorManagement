@@ -712,9 +712,7 @@ namespace EditorManagement.Functions.Editors
 
                     RenderTimelineObject(timelineObject);
 
-                    ObjectManager.inst.AddPrefabToLevel(prefabObjectCopy);
-
-                    Updater.UpdatePrefab(prefabObjectCopy);
+                    Updater.AddPrefabToLevel(prefabObject);
 
                     delay += 0.0001f;
                 }
