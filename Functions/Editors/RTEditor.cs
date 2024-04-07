@@ -9015,23 +9015,7 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.UpdatePlayButton();
             EditorManager.inst.hasLoadedLevel = true;
 
-            // Autosave handlers
-            {
-                if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
-                    Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
-
-                string[] files = Directory.GetFiles(GameManager.inst.basePath + "autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
-                files.ToList().Sort();
-
-                EditorManager.inst.autosaves.Clear();
-
-                foreach (var file in files)
-                {
-                    EditorManager.inst.autosaves.Add(file);
-                }
-
-                SetAutoSave();
-            }
+            SetAutoSave();
 
             TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
 
@@ -9317,6 +9301,19 @@ namespace EditorManagement.Functions.Editors
 
         public void SetAutoSave()
         {
+            if (!RTFile.DirectoryExists(GameManager.inst.basePath + "autosaves"))
+                Directory.CreateDirectory(GameManager.inst.basePath + "autosaves");
+
+            string[] files = Directory.GetFiles(GameManager.inst.basePath + "autosaves", "autosave_*.lsb", SearchOption.TopDirectoryOnly);
+            files.ToList().Sort();
+
+            EditorManager.inst.autosaves.Clear();
+
+            foreach (var file in files)
+            {
+                EditorManager.inst.autosaves.Add(file);
+            }
+
             EditorManager.inst.CancelInvoke("AutoSaveLevel");
             CancelInvoke("AutoSaveLevel");
             InvokeRepeating("AutoSaveLevel", EditorConfig.Instance.AutosaveLoopTime.Value, EditorConfig.Instance.AutosaveLoopTime.Value);

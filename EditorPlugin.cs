@@ -186,7 +186,15 @@ namespace EditorManagement
 
             EditorConfig.EditorTheme.SettingChanged += EditorThemeChanged;
             EditorConfig.RoundedUI.SettingChanged += EditorThemeChanged;
+
+            EditorConfig.AutosaveLoopTime.SettingChanged += AutosaveChanged;
 		}
+
+        void AutosaveChanged(object sender, EventArgs e)
+        {
+			if (EditorManager.inst && EditorManager.inst.hasLoadedLevel)
+				RTEditor.inst.SetAutoSave();
+        }
 
         void EditorThemeChanged(object sender, EventArgs e)
         {
