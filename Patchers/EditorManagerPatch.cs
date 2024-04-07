@@ -2,6 +2,7 @@
 using Crosstales.FB;
 using EditorManagement.Functions;
 using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Helpers;
 using HarmonyLib;
 using LSFunctions;
 using RTFunctions.Functions;
@@ -50,100 +51,39 @@ namespace EditorManagement.Patchers
 
             FontManager.inst.ChangeAllFontsInEditor();
 
-            //OG Code
+            InputDataManager.inst.BindMenuKeys();
+            InputDataManager.inst.BindEditorKeys();
+            __instance.ScreenScale = Screen.width / 1920f;
+            __instance.ScreenScaleInverse = 1f / __instance.ScreenScale;
+            __instance.RefreshDialogDictionary();
+
+            var easingDropdowns = (from x in Resources.FindObjectsOfTypeAll<Dropdown>()
+                        where x.gameObject != null && x.gameObject.name == "curves"
+                        select x).ToList();
+
+            RTEditor.EasingDropdowns.Clear();
+
+            var easings = __instance.CurveOptions.Select(x => new Dropdown.OptionData(x.name, x.icon)).ToList();
+
+            foreach (var dropdown in easingDropdowns)
             {
-                InputDataManager.inst.BindMenuKeys();
-                InputDataManager.inst.BindEditorKeys();
-                __instance.ScreenScale = Screen.width / 1920f;
-                __instance.ScreenScaleInverse = 1f / __instance.ScreenScale;
-                __instance.curveDictionary.Add(0, DGEase.Linear);
-                __instance.curveDictionary.Add(1, DGEase.InSine);
-                __instance.curveDictionary.Add(2, DGEase.OutSine);
-                __instance.curveDictionary.Add(3, DGEase.InOutSine);
-                __instance.curveDictionary.Add(4, DGEase.InElastic);
-                __instance.curveDictionary.Add(5, DGEase.OutElastic);
-                __instance.curveDictionary.Add(6, DGEase.InOutElastic);
-                __instance.curveDictionary.Add(7, DGEase.InBack);
-                __instance.curveDictionary.Add(8, DGEase.OutBack);
-                __instance.curveDictionary.Add(9, DGEase.InOutBack);
-                __instance.curveDictionary.Add(10, DGEase.InBounce);
-                __instance.curveDictionary.Add(11, DGEase.OutBounce);
-                __instance.curveDictionary.Add(12, DGEase.InOutBounce);
-                __instance.curveDictionaryBack.Add(DGEase.Linear, 0);
-                __instance.curveDictionaryBack.Add(DGEase.InSine, 1);
-                __instance.curveDictionaryBack.Add(DGEase.OutSine, 2);
-                __instance.curveDictionaryBack.Add(DGEase.InOutSine, 3);
-                __instance.curveDictionaryBack.Add(DGEase.InElastic, 4);
-                __instance.curveDictionaryBack.Add(DGEase.OutElastic, 5);
-                __instance.curveDictionaryBack.Add(DGEase.InOutElastic, 6);
-                __instance.curveDictionaryBack.Add(DGEase.InBack, 7);
-                __instance.curveDictionaryBack.Add(DGEase.OutBack, 8);
-                __instance.curveDictionaryBack.Add(DGEase.InOutBack, 9);
-                __instance.curveDictionaryBack.Add(DGEase.InBounce, 10);
-                __instance.curveDictionaryBack.Add(DGEase.OutBounce, 11);
-                __instance.curveDictionaryBack.Add(DGEase.InOutBounce, 12);
-                __instance.RefreshDialogDictionary();
+                dropdown.ClearOptions();
+                dropdown.AddOptions(easings);
 
-                var list = (from x in Resources.FindObjectsOfTypeAll<Dropdown>()
-                            where x.gameObject != null && x.gameObject.name == "curves"
-                            select x).ToList();
+                TriggerHelper.AddEventTriggerParams(dropdown.gameObject, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
+                {
+                    if (!EditorConfig.Instance.ScrollOnEasing.Value)
+                        return;
 
-                //List<GameObject> list = (from obj in Resources.FindObjectsOfTypeAll<GameObject>()
-                //						 where obj.name == "curves" && obj.GetComponent<Dropdown>() != null
-                //						 select obj).ToList<GameObject>();
-
-                List<Dropdown.OptionData> list2 = new List<Dropdown.OptionData>();
-                foreach (var curveOption in __instance.CurveOptions)
-                {
-                    list2.Add(new Dropdown.OptionData(curveOption.name, curveOption.icon));
-                }
-                foreach (var gameObject in list)
-                {
-                    gameObject.ClearOptions();
-                    gameObject.AddOptions(list2);
-                }
-                EventTrigger.Entry entry = new EventTrigger.Entry();
-                entry.eventID = EventTriggerType.BeginDrag;
-                entry.callback.AddListener(delegate (BaseEventData eventData)
-                {
-                    PointerEventData pointerEventData = (PointerEventData)eventData;
-                    __instance.SelectionBoxImage.gameObject.SetActive(true);
-                    __instance.DragStartPos = pointerEventData.position * __instance.ScreenScaleInverse;
-                    __instance.SelectionRect = default(Rect);
-                });
-                EventTrigger.Entry entry2 = new EventTrigger.Entry();
-                entry2.eventID = EventTriggerType.Drag;
-                entry2.callback.AddListener(delegate (BaseEventData eventData)
-                {
-                    Vector3 vector = ((PointerEventData)eventData).position * __instance.ScreenScaleInverse;
-                    if (vector.x < __instance.DragStartPos.x)
-                    {
-                        __instance.SelectionRect.xMin = vector.x;
-                        __instance.SelectionRect.xMax = __instance.DragStartPos.x;
-                    }
-                    else
-                    {
-                        __instance.SelectionRect.xMin = __instance.DragStartPos.x;
-                        __instance.SelectionRect.xMax = vector.x;
-                    }
-                    if (vector.y < __instance.DragStartPos.y)
-                    {
-                        __instance.SelectionRect.yMin = vector.y;
-                        __instance.SelectionRect.yMax = __instance.DragStartPos.y;
-                    }
-                    else
-                    {
-                        __instance.SelectionRect.yMin = __instance.DragStartPos.y;
-                        __instance.SelectionRect.yMax = vector.y;
-                    }
-                    __instance.SelectionBoxImage.rectTransform.offsetMin = __instance.SelectionRect.min;
-                    __instance.SelectionBoxImage.rectTransform.offsetMax = __instance.SelectionRect.max;
-                });
-
-                var timelineET = __instance.timeline.GetComponent<EventTrigger>();
-                timelineET.triggers.Add(entry);
-                timelineET.triggers.Add(entry2);
+                    var pointerEventData = (PointerEventData)baseEventData;
+                    if (pointerEventData.scrollDelta.y > 0f)
+                        dropdown.value = dropdown.value == 0 ? dropdown.options.Count - 1 : dropdown.value - 1;
+                    if (pointerEventData.scrollDelta.y < 0f)
+                        dropdown.value = dropdown.value == dropdown.options.Count - 1 ? 0 : dropdown.value + 1;
+                }));
             }
+
+            RTEditor.EasingDropdowns = easingDropdowns;
 
             if (Updater.levelProcessor)
             {

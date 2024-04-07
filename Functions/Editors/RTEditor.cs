@@ -482,6 +482,8 @@ namespace EditorManagement.Functions.Editors
         public bool canUpdateThemes = true;
         public bool canUpdatePrefabs = true;
 
+        public static List<Dropdown> EasingDropdowns { get; set; } = new List<Dropdown>();
+
         #endregion
 
         #region Settings
@@ -1805,11 +1807,13 @@ namespace EditorManagement.Functions.Editors
                 //layersObj.GetComponent<HoverTooltip>().tooltipLangauges.Add(Triggers.NewTooltip("Input any positive number to go to that editor layer.", "Layers will only show specific objects that are on that layer. Can be good to use for organizing levels.", new List<string> { "Middle Mouse Button" }));
 
                 layersIF = layersObj.GetComponent<InputField>();
-                layersObj.transform.Find("Text").gameObject.GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
+                layersIF.textComponent.alignment = TextAnchor.MiddleCenter;
 
                 layersIF.text = GetLayerString(EditorManager.inst.layer);
 
                 var layerImage = layersObj.GetComponent<Image>();
+
+                layersObj.AddComponent<ContrastColors>().Init(layersIF.textComponent, layerImage);
 
                 layersIF.characterValidation = InputField.CharacterValidation.None;
                 layersIF.contentType = InputField.ContentType.Standard;
@@ -2051,6 +2055,8 @@ namespace EditorManagement.Functions.Editors
 
             tltrig.triggers.Add(isOver);
             tltrig.triggers.Add(isNotOver);
+            tltrig.triggers.Add(TriggerHelper.StartDragTrigger());
+            tltrig.triggers.Add(TriggerHelper.DragTrigger());
             tltrig.triggers.Add(TriggerHelper.EndDragTrigger());
 
             for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
@@ -4937,6 +4943,18 @@ namespace EditorManagement.Functions.Editors
                 var curves = curvesObject.GetComponent<Dropdown>();
                 curves.onValueChanged.ClearAll();
                 curves.options.Insert(0, new Dropdown.OptionData("None (Doesn't Set Easing)"));
+
+                TriggerHelper.AddEventTriggerParams(curves.gameObject, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
+                {
+                    if (!EditorConfig.Instance.ScrollOnEasing.Value)
+                        return;
+
+                    var pointerEventData = (PointerEventData)baseEventData;
+                    if (pointerEventData.scrollDelta.y > 0f)
+                        curves.value = curves.value == 0 ? curves.options.Count - 1 : curves.value - 1;
+                    if (pointerEventData.scrollDelta.y < 0f)
+                        curves.value = curves.value == curves.options.Count - 1 ? 0 : curves.value + 1;
+                }));
 
                 // Assign to All
                 {
@@ -11145,6 +11163,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingPlaysSound),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingPlaysSoundOnlyWithBPM),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.RoundToNearest),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ScrollOnEasing),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabExampleTemplate),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PasteOffset),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BringToSelection),

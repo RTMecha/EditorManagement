@@ -35,6 +35,7 @@ namespace EditorManagement.Functions
             DraggingPlaysSound = Config.Bind("General", "Dragging Plays Sound", true, "If dragging an object plays a sound.");
             DraggingPlaysSoundOnlyWithBPM = Config.Bind("General", "Dragging Plays Sound Only With BPM", true, "If dragging an object plays a sound ONLY when BPM Snap is active.");
             RoundToNearest = Config.Bind("General", "Round To Nearest", true, "If numbers should be rounded up to 3 decimal points (for example, 0.43321245 into 0.433).");
+            ScrollOnEasing = Config.Bind("General", "Scroll on Easing Changes Value", true, "If Scolling on an easing dropdown changes the easing.");
             PrefabExampleTemplate = Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.");
             PasteOffset = Config.Bind("General", "Paste Offset", false, "When enabled objects that are pasted will be pasted at an offset based on the distance between the audio time and the copied object. Otherwise, the objects will be pasted at the earliest objects start time.");
             BringToSelection = Config.Bind("General", "Bring To Selection", false, "When an object is selected (whether it be a regular object, a marker, etc), it will move the layer and audio time to that object.");
@@ -1133,6 +1134,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<bool> DraggingPlaysSound { get; set; }
         public ConfigEntry<bool> DraggingPlaysSoundOnlyWithBPM { get; set; }
         public ConfigEntry<bool> RoundToNearest { get; set; }
+        public ConfigEntry<bool> ScrollOnEasing { get; set; }
         public ConfigEntry<bool> PrefabExampleTemplate { get; set; }
         public ConfigEntry<bool> PasteOffset { get; set; }
         public ConfigEntry<bool> BringToSelection { get; set; }

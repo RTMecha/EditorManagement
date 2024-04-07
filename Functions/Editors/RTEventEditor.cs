@@ -824,6 +824,21 @@ namespace EditorManagement.Functions.Editors
 			dialog.transform.SetParent(EventEditor.inst.dialogRight);
 			dialog.transform.localScale = Vector3.one;
 			dialog.name = name;
+
+			var dropdown = dialog.transform.Find("curves").GetComponent<Dropdown>();
+
+			TriggerHelper.AddEventTriggerParams(dropdown.gameObject, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
+			{
+				if (!EditorConfig.Instance.ScrollOnEasing.Value)
+					return;
+
+				var pointerEventData = (PointerEventData)baseEventData;
+				if (pointerEventData.scrollDelta.y > 0f)
+					dropdown.value = dropdown.value == 0 ? dropdown.options.Count - 1 : dropdown.value - 1;
+				if (pointerEventData.scrollDelta.y < 0f)
+					dropdown.value = dropdown.value == dropdown.options.Count - 1 ? 0 : dropdown.value + 1;
+			}));
+
 			return dialog;
 		}
 
