@@ -307,7 +307,7 @@ namespace EditorManagement.Functions.Editors
 			{
 				int type = keyframeSelection2.Type;
 				int index = keyframeSelection2.Index;
-				var eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[type][index]);
+				var eventKeyframe = EventKeyframe.DeepCopy((EventKeyframe)DataManager.inst.gameData.eventObjects.allEvents[type][index], false);
 				eventKeyframe.eventTime -= num;
 				var timelineObject = new TimelineObject(eventKeyframe);
 				timelineObject.Type = type;
@@ -322,12 +322,15 @@ namespace EditorManagement.Functions.Editors
 				for (int i = 0; i < AllEvents.Count; i++)
 				{
 					jn["events"][GameData.EventTypes[i]] = new JSONArray();
+					int add = 0;
 					for (int j = 0; j < AllEvents[i].Count; j++)
 					{
-						int add = 0;
-						if (copiedEventKeyframes.TryFind(x => x.Type == i && x.Index == j, out TimelineObject timelineObject))
+						if (copiedEventKeyframes.TryFind(x => x.ID == ((EventKeyframe)AllEvents[i][j]).id, out TimelineObject timelineObject))
 						{
-							jn["events"][GameData.EventTypes[i]][add] = timelineObject.GetData<EventKeyframe>().ToJSON();
+							var eventKeyframe = timelineObject.GetData<EventKeyframe>();
+							eventKeyframe.id = LSText.randomNumString(8);
+
+							jn["events"][GameData.EventTypes[i]][add] = eventKeyframe.ToJSON();
 
 							add++;
 						}
