@@ -3148,6 +3148,43 @@ namespace EditorManagement.Functions.Editors
             });
         }
 
+        void UpdateKeyframeRandomDialog(Transform kfdialog, Transform randomValueLabel, Transform randomValue, int type,
+            IEnumerable<TimelineObject> selected, TimelineObject firstKF, BeatmapObject beatmapObject, string typeName, int randomType)
+        {
+            if (kfdialog.Find("r_axis"))
+                kfdialog.Find("r_axis").gameObject.SetActive(RTEditor.ShowModdedUI && (randomType == 5 || randomType == 6));
+
+            randomValueLabel.gameObject.SetActive(randomType != 0 && randomType != 5);
+            randomValue.gameObject.SetActive(randomType != 0 && randomType != 5);
+            randomValueLabel.GetChild(0).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Min" : randomType == 6 ? "Minimum Range" : "Random X";
+            randomValueLabel.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
+            randomValueLabel.GetChild(1).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Max" : randomType == 6 ? "Maximum Range" : "Random Y";
+            kfdialog.Find("random/interval-input").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
+            kfdialog.Find("r_label/interval").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
+
+            if (kfdialog.Find("relative-label"))
+            {
+                kfdialog.Find("relative-label").gameObject.SetActive(RTEditor.ShowModdedUI);
+                if (RTEditor.ShowModdedUI)
+                {
+                    kfdialog.Find("relative-label").GetChild(0).GetComponent<Text>().text =
+                        randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
+                    kfdialog.Find("relative").GetChild(1).GetComponent<Text>().text =
+                        randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
+                }
+            }
+
+            randomValue.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
+
+            randomValue.GetChild(0).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
+            randomValue.GetChild(1).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
+
+            if (randomType != 0 && randomType != 3 && randomType != 5)
+            {
+                kfdialog.Find("r_label/interval").GetComponent<Text>().text = randomType == 6 ? "Speed" : "Random Interval";
+            }
+        }
+
         void KeyframeRandomHandler(Transform kfdialog, int type, IEnumerable<TimelineObject> selected, TimelineObject firstKF, BeatmapObject beatmapObject, string typeName)
         {
             var randomValueLabel = kfdialog.Find($"r_{typeName}_label");
@@ -3167,42 +3204,6 @@ namespace EditorManagement.Functions.Editors
                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
                 });
             }
-
-            Action<int> keyframeRandomHandler = delegate (int randomType)
-            {
-                if (kfdialog.Find("r_axis"))
-                    kfdialog.Find("r_axis").gameObject.SetActive(RTEditor.ShowModdedUI && (randomType == 5 || randomType == 6));
-
-                randomValueLabel.gameObject.SetActive(randomType != 0 && randomType != 5);
-                randomValue.gameObject.SetActive(randomType != 0 && randomType != 5);
-                randomValueLabel.GetChild(0).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Min" : randomType == 6 ? "Minimum Range" : "Random X";
-                randomValueLabel.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
-                randomValueLabel.GetChild(1).GetComponent<Text>().text = (randomType == 4) ? "Random Scale Max" : randomType == 6 ? "Maximum Range" : "Random Y";
-                kfdialog.Find("random/interval-input").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
-                kfdialog.Find("r_label/interval").gameObject.SetActive(randomType != 0 && randomType != 3 && randomType != 5);
-
-                if (kfdialog.Find("relative-label"))
-                {
-                    kfdialog.Find("relative-label").gameObject.SetActive(RTEditor.ShowModdedUI);
-                    if (RTEditor.ShowModdedUI)
-                    {
-                        kfdialog.Find("relative-label").GetChild(0).GetComponent<Text>().text =
-                            randomType == 6 && type != 2 ? "Object Flees from Player" : randomType == 6 ? "Object Turns Away from Player" : "Value Additive";
-                        kfdialog.Find("relative").GetChild(1).GetComponent<Text>().text =
-                            randomType == 6 && type != 2 ? "Flee" : randomType == 6 ? "Turn Away" : "Relative";
-                    }
-                }
-
-                randomValue.GetChild(1).gameObject.SetActive(type != 2 || randomType == 6);
-
-                randomValue.GetChild(0).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
-                randomValue.GetChild(1).GetChild(0).AsRT().sizeDelta = new Vector2(type != 2 || randomType == 6 ? 117 : 317f, 32f);
-
-                if (randomType != 0 && randomType != 3 && randomType != 5)
-                {
-                    kfdialog.Find("r_label/interval").GetComponent<Text>().text = randomType == 6 ? "Speed" : "Random Interval";
-                }
-            };
 
             for (int n = 0; n <= (type == 0 ? 5 : type == 2 ? 4 : 3); n++)
             {
@@ -3230,7 +3231,7 @@ namespace EditorManagement.Functions.Editors
                                 Updater.UpdateProcessor(beatmapObject, "Keyframes");
                         }
 
-                        keyframeRandomHandler?.Invoke(buttonTmp);
+                        UpdateKeyframeRandomDialog(kfdialog, randomValueLabel, randomValue, type, selected, firstKF, beatmapObject, typeName, buttonTmp);
                     });
                     if (!toggle.GetComponent<HoverUI>())
                     {
@@ -3242,7 +3243,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            keyframeRandomHandler?.Invoke(random);
+            UpdateKeyframeRandomDialog(kfdialog, randomValueLabel, randomValue, type, selected, firstKF, beatmapObject, typeName, random);
 
             float num = 0f;
             if (firstKF.GetData<EventKeyframe>().eventRandomValues.Length > 2)
