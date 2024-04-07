@@ -488,7 +488,7 @@ namespace EditorManagement.Functions.Helpers
 						if (timelineObject.IsBeatmapObject)
 							Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Start Time");
 						if (timelineObject.IsPrefabObject)
-							Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>());
+							Updater.UpdatePrefab(timelineObject.GetData<PrefabObject>(), "Start Time");
 					}
 				}
 
