@@ -2266,7 +2266,7 @@ namespace EditorManagement.Functions.Editors
                 RenderParent(beatmapObject);
             });
 
-            if (string.IsNullOrEmpty(p))
+            if (p == null)
             {
                 parentTextText.text = "No Parent Object";
                 ((HoverTooltip)ObjectUIElements["Parent Info"]).tooltipLangauges[0].hint = string.IsNullOrEmpty(parent) ? "Object not parented." : "No parent found.";
