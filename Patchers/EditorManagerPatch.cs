@@ -531,8 +531,8 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool OpenTutorialsPrefix()
         {
-            Application.OpenURL("https://www.youtube.com/playlist?list=PLMHuUok_ojlWH_UZ60tHZIRMWJTDyhRaO");
-            Instance.DisplayNotification("PA History playlist will open in your browser!", 2f, EditorManager.NotificationType.Success);
+            Application.OpenURL("https://www.youtube.com/playlist?list=PLMHuUok_ojlX89xw2z6hUFF3meXFXz9DL");
+            Instance.DisplayNotification("PA Mod Showcases playlist will open in your browser!", 2f, EditorManager.NotificationType.Success);
             return false;
         }
 
@@ -540,8 +540,8 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool OpenVerifiedSongsPrefix()
         {
-            Application.OpenURL("https://www.youtube.com/playlist?list=PLMHuUok_ojlWH_UZ60tHZIRMWJTDyhRaO");
-            Instance.DisplayNotification("PA History playlist will open in your browser!", 2f, EditorManager.NotificationType.Success);
+            Application.OpenURL("https://www.youtube.com/playlist?list=PLMHuUok_ojlX89xw2z6hUFF3meXFXz9DL");
+            Instance.DisplayNotification("PA Mod Showcases playlist will open in your browser!", 2f, EditorManager.NotificationType.Success);
             return false;
         }
 
