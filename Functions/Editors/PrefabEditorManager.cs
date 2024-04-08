@@ -1681,6 +1681,9 @@ namespace EditorManagement.Functions.Editors
             {
                 x.NewOnClickListener(delegate ()
                 {
+                    if (RTEditor.inst.prefabPickerEnabled)
+                        RTEditor.inst.prefabPickerEnabled = false;
+
                     PrefabEditor.inst.OpenDialog();
                     createInternal = true;
                 });
@@ -1800,6 +1803,35 @@ namespace EditorManagement.Functions.Editors
                 });
                 addPrefabObject.onClick.AddListener(delegate ()
                 {
+                    if (RTEditor.inst.prefabPickerEnabled)
+                    {
+                        var prefabInstanceID = LSText.randomString(16);
+                        if (RTEditor.inst.selectingMultiple)
+                        {
+                            foreach (var otherTimelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                var otherBeatmapObject = otherTimelineObject.GetData<BeatmapObject>();
+
+                                otherBeatmapObject.prefabID = prefab.ID;
+                                otherBeatmapObject.prefabInstanceID = prefabInstanceID;
+                                ObjectEditor.inst.RenderTimelineObject(otherTimelineObject);
+                            }
+                        }
+                        else if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+                        {
+                            var currentBeatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+                            currentBeatmapObject.prefabID = prefab.ID;
+                            currentBeatmapObject.prefabInstanceID = prefabInstanceID;
+                            ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
+                            ObjectEditor.inst.OpenDialog(currentBeatmapObject);
+                        }
+
+                        RTEditor.inst.prefabPickerEnabled = false;
+
+                        return;
+                    }
+
                     if (!_toggle)
                     {
                         AddPrefabObjectToLevel(prefab);
@@ -1842,6 +1874,9 @@ namespace EditorManagement.Functions.Editors
                 });
                 addPrefabObject.onClick.AddListener(delegate ()
                 {
+                    if (RTEditor.inst.prefabPickerEnabled)
+                        RTEditor.inst.prefabPickerEnabled = false;
+
                     if (savingToPrefab && prefabToSaveFrom != null)
                     {
                         savingToPrefab = false;
