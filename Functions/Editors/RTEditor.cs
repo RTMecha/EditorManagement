@@ -2202,6 +2202,7 @@ namespace EditorManagement.Functions.Editors
         {
             titleBar = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar").transform;
 
+            // Here we fix the naming issues with unmodded Legacy.
             EditorManager.inst.GetDialog("Save As Popup").Dialog.Find("New File Popup/level-name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/name/input").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
@@ -2464,7 +2465,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }, 5);
 
-            EditorHelper.AddEditorDropdown("Clear Sprite Data", "", "Edit", null, delegate ()
+            EditorHelper.AddEditorDropdown("Clear Sprite Data", "", "Edit", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
             {
                 EditorManager.inst.ShowDialog("Warning Popup");
                 RefreshWarningPopup("Are you sure you want to clear sprite data? Any Image Shapes that use a stored image will have their images cleared and you will need to set them again.", delegate ()
@@ -2478,24 +2479,16 @@ namespace EditorManagement.Functions.Editors
 
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
             {
-                var exitToArcade = Instantiate(titleBar.Find("File/File Dropdown/Quit to Main Menu").gameObject);
-                exitToArcade.name = "Get Example";
-                exitToArcade.transform.SetParent(titleBar.Find("View/View Dropdown"));
-                exitToArcade.transform.localScale = Vector3.one;
-                exitToArcade.transform.SetSiblingIndex(4);
-                exitToArcade.transform.GetChild(0).GetComponent<Text>().text = "Get Example";
-
-                var ex = exitToArcade.GetComponent<Button>();
-                ex.onClick.ClearAll();
-                ex.onClick.AddListener(delegate ()
+                EditorHelper.AddEditorDropdown("Get Example", "", "View", null, delegate ()
                 {
                     if (ModCompatibility.mods["ExampleCompanion"].Methods.ContainsKey("InitExample"))
                         ModCompatibility.mods["ExampleCompanion"].Invoke("InitExample", new object[] { });
-                });
+                }, 4);
             }
 
             titleBar.Find("Help/Help Dropdown/Join Discord/Text").GetComponent<Text>().text = "Modder's Discord";
-            titleBar.Find("Help/Help Dropdown/Watch Tutorials/Text").GetComponent<Text>().text = "Watch PA History";
+            titleBar.Find("Help/Help Dropdown/Watch Tutorials/Text").AsRT().sizeDelta = new Vector2(200f, 0f);
+            titleBar.Find("Help/Help Dropdown/Watch Tutorials/Text").GetComponent<Text>().text = "Watch Mod Showcases";
             titleBar.Find("Help/Help Dropdown/Community Guides").gameObject.SetActive(false);
             titleBar.Find("Help/Help Dropdown/Which songs can I use?").gameObject.SetActive(false);
             titleBar.Find("File/File Dropdown/Save As").gameObject.SetActive(true);
@@ -3075,6 +3068,13 @@ namespace EditorManagement.Functions.Editors
             var newFilePopupBase = EditorManager.inst.GetDialog("New File Popup").Dialog;
 
             var newFilePopup = newFilePopupBase.Find("New File Popup");
+
+            //var newFilePopupDetection = newFilePopup.gameObject.AddComponent<Clickable>();
+            //newFilePopupDetection.onEnable = delegate (bool _val)
+            //{
+            //    if (!_val)
+            //        EditorManager.inst.HideDialog("New Level Template Dialog");
+            //};
 
             EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup", "Background", newFilePopup.gameObject, new List<Component>
             {
