@@ -225,7 +225,7 @@ namespace EditorManagement.Patchers
                 }
                 if (info.ContainsKey("Prefab External Count") && info["Prefab External Count"])
                 {
-                    info["Prefab External Count"].text = $"[ {PrefabEditor.inst.LoadedPrefabs.Count} ]  ";
+                    info["Prefab External Count"].text = $"[ {PrefabEditorManager.inst.PrefabPanels.Count} ]  ";
                 }
                 if (info.ContainsKey("Prefab Internal Count") && info["Prefab Internal Count"])
                 {

@@ -1837,9 +1837,9 @@ namespace EditorManagement.Functions.Editors
 
             if (keybind.settings.ContainsKey("UseID") && bool.TryParse(keybind.settings["UseID"], out bool boolean) && keybind.settings.ContainsKey("ID") && boolean)
             {
-                if (useExternal && !string.IsNullOrEmpty(keybind.settings["ID"]) && PrefabEditor.inst.LoadedPrefabs.Has(x => x.ID == keybind.settings["ID"]))
+                if (useExternal && !string.IsNullOrEmpty(keybind.settings["ID"]) && PrefabEditorManager.inst.PrefabPanels.Has(x => x.Prefab.ID == keybind.settings["ID"]))
                 {
-                    PrefabEditorManager.inst.AddPrefabObjectToLevel(PrefabEditor.inst.LoadedPrefabs.Find(x => x.ID == keybind.settings["ID"]));
+                    PrefabEditorManager.inst.AddPrefabObjectToLevel(PrefabEditorManager.inst.PrefabPanels.Find(x => x.Prefab.ID == keybind.settings["ID"]).Prefab);
                 }
                 else if (!useExternal && DataManager.inst.gameData.prefabs.Has(x => x.ID == keybind.settings["ID"]))
                 {
@@ -1848,9 +1848,9 @@ namespace EditorManagement.Functions.Editors
             }
             else if (keybind.settings.ContainsKey("Index") && int.TryParse(keybind.settings["Index"], out int index))
             {
-                if (useExternal && index >= 0 && index < PrefabEditor.inst.LoadedPrefabs.Count && PrefabEditor.inst.LoadedPrefabs[index] != null)
+                if (useExternal && index >= 0 && index < PrefabEditorManager.inst.PrefabPanels.Count && PrefabEditorManager.inst.PrefabPanels[index] != null)
                 {
-                    PrefabEditorManager.inst.AddPrefabObjectToLevel(PrefabEditor.inst.LoadedPrefabs[index]);
+                    PrefabEditorManager.inst.AddPrefabObjectToLevel(PrefabEditorManager.inst.PrefabPanels[index].Prefab);
                 }
                 else if (!useExternal && index >= 0 && index < DataManager.inst.gameData.prefabs.Count && DataManager.inst.gameData.prefabs[index] != null)
                 {

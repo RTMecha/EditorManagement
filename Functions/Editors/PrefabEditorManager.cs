@@ -1413,8 +1413,8 @@ namespace EditorManagement.Functions.Editors
             else
                 SavePrefab(prefab);
 
-            PrefabEditor.inst.OpenPopup();
-            ObjEditor.inst.OpenDialog();
+            EditorManager.inst.HideDialog("Prefab Popup");
+            EditorManager.inst.HideDialog("Prefab Editor");
         }
 
         public void SavePrefab(Prefab prefab)
@@ -1426,11 +1426,9 @@ namespace EditorManagement.Functions.Editors
             Debug.Log($"{PrefabEditor.inst.className}Saving Prefab to File System!");
 
             prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
-            int count = PrefabEditor.inst.LoadedPrefabs.Count;
+            int count = PrefabPanels.Count;
             var file = $"{RTFile.ApplicationDirectory}{RTEditor.prefabListSlash}{prefab.Name.ToLower().Replace(" ", "_")}.lsp";
             prefab.filePath = file;
-            PrefabEditor.inst.LoadedPrefabs.Add(prefab);
-            PrefabEditor.inst.LoadedPrefabsFiles.Add(file);
 
             var config = EditorConfig.Instance;
 
@@ -1478,9 +1476,6 @@ namespace EditorManagement.Functions.Editors
             if (RTFile.FileExists(prefabPanel.FilePath))
                 FileManager.inst.DeleteFileRaw(prefabPanel.FilePath);
 
-            PrefabEditor.inst.LoadedPrefabs.RemoveAt(prefabPanel.Index);
-            PrefabEditor.inst.LoadedPrefabsFiles.RemoveAt(prefabPanel.Index);
-
             Destroy(prefabPanel.GameObject);
             PrefabPanels.RemoveAt(prefabPanel.Index);
 
@@ -1505,15 +1500,21 @@ namespace EditorManagement.Functions.Editors
             string id = DataManager.inst.gameData.prefabs[__0].ID;
 
             DataManager.inst.gameData.prefabs.RemoveAt(__0);
+
+            DataManager.inst.gameData.prefabObjects.Where(x => x.prefabID == id).ToList().ForEach(x =>
+            {
+                Updater.UpdatePrefab(x, false);
+
+                var index = RTEditor.inst.timelineObjects.FindIndex(y => y.ID == x.ID);
+                if (index >= 0)
+                {
+                    Destroy(RTEditor.inst.timelineObjects[index].GameObject);
+                    RTEditor.inst.timelineObjects.RemoveAt(index);
+                }
+            });
             DataManager.inst.gameData.prefabObjects.RemoveAll(x => x.prefabID == id);
 
             PrefabEditor.inst.ReloadInternalPrefabsInPopup();
-            ObjectEditor.inst.RenderTimelineObjects();
-
-            //DataManager.inst.gameData.beatmapObjects.Where(x => x.prefabID == id).ToList().ForEach(x => Updater.UpdateProcessor(x, reinsert: false));
-            //DataManager.inst.gameData.beatmapObjects.RemoveAll(x => x.prefabID == id);
-
-            ObjectManager.inst.updateObjects();
         }
 
         public void OpenPopup()
