@@ -296,11 +296,14 @@ namespace EditorManagement.Functions.Editors
 
 
             if (Input.GetMouseButtonDown(1))
+            {
                 parentPickerEnabled = false;
+                prefabPickerEnabled = false;
+            }
 
-            mousePicker?.SetActive(parentPickerEnabled);
+            mousePicker?.SetActive(parentPickerEnabled || prefabPickerEnabled);
 
-            if (mousePicker != null && mousePickerRT != null && parentPickerEnabled)
+            if (mousePicker != null && mousePickerRT != null && (parentPickerEnabled || prefabPickerEnabled))
             {
                 float num = (float)Screen.width / 1920f;
                 num = 1f / num;
@@ -402,6 +405,8 @@ namespace EditorManagement.Functions.Editors
 
         public bool ienumRunning;
         public bool parentPickerEnabled = false;
+        public bool prefabPickerEnabled = false;
+        public bool selectingMultiple = false;
 
         public Slider timelineSlider;
 
@@ -4309,14 +4314,31 @@ namespace EditorManagement.Functions.Editors
             }
 
             // Assign Objects to Prefab
-            //{
-            //    labelGenerator("Assign Objects to Prefab");
+            {
+                labelGenerator("Assign Objects to Prefab");
 
-            //    buttonGenerator("assign prefab", "Snap", parent, delegate ()
-            //    {
-            //        PrefabEditorManager.inst.assigningInternalPrefab = true;
-            //    });
-            //}
+                buttonGenerator("assign prefab", "Assign", parent, delegate ()
+                {
+                    selectingMultiple = true;
+                    prefabPickerEnabled = true;
+                });
+            }
+            
+            // Remove Prefab Reference
+            {
+                labelGenerator("Remove Prefab Reference");
+
+                buttonGenerator("remove prefab", "Remove", parent, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                    {
+                        var beatmapObject = timelineObject.GetData<BeatmapObject>();
+                        beatmapObject.prefabID = "";
+                        beatmapObject.prefabInstanceID = "";
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
+            }
 
             // Lock Swap
             {

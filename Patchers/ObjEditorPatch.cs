@@ -867,6 +867,40 @@ namespace EditorManagement.Patchers
 				parentMore.AsRT().sizeDelta = new Vector2(351f, 152f);
 			}
 
+            // Assign Prefab
+            {
+				var collapseLabel = __instance.ObjectView.transform.Find("collapselabel");
+                var applyPrefab = __instance.ObjectView.transform.Find("applyprefab");
+				var siblingIndex = applyPrefab.GetSiblingIndex();
+
+				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "assignlabel", siblingIndex + 1);
+				assignPrefabLabel.transform.GetChild(0).GetComponent<Text>().text = "Assign Object to a Prefab";
+				var assignPrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "assign", siblingIndex + 2);
+				assignPrefab.transform.GetChild(0).GetComponent<Text>().text = "Assign";
+				var assignPrefabButton = assignPrefab.GetComponent<Button>();
+
+				assignPrefabButton.onClick.ClearAll();
+				assignPrefabButton.onClick.AddListener(delegate ()
+				{
+					RTEditor.inst.selectingMultiple = false;
+					RTEditor.inst.prefabPickerEnabled = true;
+				});
+
+				var removePrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "remove", siblingIndex + 3);
+				removePrefab.transform.GetChild(0).GetComponent<Text>().text = "Remove";
+				var removePrefabButton = removePrefab.GetComponent<Button>();
+
+				removePrefabButton.onClick.ClearAll();
+				removePrefabButton.onClick.AddListener(delegate ()
+				{
+					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+					beatmapObject.prefabID = "";
+					beatmapObject.prefabInstanceID = "";
+					ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
+					ObjectEditor.inst.OpenDialog(beatmapObject);
+				});
+			}
+
 			try
 			{
 				var move = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move").transform;

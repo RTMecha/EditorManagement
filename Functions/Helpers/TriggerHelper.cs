@@ -507,17 +507,86 @@ namespace EditorManagement.Functions.Helpers
 				var pointerEventData = (PointerEventData)eventData;
 				if (!ObjEditor.inst.beatmapObjectsDrag)
 				{
-					if (!RTEditor.inst.parentPickerEnabled)
+					Debug.Log($"{EditorPlugin.className}Selecting [ {timelineObject.ID} ]");
+
+					if (!RTEditor.inst.parentPickerEnabled && !RTEditor.inst.prefabPickerEnabled)
 					{
 						if (InputDataManager.inst.editorActions.MultiSelect.IsPressed)
 							ObjectEditor.inst.AddSelectedObject(timelineObject);
 						else
 							ObjectEditor.inst.SetCurrentObject(timelineObject);
 
-						float timelineTime = EditorManager.inst.GetTimelineTime(0f);
+						float timelineTime = EditorManager.inst.GetTimelineTime();
 						ObjEditor.inst.mouseOffsetXForDrag = timelineObject.Time - timelineTime;
+						return;
 					}
-					else if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
+
+					if (RTEditor.inst.prefabPickerEnabled && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
+					{
+						var beatmapObject = timelineObject.GetData<BeatmapObject>();
+						if (string.IsNullOrEmpty(beatmapObject.prefabInstanceID))
+                        {
+							EditorManager.inst.DisplayNotification("Object is not assigned to a prefab!", 2f, EditorManager.NotificationType.Error);
+							return;
+                        }
+
+						if (RTEditor.inst.selectingMultiple)
+                        {
+							foreach (var otherTimelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+							{
+								var otherBeatmapObject = otherTimelineObject.GetData<BeatmapObject>();
+
+								otherBeatmapObject.prefabID = beatmapObject.prefabID;
+								otherBeatmapObject.prefabInstanceID = beatmapObject.prefabInstanceID;
+								ObjectEditor.inst.RenderTimelineObject(otherTimelineObject);
+							}
+                        }
+						else if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+						{
+							var currentBeatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+							currentBeatmapObject.prefabID = beatmapObject.prefabID;
+							currentBeatmapObject.prefabInstanceID = beatmapObject.prefabInstanceID;
+							ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
+							ObjectEditor.inst.OpenDialog(currentBeatmapObject);
+						}
+
+						RTEditor.inst.prefabPickerEnabled = false;
+
+						return;
+					}
+
+					if (RTEditor.inst.prefabPickerEnabled && timelineObject.IsPrefabObject && pointerEventData.button != PointerEventData.InputButton.Right)
+					{
+						var prefabObject = timelineObject.GetData<PrefabObject>();
+
+						if (RTEditor.inst.selectingMultiple)
+						{
+							foreach (var otherTimelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+							{
+								var otherBeatmapObject = otherTimelineObject.GetData<BeatmapObject>();
+
+								otherBeatmapObject.prefabID = prefabObject.prefabID;
+								otherBeatmapObject.prefabInstanceID = LSText.randomString(16);
+								ObjectEditor.inst.RenderTimelineObject(otherTimelineObject);
+							}
+						}
+						else if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+						{
+							var currentBeatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+							currentBeatmapObject.prefabID = prefabObject.prefabID;
+							currentBeatmapObject.prefabInstanceID = LSText.randomString(16);
+							ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
+							ObjectEditor.inst.OpenDialog(currentBeatmapObject);
+						}
+
+						RTEditor.inst.prefabPickerEnabled = false;
+
+						return;
+					}
+
+					if (RTEditor.inst.parentPickerEnabled && ObjectEditor.inst.CurrentSelection.IsBeatmapObject && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
 					{
 						var dictionary = new Dictionary<string, bool>();
 
