@@ -529,7 +529,17 @@ namespace EditorManagement.Functions.Editors
                                         if (pointerEventData.button == PointerEventData.InputButton.Right)
                                         {
                                             EditorManager.inst.ShowDialog("Browser Popup");
-                                            RTFileBrowser.inst.UpdateBrowser(System.IO.Directory.GetCurrentDirectory(), new string[] { ".wav", ".ogg" }, onSelectFile: delegate (string _val)
+
+                                            var isGlobal = modifier.commands.Count > 1 && Parser.TryParse(modifier.commands[1], false);
+                                            var directory = isGlobal && RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/soundlibrary") ?
+                                                            RTFile.ApplicationDirectory + "beatmaps/soundlibrary" : System.IO.Path.GetDirectoryName(RTFile.BasePath);
+
+                                            if (isGlobal && !RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/soundlibrary"))
+                                            {
+                                                EditorManager.inst.DisplayNotification("soundlibrary folder does not exist! If you want to have audio take from a global folder, make sure you create a soundlibrary folder inside your beatmaps folder and put your sounds in there.", 12f, EditorManager.NotificationType.Error);
+                                            }
+
+                                            RTFileBrowser.inst.UpdateBrowser(directory, new string[] { ".wav", ".ogg", ".mp3" }, onSelectFile: delegate (string _val)
                                             {
                                                 var global = Parser.TryParse(modifier.commands[1], false);
 
@@ -563,7 +573,17 @@ namespace EditorManagement.Functions.Editors
                                         if (pointerEventData.button == PointerEventData.InputButton.Right)
                                         {
                                             EditorManager.inst.ShowDialog("Browser Popup");
-                                            RTFileBrowser.inst.UpdateBrowser(System.IO.Directory.GetCurrentDirectory(), new string[] { ".wav", ".ogg" }, onSelectFile: delegate (string _val)
+
+                                            var isGlobal = modifier.commands.Count > 1 && Parser.TryParse(modifier.commands[1], false);
+                                            var directory = isGlobal && RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/soundlibrary") ?
+                                                            RTFile.ApplicationDirectory + "beatmaps/soundlibrary" : System.IO.Path.GetDirectoryName(RTFile.BasePath);
+
+                                            if (isGlobal && !RTFile.DirectoryExists(RTFile.ApplicationDirectory + "beatmaps/soundlibrary"))
+                                            {
+                                                EditorManager.inst.DisplayNotification("soundlibrary folder does not exist! If you want to have audio take from a global folder, make sure you create a soundlibrary folder inside your beatmaps folder and put your sounds in there.", 12f, EditorManager.NotificationType.Error);
+                                            }
+
+                                            RTFileBrowser.inst.UpdateBrowser(directory, new string[] { ".wav", ".ogg", ".mp3" }, onSelectFile: delegate (string _val)
                                             {
                                                 var global = Parser.TryParse(modifier.commands[1], false);
 
