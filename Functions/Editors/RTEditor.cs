@@ -12,6 +12,7 @@ using RTFunctions.Functions.Components.Player;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Managers.Networking;
 using RTFunctions.Functions.Optimization;
 using SimpleJSON;
 using System;
@@ -387,6 +388,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Variables
 
+        public bool choosingLevelTemplate;
         public int currentLevelTemplate = -1;
 
         public float dragOffset = -1f;
@@ -1729,7 +1731,7 @@ namespace EditorManagement.Functions.Editors
 
         #region Generate UI
 
-        public void SetupTimelineBar()
+        void SetupTimelineBar()
         {
             var __instance = EditorManager.inst;
 
@@ -2037,7 +2039,7 @@ namespace EditorManagement.Functions.Editors
         }
 
         public bool isOverMainTimeline;
-        public void SetupTimelineTriggers()
+        void SetupTimelineTriggers()
         {
             var isOver = new EventTrigger.Entry();
             isOver.eventID = EventTriggerType.PointerEnter;
@@ -2101,7 +2103,7 @@ namespace EditorManagement.Functions.Editors
             }));
         }
 
-        public void SetupSelectGUI()
+        void SetupSelectGUI()
         {
             var __instance = EditorManager.inst;
 
@@ -2129,7 +2131,7 @@ namespace EditorManagement.Functions.Editors
             quickActionsPopupSelect.ogPos = quickActionsPopup.position;
         }
 
-        public void SetupCreateObjects()
+        void SetupCreateObjects()
         {
             var __instance = EditorManager.inst;
 
@@ -2198,7 +2200,7 @@ namespace EditorManagement.Functions.Editors
             });
         }
 
-        public void SetupDropdowns()
+        void SetupDropdowns()
         {
             titleBar = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar").transform;
 
@@ -2494,7 +2496,7 @@ namespace EditorManagement.Functions.Editors
             titleBar.Find("File/File Dropdown/Save As").gameObject.SetActive(true);
         }
 
-        public void SetupDoggo()
+        void SetupDoggo()
         {
             var loading = new GameObject("loading");
             var fileInfoPopup = EditorManager.inst.GetDialog("File Info Popup").Dialog;
@@ -2520,7 +2522,7 @@ namespace EditorManagement.Functions.Editors
             fileInfoPopup.gameObject.GetComponent<Image>().sprite = null;
         }
 
-        public void SetupPaths()
+        void SetupPaths()
         {
             var sortList = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
                 .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
@@ -2922,7 +2924,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void SetupFileBrowser()
+        void SetupFileBrowser()
         {
             var fileBrowser = EditorManager.inst.GetDialog("New File Popup").Dialog.Find("Browser Popup").gameObject.Duplicate(EditorManager.inst.GetDialog("New File Popup").Dialog.parent, "Browser Popup");
             fileBrowser.gameObject.SetActive(false);
@@ -2955,7 +2957,7 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorPopup("Browser Popup", fileBrowser);
         }
 
-        public void SetupTimelinePreview()
+        void SetupTimelinePreview()
         {
             GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(false);
             var gui = GameManager.inst.playerGUI.Duplicate(EditorManager.inst.dialogs.parent);
@@ -2978,7 +2980,7 @@ namespace EditorManagement.Functions.Editors
             timelinePreviewLine = timelinePreview.Find("Base").GetComponent<Image>();
         }
 
-        public void SetupTimelineElements()
+        void SetupTimelineElements()
         {
             Debug.Log($"{EditorPlugin.className}Setting Timeline Cursor Colors");
 
@@ -3005,7 +3007,7 @@ namespace EditorManagement.Functions.Editors
         }
 
         public GridRenderer timelineGridRenderer;
-        public void SetupTimelineGrid()
+        void SetupTimelineGrid()
         {
             var grid = new GameObject("grid");
             grid.transform.SetParent(EditorManager.inst.timeline.transform);
@@ -3063,18 +3065,18 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void SetupNewFilePopup()
+        void SetupNewFilePopup()
         {
             var newFilePopupBase = EditorManager.inst.GetDialog("New File Popup").Dialog;
 
             var newFilePopup = newFilePopupBase.Find("New File Popup");
 
-            //var newFilePopupDetection = newFilePopup.gameObject.AddComponent<Clickable>();
-            //newFilePopupDetection.onEnable = delegate (bool _val)
-            //{
-            //    if (!_val)
-            //        EditorManager.inst.HideDialog("New Level Template Dialog");
-            //};
+            var newFilePopupDetection = newFilePopup.gameObject.AddComponent<Clickable>();
+            newFilePopupDetection.onEnable = delegate (bool _val)
+            {
+                if (!_val)
+                    EditorManager.inst.HideDialog("New Level Template Dialog");
+            };
 
             EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup", "Background", newFilePopup.gameObject, new List<Component>
             {
@@ -3163,7 +3165,8 @@ namespace EditorManagement.Functions.Editors
             chooseTemplateButton.onClick.ClearAll();
             chooseTemplateButton.onClick.AddListener(delegate ()
             {
-                EditorManager.inst.DisplayNotification("wip", 0.5f, EditorManager.NotificationType.Info);
+                EditorManager.inst.ShowDialog("New Level Template Dialog");
+                RefreshNewLevelTemplates();
             });
             chooseTemplate.transform.AsRT().sizeDelta = new Vector2(384f, 32f);
 
@@ -3250,9 +3253,112 @@ namespace EditorManagement.Functions.Editors
             {
                 createText.GetComponent<Text>(),
             }));
+
+            CreateNewLevelTemplateDialog();
         }
 
-        public void CreatePreviewCover()
+        public Transform newLevelTemplateContent;
+        public GameObject newLevelTemplatePrefab;
+        public Sprite newLevelTemplateBaseSprite;
+        void CreateNewLevelTemplateDialog()
+        {
+            var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
+            var editorDialogTransform = editorDialogObject.transform;
+            editorDialogObject.name = "NewLevelTemplateDialog";
+            editorDialogObject.layer = 5;
+            editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
+            editorDialogTransform.localScale = Vector3.one;
+            editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
+            editorDialogTransform.AsRT().sizeDelta = new Vector2(0f, 32f);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New Level Template", "Background", editorDialogObject, new List<Component>
+            {
+                editorDialogObject.GetComponent<Image>(),
+            }));
+
+            var editorDialogTitle = editorDialogTransform.GetChild(0);
+            var editorDialogTitleImage = editorDialogTitle.GetComponent<Image>();
+            var editorDialogTitleText = editorDialogTitle.GetChild(0).GetComponent<Text>();
+            editorDialogTitleText.text = "- New Level Template -";
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New Level Template Title", "Add", editorDialogTitle.gameObject, new List<Component>
+            {
+                editorDialogTitleImage,
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New Level Template Title Text", "Add Text", editorDialogTitleText.gameObject, new List<Component>
+            {
+                editorDialogTitleText,
+            }));
+
+            var editorDialogSpacer = editorDialogTransform.GetChild(1);
+            editorDialogSpacer.AsRT().sizeDelta = new Vector2(765f, 54f);
+
+            Destroy(editorDialogTransform.GetChild(2).gameObject);
+
+            EditorHelper.AddEditorDialog("New Level Template Dialog", editorDialogObject);
+
+            var scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
+            newLevelTemplateContent = scrollView.transform.Find("Viewport/Content");
+            scrollView.transform.SetParent(editorDialogTransform);
+            scrollView.transform.localScale = Vector3.one;
+            scrollView.name = "Scroll View";
+
+            LSHelpers.DeleteChildren(newLevelTemplateContent);
+
+            var scrollViewLE = scrollView.AddComponent<LayoutElement>();
+            scrollViewLE.ignoreLayout = true;
+
+            scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
+            scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
+
+            newLevelTemplatePrefab = EditorManager.inst.folderButtonPrefab.Duplicate(transform, "Template");
+
+            newLevelTemplatePrefab.transform.AsRT().sizeDelta = new Vector2(734f, 200f);
+
+            var newLevelTemplatePrefabPreviewBase = new GameObject("Preview Base");
+            newLevelTemplatePrefabPreviewBase.transform.SetParent(newLevelTemplatePrefab.transform);
+            newLevelTemplatePrefabPreviewBase.transform.localScale = Vector3.one;
+            var newLevelTemplatePrefabPreviewBaseRT = newLevelTemplatePrefabPreviewBase.AddComponent<RectTransform>();
+            var newLevelTemplatePrefabPreviewBaseImage = newLevelTemplatePrefabPreviewBase.AddComponent<Image>();
+            var newLevelTemplatePrefabPreviewBaseMask = newLevelTemplatePrefabPreviewBase.AddComponent<Mask>();
+            newLevelTemplatePrefabPreviewBaseMask.showMaskGraphic = false;
+
+            newLevelTemplatePrefabPreviewBaseRT.anchoredPosition = new Vector2(-200f, 0f);
+            newLevelTemplatePrefabPreviewBaseRT.sizeDelta = new Vector2(312f, 175.5f);
+
+            var newLevelTemplatePrefabPreview = new GameObject("Preview");
+            newLevelTemplatePrefabPreview.transform.SetParent(newLevelTemplatePrefabPreviewBaseRT);
+            newLevelTemplatePrefabPreview.transform.localScale = Vector3.one;
+            var newLevelTemplatePrefabPreviewRT = newLevelTemplatePrefabPreview.AddComponent<RectTransform>();
+            var newLevelTemplatePrefabPreviewImage = newLevelTemplatePrefabPreview.AddComponent<Image>();
+
+            newLevelTemplatePrefabPreviewRT.anchoredPosition = Vector2.zero;
+            newLevelTemplatePrefabPreviewRT.anchorMax = Vector2.one;
+            newLevelTemplatePrefabPreviewRT.anchorMin = Vector2.zero;
+            newLevelTemplatePrefabPreviewRT.sizeDelta = Vector2.zero;
+
+            var newLevelTemplatePrefabTitle = newLevelTemplatePrefab.transform.GetChild(0);
+            newLevelTemplatePrefabTitle.name = "Title";
+            newLevelTemplatePrefabTitle.AsRT().anchoredPosition = new Vector2(350f, 0f);
+            newLevelTemplatePrefabTitle.AsRT().sizeDelta = new Vector2(32f, 32f);
+
+            var noLevel = newLevelTemplatePrefabTitle.gameObject.Duplicate(newLevelTemplatePrefab.transform, "No Preview");
+            noLevel.transform.AsRT().anchoredPosition = new Vector2(-200f, 0f);
+            noLevel.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
+            var noLevelText = noLevel.GetComponent<Text>();
+            noLevelText.alignment = TextAnchor.MiddleCenter;
+            noLevelText.fontSize = 20;
+            noLevelText.text = "No Preview";
+            noLevel.SetActive(false);
+
+            StartCoroutine(AlephNetworkManager.DownloadImageTexture(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "default_template.png", delegate (Texture2D texture2D)
+            {
+                newLevelTemplateBaseSprite = SpriteManager.CreateSprite(texture2D);
+            }));
+        }
+
+        void CreatePreviewCover()
         {
             var gameObject = new GameObject("Preview Cover");
             gameObject.transform.SetParent(EditorManager.inst.dialogs.parent);
@@ -3275,7 +3381,7 @@ namespace EditorManagement.Functions.Editors
             gameObject.SetActive(!RTHelpers.AprilFools);
         }
 
-        public void CreateObjectSearch()
+        void CreateObjectSearch()
         {
             var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
                 .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Object Search");
@@ -3314,7 +3420,7 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorPopup("Object Search Popup", objectSearch);
         }
 
-        public void CreateWarningPopup()
+        void CreateWarningPopup()
         {
             var warningPopup = EditorManager.inst.GetDialog("Save As Popup").Dialog.gameObject
                 .Duplicate(EditorManager.inst.GetDialog("Save As Popup").Dialog.GetParent(), "Warning Popup");
@@ -3442,7 +3548,7 @@ namespace EditorManagement.Functions.Editors
             }));
         }
 
-        public void CreateREPLEditor()
+        void CreateREPLEditor()
         {
             var font = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/Text").GetComponent<Text>().font;
 
@@ -3547,7 +3653,7 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorPopup("REPL Editor Popup", replBase);
         }
 
-        public void CreateMultiObjectEditor()
+        void CreateMultiObjectEditor()
         {
             var barButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/time").transform.GetChild(4).gameObject;
             var barButtonImage = barButton.GetComponent<Image>();
@@ -4168,7 +4274,7 @@ namespace EditorManagement.Functions.Editors
             {
                 labelGenerator("Force Snap Start Time to BPM");
 
-                buttonGenerator("set autokill", "Snap", parent, delegate ()
+                buttonGenerator("snap", "Snap", parent, delegate ()
                 {
                     foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
@@ -4201,6 +4307,16 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
+
+            // Assign Objects to Prefab
+            //{
+            //    labelGenerator("Assign Objects to Prefab");
+
+            //    buttonGenerator("assign prefab", "Snap", parent, delegate ()
+            //    {
+            //        PrefabEditorManager.inst.assigningInternalPrefab = true;
+            //    });
+            //}
 
             // Lock Swap
             {
@@ -6450,7 +6566,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void CreatePropertiesWindow()
+        void CreatePropertiesWindow()
         {
             var editorProperties = Instantiate(EditorManager.inst.GetDialog("Object Selector").Dialog.gameObject);
             editorProperties.name = "Editor Properties Popup";
@@ -6619,7 +6735,7 @@ namespace EditorManagement.Functions.Editors
         public Text documentationTitle;
         public string documentationSearch;
         public Transform documentationContent;
-        public void CreateDocumentation()
+        void CreateDocumentation()
         {
             var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
                 .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Documentation Popup");
@@ -8896,7 +9012,7 @@ namespace EditorManagement.Functions.Editors
 
         public List<string> debugs = new List<string>();
         public string debugSearch;
-        public void CreateDebug()
+        void CreateDebug()
         {
             if (ModCompatibility.mods.ContainsKey("UnityExplorer"))
             {
@@ -9251,7 +9367,7 @@ namespace EditorManagement.Functions.Editors
         public string autosaveSearch;
         public Transform autosaveContent;
         public InputField autosaveSearchField;
-        public void CreateAutosavePopup()
+        void CreateAutosavePopup()
         {
             var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
                 .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Autosaves Popup");
@@ -9336,10 +9452,12 @@ namespace EditorManagement.Functions.Editors
             int num = 0;
             foreach (var file in files)
             {
-                int index = num;
+                if (!RTFile.FileExists(file + "/level.lsb"))
+                    continue;
+
                 var path = file.Replace("\\", "/");
                 var name = Path.GetFileName(path);
-                var metadataStr = FileManager.inst.LoadJSONFileRaw(file + "/metadata.lsb");
+                var metadataStr = RTFile.ReadFromFile(file + "/metadata.lsb");
 
                 if (metadataStr != null)
                 {
@@ -9383,6 +9501,13 @@ namespace EditorManagement.Functions.Editors
                     var button = gameObject.GetComponent<Button>();
                     button.onClick.AddListener(delegate ()
                     {
+                        if (choosingLevelTemplate)
+                        {
+                            EditorManager.inst.HideDialog("Open File Popup");
+
+                            return;
+                        }
+
                         // If clicking on the level button shows the autosaves popup or not.
                         if (Input.GetKey(KeyCode.LeftShift))
                         {
@@ -10167,7 +10292,7 @@ namespace EditorManagement.Functions.Editors
                 File.Copy(EditorManager.inst.newAudioFile, destFileName, true);
             }
 
-            var json = currentLevelTemplate >= 0 && currentLevelTemplate < NewLevelTemplates.Count && RTFile.FileExists(NewLevelTemplates[currentLevelTemplate].filePath) ? RTFile.ReadFromFile(NewLevelTemplates[currentLevelTemplate].filePath) : null;
+            var json = currentLevelTemplate >= 0 && currentLevelTemplate < NewLevelTemplates.Count && RTFile.FileExists(NewLevelTemplates[currentLevelTemplate]) ? RTFile.ReadFromFile(NewLevelTemplates[currentLevelTemplate]) : null;
 
             var gameData = !string.IsNullOrEmpty(json) ? GameData.Parse(JSON.Parse(json), false) : CreateBaseBeatmap();
 
@@ -11651,6 +11776,108 @@ namespace EditorManagement.Functions.Editors
                         EditorManager.inst.HideDialog("Open File Popup");
                     });
                 });
+            }
+        }
+
+        public void RefreshNewLevelTemplates()
+        {
+            NewLevelTemplates.Clear();
+            LSHelpers.DeleteChildren(newLevelTemplateContent);
+
+            var baseLevelTemplateGameObject = newLevelTemplatePrefab.Duplicate(newLevelTemplateContent);
+            var basePreviewBase = baseLevelTemplateGameObject.transform.Find("Preview Base");
+            basePreviewBase.Find("Preview").GetComponent<Image>().sprite = newLevelTemplateBaseSprite;
+
+            var baseButton = baseLevelTemplateGameObject.GetComponent<Button>();
+            baseButton.onClick.ClearAll();
+            baseButton.onClick.AddListener(delegate ()
+            {
+                currentLevelTemplate = -1;
+                EditorManager.inst.DisplayNotification($"Set level template to default.", 1.6f, EditorManager.NotificationType.Success);
+            });
+
+            var baseTitle = baseLevelTemplateGameObject.transform.Find("Title").GetComponent<Text>();
+            baseTitle.text = "Default Template";
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template", "List Button 1", baseLevelTemplateGameObject.gameObject, new List<Component>
+            {
+                baseLevelTemplateGameObject.GetComponent<Image>(),
+                baseButton,
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template Preview Base", "", basePreviewBase.gameObject, new List<Component>
+            {
+                basePreviewBase.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"New Level Template Text", "Light Text", baseTitle.gameObject, new List<Component>
+            {
+                baseTitle,
+            }));
+
+            var baseDirectory = RTFile.ApplicationDirectory + "beatmaps/templates";
+
+            if (!RTFile.DirectoryExists(baseDirectory))
+                return;
+
+            int num = 0;
+            var directories = Directory.GetDirectories(baseDirectory, "*", SearchOption.TopDirectoryOnly);
+            for (int i = 0; i < directories.Length; i++)
+            {
+                var directory = directories[i];
+
+                if (!RTFile.FileExists(directory + "/level.lsb"))
+                    continue;
+
+                var fileName = Path.GetFileName(directory);
+                int index = num;
+
+                var levelTemplateGameObject = newLevelTemplatePrefab.Duplicate(newLevelTemplateContent);
+
+                var previewBase = levelTemplateGameObject.transform.Find("Preview Base");
+                var previewImage = previewBase.Find("Preview").GetComponent<Image>();
+
+                var button = levelTemplateGameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
+                {
+                    currentLevelTemplate = index;
+                    EditorManager.inst.DisplayNotification($"Set level template to {fileName} [{currentLevelTemplate}]", 2f, EditorManager.NotificationType.Success);
+                });
+
+                var title = levelTemplateGameObject.transform.Find("Title").GetComponent<Text>();
+                title.text = fileName;
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template", "List Button 1", levelTemplateGameObject, new List<Component>
+                {
+                    levelTemplateGameObject.GetComponent<Image>(),
+                    button,
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template Preview Base", "", previewBase.gameObject, new List<Component>
+                {
+                    previewBase.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"New Level Template Text", "Light Text", baseTitle.gameObject, new List<Component>
+                {
+                    baseTitle,
+                }));
+
+                if (RTFile.FileExists(directory + "/preview.png"))
+                    StartCoroutine(AlephNetworkManager.DownloadImageTexture(directory + "/preview.png", delegate (Texture2D texture2D)
+                    {
+                        previewImage.sprite = SpriteManager.CreateSprite(texture2D);
+                    }));
+                else
+                {
+                    previewImage.color = new Color(1f, 1f, 1f, 0.1f);
+                    previewImage.sprite = newLevelTemplateBaseSprite;
+                    levelTemplateGameObject.transform.Find("No Preview").gameObject.SetActive(true);
+                }
+
+                NewLevelTemplates.Add(directory + "/level.lsb");
+                num++;
             }
         }
 
@@ -13888,14 +14115,7 @@ namespace EditorManagement.Functions.Editors
             public string RotEndEase => RotCloseEaseConfig.Value.ToString();
         }
 
-        public List<NewLevelTemplate> NewLevelTemplates { get; set; } = new List<NewLevelTemplate>();
-
-        public class NewLevelTemplate
-        {
-            public GameObject GameObject { get; set; }
-            public string filePath;
-            public Image Preview { get; set; }
-        }
+        public List<string> NewLevelTemplates { get; set; } = new List<string>();
 
         public class EditorProperty : Exists
         {
