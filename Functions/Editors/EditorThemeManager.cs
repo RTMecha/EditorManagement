@@ -30,7 +30,7 @@ namespace EditorManagement.Functions.Editors
             if (EditorManager.inst == null && EditorGUIElements.Count > 0)
                 Clear();
 
-            if (EditorManager.inst && DebugMode)
+            if (EditorManager.inst && DebugMode && !LSHelpers.IsUsingInputField())
             {
                 if (Input.GetKeyDown(KeyCode.G))
                     EditorConfig.Instance.EditorTheme.Value = EditorConfig.Instance.EditorTheme.Value == ThemeSetting.Legacy ? ThemeSetting.Dark : ThemeSetting.Legacy;
