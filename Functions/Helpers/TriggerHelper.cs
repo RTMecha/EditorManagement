@@ -559,6 +559,7 @@ namespace EditorManagement.Functions.Helpers
 					if (RTEditor.inst.prefabPickerEnabled && timelineObject.IsPrefabObject && pointerEventData.button != PointerEventData.InputButton.Right)
 					{
 						var prefabObject = timelineObject.GetData<PrefabObject>();
+						var prefabInstanceID = LSText.randomString(16);
 
 						if (RTEditor.inst.selectingMultiple)
 						{
@@ -567,7 +568,7 @@ namespace EditorManagement.Functions.Helpers
 								var otherBeatmapObject = otherTimelineObject.GetData<BeatmapObject>();
 
 								otherBeatmapObject.prefabID = prefabObject.prefabID;
-								otherBeatmapObject.prefabInstanceID = LSText.randomString(16);
+								otherBeatmapObject.prefabInstanceID = prefabInstanceID;
 								ObjectEditor.inst.RenderTimelineObject(otherTimelineObject);
 							}
 						}
@@ -576,7 +577,7 @@ namespace EditorManagement.Functions.Helpers
 							var currentBeatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
 
 							currentBeatmapObject.prefabID = prefabObject.prefabID;
-							currentBeatmapObject.prefabInstanceID = LSText.randomString(16);
+							currentBeatmapObject.prefabInstanceID = prefabInstanceID;
 							ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.CurrentSelection);
 							ObjectEditor.inst.OpenDialog(currentBeatmapObject);
 						}
