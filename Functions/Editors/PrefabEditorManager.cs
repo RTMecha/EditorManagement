@@ -26,6 +26,8 @@ namespace EditorManagement.Functions.Editors
 
         #region Variables
 
+        public bool assigningInternalPrefab;
+
         public bool savingToPrefab;
         public Prefab prefabToSaveFrom;
 
@@ -1800,14 +1802,33 @@ namespace EditorManagement.Functions.Editors
                 });
                 addPrefabObject.onClick.AddListener(delegate ()
                 {
+                    if (assigningInternalPrefab)
+                    {
+                        assigningInternalPrefab = false;
+
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                        {
+                            if (timelineObject.IsBeatmapObject && DataManager.inst.gameData.beatmapObjects.TryFind(x => x.prefabID == prefab.ID && !x.fromPrefab, out DataManager.GameData.BeatmapObject beatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().prefabID = prefab.ID;
+                                timelineObject.GetData<BeatmapObject>().prefabInstanceID = beatmapObject.prefabInstanceID;
+                            }
+
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
+
+                        EditorManager.inst.HideDialog("Prefab Popup");
+                        return;
+                    }
+
                     if (!_toggle)
                     {
                         AddPrefabObjectToLevel(prefab);
-                        EditorManager.inst.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
+                        EditorManager.inst.HideDialog("Prefab Popup");
                         return;
                     }
                     UpdateCurrentPrefab(prefab);
-                    PrefabEditor.inst.ReloadInternalPrefabsInPopup(false);
+                    PrefabEditor.inst.ReloadInternalPrefabsInPopup();
                 });
             }
             else
@@ -1851,7 +1872,7 @@ namespace EditorManagement.Functions.Editors
                         prefabToSaveTo.objects = prefabToSaveFrom.objects.Clone();
                         prefabToSaveTo.prefabObjects = prefabToSaveFrom.prefabObjects.Clone();
                         prefabToSaveTo.Offset = prefabToSaveFrom.Offset;
-                        prefabToSaveTo.description = prefabToSaveFrom.description;
+                        //prefabToSaveTo.description = prefabToSaveFrom.description;
                         prefabToSaveTo.Type = prefabToSaveFrom.Type;
 
                         var prefabType = prefabToSaveTo.Type >= 0 && prefabToSaveTo.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefabToSaveTo.Type] : PrefabType.InvalidType;
