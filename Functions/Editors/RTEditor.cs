@@ -387,6 +387,8 @@ namespace EditorManagement.Functions.Editors
 
         #region Variables
 
+        public int currentLevelTemplate = -1;
+
         public float dragOffset = -1f;
         public int dragBinOffset = -100;
 
@@ -3120,6 +3122,8 @@ namespace EditorManagement.Functions.Editors
             Destroy(browseBase.transform.GetChild(0).gameObject);
             Destroy(pather.GetChild(1).gameObject);
 
+            newFilePopup.Find("Song Filename").GetComponent<Text>().text = "Song Path";
+
             var browseLocal = browseBase.transform.Find("browse");
             var browseLocalText = browseLocal.Find("Text").GetComponent<Text>();
             browseLocalText.text = "Local Browser";
@@ -3151,6 +3155,19 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             });
+
+            var chooseTemplate = browseLocal.gameObject.Duplicate(newFilePopup, "choose template", 8);
+            var chooseTemplateText = chooseTemplate.transform.Find("Text").GetComponent<Text>();
+            chooseTemplateText.text = "Choose Template";
+            var chooseTemplateButton = chooseTemplate.GetComponent<Button>();
+            chooseTemplateButton.onClick.ClearAll();
+            chooseTemplateButton.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.DisplayNotification("wip", 0.5f, EditorManager.NotificationType.Info);
+            });
+            chooseTemplate.transform.AsRT().sizeDelta = new Vector2(384f, 32f);
+
+            spacer.gameObject.Duplicate(newFilePopup, "spacer", 8);
 
             var hlg = browseBase.AddComponent<HorizontalLayoutGroup>();
             hlg.spacing = 8f;
@@ -3208,6 +3225,16 @@ namespace EditorManagement.Functions.Editors
             EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Browse Internal Text", "Function 2 Text", browseInternalText.gameObject, new List<Component>
             {
                 browseInternalText,
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Choose Template", "Function 2 Normal", chooseTemplate.gameObject, new List<Component>
+            {
+                chooseTemplate.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Choose Template Text", "Function 2 Text", chooseTemplateText.gameObject, new List<Component>
+            {
+                chooseTemplateText,
             }));
 
             var create = newFilePopup.Find("submit").gameObject;
@@ -9950,6 +9977,20 @@ namespace EditorManagement.Functions.Editors
             {
                 x.NewOnClickListener(delegate ()
                 {
+                    if (PrefabEditorManager.inst.savingToPrefab && PrefabEditorManager.inst.prefabToSaveFrom != null)
+                    {
+                        PrefabEditorManager.inst.savingToPrefab = false;
+                        PrefabEditorManager.inst.SavePrefab(PrefabEditorManager.inst.prefabToSaveFrom);
+
+                        EditorManager.inst.HideDialog("Prefab Popup");
+
+                        PrefabEditorManager.inst.prefabToSaveFrom = null;
+
+                        EditorManager.inst.DisplayNotification("Applied all changes to External Prefab.", 2f, EditorManager.NotificationType.Success);
+
+                        return;
+                    }
+
                     PrefabEditor.inst.OpenDialog();
                     PrefabEditorManager.inst.createInternal = false;
                 });
@@ -9983,8 +10024,6 @@ namespace EditorManagement.Functions.Editors
                 var prefab = Prefab.Parse(jn);
                 prefab.objects.ForEach(x => { x.prefabID = ""; x.prefabInstanceID = ""; });
                 prefab.filePath = file.Replace("\\", "/");
-                __instance.LoadedPrefabs.Add(Prefab.Parse(jn));
-                __instance.LoadedPrefabsFiles.Add(file);
 
                 StartCoroutine(PrefabEditorManager.inst.CreatePrefabButton(prefab, num, PrefabDialog.External, file, false, hoverSize,
                          nameHorizontalOverflow, nameVerticalOverflow, nameFontSize,
@@ -10001,8 +10040,6 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator UpdatePrefabs()
         {
-            PrefabEditor.inst.LoadedPrefabs.Clear();
-            PrefabEditor.inst.LoadedPrefabsFiles.Clear();
             yield return inst.StartCoroutine(LoadPrefabs(PrefabEditor.inst));
             PrefabEditor.inst.ReloadExternalPrefabsInPopup();
             EditorManager.inst.DisplayNotification("Updated external prefabs!", 2f, EditorManager.NotificationType.Success);
@@ -10077,68 +10114,76 @@ namespace EditorManagement.Functions.Editors
 
         public void CreateNewLevel()
         {
-            var __instance = EditorManager.inst;
-            if (!__instance.newAudioFile.ToLower().Contains(".ogg") && !__instance.newAudioFile.ToLower().Contains(".wav") && !__instance.newAudioFile.ToLower().Contains(".mp3"))
+            if (string.IsNullOrEmpty(EditorManager.inst.newAudioFile))
             {
-                __instance.DisplayNotification("The file you are trying to load doesn't appear to be a song file.", 2f, EditorManager.NotificationType.Error, false);
+                EditorManager.inst.DisplayNotification("The file path is empty.", 2f, EditorManager.NotificationType.Error);
                 return;
             }
-            if (!RTFile.FileExists(__instance.newAudioFile))
+
+            if (!EditorManager.inst.newAudioFile.ToLower().Contains(".ogg") && !EditorManager.inst.newAudioFile.ToLower().Contains(".wav") && !EditorManager.inst.newAudioFile.ToLower().Contains(".mp3"))
             {
-                __instance.DisplayNotification("The file you are trying to load doesn't appear to exist.", 2f, EditorManager.NotificationType.Error, false);
+                EditorManager.inst.DisplayNotification("The file you are trying to load doesn't appear to be a song file.", 2f, EditorManager.NotificationType.Error);
+                return;
+            }
+            if (!RTFile.FileExists(EditorManager.inst.newAudioFile))
+            {
+                EditorManager.inst.DisplayNotification("The file you are trying to load doesn't appear to exist.", 2f, EditorManager.NotificationType.Error);
                 return;
             }
 
             bool setNew = false;
             int num = 0;
-            string p = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName;
+            string p = RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName;
             while (RTFile.DirectoryExists(p))
             {
-                p = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + " - " + num.ToString();
+                p = RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName + " - " + num.ToString();
                 num += 1;
                 setNew = true;
 
             }
             if (setNew)
-                __instance.newLevelName += " - " + num.ToString();
+                EditorManager.inst.newLevelName += " - " + num.ToString();
 
-            if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName))
+            if (RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName))
             {
-                __instance.DisplayNotification("The level you are trying to create already exists.", 2f, EditorManager.NotificationType.Error, false);
+                EditorManager.inst.DisplayNotification("The level you are trying to create already exists.", 2f, EditorManager.NotificationType.Error);
                 return;
             }
-            Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName);
+            Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName);
 
-            if (__instance.newAudioFile.ToLower().Contains(".ogg"))
+            if (EditorManager.inst.newAudioFile.ToLower().Contains(".ogg"))
             {
-                string destFileName = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.ogg";
-                File.Copy(__instance.newAudioFile, destFileName, true);
+                string destFileName = RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName + "/level.ogg";
+                File.Copy(EditorManager.inst.newAudioFile, destFileName, true);
             }
-            if (__instance.newAudioFile.ToLower().Contains(".wav"))
+            if (EditorManager.inst.newAudioFile.ToLower().Contains(".wav"))
             {
-                string destFileName = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.wav";
-                File.Copy(__instance.newAudioFile, destFileName, true);
+                string destFileName = RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName + "/level.wav";
+                File.Copy(EditorManager.inst.newAudioFile, destFileName, true);
             }
-            if (__instance.newAudioFile.ToLower().Contains(".mp3"))
+            if (EditorManager.inst.newAudioFile.ToLower().Contains(".mp3"))
             {
-                string destFileName = RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.mp3";
-                File.Copy(__instance.newAudioFile, destFileName, true);
+                string destFileName = RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName + "/level.mp3";
+                File.Copy(EditorManager.inst.newAudioFile, destFileName, true);
             }
 
-            StartCoroutine(ProjectData.Writer.SaveData(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/level.lsb", CreateBaseBeatmap()));
-            var dataManager = DataManager.inst;
+            var json = currentLevelTemplate >= 0 && currentLevelTemplate < NewLevelTemplates.Count && RTFile.FileExists(NewLevelTemplates[currentLevelTemplate].filePath) ? RTFile.ReadFromFile(NewLevelTemplates[currentLevelTemplate].filePath) : null;
+
+            var gameData = !string.IsNullOrEmpty(json) ? GameData.Parse(JSON.Parse(json), false) : CreateBaseBeatmap();
+
+            StartCoroutine(ProjectData.Writer.SaveData(RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName + "/level.lsb", gameData));
             var metaData = new MetaData();
             metaData.beatmap.game_version = "4.1.16";
             metaData.arcadeID = LSText.randomNumString(16);
-            metaData.song.title = __instance.newLevelName;
+            metaData.song.title = EditorManager.inst.newLevelName;
             metaData.creator.steam_name = SteamWrapper.inst.user.displayName;
             metaData.creator.steam_id = SteamWrapper.inst.user.id;
 
-            dataManager.metaData = metaData;
+            DataManager.inst.metaData = metaData;
 
-            dataManager.SaveMetadata(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName + "/metadata.lsb");
-            StartCoroutine(LoadLevel(RTFile.ApplicationDirectory + editorListSlash + __instance.newLevelName));
-            __instance.HideDialog("New File Popup");
+            DataManager.inst.SaveMetadata(RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName + "/metadata.lsb");
+            StartCoroutine(LoadLevel(RTFile.ApplicationDirectory + editorListSlash + EditorManager.inst.newLevelName));
+            EditorManager.inst.HideDialog("New File Popup");
         }
 
         public GameData CreateBaseBeatmap()
