@@ -1766,8 +1766,8 @@ namespace EditorManagement.Functions.Editors
             depthTf.gameObject.SetActive(active);
 
             var renderTypeTF = (Transform)ObjectUIElements["Render Type T"];
-            renderTypeTF.parent.GetChild(renderTypeTF.GetSiblingIndex() - 1).gameObject.SetActive(active && RTEditor.ShowModdedUI || RTEditor.ShowModdedUI);
-            renderTypeTF.gameObject.SetActive(active && RTEditor.ShowModdedUI || RTEditor.ShowModdedUI);
+            renderTypeTF.parent.GetChild(renderTypeTF.GetSiblingIndex() - 1).gameObject.SetActive(active && RTEditor.ShowModdedUI);
+            renderTypeTF.gameObject.SetActive(active && RTEditor.ShowModdedUI);
 
             var originTF = (Transform)ObjectUIElements["Origin"];
             originTF.parent.GetChild(originTF.GetSiblingIndex() - 1).gameObject.SetActive(active);
