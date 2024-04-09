@@ -85,6 +85,7 @@ namespace EditorManagement.Functions
             AutosaveLoopTime = Config.Bind("Data", "Autosave Loop Time", 600f, "The repeat time of autosave.");
             LevelLoadsLastTime = Config.Bind("Data", "Level Loads Last Time", true, "Sets the editor position (audio time, layer, etc) to the last saved editor position on level load.");
             LevelPausesOnStart = Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.");
+            SettingPathReloads = Config.Bind("Data", "Setting Path Reloads", true, "With this setting on, update the list for levels, prefabs and themes when changing the directory.");
             SavingSavesThemeOpacity = Config.Bind("Data", "Saving Saves Theme Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.");
             UpdatePrefabListOnFilesChanged = Config.Bind("Data", "Update Prefab List on Files Changed", false, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.");
             UpdateThemeListOnFilesChanged = Config.Bind("Data", "Update Theme List on Files Changed", false, "When you add a theme to your theme path, the editor will automatically update the theme list for you.");
@@ -1184,6 +1185,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<float> AutosaveLoopTime { get; set; }
         public ConfigEntry<bool> LevelLoadsLastTime { get; set; }
         public ConfigEntry<bool> LevelPausesOnStart { get; set; }
+        public ConfigEntry<bool> SettingPathReloads { get; set; }
         public ConfigEntry<bool> SavingSavesThemeOpacity { get; set; }
         public ConfigEntry<bool> UpdatePrefabListOnFilesChanged { get; set; }
         public ConfigEntry<bool> UpdateThemeListOnFilesChanged { get; set; }

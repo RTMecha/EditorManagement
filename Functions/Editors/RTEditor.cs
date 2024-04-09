@@ -173,34 +173,13 @@ namespace EditorManagement.Functions.Editors
             
             timelineSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
 
-            //EditorPlugin.SetTimelineColors();
-
-            if (!ModCompatibility.sharedFunctions.ContainsKey("ParentPickerDisable"))
-                ModCompatibility.sharedFunctions.Add("ParentPickerDisable", (Action)delegate ()
-                {
-                    parentPickerEnabled = false;
-                });
-            if (ModCompatibility.sharedFunctions.ContainsKey("ParentPickerDisable"))
-                ModCompatibility.sharedFunctions["ParentPickerDisable"] = (Action)delegate ()
-                {
-                    parentPickerEnabled = false;
-                };
-
-            Action<string, UnityAction, UnityAction, string, string> showWarningPopup = delegate (string warning, UnityAction confirmDelegate, UnityAction cancelDelegate, string confirm, string cancel)
+            ModCompatibility.sharedFunctions.AddSet("ParentPickerDisable", (Action)delegate ()
             {
-                EditorManager.inst.ShowDialog("Warning Popup");
-                RefreshWarningPopup(warning, confirmDelegate, cancelDelegate, confirm, cancel);
-            };
+                parentPickerEnabled = false;
+                prefabPickerEnabled = false;
+            });
 
-
-            if (!ModCompatibility.sharedFunctions.ContainsKey("ShowWarningPopup"))
-            {
-                ModCompatibility.sharedFunctions.Add("ShowWarningPopup", showWarningPopup);
-            }
-            else
-            {
-                ModCompatibility.sharedFunctions["ShowWarningPopup"] = showWarningPopup;
-            }
+            ModCompatibility.sharedFunctions.AddSet("ShowWarningPopup", (Action<string, UnityAction, UnityAction, string, string>)ShowWarningPopup);
 
             if (ModCompatibility.sharedFunctions.ContainsKey("EventsCoreConfigs") && ModCompatibility.sharedFunctions["EventsCoreConfigs"] is List<ConfigEntryBase> configs)
             {
@@ -295,7 +274,7 @@ namespace EditorManagement.Functions.Editors
             }
 
 
-            if (Input.GetMouseButtonDown(1))
+            if (Input.GetMouseButtonDown(1) && (parentPickerEnabled || prefabPickerEnabled))
             {
                 parentPickerEnabled = false;
                 prefabPickerEnabled = false;
@@ -309,8 +288,7 @@ namespace EditorManagement.Functions.Editors
                 num = 1f / num;
                 float x = mousePickerRT.sizeDelta.x;
                 float y = mousePickerRT.sizeDelta.y;
-                Vector3 zero = Vector3.zero;
-                mousePickerRT.anchoredPosition = (Input.mousePosition + zero) * num;
+                mousePickerRT.anchoredPosition = Input.mousePosition * num;
             }
 
             if (selectingKey)
@@ -353,11 +331,8 @@ namespace EditorManagement.Functions.Editors
                 timelinePreviewLine.color = GameStorageManager.inst.timelineLine.color;
             }
 
-            if (!ModCompatibility.sharedFunctions.ContainsKey("ParentPickerActive"))
-                ModCompatibility.sharedFunctions.Add("ParentPickerActive", parentPickerEnabled);
-            if (ModCompatibility.sharedFunctions.ContainsKey("ParentPickerActive"))
-                ModCompatibility.sharedFunctions["ParentPickerActive"] = parentPickerEnabled;
-
+            ModCompatibility.sharedFunctions.AddSet("ParentPickerActive", parentPickerEnabled);
+            ModCompatibility.sharedFunctions.AddSet("PrefabPickerActive", prefabPickerEnabled);
             ModCompatibility.sharedFunctions.AddSet("SelectedObjects", ObjectEditor.inst.SelectedObjects);
 
             if (RTHelpers.AprilFools && UnityEngine.Random.Range(0, 10000) > 9996)
@@ -1126,6 +1101,35 @@ namespace EditorManagement.Functions.Editors
         public static string editorListPath = "beatmaps/editor";
         public static string editorListSlash = "beatmaps/editor/";
 
+        public void UpdateEditorPath(bool forceReload)
+        {
+            if (!forceReload && !EditorConfig.Instance.SettingPathReloads.Value || editorListPath[editorListPath.Length - 1] == '/')
+                return;
+
+            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
+            {
+                ShowWarningPopup("No directory exists for this path. Do you want to create a new folder?", delegate ()
+                {
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
+
+                    SaveGlobalSettings();
+
+                    EditorManager.inst.GetLevelList();
+
+                    EditorManager.inst.HideDialog("Warning Popup");
+                }, delegate ()
+                {
+                    EditorManager.inst.HideDialog("Warning Popup");
+                });
+
+                return;
+            }
+
+            SaveGlobalSettings();
+
+            EditorManager.inst.GetLevelList();
+        }
+
         public static string ThemePath
         {
             get => themePath;
@@ -1146,6 +1150,37 @@ namespace EditorManagement.Functions.Editors
         public static string themeListPath = "beatmaps/themes";
         public static string themeListSlash = "beatmaps/themes/";
 
+        public void UpdateThemePath(bool forceReload)
+        {
+            if (!forceReload && !EditorConfig.Instance.SettingPathReloads.Value || themeListPath[themeListPath.Length - 1] == '/')
+                return;
+
+            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
+            {
+                ShowWarningPopup("No directory exists for this path. Do you want to create a new folder?", delegate ()
+                {
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
+
+                    SaveGlobalSettings();
+
+                    StartCoroutine(LoadThemes(true));
+                    EventEditor.inst.RenderEventsDialog();
+
+                    EditorManager.inst.HideDialog("Warning Popup");
+                }, delegate ()
+                {
+                    EditorManager.inst.HideDialog("Warning Popup");
+                });
+
+                return;
+            }
+
+            SaveGlobalSettings();
+
+            StartCoroutine(LoadThemes(true));
+            EventEditor.inst.RenderEventsDialog();
+        }
+
         public static string PrefabPath
         {
             get => prefabPath;
@@ -1165,6 +1200,35 @@ namespace EditorManagement.Functions.Editors
         static string prefabPath = "prefabs";
         public static string prefabListPath = "beatmaps/prefabs";
         public static string prefabListSlash = "beatmaps/prefabs/";
+
+        public void UpdatePrefabPath(bool forceReload)
+        {
+            if (!forceReload && !EditorConfig.Instance.SettingPathReloads.Value || prefabListPath[prefabListPath.Length - 1] == '/')
+                return;
+
+            if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
+            {
+                ShowWarningPopup("No directory exists for this path. Do you want to create a new folder?", delegate ()
+                {
+                    Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
+
+                    SaveGlobalSettings();
+
+                    StartCoroutine(UpdatePrefabs());
+
+                    EditorManager.inst.HideDialog("Warning Popup");
+                }, delegate ()
+                {
+                    EditorManager.inst.HideDialog("Warning Popup");
+                });
+
+                return;
+            }
+
+            SaveGlobalSettings();
+
+            StartCoroutine(UpdatePrefabs());
+        }
 
         public void CreateGlobalSettings()
         {
@@ -2679,11 +2743,16 @@ namespace EditorManagement.Functions.Editors
 
                 var editorPathIF = editorPathGO.GetComponent<InputField>();
                 editorPathIF.characterValidation = InputField.CharacterValidation.None;
-                editorPathIF.onValueChanged.RemoveAllListeners();
+                editorPathIF.onValueChanged.ClearAll();
+                editorPathIF.onEndEdit.ClearAll();
                 editorPathIF.text = EditorPath;
                 editorPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     EditorPath = _val;
+                });
+                editorPathIF.onEndEdit.AddListener(delegate (string _val)
+                {
+                    UpdateEditorPath(false);
                 });
                 
                 var clickable = editorPathGO.AddComponent<Clickable>();
@@ -2699,6 +2768,7 @@ namespace EditorManagement.Functions.Editors
                                 editorPathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
                                 EditorManager.inst.DisplayNotification($"Set Editor path to {EditorPath}!", 2f, EditorManager.NotificationType.Success);
                                 EditorManager.inst.HideDialog("Browser Popup");
+                                UpdateEditorPath(false);
                             }
                             else
                             {
@@ -2725,15 +2795,7 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
-                    if (editorListPath[editorListPath.Length - 1] == '/')
-                        return;
-
-                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
-                        Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
-
-                    SaveGlobalSettings();
-
-                    EditorManager.inst.GetLevelList();
+                    UpdateEditorPath(true);
                 });
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
@@ -2771,11 +2833,16 @@ namespace EditorManagement.Functions.Editors
 
                 var themePathIF = themePathGO.GetComponent<InputField>();
                 themePathIF.characterValidation = InputField.CharacterValidation.None;
-                themePathIF.onValueChanged.RemoveAllListeners();
+                themePathIF.onValueChanged.ClearAll();
+                themePathIF.onEndEdit.ClearAll();
                 themePathIF.text = ThemePath;
                 themePathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     ThemePath = _val;
+                });
+                themePathIF.onEndEdit.AddListener(delegate (string _val)
+                {
+                    UpdateThemePath(false);
                 });
 
                 var clickable = themePathGO.AddComponent<Clickable>();
@@ -2791,6 +2858,7 @@ namespace EditorManagement.Functions.Editors
                                 themePathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
                                 EditorManager.inst.DisplayNotification($"Set Theme path to {ThemePath}!", 2f, EditorManager.NotificationType.Success);
                                 EditorManager.inst.HideDialog("Browser Popup");
+                                UpdateThemePath(false);
                             }
                             else
                             {
@@ -2816,13 +2884,7 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
-                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
-                        Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
-
-                    SaveGlobalSettings();
-
-                    StartCoroutine(LoadThemes(true));
-                    EventEditor.inst.RenderEventsDialog();
+                    UpdateThemePath(true);
                 });
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
@@ -2852,11 +2914,16 @@ namespace EditorManagement.Functions.Editors
 
                 var prefabPathIF = prefabPathGO.GetComponent<InputField>();
                 prefabPathIF.characterValidation = InputField.CharacterValidation.None;
-                prefabPathIF.onValueChanged.RemoveAllListeners();
+                prefabPathIF.onValueChanged.ClearAll();
+                prefabPathIF.onEndEdit.ClearAll();
                 prefabPathIF.text = PrefabPath;
                 prefabPathIF.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
+                });
+                prefabPathIF.onEndEdit.AddListener(delegate (string _val)
+                {
+                    UpdatePrefabPath(false);
                 });
 
                 var clickable = prefabPathGO.AddComponent<Clickable>();
@@ -2872,6 +2939,7 @@ namespace EditorManagement.Functions.Editors
                                 prefabPathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
                                 EditorManager.inst.DisplayNotification($"Set Prefab path to {PrefabPath}!", 2f, EditorManager.NotificationType.Success);
                                 EditorManager.inst.HideDialog("Browser Popup");
+                                UpdatePrefabPath(false);
                             }
                             else
                             {
@@ -2898,11 +2966,7 @@ namespace EditorManagement.Functions.Editors
                 levelListRButton.onClick.ClearAll();
                 levelListRButton.onClick.AddListener(delegate ()
                 {
-                    if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
-                        Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
-                    SaveGlobalSettings();
-
-                    StartCoroutine(UpdatePrefabs());
+                    UpdatePrefabPath(true);
                 });
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
@@ -2915,18 +2979,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            if (!ModCompatibility.sharedFunctions.ContainsKey("EditorOnLoadLevel"))
-            {
-                Action action = delegate () { };
-
-                ModCompatibility.sharedFunctions.Add("EditorOnLoadLevel", action);
-            }
-            else
-            {
-                Action action = delegate () { };
-
-                ModCompatibility.sharedFunctions["EditorOnLoadLevel"] = action;
-            }
+            ModCompatibility.sharedFunctions.AddSet("EditorOnLoadLevel", (Action)delegate () { });
         }
 
         void SetupFileBrowser()
@@ -10647,6 +10700,12 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public void ShowWarningPopup(string warning, UnityAction confirmDelegate, UnityAction cancelDelegate, string confirm = "Yes", string cancel = "No")
+        {
+            EditorManager.inst.ShowDialog("Warning Popup");
+            RefreshWarningPopup(warning, confirmDelegate, cancelDelegate, confirm, cancel);
+        }
+
         public void RefreshWarningPopup(string warning, UnityAction confirmDelegate, UnityAction cancelDelegate, string confirm = "Yes", string cancel = "No")
         {
             var warningPopup = EditorManager.inst.GetDialog("Warning Popup").Dialog.GetChild(0);
@@ -12216,7 +12275,7 @@ namespace EditorManagement.Functions.Editors
         {
             #region General
             
-            new EditorProperty("Reset to Defaults", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.Timeline,
+            new EditorProperty("Reset to Defaults", EditorProperty.ValueType.Function, EditorProperty.EditorPropCategory.General,
                 delegate ()
                 {
                     EditorManager.inst.ShowDialog("Warning Popup");
@@ -12310,6 +12369,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosaveLoopTime),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.LevelLoadsLastTime),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.LevelPausesOnStart),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SettingPathReloads),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SavingSavesThemeOpacity),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.UpdatePrefabListOnFilesChanged),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.UpdateThemeListOnFilesChanged),
