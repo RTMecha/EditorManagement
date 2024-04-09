@@ -1901,7 +1901,7 @@ namespace EditorManagement.Functions.Editors
                             "<br>Count: " + prefabToSaveTo.objects.Count +
                             "<br>Description: " + prefabToSaveTo.description);
 
-                        RTFile.WriteToFile(prefabToSaveTo.filePath, prefabToSaveFrom.ToJSON().ToString());
+                        RTFile.WriteToFile(prefabToSaveTo.filePath, prefabToSaveTo.ToJSON().ToString());
 
                         EditorManager.inst.HideDialog("Prefab Popup");
 
