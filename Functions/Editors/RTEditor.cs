@@ -84,6 +84,8 @@ namespace EditorManagement.Functions.Editors
                 Debug.LogError(ex);
             }
 
+            popups = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform;
+
             SetupNotificationValues();
             SetupTimelineBar();
             SetupTimelineTriggers();
@@ -164,7 +166,8 @@ namespace EditorManagement.Functions.Editors
 
             var image = img.AddComponent<Image>();
 
-            UIManager.GetImage(image, RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_dropper.png");
+            dropperSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_dropper.png");
+            image.sprite = dropperSprite;
 
             doggoObject = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups/File Info Popup/loading");
             doggoImage = doggoObject.GetComponent<Image>();
@@ -365,6 +368,14 @@ namespace EditorManagement.Functions.Editors
         }
 
         #region Variables
+
+        public Sprite dropperSprite;
+
+        public Transform popups;
+
+        public InputField editorPathField;
+        public InputField themePathField;
+        public InputField prefabPathField;
 
         public bool choosingLevelTemplate;
         public int currentLevelTemplate = -1;
@@ -1108,6 +1119,7 @@ namespace EditorManagement.Functions.Editors
 
             if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + editorListPath))
             {
+                editorPathField.interactable = false;
                 ShowWarningPopup("No directory exists for this path. Do you want to create a new folder?", delegate ()
                 {
                     Directory.CreateDirectory(RTFile.ApplicationDirectory + editorListPath);
@@ -1117,9 +1129,11 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.GetLevelList();
 
                     EditorManager.inst.HideDialog("Warning Popup");
+                    editorPathField.interactable = true;
                 }, delegate ()
                 {
                     EditorManager.inst.HideDialog("Warning Popup");
+                    editorPathField.interactable = true;
                 });
 
                 return;
@@ -1157,6 +1171,7 @@ namespace EditorManagement.Functions.Editors
 
             if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + themeListPath))
             {
+                themePathField.interactable = false;
                 ShowWarningPopup("No directory exists for this path. Do you want to create a new folder?", delegate ()
                 {
                     Directory.CreateDirectory(RTFile.ApplicationDirectory + themeListPath);
@@ -1167,9 +1182,11 @@ namespace EditorManagement.Functions.Editors
                     EventEditor.inst.RenderEventsDialog();
 
                     EditorManager.inst.HideDialog("Warning Popup");
+                    themePathField.interactable = true;
                 }, delegate ()
                 {
                     EditorManager.inst.HideDialog("Warning Popup");
+                    themePathField.interactable = true;
                 });
 
                 return;
@@ -1208,6 +1225,7 @@ namespace EditorManagement.Functions.Editors
 
             if (!RTFile.DirectoryExists(RTFile.ApplicationDirectory + prefabListPath))
             {
+                prefabPathField.interactable = false;
                 ShowWarningPopup("No directory exists for this path. Do you want to create a new folder?", delegate ()
                 {
                     Directory.CreateDirectory(RTFile.ApplicationDirectory + prefabListPath);
@@ -1217,9 +1235,11 @@ namespace EditorManagement.Functions.Editors
                     StartCoroutine(UpdatePrefabs());
 
                     EditorManager.inst.HideDialog("Warning Popup");
+                    prefabPathField.interactable = true;
                 }, delegate ()
                 {
                     EditorManager.inst.HideDialog("Warning Popup");
+                    prefabPathField.interactable = true;
                 });
 
                 return;
@@ -2684,6 +2704,7 @@ namespace EditorManagement.Functions.Editors
             titleRT.sizeDelta = new Vector2(110f, 32f);
 
             var toggle = checkDes.transform.Find("toggle").GetComponent<Toggle>();
+            toggle.onValueChanged.ClearAll();
             toggle.isOn = true;
             toggle.onValueChanged.AddListener(delegate (bool _value)
             {
@@ -2736,21 +2757,25 @@ namespace EditorManagement.Functions.Editors
 
                 var llTip = new HoverTooltip.Tooltip();
 
+                llTip.keys = new List<string>
+                {
+                    "Right click to select a folder",
+                };
                 llTip.desc = "Level list path";
                 llTip.hint = "Input the path you want to load levels from within the beatmaps folder. For example: inputting \"editor\" into the input field will load levels from beatmaps/editor. You can also set it to sub-directories, like: \"editor/pa levels\" will take levels from \"beatmaps/editor/pa levels\".";
 
                 levelListTip.tooltipLangauges.Add(llTip);
 
-                var editorPathIF = editorPathGO.GetComponent<InputField>();
-                editorPathIF.characterValidation = InputField.CharacterValidation.None;
-                editorPathIF.onValueChanged.ClearAll();
-                editorPathIF.onEndEdit.ClearAll();
-                editorPathIF.text = EditorPath;
-                editorPathIF.onValueChanged.AddListener(delegate (string _val)
+                editorPathField = editorPathGO.GetComponent<InputField>();
+                editorPathField.characterValidation = InputField.CharacterValidation.None;
+                editorPathField.onValueChanged.ClearAll();
+                editorPathField.onEndEdit.ClearAll();
+                editorPathField.text = EditorPath;
+                editorPathField.onValueChanged.AddListener(delegate (string _val)
                 {
                     EditorPath = _val;
                 });
-                editorPathIF.onEndEdit.AddListener(delegate (string _val)
+                editorPathField.onEndEdit.AddListener(delegate (string _val)
                 {
                     UpdateEditorPath(false);
                 });
@@ -2765,7 +2790,7 @@ namespace EditorManagement.Functions.Editors
                         {
                             if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
                             {
-                                editorPathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
+                                editorPathField.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
                                 EditorManager.inst.DisplayNotification($"Set Editor path to {EditorPath}!", 2f, EditorManager.NotificationType.Success);
                                 EditorManager.inst.HideDialog("Browser Popup");
                                 UpdateEditorPath(false);
@@ -2826,21 +2851,25 @@ namespace EditorManagement.Functions.Editors
                 var themePathTip = themePathGO.AddComponent<HoverTooltip>();
                 var llTip = new HoverTooltip.Tooltip();
 
+                llTip.keys = new List<string>
+                {
+                    "Right click to select a folder",
+                };
                 llTip.desc = "Theme list path";
                 llTip.hint = "Input the path you want to load themes from within the beatmaps folder. For example: inputting \"themes\" into the input field will load themes from beatmaps/themes. You can also set it to sub-directories, like: \"themes/pa colors\" will take levels from \"beatmaps/themes/pa colors\".";
 
                 themePathTip.tooltipLangauges.Add(llTip);
 
-                var themePathIF = themePathGO.GetComponent<InputField>();
-                themePathIF.characterValidation = InputField.CharacterValidation.None;
-                themePathIF.onValueChanged.ClearAll();
-                themePathIF.onEndEdit.ClearAll();
-                themePathIF.text = ThemePath;
-                themePathIF.onValueChanged.AddListener(delegate (string _val)
+                themePathField = themePathGO.GetComponent<InputField>();
+                themePathField.characterValidation = InputField.CharacterValidation.None;
+                themePathField.onValueChanged.ClearAll();
+                themePathField.onEndEdit.ClearAll();
+                themePathField.text = ThemePath;
+                themePathField.onValueChanged.AddListener(delegate (string _val)
                 {
                     ThemePath = _val;
                 });
-                themePathIF.onEndEdit.AddListener(delegate (string _val)
+                themePathField.onEndEdit.AddListener(delegate (string _val)
                 {
                     UpdateThemePath(false);
                 });
@@ -2855,7 +2884,7 @@ namespace EditorManagement.Functions.Editors
                         {
                             if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
                             {
-                                themePathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
+                                themePathField.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
                                 EditorManager.inst.DisplayNotification($"Set Theme path to {ThemePath}!", 2f, EditorManager.NotificationType.Success);
                                 EditorManager.inst.HideDialog("Browser Popup");
                                 UpdateThemePath(false);
@@ -2907,21 +2936,25 @@ namespace EditorManagement.Functions.Editors
                 var levelListTip = prefabPathGO.AddComponent<HoverTooltip>();
                 var llTip = new HoverTooltip.Tooltip();
 
+                llTip.keys = new List<string>
+                {
+                    "Right click to select a folder",
+                };
                 llTip.desc = "Prefab list path";
                 llTip.hint = "Input the path you want to load prefabs from within the beatmaps folder. For example: inputting \"prefabs\" into the input field will load levels from beatmaps/prefabs. You can also set it to sub-directories, like: \"prefabs/pa characters\" will take levels from \"beatmaps/prefabs/pa characters\".";
 
                 levelListTip.tooltipLangauges.Add(llTip);
 
-                var prefabPathIF = prefabPathGO.GetComponent<InputField>();
-                prefabPathIF.characterValidation = InputField.CharacterValidation.None;
-                prefabPathIF.onValueChanged.ClearAll();
-                prefabPathIF.onEndEdit.ClearAll();
-                prefabPathIF.text = PrefabPath;
-                prefabPathIF.onValueChanged.AddListener(delegate (string _val)
+                prefabPathField = prefabPathGO.GetComponent<InputField>();
+                prefabPathField.characterValidation = InputField.CharacterValidation.None;
+                prefabPathField.onValueChanged.ClearAll();
+                prefabPathField.onEndEdit.ClearAll();
+                prefabPathField.text = PrefabPath;
+                prefabPathField.onValueChanged.AddListener(delegate (string _val)
                 {
                     PrefabPath = _val;
                 });
-                prefabPathIF.onEndEdit.AddListener(delegate (string _val)
+                prefabPathField.onEndEdit.AddListener(delegate (string _val)
                 {
                     UpdatePrefabPath(false);
                 });
@@ -2936,7 +2969,7 @@ namespace EditorManagement.Functions.Editors
                         {
                             if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
                             {
-                                prefabPathIF.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
+                                prefabPathField.text = _val.Replace("\\", "/").Replace(RTFile.ApplicationDirectory.Replace("\\", "/") + "beatmaps/", "");
                                 EditorManager.inst.DisplayNotification($"Set Prefab path to {PrefabPath}!", 2f, EditorManager.NotificationType.Success);
                                 EditorManager.inst.HideDialog("Browser Popup");
                                 UpdatePrefabPath(false);
@@ -3449,7 +3482,9 @@ namespace EditorManagement.Functions.Editors
             objectSearchRT.sizeDelta = new Vector2(600f, 450f);
             var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
             objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
-            objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Object Search";
+
+            var title = objectSearchPanel.transform.Find("Text").GetComponent<Text>();
+            title.text = "Object Search";
             ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
             objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
 
@@ -3476,6 +3511,53 @@ namespace EditorManagement.Functions.Editors
             });
 
             EditorHelper.AddEditorPopup("Object Search Popup", objectSearch);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup", "Background", objectSearch, new List<Component>
+            {
+                objectSearch.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup Panel", "Background", objectSearchPanel.gameObject, new List<Component>
+            {
+                objectSearchPanel.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Top));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", x.gameObject, new List<Component>
+            {
+                x.GetComponent<Image>(),
+                x,
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var objectSearchPopupCloseX = x.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", objectSearchPopupCloseX, new List<Component>
+            {
+                objectSearchPopupCloseX.GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Title", "Light Text", title.gameObject, new List<Component>
+            {
+                title,
+            }));
+
+            var objectSearchPopupScrollbar = objectSearch.transform.Find("Scrollbar").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", objectSearchPopupScrollbar, new List<Component>
+            {
+                objectSearchPopupScrollbar.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+            var objectSearchPopupScrollbarHandle = objectSearchPopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar Handle", "Scrollbar Handle", objectSearchPopupScrollbarHandle, new List<Component>
+            {
+                objectSearchPopupScrollbarHandle.GetComponent<Image>(),
+                objectSearchPopupScrollbar.GetComponent<Scrollbar>()
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var objectSearchPopupSearch = objectSearch.transform.Find("search-box/search").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Search", "Search Field 1", objectSearchPopupSearch, new List<Component>
+            {
+                objectSearchPopupSearch.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
+
         }
 
         void CreateWarningPopup()
@@ -6759,7 +6841,7 @@ namespace EditorManagement.Functions.Editors
             var editorProperties = Instantiate(EditorManager.inst.GetDialog("Object Selector").Dialog.gameObject);
             editorProperties.name = "Editor Properties Popup";
             editorProperties.layer = 5;
-            editorProperties.transform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform);
+            editorProperties.transform.SetParent(popups);
             editorProperties.transform.localScale = Vector3.one;
             editorProperties.transform.localPosition = Vector3.zero;
 
@@ -6767,23 +6849,23 @@ namespace EditorManagement.Functions.Editors
             eSelect.target = editorProperties.transform;
             eSelect.ogPos = editorProperties.transform.position;
 
-            Text textFont = GameObject.Find("TitleBar/File/Text").GetComponent<Text>();
+            var editorPropertiesPanel = editorProperties.transform.Find("Panel");
+
             var prefabTMP = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/prefab");
 
-            //Set Text and stuff
+            var searchField = editorProperties.transform.Find("search-box").GetChild(0).GetComponent<InputField>();
+            searchField.onValueChanged.RemoveAllListeners();
+            searchField.onValueChanged.AddListener(delegate (string _val)
             {
-                var searchField = editorProperties.transform.Find("search-box").GetChild(0).GetComponent<InputField>();
-                searchField.onValueChanged.RemoveAllListeners();
-                searchField.onValueChanged.AddListener(delegate (string _val)
-                {
-                    propertiesSearch = _val;
-                    RenderPropertiesWindow();
-                });
-                searchField.placeholder.GetComponent<Text>().text = "Search for property...";
-                editorProperties.transform.Find("Panel/Text").GetComponent<Text>().text = "Editor Properties";
-            }
+                propertiesSearch = _val;
+                RenderPropertiesWindow();
+            });
+            searchField.placeholder.GetComponent<Text>().text = "Search for property...";
 
-            //Sort Layout
+            var title = editorPropertiesPanel.Find("Text").GetComponent<Text>();
+            title.text = "Editor Properties";
+
+            // Sort Layout
             {
                 editorProperties.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(737f, 32f);
                 editorProperties.transform.Find("mask/content").AsRT().anchorMin = new Vector2(0.01f, 1f);
@@ -6797,7 +6879,7 @@ namespace EditorManagement.Functions.Editors
                 editorProperties.transform.Find("crumbs").GetComponent<HorizontalLayoutGroup>().spacing = 5.5f;
             }
 
-            //Categories
+            // Categories
             {
                 Action<string, Color, EditorProperty.EditorPropCategory> categoryTabGenerator = delegate (string name, Color color, EditorProperty.EditorPropCategory editorPropCategory)
                 {
@@ -6818,14 +6900,6 @@ namespace EditorManagement.Functions.Editors
                     rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
 
                     image.color = color;
-                    //categoryColors.Add(LSColors.HexToColor("FFE7E7"));
-
-                    ColorBlock cb2 = button.colors;
-                    cb2.normalColor = new Color(1f, 1f, 1f, 1f);
-                    cb2.pressedColor = new Color(1.5f, 1.5f, 1.5f, 1f);
-                    cb2.highlightedColor = new Color(1.3f, 1.3f, 1.3f, 1f);
-                    cb2.selectedColor = new Color(1f, 1f, 1f, 1f);
-                    button.colors = cb2;
 
                     var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
@@ -6849,52 +6923,60 @@ namespace EditorManagement.Functions.Editors
                     textText.text = name;
                     textText.alignment = TextAnchor.MiddleCenter;
                     textText.color = LSColors.ContrastColor(color);
-                    textText.font = textFont.font;
+                    textText.font = FontManager.inst.Inconsolata;
                     textText.fontSize = 20;
 
-                    var clickable = gameObject.AddComponent<Clickable>();
-                    clickable.onEnter = delegate (PointerEventData pointerEventData)
+                    gameObject.AddComponent<ContrastColors>().Init(textText, image);
+
+                    int category = (int)editorPropCategory + 1;
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Editor Properties Tab {category} - {editorPropCategory}", $"Tab Color {category}", gameObject, new List<Component>
                     {
-                        var animation = new AnimationManager.Animation($"{name} Hover");
-                        var id = animation.id;
+                        image,
+                        button
+                    }, true, 1, SpriteManager.RoundedSide.W, true));
 
-                        animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
-                        {
-                            new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
-                            {
-                                new ColorKeyframe(0f, color, Ease.Linear),
-                                new ColorKeyframe(0.2f, Color.white, Ease.SineOut),
-                            }, delegate (Color x)
-                            {
-                                image.color = x;
-                                textText.color = LSColors.ContrastColor(x);
-                            }),
-                        };
+                    //var clickable = gameObject.AddComponent<Clickable>();
+                    //clickable.onEnter = delegate (PointerEventData pointerEventData)
+                    //{
+                    //    var animation = new AnimationManager.Animation($"{name} Hover");
+                    //    var id = animation.id;
 
-                        AnimationManager.inst.RemoveName($"{name} Exit");
-                        AnimationManager.inst.Play(animation);
-                    };
-                    clickable.onExit = delegate (PointerEventData pointerEventData)
-                    {
-                        var animation = new AnimationManager.Animation($"{name} Exit");
-                        var id = animation.id;
+                    //    animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
+                    //    {
+                    //        new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
+                    //        {
+                    //            new ColorKeyframe(0f, color, Ease.Linear),
+                    //            new ColorKeyframe(0.2f, Color.white, Ease.SineOut),
+                    //        }, delegate (Color x)
+                    //        {
+                    //            image.color = x;
+                    //        }),
+                    //    };
 
-                        animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
-                        {
-                            new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
-                            {
-                                new ColorKeyframe(0f, Color.white, Ease.Linear),
-                                new ColorKeyframe(0.2f, color, Ease.SineIn),
-                            }, delegate (Color x)
-                            {
-                                image.color = x;
-                                textText.color = LSColors.ContrastColor(x);
-                            }),
-                        };
+                    //    AnimationManager.inst.RemoveName($"{name} Exit");
+                    //    AnimationManager.inst.Play(animation);
+                    //};
+                    //clickable.onExit = delegate (PointerEventData pointerEventData)
+                    //{
+                    //    var animation = new AnimationManager.Animation($"{name} Exit");
+                    //    var id = animation.id;
 
-                        AnimationManager.inst.RemoveName($"{name} Hover");
-                        AnimationManager.inst.Play(animation);
-                    };
+                    //    animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
+                    //    {
+                    //        new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
+                    //        {
+                    //            new ColorKeyframe(0f, Color.white, Ease.Linear),
+                    //            new ColorKeyframe(0.2f, color, Ease.SineIn),
+                    //        }, delegate (Color x)
+                    //        {
+                    //            image.color = x;
+                    //        }),
+                    //    };
+
+                    //    AnimationManager.inst.RemoveName($"{name} Hover");
+                    //    AnimationManager.inst.Play(animation);
+                    //};
                 };
 
                 categoryTabGenerator("General", LSColors.HexToColor("FFE7E7"), EditorProperty.EditorPropCategory.General);
@@ -6911,13 +6993,60 @@ namespace EditorManagement.Functions.Editors
                 OpenPropertiesWindow();
             });
 
-            editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.RemoveAllListeners();
-            editorProperties.transform.Find("Panel/x").GetComponent<Button>().onClick.AddListener(delegate ()
+            var x = editorPropertiesPanel.Find("x").GetComponent<Button>();
+            x.onClick.RemoveAllListeners();
+            x.onClick.AddListener(delegate ()
             {
                 ClosePropertiesWindow();
             });
 
             EditorHelper.AddEditorPopup("Editor Properties Popup", editorProperties);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup", "Background", editorProperties, new List<Component>
+            {
+                editorProperties.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup Panel", "Background", editorPropertiesPanel.gameObject, new List<Component>
+            {
+                editorPropertiesPanel.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Top));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", x.gameObject, new List<Component>
+            {
+                x.GetComponent<Image>(),
+                x,
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var objectSearchPopupCloseX = x.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", objectSearchPopupCloseX, new List<Component>
+            {
+                objectSearchPopupCloseX.GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Title", "Light Text", title.gameObject, new List<Component>
+            {
+                title,
+            }));
+
+            var editorPropertiesScrollbar = editorProperties.transform.Find("Scrollbar").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", editorPropertiesScrollbar, new List<Component>
+            {
+                editorPropertiesScrollbar.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+            var editorPropertiesScrollbarHandle = editorPropertiesScrollbar.transform.Find("Sliding Area/Handle").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar Handle", "Scrollbar Handle", editorPropertiesScrollbarHandle, new List<Component>
+            {
+                editorPropertiesScrollbarHandle.GetComponent<Image>(),
+                editorPropertiesScrollbar.GetComponent<Scrollbar>()
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var editorPropertiesSearch = editorProperties.transform.Find("search-box/search").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Search", "Search Field 1", editorPropertiesSearch, new List<Component>
+            {
+                editorPropertiesSearch.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
         }
 
         public Text documentationTitle;
@@ -10633,7 +10762,8 @@ namespace EditorManagement.Functions.Editors
                 {
                     string nm = $"[{(list.IndexOf(beatmapObject) + 1).ToString("0000")}/{list.Count.ToString("0000")} - {beatmapObject.id}] : {beatmapObject.name}";
                     var buttonPrefab = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, nm);
-                    buttonPrefab.transform.GetChild(0).GetComponent<Text>().text = nm;
+                    var buttonText = buttonPrefab.transform.GetChild(0).GetComponent<Text>();
+                    buttonText.text = nm;
 
                     var b = buttonPrefab.GetComponent<Button>();
                     b.onClick.RemoveAllListeners();
@@ -10649,6 +10779,17 @@ namespace EditorManagement.Functions.Editors
                     var shapeOption = Mathf.Clamp(beatmapObject.shapeOption, 0, ShapeManager.inst.Shapes2D[shape].Count - 1);
 
                     image.sprite = ShapeManager.inst.Shapes2D[shape][shapeOption].Icon;
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Beatmap Object", "List Button 1", buttonPrefab, new List<Component>
+                    {
+                        b.GetComponent<Image>(),
+                        b,
+                    }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Beatmap Object Text", "Light Text", buttonText.gameObject, new List<Component>
+                    {
+                        buttonText,
+                    }));
 
                     string desc = "";
                     string hint = "";
@@ -10709,6 +10850,13 @@ namespace EditorManagement.Functions.Editors
         public void RefreshWarningPopup(string warning, UnityAction confirmDelegate, UnityAction cancelDelegate, string confirm = "Yes", string cancel = "No")
         {
             var warningPopup = EditorManager.inst.GetDialog("Warning Popup").Dialog.GetChild(0);
+
+            var close = warningPopup.Find("Panel/x").GetComponent<Button>();
+            close.onClick.ClearAll();
+            close.onClick.AddListener(delegate ()
+            {
+                cancelDelegate?.Invoke();
+            });
 
             warningPopup.Find("Level Name").GetComponent<Text>().text = warning;
 
@@ -10970,22 +11118,492 @@ namespace EditorManagement.Functions.Editors
 
         };
 
-        bool generatedPropertiesWindow = false;
+        bool generatedPropertiesPrefabs = false;
+        List<GameObject> editorPropertiesPrefabs = new List<GameObject>();
 
         public void RenderPropertiesWindow() => StartCoroutine(IRenderPropertiesWindow());
+
+        void DeleteChildren(Transform transform)
+        {
+            var listToDelete = new List<GameObject>();
+            for (int i = 0; i < transform.childCount; i++)
+                listToDelete.Add(transform.GetChild(i).gameObject);
+            for (int i = 0; i < listToDelete.Count; i++)
+                DestroyImmediate(listToDelete[i]);
+            listToDelete.Clear();
+            listToDelete = null;
+        }
 
         IEnumerator IRenderPropertiesWindow()
         {
             var editorDialog = EditorManager.inst.GetDialog("Editor Properties Popup").Dialog;
-            var label = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
-            var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-            var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
-            var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
-            var dropdownInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
-            var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
-            var stringInput = defaultIF;
 
-            LSHelpers.DeleteChildren(editorDialog.Find("mask/content"));
+            if (!generatedPropertiesPrefabs)
+            {
+                generatedPropertiesPrefabs = true;
+
+                var labelToCopy = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content").transform.GetChild(3).gameObject;
+                var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
+                var vector2Input = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position");
+                var boolInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle");
+                var dropdownInputToCopy = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown");
+                var sliderFullInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/bpm");
+                var stringInput = defaultIF;
+
+                var parentObject = new GameObject("Editor Properties Prefabs");
+                var parent = parentObject.transform;
+                parent.SetParent(transform);
+
+                // Bool
+                {
+                    var bar = singleInput.Duplicate(parent, "input [BOOL]");
+                    DestroyImmediate(bar.GetComponent<InputField>());
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+
+                    DeleteChildren(bar.transform);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label");
+                    label.transform.SetParent(bar.transform);
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    boolInput.Duplicate(bar.transform, "toggle");
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Int
+                {
+                    var bar = singleInput.Duplicate(parent, "input [INT]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+
+                    bar.transform.localScale = Vector3.one;
+                    bar.transform.GetChild(0).localScale = Vector3.one;
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label", 0);
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var input = bar.transform.Find("input");
+
+                    var inputField = input.gameObject.AddComponent<InputField>();
+                    inputField.onValueChanged.ClearAll();
+                    inputField.textComponent = input.Find("Text").GetComponent<Text>();
+                    inputField.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                    inputField.characterValidation = InputField.CharacterValidation.None;
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Float
+                {
+                    var bar = singleInput.Duplicate(parent, "input [FLOAT]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+
+                    bar.transform.localScale = Vector3.one;
+                    bar.transform.GetChild(0).localScale = Vector3.one;
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label", 0);
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var input = bar.transform.Find("input");
+
+                    var inputField = input.gameObject.AddComponent<InputField>();
+                    inputField.onValueChanged.ClearAll();
+                    inputField.textComponent = input.Find("Text").GetComponent<Text>();
+                    inputField.placeholder = input.Find("Placeholder").GetComponent<Text>();
+                    inputField.characterValidation = InputField.CharacterValidation.None;
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Int Slider
+                {
+                    var bar = sliderFullInput.Duplicate(parent, "input [INTSLIDER]");
+
+                    DestroyImmediate(bar.transform.Find("title").gameObject);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label", 0);
+                    label.transform.SetParent(bar.transform);
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    var labelLayoutElement = label.AddComponent<LayoutElement>();
+                    labelLayoutElement.ignoreLayout = true;
+
+                    label.transform.AsRT().anchoredPosition = Vector2.zero;
+                    label.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
+
+                    var image = bar.AddComponent<Image>();
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    bar.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
+                    var slider = bar.transform.Find("slider").GetComponent<Slider>();
+                    slider.onValueChanged.RemoveAllListeners();
+
+                    var sliderLayoutElement = slider.GetComponent<LayoutElement>();
+                    sliderLayoutElement.ignoreLayout = true;
+
+                    slider.transform.AsRT().anchoredPosition = new Vector2(348f, 0f);
+
+                    var input = bar.transform.Find("input");
+                    var inputLayoutElement = input.GetComponent<LayoutElement>();
+                    inputLayoutElement.ignoreLayout = true;
+
+                    input.AsRT().anchoredPosition = new Vector2(686f, -16f);
+
+                    if (bar.transform.Find("<"))
+                        DestroyImmediate(bar.transform.Find("<").gameObject);
+                    if (bar.transform.Find(">"))
+                        DestroyImmediate(bar.transform.Find(">").gameObject);
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Float Slider
+                {
+                    var bar = sliderFullInput.Duplicate(parent, "input [FLOATSLIDER]");
+
+                    DestroyImmediate(bar.transform.Find("title").gameObject);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label", 0);
+                    label.transform.SetParent(bar.transform);
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    var labelLayoutElement = label.AddComponent<LayoutElement>();
+                    labelLayoutElement.ignoreLayout = true;
+
+                    label.transform.AsRT().anchoredPosition = Vector2.zero;
+                    label.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
+
+                    var image = bar.AddComponent<Image>();
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    bar.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
+                    var slider = bar.transform.Find("slider").GetComponent<Slider>();
+                    slider.onValueChanged.RemoveAllListeners();
+
+                    var sliderLayoutElement = slider.GetComponent<LayoutElement>();
+                    sliderLayoutElement.ignoreLayout = true;
+
+                    slider.transform.AsRT().anchoredPosition = new Vector2(348f, 0f);
+
+                    var input = bar.transform.Find("input");
+                    var inputLayoutElement = input.GetComponent<LayoutElement>();
+                    inputLayoutElement.ignoreLayout = true;
+
+                    input.AsRT().anchoredPosition = new Vector2(686f, -16f);
+
+                    if (bar.transform.Find("<"))
+                        DestroyImmediate(bar.transform.Find("<").gameObject);
+                    if (bar.transform.Find(">"))
+                        DestroyImmediate(bar.transform.Find(">").gameObject);
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // String
+                {
+                    var bar = singleInput.Duplicate(parent, "input [STRING]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+                    DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
+
+                    DeleteChildren(bar.transform);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label");
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(354f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var input = stringInput.Duplicate(bar.transform, "input");
+                    input.transform.localScale = Vector3.one;
+                    DestroyImmediate(input.GetComponent<HoverTooltip>());
+
+                    input.transform.AsRT().sizeDelta = new Vector2(366f, 32f);
+
+                    var inputField = input.GetComponent<InputField>();
+                    inputField.onValueChanged.RemoveAllListeners();
+                    inputField.characterValidation = InputField.CharacterValidation.None;
+                    inputField.characterLimit = 0;
+                    inputField.textComponent.fontSize = 18;
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Vector2
+                {
+                    var bar = singleInput.Duplicate(parent, "input [VECTOR2]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+                    DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
+
+                    DeleteChildren(bar.transform);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label");
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(354f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var vector2 = vector2Input.Duplicate(bar.transform, "input");
+                    vector2.transform.localScale = Vector3.one;
+
+                    var x = vector2.transform.Find("x");
+                    DestroyImmediate(x.GetComponent<EventInfo>());
+                    x.localScale = Vector3.one;
+                    x.GetChild(0).localScale = Vector3.one;
+                    var inputFieldX = x.GetComponent<InputField>();
+                    inputFieldX.onValueChanged.RemoveAllListeners();
+
+                    var y = vector2.transform.Find("y");
+                    DestroyImmediate(y.GetComponent<EventInfo>());
+                    y.localScale = Vector3.one;
+                    y.GetChild(0).localScale = Vector3.one;
+                    var inputFieldY = y.GetComponent<InputField>();
+                    inputFieldY.onValueChanged.RemoveAllListeners();
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Vector3
+                {
+                    editorPropertiesPrefabs.Add(null);
+                }
+
+                // Enum
+                {
+                    var bar = singleInput.Duplicate(parent, "input [ENUM]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+                    DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
+
+                    DeleteChildren(bar.transform);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label");
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(522f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var selector = new GameObject("selector");
+                    selector.transform.SetParent(bar.transform);
+                    selector.transform.localScale = Vector3.one;
+                    var rectTransform = selector.AddComponent<RectTransform>();
+
+                    rectTransform.sizeDelta = new Vector2(90f, 32f);
+
+                    var selectorImage = selector.AddComponent<Image>();
+
+                    var button = selector.AddComponent<Button>();
+
+                    selector.SetActive(false);
+
+                    var buttonLabel = text.gameObject.Duplicate(rectTransform, "text");
+                    buttonLabel.transform.AsRT().anchoredPosition = Vector2.zero;
+                    buttonLabel.transform.AsRT().anchorMax = Vector2.one;
+                    buttonLabel.transform.AsRT().anchorMin = Vector2.zero;
+                    buttonLabel.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
+                    buttonLabel.transform.AsRT().sizeDelta = new Vector2(90f, 32f);
+                    var buttonLabelText = buttonLabel.GetComponent<Text>();
+                    buttonLabelText.text = "Set Key";
+                    buttonLabelText.alignment = TextAnchor.MiddleCenter;
+
+                    var x = dropdownInputToCopy.Duplicate(bar.transform, "dropdown");
+                    x.transform.localScale = Vector3.one;
+
+                    DestroyImmediate(x.GetComponent<HoverTooltip>());
+
+                    var hide = x.GetComponent<HideDropdownOptions>();
+                    hide.DisabledOptions.Clear();
+
+                    var dropdown = x.GetComponent<Dropdown>();
+                    dropdown.onValueChanged.ClearAll();
+                    dropdown.options.Clear();
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Color
+                {
+                    var bar = singleInput.Duplicate(parent, "input [COLOR]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+                    DestroyImmediate(bar.GetComponent<InputFieldSwapper>());
+
+                    DeleteChildren(bar.transform);
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label");
+                    label.transform.localScale = Vector3.one;
+                    label.SetActive(true);
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(314f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    var bar2 = singleInput.Duplicate(bar.transform, "color");
+                    DestroyImmediate(bar2.GetComponent<InputField>());
+                    DestroyImmediate(bar2.GetComponent<EventInfo>());
+                    DeleteChildren(bar2.transform);
+                    bar2.transform.localScale = Vector3.one;
+                    bar2.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
+
+                    var bar2Color = bar2.GetComponent<Image>();
+                    bar2Color.enabled = true;
+                    bar2Color.fillCenter = true;
+
+                    var dropper = EventEditor.inst.dialogLeft.Find("theme/theme/viewport/content/gui/preview/dropper").gameObject.Duplicate(bar2.transform, "dropper");
+                    dropper.transform.localScale = Vector3.one;
+                    dropper.name = "dropper";
+
+                    dropper.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
+                    dropper.transform.AsRT().anchoredPosition = Vector2.zero;
+
+                    var hex = stringInput.Duplicate(bar.transform, "input");
+                    hex.transform.localScale = Vector3.one;
+                    DestroyImmediate(hex.GetComponent<HoverTooltip>());
+
+                    hex.transform.AsRT().sizeDelta = new Vector2(366f, 32f);
+
+                    var hexInput = hex.GetComponent<InputField>();
+                    hexInput.onValueChanged.ClearAll();
+                    hexInput.characterValidation = InputField.CharacterValidation.None;
+                    hexInput.characterLimit = 8;
+                    hexInput.textComponent.fontSize = 18;
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+
+                // Function
+                {
+                    var bar = singleInput.Duplicate(parent, "input [FUNCTION]");
+
+                    DestroyImmediate(bar.GetComponent<EventInfo>());
+                    DestroyImmediate(bar.GetComponent<EventTrigger>());
+                    DestroyImmediate(bar.GetComponent<InputField>());
+
+                    bar.transform.localScale = Vector3.one;
+                    bar.transform.GetChild(0).localScale = Vector3.one;
+
+                    var label = labelToCopy.Duplicate(bar.transform, "label", 0);
+                    label.transform.localScale = Vector3.one;
+                    var text = label.transform.GetChild(0).GetComponent<Text>();
+                    text.alignment = TextAnchor.MiddleLeft;
+
+                    label.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
+                    label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
+                    label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(541, 32f);
+
+                    var image = bar.GetComponent<Image>();
+                    image.enabled = true;
+                    image.fillCenter = true;
+                    image.color = new Color(1f, 1f, 1f, 0.03f);
+
+                    DestroyImmediate(bar.transform.Find("input").gameObject);
+                    DestroyImmediate(bar.transform.Find("<").gameObject);
+                    DestroyImmediate(bar.transform.Find(">").gameObject);
+
+                    var button = bar.AddComponent<Button>();
+
+                    editorPropertiesPrefabs.Add(bar);
+                }
+            }
+
+            var content = editorDialog.Find("mask/content");
+            LSHelpers.DeleteChildren(content);
 
             var list = EditorProperties.Union(otherProperties).ToList();
 
@@ -10995,94 +11613,76 @@ namespace EditorManagement.Functions.Editors
 
                 if (currentCategory == prop.propCategory && (string.IsNullOrEmpty(propertiesSearch) || prop.name.ToLower().Contains(propertiesSearch.ToLower())))
                 {
+                    var prefab = editorPropertiesPrefabs[(int)prop.valueType];
+                    if (prefab == null)
+                        continue;
+
+                    var gameObject = prefab.Duplicate(content, prefab.name);
+
+                    var text = gameObject.transform.Find("label").GetChild(0).GetComponent<Text>();
+                    text.text = prop.name;
+
+                    if (prop.valueType != EditorProperty.ValueType.Function)
+                    {
+                        TooltipHelper.AddTooltip(gameObject, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+
+                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Base", "List Button 1 Normal", gameObject, new List<Component>
+                        {
+                            gameObject.GetComponent<Image>(),
+                        }, true, 1, SpriteManager.RoundedSide.W));
+                    }
+                    
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Base", "Light Text", gameObject, new List<Component>
+                    {
+                        text,
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
                     switch (prop.valueType)
                     {
                         case EditorProperty.ValueType.Bool:
                             {
-                                var bar = Instantiate(singleInput);
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
+                                if (prop.configEntry.SettingType != typeof(bool))
+                                {
+                                    Destroy(gameObject);
+                                    continue;
+                                }
 
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialog.Find("mask/content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [BOOL]";
-
-                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
-
-                                var image = bar.GetComponent<Image>();
-                                image.enabled = true;
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                var x = Instantiate(boolInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-
-                                Toggle xt = x.GetComponent<Toggle>();
-                                xt.onValueChanged.RemoveAllListeners();
-                                xt.isOn = (bool)prop.configEntry.BoxedValue;
-                                xt.onValueChanged.AddListener(delegate (bool _val)
+                                var toggle = gameObject.transform.Find("toggle").GetComponent<Toggle>();
+                                toggle.onValueChanged.RemoveAllListeners();
+                                toggle.isOn = (bool)prop.configEntry.BoxedValue;
+                                toggle.onValueChanged.AddListener(delegate (bool _val)
                                 {
                                     prop.configEntry.BoxedValue = _val;
                                 });
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Toggle", "Toggle 1", toggle.gameObject, new List<Component>
+                                {
+                                    toggle.image,
+                                }, true, 1, SpriteManager.RoundedSide.W));
+                                
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Toggle Checkmark", "Toggle 1 Check", toggle.graphic.gameObject, new List<Component>
+                                {
+                                    toggle.graphic,
+                                }));
+
                                 break;
                             }
                         case EditorProperty.ValueType.Int:
                             {
-                                GameObject x = Instantiate(singleInput);
-                                x.transform.SetParent(editorDialog.Find("mask/content"));
-                                x.name = "input [INT]";
-
-                                Destroy(x.GetComponent<EventInfo>());
-                                Destroy(x.GetComponent<EventTrigger>());
-                                Destroy(x.GetComponent<InputField>());
-
-                                x.transform.localScale = Vector3.one;
-                                x.transform.GetChild(0).localScale = Vector3.one;
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(x.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
-                                l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-
-                                var image = x.GetComponent<Image>();
-                                image.enabled = true;
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var input = x.transform.Find("input");
-
-                                var xif = input.gameObject.AddComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.textComponent = input.Find("Text").GetComponent<Text>();
-                                xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
-                                xif.characterValidation = InputField.CharacterValidation.Integer;
-                                xif.text = prop.configEntry.BoxedValue.ToString();
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                if (prop.configEntry.SettingType != typeof(int))
                                 {
-                                    prop.configEntry.BoxedValue = int.Parse(_val);
+                                    Destroy(gameObject);
+                                    continue;
+                                }
+
+                                var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
+
+                                inputField.onValueChanged.RemoveAllListeners();
+                                inputField.text = prop.configEntry.BoxedValue.ToString();
+                                inputField.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float result))
+                                        prop.configEntry.BoxedValue = result;
                                 });
 
                                 if (prop.configEntry.Description.AcceptableValues != null)
@@ -11092,135 +11692,160 @@ namespace EditorManagement.Functions.Editors
                                     min = (int)prop.configEntry.Description.AcceptableValues.Clamp(min);
                                     max = (int)prop.configEntry.Description.AcceptableValues.Clamp(max);
 
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif, 1, min, max) });
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField, 1, min, max));
 
-                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, 1, min, max, x.transform);
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(inputField, 1, min, max, gameObject.transform);
                                 }
                                 else
                                 {
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif) });
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField));
 
-                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, t: x.transform);
+                                    TriggerHelper.IncreaseDecreaseButtonsInt(inputField, t: gameObject.transform);
                                 }
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
+                                {
+                                    inputField.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                                {
+                                    inputField.textComponent
+                                }));
+
+                                var left = gameObject.transform.Find("<").GetComponent<Button>();
+                                Destroy(left.GetComponent<Animator>());
+                                left.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", left.gameObject, new List<Component>
+                                {
+                                    left.image,
+                                    left,
+                                }, isSelectable: true));
+
+                                var right = gameObject.transform.Find(">").GetComponent<Button>();
+                                Destroy(right.GetComponent<Animator>());
+                                right.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", right.gameObject, new List<Component>
+                                {
+                                    right.image,
+                                    right,
+                                }, isSelectable: true));
 
                                 break;
                             }
                         case EditorProperty.ValueType.Float:
                             {
-                                GameObject x = Instantiate(singleInput);
-                                x.transform.SetParent(editorDialog.Find("mask/content"));
-                                x.name = "input [FLOAT]";
-
-                                Destroy(x.GetComponent<EventInfo>());
-                                Destroy(x.GetComponent<EventTrigger>());
-                                Destroy(x.GetComponent<InputField>());
-
-                                x.transform.localScale = Vector3.one;
-                                x.transform.GetChild(0).localScale = Vector3.one;
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(x.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
-                                l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-
-                                var image = x.GetComponent<Image>();
-                                image.enabled = true;
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var input = x.transform.Find("input");
-
-                                var xif = input.gameObject.AddComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.textComponent = input.Find("Text").GetComponent<Text>();
-                                xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
-                                xif.characterValidation = InputField.CharacterValidation.None;
-                                xif.text = prop.configEntry.BoxedValue.ToString();
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                if (prop.configEntry.SettingType != typeof(float))
                                 {
-                                    prop.configEntry.BoxedValue = float.Parse(_val);
+                                    Destroy(gameObject);
+                                    continue;
+                                }
+
+                                var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
+
+                                inputField.onValueChanged.RemoveAllListeners();
+                                inputField.text = prop.configEntry.BoxedValue.ToString();
+                                inputField.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (float.TryParse(_val, out float result))
+                                        prop.configEntry.BoxedValue = result;
                                 });
 
                                 if (prop.configEntry.Description.AcceptableValues != null)
                                 {
-                                    float min = float.MinValue;
-                                    float max = float.MaxValue;
+                                    float min = float.NegativeInfinity;
+                                    float max = float.PositiveInfinity;
                                     min = (float)prop.configEntry.Description.AcceptableValues.Clamp(min);
                                     max = (float)prop.configEntry.Description.AcceptableValues.Clamp(max);
 
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif, 0.1f, 10f, min, max, false) });
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 0.1f, 10f, min, max));
 
-                                    TriggerHelper.IncreaseDecreaseButtons(xif, 1f, 10f, min, max, x.transform);
+                                    TriggerHelper.IncreaseDecreaseButtons(inputField, 0.1f, 10f, min, max, gameObject.transform);
                                 }
                                 else
                                 {
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
 
-                                    TriggerHelper.IncreaseDecreaseButtons(xif, t: x.transform);
+                                    TriggerHelper.IncreaseDecreaseButtons(inputField, t: gameObject.transform);
                                 }
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
+                                {
+                                    inputField.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                                {
+                                    inputField.textComponent
+                                }));
+
+                                var left = gameObject.transform.Find("<").GetComponent<Button>();
+                                Destroy(left.GetComponent<Animator>());
+                                left.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", left.gameObject, new List<Component>
+                                {
+                                    left.image,
+                                    left,
+                                }, isSelectable: true));
+
+                                var right = gameObject.transform.Find(">").GetComponent<Button>();
+                                Destroy(right.GetComponent<Animator>());
+                                right.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", right.gameObject, new List<Component>
+                                {
+                                    right.image,
+                                    right,
+                                }, isSelectable: true));
 
                                 break;
                             }
                         case EditorProperty.ValueType.IntSlider:
                             {
-                                GameObject x = Instantiate(sliderFullInput);
-                                x.transform.SetParent(editorDialog.Find("mask/content"));
-                                x.transform.localScale = Vector3.one;
-                                x.name = "input [INTSLIDER]";
-
-                                var title = x.transform.Find("title");
-
-                                var l = title.GetComponent<Text>();
-                                l.font = FontManager.inst.Inconsolata;
-                                l.text = prop.name;
-
-                                var titleRT = title.GetComponent<RectTransform>();
-                                titleRT.sizeDelta = new Vector2(220f, 32f);
-                                titleRT.anchoredPosition = new Vector2(122f, -16f);
-
-                                var image = x.AddComponent<Image>();
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                x.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
-                                var xsli = x.transform.Find("slider").GetComponent<Slider>();
-                                xsli.onValueChanged.RemoveAllListeners();
-
-                                xsli.value = (int)prop.configEntry.BoxedValue * 10;
-
-                                xsli.maxValue = 100f;
-                                xsli.minValue = -100f;
-
-                                var xif = x.transform.Find("input").GetComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.characterValidation = InputField.CharacterValidation.Integer;
-                                xif.text = prop.configEntry.BoxedValue.ToString();
-
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                if (prop.configEntry.SettingType != typeof(int))
                                 {
-                                    if (LSHelpers.IsUsingInputField())
+                                    Destroy(gameObject);
+                                    continue;
+                                }
+
+                                gameObject.transform.Find("label").AsRT().anchoredPosition = Vector2.zero;
+                                gameObject.transform.Find("label").AsRT().sizeDelta = new Vector2(312f, 32f);
+
+                                var slider = gameObject.transform.Find("slider").GetComponent<Slider>();
+                                slider.onValueChanged.RemoveAllListeners();
+
+                                slider.value = (int)prop.configEntry.BoxedValue * 10;
+
+                                slider.maxValue = 100f;
+                                slider.minValue = -100f;
+
+                                var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
+                                inputField.onValueChanged.RemoveAllListeners();
+                                inputField.text = prop.configEntry.BoxedValue.ToString();
+                                inputField.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (LSHelpers.IsUsingInputField() && int.TryParse(_val, out int result))
                                     {
-                                        prop.configEntry.BoxedValue = float.Parse(_val);
-                                        xsli.value = int.Parse(_val);
+                                        prop.configEntry.BoxedValue = result;
+                                        slider.value = result;
                                     }
                                 });
 
-                                xsli.onValueChanged.AddListener(delegate (float _val)
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
+                                {
+                                    inputField.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                                {
+                                    inputField.textComponent
+                                }));
+
+                                slider.onValueChanged.AddListener(delegate (float _val)
                                 {
                                     if (!LSHelpers.IsUsingInputField())
                                     {
-                                        prop.configEntry.BoxedValue = _val;
-                                        xif.text = _val.ToString();
+                                        prop.configEntry.BoxedValue = (int)_val / 10;
+                                        inputField.text = _val.ToString();
                                     }
                                 });
 
@@ -11231,219 +11856,220 @@ namespace EditorManagement.Functions.Editors
                                     min = (int)prop.configEntry.Description.AcceptableValues.Clamp(min);
                                     max = (int)prop.configEntry.Description.AcceptableValues.Clamp(max);
 
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif, 1, min, max, false) });
-
-                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, 1, min, max, x.transform);
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField, 1, min, max, false));
                                 }
                                 else
                                 {
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif) });
-
-                                    TriggerHelper.IncreaseDecreaseButtonsInt(xif, t: x.transform);
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField));
                                 }
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider", "Slider 1", slider.gameObject, new List<Component>
+                                {
+                                    slider.transform.Find("Background").GetComponent<Image>(),
+                                    slider
+                                }, true, 1, SpriteManager.RoundedSide.W, true));
+                                
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider Handle", "Slider 1 Handle", slider.gameObject, new List<Component>
+                                {
+                                    slider.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
 
                                 break;
                             }
                         case EditorProperty.ValueType.FloatSlider:
                             {
-                                GameObject x = Instantiate(sliderFullInput);
-                                x.transform.SetParent(editorDialog.Find("mask/content"));
-                                x.transform.localScale = Vector3.one;
-                                x.name = "input [FLOATSLIDER]";
-
-                                var title = x.transform.Find("title");
-
-                                var l = title.GetComponent<Text>();
-                                l.font = FontManager.inst.Inconsolata;
-                                l.text = prop.name;
-
-                                x.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = false;
-
-                                var titleRT = title.GetComponent<RectTransform>();
-                                titleRT.sizeDelta = new Vector2(220f, 32f);
-                                titleRT.anchoredPosition = new Vector2(122f, -16f);
-
-                                var image = x.AddComponent<Image>();
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                x.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
-                                var xsli = x.transform.Find("slider").GetComponent<Slider>();
-                                xsli.onValueChanged.RemoveAllListeners();
-
-                                xsli.value = (float)prop.configEntry.BoxedValue * 10;
-
-                                xsli.maxValue = 100f;
-                                xsli.minValue = -100f;
-
-                                var xif = x.transform.Find("input").GetComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.characterValidation = InputField.CharacterValidation.None;
-                                xif.text = prop.configEntry.BoxedValue.ToString();
-
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                if (prop.configEntry.SettingType != typeof(float))
                                 {
-                                    if (LSHelpers.IsUsingInputField())
+                                    Destroy(gameObject);
+                                    continue;
+                                }
+
+                                var slider = gameObject.transform.Find("slider").GetComponent<Slider>();
+                                slider.onValueChanged.RemoveAllListeners();
+
+                                slider.value = (float)prop.configEntry.BoxedValue * 10f;
+
+                                slider.maxValue = 100f;
+                                slider.minValue = -100f;
+
+                                var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
+                                inputField.onValueChanged.RemoveAllListeners();
+                                inputField.text = prop.configEntry.BoxedValue.ToString();
+                                inputField.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    if (LSHelpers.IsUsingInputField() && float.TryParse(_val, out float result))
                                     {
-                                        prop.configEntry.BoxedValue = float.Parse(_val);
-                                        int v = int.Parse(_val) * 10;
-                                        xsli.value = v;
+                                        prop.configEntry.BoxedValue = result;
+                                        slider.value = result;
                                     }
                                 });
 
-                                xsli.onValueChanged.AddListener(delegate (float _val)
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
+                                {
+                                    inputField.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                                {
+                                    inputField.textComponent
+                                }));
+
+                                slider.onValueChanged.AddListener(delegate (float _val)
                                 {
                                     if (!LSHelpers.IsUsingInputField())
                                     {
-                                        int v = (int)_val * 10;
-                                        float v2 = v / 100f;
-                                        prop.configEntry.BoxedValue = v2;
-                                        xif.text = v2.ToString();
+                                        prop.configEntry.BoxedValue = _val / 10f;
+                                        inputField.text = _val.ToString();
                                     }
                                 });
 
                                 if (prop.configEntry.Description.AcceptableValues != null)
                                 {
-                                    float min = float.MinValue;
-                                    float max = float.MaxValue;
+                                    float min = float.NegativeInfinity;
+                                    float max = float.PositiveInfinity;
                                     min = (float)prop.configEntry.Description.AcceptableValues.Clamp(min);
                                     max = (float)prop.configEntry.Description.AcceptableValues.Clamp(max);
 
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif, 0.1f, 10f, min, max, false) });
-
-                                    TriggerHelper.IncreaseDecreaseButtons(xif, 1f, 10f, min, max, x.transform);
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 0.1f, 10f, min, max, false));
                                 }
                                 else
                                 {
-                                    TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
-
-                                    TriggerHelper.IncreaseDecreaseButtons(xif, t: x.transform);
+                                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
                                 }
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider", "Slider 1", slider.gameObject, new List<Component>
+                                {
+                                    slider.transform.Find("Background").GetComponent<Image>(),
+                                    slider
+                                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider Handle", "Slider 1 Handle", slider.gameObject, new List<Component>
+                                {
+                                    slider.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
 
                                 break;
                             }
                         case EditorProperty.ValueType.String:
                             {
-                                var bar = Instantiate(singleInput);
+                                if (prop.configEntry.SettingType != typeof(string))
+                                {
+                                    Destroy(gameObject);
+                                    continue;
+                                }
 
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<InputFieldSwapper>());
+                                var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
 
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialog.Find("mask/content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [STRING]";
-
-                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
-                                l.transform.AsRT().sizeDelta = new Vector2(354f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-
-                                var image = bar.GetComponent<Image>();
-                                image.enabled = true;
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject x = Instantiate(stringInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                x.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 32f);
-
-                                var xif = x.GetComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.characterValidation = InputField.CharacterValidation.None;
-                                xif.characterLimit = 0;
-                                xif.text = prop.configEntry.BoxedValue.ToString();
-                                xif.textComponent.fontSize = 18;
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                inputField.onValueChanged.RemoveAllListeners();
+                                inputField.text = prop.configEntry.BoxedValue.ToString();
+                                inputField.onValueChanged.AddListener(delegate (string _val)
                                 {
                                     prop.configEntry.BoxedValue = _val;
                                 });
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
+                                {
+                                    inputField.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                                {
+                                    inputField.textComponent
+                                }));
 
                                 break;
                             }
                         case EditorProperty.ValueType.Vector2:
                             {
-                                var bar = Instantiate(singleInput);
+                                if (prop.configEntry.SettingType != typeof(Vector2))
+                                {
+                                    Destroy(gameObject);
+                                    continue;
+                                }
 
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<InputFieldSwapper>());
+                                var vector2 = gameObject.transform.Find("input");
 
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialog.Find("mask/content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [VECTOR2]";
+                                var vtmp = (Vector2)prop.configEntry.BoxedValue;
 
-                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
-                                l.transform.AsRT().sizeDelta = new Vector2(354f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-
-                                var image = bar.GetComponent<Image>();
-                                image.enabled = true;
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                GameObject vector2 = Instantiate(vector2Input);
-                                vector2.transform.SetParent(bar.transform);
-                                vector2.transform.localScale = Vector3.one;
-
-                                Vector2 vtmp = (Vector2)prop.configEntry.BoxedValue;
-
-                                Destroy(vector2.transform.Find("x").GetComponent<EventInfo>());
-                                vector2.transform.Find("x").localScale = Vector3.one;
-                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
                                 var vxif = vector2.transform.Find("x").GetComponent<InputField>();
+                                vxif.onValueChanged.RemoveAllListeners();
+                                vxif.text = vtmp.x.ToString();
+                                vxif.onValueChanged.AddListener(delegate (string _val)
                                 {
-                                    vxif.onValueChanged.RemoveAllListeners();
-
-                                    vxif.text = vtmp.x.ToString();
-
-                                    vxif.onValueChanged.AddListener(delegate (string _val)
+                                    if (float.TryParse(_val, out float result))
                                     {
-                                        vtmp = new Vector2(float.Parse(_val), vtmp.y);
-                                        prop.configEntry.BoxedValue = vtmp;
-                                    });
-                                }
+                                        var vector2Value = (Vector2)prop.configEntry.BoxedValue;
+                                        prop.configEntry.BoxedValue = new Vector2(result, vector2Value.y);
+                                    }
+                                });
 
-                                Destroy(vector2.transform.Find("y").GetComponent<EventInfo>());
-                                vector2.transform.Find("y").localScale = Vector3.one;
-                                vector2.transform.Find("x").GetChild(0).localScale = Vector3.one;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", vxif.gameObject, new List<Component>
+                                {
+                                    vxif.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", vxif.textComponent.gameObject, new List<Component>
+                                {
+                                    vxif.textComponent
+                                }));
+
+                                var leftX = vxif.transform.Find("<").GetComponent<Button>();
+                                Destroy(leftX.GetComponent<Animator>());
+                                leftX.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", leftX.gameObject, new List<Component>
+                                {
+                                    leftX.image,
+                                    leftX,
+                                }, isSelectable: true));
+
+                                var rightX = vxif.transform.Find(">").GetComponent<Button>();
+                                Destroy(rightX.GetComponent<Animator>());
+                                rightX.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", rightX.gameObject, new List<Component>
+                                {
+                                    rightX.image,
+                                    rightX,
+                                }, isSelectable: true));
+
                                 var vyif = vector2.transform.Find("y").GetComponent<InputField>();
+                                vyif.onValueChanged.RemoveAllListeners();
+                                vyif.text = vtmp.y.ToString();
+                                vyif.onValueChanged.AddListener(delegate (string _val)
                                 {
-                                    vyif.onValueChanged.RemoveAllListeners();
-
-                                    vyif.text = vtmp.y.ToString();
-
-                                    vyif.onValueChanged.AddListener(delegate (string _val)
+                                    if (float.TryParse(_val, out float result))
                                     {
-                                        vtmp = new Vector2(vtmp.x, float.Parse(_val));
-                                        prop.configEntry.BoxedValue = vtmp;
-                                    });
-                                }
+                                        var vector2Value = (Vector2)prop.configEntry.BoxedValue;
+                                        prop.configEntry.BoxedValue = new Vector2(vector2Value.x, result);
+                                    }
+                                });
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", vyif.gameObject, new List<Component>
+                                {
+                                    vyif.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", vyif.textComponent.gameObject, new List<Component>
+                                {
+                                    vyif.textComponent
+                                }));
+
+                                var leftY = vyif.transform.Find("<").GetComponent<Button>();
+                                Destroy(leftY.GetComponent<Animator>());
+                                leftY.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", leftY.gameObject, new List<Component>
+                                {
+                                    leftY.image,
+                                    leftY,
+                                }, isSelectable: true));
+
+                                var rightY = vyif.transform.Find(">").GetComponent<Button>();
+                                Destroy(rightY.GetComponent<Animator>());
+                                rightY.transition = Selectable.Transition.ColorTint;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", rightY.gameObject, new List<Component>
+                                {
+                                    rightY.image,
+                                    rightY,
+                                }, isSelectable: true));
 
                                 TriggerHelper.AddEventTrigger(vxif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(vxif) });
                                 TriggerHelper.AddEventTrigger(vyif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(vyif) });
@@ -11462,49 +12088,18 @@ namespace EditorManagement.Functions.Editors
                             {
                                 bool isKeyCode = prop.configEntry.GetType() == typeof(ConfigEntry<KeyCode>);
 
-                                var bar = Instantiate(singleInput);
+                                var l = gameObject.transform.Find("label");
 
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<InputFieldSwapper>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialog.Find("mask/content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [ENUM]";
-
-                                TooltipHelper.AddTooltip(bar, prop.name, prop.description + " (You may see some Invalid Values, don't worry nothing's wrong.)", new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
-                                l.transform.AsRT().sizeDelta = new Vector2(isKeyCode ? 482 : 522f, 32f);
-
+                                l.transform.AsRT().sizeDelta = new Vector2(isKeyCode ? 424f : 522f, 32f);
                                 l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-
-                                var im = bar.GetComponent<Image>();
-                                im.enabled = true;
-                                im.color = new Color(1f, 1f, 1f, 0.03f);
+                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
 
                                 if (isKeyCode)
                                 {
-                                    var gameObject = new GameObject("selector");
-                                    gameObject.transform.SetParent(bar.transform);
-                                    gameObject.transform.localScale = Vector3.one;
-                                    var rectTransform = gameObject.AddComponent<RectTransform>();
-                                    gameObject.AddComponent<CanvasRenderer>();
-
-                                    rectTransform.sizeDelta = new Vector2(32f, 32f);
-
-                                    var image = gameObject.AddComponent<Image>();
-
-                                    var button = gameObject.AddComponent<Button>();
+                                    var selector = gameObject.transform.Find("selector");
+                                    selector.gameObject.SetActive(true);
+                                    var button = selector.GetComponent<Button>();
+                                    button.onClick.ClearAll();
                                     button.onClick.AddListener(delegate ()
                                     {
                                         selectingKey = true;
@@ -11515,26 +12110,28 @@ namespace EditorManagement.Functions.Editors
 
                                         onKeySet = RenderPropertiesWindow;
                                     });
+
+                                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Keybind Assign", "Function 1", selector.gameObject, new List<Component>
+                                    {
+                                        button.image
+                                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Keybind Assign Text", "Function 1 Text", selector.Find("text").gameObject, new List<Component>
+                                    {
+                                        selector.Find("text").GetComponent<Text>()
+                                    }));
                                 }
 
-                                GameObject x = Instantiate(dropdownInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
+                                var hide = gameObject.transform.Find("dropdown").GetComponent<HideDropdownOptions>();
+                                var dropdown = gameObject.transform.Find("dropdown").GetComponent<Dropdown>();
 
-                                RectTransform xRT = x.GetComponent<RectTransform>();
-                                //xRT.anchoredPosition = ConfigEntries.OpenFileDropdownPosition.Value;
-
-                                Destroy(x.GetComponent<HoverTooltip>());
-
-                                var hide = x.GetComponent<HideDropdownOptions>();
+                                dropdown.onValueChanged.ClearAll();
+                                dropdown.options.Clear();
                                 hide.DisabledOptions.Clear();
 
-                                Dropdown dropdown = x.GetComponent<Dropdown>();
-                                dropdown.options.Clear();
-                                dropdown.onValueChanged.RemoveAllListeners();
-                                Type type = prop.configEntry.SettingType;
-
+                                var type = prop.configEntry.SettingType;
                                 var enums = Enum.GetValues(prop.configEntry.SettingType);
+
                                 for (int j = 0; j < enums.Length; j++)
                                 {
                                     var str = "Invalid Value";
@@ -11544,9 +12141,7 @@ namespace EditorManagement.Functions.Editors
                                         str = Enum.GetName(prop.configEntry.SettingType, j);
                                     }
                                     else
-                                    {
                                         hide.DisabledOptions.Add(true);
-                                    }
 
                                     dropdown.options.Add(new Dropdown.OptionData(str));
                                 }
@@ -11557,157 +12152,115 @@ namespace EditorManagement.Functions.Editors
                                     prop.configEntry.BoxedValue = _val;
                                 });
 
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby", "Dropdown 1", dropdown.gameObject, new List<Component>
+                                {
+                                    dropdown.image,
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Text", "Dropdown 1 Overlay", dropdown.captionText.gameObject, new List<Component>
+                                {
+                                    dropdown.captionText,
+                                }));
+
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Arrow", "Dropdown 1 Overlay", dropdown.transform.Find("Arrow").gameObject, new List<Component>
+                                {
+                                    dropdown.transform.Find("Arrow").gameObject.GetComponent<Image>(),
+                                }));
+
+                                var template = dropdown.transform.Find("Template").gameObject;
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1", template, new List<Component>
+                                {
+                                    template.GetComponent<Image>(),
+                                }, true, 1, SpriteManager.RoundedSide.Bottom));
+
+                                var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1 Item", templateItem, new List<Component>
+                                {
+                                    templateItem.GetComponent<Image>(),
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
+                                {
+                                    templateItemCheckmark.GetComponent<Image>(),
+                                }));
+
+                                var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
+                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
+                                {
+                                    templateItemLabel.GetComponent<Text>(),
+                                }));
+
                                 break;
                             }
                         case EditorProperty.ValueType.Color:
                             {
-                                var bar = Instantiate(singleInput);
-
-                                Destroy(bar.GetComponent<EventInfo>());
-                                Destroy(bar.GetComponent<EventTrigger>());
-                                Destroy(bar.GetComponent<InputField>());
-                                Destroy(bar.GetComponent<InputFieldSwapper>());
-
-                                LSHelpers.DeleteChildren(bar.transform);
-                                bar.transform.SetParent(editorDialog.Find("mask/content"));
-                                bar.transform.localScale = Vector3.one;
-                                bar.name = "input [COLOR]";
-
-                                TooltipHelper.AddTooltip(bar, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(bar.transform);
-                                l.transform.localScale = Vector3.one;
-                                l.SetActive(true);
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
-                                l.transform.AsRT().sizeDelta = new Vector2(314f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-
-                                var im = bar.GetComponent<Image>();
-                                im.enabled = true;
-                                im.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                var bar2 = Instantiate(singleInput);
-                                Destroy(bar2.GetComponent<InputField>());
-                                Destroy(bar2.GetComponent<EventInfo>());
-                                LSHelpers.DeleteChildren(bar2.transform);
-                                bar2.transform.SetParent(bar.transform);
-                                bar2.transform.localScale = Vector3.one;
-                                bar2.name = "color";
-                                bar2.GetComponent<RectTransform>().sizeDelta = new Vector2(32f, 32f);
-
-                                var bar2Color = bar2.GetComponent<Image>();
-                                bar2Color.enabled = true;
-                                bar2Color.color = (Color)prop.configEntry.BoxedValue;
-
-                                Image image2 = null;
-
-                                if (EventEditor.inst.dialogLeft.TryFind("theme/theme/viewport/content/gui/preview/dropper", out Transform dropper))
+                                if (prop.configEntry.SettingType != typeof(Color))
                                 {
-                                    var drop = Instantiate(dropper.gameObject);
-                                    drop.transform.SetParent(bar2.transform);
-                                    drop.transform.localScale = Vector3.one;
-                                    drop.name = "dropper";
-
-                                    var dropRT = drop.GetComponent<RectTransform>();
-                                    dropRT.sizeDelta = new Vector2(32f, 32f);
-                                    dropRT.anchoredPosition = Vector2.zero;
-
-                                    if (drop.TryGetComponent(out Image image))
-                                    {
-                                        image2 = image;
-                                        image.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
-                                    }
+                                    Destroy(gameObject);
+                                    continue;
                                 }
 
-                                GameObject x = Instantiate(stringInput);
-                                x.transform.SetParent(bar.transform);
-                                x.transform.localScale = Vector3.one;
-                                Destroy(x.GetComponent<HoverTooltip>());
+                                var configColor = gameObject.transform.Find("color").gameObject;
+                                var configColorImage = configColor.GetComponent<Image>();
+                                configColorImage.color = (Color)prop.configEntry.BoxedValue;
 
-                                x.transform.GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 32f);
-
-                                var xif = x.GetComponent<InputField>();
-                                xif.onValueChanged.RemoveAllListeners();
-                                xif.characterValidation = InputField.CharacterValidation.None;
-                                xif.characterLimit = 8;
-                                xif.text = RTHelpers.ColorToHex((Color)prop.configEntry.BoxedValue);
-                                xif.textComponent.fontSize = 18;
-                                xif.onValueChanged.AddListener(delegate (string _val)
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Color", "", configColor, new List<Component>
                                 {
-                                    string v = _val;
-                                    if (v.Length == 6)
-                                        v += "FF";
+                                    configColorImage,
+                                }, true, 1, SpriteManager.RoundedSide.W));
 
-                                    if (v.Length == 8)
+                                var dropperImage = configColor.transform.Find("dropper").GetComponent<Image>();
+                                dropperImage.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
+
+                                var hexField = gameObject.transform.Find("input").GetComponent<InputField>();
+                                hexField.onValueChanged.RemoveAllListeners();
+                                hexField.text = RTHelpers.ColorToHex((Color)prop.configEntry.BoxedValue);
+                                hexField.onValueChanged.AddListener(delegate (string _val)
+                                {
+                                    string hex = _val;
+                                    if (hex.Length == 6)
+                                        hex += "FF";
+
+                                    if (hex.Length == 8)
                                     {
-                                        prop.configEntry.BoxedValue = LSColors.HexToColorAlpha(v);
-                                        bar2Color.color = (Color)prop.configEntry.BoxedValue;
-                                        if (image2 != null)
-                                        {
-                                            image2.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
-                                        }
+                                        prop.configEntry.BoxedValue = LSColors.HexToColorAlpha(hex);
+                                        configColorImage.color = (Color)prop.configEntry.BoxedValue;
+                                        dropperImage.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
 
-                                        TriggerHelper.AddEventTrigger(bar2, new List<EventTrigger.Entry> { TriggerHelper.CreatePreviewClickTrigger(bar2Color, image2, xif, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup") });
+                                        TriggerHelper.AddEventTriggerParams(configColor, TriggerHelper.CreatePreviewClickTrigger(configColorImage, dropperImage, hexField, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup"));
                                     }
                                 });
 
-                                TriggerHelper.AddEventTrigger(bar2, new List<EventTrigger.Entry> { TriggerHelper.CreatePreviewClickTrigger(bar2Color, image2, xif, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup") });
+                                TriggerHelper.AddEventTriggerParams(configColor, TriggerHelper.CreatePreviewClickTrigger(configColorImage, dropperImage, hexField, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup"));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", hexField.gameObject, new List<Component>
+                                {
+                                    hexField.image
+                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", hexField.textComponent.gameObject, new List<Component>
+                                {
+                                    hexField.textComponent
+                                }));
 
                                 break;
                             }
                         case EditorProperty.ValueType.Function:
                             {
-                                var x = Instantiate(singleInput);
-                                x.transform.SetParent(editorDialog.Find("mask/content"));
-                                x.name = "input [FUNCTION]";
+                                TooltipHelper.AddTooltip(gameObject, prop.name, prop.description, new List<string> { "Function" });
 
-                                Destroy(x.GetComponent<EventInfo>());
-                                Destroy(x.GetComponent<EventTrigger>());
-                                DestroyImmediate(x.GetComponent<InputField>());
-
-                                x.transform.localScale = Vector3.one;
-                                x.transform.GetChild(0).localScale = Vector3.one;
-
-                                var l = Instantiate(label);
-                                l.transform.SetParent(x.transform);
-                                l.transform.SetAsFirstSibling();
-                                l.transform.localScale = Vector3.one;
-                                var text = l.transform.GetChild(0).GetComponent<Text>();
-                                text.alignment = TextAnchor.MiddleLeft;
-                                text.text = prop.name;
-                                l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
-
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(541, 32f);
-
-                                var image = x.GetComponent<Image>();
-                                image.enabled = true;
-                                image.color = new Color(1f, 1f, 1f, 0.03f);
-
-                                try
-                                {
-                                    if (!string.IsNullOrEmpty(prop.description))
-                                        TooltipHelper.AddTooltip(x, prop.name, prop.description, new List<string> { "Function" });
-                                }
-                                catch (Exception ex)
-                                {
-                                    Debug.LogError(ex);
-                                }
-
-                                Destroy(x.transform.Find("input").gameObject);
-                                Destroy(x.transform.Find("<").gameObject);
-                                Destroy(x.transform.Find(">").gameObject);
-
-                                var button = x.AddComponent<Button>();
+                                var button = gameObject.GetComponent<Button>();
                                 button.onClick.AddListener(delegate ()
                                 {
                                     prop.action?.Invoke();
                                 });
+
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Base", "List Button 1", gameObject, new List<Component>
+                                {
+                                    gameObject.GetComponent<Image>(),
+                                    button
+                                }, true, 1, SpriteManager.RoundedSide.W, true));
 
                                 break;
                             }
@@ -11715,7 +12268,6 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            generatedPropertiesWindow = true;
             yield break;
         }
 
@@ -11969,10 +12521,14 @@ namespace EditorManagement.Functions.Editors
         {
             NewLevelTemplates.Clear();
             LSHelpers.DeleteChildren(newLevelTemplateContent);
+            List<Text> texts = new List<Text>();
 
             var baseLevelTemplateGameObject = newLevelTemplatePrefab.Duplicate(newLevelTemplateContent);
             var basePreviewBase = baseLevelTemplateGameObject.transform.Find("Preview Base");
             basePreviewBase.Find("Preview").GetComponent<Image>().sprite = newLevelTemplateBaseSprite;
+
+            var baseTitle = baseLevelTemplateGameObject.transform.Find("Title").GetComponent<Text>();
+            baseTitle.text = $"Default Template{(currentLevelTemplate == -1 ? " [SELECTED]" : "")}";
 
             var baseButton = baseLevelTemplateGameObject.GetComponent<Button>();
             baseButton.onClick.ClearAll();
@@ -11980,10 +12536,9 @@ namespace EditorManagement.Functions.Editors
             {
                 currentLevelTemplate = -1;
                 EditorManager.inst.DisplayNotification($"Set level template to default.", 1.6f, EditorManager.NotificationType.Success);
-            });
 
-            var baseTitle = baseLevelTemplateGameObject.transform.Find("Title").GetComponent<Text>();
-            baseTitle.text = "Default Template";
+                UpdateSelectedTemplate(baseTitle, texts);
+            });
 
             EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template", "List Button 1", baseLevelTemplateGameObject.gameObject, new List<Component>
             {
@@ -12029,10 +12584,13 @@ namespace EditorManagement.Functions.Editors
                 {
                     currentLevelTemplate = index;
                     EditorManager.inst.DisplayNotification($"Set level template to {fileName} [{currentLevelTemplate}]", 2f, EditorManager.NotificationType.Success);
+
+                    UpdateSelectedTemplate(baseTitle, texts);
                 });
 
                 var title = levelTemplateGameObject.transform.Find("Title").GetComponent<Text>();
-                title.text = fileName;
+                title.text = $"{fileName}{(currentLevelTemplate == index ? " [SELECTED]" : "")}";
+                texts.Add(title);
 
                 EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template", "List Button 1", levelTemplateGameObject, new List<Component>
                 {
@@ -12064,6 +12622,21 @@ namespace EditorManagement.Functions.Editors
 
                 NewLevelTemplates.Add(directory + "/level.lsb");
                 num++;
+            }
+
+            currentLevelTemplate = Mathf.Clamp(currentLevelTemplate, -1, NewLevelTemplates.Count - 1);
+
+            UpdateSelectedTemplate(baseTitle, texts);
+        }
+        
+        void UpdateSelectedTemplate(Text baseTitle, List<Text> texts)
+        {
+            baseTitle.text = $"Default Template{(currentLevelTemplate == -1 ? " [SELECTED]" : "")}";
+            for (int i = 0; i < texts.Count; i++)
+            {
+                var fileName = Path.GetFileName(Path.GetDirectoryName(NewLevelTemplates[i]));
+
+                texts[i].text = $"{fileName}{(currentLevelTemplate == i ? " [SELECTED]" : "")}";
             }
         }
 

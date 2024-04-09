@@ -80,6 +80,12 @@ namespace EditorManagement.Functions.Editors
                     }));
                 }
             }
+
+            if (EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.gameObject.activeInHierarchy)
+            {
+                RTEditor.inst.RenderPropertiesWindow();
+            }
+
             yield break;
         }
 
@@ -154,6 +160,13 @@ namespace EditorManagement.Functions.Editors
                 { "Toggle 1 Check", LSColors.HexToColorAlpha("212121FF") },
                 { "Input Field", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Input Field Text", LSColors.HexToColorAlpha("252525FF") },
+                { "Slider 1", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Slider 1 Normal", LSColors.HexToColorAlpha("EFEBEFFF") },
+                { "Slider 1 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Slider 1 Selected", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Slider 1 Pressed", LSColors.HexToColorAlpha("C8C8C8FF") },
+                { "Slider 1 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
+                { "Slider 1 Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
@@ -188,12 +201,47 @@ namespace EditorManagement.Functions.Editors
                 { "Paste", LSColors.HexToColorAlpha("FFAF38FF") },
                 { "Paste Text", LSColors.HexToColorAlpha("1C1C1DFF") },
                 { "Tab Color 1", LSColors.HexToColorAlpha("FFE7E7FF") },
+                { "Tab Color 1 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 1 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 1 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 1 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 1 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 2", LSColors.HexToColorAlpha("C0ACE1FF") },
+                { "Tab Color 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 2 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 2 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 2 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 2 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 3", LSColors.HexToColorAlpha("F17BB8FF") },
+                { "Tab Color 3 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 3 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 3 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 3 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 3 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 4", LSColors.HexToColorAlpha("2F426DFF") },
+                { "Tab Color 4 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 4 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 4 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 4 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 4 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 5", LSColors.HexToColorAlpha("4076DFFF") },
+                { "Tab Color 5 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 5 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 5 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 5 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 5 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 6", LSColors.HexToColorAlpha("6CCBCFFF") },
+                { "Tab Color 6 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 6 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 6 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 6 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 6 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 7", LSColors.HexToColorAlpha("1B1B1CFF") },
+                { "Tab Color 7 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 7 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 7 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 7 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 7 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
             }),
             new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
@@ -251,6 +299,13 @@ namespace EditorManagement.Functions.Editors
                 { "Toggle 1 Check", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Input Field", LSColors.HexToColorAlpha("252525FF") },
                 { "Input Field Text", LSColors.HexToColorAlpha("EFEBEFFF") },
+                { "Slider 1", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Slider 1 Normal", LSColors.HexToColorAlpha("EFEBEFFF") },
+                { "Slider 1 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Slider 1 Selected", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Slider 1 Pressed", LSColors.HexToColorAlpha("C8C8C8FF") },
+                { "Slider 1 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
+                { "Slider 1 Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
@@ -285,12 +340,47 @@ namespace EditorManagement.Functions.Editors
                 { "Paste", LSColors.HexToColorAlpha("C18736FF") },
                 { "Paste Text", LSColors.HexToColorAlpha("E5E1E5FF") },
                 { "Tab Color 1", LSColors.HexToColorAlpha("1395BAFF") },
+                { "Tab Color 1 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 1 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 1 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 1 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 1 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 2", LSColors.HexToColorAlpha("0D3C55FF") },
+                { "Tab Color 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 2 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 2 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 2 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 2 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 3", LSColors.HexToColorAlpha("C02E1DFF") },
+                { "Tab Color 3 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 3 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 3 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 3 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 3 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 4", LSColors.HexToColorAlpha("F16C20FF") },
+                { "Tab Color 4 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 4 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 4 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 4 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 4 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 5", LSColors.HexToColorAlpha("EBC844FF") },
+                { "Tab Color 5 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 5 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 5 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 5 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 5 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 6", LSColors.HexToColorAlpha("A2B86CFF") },
+                { "Tab Color 6 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 6 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 6 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 6 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 6 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 7", LSColors.HexToColorAlpha("1B1B1CFF") },
+                { "Tab Color 7 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 7 Highlight", new Color(2f, 2f, 2f, 1f) },
+                { "Tab Color 7 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 7 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Tab Color 7 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
             }),
         };
 
@@ -349,43 +439,50 @@ namespace EditorManagement.Functions.Editors
 
             public void ApplyTheme(EditorTheme theme)
             {
-                SetRounded();
-
-                if (string.IsNullOrEmpty(group))
-                    return;
-
-                if (theme.ColorGroups.ContainsKey(group))
+                try
                 {
-                    if (!isSelectable)
-                        SetColor(theme.ColorGroups[group]);
+                    SetRounded();
+
+                    if (string.IsNullOrEmpty(group))
+                        return;
+
+                    if (theme.ColorGroups.ContainsKey(group))
+                    {
+                        if (!isSelectable)
+                            SetColor(theme.ColorGroups[group]);
+                        else
+                        {
+                            var colorBlock = new ColorBlock();
+
+                            colorBlock.colorMultiplier = 1f;
+                            colorBlock.fadeDuration = 0.1f;
+
+                            if (theme.ColorGroups.ContainsKey(group + " Normal"))
+                                colorBlock.normalColor = theme.ColorGroups[group + " Normal"];
+
+                            if (theme.ColorGroups.ContainsKey(group + " Highlight"))
+                                colorBlock.highlightedColor = theme.ColorGroups[group + " Highlight"];
+
+                            if (theme.ColorGroups.ContainsKey(group + " Selected"))
+                                colorBlock.selectedColor = theme.ColorGroups[group + " Selected"];
+
+                            if (theme.ColorGroups.ContainsKey(group + " Pressed"))
+                                colorBlock.pressedColor = theme.ColorGroups[group + " Pressed"];
+
+                            if (theme.ColorGroups.ContainsKey(group + " Disabled"))
+                                colorBlock.disabledColor = theme.ColorGroups[group + " Disabled"];
+
+                            SetColor(theme.ColorGroups[group], colorBlock);
+                        }
+                    }
                     else
                     {
-                        var colorBlock = new ColorBlock();
-
-                        colorBlock.colorMultiplier = 1f;
-                        colorBlock.fadeDuration = 0.1f;
-
-                        if (theme.ColorGroups.ContainsKey(group + " Normal"))
-                            colorBlock.normalColor = theme.ColorGroups[group + " Normal"];
-                        
-                        if (theme.ColorGroups.ContainsKey(group + " Highlight"))
-                            colorBlock.highlightedColor = theme.ColorGroups[group + " Highlight"];
-
-                        if (theme.ColorGroups.ContainsKey(group + " Selected"))
-                            colorBlock.selectedColor = theme.ColorGroups[group + " Selected"];
-
-                        if (theme.ColorGroups.ContainsKey(group + " Pressed"))
-                            colorBlock.pressedColor = theme.ColorGroups[group + " Pressed"];
-
-                        if (theme.ColorGroups.ContainsKey(group + " Disabled"))
-                            colorBlock.disabledColor = theme.ColorGroups[group + " Disabled"];
-
-                        SetColor(theme.ColorGroups[group], colorBlock);
+                        Debug.LogError($"{EditorPlugin.className}Failed to assign theme color to {name}.");
                     }
                 }
-                else
+                catch
                 {
-                    Debug.LogError($"{EditorPlugin.className}Failed to assign theme color to {name}.");
+
                 }
             }
 
