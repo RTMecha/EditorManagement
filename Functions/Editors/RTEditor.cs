@@ -2692,7 +2692,7 @@ namespace EditorManagement.Functions.Editors
                     if (pointerEventData.button == PointerEventData.InputButton.Right)
                     {
                         EditorManager.inst.ShowDialog("Browser Popup");
-                        RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), onSelectFolder: delegate (string _val)
+                        RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory + "beatmaps", onSelectFolder: delegate (string _val)
                         {
                             if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
                             {
@@ -2784,7 +2784,7 @@ namespace EditorManagement.Functions.Editors
                     if (pointerEventData.button == PointerEventData.InputButton.Right)
                     {
                         EditorManager.inst.ShowDialog("Browser Popup");
-                        RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), onSelectFolder: delegate (string _val)
+                        RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory + "beatmaps", onSelectFolder: delegate (string _val)
                         {
                             if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
                             {
@@ -2865,7 +2865,7 @@ namespace EditorManagement.Functions.Editors
                     if (pointerEventData.button == PointerEventData.InputButton.Right)
                     {
                         EditorManager.inst.ShowDialog("Browser Popup");
-                        RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), onSelectFolder: delegate (string _val)
+                        RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory + "beatmaps", onSelectFolder: delegate (string _val)
                         {
                             if (_val.Replace("\\", "/").Contains(RTFile.ApplicationDirectory + "beatmaps/"))
                             {
@@ -4534,7 +4534,7 @@ namespace EditorManagement.Functions.Editors
                 syncLayout.transform.localScale = Vector3.one;
 
                 var multiSyncRT = syncLayout.AddComponent<RectTransform>();
-                multiSyncRT.sizeDelta = new Vector2(390f, 160f);
+                multiSyncRT.sizeDelta = new Vector2(390f, 210f);
                 var multiSyncGLG = syncLayout.AddComponent<GridLayoutGroup>();
                 multiSyncGLG.spacing = new Vector2(4f, 4f);
                 multiSyncGLG.cellSize = new Vector2(61.6f, 49f);
@@ -4645,6 +4645,23 @@ namespace EditorManagement.Functions.Editors
                     });
                 }
 
+                // Parent Desync
+                {
+                    buttonGenerator("parent desync", "PD", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().desync = beatmapObject.desync;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "Parent");
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+
                 // Parent Type
                 {
                     buttonGenerator("parent type", "PT", syncLayout.transform, delegate ()
@@ -4672,6 +4689,40 @@ namespace EditorManagement.Functions.Editors
                             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
                             {
                                 timelineObject.GetData<BeatmapObject>().parentOffsets = beatmapObject.parentOffsets.Clone();
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentOffset");
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+
+                // Parent Additive
+                {
+                    buttonGenerator("parent additive", "PA", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().parentAdditive = beatmapObject.parentAdditive;
+                                Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentOffset");
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+                
+                // Parent Parallax
+                {
+                    buttonGenerator("parent parallax", "PP", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().parallaxSettings = beatmapObject.parallaxSettings.Copy();
                                 Updater.UpdateProcessor(timelineObject.GetData<BeatmapObject>(), "ParentOffset");
                             }
                             EditorManager.inst.HideDialog("Object Search Popup");
@@ -4772,7 +4823,7 @@ namespace EditorManagement.Functions.Editors
                 // Modifiers
                 if (ModCompatibility.ObjectModifiersInstalled)
                 {
-                    buttonGenerator("keyframes", "MOD", syncLayout.transform, delegate ()
+                    buttonGenerator("modifiers", "MOD", syncLayout.transform, delegate ()
                     {
                         EditorManager.inst.ShowDialog("Object Search Popup");
                         RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
@@ -4784,6 +4835,68 @@ namespace EditorManagement.Functions.Editors
                                 bm.modifiers.AddRange(beatmapObject.modifiers.Select(x => BeatmapObject.Modifier.DeepCopy(x, bm)));
 
                                 Updater.UpdateProcessor(bm);
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+
+                    buttonGenerator("ignore", "IGN", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().ignoreLifespan = beatmapObject.ignoreLifespan;
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+
+                // Tags
+                {
+                    buttonGenerator("tag", "TAG", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().tags = beatmapObject.tags.Clone();
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+
+                // Render Type
+                {
+                    buttonGenerator("rendertype", "RT", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().background = beatmapObject.background;
+                            }
+                            EditorManager.inst.HideDialog("Object Search Popup");
+                        });
+                    });
+                }
+
+                // Prefab
+                {
+                    buttonGenerator("prefab", "PR", syncLayout.transform, delegate ()
+                    {
+                        EditorManager.inst.ShowDialog("Object Search Popup");
+                        RefreshObjectSearch(delegate (BeatmapObject beatmapObject)
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+                                timelineObject.GetData<BeatmapObject>().prefabID = beatmapObject.prefabID;
+                                timelineObject.GetData<BeatmapObject>().prefabInstanceID = beatmapObject.prefabInstanceID;
                             }
                             EditorManager.inst.HideDialog("Object Search Popup");
                         });
@@ -6565,8 +6678,8 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
-            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data").AsRT().sizeDelta = new Vector2(810f, 730.11f);
-            EditorManager.inst.GetDialog("Multi Object Editor").Dialog.Find("data/left").AsRT().sizeDelta = new Vector2(355f, 730f);
+            multiObjectEditorDialog.Find("data").AsRT().sizeDelta = new Vector2(810f, 730.11f);
+            multiObjectEditorDialog.Find("data/left").AsRT().sizeDelta = new Vector2(355f, 730f);
         }
 
         List<MultiColorButton> multiColorButtons = new List<MultiColorButton>();
@@ -10454,20 +10567,22 @@ namespace EditorManagement.Functions.Editors
 
             LSHelpers.DeleteChildren(content);
 
-            var list = DataManager.inst.gameData.beatmapObjects;
+            var list = DataManager.inst.gameData.beatmapObjects.Where(x => !x.fromPrefab).ToList();
             foreach (var beatmapObject in list)
             {
                 var regex = new Regex(@"\[([0-9])\]");
                 var match = regex.Match(objectSearchTerm);
 
-                if (string.IsNullOrEmpty(objectSearchTerm) || beatmapObject.name.ToLower().Contains(objectSearchTerm.ToLower()) || match.Success && int.Parse(match.Groups[1].ToString()) < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == int.Parse(match.Groups[1].ToString()))
+                if (string.IsNullOrEmpty(objectSearchTerm) ||
+                    match.Success && int.TryParse(match.Groups[1].ToString(), out int index) && index < DataManager.inst.gameData.beatmapObjects.Count && DataManager.inst.gameData.beatmapObjects.IndexOf(beatmapObject) == index ||
+                    beatmapObject.id == objectSearchTerm ||
+                    beatmapObject.name.ToLower().Contains(objectSearchTerm.ToLower()))
                 {
                     string nm = $"[{(list.IndexOf(beatmapObject) + 1).ToString("0000")}/{list.Count.ToString("0000")} - {beatmapObject.id}] : {beatmapObject.name}";
                     var buttonPrefab = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, nm);
                     buttonPrefab.transform.GetChild(0).GetComponent<Text>().text = nm;
 
                     var b = buttonPrefab.GetComponent<Button>();
-                    b.interactable = !beatmapObject.fromPrefab;
                     b.onClick.RemoveAllListeners();
                     b.onClick.AddListener(delegate ()
                     {
@@ -10477,20 +10592,10 @@ namespace EditorManagement.Functions.Editors
                     var image = buttonPrefab.transform.Find("Image").GetComponent<Image>();
                     image.color = GetObjectColor(beatmapObject, false);
 
-                    int n = beatmapObject.shape + 1;
+                    var shape = Mathf.Clamp(beatmapObject.shape, 0, ShapeManager.inst.Shapes2D.Count - 1);
+                    var shapeOption = Mathf.Clamp(beatmapObject.shapeOption, 0, ShapeManager.inst.Shapes2D[shape].Count - 1);
 
-                    try
-                    {
-                        if (beatmapObject.shape == 4 || beatmapObject.shape == 6)
-                            image.sprite = ObjEditor.inst.ObjectView.transform.Find("shape/" + n.ToString() + "/Image").GetComponent<Image>().sprite;
-                        else
-                            image.sprite = ObjEditor.inst.ObjectView.transform.Find("shapesettings").GetChild(beatmapObject.shape).GetChild(beatmapObject.shapeOption).Find("Image").GetComponent<Image>().sprite;
-
-                    }
-                    catch
-                    {
-
-                    }
+                    image.sprite = ShapeManager.inst.Shapes2D[shape][shapeOption].Icon;
 
                     string desc = "";
                     string hint = "";
