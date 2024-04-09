@@ -6942,48 +6942,6 @@ namespace EditorManagement.Functions.Editors
                         image,
                         button
                     }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                    //var clickable = gameObject.AddComponent<Clickable>();
-                    //clickable.onEnter = delegate (PointerEventData pointerEventData)
-                    //{
-                    //    var animation = new AnimationManager.Animation($"{name} Hover");
-                    //    var id = animation.id;
-
-                    //    animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
-                    //    {
-                    //        new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
-                    //        {
-                    //            new ColorKeyframe(0f, color, Ease.Linear),
-                    //            new ColorKeyframe(0.2f, Color.white, Ease.SineOut),
-                    //        }, delegate (Color x)
-                    //        {
-                    //            image.color = x;
-                    //        }),
-                    //    };
-
-                    //    AnimationManager.inst.RemoveName($"{name} Exit");
-                    //    AnimationManager.inst.Play(animation);
-                    //};
-                    //clickable.onExit = delegate (PointerEventData pointerEventData)
-                    //{
-                    //    var animation = new AnimationManager.Animation($"{name} Exit");
-                    //    var id = animation.id;
-
-                    //    animation.colorAnimations = new List<AnimationManager.Animation.AnimationObject<Color>>()
-                    //    {
-                    //        new AnimationManager.Animation.AnimationObject<Color>(new List<IKeyframe<Color>>()
-                    //        {
-                    //            new ColorKeyframe(0f, Color.white, Ease.Linear),
-                    //            new ColorKeyframe(0.2f, color, Ease.SineIn),
-                    //        }, delegate (Color x)
-                    //        {
-                    //            image.color = x;
-                    //        }),
-                    //    };
-
-                    //    AnimationManager.inst.RemoveName($"{name} Hover");
-                    //    AnimationManager.inst.Play(animation);
-                    //};
                 };
 
                 categoryTabGenerator("General", LSColors.HexToColor("FFE7E7"), EditorProperty.EditorPropCategory.General);
@@ -12150,18 +12108,20 @@ namespace EditorManagement.Functions.Editors
                                 var l = gameObject.transform.Find("label");
 
                                 l.transform.AsRT().sizeDelta = new Vector2(isKeyCode ? 424f : 522f, 32f);
-                                l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
-                                l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(434.4f, 32f);
+                                text.rectTransform.anchoredPosition = new Vector2(10f, -5f);
+                                text.rectTransform.AsRT().sizeDelta = new Vector2(434.4f, 32f);
 
                                 if (isKeyCode)
                                 {
                                     var selector = gameObject.transform.Find("selector");
                                     selector.gameObject.SetActive(true);
+                                    var selectorText = selector.Find("text").GetComponent<Text>();
                                     var button = selector.GetComponent<Button>();
                                     button.onClick.ClearAll();
                                     button.onClick.AddListener(delegate ()
                                     {
                                         selectingKey = true;
+                                        selectorText.text = "Press...";
                                         setKey = delegate (KeyCode key)
                                         {
                                             prop.configEntry.BoxedValue = key;
@@ -12175,9 +12135,9 @@ namespace EditorManagement.Functions.Editors
                                         button.image
                                     }, true, 1, SpriteManager.RoundedSide.W));
 
-                                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Keybind Assign Text", "Function 1 Text", selector.Find("text").gameObject, new List<Component>
+                                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Keybind Assign Text", "Function 1 Text", selectorText.gameObject, new List<Component>
                                     {
-                                        selector.Find("text").GetComponent<Text>()
+                                        selectorText
                                     }));
                                 }
 
