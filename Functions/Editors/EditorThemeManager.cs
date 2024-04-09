@@ -299,7 +299,7 @@ namespace EditorManagement.Functions.Editors
                 { "Toggle 1 Check", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Input Field", LSColors.HexToColorAlpha("252525FF") },
                 { "Input Field Text", LSColors.HexToColorAlpha("EFEBEFFF") },
-                { "Slider 1", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Slider 1", LSColors.HexToColorAlpha("565656FF") },
                 { "Slider 1 Normal", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Slider 1 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
                 { "Slider 1 Selected", LSColors.HexToColorAlpha("F5F5F5FF") },

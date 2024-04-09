@@ -6865,18 +6865,25 @@ namespace EditorManagement.Functions.Editors
             var title = editorPropertiesPanel.Find("Text").GetComponent<Text>();
             title.text = "Editor Properties";
 
+            var content = editorProperties.transform.Find("mask/content");
+            var crumbs = editorProperties.transform.Find("crumbs");
             // Sort Layout
             {
-                editorProperties.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(737f, 32f);
-                editorProperties.transform.Find("mask/content").AsRT().anchorMin = new Vector2(0.01f, 1f);
-                editorProperties.transform.Find("mask/content").AsRT().anchorMax = new Vector2(0.01f, 1f);
-                editorProperties.GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 450f);
-                editorProperties.transform.Find("Panel").GetComponent<RectTransform>().sizeDelta = new Vector2(782f, 32f);
-                editorProperties.transform.Find("search-box").GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 32f);
+                content.GetComponent<GridLayoutGroup>().cellSize = new Vector2(737f, 32f);
+                content.AsRT().anchorMin = new Vector2(0.01f, 1f);
+                content.AsRT().anchorMax = new Vector2(0.01f, 1f);
+                editorProperties.transform.AsRT().sizeDelta = new Vector2(750f, 450f);
+                editorProperties.transform.Find("Panel").AsRT().sizeDelta = new Vector2(782f, 32f);
+                editorProperties.transform.Find("search-box").AsRT().sizeDelta = new Vector2(750f, 32f);
                 editorProperties.transform.Find("search-box").localPosition = new Vector3(0f, 195f, 0f);
-                editorProperties.transform.Find("crumbs").GetComponent<RectTransform>().sizeDelta = new Vector2(750f, 32f);
-                editorProperties.transform.Find("crumbs").localPosition = new Vector3(0f, 225f, 0f);
-                editorProperties.transform.Find("crumbs").GetComponent<HorizontalLayoutGroup>().spacing = 5.5f;
+                crumbs.AsRT().sizeDelta = new Vector2(750f, 32f);
+                crumbs.localPosition = new Vector3(0f, 225f, 0f);
+                crumbs.GetComponent<HorizontalLayoutGroup>().spacing = 5.5f;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Editor Properties Crumbs", "Background", crumbs.gameObject, new List<Component>
+                {
+                    crumbs.GetComponent<Image>(),
+                }));
             }
 
             // Categories
@@ -11275,6 +11282,9 @@ namespace EditorManagement.Functions.Editors
                     labelLayoutElement.ignoreLayout = true;
 
                     label.transform.AsRT().anchoredPosition = Vector2.zero;
+                    label.transform.AsRT().anchorMax = Vector2.zero;
+                    label.transform.AsRT().anchorMin = Vector2.zero;
+                    label.transform.AsRT().pivot = Vector2.zero;
                     label.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
                     label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
                     label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
@@ -11285,6 +11295,7 @@ namespace EditorManagement.Functions.Editors
                     bar.transform.Find("slider").GetComponent<RectTransform>().sizeDelta = new Vector2(295f, 32f);
                     var slider = bar.transform.Find("slider").GetComponent<Slider>();
                     slider.onValueChanged.RemoveAllListeners();
+                    slider.wholeNumbers = true;
 
                     var sliderLayoutElement = slider.GetComponent<LayoutElement>();
                     sliderLayoutElement.ignoreLayout = true;
@@ -11322,6 +11333,9 @@ namespace EditorManagement.Functions.Editors
                     labelLayoutElement.ignoreLayout = true;
 
                     label.transform.AsRT().anchoredPosition = Vector2.zero;
+                    label.transform.AsRT().anchorMax = Vector2.zero;
+                    label.transform.AsRT().anchorMin = Vector2.zero;
+                    label.transform.AsRT().pivot = Vector2.zero;
                     label.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
                     label.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
                     label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(688f, 32f);
@@ -11811,23 +11825,47 @@ namespace EditorManagement.Functions.Editors
                                 gameObject.transform.Find("label").AsRT().sizeDelta = new Vector2(312f, 32f);
 
                                 var slider = gameObject.transform.Find("slider").GetComponent<Slider>();
-                                slider.onValueChanged.RemoveAllListeners();
-
-                                slider.value = (int)prop.configEntry.BoxedValue * 10;
-
-                                slider.maxValue = 100f;
-                                slider.minValue = -100f;
-
                                 var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
-                                inputField.onValueChanged.RemoveAllListeners();
+
+                                Action<int> setSlider = null;
+                                Action<int> setInputField = null;
+
+                                setSlider = delegate (int value)
+                                {
+                                    prop.configEntry.BoxedValue = value;
+                                    slider.onValueChanged.ClearAll();
+                                    slider.value = (int)prop.configEntry.BoxedValue;
+                                    slider.onValueChanged.AddListener(delegate (float _val)
+                                    {
+                                        setInputField?.Invoke((int)_val);
+                                    });
+                                };
+
+                                setInputField = delegate (int value)
+                                {
+                                    prop.configEntry.BoxedValue = value;
+                                    inputField.onValueChanged.ClearAll();
+                                    inputField.text = prop.configEntry.BoxedValue.ToString();
+                                    inputField.onValueChanged.AddListener(delegate (string _val)
+                                    {
+                                        if (int.TryParse(_val, out int result))
+                                            setSlider?.Invoke(result);
+                                    });
+                                };
+
+                                slider.onValueChanged.ClearAll();
+                                slider.value = (int)prop.configEntry.BoxedValue;
+                                slider.onValueChanged.AddListener(delegate (float _val)
+                                {
+                                    setInputField?.Invoke((int)_val);
+                                });
+
+                                inputField.onValueChanged.ClearAll();
                                 inputField.text = prop.configEntry.BoxedValue.ToString();
                                 inputField.onValueChanged.AddListener(delegate (string _val)
                                 {
-                                    if (LSHelpers.IsUsingInputField() && int.TryParse(_val, out int result))
-                                    {
-                                        prop.configEntry.BoxedValue = result;
-                                        slider.value = result;
-                                    }
+                                    if (int.TryParse(_val, out int result))
+                                        setSlider?.Invoke(result);
                                 });
 
                                 EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
@@ -11840,21 +11878,15 @@ namespace EditorManagement.Functions.Editors
                                     inputField.textComponent
                                 }));
 
-                                slider.onValueChanged.AddListener(delegate (float _val)
-                                {
-                                    if (!LSHelpers.IsUsingInputField())
-                                    {
-                                        prop.configEntry.BoxedValue = (int)_val / 10;
-                                        inputField.text = _val.ToString();
-                                    }
-                                });
-
                                 if (prop.configEntry.Description.AcceptableValues != null)
                                 {
                                     int min = int.MinValue;
                                     int max = int.MaxValue;
                                     min = (int)prop.configEntry.Description.AcceptableValues.Clamp(min);
                                     max = (int)prop.configEntry.Description.AcceptableValues.Clamp(max);
+
+                                    slider.minValue = min;
+                                    slider.maxValue = max;
 
                                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField, 1, min, max, false));
                                 }
@@ -11885,23 +11917,47 @@ namespace EditorManagement.Functions.Editors
                                 }
 
                                 var slider = gameObject.transform.Find("slider").GetComponent<Slider>();
-                                slider.onValueChanged.RemoveAllListeners();
-
-                                slider.value = (float)prop.configEntry.BoxedValue * 10f;
-
-                                slider.maxValue = 100f;
-                                slider.minValue = -100f;
-
                                 var inputField = gameObject.transform.Find("input").GetComponent<InputField>();
-                                inputField.onValueChanged.RemoveAllListeners();
+
+                                Action<float> setSlider = null;
+                                Action<float> setInputField = null;
+
+                                setSlider = delegate (float value)
+                                {
+                                    prop.configEntry.BoxedValue = value;
+                                    slider.onValueChanged.ClearAll();
+                                    slider.value = (float)prop.configEntry.BoxedValue * 10f;
+                                    slider.onValueChanged.AddListener(delegate (float _val)
+                                    {
+                                        setInputField?.Invoke(_val / 10f);
+                                    });
+                                };
+
+                                setInputField = delegate (float value)
+                                {
+                                    prop.configEntry.BoxedValue = value / 10f;
+                                    inputField.onValueChanged.ClearAll();
+                                    inputField.text = prop.configEntry.BoxedValue.ToString();
+                                    inputField.onValueChanged.AddListener(delegate (string _val)
+                                    {
+                                        if (float.TryParse(_val, out float result))
+                                            setSlider?.Invoke(result);
+                                    });
+                                };
+
+                                slider.onValueChanged.ClearAll();
+                                slider.value = (float)prop.configEntry.BoxedValue * 10f;
+                                slider.onValueChanged.AddListener(delegate (float _val)
+                                {
+                                    setInputField?.Invoke(_val / 10f);
+                                });
+
+                                inputField.onValueChanged.ClearAll();
                                 inputField.text = prop.configEntry.BoxedValue.ToString();
                                 inputField.onValueChanged.AddListener(delegate (string _val)
                                 {
-                                    if (LSHelpers.IsUsingInputField() && float.TryParse(_val, out float result))
-                                    {
-                                        prop.configEntry.BoxedValue = result;
-                                        slider.value = result;
-                                    }
+                                    if (float.TryParse(_val, out float result))
+                                        setSlider?.Invoke(result);
                                 });
 
                                 EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
@@ -11929,6 +11985,9 @@ namespace EditorManagement.Functions.Editors
                                     float max = float.PositiveInfinity;
                                     min = (float)prop.configEntry.Description.AcceptableValues.Clamp(min);
                                     max = (float)prop.configEntry.Description.AcceptableValues.Clamp(max);
+
+                                    slider.minValue = min * 10f;
+                                    slider.maxValue = max * 10f;
 
                                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField, 0.1f, 10f, min, max, false));
                                 }
