@@ -589,6 +589,20 @@ namespace EditorManagement.Functions.Helpers
 
 					if (RTEditor.inst.parentPickerEnabled && ObjectEditor.inst.CurrentSelection.IsBeatmapObject && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
 					{
+						if (RTEditor.inst.selectingMultiple)
+                        {
+							bool success = false;
+							foreach (var otherTimelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            {
+								success = SetParent(otherTimelineObject, timelineObject);
+                            }
+
+							if (!success)
+								EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
+
+							return;
+                        }
+
 						var dictionary = new Dictionary<string, bool>();
 
 						foreach (var obj in DataManager.inst.gameData.beatmapObjects)
@@ -640,7 +654,7 @@ namespace EditorManagement.Functions.Helpers
 			return entry;
 		}
 
-		public static void SetParent(TimelineObject timelineObject)
+		public static bool SetParent(TimelineObject currentSelection, TimelineObject timelineObjectToParentTo)
 		{
 			var dictionary = new Dictionary<string, bool>();
 
@@ -649,7 +663,7 @@ namespace EditorManagement.Functions.Helpers
 				bool flag = true;
 				if (!string.IsNullOrEmpty(obj.parent))
 				{
-					string parentID = ObjectEditor.inst.CurrentSelection.ID;
+					string parentID = currentSelection.ID;
 					while (!string.IsNullOrEmpty(parentID))
 					{
 						if (parentID == obj.parent)
@@ -672,21 +686,18 @@ namespace EditorManagement.Functions.Helpers
 					dictionary.Add(obj.id, flag);
 			}
 
-			if (dictionary.ContainsKey(ObjectEditor.inst.CurrentSelection.ID))
-				dictionary[ObjectEditor.inst.CurrentSelection.ID] = false;
+			if (dictionary.ContainsKey(currentSelection.ID))
+				dictionary[currentSelection.ID] = false;
 
-			if (dictionary.ContainsKey(timelineObject.ID) && dictionary[timelineObject.ID])
+			if (dictionary.ContainsKey(timelineObjectToParentTo.ID) && dictionary[timelineObjectToParentTo.ID])
 			{
-				ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().parent = timelineObject.ID;
-				Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+				currentSelection.GetData<BeatmapObject>().parent = timelineObjectToParentTo.ID;
+				Updater.UpdateProcessor(currentSelection.GetData<BeatmapObject>());
 
-				RTEditor.inst.parentPickerEnabled = false;
-				RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
+				RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(currentSelection.GetData<BeatmapObject>()));
 			}
-			else
-			{
-				EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
-			}
+
+			return dictionary.ContainsKey(timelineObjectToParentTo.ID) && dictionary[timelineObjectToParentTo.ID];
 		}
 
 		#endregion
