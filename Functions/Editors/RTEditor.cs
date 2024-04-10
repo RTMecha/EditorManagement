@@ -256,6 +256,8 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
 
+            var theme = EditorThemeManager.CurrentTheme;
+            var eventKeyframesRenderBinColor = EditorConfig.Instance.EventKeyframesRenderBinColor.Value;
             foreach (var timelineObject in timelineKeyframes)
             {
                 if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
@@ -268,10 +270,12 @@ namespace EditorManagement.Functions.Editors
 
                     if (active)
                     {
-                        var color = EventEditor.inst.EventColors[timelineObject.Type % RTEventEditor.EventLimit];
+                        var color = eventKeyframesRenderBinColor &&
+                            theme.ColorGroups.ContainsKey($"Event Color {timelineObject.Type % RTEventEditor.EventLimit + 1} Keyframe") ?
+                            theme.ColorGroups[$"Event Color {timelineObject.Type % RTEventEditor.EventLimit + 1} Keyframe"] : ObjEditor.inst.NormalColor;
                         color.a = 1f;
 
-                        timelineObject.Image.color = timelineObject.selected ? EventEditor.inst.Selected : color;
+                        timelineObject.Image.color = timelineObject.selected ? !eventKeyframesRenderBinColor ? ObjEditor.inst.SelectedColor : EventEditor.inst.Selected : color;
                     }
                 }
             }
@@ -12999,6 +13003,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.KeyframeEndLengthOffset),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.TimelineObjectPrefabTypeIcon),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EventLabelsRenderLeft),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.EventKeyframesRenderBinColor),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WaveformGenerate),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.WaveformRerender),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.WaveformMode),

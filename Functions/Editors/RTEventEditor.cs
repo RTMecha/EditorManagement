@@ -2,6 +2,7 @@
 using EditorManagement.Functions.Helpers;
 using LSFunctions;
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
@@ -20,8 +21,10 @@ namespace EditorManagement.Functions.Editors
     public class RTEventEditor : MonoBehaviour
 	{
 		public static RTEventEditor inst;
-		
+
 		#region Variables
+
+		public Transform eventEditorDialog;
 
 		public List<TimelineObject> SelectedKeyframes => RTEditor.inst.timelineKeyframes.FindAll(x => x.selected);
 
@@ -87,6 +90,7 @@ namespace EditorManagement.Functions.Editors
 
 		public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
         {
+			#region Layer 1
 			{ "- Move Editor -", new Color(0.3372549f, 0.2941177f, 0.4156863f, 1f) }, // 1
 			{ "- Zoom Editor -", new Color(0.254902f, 0.2705882f, 0.372549f, 1f) }, // 2
 			{ "- Rotation Editor -", new Color(0.2705882f, 0.3843138f, 0.4784314f, 1f) }, // 3
@@ -101,7 +105,9 @@ namespace EditorManagement.Functions.Editors
 			{ "- Ripples Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
 			{ "- Radial Blur Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
 			{ "- Color Split Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
-
+			#endregion
+			
+			#region Layer 2
 			{ "- Camera Offset Editor -", new Color(0.3372549f, 0.2941177f, 0.4156863f, 1f) }, // 1
 			{ "- Gradient Editor -", new Color(0.254902f, 0.2705882f, 0.372549f, 1f) }, // 2
 			{ "- Double Vision Editor -", new Color(0.2705882f, 0.3843138f, 0.4784314f, 1f) }, // 3
@@ -116,7 +122,9 @@ namespace EditorManagement.Functions.Editors
 			{ "- Audio Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
 			{ "- Video BG Parent Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
 			{ "- Video BG Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			#endregion
 			
+			#region Layer 3
 			{ "- Sharpen Editor -", new Color(0.3372549f, 0.2941177f, 0.4156863f, 1f) }, // 1
 			{ "- Bars Editor -", new Color(0.254902f, 0.2705882f, 0.372549f, 1f) }, // 2
 			{ "- Danger Editor -", new Color(0.2705882f, 0.3843138f, 0.4784314f, 1f) }, // 3
@@ -125,31 +133,48 @@ namespace EditorManagement.Functions.Editors
 			{ "- Window Base Editor -", new Color(0.1882353f, 0.3372549f, 0.3254902f, 1f) }, // 6
 			{ "- Window Position X Editor -", new Color(0.3137255f, 0.4117647f, 0.3176471f, 1f) }, // 7
 			{ "- Window Position Y Editor -", new Color(0.3176471f, 0.3686275f, 0.2588235f, 1f) }, // 8
-			{ "- Player Force Distort Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f) }, // 9
+			{ "- Player Force Editor -", new Color(0.4039216f, 0.4117647f, 0.2745098f, 1f) }, // 9
 			{ "- Mosaic Editor -", new Color(0.4470589f, 0.3882353f, 0.2117647f, 1f) }, // 10
 			{ "- ??? 1 Editor -", new Color(1f, 0.5960785f, 0f, 1f) }, // 11
 			{ "- ??? 2 Editor -", new Color(1f, 0.3490196f, 0f, 1f) }, // 12
 			{ "- ??? 3 Editor -", new Color(1f, 0.1490196f, 0.03529412f, 1f) }, // 13
 			{ "- ??? 4 Editor -", new Color(1f, 0.05882353f, 0.05882353f, 1f) }, // 14
+			#endregion
         };
 
 		public static List<Color> EventLayerColors => new List<Color>
 		{
-			new Color(0.4039216f, 0.227451f, 0.7176471f, 0.5f),
-			new Color(0.2470588f, 0.3176471f, 0.7098039f, 0.5f),
-			new Color(0.1294118f, 0.5882353f, 0.9529412f, 0.5f),
-			new Color(0.01176471f, 0.6627451f, 0.9568628f, 0.5f),
-			new Color(0f, 0.7372549f, 0.8313726f, 0.5f),
-			new Color(0f, 0.5882353f, 0.5333334f, 0.5f),
-			new Color(0.2980392f, 0.6862745f, 0.3137255f, 0.5f),
-			new Color(0.4862745f, 0.7019608f, 0.2588235f, 0.5f),
-			new Color(0.6862745f, 0.7058824f, 0.1686275f, 0.5f),
-			new Color(1f, 0.7568628f, 0.02745098f, 0.5f),
-			new Color(1f, 0.5960785f, 0f, 0.5f),
-			new Color(0.7267f, 0.3796f, 0f, 0.5f),
-			new Color(0.6980392f, 0.1411765f, 0.06666667f, 0.5f),
-			new Color(0.6980392f, 0.145098f, 0.145098f, 0.5f),
-			new Color(0.3921569f, 0.7098039f, 0.9647059f, 0.5f),
+			LSColors.HexToColorAlpha("564B6A7F"), // 1
+			LSColors.HexToColorAlpha("41445E7F"), // 2
+			LSColors.HexToColorAlpha("44627A7F"), // 3
+			LSColors.HexToColorAlpha("315B6E7F"), // 4
+			LSColors.HexToColorAlpha("3E6D73FF"), // 5
+			LSColors.HexToColorAlpha("305653FF"), // 6
+			LSColors.HexToColorAlpha("5069517F"), // 7
+			LSColors.HexToColorAlpha("515E417F"), // 8
+			LSColors.HexToColorAlpha("6769457F"), // 9
+			LSColors.HexToColorAlpha("7263357F"), // 10
+			LSColors.HexToColorAlpha("FF98007F"), // 11
+			LSColors.HexToColorAlpha("FF58007F"), // 12
+			LSColors.HexToColorAlpha("FF25097F"), // 13
+			LSColors.HexToColorAlpha("FF0F0F7F"), // 14
+			LSColors.HexToColorAlpha("64B4F67F"), // 15
+
+			//new Color(0.4039216f, 0.227451f, 0.7176471f, 0.5f),
+			//new Color(0.2470588f, 0.3176471f, 0.7098039f, 0.5f),
+			//new Color(0.1294118f, 0.5882353f, 0.9529412f, 0.5f),
+			//new Color(0.01176471f, 0.6627451f, 0.9568628f, 0.5f),
+			//new Color(0f, 0.7372549f, 0.8313726f, 0.5f),
+			//new Color(0f, 0.5882353f, 0.5333334f, 0.5f),
+			//new Color(0.2980392f, 0.6862745f, 0.3137255f, 0.5f),
+			//new Color(0.4862745f, 0.7019608f, 0.2588235f, 0.5f),
+			//new Color(0.6862745f, 0.7058824f, 0.1686275f, 0.5f),
+			//new Color(1f, 0.7568628f, 0.02745098f, 0.5f),
+			//new Color(1f, 0.5960785f, 0f, 0.5f),
+			//new Color(0.7267f, 0.3796f, 0f, 0.5f),
+			//new Color(0.6980392f, 0.1411765f, 0.06666667f, 0.5f),
+			//new Color(0.6980392f, 0.145098f, 0.145098f, 0.5f),
+			//new Color(0.3921569f, 0.7098039f, 0.9647059f, 0.5f),
 		};
 
 		public static bool EventsCore => ModCompatibility.mods.ContainsKey("EventsCore");
@@ -158,6 +183,9 @@ namespace EditorManagement.Functions.Editors
 		public Dictionary<string, GameObject> uiDictionary = new Dictionary<string, GameObject>();
 
 		public bool debug = false;
+
+		public List<Image> EventBins { get; set; } = new List<Image>();
+		public List<Text> EventLabels { get; set; } = new List<Text>();
 
 		#endregion
 
@@ -173,16 +201,301 @@ namespace EditorManagement.Functions.Editors
         {
             inst = this;
 
+			eventEditorDialog = EditorManager.inst.GetDialog("Event Editor").Dialog;
 			EventEditor.inst.EventColors = EventLayerColors;
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Dialog", "Background 3", eventEditorDialog.gameObject, new List<Component>
+			{
+				eventEditorDialog.GetComponent<Image>(),
+			}));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Dialog Right", "Background", EventEditor.inst.dialogRight.gameObject, new List<Component>
+			{
+				EventEditor.inst.dialogRight.GetComponent<Image>(),
+			}));
 
 			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
 			{
 				var dialog = EventEditor.inst.dialogRight.GetChild(i);
 				dialog.gameObject.SetActive(false);
-				dialog.Find("curves_label").GetChild(0).GetComponent<Text>().text = "Ease Type";
+                dialog.Find("curves_label").GetChild(0).GetComponent<Text>().text = "Ease Type";
+
+				var topPanel = dialog.GetChild(0);
+				var bg = topPanel.GetChild(0).GetComponent<Image>();
+				var title = topPanel.GetChild(1).GetComponent<Text>();
+				bg.gameObject.AddComponent<ContrastColors>().Init(title, bg);
+
+				var edit = dialog.Find("edit");
+				for (int j = 0; j < edit.childCount; j++)
+                {
+					var button = edit.GetChild(j);
+					var buttonComponent = button.GetComponent<Button>();
+
+					if (!buttonComponent)
+						continue;
+
+					if (button.name == "del")
+                    {
+						var buttonBG = button.GetChild(0).GetComponent<Image>();
+
+						EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete BG", "Delete Keyframe BG", buttonBG.gameObject, new List<Component>
+						{
+							buttonBG,
+						}));
+						
+						EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete", "Delete Keyframe Button", buttonBG.gameObject, new List<Component>
+						{
+							buttonComponent,
+							buttonComponent.image,
+						}, isSelectable: true));
+
+						continue;
+                    }
+
+					Destroy(button.GetComponent<Animator>());
+					buttonComponent.transition = Selectable.Transition.ColorTint;
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
+					{
+						buttonComponent,
+						buttonComponent.image
+					}, isSelectable: true));
+				}
+
+				// Labels
+				for (int j = 0; j < dialog.childCount; j++)
+                {
+					var label = dialog.GetChild(j);
+					if (label.name == "label" || label.name == "curves_label")
+                    {
+						for (int k = 0; k < label.childCount; k++)
+                        {
+							var labelText = label.GetChild(k).GetComponent<Text>();
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", labelText.gameObject, new List<Component>
+							{
+								labelText,
+							}));
+                        }
+                    }
+                }
+
+				var timeBase = dialog.Find("time");
+				var timeInput = timeBase.Find("time").GetComponent<InputField>();
+
+				EditorThemeManager.AddInputField(timeInput, "Event Editor Time", "Input Field");
+
+				for (int j = 1; j < timeBase.childCount; j++)
+				{
+					var button = timeBase.GetChild(j);
+					var buttonComponent = button.GetComponent<Button>();
+
+					if (!buttonComponent)
+						continue;
+
+					Destroy(button.GetComponent<Animator>());
+					buttonComponent.transition = Selectable.Transition.ColorTint;
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
+					{
+						buttonComponent,
+						buttonComponent.image
+					}, isSelectable: true));
+				}
+
+				#region Easing Dropdown
+
+				var easing = dialog.Find("curves").GetComponent<Dropdown>();
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing", "Dropdown 1", easing.gameObject, new List<Component>
+				{
+					easing.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Text", "Dropdown 1 Overlay", easing.captionText.gameObject, new List<Component>
+				{
+					easing.captionText,
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Arrow", "Dropdown 1 Overlay", easing.transform.Find("Arrow").gameObject, new List<Component>
+				{
+					easing.transform.Find("Arrow").gameObject.GetComponent<Image>(),
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Preview", "Dropdown 1 Overlay", easing.captionImage.gameObject, new List<Component>
+				{
+					easing.captionImage,
+				}));
+
+				var template = easing.transform.Find("Template").gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1", template, new List<Component>
+				{
+					template.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.Bottom));
+
+				var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1 Item", templateItem, new List<Component>
+				{
+					templateItem.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
+				{
+					templateItemCheckmark.GetComponent<Image>(),
+				}));
+
+				var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
+				{
+					templateItemLabel.GetComponent<Text>(),
+				}));
+
+				#endregion
+
+				switch (i)
+                {
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 5:
+					case 6:
+					case 8:
+                        {
+							var valueNames = new Dictionary<int, string>
+							{
+								{ 0, "position" },
+								{ 1, "zoom" },
+								{ 2, "rotation" },
+								{ 3, "shake" },
+								{ 5, "chroma" },
+								{ 6, "bloom" },
+								{ 8, "lens" },
+							};
+
+                            var positionBase = dialog.Find(valueNames[i]);
+							EditorThemeManager.AddInputFields(positionBase.gameObject, true, "Event Editor");
+
+							break;
+                        }
+					case 4:
+                        {
+							var themesSearch = dialog.Find("theme-search").GetComponent<InputField>();
+
+							EditorThemeManager.AddInputField(themesSearch, "Event Editor Theme Search", "Search Field 2");
+
+							var themes = dialog.Find("themes").GetComponent<Image>();
+
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes", "Background 3", themes.gameObject, new List<Component>
+							{
+								themes,
+							}));
+
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes Mask", "", dialog.Find("themes/viewport").gameObject, new List<Component>
+							{
+								dialog.Find("themes/viewport").GetComponent<Image>(),
+							}, true, 1, SpriteManager.RoundedSide.W));
+
+							var scrollbar = themes.transform.Find("Scrollbar Vertical").GetComponent<Scrollbar>();
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
+							{
+								scrollbar.GetComponent<Image>(),
+							}, true, 1, SpriteManager.RoundedSide.W));
+
+							var scrollbarHandle = scrollbar.handleRect.gameObject;
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
+							{
+								scrollbar.image,
+								scrollbar
+							}, true, 1, SpriteManager.RoundedSide.W, true));
+
+							var current = dialog.Find("current_title");
+
+							for (int k = 0; k < current.childCount; k++)
+							{
+								var labelText = current.GetChild(k).GetComponent<Text>();
+								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", labelText.gameObject, new List<Component>
+								{
+									labelText,
+								}));
+							}
+
+							var objectCols = dialog.Find("object_cols/text").GetComponent<Text>();
+							var bgCols = dialog.Find("bg_cols/text").GetComponent<Text>();
+							var playerCols = dialog.Find("player_cols/text").GetComponent<Text>();
+
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", objectCols.gameObject, new List<Component>
+							{
+								objectCols,
+							}));
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", bgCols.gameObject, new List<Component>
+							{
+								bgCols,
+							}));
+							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", playerCols.gameObject, new List<Component>
+							{
+								playerCols,
+							}));
+
+							break;
+                        }
+					case 7:
+					case 9:
+						{
+							var valueNames = new List<string>
+							{
+								"intensity",
+								"size",
+								"colored",
+							};
+
+							if (i == 7)
+                            {
+								valueNames = new List<string>
+								{
+									"intensity",
+									"smoothness",
+									"roundness",
+									"position",
+								};
+							}
+
+							for (int j = 0; j < valueNames.Count; j++)
+							{
+								var positionBase = dialog.Find(valueNames[j]);
+
+								if (valueNames[j] == "colored" || valueNames[j] == "roundness")
+								{
+									var toggle = dialog.Find(valueNames[j] == "colored" ? "colored" : "roundness/rounded").GetComponent<Toggle>();
+									EditorThemeManager.AddToggle(toggle, "Event Editor Toggle");
+
+									if (valueNames[j] == "colored")
+										continue;
+								}
+
+								EditorThemeManager.AddInputFields(positionBase.gameObject, true, "Event Editor", false, valueNames[j] == "position");
+							}
+
+							break;
+                        }
+                }
 			}
 
+            var detector = EditorManager.inst.GetDialog("Event Editor").Dialog.gameObject.AddComponent<Clickable>();
+			detector.onEnable = delegate (bool _val)
+			{
+				if (!_val)
+					for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
+						EventEditor.inst.dialogRight.GetChild(i).gameObject.SetActive(false);
+			};
+
 			SetupCopies();
+
+			for (int i = 0; i < 15; i++)
+			{
+				EventBins.Add(EventEditor.inst.EventLabels.transform.GetChild(i).GetComponent<Image>());
+				EventLabels.Add(EventEditor.inst.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>());
+			}
 		}
 
 		#region Deleting
@@ -639,59 +952,17 @@ namespace EditorManagement.Functions.Editors
 
 		#region Generate UI
 
-		public void OpenDialog()
-		{
-			if (SelectedKeyframes.Count > 1 && !SelectedKeyframes.All(x => x.Type == SelectedKeyframes.Min(y => y.Type)))
-			{
-				EditorManager.inst.ClearDialogs();
-				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
-				RenderMultiEventsDialog();
-			}
-			else if (SelectedKeyframes.Count > 0)
-			{
-				EditorManager.inst.ClearDialogs();
-				EditorManager.inst.SetDialogStatus("Event Editor", true);
-
-				EventEditor.inst.currentEventType = SelectedKeyframes[0].Type;
-				EventEditor.inst.currentEvent = SelectedKeyframes[0].Index;
-
-				if (EventEditor.inst.dialogRight.childCount > EventEditor.inst.currentEventType)
-				{
-					Debug.Log($"{EventEditor.inst.className}Dialog: {EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).name}");
-					LSHelpers.SetActiveChildren(EventEditor.inst.dialogRight, false);
-					EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).gameObject.SetActive(true);
-					RenderEventsDialog();
-					RenderEventObjects();
-				}
-				else
-				{
-					Debug.LogError($"{EventEditor.inst.className}Keyframe Type {EventEditor.inst.currentEventType} does not exist.");
-				}
-			}
-			else
-            {
-				CheckpointEditor.inst.SetCurrentCheckpoint(0);
-            }
-		}
-
 		void SetupCopies()
 		{
-			if (!EventsCore)
-				return;
-
 			var gameObject = new GameObject("UI Dictionary");
 			eventCopies = gameObject.transform;
+			eventCopies.transform.SetParent(transform);
 
 			var uiCopy = Instantiate(EventEditor.inst.dialogRight.Find("grain").gameObject);
 			uiCopy.transform.SetParent(eventCopies);
 
 			while (uiCopy.transform.childCount > 8)
 				DestroyImmediate(uiCopy.transform.GetChild(uiCopy.transform.childCount - 1).gameObject);
-
-			//for (int i = 8; i < 14; i++)
-			//{
-			//	DestroyImmediate(uiCopy.transform.GetChild(i).gameObject);
-			//}
 
 			uiDictionary.Add("UI Copy", uiCopy);
 
@@ -790,14 +1061,18 @@ namespace EditorManagement.Functions.Editors
         {
 			LSHelpers.DeleteChildren(parent);
 
-			var label = uiDictionary["Label"].transform.GetChild(0).gameObject;
+			var labelToCopy = uiDictionary["Label"].transform.GetChild(0).gameObject;
 			for (int i = 0; i < labels.Length; i++)
 			{
-				var l = Instantiate(label);
-				l.name = "label";
-				l.transform.SetParent(parent);
-				l.transform.localScale = Vector3.one;
-				l.transform.GetComponent<Text>().text = labels[i];
+				var label = labelToCopy.Duplicate(parent, "label");
+				label.transform.localScale = Vector3.one;
+				var labelText = label.GetComponent<Text>();
+				labelText.text = labels[i];
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", label, new List<Component>
+				{
+					labelText
+				}));
 			}
         }
 
@@ -806,18 +1081,12 @@ namespace EditorManagement.Functions.Editors
 			if (!uiDictionary.ContainsKey(toCopy))
 				return null;
 
-			var l = Instantiate(uiDictionary["Label"]);
-			l.name = "label";
-			l.transform.SetParent(parent);
+			var l = uiDictionary["Label"].Duplicate(parent, "label", index);
 			l.transform.localScale = Vector3.one;
-			l.transform.SetSiblingIndex(index);
 			GenerateLabels(l.transform, labels);
 
-			var copy = Instantiate(uiDictionary[toCopy]);
-			copy.name = name;
-			copy.transform.SetParent(parent);
+			var copy = uiDictionary[toCopy].Duplicate(parent, name, index + 1);
 			copy.transform.localScale = Vector3.one;
-			copy.transform.SetSiblingIndex(index + 1);
 
 			return new Dictionary<string, GameObject>()
             {
@@ -833,19 +1102,150 @@ namespace EditorManagement.Functions.Editors
 			dialog.transform.localScale = Vector3.one;
 			dialog.name = name;
 
-			var dropdown = dialog.transform.Find("curves").GetComponent<Dropdown>();
+			var easing = dialog.transform.Find("curves").GetComponent<Dropdown>();
 
-			TriggerHelper.AddEventTriggerParams(dropdown.gameObject, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
+			TriggerHelper.AddEventTriggerParams(easing.gameObject, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
 			{
 				if (!EditorConfig.Instance.ScrollOnEasing.Value)
 					return;
 
 				var pointerEventData = (PointerEventData)baseEventData;
 				if (pointerEventData.scrollDelta.y > 0f)
-					dropdown.value = dropdown.value == 0 ? dropdown.options.Count - 1 : dropdown.value - 1;
+					easing.value = easing.value == 0 ? easing.options.Count - 1 : easing.value - 1;
 				if (pointerEventData.scrollDelta.y < 0f)
-					dropdown.value = dropdown.value == dropdown.options.Count - 1 ? 0 : dropdown.value + 1;
+					easing.value = easing.value == easing.options.Count - 1 ? 0 : easing.value + 1;
 			}));
+
+
+			var topPanel = dialog.transform.GetChild(0);
+			var bg = topPanel.GetChild(0).GetComponent<Image>();
+			var title = topPanel.GetChild(1).GetComponent<Text>();
+			bg.gameObject.AddComponent<ContrastColors>().Init(title, bg);
+
+			var edit = dialog.transform.Find("edit");
+			for (int j = 0; j < edit.childCount; j++)
+			{
+				var button = edit.GetChild(j);
+				var buttonComponent = button.GetComponent<Button>();
+
+				if (!buttonComponent)
+					continue;
+
+				if (button.name == "del")
+				{
+					var buttonBG = button.GetChild(0).GetComponent<Image>();
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete BG", "Delete Keyframe BG", buttonBG.gameObject, new List<Component>
+						{
+							buttonBG,
+						}));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete", "Delete Keyframe Button", buttonBG.gameObject, new List<Component>
+						{
+							buttonComponent,
+							buttonComponent.image,
+						}, isSelectable: true));
+
+					continue;
+				}
+
+				Destroy(button.GetComponent<Animator>());
+				buttonComponent.transition = Selectable.Transition.ColorTint;
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
+					{
+						buttonComponent,
+						buttonComponent.image
+					}, isSelectable: true));
+			}
+
+			// Labels
+			for (int j = 0; j < dialog.transform.childCount; j++)
+			{
+				var label = dialog.transform.GetChild(j);
+				if (label.name == "label" || label.name == "curves_label")
+				{
+					for (int k = 0; k < label.childCount; k++)
+					{
+						var labelText = label.GetChild(k).GetComponent<Text>();
+						EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", labelText.gameObject, new List<Component>
+							{
+								labelText,
+							}));
+					}
+				}
+			}
+
+			var timeBase = dialog.transform.Find("time");
+			var timeInput = timeBase.Find("time").GetComponent<InputField>();
+
+			EditorThemeManager.AddInputField(timeInput, "Event Editor Time", "Input Field");
+
+			for (int j = 1; j < timeBase.childCount; j++)
+			{
+				var button = timeBase.GetChild(j);
+				var buttonComponent = button.GetComponent<Button>();
+
+				if (!buttonComponent)
+					continue;
+
+				Destroy(button.GetComponent<Animator>());
+				buttonComponent.transition = Selectable.Transition.ColorTint;
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
+					{
+						buttonComponent,
+						buttonComponent.image
+					}, isSelectable: true));
+			}
+
+			#region Easing Dropdown
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing", "Dropdown 1", easing.gameObject, new List<Component>
+			{
+				easing.image,
+			}, true, 1, SpriteManager.RoundedSide.W));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Text", "Dropdown 1 Overlay", easing.captionText.gameObject, new List<Component>
+			{
+				easing.captionText,
+			}));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Arrow", "Dropdown 1 Overlay", easing.transform.Find("Arrow").gameObject, new List<Component>
+			{
+				easing.transform.Find("Arrow").gameObject.GetComponent<Image>(),
+			}));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Preview", "Dropdown 1 Overlay", easing.captionImage.gameObject, new List<Component>
+			{
+				easing.captionImage,
+			}));
+
+			var template = easing.transform.Find("Template").gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1", template, new List<Component>
+			{
+				template.GetComponent<Image>(),
+			}, true, 1, SpriteManager.RoundedSide.Bottom));
+
+			var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1 Item", templateItem, new List<Component>
+			{
+				templateItem.GetComponent<Image>(),
+			}, true, 1, SpriteManager.RoundedSide.W));
+
+			var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
+			{
+				templateItemCheckmark.GetComponent<Image>(),
+			}));
+
+			var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
+			{
+				templateItemLabel.GetComponent<Text>(),
+			}));
+
+			#endregion
 
 			return dialog;
 		}
@@ -862,12 +1262,24 @@ namespace EditorManagement.Functions.Editors
 
 			for (int i = 0; i < colorCount; i++)
 			{
-				GameObject toggle = uiDictionary["Color Button"].Duplicate(colorsObject.transform, (i + 1).ToString());
+				var toggle = uiDictionary["Color Button"].Duplicate(colorsObject.transform, (i + 1).ToString());
 
-				toggle.GetComponent<Image>().enabled = true;
-				toggle.transform.Find("Image").GetComponent<Image>().color = new Color(0.1294f, 0.1294f, 0.1294f);
 				var t = toggle.GetComponent<Toggle>();
+				t.image.enabled = true;
 				t.enabled = true;
+
+				toggle.AddComponent<Mask>();
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color Toggle Background", "Background", toggle, new List<Component>
+				{
+					t.graphic
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color Toggle", "", toggle, new List<Component>
+				{
+					t.image
+				}, true, 1, SpriteManager.RoundedSide.W));
+
 				toggles.Add(t);
 			}
 
@@ -876,518 +1288,661 @@ namespace EditorManagement.Functions.Editors
 
 		void GenerateEventDialogs()
 		{
-			Log($"{EventEditor.inst.className}Modifying Shake Event");
-			var shake = EventEditor.inst.dialogRight.Find("shake");
-            {
-				var direction = GenerateUIElement("direction", "Vector2", shake, 10, "Direction X", "Direction Y");
-
-				var labelBase = Instantiate(uiDictionary["Label"]);
-				labelBase.name = "label";
-				labelBase.transform.SetParent(shake);
-				labelBase.transform.localScale = Vector3.one;
-				labelBase.transform.AsRT().sizeDelta = new Vector2(366f, 42f);
-
-				LSHelpers.DeleteChildren(labelBase.transform);
-
-				var label = Instantiate(uiDictionary["Label"].transform.GetChild(0).gameObject);
-				label.name = "label";
-				label.transform.SetParent(labelBase.transform);
-				label.transform.localScale = Vector3.one;
-				label.transform.AsRT().sizeDelta = new Vector2(366f, 42f);
-				var labelText = label.transform.GetComponent<Text>();
-				labelText.text = "FEATURES BELOW ARE WIP & SUBJECT TO CHANGE (Requires Catalyst Shake)";
-
-				var interpolation = GenerateUIElement("interpolation", "Single", shake, 13, "Interpolation");
-				var speed = GenerateUIElement("speed", "Single", shake, 15, "Speed");
-            }
-
-			Log($"{EventEditor.inst.className}Modifying Bloom Event");
-			var bloom = EventEditor.inst.dialogRight.Find("bloom");
-            {
-				var diffusion = GenerateUIElement("diffusion", "Single", bloom, 10, "Diffusion");
-				var threshold = GenerateUIElement("threshold", "Single", bloom, 12, "Threshold");
-				var ratio = GenerateUIElement("anamorphic ratio", "Single", bloom, 14, "Anamorphic Ratio");
-				var colors = SetupColorButtons("colors", "Colors", bloom, 16, bloomColorButtons);
-			}
-
-			Log($"{EventEditor.inst.className}Modifying Vignette Event");
-			var vignette = EventEditor.inst.dialogRight.Find("vignette");
+			if (EventsCore)
 			{
-				var colors = SetupColorButtons("colors", "Colors", vignette, 18, vignetteColorButtons);
-			}
+				var shake = EventEditor.inst.dialogRight.Find("shake");
+				{
+					var direction = GenerateUIElement("direction", "Vector2", shake, 10, "Direction X", "Direction Y");
 
-			Log($"{EventEditor.inst.className}Modifying Lens Event");
-			var lens = EventEditor.inst.dialogRight.Find("lens");
-            {
-				var center = GenerateUIElement("center", "Vector2", lens, 10, "Center X", "Center Y");
-				var intensity = GenerateUIElement("intensity", "Vector2", lens, 12, "Intensity X", "Intensity Y");
-				var scale = GenerateUIElement("scale", "Single", lens, 14, "Scale");
-            }
+					var labelBase = Instantiate(uiDictionary["Label"]);
+					labelBase.name = "label";
+					labelBase.transform.SetParent(shake);
+					labelBase.transform.localScale = Vector3.one;
+					labelBase.transform.AsRT().sizeDelta = new Vector2(366f, 42f);
 
-			Log($"{EventEditor.inst.className}Generating ColorGrading Event");
-			var colorGrading = GenerateEventDialog("colorgrading");
-			{
-				var hueShift = GenerateUIElement("hueshift", "Single", colorGrading.transform, 8, "Hueshift");
-				var contrast = GenerateUIElement("contrast", "Single", colorGrading.transform, 10, "Contrast");
-				var gamma = GenerateUIElement("gamma", "Vector4", colorGrading.transform, 12, "Gamma X", "Gamma Y", "Gamma Z", "Gamma W");
-				var saturation = GenerateUIElement("saturation", "Single", colorGrading.transform, 12, "Saturation");
-				var temperature = GenerateUIElement("temperature", "Single", colorGrading.transform, 14, "Temperature");
-				var tint = GenerateUIElement("tint", "Single", colorGrading.transform, 16, "Tint");
-			}
+					LSHelpers.DeleteChildren(labelBase.transform);
 
-			Log($"{EventEditor.inst.className}Generating Ripples Event");
-			var ripples = GenerateEventDialog("ripples");
-			{
-				var strength = GenerateUIElement("strength", "Single", ripples.transform, 8, "Strength");
-				var speed = GenerateUIElement("speed", "Single", ripples.transform, 10, "Speed");
-				var distance = GenerateUIElement("distance", "Single", ripples.transform, 12, "Distance");
-				var size = GenerateUIElement("size", "Vector2", ripples.transform, 14, "Height", "Width");
-			}
+					var label = Instantiate(uiDictionary["Label"].transform.GetChild(0).gameObject);
+					label.name = "label";
+					label.transform.SetParent(labelBase.transform);
+					label.transform.localScale = Vector3.one;
+					label.transform.AsRT().sizeDelta = new Vector2(366f, 42f);
+					var labelText = label.GetComponent<Text>();
+					labelText.text = "FEATURES BELOW ARE WIP & SUBJECT TO CHANGE (Requires Catalyst Shake)";
 
-			Log($"{EventEditor.inst.className}Generating RadialBlur Event");
-			var radialBlur = GenerateEventDialog("radialblur");
-            {
-				var intensity = GenerateUIElement("intensity", "Single", radialBlur.transform, 8, "Intensity");
-				var iterations = GenerateUIElement("iterations", "Single", radialBlur.transform, 10, "Iterations");
-            }
+					var interpolation = GenerateUIElement("interpolation", "Single", shake, 13, "Interpolation");
+					var speed = GenerateUIElement("speed", "Single", shake, 15, "Speed");
 
-            Log($"{EventEditor.inst.className}Generating ColorSplit Event");
-			var colorSplit = GenerateEventDialog("colorsplit");
-            {
-				var offset = GenerateUIElement("offset", "Single", colorSplit.transform, 8, "Offset");
-            }
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", label, new List<Component>
+				{
+					labelText,
+				}));
+					EditorThemeManager.AddInputFields(direction["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(interpolation["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(speed["UI"], true, "Event Editor");
+				}
 
-			Log($"{EventEditor.inst.className}Generating Offset Event");
-			var cameraOffset = GenerateEventDialog("camoffset");
-            {
-				var position = GenerateUIElement("position", "Vector2", cameraOffset.transform, 8, "Offset X", "Offset Y");
-            }
+				var bloom = EventEditor.inst.dialogRight.Find("bloom");
+				{
+					var diffusion = GenerateUIElement("diffusion", "Single", bloom, 10, "Diffusion");
+					var threshold = GenerateUIElement("threshold", "Single", bloom, 12, "Threshold");
+					var ratio = GenerateUIElement("anamorphic ratio", "Single", bloom, 14, "Anamorphic Ratio");
+					var colors = SetupColorButtons("colors", "Colors", bloom, 16, bloomColorButtons);
 
-			Log($"{EventEditor.inst.className}Generating Gradient Event");
-			var gradient = GenerateEventDialog("gradient");
-            {
-				var intensity = GenerateUIElement("introt", "Vector2", gradient.transform, 8, "Intensity", "Rotation");
-				var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons, 20);
-				var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 12, gradientColor2Buttons, 20);
+					EditorThemeManager.AddInputFields(diffusion["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(threshold["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(ratio["UI"], true, "Event Editor");
+				}
 
-				var modeLabel = intensity["Label"].Duplicate(gradient.transform);
-                GenerateLabels(modeLabel.transform, "Mode");
+				var vignette = EventEditor.inst.dialogRight.Find("vignette");
+				{
+					var colors = SetupColorButtons("colors", "Colors", vignette, 18, vignetteColorButtons);
+				}
 
-				var mode = gradient.transform.Find("curves").gameObject.Duplicate(gradient.transform, "mode");
-				mode.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
+				var lens = EventEditor.inst.dialogRight.Find("lens");
+				{
+					var center = GenerateUIElement("center", "Vector2", lens, 10, "Center X", "Center Y");
+					var intensity = GenerateUIElement("intensity", "Vector2", lens, 12, "Intensity X", "Intensity Y");
+					var scale = GenerateUIElement("scale", "Single", lens, 14, "Scale");
+
+					EditorThemeManager.AddInputFields(center["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
+				}
+
+				var colorGrading = GenerateEventDialog("colorgrading");
+				{
+					var hueShift = GenerateUIElement("hueshift", "Single", colorGrading.transform, 8, "Hueshift");
+					var contrast = GenerateUIElement("contrast", "Single", colorGrading.transform, 10, "Contrast");
+					var gamma = GenerateUIElement("gamma", "Vector4", colorGrading.transform, 12, "Gamma X", "Gamma Y", "Gamma Z", "Gamma W");
+					var saturation = GenerateUIElement("saturation", "Single", colorGrading.transform, 12, "Saturation");
+					var temperature = GenerateUIElement("temperature", "Single", colorGrading.transform, 14, "Temperature");
+					var tint = GenerateUIElement("tint", "Single", colorGrading.transform, 16, "Tint");
+
+					EditorThemeManager.AddInputFields(hueShift["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(contrast["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(gamma["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(saturation["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(temperature["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(tint["UI"], true, "Event Editor");
+				}
+
+				var ripples = GenerateEventDialog("ripples");
+				{
+					var strength = GenerateUIElement("strength", "Single", ripples.transform, 8, "Strength");
+					var speed = GenerateUIElement("speed", "Single", ripples.transform, 10, "Speed");
+					var distance = GenerateUIElement("distance", "Single", ripples.transform, 12, "Distance");
+					var size = GenerateUIElement("size", "Vector2", ripples.transform, 14, "Height", "Width");
+
+					EditorThemeManager.AddInputFields(strength["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(speed["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(distance["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(size["UI"], true, "Event Editor");
+				}
+
+				var radialBlur = GenerateEventDialog("radialblur");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", radialBlur.transform, 8, "Intensity");
+					var iterations = GenerateUIElement("iterations", "Single", radialBlur.transform, 10, "Iterations");
+
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(iterations["UI"], true, "Event Editor");
+				}
+
+				var colorSplit = GenerateEventDialog("colorsplit");
+				{
+					var offset = GenerateUIElement("offset", "Single", colorSplit.transform, 8, "Offset");
+					EditorThemeManager.AddInputFields(offset["UI"], true, "Event Editor");
+				}
+
+				var cameraOffset = GenerateEventDialog("camoffset");
+				{
+					var position = GenerateUIElement("position", "Vector2", cameraOffset.transform, 8, "Offset X", "Offset Y");
+					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+				}
+
+				var gradient = GenerateEventDialog("gradient");
+				{
+					var intensity = GenerateUIElement("introt", "Vector2", gradient.transform, 8, "Intensity", "Rotation");
+					var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons, 20);
+					var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 12, gradientColor2Buttons, 20);
+
+					var modeLabel = intensity["Label"].Duplicate(gradient.transform);
+					GenerateLabels(modeLabel.transform, "Mode");
+
+					var mode = gradient.transform.Find("curves").gameObject.Duplicate(gradient.transform, "mode");
+					var modeDropdown = mode.GetComponent<Dropdown>();
+					modeDropdown.options = new List<Dropdown.OptionData>
 				{
 					new Dropdown.OptionData("Linear"),
 					new Dropdown.OptionData("Additive"),
 					new Dropdown.OptionData("Multiply"),
 					new Dropdown.OptionData("Screen"),
 				};
-			}
 
-			Log($"{EventEditor.inst.className}Generating DoubleVision Event");
-			var doubleVision = GenerateEventDialog("doublevision");
-            {
-				var intensity = GenerateUIElement("intensity", "Single", doubleVision.transform, 8, "Intensity");
-            }
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddDropdown(modeDropdown, "Event Editor Gradient Mode");
+				}
 
-			Log($"{EventEditor.inst.className}Generating ScanLines Event");
-			var scanLines = GenerateEventDialog("scanlines");
-            {
-                var intensity = GenerateUIElement("intensity", "Single", scanLines.transform, 8, "Intensity");
-                var amount = GenerateUIElement("amount", "Single", scanLines.transform, 10, "Amount Horizontal");
-                var speed = GenerateUIElement("speed", "Single", scanLines.transform, 12, "Speed");
-            }
+				var doubleVision = GenerateEventDialog("doublevision");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", doubleVision.transform, 8, "Intensity");
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+				}
 
-			Log($"{EventEditor.inst.className}Generating Blur Event");
-			var blur = GenerateEventDialog("blur");
-            {
-				var intensity = GenerateUIElement("intensity", "Single", blur.transform, 8, "Intensity");
-				var iterations = GenerateUIElement("iterations", "Single", blur.transform, 10, "Iterations");
-            }
+				var scanLines = GenerateEventDialog("scanlines");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", scanLines.transform, 8, "Intensity");
+					var amount = GenerateUIElement("amount", "Single", scanLines.transform, 10, "Amount Horizontal");
+					var speed = GenerateUIElement("speed", "Single", scanLines.transform, 12, "Speed");
 
-			Log($"{EventEditor.inst.className}Generating Pixelize Event");
-			var pixelize = GenerateEventDialog("pixelize");
-            {
-				var amount = GenerateUIElement("amount", "Single", pixelize.transform, 8, "Amount");
-			}
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(amount["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(speed["UI"], true, "Event Editor");
+				}
 
-			Log($"{EventEditor.inst.className}Generating BG Event");
-			var bg = GenerateEventDialog("bg");
-            {
-				var colors = SetupColorButtons("colors", "Colors", bg.transform, 8, bgColorButtons);
+				var blur = GenerateEventDialog("blur");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", blur.transform, 8, "Intensity");
+					var iterations = GenerateUIElement("iterations", "Single", blur.transform, 10, "Iterations");
 
-				var active = GenerateUIElement("active", "Bool", bg.transform, 10, "Background Objects Active");
-				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Active";
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(iterations["UI"], true, "Event Editor");
+				}
 
-			}
+				var pixelize = GenerateEventDialog("pixelize");
+				{
+					var amount = GenerateUIElement("amount", "Single", pixelize.transform, 8, "Amount");
 
-			Log($"{EventEditor.inst.className}Generating Invert Event");
-			var invert = GenerateEventDialog("invert");
-            {
-				var intensity = GenerateUIElement("amount", "Single", invert.transform, 8, "Invert Amount");
-            }
+					EditorThemeManager.AddInputFields(amount["UI"], true, "Event Editor");
+				}
 
-			Log($"{EventEditor.inst.className}Generating Timeline Event");
-			var timeline = GenerateEventDialog("timeline");
-            {
-                var active = GenerateUIElement("active", "Bool", timeline.transform, 8, "Active");
-				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Active";
+				var bg = GenerateEventDialog("bg");
+				{
+					var colors = SetupColorButtons("colors", "Colors", bg.transform, 8, bgColorButtons);
 
-				var position = GenerateUIElement("position", "Vector2", timeline.transform, 10, "Position X", "Position Y");
-				var scale = GenerateUIElement("scale", "Vector2", timeline.transform, 12, "Scale X", "Scale Y");
-				var rotation = GenerateUIElement("rotation", "Single", timeline.transform, 14, "Rotation");
-				var colors = SetupColorButtons("colors", "Colors", timeline.transform, 16, timelineColorButtons);
-			}
+					var active = GenerateUIElement("active", "Bool", bg.transform, 10, "Background Objects Active");
+					var activeText = active["UI"].transform.Find("Text").GetComponent<Text>();
+					activeText.text = "Active";
 
-			Log($"{EventEditor.inst.className}Generating Player Event");
-			var player = GenerateEventDialog("player");
-            {
-				var active = GenerateUIElement("active", "Bool", player.transform, 8, "Active");
-				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Active";
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
+				}
 
-				var moveable = GenerateUIElement("move", "Bool", player.transform, 10, "Can Move");
-				moveable["UI"].transform.Find("Text").GetComponent<Text>().text = "Moveable";
+				var invert = GenerateEventDialog("invert");
+				{
+					var intensity = GenerateUIElement("amount", "Single", invert.transform, 8, "Invert Amount");
 
-				var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+				}
 
-				var rotation = GenerateUIElement("rotation", "Single", player.transform, 14, "Rotation");
+				var timeline = GenerateEventDialog("timeline");
+				{
+					var active = GenerateUIElement("active", "Bool", timeline.transform, 8, "Active");
+					var activeText = active["UI"].transform.Find("Text").GetComponent<Text>();
+					activeText.text = "Active";
 
-				var outOfBounds = GenerateUIElement("oob", "Bool", player.transform, 16, "Can Exit Bounds");
-				outOfBounds["UI"].transform.Find("Text").GetComponent<Text>().text = "Out of Bounds";
+					var position = GenerateUIElement("position", "Vector2", timeline.transform, 10, "Position X", "Position Y");
+					var scale = GenerateUIElement("scale", "Vector2", timeline.transform, 12, "Scale X", "Scale Y");
+					var rotation = GenerateUIElement("rotation", "Single", timeline.transform, 14, "Rotation");
+					var colors = SetupColorButtons("colors", "Colors", timeline.transform, 16, timelineColorButtons);
 
-			}
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
+					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
+				}
 
-			Log($"{EventEditor.inst.className}Generating Follow Player Event");
-			var follow = GenerateEventDialog("follow");
-			{
-				var active = GenerateUIElement("active", "Bool", follow.transform, 8, "Active");
-				active["UI"].transform.Find("Text").GetComponent<Text>().text = "Active";
+				var player = GenerateEventDialog("player");
+				{
+					var active = GenerateUIElement("active", "Bool", player.transform, 8, "Active");
+					var activeText = active["UI"].transform.Find("Text").GetComponent<Text>();
+					activeText.text = "Active";
 
-				var moveable = GenerateUIElement("move", "Bool", follow.transform, 10, "Move Enabled");
-				moveable["UI"].transform.Find("Text").GetComponent<Text>().text = "Move";
+					var moveable = GenerateUIElement("move", "Bool", player.transform, 10, "Can Move");
+					var moveableText = moveable["UI"].transform.Find("Text").GetComponent<Text>();
+					moveableText.text = "Moveable";
 
-				var rotateable = GenerateUIElement("rotate", "Bool", follow.transform, 12, "Rotate Enabled");
-				rotateable["UI"].transform.Find("Text").GetComponent<Text>().text = "Rotate";
+					var position = GenerateUIElement("position", "Vector2", player.transform, 12, "Position X", "Position Y");
 
-				var position = GenerateUIElement("position", "Vector2", follow.transform, 14, "Sharpness", "Offset");
+					var rotation = GenerateUIElement("rotation", "Single", player.transform, 14, "Rotation");
 
-				var limitHorizontal = GenerateUIElement("limit horizontal", "Vector2", follow.transform, 16, "Limit Left", "Limit Right");
-				var limitVertical = GenerateUIElement("limit vertical", "Vector2", follow.transform, 18, "Limit Up", "Limit Down");
+					var outOfBounds = GenerateUIElement("oob", "Bool", player.transform, 16, "Can Exit Bounds");
+					var outOfBoundsText = outOfBounds["UI"].transform.Find("Text").GetComponent<Text>();
+					outOfBoundsText.text = "Out of Bounds";
 
-				var anchor = GenerateUIElement("anchor", "Single", follow.transform, 20, "Anchor");
-			}
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
+					EditorThemeManager.AddToggle(moveable["UI"].GetComponent<Toggle>(), "Event Editor Toggle", moveableText);
+					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
+					EditorThemeManager.AddToggle(outOfBounds["UI"].GetComponent<Toggle>(), "Event Editor Toggle", outOfBoundsText);
 
-			Log($"{EventEditor.inst.className}Generating Audio Event");
-			var audio = GenerateEventDialog("audio");
-            {
-				var pitchVol = GenerateUIElement("music", "Vector2", audio.transform, 8, "Pitch", "Volume");
-            }
+				}
 
-			var videoBGParent = GenerateEventDialog("videobgparent");
-            {
-				var position = GenerateUIElement("position", "Vector3", videoBGParent.transform, 8, "Position X", "Position Y", "Position Z");
-				var scale = GenerateUIElement("scale", "Vector3", videoBGParent.transform, 10, "Scale X", "Scale Y", "Scale Z");
-				var rotation = GenerateUIElement("rotation", "Vector3", videoBGParent.transform, 12, "Rotation X", "Rotation Y", "Rotation Z");
-            }
-			
-			var videoBG = GenerateEventDialog("videobg");
-            {
-				var position = GenerateUIElement("position", "Vector3", videoBG.transform, 8, "Position X", "Position Y", "Position Z");
-				var scale = GenerateUIElement("scale", "Vector3", videoBG.transform, 10, "Scale X", "Scale Y", "Scale Z");
-				var rotation = GenerateUIElement("rotation", "Vector3", videoBG.transform, 12, "Rotation X", "Rotation Y", "Rotation Z");
+				var follow = GenerateEventDialog("follow");
+				{
+					var active = GenerateUIElement("active", "Bool", follow.transform, 8, "Active");
+					var activeText = active["UI"].transform.Find("Text").GetComponent<Text>();
+					activeText.text = "Active";
 
-				var modeLabel = position["Label"].Duplicate(videoBG.transform);
-				GenerateLabels(modeLabel.transform, "Render Type");
+					var moveable = GenerateUIElement("move", "Bool", follow.transform, 10, "Move Enabled");
+					var moveableText = moveable["UI"].transform.Find("Text").GetComponent<Text>();
+					moveableText.text = "Move";
 
-				var mode = gradient.transform.Find("curves").gameObject.Duplicate(videoBG.transform, "rendertype");
-				mode.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
+					var rotateable = GenerateUIElement("rotate", "Bool", follow.transform, 12, "Rotate Enabled");
+					var rotateableText = rotateable["UI"].transform.Find("Text").GetComponent<Text>();
+					rotateableText.text = "Rotate";
+
+					var position = GenerateUIElement("position", "Vector2", follow.transform, 14, "Sharpness", "Offset");
+					var limitHorizontal = GenerateUIElement("limit horizontal", "Vector2", follow.transform, 16, "Limit Left", "Limit Right");
+					var limitVertical = GenerateUIElement("limit vertical", "Vector2", follow.transform, 18, "Limit Up", "Limit Down");
+					var anchor = GenerateUIElement("anchor", "Single", follow.transform, 20, "Anchor");
+
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
+					EditorThemeManager.AddToggle(moveable["UI"].GetComponent<Toggle>(), "Event Editor Toggle", moveableText);
+					EditorThemeManager.AddToggle(rotateable["UI"].GetComponent<Toggle>(), "Event Editor Toggle", rotateableText);
+					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(limitHorizontal["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(limitVertical["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(anchor["UI"], true, "Event Editor");
+				}
+
+				var audio = GenerateEventDialog("audio");
+				{
+					var pitchVol = GenerateUIElement("music", "Vector2", audio.transform, 8, "Pitch", "Volume");
+
+					EditorThemeManager.AddInputFields(pitchVol["UI"], true, "Event Editor");
+				}
+
+				var videoBGParent = GenerateEventDialog("videobgparent");
+				{
+					var position = GenerateUIElement("position", "Vector3", videoBGParent.transform, 8, "Position X", "Position Y", "Position Z");
+					var scale = GenerateUIElement("scale", "Vector3", videoBGParent.transform, 10, "Scale X", "Scale Y", "Scale Z");
+					var rotation = GenerateUIElement("rotation", "Vector3", videoBGParent.transform, 12, "Rotation X", "Rotation Y", "Rotation Z");
+
+					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
+				}
+
+				var videoBG = GenerateEventDialog("videobg");
+				{
+					var position = GenerateUIElement("position", "Vector3", videoBG.transform, 8, "Position X", "Position Y", "Position Z");
+					var scale = GenerateUIElement("scale", "Vector3", videoBG.transform, 10, "Scale X", "Scale Y", "Scale Z");
+					var rotation = GenerateUIElement("rotation", "Vector3", videoBG.transform, 12, "Rotation X", "Rotation Y", "Rotation Z");
+
+					var modeLabel = position["Label"].Duplicate(videoBG.transform);
+					GenerateLabels(modeLabel.transform, "Render Type");
+
+					var renderTypeD = gradient.transform.Find("curves").gameObject.Duplicate(videoBG.transform, "rendertype");
+					var renderTypeDropdown = renderTypeD.GetComponent<Dropdown>();
+					renderTypeDropdown.options = new List<Dropdown.OptionData>
 				{
 					new Dropdown.OptionData("Background"),
 					new Dropdown.OptionData("Foreground"),
 				};
-			}
 
-			Log($"{EventEditor.inst.className}Generating Sharpen Event");
-			var sharpen = GenerateEventDialog("sharpen");
-			{
-				var intensity = GenerateUIElement("intensity", "Single", sharpen.transform, 8, "Intensity");
-			}
-			
-			Log($"{EventEditor.inst.className}Generating Sharpen Event");
-			var bars = GenerateEventDialog("bars");
-			{
-				var intensity = GenerateUIElement("intensity", "Single", bars.transform, 8, "Intensity");
+					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
+					EditorThemeManager.AddDropdown(renderTypeDropdown, "Event Editor");
+				}
 
-				var modeLabel = intensity["Label"].Duplicate(bars.transform);
-				GenerateLabels(modeLabel.transform, "Direction");
+				var sharpen = GenerateEventDialog("sharpen");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", sharpen.transform, 8, "Intensity");
 
-				var mode = gradient.transform.Find("curves").gameObject.Duplicate(bars.transform, "direction");
-				mode.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+				}
+
+				var bars = GenerateEventDialog("bars");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", bars.transform, 8, "Intensity");
+
+					var modeLabel = intensity["Label"].Duplicate(bars.transform);
+					GenerateLabels(modeLabel.transform, "Direction");
+
+					var direction = gradient.transform.Find("curves").gameObject.Duplicate(bars.transform, "direction");
+					var directionDropdown = direction.GetComponent<Dropdown>();
+					directionDropdown.options = new List<Dropdown.OptionData>
 				{
 					new Dropdown.OptionData("Horizontal"),
 					new Dropdown.OptionData("Vertical"),
 				};
+
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddDropdown(directionDropdown, "Event Editor");
+				}
+
+				var danger = GenerateEventDialog("danger");
+				{
+					var intensity = GenerateUIElement("intensity", "Single", danger.transform, 8, "Intensity");
+					var size = GenerateUIElement("size", "Single", danger.transform, 10, "Size");
+					var colors = SetupColorButtons("colors", "Colors", danger.transform, 12, dangerColorButtons);
+
+					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+					EditorThemeManager.AddInputFields(size["UI"], true, "Event Editor");
+				}
+
+				var rotxy = GenerateEventDialog("3d rotation");
+				{
+					var rotation = GenerateUIElement("rotation", "Vector2", rotxy.transform, 8, "Rotation X", "Rotation Y");
+
+					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
+				}
+
+				var cameraDepth = GenerateEventDialog("cameradepth");
+				{
+					var depth = GenerateUIElement("depth", "Single", cameraDepth.transform, 8, "Depth");
+					var perspectiveZoom = GenerateUIElement("zoom", "Single", cameraDepth.transform, 10, "Zoom");
+
+					EditorThemeManager.AddInputFields(depth["UI"], true, "Event Editor");
+				}
+
+				var windowBase = GenerateEventDialog("windowbase");
+				{
+					var force = GenerateUIElement("force", "Bool", windowBase.transform, 8, "Force Resolution");
+					var forceText = force["UI"].transform.Find("Text").GetComponent<Text>();
+					forceText.text = "Force";
+
+					var resolution = GenerateUIElement("resolution", "Vector2", windowBase.transform, 10, "Width", "Height");
+
+					var allow = GenerateUIElement("allow", "Bool", windowBase.transform, 12, "Allow Position Events");
+					allow["UI"].transform.Find("Text").GetComponent<Text>().text = "Allow";
+					var allowText = allow["UI"].transform.Find("Text").GetComponent<Text>();
+					allowText.text = "Force";
+
+					EditorThemeManager.AddToggle(force["UI"].GetComponent<Toggle>(), "Event Editor Toggle", forceText);
+					EditorThemeManager.AddInputFields(resolution["UI"], true, "Event Editor");
+					EditorThemeManager.AddToggle(allow["UI"].GetComponent<Toggle>(), "Event Editor Toggle", allowText);
+				}
+
+				var windowPositionX = GenerateEventDialog("windowpositionx");
+				{
+					var x = GenerateUIElement("x", "Single", windowPositionX.transform, 8, "Position X (Requires Force Resolution)");
+					EditorThemeManager.AddInputFields(x["UI"], true, "Event Editor");
+				}
+
+				var windowPositionY = GenerateEventDialog("windowpositiony");
+				{
+					var y = GenerateUIElement("y", "Single", windowPositionY.transform, 8, "Position Y (Requires Force Resolution)");
+					EditorThemeManager.AddInputFields(y["UI"], true, "Event Editor");
+				}
 			}
 
-			var danger = GenerateEventDialog("danger");
-            {
-				var intensity = GenerateUIElement("intensity", "Single", danger.transform, 8, "Intensity");
-				var size = GenerateUIElement("size", "Single", danger.transform, 10, "Size");
-				var colors = SetupColorButtons("colors", "Colors", danger.transform, 12, dangerColorButtons);
-			}
+			#region Multi Event Keyframe Editor
 
-			var rotxy = GenerateEventDialog("3d rotation");
+			var move = EventEditor.inst.dialogRight.Find("move");
+			var multiKeyframeEditor = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
+
+			multiKeyframeEditor.Find("Text").gameObject.SetActive(false);
+
+			// Label
 			{
-				var rotation = GenerateUIElement("rotation", "Vector2", rotxy.transform, 8, "Rotation X", "Rotation Y");
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Time");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
-			
-			var cameraDepth = GenerateEventDialog("cameradepth");
+
+			var timeBase = new GameObject("time");
+			timeBase.transform.SetParent(multiKeyframeEditor);
+			timeBase.transform.localScale = Vector3.one;
+			var timeBaseRT = timeBase.AddComponent<RectTransform>();
+			timeBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+			var time = move.Find("time").gameObject.Duplicate(timeBaseRT, "time");
+			time.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
+
+			// Label
 			{
-				var depth = GenerateUIElement("depth", "Single", cameraDepth.transform, 8, "Depth");
-				var perspectiveZoom = GenerateUIElement("zoom", "Single", cameraDepth.transform, 10, "Zoom");
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Ease / Animation Type");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
-			
-			var windowBase = GenerateEventDialog("windowbase");
+
+			var curveBase = new GameObject("curves");
+			curveBase.transform.SetParent(multiKeyframeEditor);
+			curveBase.transform.localScale = Vector3.one;
+			var curveBaseRT = curveBase.AddComponent<RectTransform>();
+			curveBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+			var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
+			curves.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
+
+			var valueIndex = GenerateUIElement("value index", "Single", multiKeyframeEditor, 7, "Value Index");
+
+			var value = GenerateUIElement("value", "Single", multiKeyframeEditor, 9, "Value");
+
+			// Label
 			{
-				var force = GenerateUIElement("force", "Bool", windowBase.transform, 8, "Force Resolution");
-				force["UI"].transform.Find("Text").GetComponent<Text>().text = "Force";
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
 
-				var resolution = GenerateUIElement("resolution", "Vector2", windowBase.transform, 10, "Width", "Height");
-
-				var allow = GenerateUIElement("allow", "Bool", windowBase.transform, 12, "Allow Position Events");
-				allow["UI"].transform.Find("Text").GetComponent<Text>().text = "Allow";
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Force Snap Time to BPM");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
 
-			var windowPositionX = GenerateEventDialog("windowpositionx");
-            {
-				var x = GenerateUIElement("x", "Single", windowPositionX.transform, 8, "Position X (Requires Force Resolution)");
-            }
-			
-			var windowPositionY = GenerateEventDialog("windowpositiony");
-            {
-				var y = GenerateUIElement("y", "Single", windowPositionY.transform, 8, "Position Y (Requires Force Resolution)");
-            }
+			var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
 
-			try
+			var gameObject = eventButton.Duplicate(multiKeyframeEditor, "snap bpm");
+			gameObject.transform.localScale = Vector3.one;
+
+			((RectTransform)gameObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+			gameObject.transform.GetChild(0).GetComponent<Text>().text = "Snap";
+			gameObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+			var button = gameObject.GetComponent<Button>();
+			button.onClick.ClearAll();
+			button.onClick.AddListener(delegate ()
 			{
-				var move = EventEditor.inst.dialogRight.Find("move");
-				var multiKeyframeEditor = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
-
-				multiKeyframeEditor.Find("Text").gameObject.SetActive(false);
-
-				// Label
+				foreach (var timelineObject in SelectedKeyframes)
 				{
-					var labelBase1 = new GameObject("label base");
-					labelBase1.transform.SetParent(multiKeyframeEditor);
-					labelBase1.transform.localScale = Vector3.one;
-					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
-					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
-
-					var l = Instantiate(uiDictionary["Label"]);
-					l.name = "label";
-					l.transform.SetParent(labelBase1RT);
-					l.transform.localScale = Vector3.one;
-					GenerateLabels(l.transform, "Time");
-					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+					if (timelineObject.Index != 0)
+						timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
+					RenderTimelineObject(timelineObject);
 				}
 
-				var timeBase = new GameObject("time");
-				timeBase.transform.SetParent(multiKeyframeEditor);
-				timeBase.transform.localScale = Vector3.one;
-				var timeBaseRT = timeBase.AddComponent<RectTransform>();
-				timeBaseRT.sizeDelta = new Vector2(765f, 38f);
+				RenderEventsDialog();
+				EventManager.inst.updateEvents();
+				EditorManager.inst.DisplayNotification($"Snapped all keyframes time!", 2f, EditorManager.NotificationType.Success);
+			});
 
-				var time = move.Find("time").gameObject.Duplicate(timeBaseRT, "time");
-				time.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
+			// Label
+			{
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
 
-				// Label
-				{
-					var labelBase1 = new GameObject("label base");
-					labelBase1.transform.SetParent(multiKeyframeEditor);
-					labelBase1.transform.localScale = Vector3.one;
-					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
-					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
-
-					var l = Instantiate(uiDictionary["Label"]);
-					l.name = "label";
-					l.transform.SetParent(labelBase1RT);
-					l.transform.localScale = Vector3.one;
-					GenerateLabels(l.transform, "Ease / Animation Type");
-					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
-				}
-
-				var curveBase = new GameObject("curves");
-				curveBase.transform.SetParent(multiKeyframeEditor);
-				curveBase.transform.localScale = Vector3.one;
-				var curveBaseRT = curveBase.AddComponent<RectTransform>();
-				curveBaseRT.sizeDelta = new Vector2(765f, 38f);
-
-				var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
-				curves.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
-
-				var valueIndex = GenerateUIElement("value index", "Single", multiKeyframeEditor, 7, "Value Index");
-
-				var value = GenerateUIElement("value", "Single", multiKeyframeEditor, 9, "Value");
-
-				// Label
-				{
-					var labelBase1 = new GameObject("label base");
-					labelBase1.transform.SetParent(multiKeyframeEditor);
-					labelBase1.transform.localScale = Vector3.one;
-					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
-					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
-
-					var l = Instantiate(uiDictionary["Label"]);
-					l.name = "label";
-					l.transform.SetParent(labelBase1RT);
-					l.transform.localScale = Vector3.one;
-					GenerateLabels(l.transform, "Force Snap Time to BPM");
-					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
-				}
-
-				var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
-
-				var gameObject = eventButton.Duplicate(multiKeyframeEditor, "snap bpm");
-				gameObject.transform.localScale = Vector3.one;
-
-				((RectTransform)gameObject.transform).sizeDelta = new Vector2(404f, 32f);
-
-				gameObject.transform.GetChild(0).GetComponent<Text>().text = "Snap";
-				gameObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				var button = gameObject.GetComponent<Button>();
-				button.onClick.ClearAll();
-				button.onClick.AddListener(delegate ()
-				{
-					foreach (var timelineObject in SelectedKeyframes)
-                    {
-						if (timelineObject.Index != 0)
-							timelineObject.Time = RTEditor.SnapToBPM(timelineObject.Time);
-						RenderTimelineObject(timelineObject);
-					}
-
-					RenderEventsDialog();
-					EventManager.inst.updateEvents();
-					EditorManager.inst.DisplayNotification($"Snapped all keyframes time!", 2f, EditorManager.NotificationType.Success);
-				});
-
-				// Label
-				{
-					var labelBase1 = new GameObject("label base");
-					labelBase1.transform.SetParent(multiKeyframeEditor);
-					labelBase1.transform.localScale = Vector3.one;
-					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
-					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
-
-					var l = Instantiate(uiDictionary["Label"]);
-					l.name = "label";
-					l.transform.SetParent(labelBase1RT);
-					l.transform.localScale = Vector3.one;
-					GenerateLabels(l.transform, "Align to First Selected");
-					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
-				}
-
-				var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
-				alignToFirstObject.transform.localScale = Vector3.one;
-
-				((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
-
-				alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
-				alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-
-				var alignToFirst = alignToFirstObject.GetComponent<Button>();
-				alignToFirst.onClick.ClearAll();
-				alignToFirst.onClick.AddListener(delegate ()
-				{
-					var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
-					var list = SelectedKeyframes.OrderBy(x => x.Time);
-					var first = list.ElementAt(0);
-
-					foreach (var timelineObject in list)
-					{
-						if (timelineObject.Index != 0)
-							timelineObject.Time = first.Time;
-						RenderTimelineObject(timelineObject);
-					}
-
-					RenderEventsDialog();
-					EventManager.inst.updateEvents();
-					EditorManager.inst.DisplayNotification($"Aligned all keyframes to the first keyframe!", 2f, EditorManager.NotificationType.Success);
-				});
-
-				// Label
-				{
-					var labelBase1 = new GameObject("label base");
-					labelBase1.transform.SetParent(multiKeyframeEditor);
-					labelBase1.transform.localScale = Vector3.one;
-					var labelBase1RT = labelBase1.AddComponent<RectTransform>();
-					labelBase1RT.sizeDelta = new Vector2(765f, 38f);
-
-					var l = Instantiate(uiDictionary["Label"]);
-					l.name = "label";
-					l.transform.SetParent(labelBase1RT);
-					l.transform.localScale = Vector3.one;
-					GenerateLabels(l.transform, "Paste All Keyframe Data");
-					l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
-				}
-
-				var pasteAllObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
-				pasteAllObject.transform.localScale = Vector3.one;
-
-				((RectTransform)pasteAllObject.transform).sizeDelta = new Vector2(404f, 32f);
-
-				pasteAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste";
-
-				var pasteAll = pasteAllObject.GetComponent<Button>();
-				pasteAll.onClick.ClearAll();
-				pasteAll.onClick.AddListener(delegate ()
-				{
-					foreach (var keyframe in SelectedKeyframes)
-					{
-						if (!(copiedKeyframeDatas.Count > keyframe.Type) || copiedKeyframeDatas[keyframe.Type] == null)
-							continue;
-
-						var kf = keyframe.GetData<EventKeyframe>();
-						kf.curveType = copiedKeyframeDatas[keyframe.Type].curveType;
-						kf.eventValues = copiedKeyframeDatas[keyframe.Type].eventValues.Copy();
-						kf.eventRandomValues = copiedKeyframeDatas[keyframe.Type].eventRandomValues.Copy();
-						kf.random = copiedKeyframeDatas[keyframe.Type].random;
-						kf.relative = copiedKeyframeDatas[keyframe.Type].relative;
-						RenderTimelineObject(keyframe);
-					}
-
-					RenderEventsDialog();
-					EventManager.inst.updateEvents();
-					EditorManager.inst.DisplayNotification($"Pasted all keyframe data to current selected keyframes!", 2f, EditorManager.NotificationType.Success);
-				});
-			}
-			catch (Exception ex)
-            {
-				Debug.LogError($"{EventEditor.inst.className}{ex}");
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Align to First Selected");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
 
+			var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
+			alignToFirstObject.transform.localScale = Vector3.one;
+
+			((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+			alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
+			alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+
+			var alignToFirst = alignToFirstObject.GetComponent<Button>();
+			alignToFirst.onClick.ClearAll();
+			alignToFirst.onClick.AddListener(delegate ()
+			{
+				var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+				var list = SelectedKeyframes.OrderBy(x => x.Time);
+				var first = list.ElementAt(0);
+
+				foreach (var timelineObject in list)
+				{
+					if (timelineObject.Index != 0)
+						timelineObject.Time = first.Time;
+					RenderTimelineObject(timelineObject);
+				}
+
+				RenderEventsDialog();
+				EventManager.inst.updateEvents();
+				EditorManager.inst.DisplayNotification($"Aligned all keyframes to the first keyframe!", 2f, EditorManager.NotificationType.Success);
+			});
+
+			// Label
+			{
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Paste All Keyframe Data");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+			}
+
+			var pasteAllObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+			pasteAllObject.transform.localScale = Vector3.one;
+
+			((RectTransform)pasteAllObject.transform).sizeDelta = new Vector2(404f, 32f);
+
+			pasteAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+
+			var pasteAll = pasteAllObject.GetComponent<Button>();
+			pasteAll.onClick.ClearAll();
+			pasteAll.onClick.AddListener(delegate ()
+			{
+				foreach (var keyframe in SelectedKeyframes)
+				{
+					if (!(copiedKeyframeDatas.Count > keyframe.Type) || copiedKeyframeDatas[keyframe.Type] == null)
+						continue;
+
+					var kf = keyframe.GetData<EventKeyframe>();
+					kf.curveType = copiedKeyframeDatas[keyframe.Type].curveType;
+					kf.eventValues = copiedKeyframeDatas[keyframe.Type].eventValues.Copy();
+					kf.eventRandomValues = copiedKeyframeDatas[keyframe.Type].eventRandomValues.Copy();
+					kf.random = copiedKeyframeDatas[keyframe.Type].random;
+					kf.relative = copiedKeyframeDatas[keyframe.Type].relative;
+					RenderTimelineObject(keyframe);
+				}
+
+				RenderEventsDialog();
+				EventManager.inst.updateEvents();
+				EditorManager.inst.DisplayNotification($"Pasted all keyframe data to current selected keyframes!", 2f, EditorManager.NotificationType.Success);
+			});
+
+			#endregion
+
+			// Copy / Paste
 			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
 			{
 				var dialog = EventEditor.inst.dialogRight.GetChild(i);
 
-				var button = GameObject.Find("TimelineBar/GameObject/event");
-                var edit = dialog.Find("edit");
+				var edit = dialog.Find("edit");
 				DestroyImmediate(edit.Find("spacer").gameObject);
 
-				var copy = button.Duplicate(edit, "copy", 5);
-				copy.transform.GetChild(0).GetComponent<Text>().text = "Copy";
-				copy.transform.GetComponent<Image>().color = new Color(0.24f, 0.6792f, 1f);
+				var copy = eventButton.Duplicate(edit, "copy", 5);
+				var copyText = copy.transform.GetChild(0).GetComponent<Text>();
+				copyText.text = "Copy";
 				((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
-				var paste = button.Duplicate(edit, "paste", 6);
-				paste.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+
+				var paste = eventButton.Duplicate(edit, "paste", 6);
+				var pasteText = paste.transform.GetChild(0).GetComponent<Text>();
+				pasteText.text = "Paste";
 				((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Copy", "Copy", copy, new List<Component>
+				{
+					copy.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Copy Text", "Copy Text", copyText.gameObject, new List<Component>
+				{
+					copyText,
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Paste", "Paste", paste, new List<Component>
+				{
+					paste.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Paste Text", "Paste Text", pasteText.gameObject, new List<Component>
+				{
+					pasteText,
+				}));
 			}
-        }
+		}
 
-        #endregion
+		#endregion
 
-        #region Dialogs
+		#region Dialogs
 
-        public static void LogIncorrectFormat(string str) => Debug.LogError($"{EventEditor.inst.className}Event Value was not in correct format! String: {str}");
+		public static void LogIncorrectFormat(string str) => Debug.LogError($"{EventEditor.inst.className}Event Value was not in correct format! String: {str}");
+
+		public void OpenDialog()
+		{
+			if (SelectedKeyframes.Count > 1 && !SelectedKeyframes.All(x => x.Type == SelectedKeyframes.Min(y => y.Type)))
+			{
+				EditorManager.inst.ClearDialogs();
+				EditorManager.inst.ShowDialog("Multi Keyframe Editor", false);
+				RenderMultiEventsDialog();
+			}
+			else if (SelectedKeyframes.Count > 0)
+			{
+				EditorManager.inst.ClearDialogs();
+				EditorManager.inst.ShowDialog("Event Editor");
+
+				EventEditor.inst.currentEventType = SelectedKeyframes[0].Type;
+				EventEditor.inst.currentEvent = SelectedKeyframes[0].Index;
+
+				if (EventEditor.inst.dialogRight.childCount > EventEditor.inst.currentEventType)
+				{
+					Debug.Log($"{EventEditor.inst.className}Dialog: {EventEditor.inst.dialogRight.GetChild(EventEditor.inst.currentEventType).name}");
+					for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
+						EventEditor.inst.dialogRight.GetChild(i).gameObject.SetActive(EventEditor.inst.currentEventType == i);
+
+					RenderEventsDialog();
+					RenderEventObjects();
+				}
+				else
+					Debug.LogError($"{EventEditor.inst.className}Keyframe Type {EventEditor.inst.currentEventType} does not currently exist.");
+			}
+			else
+			{
+				CheckpointEditor.inst.SetCurrentCheckpoint(0);
+			}
+		}
 
 		public void RenderMultiEventsDialog()
         {
@@ -2021,22 +2576,23 @@ namespace EditorManagement.Functions.Editors
 
 				dialogTmp.transform.Find("curves_label").gameObject.SetActive(isNotFirst);
 				curvesDropdown.gameObject.SetActive(isNotFirst);
-				curvesDropdown.onValueChanged.RemoveAllListeners();
-				if (DataManager.inst.AnimationListDictionaryBack.ContainsKey(currentKeyframe.curveType))
+				if (isNotFirst)
 				{
-					curvesDropdown.value = DataManager.inst.AnimationListDictionaryBack[currentKeyframe.curveType];
-				}
-				curvesDropdown.onValueChanged.AddListener(delegate (int _value)
-				{
-					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0 && x.Type == __instance.currentEventType))
-					{
-						kf.GetData<EventKeyframe>().curveType = DataManager.inst.AnimationListDictionary[_value];
-					}
+					curvesDropdown.onValueChanged.RemoveAllListeners();
+					if (DataManager.inst.AnimationListDictionaryBack.ContainsKey(currentKeyframe.curveType))
+						curvesDropdown.value = DataManager.inst.AnimationListDictionaryBack[currentKeyframe.curveType];
 
-					//currentKeyframe.curveType = DataManager.inst.AnimationListDictionary[_value];
-					RenderEventObjects();
-					eventManager.updateEvents();
-				});
+					curvesDropdown.onValueChanged.AddListener(delegate (int _value)
+					{
+						foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0 && x.Type == __instance.currentEventType))
+						{
+							kf.GetData<EventKeyframe>().curveType = DataManager.inst.AnimationListDictionary[_value];
+						}
+
+						RenderEventObjects();
+						eventManager.updateEvents();
+					});
+				}
 
 				var editJumpLeftLarge = dialogTmp.Find("edit/<<").GetComponent<Button>();
 				var editJumpLeft = dialogTmp.Find("edit/<").GetComponent<Button>();
@@ -2058,41 +2614,29 @@ namespace EditorManagement.Functions.Editors
 					__instance.UpdateEventOrder(false);
 					int num = __instance.currentEvent - 1;
 					if (num < 0)
-					{
 						num = 0;
-					}
+
 					__instance.SetCurrentEvent(__instance.currentEventType, num);
 				});
 
-				var tex = dialogTmp.Find("edit/|/text").GetComponent<Text>();
+				var indexText = dialogTmp.Find("edit/|/text").GetComponent<Text>();
 				var allEvents = DataManager.inst.gameData.eventObjects.allEvents[__instance.currentEventType];
 
-				if (!isNotFirst)
-				{
-					tex.text = "S";
-				}
-				else if (__instance.currentEvent == allEvents.Count() - 1)
-				{
-					tex.text = "E";
-				}
-				else
-				{
-					tex.text = __instance.currentEvent.ToString();
-				}
+				indexText.text = !isNotFirst ? "S" : __instance.currentEvent == allEvents.Count ? "E" : __instance.currentEvent.ToString();
 
-				editJumpRight.interactable = (__instance.currentEvent != allEvents.Count - 1);
+				editJumpRight.interactable = __instance.currentEvent != allEvents.Count - 1;
 				editJumpRight.onClick.RemoveAllListeners();
 				editJumpRight.onClick.AddListener(delegate ()
 				{
 					__instance.UpdateEventOrder(false);
 					int num = __instance.currentEvent + 1;
-					if (num >= allEvents.Count())
-					{
-						num = allEvents.Count() - 1;
-					}
+					if (num >= allEvents.Count)
+						num = allEvents.Count - 1;
+
 					__instance.SetCurrentEvent(__instance.currentEventType, num);
 				});
-				editJumpRightLarge.interactable = (__instance.currentEvent != allEvents.Count() - 1);
+
+				editJumpRightLarge.interactable = __instance.currentEvent != allEvents.Count() - 1;
 				editJumpRightLarge.onClick.RemoveAllListeners();
 				editJumpRightLarge.onClick.AddListener(delegate ()
 				{
@@ -2660,23 +3204,15 @@ namespace EditorManagement.Functions.Editors
 
 		void RenderTitle(int i)
 		{
+			var theme = EditorThemeManager.CurrentTheme;
 			var title = EventEditor.inst.dialogRight.GetChild(i).GetChild(0);
 			var image = title.GetChild(0).GetComponent<Image>();
-			image.color = EventTitles.ElementAt(i).Value;
+			//image.color = EventTitles.ElementAt(i).Value;
+			image.color = theme.ColorGroups.ContainsKey($"Event Color {i % EventLimit + 1} Editor") ? theme.ColorGroups[$"Event Color {i % EventLimit + 1} Editor"] : Color.white;
+			image.color = LSColors.fadeColor(image.color, 1f);
 			image.rectTransform.sizeDelta = new Vector2(17f, 0f);
-			title.GetChild(1).GetComponent<Text>().text = EventTitles.ElementAt(i).Key;
-		}
-
-		void RenderTitles()
-		{
-			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
-			{
-				var title = EventEditor.inst.dialogRight.GetChild(i).GetChild(0);
-				var image = title.GetChild(0).GetComponent<Image>();
-				image.color = EventTitles.ElementAt(i).Value;
-				image.rectTransform.sizeDelta = new Vector2(17f, 0f);
-				title.GetChild(1).GetComponent<Text>().text = EventTitles.ElementAt(i).Key;
-			}
+			//title.GetChild(1).GetComponent<Text>().text = EventTitles.ElementAt(i).Key;
+			title.GetChild(1).GetComponent<Text>().text = $"- {EventTypes[i]} Editor - ";
 		}
 
 		public static string NoEventLabel => "??? (No event yet)";
@@ -2711,6 +3247,23 @@ namespace EditorManagement.Functions.Editors
                 {
 					text.text = "No Event";
                 }
+			}
+
+			var theme = EditorThemeManager.CurrentTheme;
+			for (int i = 0; i < 15; i++)
+			{
+				var img = EventBins[i];
+
+				var enabled = i == 14 || i < (EventsCore && RTEditor.ShowModdedUI ? 14 : 10);
+
+				img.enabled = enabled;
+				if (enabled)
+				{
+					img.color = theme.ColorGroups.ContainsKey($"Event Color {i % EventLimit + 1}") ? theme.ColorGroups[$"Event Color {i % EventLimit + 1}"] : Color.white;
+					img.color = LSColors.fadeColor(img.color, 0.5f);
+				}
+
+				EventLabels[i].enabled = enabled;
 			}
 		}
 

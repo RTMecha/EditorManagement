@@ -61,6 +61,13 @@ namespace EditorManagement.Functions.Editors
                 Debug.LogException(ex);
             }
 
+            if (RTEditor.inst && RTEditor.inst.layerType == RTEditor.LayerType.Events)
+            {
+                RTEventEditor.inst.RenderLayerBins();
+                if (EventEditor.inst.dialogRight.gameObject.activeInHierarchy)
+                    RTEventEditor.inst.RenderEventsDialog();
+            }
+
             yield break;
         }
 
@@ -95,13 +102,24 @@ namespace EditorManagement.Functions.Editors
             {
                 { "Background", LSColors.HexToColorAlpha("212121FF") },
                 { "Background 2", LSColors.HexToColorAlpha("1B1B1CFF") },
+                { "Background 3", LSColors.HexToColorAlpha("373738FF") },
                 { "Preview Cover", LSColors.HexToColorAlpha("191919FF") },
+
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("C8C8C8FF") },
                 { "Scrollbar Handle Normal", LSColors.HexToColorAlpha("C7C7C7FF") },
                 { "Scrollbar Handle Highlight", LSColors.HexToColorAlpha("414141FF") },
                 { "Scrollbar Handle Selected", LSColors.HexToColorAlpha("414141FF") },
                 { "Scrollbar Handle Pressed", LSColors.HexToColorAlpha("414141FF") },
                 { "Scrollbar Handle Disabled", LSColors.HexToColorAlpha("414141FF") },
+
+                { "Scrollbar 2", LSColors.HexToColorAlpha("EEEAEEFF") },
+                { "Scrollbar Handle 2", LSColors.HexToColorAlpha("424242FF") },
+                { "Scrollbar Handle 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Scrollbar Handle 2 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Scrollbar Handle 2 Selected", LSColors.HexToColorAlpha("414141FF") },
+                { "Scrollbar Handle 2 Pressed", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Scrollbar Handle 2 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
+
                 { "Close", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Close Normal", LSColors.HexToColorAlpha("F44336FF") },
                 { "Close Highlight", LSColors.HexToColorAlpha("292929FF") },
@@ -129,10 +147,19 @@ namespace EditorManagement.Functions.Editors
                 { "Search Field 1 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Search Field 2", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Search Field 2 Text", LSColors.HexToColorAlpha("2F2F2FFF") },
+
                 { "Add", LSColors.HexToColorAlpha("4DB6ACFF") },
                 { "Add Text", LSColors.HexToColorAlpha("202020FF") },
                 { "Delete", LSColors.HexToColorAlpha("E67474FF") },
                 { "Delete Text", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Delete Keyframe BG", LSColors.HexToColorAlpha("EEEAEEFF") },
+                { "Delete Keyframe Button", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Delete Keyframe Button Normal", LSColors.HexToColorAlpha("F34235FF") },
+                { "Delete Keyframe Button Highlight", LSColors.HexToColorAlpha("212121FF") },
+                { "Delete Keyframe Button Selected", LSColors.HexToColorAlpha("212121FF") },
+                { "Delete Keyframe Button Pressed", LSColors.HexToColorAlpha("222222FF") },
+                { "Delete Keyframe Button Disabled", LSColors.HexToColorAlpha("37373880") },
+
                 { "Prefab", LSColors.HexToColorAlpha("383838FF") },
                 { "Prefab Text", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Object", LSColors.HexToColorAlpha("EFEBEFFF") },
@@ -191,8 +218,11 @@ namespace EditorManagement.Functions.Editors
                 { "Notification Success", LSColors.HexToColorAlpha("4DB6ACFF") },
                 { "Notification Error", LSColors.HexToColorAlpha("E57373FF") },
                 { "Notification Warning", LSColors.HexToColorAlpha("FFAF38FF") },
+                { "Copy", LSColors.HexToColorAlpha("3DADFFFF") },
+                { "Copy Text", LSColors.HexToColorAlpha("1C1C1DFF") },
                 { "Paste", LSColors.HexToColorAlpha("FFAF38FF") },
                 { "Paste Text", LSColors.HexToColorAlpha("1C1C1DFF") },
+
                 { "Tab Color 1", LSColors.HexToColorAlpha("FFE7E7FF") },
                 { "Tab Color 1 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 1 Highlight", new Color(2f, 2f, 2f, 1f) },
@@ -235,18 +265,90 @@ namespace EditorManagement.Functions.Editors
                 { "Tab Color 7 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 7 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 7 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
+
+                { "Event Color 1", LSColors.HexToColorAlpha("673AB7FF") }, // 1
+                { "Event Color 2", LSColors.HexToColorAlpha("3E51B4FF") }, // 2
+                { "Event Color 3", LSColors.HexToColorAlpha("2196F3FF") }, // 3
+                { "Event Color 4", LSColors.HexToColorAlpha("03A9F4FF") }, // 4
+                { "Event Color 5", LSColors.HexToColorAlpha("00BCD4FF") }, // 5
+                { "Event Color 6", LSColors.HexToColorAlpha("009688FF") }, // 6
+                { "Event Color 7", LSColors.HexToColorAlpha("4BAF50FF") }, // 7
+                { "Event Color 8", LSColors.HexToColorAlpha("7CB341FF") }, // 8
+                { "Event Color 9", LSColors.HexToColorAlpha("AFB42BFF") }, // 9
+                { "Event Color 10", LSColors.HexToColorAlpha("FFC107FF") }, // 10
+                { "Event Color 11", LSColors.HexToColorAlpha("FF9800FF") }, // 11
+                { "Event Color 12", LSColors.HexToColorAlpha("B96000FF") }, // 12
+                { "Event Color 13", LSColors.HexToColorAlpha("B12411FF") }, // 13
+                { "Event Color 14", LSColors.HexToColorAlpha("B12424FF") }, // 14
+                { "Event Color 15", LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+
+                { "Event Color 1 Keyframe", LSColors.HexToColorAlpha("673AB7FF") }, // 1
+                { "Event Color 2 Keyframe", LSColors.HexToColorAlpha("3E51B4FF") }, // 2
+                { "Event Color 3 Keyframe", LSColors.HexToColorAlpha("2196F3FF") }, // 3
+                { "Event Color 4 Keyframe", LSColors.HexToColorAlpha("03A9F4FF") }, // 4
+                { "Event Color 5 Keyframe", LSColors.HexToColorAlpha("00BCD4FF") }, // 5
+                { "Event Color 6 Keyframe", LSColors.HexToColorAlpha("009688FF") }, // 6
+                { "Event Color 7 Keyframe", LSColors.HexToColorAlpha("4BAF50FF") }, // 7
+                { "Event Color 8 Keyframe", LSColors.HexToColorAlpha("7CB341FF") }, // 8
+                { "Event Color 9 Keyframe", LSColors.HexToColorAlpha("AFB42BFF") }, // 9
+                { "Event Color 10 Keyframe", LSColors.HexToColorAlpha("FFC107FF") }, // 10
+                { "Event Color 11 Keyframe", LSColors.HexToColorAlpha("FF9800FF") }, // 11
+                { "Event Color 12 Keyframe", LSColors.HexToColorAlpha("B96000FF") }, // 12
+                { "Event Color 13 Keyframe", LSColors.HexToColorAlpha("B12411FF") }, // 13
+                { "Event Color 14 Keyframe", LSColors.HexToColorAlpha("B12424FF") }, // 14
+                { "Event Color 15 Keyframe", LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+                { "Event Color 1 Editor", LSColors.HexToColorAlpha("564B6AFF") }, // 1
+                { "Event Color 2 Editor", LSColors.HexToColorAlpha("41445EFF") }, // 2
+                { "Event Color 3 Editor", LSColors.HexToColorAlpha("44627AFF") }, // 3
+                { "Event Color 4 Editor", LSColors.HexToColorAlpha("315B6EFF") }, // 4
+                { "Event Color 5 Editor", LSColors.HexToColorAlpha("3E6D73FF") }, // 5
+                { "Event Color 6 Editor", LSColors.HexToColorAlpha("305653FF") }, // 6
+                { "Event Color 7 Editor", LSColors.HexToColorAlpha("506951FF") }, // 7
+                { "Event Color 8 Editor", LSColors.HexToColorAlpha("515E41FF") }, // 8
+                { "Event Color 9 Editor", LSColors.HexToColorAlpha("676945FF") }, // 9
+                { "Event Color 10 Editor", LSColors.HexToColorAlpha("726335FF") }, // 10
+                { "Event Color 11 Editor", LSColors.HexToColorAlpha("FF9800FF") }, // 11
+                { "Event Color 12 Editor", LSColors.HexToColorAlpha("FF5800FF") }, // 12
+                { "Event Color 13 Editor", LSColors.HexToColorAlpha("FF2509FF") }, // 13
+                { "Event Color 14 Editor", LSColors.HexToColorAlpha("FF0F0FFF") }, // 14
+                //{ "Event Color 1", LSColors.HexToColorAlpha("673AB77F") }, // 1
+			    //{ "Event Color 2", LSColors.HexToColorAlpha("41445E7F") }, // 2
+			    //{ "Event Color 3", LSColors.HexToColorAlpha("44627A7F") }, // 3
+			    //{ "Event Color 4", LSColors.HexToColorAlpha("315B6E7F") }, // 4
+			    //{ "Event Color 5", LSColors.HexToColorAlpha("3E6D737F") }, // 5
+			    //{ "Event Color 6", LSColors.HexToColorAlpha("3056537F") }, // 6
+			    //{ "Event Color 7", LSColors.HexToColorAlpha("5069517F") }, // 7
+			    //{ "Event Color 8", LSColors.HexToColorAlpha("515E417F") }, // 8
+			    //{ "Event Color 9", LSColors.HexToColorAlpha("6769457F") }, // 9
+			    //{ "Event Color 10", LSColors.HexToColorAlpha("7263357F") }, // 10
+			    //{ "Event Color 11", LSColors.HexToColorAlpha("FF98007F") }, // 11
+			    //{ "Event Color 12", LSColors.HexToColorAlpha("FF58007F") }, // 12
+			    //{ "Event Color 13", LSColors.HexToColorAlpha("FF25097F") }, // 13
+			    //{ "Event Color 14", LSColors.HexToColorAlpha("FF0F0F7F") }, // 14
+			    //{ "Event Color 15", LSColors.HexToColorAlpha("64B4F67F") }, // 15
             }),
             new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
                 { "Background", LSColors.HexToColorAlpha("0A0A0AFF") },
                 { "Background 2", LSColors.HexToColorAlpha("060606FF") },
+                { "Background 3", LSColors.HexToColorAlpha("0C0C0CFF") },
                 { "Preview Cover", LSColors.HexToColorAlpha("060606FF") },
+
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Scrollbar Handle Normal", LSColors.HexToColorAlpha("4C4C4CFF") },
                 { "Scrollbar Handle Highlight", LSColors.HexToColorAlpha("606060FF") },
                 { "Scrollbar Handle Selected", LSColors.HexToColorAlpha("606060FF") },
                 { "Scrollbar Handle Pressed", LSColors.HexToColorAlpha("606060FF") },
                 { "Scrollbar Handle Disabled", LSColors.HexToColorAlpha("606060FF") },
+
+                { "Scrollbar 2", LSColors.HexToColorAlpha("EEEAEEFF") },
+                { "Scrollbar Handle 2", LSColors.HexToColorAlpha("424242FF") },
+                { "Scrollbar Handle 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Scrollbar Handle 2 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Scrollbar Handle 2 Selected", LSColors.HexToColorAlpha("414141FF") },
+                { "Scrollbar Handle 2 Pressed", LSColors.HexToColorAlpha("F5F5F5FF") },
+                { "Scrollbar Handle 2 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
+
                 { "Close", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Close Normal", LSColors.HexToColorAlpha("F44336FF") },
                 { "Close Highlight", LSColors.HexToColorAlpha("292929FF") },
@@ -274,10 +376,19 @@ namespace EditorManagement.Functions.Editors
                 { "Search Field 1 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Search Field 2", LSColors.HexToColorAlpha("111111FF") },
                 { "Search Field 2 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
+
                 { "Add", LSColors.HexToColorAlpha("06ADADFF") },
                 { "Add Text", LSColors.HexToColorAlpha("011E1EFF") },
                 { "Delete", LSColors.HexToColorAlpha("7F2626FF") },
                 { "Delete Text", LSColors.HexToColorAlpha("EFE1E1FF") },
+                { "Delete Keyframe BG", LSColors.HexToColorAlpha("EEEAEEFF") },
+                { "Delete Keyframe Button", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Delete Keyframe Button Normal", LSColors.HexToColorAlpha("F34235FF") },
+                { "Delete Keyframe Button Highlight", LSColors.HexToColorAlpha("212121FF") },
+                { "Delete Keyframe Button Selected", LSColors.HexToColorAlpha("212121FF") },
+                { "Delete Keyframe Button Pressed", LSColors.HexToColorAlpha("222222FF") },
+                { "Delete Keyframe Button Disabled", LSColors.HexToColorAlpha("37373880") },
+
                 { "Prefab", LSColors.HexToColorAlpha("1B1B1CFF") },
                 { "Prefab Text", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Object", LSColors.HexToColorAlpha("918B91FF") },
@@ -336,8 +447,12 @@ namespace EditorManagement.Functions.Editors
                 { "Notification Success", LSColors.HexToColorAlpha("6EB5D3FF") },
                 { "Notification Error", LSColors.HexToColorAlpha("AA3D3DFF") },
                 { "Notification Warning", LSColors.HexToColorAlpha("CE8633FF") },
+
+                { "Copy", LSColors.HexToColorAlpha("1D4675FF") },
+                { "Copy Text", LSColors.HexToColorAlpha("E5E1E5FF") },
                 { "Paste", LSColors.HexToColorAlpha("C18736FF") },
                 { "Paste Text", LSColors.HexToColorAlpha("E5E1E5FF") },
+
                 { "Tab Color 1", LSColors.HexToColorAlpha("1395BAFF") },
                 { "Tab Color 1 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 1 Highlight", new Color(2f, 2f, 2f, 1f) },
@@ -380,10 +495,255 @@ namespace EditorManagement.Functions.Editors
                 { "Tab Color 7 Selected", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 7 Pressed", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Tab Color 7 Disabled", LSColors.HexToColorAlpha("FFFFFFFF") },
+
+                { "Event Color 1", LSColors.HexToColorAlpha("241A35FF") }, // 1
+			    { "Event Color 2", LSColors.HexToColorAlpha("1F2444FF") }, // 2
+			    { "Event Color 3", LSColors.HexToColorAlpha("193042FF") }, // 3
+			    { "Event Color 4", LSColors.HexToColorAlpha("102C38FF") }, // 4
+			    { "Event Color 5", LSColors.HexToColorAlpha("14393DFF") }, // 5
+			    { "Event Color 6", LSColors.HexToColorAlpha("164440FF") }, // 6
+			    { "Event Color 7", LSColors.HexToColorAlpha("274928FF") }, // 7
+			    { "Event Color 8", LSColors.HexToColorAlpha("2E3D1AFF") }, // 8
+			    { "Event Color 9", LSColors.HexToColorAlpha("404225FF") }, // 9
+			    { "Event Color 10", LSColors.HexToColorAlpha("594711FF") }, // 10
+			    { "Event Color 11", LSColors.HexToColorAlpha("562E13FF") }, // 11
+			    { "Event Color 12", LSColors.HexToColorAlpha("66280EFF") }, // 12
+			    { "Event Color 13", LSColors.HexToColorAlpha("561106FF") }, // 13
+			    { "Event Color 14", LSColors.HexToColorAlpha("3D0000FF") }, // 14
+			    { "Event Color 15", LSColors.HexToColorAlpha("1168AFFF") }, // 15
+
+                { "Event Color 1 Keyframe", LSColors.HexToColorAlpha("673AB7FF") }, // 1
+                { "Event Color 2 Keyframe", LSColors.HexToColorAlpha("3E51B4FF") }, // 2
+                { "Event Color 3 Keyframe", LSColors.HexToColorAlpha("2196F3FF") }, // 3
+                { "Event Color 4 Keyframe", LSColors.HexToColorAlpha("03A9F4FF") }, // 4
+                { "Event Color 5 Keyframe", LSColors.HexToColorAlpha("00BCD4FF") }, // 5
+                { "Event Color 6 Keyframe", LSColors.HexToColorAlpha("009688FF") }, // 6
+                { "Event Color 7 Keyframe", LSColors.HexToColorAlpha("4BAF50FF") }, // 7
+                { "Event Color 8 Keyframe", LSColors.HexToColorAlpha("7CB341FF") }, // 8
+                { "Event Color 9 Keyframe", LSColors.HexToColorAlpha("AFB42BFF") }, // 9
+                { "Event Color 10 Keyframe", LSColors.HexToColorAlpha("FFC107FF") }, // 10
+                { "Event Color 11 Keyframe", LSColors.HexToColorAlpha("FF9800FF") }, // 11
+                { "Event Color 12 Keyframe", LSColors.HexToColorAlpha("B96000FF") }, // 12
+                { "Event Color 13 Keyframe", LSColors.HexToColorAlpha("B12411FF") }, // 13
+                { "Event Color 14 Keyframe", LSColors.HexToColorAlpha("B12424FF") }, // 14
+                { "Event Color 15 Keyframe", LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+
+                { "Event Color 1 Editor", LSColors.HexToColorAlpha("564B6AFF") }, // 1
+                { "Event Color 2 Editor", LSColors.HexToColorAlpha("41445EFF") }, // 2
+                { "Event Color 3 Editor", LSColors.HexToColorAlpha("44627AFF") }, // 3
+                { "Event Color 4 Editor", LSColors.HexToColorAlpha("315B6EFF") }, // 4
+                { "Event Color 5 Editor", LSColors.HexToColorAlpha("3E6D73FF") }, // 5
+                { "Event Color 6 Editor", LSColors.HexToColorAlpha("305653FF") }, // 6
+                { "Event Color 7 Editor", LSColors.HexToColorAlpha("506951FF") }, // 7
+                { "Event Color 8 Editor", LSColors.HexToColorAlpha("515E41FF") }, // 8
+                { "Event Color 9 Editor", LSColors.HexToColorAlpha("676945FF") }, // 9
+                { "Event Color 10 Editor", LSColors.HexToColorAlpha("726335FF") }, // 10
+                { "Event Color 11 Editor", LSColors.HexToColorAlpha("FF9800FF") }, // 11
+                { "Event Color 12 Editor", LSColors.HexToColorAlpha("FF5800FF") }, // 12
+                { "Event Color 13 Editor", LSColors.HexToColorAlpha("FF2509FF") }, // 13
+                { "Event Color 14 Editor", LSColors.HexToColorAlpha("FF0F0FFF") }, // 14
             }),
         };
 
         public static Dictionary<string, EditorTheme> EditorThemesDictionary => EditorThemes.ToDictionary(x => x.name, x => x);
+
+        public static void AddDropdown(Dropdown dropdown, string name)
+        {
+            AddElement(new Element(name, "Dropdown 1", dropdown.gameObject, new List<Component>
+            {
+                dropdown.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            AddElement(new Element($"{name} Text", "Dropdown 1 Overlay", dropdown.captionText.gameObject, new List<Component>
+            {
+                dropdown.captionText,
+            }));
+
+            AddElement(new Element($"{name} Arrow", "Dropdown 1 Overlay", dropdown.transform.Find("Arrow").gameObject, new List<Component>
+            {
+                dropdown.transform.Find("Arrow").gameObject.GetComponent<Image>(),
+            }));
+
+            if (dropdown.captionImage)
+                AddElement(new Element($"{name} Preview", "Dropdown 1 Overlay", dropdown.captionImage.gameObject, new List<Component>
+                {
+                    dropdown.captionImage,
+                }));
+
+            var template = dropdown.transform.Find("Template").gameObject;
+            AddElement(new Element($"{name} Template", "Dropdown 1", template, new List<Component>
+            {
+                template.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
+
+            var templateItem = template.transform.Find("Viewport/Content/Item");
+            var templateItemBG = templateItem.Find("Item Background").gameObject;
+            AddElement(new Element($"{name} Template", "Dropdown 1 Item", templateItemBG, new List<Component>
+            {
+                templateItemBG.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var templateItemCheckmark = templateItem.Find("Item Checkmark").gameObject;
+            AddElement(new Element($"{name} Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
+            {
+                templateItemCheckmark.GetComponent<Image>(),
+            }));
+
+            var templateItemLabel = templateItem.Find("Item Label").gameObject;
+            AddElement(new Element($"{name} Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
+            {
+                templateItemLabel.GetComponent<Text>(),
+            }));
+
+        }
+
+        public static void AddInputField(InputField inputField, string name, string group)
+        {
+            inputField.image.fillCenter = true;
+            AddElement(new Element(name, group, inputField.gameObject, new List<Component>
+            {
+                inputField.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            AddElement(new Element($"{name} Text", $"{group} Text", inputField.textComponent.gameObject, new List<Component>
+            {
+                inputField.textComponent,
+            }));
+        }
+
+        public static void AddInputFields(GameObject gameObject, bool self, string name, bool selfInput = false, bool searchChildren = true)
+        {
+            if (!searchChildren)
+            {
+                var inputField = gameObject.GetComponent<InputField>();
+
+                if (!inputField)
+                    return;
+
+                var input = selfInput ? inputField.transform : gameObject.transform.Find("input") ?? gameObject.transform.Find("Input");
+
+                AddElement(new Element($"{name} Value", "Input Field", input.gameObject, new List<Component>
+                {
+                    selfInput ? inputField.image : input.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                AddElement(new Element($"{name} Value Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                {
+                    inputField.textComponent,
+                }));
+
+                var buttonLeft = self ? gameObject.transform.Find("<") : gameObject.transform.parent.Find("<");
+                var buttonRight = self ? gameObject.transform.Find(">") : gameObject.transform.parent.Find(">");
+
+                if (!buttonLeft || !buttonRight)
+                    return;
+
+                var buttonLeftComponent = buttonLeft.GetComponent<Button>();
+                var buttonRightComponent = buttonRight.GetComponent<Button>();
+
+                UnityEngine.Object.Destroy(buttonLeftComponent.GetComponent<Animator>());
+                buttonLeftComponent.transition = Selectable.Transition.ColorTint;
+
+                UnityEngine.Object.Destroy(buttonRightComponent.GetComponent<Animator>());
+                buttonRightComponent.transition = Selectable.Transition.ColorTint;
+
+                AddElement(new Element($"{name} Button", "Function 2", buttonLeft.gameObject, new List<Component>
+                {
+                    buttonLeftComponent,
+                    buttonLeftComponent.image
+                }, isSelectable: true));
+
+                AddElement(new Element($"{name} Button", "Function 2", buttonRight.gameObject, new List<Component>
+                {
+                    buttonRightComponent,
+                    buttonRightComponent.image
+                }, isSelectable: true));
+
+                return;
+            }
+            
+            for (int j = 0; j < gameObject.transform.childCount; j++)
+            {
+                var child = gameObject.transform.GetChild(j);
+
+                var inputField = child.GetComponent<InputField>();
+                var input = selfInput ? inputField.transform : child.Find("input") ?? child.Find("Input");
+
+                if (!inputField)
+                    continue;
+
+                AddElement(new Element($"{name} Value", "Input Field", input.gameObject, new List<Component>
+                {
+                    selfInput ? inputField.image : input.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                AddElement(new Element($"{name} Value Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                {
+                    inputField.textComponent,
+                }));
+
+                var buttonLeft = self ? child.Find("<") : child.parent.Find("<");
+                var buttonRight = self ? child.Find(">") : child.parent.Find(">");
+
+                if (!buttonLeft || !buttonRight)
+                    continue;
+
+                var buttonLeftComponent = buttonLeft.GetComponent<Button>();
+                var buttonRightComponent = buttonRight.GetComponent<Button>();
+
+                UnityEngine.Object.Destroy(buttonLeftComponent.GetComponent<Animator>());
+                buttonLeftComponent.transition = Selectable.Transition.ColorTint;
+
+                UnityEngine.Object.Destroy(buttonRightComponent.GetComponent<Animator>());
+                buttonRightComponent.transition = Selectable.Transition.ColorTint;
+
+                AddElement(new Element($"{name} Button", "Function 2", buttonLeft.gameObject, new List<Component>
+                {
+                    buttonLeftComponent,
+                    buttonLeftComponent.image
+                }, isSelectable: true));
+
+                AddElement(new Element($"{name} Button", "Function 2", buttonRight.gameObject, new List<Component>
+                {
+                    buttonRightComponent,
+                    buttonRightComponent.image
+                }, isSelectable: true));
+            }
+        }
+
+        public static void AddToggle(Toggle toggle, string name, Text text = null)
+        {
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(name, "Toggle 1", toggle.gameObject, new List<Component>
+            {
+                toggle.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Checkmark", "Toggle 1 Check", toggle.graphic.gameObject, new List<Component>
+            {
+                toggle.graphic,
+            }));
+
+            if (text)
+            {
+                EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", text.gameObject, new List<Component>
+                {
+                    text,
+                }));
+                return;
+            }
+
+            if (toggle.transform.Find("Text"))
+                EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("Text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("Text").GetComponent<Text>(),
+                }));
+
+            if (toggle.transform.Find("text"))
+                EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("text").GetComponent<Text>(),
+                }));
+        }
 
         public class EditorTheme
         {
@@ -476,7 +836,7 @@ namespace EditorManagement.Functions.Editors
                     }
                     else
                     {
-                        Debug.LogError($"{EditorPlugin.className}Failed to assign theme color to {name}.");
+                        Debug.LogError($"{EditorPlugin.className}Failed to assign theme color ({group}) to {name}.");
                     }
                 }
                 catch
