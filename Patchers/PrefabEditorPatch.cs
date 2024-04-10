@@ -1,34 +1,18 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-
-using HarmonyLib;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using SimpleJSON;
-using LSFunctions;
-
-using EditorManagement.Functions;
+﻿using EditorManagement.Functions;
+using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Editors;
-using EditorManagement.Functions.Helpers;
-
+using HarmonyLib;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
-using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Optimization;
-using RTFunctions.Patchers;
-
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using UnityEngine;
+using UnityEngine.UI;
 using BasePrefab = DataManager.GameData.Prefab;
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
-using BasePrefabObject = DataManager.GameData.PrefabObject;
-using EditorManagement.Functions.Components;
 
 namespace EditorManagement.Patchers
 {
