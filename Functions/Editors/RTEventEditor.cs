@@ -2650,7 +2650,7 @@ namespace EditorManagement.Functions.Editors
 				editDelete.interactable = isNotFirst;
 				editDelete.onClick.AddListener(delegate ()
 				{
-					__instance.DeleteEvent(__instance.currentEventType, __instance.currentEvent);
+					StartCoroutine(DeleteKeyframes());
 				});
 			}
 
