@@ -15,24 +15,23 @@ namespace EditorManagement.Functions.Components
     {
         bool init = false;
         int lastTheme = 0;
+        public string id;
 
         public EditorThemeManager.Element Element { get; set; }
 
-        public void Init(EditorThemeManager.Element element)
+        public void Init(EditorThemeManager.Element element, string id)
         {
             Element = element;
             Element.ApplyTheme(EditorThemeManager.CurrentTheme);
             lastTheme = EditorThemeManager.currentTheme;
+            this.id = id;
             init = true;
         }
 
-        void FixedUpdate()
+        void OnDestroy()
         {
-            if (init && lastTheme != EditorThemeManager.currentTheme)
-            {
-                Element.ApplyTheme(EditorThemeManager.CurrentTheme);
-                lastTheme = EditorThemeManager.currentTheme;
-            }
+            if (!string.IsNullOrEmpty(id) && EditorThemeManager.TemporaryEditorGUIElements.ContainsKey(id))
+                EditorThemeManager.TemporaryEditorGUIElements.Remove(id);
         }
     }
 }
