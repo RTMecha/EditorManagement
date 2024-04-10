@@ -11653,7 +11653,7 @@ namespace EditorManagement.Functions.Editors
                                 inputField.text = prop.configEntry.BoxedValue.ToString();
                                 inputField.onValueChanged.AddListener(delegate (string _val)
                                 {
-                                    if (float.TryParse(_val, out float result))
+                                    if (int.TryParse(_val, out int result))
                                         prop.configEntry.BoxedValue = result;
                                 });
 
@@ -11688,7 +11688,7 @@ namespace EditorManagement.Functions.Editors
                                 var left = gameObject.transform.Find("<").GetComponent<Button>();
                                 Destroy(left.GetComponent<Animator>());
                                 left.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", left.gameObject, new List<Component>
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Function 2", left.gameObject, new List<Component>
                                 {
                                     left.image,
                                     left,
@@ -11697,7 +11697,7 @@ namespace EditorManagement.Functions.Editors
                                 var right = gameObject.transform.Find(">").GetComponent<Button>();
                                 Destroy(right.GetComponent<Animator>());
                                 right.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", right.gameObject, new List<Component>
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Function 2", right.gameObject, new List<Component>
                                 {
                                     right.image,
                                     right,
@@ -12953,6 +12953,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.MarkerLoopActive),
             new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerLoopBegin),
             new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerLoopEnd),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.MarkerDefaultColor),
 
             #endregion
 
