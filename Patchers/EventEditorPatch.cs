@@ -64,18 +64,6 @@ namespace EditorManagement.Patchers
 				$"---------------------------- INITIALIZED ----------------------------\n" +
 				$"---------------------------------------------------------------------\n");
 
-			// Regular Legacy only allows for using the first 10 event rows, EventsCore adds the rest.
-			for (int i = 0; i < (EventsCore ? 14 : 10); i++)
-				Instance.eventObjects.Add(new List<GameObject>());
-
-			for (int i = 0; i < 14; i++)
-			{
-				var img = Instance.EventLabels.transform.GetChild(i).GetComponent<Image>();
-				img.color = RTEventEditor.EventLayerColors[i];
-				img.enabled = i < (EventsCore && RTEditor.ShowModdedUI ? 14 : 10);
-				Instance.EventLabels.transform.GetChild(i).GetChild(0).GetComponent<Text>().enabled = i < (EventsCore && RTEditor.ShowModdedUI ? 14 : 10);
-			}
-
 			for (int i = 0; i < 9; i++)
 			{
 				__instance.previewTheme.objectColors.Add(LSColors.pink900);
