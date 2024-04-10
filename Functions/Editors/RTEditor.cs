@@ -1835,10 +1835,7 @@ namespace EditorManagement.Functions.Editors
             eventToggle.onValueChanged.ClearAll();
             eventToggle.onValueChanged.AddListener(delegate (bool _val)
             {
-                if (_val)
-                    layerType = LayerType.Events;
-                else
-                    layerType = LayerType.Objects;
+                layerType = _val ? LayerType.Events : LayerType.Objects;
             });
 
             var timeDefault = timelineBar.transform.GetChild(0).gameObject;
@@ -1861,7 +1858,6 @@ namespace EditorManagement.Functions.Editors
                 timeObj.transform.localScale = Vector3.one;
                 timeObj.name = "Time Input";
 
-                //timelineBar.transform.GetChild(0).gameObject.SetActive(true);
                 timeIF = timeObj.GetComponent<InputField>();
 
                 //Triggers.AddTooltip(timeObj, "Shows the exact current time of song.", "Type in the input field to go to a precise time in the level.");
@@ -2823,13 +2819,13 @@ namespace EditorManagement.Functions.Editors
                     UpdateEditorPath(true);
                 });
 
-                string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
-
                 EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Reloader", "Function 2", levelListReloader, new List<Component>
                 {
                     levelListReloader.GetComponent<Image>(),
                     levelListRButton
                 }, isSelectable: true));
+
+                string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
                 if (RTFile.FileExists(refreshImage))
                 {
@@ -2847,6 +2843,21 @@ namespace EditorManagement.Functions.Editors
                 var themePathGO = timeIF.gameObject.Duplicate(themePathSpacer.transform, "themes path");
                 ((RectTransform)themePathGO.transform).anchoredPosition = new Vector2(150f, 0f);
                 ((RectTransform)themePathGO.transform).sizeDelta = new Vector2(300f, 34f);
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Dialog Path", "Input Field", themePathGO, new List<Component>
+                {
+                    themePathGO.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var text = themePathGO.transform.Find("Text").gameObject;
+                var textComponent = text.GetComponent<Text>();
+                textComponent.alignment = TextAnchor.MiddleLeft;
+                textComponent.fontSize = 16;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Dialog Path Text", "Input Field Text", text, new List<Component>
+                {
+                    textComponent,
+                }));
 
                 var themePathTip = themePathGO.AddComponent<HoverTooltip>();
                 var llTip = new HoverTooltip.Tooltip();
@@ -2916,6 +2927,12 @@ namespace EditorManagement.Functions.Editors
                     UpdateThemePath(true);
                 });
 
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Dialog Reloader", "Function 2", themePathReloader, new List<Component>
+                {
+                    themePathReloader.GetComponent<Image>(),
+                    levelListRButton
+                }, isSelectable: true));
+
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
                 if (RTFile.FileExists(refreshImage))
@@ -2931,7 +2948,22 @@ namespace EditorManagement.Functions.Editors
                 var prefabPathGO = timeIF.gameObject.Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "prefabs path");
 
                 ((RectTransform)prefabPathGO.transform).anchoredPosition = config.PrefabExternalPrefabPathPos.Value;
-                ((RectTransform)prefabPathGO.transform).sizeDelta = new Vector2(config.PrefabExternalPrefabPathLength.Value, 34f);
+                ((RectTransform)prefabPathGO.transform).sizeDelta = new Vector2(config.PrefabExternalPrefabPathLength.Value, 32f);
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Externap Prefab Popup Path", "Input Field", prefabPathGO, new List<Component>
+                {
+                    prefabPathGO.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var text = prefabPathGO.transform.Find("Text").gameObject;
+                var textComponent = text.GetComponent<Text>();
+                textComponent.alignment = TextAnchor.MiddleLeft;
+                textComponent.fontSize = 16;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Externap Prefab Popup Path Text", "Input Field Text", text, new List<Component>
+                {
+                    textComponent,
+                }));
 
                 var levelListTip = prefabPathGO.AddComponent<HoverTooltip>();
                 var llTip = new HoverTooltip.Tooltip();
@@ -2949,6 +2981,7 @@ namespace EditorManagement.Functions.Editors
                 prefabPathField.characterValidation = InputField.CharacterValidation.None;
                 prefabPathField.onValueChanged.ClearAll();
                 prefabPathField.onEndEdit.ClearAll();
+                prefabPathField.textComponent.fontSize = 16;
                 prefabPathField.text = PrefabPath;
                 prefabPathField.onValueChanged.AddListener(delegate (string _val)
                 {
@@ -3001,6 +3034,12 @@ namespace EditorManagement.Functions.Editors
                 {
                     UpdatePrefabPath(true);
                 });
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Popup Reloader", "Function 2", levelListReloader, new List<Component>
+                {
+                    levelListReloader.GetComponent<Image>(),
+                    levelListRButton
+                }, isSelectable: true));
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
@@ -10364,44 +10403,66 @@ namespace EditorManagement.Functions.Editors
             while (!PrefabEditor.inst || !PrefabEditor.inst.externalContent)
                 yield return null;
 
+            PrefabEditorManager.inst.PrefabPanels.Where(x => x.Dialog == PrefabDialog.External).ToList().ForEach(x => Destroy(x.GameObject));
             PrefabEditorManager.inst.PrefabPanels.RemoveAll(x => x.Dialog == PrefabDialog.External);
-
-            LSHelpers.DeleteChildren(PrefabEditor.inst.externalContent);
-
-            var gameObject = PrefabEditor.inst.CreatePrefab.Duplicate(PrefabEditor.inst.externalContent, "add new prefab");
-            gameObject.GetComponentInChildren<Text>().text = "New External Prefab";
 
             var config = EditorConfig.Instance;
 
             var hoverSize = config.PrefabButtonHoverSize.Value;
 
-            var hover = gameObject.AddComponent<HoverUI>();
-            hover.animateSca = true;
-            hover.animatePos = false;
-            hover.size = hoverSize;
-
-            gameObject.GetComponentAndPerformAction(delegate (Button x)
+            if (!prefabExternalAddButton)
             {
-                x.NewOnClickListener(delegate ()
+                DeleteChildren(PrefabEditor.inst.externalContent);
+
+                prefabExternalAddButton = PrefabEditor.inst.CreatePrefab.Duplicate(PrefabEditor.inst.externalContent, "add new prefab");
+                var text = prefabExternalAddButton.GetComponentInChildren<Text>();
+                text.text = "New External Prefab";
+
+                var hover = prefabExternalAddButton.AddComponent<HoverUI>();
+                hover.animateSca = true;
+                hover.animatePos = false;
+                hover.size = hoverSize;
+
+                prefabExternalAddButton.GetComponentAndPerformAction(delegate (Button x)
                 {
-                    if (PrefabEditorManager.inst.savingToPrefab && PrefabEditorManager.inst.prefabToSaveFrom != null)
+                    x.NewOnClickListener(delegate ()
                     {
-                        PrefabEditorManager.inst.savingToPrefab = false;
-                        PrefabEditorManager.inst.SavePrefab(PrefabEditorManager.inst.prefabToSaveFrom);
+                        if (PrefabEditorManager.inst.savingToPrefab && PrefabEditorManager.inst.prefabToSaveFrom != null)
+                        {
+                            PrefabEditorManager.inst.savingToPrefab = false;
+                            PrefabEditorManager.inst.SavePrefab(PrefabEditorManager.inst.prefabToSaveFrom);
 
-                        EditorManager.inst.HideDialog("Prefab Popup");
+                            EditorManager.inst.HideDialog("Prefab Popup");
 
-                        PrefabEditorManager.inst.prefabToSaveFrom = null;
+                            PrefabEditorManager.inst.prefabToSaveFrom = null;
 
-                        EditorManager.inst.DisplayNotification("Applied all changes to External Prefab.", 2f, EditorManager.NotificationType.Success);
+                            EditorManager.inst.DisplayNotification("Applied all changes to new External Prefab.", 2f, EditorManager.NotificationType.Success);
 
-                        return;
-                    }
+                            return;
+                        }
 
-                    PrefabEditor.inst.OpenDialog();
-                    PrefabEditorManager.inst.createInternal = false;
+                        PrefabEditor.inst.OpenDialog();
+                        PrefabEditorManager.inst.createInternal = false;
+                    });
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Create", "Add", prefabExternalAddButton, new List<Component>
+                    {
+                        x.image,
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Create Text", "Add Text", text.gameObject, new List<Component>
+                    {
+                        text,
+                    }));
                 });
-            });
+            }
+            else
+            {
+                var hover = prefabExternalAddButton.GetComponent<HoverUI>();
+                hover.animateSca = true;
+                hover.animatePos = false;
+                hover.size = hoverSize;
+            }
 
             bool isExternal = true;
 
@@ -12675,7 +12736,8 @@ namespace EditorManagement.Functions.Editors
 
                 var dialog = gameObject.transform;
 
-                var scrollbar = dialog.GetComponentInChildren<Scrollbar>();
+                var scrollbar = dialog.GetComponentsInChildren<Scrollbar>().ToList();
+                var scrollAmounts = scrollbar.Select(x => x.value).ToList();
 
                 var animation = new AnimationManager.Animation("Popup Open");
                 animation.floatAnimations = new List<AnimationManager.Animation.AnimationObject<float>>
@@ -12720,8 +12782,11 @@ namespace EditorManagement.Functions.Editors
                             var pos = dialog.localScale;
                             pos.x = x;
                             dialog.localScale = pos;
-                            if (scrollbar && active)
-                                scrollbar.value = 1f;
+
+                            for (int i = 0; i < scrollbar.Count; i++)
+                            {
+                                scrollbar[i].value = scrollAmounts[i];
+                            }
                         }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
@@ -12736,8 +12801,11 @@ namespace EditorManagement.Functions.Editors
                             var pos = dialog.localScale;
                             pos.y = x;
                             dialog.localScale = pos;
-                            if (scrollbar && active)
-                                scrollbar.value = 1f;
+
+                            for (int i = 0; i < scrollbar.Count; i++)
+                            {
+                                scrollbar[i].value = scrollAmounts[i];
+                            }
                         }
                     }),
                     new AnimationManager.Animation.AnimationObject<float>(new List<IKeyframe<float>>
