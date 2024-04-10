@@ -15,6 +15,7 @@ using RTFunctions.Functions.Managers;
 using ThemeSetting = EditorManagement.EditorTheme;
 using TMPro;
 using System.Collections;
+using EditorManagement.Functions.Components;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -46,44 +47,18 @@ namespace EditorManagement.Functions.Editors
             for (int i = 0; i < EditorGUIElements.Count; i++)
                 EditorGUIElements[i].ApplyTheme(theme);
 
-            for (int i = 0; i < EditorManager.inst.loadedLevels.Count; i++)
+            try
             {
-                var level = EditorManager.inst.loadedLevels.Select(x => x as EditorWrapper).ElementAt(i);
-
-                if (level.GameObject)
+                for (int i = 0; i < TemporaryEditorGUIElements.Count; i++)
                 {
-                    ApplyElement(new Element($"Level Button {i}", "List Button 1", level.GameObject, new List<Component>
-                    {
-                        level.GameObject.GetComponent<Image>(),
-                        level.GameObject.GetComponent<Button>(),
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
+                    var element = TemporaryEditorGUIElements.ElementAt(i).Value;
 
-                    var text = level.GameObject.transform.GetChild(0).gameObject;
-                    ApplyElement(new Element($"Level Button {i} Text", "Light Text", text, new List<Component>
-                    {
-                        text.GetComponent<Text>(),
-                    }));
-                }
-
-                if (level.CombinerGameObject)
-                {
-                    ApplyElement(new Element($"Level Combiner Button {i}", "List Button 1", level.CombinerGameObject, new List<Component>
-                    {
-                        level.CombinerGameObject.GetComponent<Image>(),
-                        level.CombinerGameObject.GetComponent<Button>(),
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                    var text = level.CombinerGameObject.transform.GetChild(0).gameObject;
-                    ApplyElement(new Element($"Level Button {i} Text", "Light Text", text, new List<Component>
-                    {
-                        text.GetComponent<Text>(),
-                    }));
+                    element.ApplyTheme(theme);
                 }
             }
-
-            if (EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.gameObject.activeInHierarchy)
+            catch (Exception ex)
             {
-                RTEditor.inst.RenderPropertiesWindow();
+                Debug.LogException(ex);
             }
 
             yield break;
@@ -98,15 +73,28 @@ namespace EditorManagement.Functions.Editors
             element.ApplyTheme(CurrentTheme);
         }
 
-        public static void ApplyElement(Element element) => element.ApplyTheme(CurrentTheme);
+        public static void ApplyElement(Element element)
+        {
+            element.ApplyTheme(CurrentTheme);
+
+            if (element.GameObject != null)
+            {
+                var id = LSText.randomNumString(16);
+                element.GameObject.AddComponent<EditorThemeElement>().Init(element, id);
+                if (!TemporaryEditorGUIElements.ContainsKey(id))
+                    TemporaryEditorGUIElements.Add(id, element);
+            }
+        }
 
         public static List<Element> EditorGUIElements { get; set; } = new List<Element>();
+        public static Dictionary<string, Element> TemporaryEditorGUIElements { get; set; } = new Dictionary<string, Element>();
 
         public static List<EditorTheme> EditorThemes { get; set; } = new List<EditorTheme>
         {
             new EditorTheme($"{nameof(ThemeSetting.Legacy)}", new Dictionary<string, Color>
             {
                 { "Background", LSColors.HexToColorAlpha("212121FF") },
+                { "Background 2", LSColors.HexToColorAlpha("1B1B1CFF") },
                 { "Preview Cover", LSColors.HexToColorAlpha("191919FF") },
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("C8C8C8FF") },
                 { "Scrollbar Handle Normal", LSColors.HexToColorAlpha("C7C7C7FF") },
@@ -138,8 +126,13 @@ namespace EditorManagement.Functions.Editors
                 { "List Button 1 Pressed", LSColors.HexToColorAlpha("424242FF") },
                 { "List Button 1 Disabled", LSColors.HexToColorAlpha("424242FF") },
                 { "Search Field 1", LSColors.HexToColorAlpha("2F2F2FFF") },
+                { "Search Field 1 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Search Field 2", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Search Field 2 Text", LSColors.HexToColorAlpha("2F2F2FFF") },
                 { "Add", LSColors.HexToColorAlpha("4DB6ACFF") },
                 { "Add Text", LSColors.HexToColorAlpha("202020FF") },
+                { "Delete", LSColors.HexToColorAlpha("E67474FF") },
+                { "Delete Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Prefab", LSColors.HexToColorAlpha("383838FF") },
                 { "Prefab Text", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Object", LSColors.HexToColorAlpha("EFEBEFFF") },
@@ -246,6 +239,7 @@ namespace EditorManagement.Functions.Editors
             new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
                 { "Background", LSColors.HexToColorAlpha("0A0A0AFF") },
+                { "Background 2", LSColors.HexToColorAlpha("060606FF") },
                 { "Preview Cover", LSColors.HexToColorAlpha("060606FF") },
                 { "Scrollbar Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Scrollbar Handle Normal", LSColors.HexToColorAlpha("4C4C4CFF") },
@@ -277,8 +271,13 @@ namespace EditorManagement.Functions.Editors
                 { "List Button 1 Pressed", LSColors.HexToColorAlpha("282828FF") },
                 { "List Button 1 Disabled", LSColors.HexToColorAlpha("282828FF") },
                 { "Search Field 1", LSColors.HexToColorAlpha("111111FF") },
+                { "Search Field 1 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "Search Field 2", LSColors.HexToColorAlpha("111111FF") },
+                { "Search Field 2 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Add", LSColors.HexToColorAlpha("06ADADFF") },
                 { "Add Text", LSColors.HexToColorAlpha("011E1EFF") },
+                { "Delete", LSColors.HexToColorAlpha("7F2626FF") },
+                { "Delete Text", LSColors.HexToColorAlpha("EFE1E1FF") },
                 { "Prefab", LSColors.HexToColorAlpha("1B1B1CFF") },
                 { "Prefab Text", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Object", LSColors.HexToColorAlpha("918B91FF") },
