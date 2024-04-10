@@ -159,7 +159,7 @@ namespace EditorManagement.Functions.Editors
 
         public IEnumerator Wait()
         {
-            while (!EditorManager.inst || !RTEditor.inst || !RTEditor.inst.defaultIF)
+            while (!PrefabEditor.inst || !RTEditor.inst || !RTEditor.inst.defaultIF)
                 yield return null;
 
             try
@@ -176,11 +176,16 @@ namespace EditorManagement.Functions.Editors
                 var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
                 input.transform.localScale = Vector3.one;
                 ((RectTransform)input.transform).sizeDelta = new Vector2(136f, 32f);
-                input.transform.Find("Text").GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
-                input.transform.Find("Text").GetComponent<Text>().fontSize = 17;
+                var text = input.transform.Find("Text").GetComponent<Text>();
+                text.alignment = TextAnchor.MiddleCenter;
+                text.fontSize = 17;
 
-                var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
-                ((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
+                var delete = PrefabEditor.inst.AddPrefab.transform.Find("delete").gameObject.Duplicate(tagPrefabRT, "Delete");
+                delete.transform.AsRT().anchoredPosition = Vector2.zero;
+                delete.transform.AsRT().anchorMax = Vector2.one;
+                delete.transform.AsRT().anchorMin = Vector2.one;
+                delete.transform.AsRT().pivot = Vector2.one;
+                delete.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
             }
             catch (Exception ex)
             {
@@ -192,8 +197,6 @@ namespace EditorManagement.Functions.Editors
         public GameObject shapeButtonPrefab;
 
         public TimelineObject CurrentSelection { get; set; } = new TimelineObject(null);
-        //public TimelineObject CurrentBeatmapObjectSelection => SelectedBeatmapObjects.Last();
-        //public TimelineObject CurrentPrefabObjectSelection => SelectedPrefabObjects.Last();
 
         public List<TimelineObject> SelectedObjects => RTEditor.inst.timelineObjects.FindAll(x => x.selected && !x.IsEventKeyframe);
         public List<TimelineObject> SelectedBeatmapObjects => RTEditor.inst.TimelineBeatmapObjects.FindAll(x => x.selected);
