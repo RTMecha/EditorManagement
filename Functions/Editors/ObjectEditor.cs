@@ -356,7 +356,17 @@ namespace EditorManagement.Functions.Editors
             var list = bmTimelineObject.InternalSelections.Where(x => x.selected).ToList();
             int count = list.Where(x => x.Index != 0).Count();
 
-            EditorManager.inst.DisplayNotification("Deleting Object Keyframes [ " + count + " ]", 0.2f, EditorManager.NotificationType.Success);
+            if (count < 1)
+            {
+                EditorManager.inst.DisplayNotification($"No Object keyframes to delete.", 2f, EditorManager.NotificationType.Warning);
+                yield break;
+            }
+
+            int index = list.Min(x => x.Index);
+            int type = list.Min(x => x.Type);
+            bool allOfTheSameType = list.All(x => x.Type == list.Min(y => y.Type));
+
+            EditorManager.inst.DisplayNotification($"Deleting Object Keyframes [ {count} ]", 0.2f, EditorManager.NotificationType.Success);
 
             UpdateKeyframeOrder(beatmapObject);
 
@@ -372,9 +382,8 @@ namespace EditorManagement.Functions.Editors
                 beatmapObject.events[i].RemoveAll(x => strs.Contains(((EventKeyframe)x).id));
             }
 
-            var ti = GetTimelineObject(beatmapObject);
-            ti.InternalSelections.Where(x => x.selected).ToList().ForEach(x => Destroy(x.GameObject));
-            ti.InternalSelections.RemoveAll(x => x.selected);
+            bmTimelineObject.InternalSelections.Where(x => x.selected).ToList().ForEach(x => Destroy(x.GameObject));
+            bmTimelineObject.InternalSelections.RemoveAll(x => x.selected);
 
             RenderTimelineObject(bmTimelineObject);
             Updater.UpdateProcessor(beatmapObject, "Keyframes");
@@ -384,10 +393,14 @@ namespace EditorManagement.Functions.Editors
 
             RenderKeyframes(beatmapObject);
 
-            SetCurrentKeyframe(beatmapObject, 0);
+            if (count == 1 || allOfTheSameType)
+                SetCurrentKeyframe(beatmapObject, type, Mathf.Clamp(index - 1, 0, beatmapObject.events[type].Count - 1));
+            else
+                SetCurrentKeyframe(beatmapObject, type, 0);
+
             ResizeKeyframeTimeline(beatmapObject);
 
-            EditorManager.inst.DisplayNotification("Deleted Object Keyframes [ " + count + " ]", 1f, EditorManager.NotificationType.Success);
+            EditorManager.inst.DisplayNotification("Deleted Object Keyframes [ " + count + " ]", 2f, EditorManager.NotificationType.Success);
 
             yield break;
         }
