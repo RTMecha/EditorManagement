@@ -422,7 +422,10 @@ namespace EditorManagement.Functions.Helpers
 				ObjectEditor.inst.UpdateKeyframeOrder(beatmapObject);
 
 				ObjectEditor.inst.RenderTimelineObject(ObjectEditor.inst.GetTimelineObject(beatmapObject));
-				ObjectEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+
+				ObjectEditor.inst.RenderKeyframes(beatmapObject);
+				ObjectEditor.inst.ResizeKeyframeTimeline(beatmapObject);
+				ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
 				ObjEditor.inst.timelineKeyframesDrag = false;
 			});
 			return entry;
@@ -599,6 +602,10 @@ namespace EditorManagement.Functions.Helpers
 
 							if (!success)
 								EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
+							else
+                            {
+								RTEditor.inst.parentPickerEnabled = false;
+                            }
 
 							return;
                         }
