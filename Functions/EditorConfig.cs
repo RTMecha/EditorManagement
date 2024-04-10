@@ -77,6 +77,7 @@ namespace EditorManagement.Functions
             MarkerLoopActive = Config.Bind("Timeline", "Marker Loop Active", false, "If the marker should loop between markers.");
             MarkerLoopBegin = Config.Bind("Timeline", "Marker Loop Begin", 0, "Audio time gets set to this marker.");
             MarkerLoopEnd = Config.Bind("Timeline", "Marker Loop End", 1, "If the audio time gets to the set marker time, it will loop to the beginning marker.");
+            MarkerDefaultColor = Config.Bind("Timeline", "Marker Default Color", 0, "The default color assigned to a new marker.");
 
             #endregion
 
@@ -1178,6 +1179,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<bool> MarkerLoopActive { get; set; }
         public ConfigEntry<int> MarkerLoopBegin { get; set; }
         public ConfigEntry<int> MarkerLoopEnd { get; set; }
+        public ConfigEntry<int> MarkerDefaultColor { get; set; }
 
         #endregion
 

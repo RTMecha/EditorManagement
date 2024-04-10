@@ -338,6 +338,7 @@ namespace EditorManagement.Patchers
 				var marker = new DataManager.GameData.BeatmapData.Marker();
 				marker.time = __0;
 				marker.name = "";
+				marker.color = Mathf.Clamp(EditorConfig.Instance.MarkerDefaultColor.Value, 0, Instance.markerColors.Count - 1);
 				Markers.Add(marker);
 				index = Markers.Count - 1;
 			}
