@@ -12909,6 +12909,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabExampleTemplate),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PasteOffset),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BringToSelection),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SelectPasted),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.CreateObjectsatCameraCenter),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.CreateObjectsScaleParentDefault),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.AllowEditorKeybindsWithEditorCam),

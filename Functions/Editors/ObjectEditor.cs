@@ -461,12 +461,29 @@ namespace EditorManagement.Functions.Editors
                 return;
             }
 
+            var ids = new List<string>();
             for (int i = 0; i < beatmapObject.events.Count; i++)
-                beatmapObject.events[i].AddRange(kfs.Where(x => x.Type == i).Select(x => PasteKF(beatmapObject, x, setTime)));
+                beatmapObject.events[i].AddRange(kfs.Where(x => x.Type == i).Select(x =>
+                {
+                    var kf = PasteKF(beatmapObject, x, setTime);
+                    ids.Add(kf.id);
+                    return kf;
+                }));
 
             ResizeKeyframeTimeline(beatmapObject);
             UpdateKeyframeOrder(beatmapObject);
             RenderKeyframes(beatmapObject);
+
+            if (EditorConfig.Instance.SelectPasted.Value)
+            {
+                var timelineObject = GetTimelineObject(beatmapObject);
+                foreach (var kf in timelineObject.InternalSelections)
+                {
+                    kf.selected = ids.Contains(kf.ID);
+                }
+            }
+
+            RenderObjectKeyframesDialog(beatmapObject);
             RenderTimelineObject(new TimelineObject(beatmapObject));
 
             if (UpdateObjects)

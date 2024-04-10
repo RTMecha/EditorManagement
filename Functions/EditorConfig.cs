@@ -39,6 +39,7 @@ namespace EditorManagement.Functions
             PrefabExampleTemplate = Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.");
             PasteOffset = Config.Bind("General", "Paste Offset", false, "When enabled objects that are pasted will be pasted at an offset based on the distance between the audio time and the copied object. Otherwise, the objects will be pasted at the earliest objects start time.");
             BringToSelection = Config.Bind("General", "Bring To Selection", false, "When an object is selected (whether it be a regular object, a marker, etc), it will move the layer and audio time to that object.");
+            SelectPasted = Config.Bind("General", "Select Pasted Keyframes", false, "Select a pasted keyframe.");
             CreateObjectsatCameraCenter = Config.Bind("General", "Create Objects at Camera Center", true, "When an object is created, its position will be set to that of the camera's.");
             CreateObjectsScaleParentDefault = Config.Bind("General", "Create Objects Scale Parent Default", true, "The default value for new Beatmap Objects' Scale Parent.");
             AllowEditorKeybindsWithEditorCam = Config.Bind("General", "Allow Editor Keybinds With Editor Cam", true, "Allows keybinds to be used if EventsCore editor camera is on.");
@@ -1139,6 +1140,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<bool> PrefabExampleTemplate { get; set; }
         public ConfigEntry<bool> PasteOffset { get; set; }
         public ConfigEntry<bool> BringToSelection { get; set; }
+        public ConfigEntry<bool> SelectPasted { get; set; }
         public ConfigEntry<bool> CreateObjectsatCameraCenter { get; set; }
         public ConfigEntry<bool> CreateObjectsScaleParentDefault { get; set; }
         public ConfigEntry<bool> AllowEditorKeybindsWithEditorCam { get; set; }

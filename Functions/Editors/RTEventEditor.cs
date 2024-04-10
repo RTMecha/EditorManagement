@@ -360,7 +360,9 @@ namespace EditorManagement.Functions.Editors
 				return;
 			}
 
-			RTEditor.inst.timelineKeyframes.ForEach(x => x.selected = false);
+			var selectPasted = EditorConfig.Instance.SelectPasted.Value;
+			if (selectPasted)
+				RTEditor.inst.timelineKeyframes.ForEach(x => x.selected = false);
 
 			foreach (var keyframeSelection in kfs)
 			{
@@ -380,7 +382,8 @@ namespace EditorManagement.Functions.Editors
 
 				var kf = CreateEventObject(keyframeSelection.Type, index);
 				RenderTimelineObject(kf);
-				kf.selected = true;
+				if (selectPasted)
+					kf.selected = true;
 				RTEditor.inst.timelineKeyframes.Add(kf);
 			}
 
