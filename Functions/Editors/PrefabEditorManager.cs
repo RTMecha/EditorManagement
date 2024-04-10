@@ -1549,6 +1549,9 @@ namespace EditorManagement.Functions.Editors
                 PrefabEditor.inst.ReloadInternalPrefabsInPopup();
             });
 
+            savingToPrefab = false;
+            prefabToSaveFrom = null;
+
             PrefabEditor.inst.ReloadExternalPrefabsInPopup();
             PrefabEditor.inst.ReloadInternalPrefabsInPopup();
         }
