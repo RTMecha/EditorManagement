@@ -170,7 +170,7 @@ namespace EditorManagement.Functions
 
             PrefabExternalPopupPos = Config.Bind("Editor GUI", "Prefab External Popup Pos", new Vector2(0f, -16f), "Position of the external prefabs popup.");
             PrefabExternalPopupSize = Config.Bind("Editor GUI", "Prefab External Popup Size", new Vector2(400f, -32f), "Scale of the external prefabs popup.");
-            PrefabExternalPrefabPathPos = Config.Bind("Editor GUI", "Prefab External Prefab Path Pos", new Vector2(325f, 15f), "Position of the prefab path input field.");
+            PrefabExternalPrefabPathPos = Config.Bind("Editor GUI", "Prefab External Prefab Path Pos", new Vector2(325f, 16f), "Position of the prefab path input field.");
             PrefabExternalPrefabPathLength = Config.Bind("Editor GUI", "Prefab External Prefab Path Length", 150f, "Length of the prefab path input field.");
             PrefabExternalPrefabRefreshPos = Config.Bind("Editor GUI", "Prefab External Prefab Refresh Pos", new Vector2(210f, 450f), "Position of the prefab refresh button.");
             PrefabExternalHorizontalScroll = Config.Bind("Editor GUI", "Prefab External Horizontal Scroll", false, "If you can scroll left / right or not.");
