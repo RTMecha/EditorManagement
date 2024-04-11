@@ -19,6 +19,7 @@ namespace EditorManagement.Functions
         public Button UseButton { get; set; }
         public Button EditButton { get; set; }
         public Button DeleteButton { get; set; }
+        public Image BaseImage { get; set; }
 
         public Text Name { get; set; }
 
