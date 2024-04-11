@@ -466,7 +466,7 @@ namespace EditorManagement.Functions.Editors
 
 					var useTheme = EditorPrefabHolder.Instance.FunctionButton.Duplicate(buttons.transform, "use");
 					var useThemeStorage = useTheme.GetComponent<FunctionButtonStorage>();
-					useTheme.SetActive(true);
+					useTheme.SetActive(false);
 					var useThemeText = useThemeStorage.text;
 					useThemeText.fontSize = 16;
 					useThemeText.text = "Use Theme";
@@ -477,7 +477,7 @@ namespace EditorManagement.Functions.Editors
 
 					var exportToVG = EditorPrefabHolder.Instance.FunctionButton.Duplicate(buttons.transform, "convert");
 					var exportToVGStorage = exportToVG.GetComponent<FunctionButtonStorage>();
-					exportToVG.SetActive(true);
+					exportToVG.SetActive(false);
 					var exportToVGText = exportToVGStorage.text;
 					exportToVGText.fontSize = 16;
 					exportToVGText.text = "Convert to VG Format";
@@ -571,6 +571,21 @@ namespace EditorManagement.Functions.Editors
 						viewThemeStorage.baseColors[0].color = beatmapTheme.backgroundColor;
 						viewThemeStorage.baseColors[1].color = beatmapTheme.guiColor;
 						viewThemeStorage.baseColors[2].color = beatmapTheme.guiAccentColor;
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.baseColors[0].gameObject, new List<Component>
+						{
+							viewThemeStorage.baseColors[0],
+						}, true, 1, SpriteManager.RoundedSide.W));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.baseColors[1].gameObject, new List<Component>
+						{
+							viewThemeStorage.baseColors[1],
+						}, true, 1, SpriteManager.RoundedSide.W));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.baseColors[2].gameObject, new List<Component>
+						{
+							viewThemeStorage.baseColors[2],
+						}, true, 1, SpriteManager.RoundedSide.W));
 
 						for (int i = 0; i < viewThemeStorage.playerColors.Count; i++)
 						{
@@ -696,6 +711,7 @@ namespace EditorManagement.Functions.Editors
 							viewThemeStorage.text,
 						}));
 
+						use.gameObject.SetActive(true);
 						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Use", "Function 2", use.gameObject, new List<Component>
 						{
 							use.image,
@@ -707,6 +723,7 @@ namespace EditorManagement.Functions.Editors
 							useStorage.text,
 						}));
 
+						convert.gameObject.SetActive(true);
 						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Convert", "Function 2", convert.gameObject, new List<Component>
 						{
 							convert.image,
