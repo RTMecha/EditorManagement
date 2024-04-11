@@ -140,37 +140,39 @@ namespace EditorManagement.Functions.Editors
         public string themeSearch;
 		public int themePage;
         public Transform themeContent;
-        public void CreateThemePopup()
+		public InputFieldStorage pageStorage;
+		public void CreateThemePopup()
 		{
 			try
 			{
-				var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+				var themePopup = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
 					.Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Theme Popup");
-				objectSearch.transform.localPosition = Vector3.zero;
+				themePopup.transform.localPosition = Vector3.zero;
 
-				var objectSearchRT = (RectTransform)objectSearch.transform;
-				objectSearchRT.sizeDelta = new Vector2(600f, 450f);
-				var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
-				objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
-				objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Beatmap Themes";
-				((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
-				objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 362f);
+				themePopup.transform.AsRT().sizeDelta = new Vector2(600f, 450f);
+				var themePopupPanel = themePopup.transform.Find("Panel").AsRT();
+				themePopupPanel.sizeDelta = new Vector2(632f, 32f);
 
-				var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
+				var themePopupTitle = themePopupPanel.Find("Text").GetComponent<Text>();
+				themePopupTitle.text = "Beatmap Themes";
+				((RectTransform)themePopup.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
+				themePopup.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 362f);
+
+				var x = themePopupPanel.Find("x").GetComponent<Button>();
 				x.onClick.RemoveAllListeners();
 				x.onClick.AddListener(delegate ()
 				{
 					EditorManager.inst.HideDialog("Theme Popup");
 				});
 
-				var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
+				var searchBar = themePopup.transform.Find("search-box/search").GetComponent<InputField>();
 				searchBar.onValueChanged.ClearAll();
 				searchBar.onValueChanged.AddListener(delegate (string _value)
 				{
 					themeSearch = _value;
 					RefreshThemeSearch();
 				});
-				searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for theme...";
+				((Text)searchBar.placeholder).text = "Search for theme...";
 
 				EditorHelper.AddEditorDropdown("View Themes", "", "View", RTEditor.inst.SearchSprite, delegate ()
 				{
@@ -178,57 +180,109 @@ namespace EditorManagement.Functions.Editors
 					RefreshThemeSearch();
 				});
 
-				themeContent = objectSearch.transform.Find("mask/content");
+				themeContent = themePopup.transform.Find("mask/content");
 
-				EditorHelper.AddEditorPopup("Theme Popup", objectSearch);
+				EditorHelper.AddEditorPopup("Theme Popup", themePopup);
 
-
-				var singleInput = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move/position/x");
-
+				// Page
                 {
-					var page = singleInput.Duplicate(objectSearchPanel, "page");
-					page.transform.AsRT().anchoredPosition = new Vector2(340f, 0f);
-
-					Destroy(page.GetComponent<EventInfo>());
-					Destroy(page.GetComponent<EventTrigger>());
-					Destroy(page.GetComponent<InputField>());
-
-					page.transform.localScale = Vector3.one;
-					page.transform.GetChild(0).localScale = Vector3.one;
-
-					var input = page.transform.Find("input");
-
-					var xif = input.gameObject.AddComponent<InputField>();
-					xif.onValueChanged.RemoveAllListeners();
-					xif.textComponent = input.Find("Text").GetComponent<Text>();
-					xif.placeholder = input.Find("Placeholder").GetComponent<Text>();
-					xif.characterValidation = InputField.CharacterValidation.Integer;
-					xif.text = themePage.ToString();
-					xif.onValueChanged.AddListener(delegate (string _val)
+					var page = EditorPrefabHolder.Instance.NumberInputField.Duplicate(themePopupPanel, "page");
+					page.transform.AsRT().anchoredPosition = new Vector2(240f, 16f);
+					pageStorage = page.GetComponent<InputFieldStorage>();
+					pageStorage.inputField.onValueChanged.ClearAll();
+					pageStorage.inputField.text = themePage.ToString();
+					pageStorage.inputField.onValueChanged.AddListener(delegate (string _val)
 					{
 						if (int.TryParse(_val, out int p))
                         {
-							themePage = p;
+							themePage = Mathf.Clamp(p, 0, AllThemes.Count / themesPerPage);
 							RefreshThemeSearch();
                         }
 					});
 
-					TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(xif, max: int.MaxValue) });
+					pageStorage.leftGreaterButton.onClick.ClearAll();
+					pageStorage.leftGreaterButton.onClick.AddListener(delegate ()
+					{
+						if (int.TryParse(pageStorage.inputField.text, out int p))
+							pageStorage.inputField.text = "0";
+					});
 
-					TriggerHelper.IncreaseDecreaseButtonsInt(xif, max: int.MaxValue, t: page.transform);
+					pageStorage.leftButton.onClick.ClearAll();
+					pageStorage.leftButton.onClick.AddListener(delegate ()
+					{
+						if (int.TryParse(pageStorage.inputField.text, out int p))
+							pageStorage.inputField.text = Mathf.Clamp(p - 1, 0, AllThemes.Count / themesPerPage).ToString();
+					});
+					
+					pageStorage.rightButton.onClick.ClearAll();
+					pageStorage.rightButton.onClick.AddListener(delegate ()
+					{
+						if (int.TryParse(pageStorage.inputField.text, out int p))
+							pageStorage.inputField.text = Mathf.Clamp(p + 1, 0, AllThemes.Count / themesPerPage).ToString();
+					});
+					
+					pageStorage.rightGreaterButton.onClick.ClearAll();
+					pageStorage.rightGreaterButton.onClick.AddListener(delegate ()
+					{
+						if (int.TryParse(pageStorage.inputField.text, out int p))
+							pageStorage.inputField.text = (DataManager.inst.AllThemes.Count / themesPerPage).ToString();
+					});
+
+					Destroy(pageStorage.middleButton.gameObject);
+
+					EditorThemeManager.AddInputField(pageStorage.inputField, "View Themes Popup Page Input", "Input Field");
+
+					Destroy(pageStorage.leftGreaterButton.GetComponent<Animator>());
+					pageStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.leftGreaterButton.gameObject, new List<Component>
+					{
+						pageStorage.leftGreaterButton.image,
+						pageStorage.leftGreaterButton,
+					}, isSelectable: true));
+
+					Destroy(pageStorage.leftButton.GetComponent<Animator>());
+					pageStorage.leftButton.transition = Selectable.Transition.ColorTint;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.leftButton.gameObject, new List<Component>
+					{
+						pageStorage.leftButton.image,
+						pageStorage.leftButton,
+					}, isSelectable: true));
+
+					Destroy(pageStorage.rightButton.GetComponent<Animator>());
+					pageStorage.rightButton.transition = Selectable.Transition.ColorTint;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.rightButton.gameObject, new List<Component>
+					{
+						pageStorage.rightButton.image,
+						pageStorage.rightButton,
+					}, isSelectable: true));
+
+					Destroy(pageStorage.rightGreaterButton.GetComponent<Animator>());
+					pageStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.rightGreaterButton.gameObject, new List<Component>
+					{
+						pageStorage.rightGreaterButton.image,
+						pageStorage.rightGreaterButton,
+					}, isSelectable: true));
 				}
 
 				// Prefab
 				{
 					themePopupPanelPrefab = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"theme panel");
-					themePopupPanelPrefab.GetComponent<Image>().color = new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+
+					var viewThemeStorage = themePopupPanelPrefab.AddComponent<ViewThemePanelStorage>();
 
 					var nameText = themePopupPanelPrefab.transform.GetChild(0).GetComponent<Text>();
-					nameText.transform.AsRT().anchoredPosition = new Vector2(2f, 160f);
-					nameText.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
-					nameText.transform.AsRT().anchorMin = new Vector2(0f, 0.5f);
-					nameText.transform.AsRT().sizeDelta = new Vector2(-12f, 32f);
+					UIManager.SetRectTransform(nameText.rectTransform, new Vector2(2f, 160f), new Vector2(1f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-12f, 32f));
 					nameText.text = "theme";
+					nameText.fontSize = 17;
+
+					viewThemeStorage.baseImage = themePopupPanelPrefab.GetComponent<Image>();
+					viewThemeStorage.text = nameText;
+					viewThemeStorage.baseColors = new List<Image>();
+					viewThemeStorage.playerColors = new List<Image>();
+					viewThemeStorage.objectColors = new List<Image>();
+					viewThemeStorage.backgroundColors = new List<Image>();
+					viewThemeStorage.effectColors = new List<Image>();
 
 					// Misc Colors
 					{
@@ -258,6 +312,7 @@ namespace EditorManagement.Functions.Editors
 
 							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
 							var colorSlotImage = colorSlot.AddComponent<Image>();
+							viewThemeStorage.baseColors.Add(colorSlotImage);
 						}
 					}
 
@@ -289,6 +344,7 @@ namespace EditorManagement.Functions.Editors
 
 							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
 							var colorSlotImage = colorSlot.AddComponent<Image>();
+							viewThemeStorage.playerColors.Add(colorSlotImage);
 						}
 					}
 
@@ -320,6 +376,7 @@ namespace EditorManagement.Functions.Editors
 
 							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
 							var colorSlotImage = colorSlot.AddComponent<Image>();
+							viewThemeStorage.objectColors.Add(colorSlotImage);
 						}
 					}
 
@@ -351,6 +408,7 @@ namespace EditorManagement.Functions.Editors
 
 							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
 							var colorSlotImage = colorSlot.AddComponent<Image>();
+							viewThemeStorage.backgroundColors.Add(colorSlotImage);
 						}
 					}
 
@@ -382,6 +440,7 @@ namespace EditorManagement.Functions.Editors
 
 							var colorSlotRT = colorSlot.AddComponent<RectTransform>();
 							var colorSlotImage = colorSlot.AddComponent<Image>();
+							viewThemeStorage.effectColors.Add(colorSlotImage);
 						}
 					}
 
@@ -405,21 +464,79 @@ namespace EditorManagement.Functions.Editors
 
 					var tfv = ObjEditor.inst.ObjectView.transform;
 
-					var useTheme = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform, "use");
+					var useTheme = EditorPrefabHolder.Instance.FunctionButton.Duplicate(buttons.transform, "use");
+					var useThemeStorage = useTheme.GetComponent<FunctionButtonStorage>();
 					useTheme.SetActive(true);
-					var useThemeText = useTheme.transform.GetChild(0).GetComponent<Text>();
+					var useThemeText = useThemeStorage.text;
 					useThemeText.fontSize = 16;
 					useThemeText.text = "Use Theme";
 
-					var exportToVG = tfv.Find("applyprefab").gameObject.Duplicate(buttons.transform, "convert");
+					viewThemeStorage.useButton = useThemeStorage.button;
+					Destroy(useTheme.GetComponent<Animator>());
+					viewThemeStorage.useButton.transition = Selectable.Transition.ColorTint;
+
+					var exportToVG = EditorPrefabHolder.Instance.FunctionButton.Duplicate(buttons.transform, "convert");
+					var exportToVGStorage = exportToVG.GetComponent<FunctionButtonStorage>();
 					exportToVG.SetActive(true);
-					var exportToVGText = exportToVG.transform.GetChild(0).GetComponent<Text>();
+					var exportToVGText = exportToVGStorage.text;
 					exportToVGText.fontSize = 16;
 					exportToVGText.text = "Convert to VG Format";
 
+					viewThemeStorage.convertButton = exportToVGStorage.button;
+					Destroy(exportToVG.GetComponent<Animator>());
+					viewThemeStorage.convertButton.transition = Selectable.Transition.ColorTint;
+
 					Destroy(themePopupPanelPrefab.GetComponent<Button>());
 				}
-            }
+
+				// Editor Theme
+				{
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup", "Background", themePopup, new List<Component>
+					{
+						themePopup.GetComponent<Image>(),
+					}, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Panel", "Background", themePopupPanel.gameObject, new List<Component>
+					{
+						themePopupPanel.GetComponent<Image>(),
+					}, true, 1, SpriteManager.RoundedSide.Top));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Close", "Close", x.gameObject, new List<Component>
+					{
+						x.image,
+						x,
+					}, true, 1, SpriteManager.RoundedSide.W, true));
+
+					var themePopupCloseX = x.transform.GetChild(0).gameObject;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Close X", "Close X", themePopupCloseX, new List<Component>
+					{
+						themePopupCloseX.GetComponent<Image>(),
+					}));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Title", "Light Text", themePopupTitle.gameObject, new List<Component>
+					{
+						themePopupTitle,
+					}));
+
+					var themePopupScrollbar = themePopup.transform.Find("Scrollbar").gameObject;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Scrollbar", "Background", themePopupScrollbar, new List<Component>
+					{
+						themePopupScrollbar.GetComponent<Image>(),
+					}, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+					var themePopupScrollbarHandle = themePopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Scrollbar Handle", "Scrollbar Handle", themePopupScrollbarHandle, new List<Component>
+					{
+						themePopupScrollbarHandle.GetComponent<Image>(),
+						themePopupScrollbar.GetComponent<Scrollbar>()
+					}, true, 1, SpriteManager.RoundedSide.W, true));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Themes Popup Search", "Search Field 1", searchBar.gameObject, new List<Component>
+					{
+						searchBar.image,
+					}, true, 1, SpriteManager.RoundedSide.Bottom));
+				}
+			}
 			catch (Exception ex)
 			{
 				Debug.LogError(ex);
@@ -433,6 +550,8 @@ namespace EditorManagement.Functions.Editors
 
 			var layer = themePage + 1;
 
+			TriggerHelper.AddEventTriggerParams(pageStorage.inputField.gameObject, TriggerHelper.ScrollDeltaInt(pageStorage.inputField, max: AllThemes.Count / themesPerPage));
+
 			int num = 0;
 			foreach (var beatmapTheme in AllThemes)
 			{
@@ -445,45 +564,76 @@ namespace EditorManagement.Functions.Editors
 					{
 						var gameObject = themePopupPanelPrefab.Duplicate(themeContent, name);
 						gameObject.transform.localScale = Vector3.one;
-						gameObject.transform.GetChild(0).GetComponent<Text>().text = $"{name} [ ID: {beatmapTheme.id} ]";
 
-						gameObject.transform.Find("misc colors").GetChild(0).GetComponent<Image>().color = beatmapTheme.backgroundColor;
-						gameObject.transform.Find("misc colors").GetChild(1).GetComponent<Image>().color = beatmapTheme.guiColor;
-						gameObject.transform.Find("misc colors").GetChild(2).GetComponent<Image>().color = beatmapTheme.guiAccentColor;
+						var viewThemeStorage = gameObject.GetComponent<ViewThemePanelStorage>();
+						viewThemeStorage.text.text = $"{name} [ ID: {beatmapTheme.id} ]";
 
-						for (int i = 0; i < beatmapTheme.playerColors.Count; i++)
+						viewThemeStorage.baseColors[0].color = beatmapTheme.backgroundColor;
+						viewThemeStorage.baseColors[1].color = beatmapTheme.guiColor;
+						viewThemeStorage.baseColors[2].color = beatmapTheme.guiAccentColor;
+
+						for (int i = 0; i < viewThemeStorage.playerColors.Count; i++)
 						{
-							if (gameObject.transform.TryFind($"player colors/{i + 1}", out Transform colorSlot))
-							{
-								colorSlot.GetComponent<Image>().color = beatmapTheme.playerColors[i];
+							if (i < beatmapTheme.playerColors.Count)
+                            {
+                                viewThemeStorage.playerColors[i].color = beatmapTheme.playerColors[i];
+
+								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.playerColors[i].gameObject, new List<Component>
+								{
+									viewThemeStorage.playerColors[i],
+								}, true, 1, SpriteManager.RoundedSide.W));
 							}
+                            else
+                                viewThemeStorage.playerColors[i].gameObject.SetActive(false);
+						}
+						
+						for (int i = 0; i < viewThemeStorage.objectColors.Count; i++)
+						{
+							if (i < beatmapTheme.objectColors.Count)
+                            {
+                                viewThemeStorage.objectColors[i].color = beatmapTheme.objectColors[i];
+
+								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.objectColors[i].gameObject, new List<Component>
+								{
+									viewThemeStorage.objectColors[i],
+								}, true, 1, SpriteManager.RoundedSide.W));
+							}
+                            else
+                                viewThemeStorage.objectColors[i].gameObject.SetActive(false);
+						}
+						
+						for (int i = 0; i < viewThemeStorage.backgroundColors.Count; i++)
+						{
+							if (i < beatmapTheme.backgroundColors.Count)
+                            {
+                                viewThemeStorage.backgroundColors[i].color = beatmapTheme.backgroundColors[i];
+
+								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.backgroundColors[i].gameObject, new List<Component>
+								{
+									viewThemeStorage.backgroundColors[i],
+								}, true, 1, SpriteManager.RoundedSide.W));
+							}
+                            else
+                                viewThemeStorage.backgroundColors[i].gameObject.SetActive(false);
+						}
+						
+						for (int i = 0; i < viewThemeStorage.effectColors.Count; i++)
+						{
+							if (i < beatmapTheme.effectColors.Count)
+                            {
+                                viewThemeStorage.effectColors[i].color = beatmapTheme.effectColors[i];
+
+								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.effectColors[i].gameObject, new List<Component>
+								{
+									viewThemeStorage.effectColors[i],
+								}, true, 1, SpriteManager.RoundedSide.W));
+							}
+                            else
+                                viewThemeStorage.effectColors[i].gameObject.SetActive(false);
 						}
 
-						for (int i = 0; i < beatmapTheme.objectColors.Count; i++)
-						{
-							if (gameObject.transform.TryFind($"object colors/{i + 1}", out Transform colorSlot))
-							{
-								colorSlot.GetComponent<Image>().color = beatmapTheme.objectColors[i];
-							}
-						}
-
-						for (int i = 0; i < beatmapTheme.backgroundColors.Count; i++)
-						{
-							if (gameObject.transform.TryFind($"background colors/{i + 1}", out Transform colorSlot))
-							{
-								colorSlot.GetComponent<Image>().color = beatmapTheme.backgroundColors[i];
-							}
-						}
-
-						for (int i = 0; i < beatmapTheme.effectColors.Count; i++)
-						{
-							if (gameObject.transform.TryFind($"effect colors/{i + 1}", out Transform colorSlot))
-							{
-								colorSlot.GetComponent<Image>().color = beatmapTheme.effectColors[i];
-							}
-						}
-
-						var use = gameObject.transform.Find("buttons base/buttons/use").GetComponent<Button>();
+						var use = viewThemeStorage.useButton;
+						var useStorage = use.GetComponent<FunctionButtonStorage>();
 						use.onClick.ClearAll();
 						use.onClick.AddListener(delegate ()
 						{
@@ -506,7 +656,8 @@ namespace EditorManagement.Functions.Editors
 							EventManager.inst.updateEvents();
 						});
 
-						var convert = gameObject.transform.Find("buttons base/buttons/convert").GetComponent<Button>();
+						var convert = viewThemeStorage.convertButton;
+						var convertStorage = convert.GetComponent<FunctionButtonStorage>();
 						convert.onClick.ClearAll();
 						convert.onClick.AddListener(delegate ()
 						{
@@ -534,6 +685,38 @@ namespace EditorManagement.Functions.Editors
 
 							EditorManager.inst.DisplayNotification($"Converted Theme {beatmapTheme.name.ToLower()}.lst from LS format to VG format and saved to {beatmapTheme.name.ToLower()}.vgt!", 4f, EditorManager.NotificationType.Success);
 						});
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel", "List Button 1 Normal", gameObject, new List<Component>
+						{
+							viewThemeStorage.baseImage,
+						}, true, 1, SpriteManager.RoundedSide.W));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Text", "Light Text", viewThemeStorage.text.gameObject, new List<Component>
+						{
+							viewThemeStorage.text,
+						}));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Use", "Function 2", use.gameObject, new List<Component>
+						{
+							use.image,
+							use,
+						}, true, 1, SpriteManager.RoundedSide.W, true));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Use Text", "Function 2 Text", useStorage.text.gameObject, new List<Component>
+						{
+							useStorage.text,
+						}));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Convert", "Function 2", convert.gameObject, new List<Component>
+						{
+							convert.image,
+							convert,
+						}, true, 1, SpriteManager.RoundedSide.W, true));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Convert Text", "Function 2 Text", convertStorage.text.gameObject, new List<Component>
+						{
+							convertStorage.text,
+						}));
 					}
 
 					num++;
