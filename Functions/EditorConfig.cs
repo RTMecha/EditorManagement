@@ -62,6 +62,7 @@ namespace EditorManagement.Functions
             TimelineObjectPrefabTypeIcon = Config.Bind("Timeline", "Timeline Object Prefab Type Icon", true, "Shows the object's prefab type's icon.");
             EventLabelsRenderLeft = Config.Bind("Timeline", "Event Labels Render Left", false, "If the Event Layer labels should render on the left side or not.");
             EventKeyframesRenderBinColor = Config.Bind("Timeline", "Event Keyframes Use Bin Color", true, "If the Event Keyframes should use the bin color when not selected or not.");
+            ObjectKeyframesRenderBinColor = Config.Bind("Timeline", "Object Keyframes Use Bin Color", true, "If the Object Keyframes should use the bin color when not selected or not.");
             WaveformGenerate = Config.Bind("Timeline", "Waveform Generate", true, "Allows the timeline waveform to generate. (Waveform might not show on some devices and will increase level load times)");
             WaveformRerender = Config.Bind("Timeline", "Waveform Re-render", false, "If the timeline waveform should update when a value is changed.");
             WaveformMode = Config.Bind("Timeline", "Waveform Mode", WaveformType.Legacy, "The mode of the timeline waveform.");
@@ -1165,6 +1166,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<bool> TimelineObjectPrefabTypeIcon { get; set; }
         public ConfigEntry<bool> EventLabelsRenderLeft { get; set; }
         public ConfigEntry<bool> EventKeyframesRenderBinColor { get; set; }
+        public ConfigEntry<bool> ObjectKeyframesRenderBinColor { get; set; }
         public ConfigEntry<bool> WaveformGenerate { get; set; }
         public ConfigEntry<bool> WaveformRerender { get; set; }
         public ConfigEntry<WaveformType> WaveformMode { get; set; }
