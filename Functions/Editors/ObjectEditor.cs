@@ -80,6 +80,7 @@ namespace EditorManagement.Functions.Editors
             if (ModCompatibility.sharedFunctions.ContainsKey("RefreshObjectGUI"))
                 ModCompatibility.sharedFunctions["RefreshObjectGUI"] = (Action<BeatmapObject>)delegate (BeatmapObject beatmapObject) { StartCoroutine(RefreshObjectGUI(beatmapObject)); };
 
+            var idRight = ObjEditor.inst.objTimelineContent.parent.Find("id/right");
             for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
             {
                 int tmpIndex = i;
@@ -108,8 +109,8 @@ namespace EditorManagement.Functions.Editors
 
                         RenderObjectKeyframesDialog(beatmapObject);
 
-                            // Keyframes affect both physical object and timeline object.
-                            RenderTimelineObject(new TimelineObject(beatmapObject));
+                        // Keyframes affect both physical object and timeline object.
+                        RenderTimelineObject(new TimelineObject(beatmapObject));
                         if (UpdateObjects)
                             Updater.UpdateProcessor(beatmapObject, "Keyframes");
                     }
@@ -117,6 +118,13 @@ namespace EditorManagement.Functions.Editors
                 var comp = ObjEditor.inst.TimelineParents[tmpIndex].GetComponent<EventTrigger>();
                 comp.triggers.RemoveAll(x => x.eventID == EventTriggerType.PointerUp);
                 comp.triggers.Add(entry);
+
+                var image = idRight.GetChild(i).GetComponent<Image>();
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Editor Keyframe Bin", $"Object Keyframe Color {i + 1}", image.gameObject, new List<Component>
+                {
+                    image,
+                }));
             }
 
             ObjEditor.inst.objTimelineSlider.onValueChanged.RemoveAllListeners();
@@ -168,7 +176,7 @@ namespace EditorManagement.Functions.Editors
                 tagPrefab.transform.SetParent(transform);
                 var tagPrefabRT = tagPrefab.AddComponent<RectTransform>();
                 var tagPrefabImage = tagPrefab.AddComponent<Image>();
-                tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);
+                tagPrefabImage.color = new Color(1f, 1f, 1f, 1f);
                 var tagPrefabLayout = tagPrefab.AddComponent<HorizontalLayoutGroup>();
                 tagPrefabLayout.childControlWidth = false;
                 tagPrefabLayout.childForceExpandWidth = false;
@@ -180,12 +188,8 @@ namespace EditorManagement.Functions.Editors
                 text.alignment = TextAnchor.MiddleCenter;
                 text.fontSize = 17;
 
-                var delete = PrefabEditor.inst.AddPrefab.transform.Find("delete").gameObject.Duplicate(tagPrefabRT, "Delete");
-                delete.transform.AsRT().anchoredPosition = Vector2.zero;
-                delete.transform.AsRT().anchorMax = Vector2.one;
-                delete.transform.AsRT().anchorMin = Vector2.one;
-                delete.transform.AsRT().pivot = Vector2.one;
-                delete.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
+                var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(tagPrefabRT, "Delete");
+                UIManager.SetRectTransform(delete.transform.AsRT(), Vector2.zero, Vector2.one, Vector2.one, Vector2.one, new Vector2(32f, 32f));
             }
             catch (Exception ex)
             {
@@ -1599,16 +1603,17 @@ namespace EditorManagement.Functions.Editors
                 Destroy(timelineObject.GameObject);
 
             gameObject = ObjEditor.inst.timelineObjectPrefab.Duplicate(EditorManager.inst.timeline.transform, "timeline object");
+            var storage = gameObject.GetComponent<TimelineObjectStorage>();
 
-            timelineObject.Hover = gameObject.GetComponent<HoverUI>();
+            timelineObject.Hover = storage.hoverUI;
             timelineObject.GameObject = gameObject;
-            timelineObject.Image = gameObject.GetComponent<Image>();
-            timelineObject.Text = gameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
+            timelineObject.Image = storage.image;
+            timelineObject.Text = storage.text;
 
-            TriggerHelper.AddEventTriggerParams(gameObject,
-                TriggerHelper.CreateBeatmapObjectTrigger(timelineObject),
-                TriggerHelper.CreateBeatmapObjectStartDragTrigger(timelineObject),
-                TriggerHelper.CreateBeatmapObjectEndDragTrigger(timelineObject));
+            storage.eventTrigger.triggers.Clear();
+            storage.eventTrigger.triggers.Add(TriggerHelper.CreateBeatmapObjectTrigger(timelineObject));
+            storage.eventTrigger.triggers.Add(TriggerHelper.CreateBeatmapObjectStartDragTrigger(timelineObject));
+            storage.eventTrigger.triggers.Add(TriggerHelper.CreateBeatmapObjectEndDragTrigger(timelineObject));
 
             return gameObject;
         }
