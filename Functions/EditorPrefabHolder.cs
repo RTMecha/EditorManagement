@@ -21,7 +21,7 @@ namespace EditorManagement.Functions
 
         public Transform PrefabParent { get; set; }
         public GameObject StringInputField { get; set; }
-        public GameObject FloatInputField { get; set; }
+        public GameObject NumberInputField { get; set; }
         public GameObject DeleteButton { get; set; }
         public GameObject FunctionButton { get; set; }
     }
@@ -36,6 +36,15 @@ namespace EditorManagement.Functions
 
         [SerializeField]
         public Image image;
+    }
+
+    public class FunctionButtonStorage : MonoBehaviour
+    {
+        [SerializeField]
+        public Button button;
+
+        [SerializeField]
+        public Text text;
     }
 
     public class InputFieldStorage : MonoBehaviour
@@ -76,6 +85,36 @@ namespace EditorManagement.Functions
 
         [SerializeField]
         public Button deleteButton;
+    }
+
+    public class ViewThemePanelStorage : MonoBehaviour
+    {
+        [SerializeField]
+        public Image baseImage;
+
+        [SerializeField]
+        public Text text;
+
+        [SerializeField]
+        public List<Image> baseColors;
+
+        [SerializeField]
+        public List<Image> playerColors;
+
+        [SerializeField]
+        public List<Image> objectColors;
+
+        [SerializeField]
+        public List<Image> backgroundColors;
+
+        [SerializeField]
+        public List<Image> effectColors;
+
+        [SerializeField]
+        public Button useButton;
+
+        [SerializeField]
+        public Button convertButton;
     }
 
     public class ThemePanelStorage : MonoBehaviour

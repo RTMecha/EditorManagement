@@ -100,21 +100,29 @@ namespace EditorManagement.Functions.Editors
 
             if (ObjEditor.inst)
             {
-                prefabHolder.FloatInputField = ObjEditor.inst.ObjectView.transform.Find("time").gameObject.Duplicate(prefabHolder.PrefabParent, "float input");
+                prefabHolder.NumberInputField = ObjEditor.inst.ObjectView.transform.Find("time").gameObject.Duplicate(prefabHolder.PrefabParent, "float input");
 
-                var floatInputFieldStorage = prefabHolder.FloatInputField.AddComponent<InputFieldStorage>();
-                floatInputFieldStorage.leftGreaterButton = prefabHolder.FloatInputField.transform.Find("<<").GetComponent<Button>();
-                floatInputFieldStorage.leftButton = prefabHolder.FloatInputField.transform.Find("<").GetComponent<Button>();
-                floatInputFieldStorage.middleButton = prefabHolder.FloatInputField.transform.Find("|").GetComponent<Button>();
-                floatInputFieldStorage.rightButton = prefabHolder.FloatInputField.transform.Find(">").GetComponent<Button>();
-                floatInputFieldStorage.rightGreaterButton = prefabHolder.FloatInputField.transform.Find(">>").GetComponent<Button>();
-                floatInputFieldStorage.inputField = prefabHolder.FloatInputField.transform.Find("time").GetComponent<InputField>();
-                prefabHolder.FloatInputField.transform.Find("time").gameObject.name = "input";
+                var floatInputFieldStorage = prefabHolder.NumberInputField.AddComponent<InputFieldStorage>();
+                floatInputFieldStorage.leftGreaterButton = prefabHolder.NumberInputField.transform.Find("<<").GetComponent<Button>();
+                floatInputFieldStorage.leftButton = prefabHolder.NumberInputField.transform.Find("<").GetComponent<Button>();
+                floatInputFieldStorage.middleButton = prefabHolder.NumberInputField.transform.Find("|").GetComponent<Button>();
+                floatInputFieldStorage.rightButton = prefabHolder.NumberInputField.transform.Find(">").GetComponent<Button>();
+                floatInputFieldStorage.rightGreaterButton = prefabHolder.NumberInputField.transform.Find(">>").GetComponent<Button>();
+                floatInputFieldStorage.inputField = prefabHolder.NumberInputField.transform.Find("time").GetComponent<InputField>();
+                floatInputFieldStorage.inputField.characterValidation = InputField.CharacterValidation.None;
+                floatInputFieldStorage.inputField.characterLimit = 0;
+                prefabHolder.NumberInputField.transform.Find("time").gameObject.name = "input";
 
-                if (prefabHolder.FloatInputField.transform.Find("lock"))
-                    Destroy(prefabHolder.FloatInputField.transform.Find("lock").gameObject);
+                if (prefabHolder.NumberInputField.transform.Find("lock"))
+                    DestroyImmediate(prefabHolder.NumberInputField.transform.Find("lock").gameObject);
 
                 prefabHolder.StringInputField = floatInputFieldStorage.inputField.gameObject.Duplicate(prefabHolder.PrefabParent, "string input");
+
+                prefabHolder.FunctionButton = ObjEditor.inst.ObjectView.transform.Find("applyprefab").gameObject.Duplicate(prefabHolder.PrefabParent, "function button");
+
+                var functionButtonStorage = prefabHolder.FunctionButton.AddComponent<FunctionButtonStorage>();
+                functionButtonStorage.button = prefabHolder.FunctionButton.GetComponent<Button>();
+                functionButtonStorage.text = prefabHolder.FunctionButton.transform.GetChild(0).GetComponent<Text>();
             }
 
             if (PrefabEditor.inst)
