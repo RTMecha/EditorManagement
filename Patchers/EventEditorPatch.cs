@@ -239,28 +239,7 @@ namespace EditorManagement.Patchers
 		static bool RenderThemeContentPrefix(Transform __0, string __1)
 		{
 			Debug.LogFormat("{0}RenderThemeContent Prefix Patch", EditorPlugin.className);
-			Transform parent = __0.Find("themes/viewport/content");
-
-			__0.Find("themes").GetComponent<ScrollRect>().horizontal = false;
-
-			if (!parent.GetComponent<GridLayoutGroup>())
-			{
-				parent.gameObject.AddComponent<GridLayoutGroup>();
-			}
-
-			var prefabLay = parent.GetComponent<GridLayoutGroup>();
-			prefabLay.cellSize = new Vector2(344f, 30f);
-			prefabLay.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-			prefabLay.constraintCount = 1;
-			prefabLay.spacing = new Vector2(4f, 4f);
-			prefabLay.startAxis = GridLayoutGroup.Axis.Horizontal;
-
-			parent.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.MinSize;
-
-			if (__0.TryFind("theme/themepathers/themes path", out Transform themePath) && themePath.gameObject.TryGetComponent(out InputField themePathIF))
-				themePathIF.text = RTEditor.ThemePath;
-
-			RTEditor.inst.StartCoroutine(ThemeEditorManager.inst.RenderThemeList(__1));
+			ThemeEditorManager.inst.RenderThemeContent(__0, __1);
 			return false;
         }
 
