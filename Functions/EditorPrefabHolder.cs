@@ -1,10 +1,12 @@
-﻿using System;
+﻿using RTFunctions.Functions.Components;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace EditorManagement.Functions
@@ -24,7 +26,19 @@ namespace EditorManagement.Functions
         public GameObject FunctionButton { get; set; }
     }
 
-    public class FloatInputFieldStorage : MonoBehaviour
+    public class DeleteButtonStorage : MonoBehaviour
+    {
+        [SerializeField]
+        public Button button;
+
+        [SerializeField]
+        public Image baseImage;
+
+        [SerializeField]
+        public Image image;
+    }
+
+    public class InputFieldStorage : MonoBehaviour
     {
         [SerializeField]
         public Button leftGreaterButton;
@@ -88,5 +102,20 @@ namespace EditorManagement.Functions
         public Button edit;
         [SerializeField]
         public Button delete;
+    }
+
+    public class TimelineObjectStorage : MonoBehaviour
+    {
+        [SerializeField]
+        public HoverUI hoverUI;
+
+        [SerializeField]
+        public Image image;
+
+        [SerializeField]
+        public TextMeshProUGUI text;
+
+        [SerializeField]
+        public EventTrigger eventTrigger;
     }
 }
