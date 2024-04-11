@@ -410,6 +410,7 @@ namespace EditorManagement.Functions.Editors
 							}, true, 1, SpriteManager.RoundedSide.W, true));
 
 							var current = dialog.Find("current_title");
+							current.AsRT().sizeDelta = new Vector2(366f, 24f);
 
 							for (int k = 0; k < current.childCount; k++)
 							{
@@ -436,6 +437,45 @@ namespace EditorManagement.Functions.Editors
 							{
 								playerCols,
 							}));
+
+							dialog.Find("object_cols").AsRT().sizeDelta = new Vector2(366f, 24f);
+							dialog.Find("object_cols").GetComponent<HorizontalLayoutGroup>().spacing = 6f;
+							for (int j = 1; j < dialog.Find("object_cols").childCount; j++)
+                            {
+								var child = dialog.Find("object_cols").GetChild(j);
+								child.AsRT().sizeDelta = new Vector2(24f, 24f);
+
+								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color", "", child.gameObject, new List<Component>
+								{
+									child.GetComponent<Image>(),
+								}, true, 1, SpriteManager.RoundedSide.W));
+							}
+
+							dialog.Find("bg_cols").AsRT().sizeDelta = new Vector2(366f, 24f);
+							dialog.Find("bg_cols").GetComponent<HorizontalLayoutGroup>().spacing = 6f;
+							for (int j = 1; j < dialog.Find("bg_cols").childCount; j++)
+                            {
+								var child = dialog.Find("bg_cols").GetChild(j);
+								child.AsRT().sizeDelta = new Vector2(24f, 24f);
+
+								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color", "", child.gameObject, new List<Component>
+								{
+									child.GetComponent<Image>(),
+								}, true, 1, SpriteManager.RoundedSide.W));
+							}
+
+							dialog.Find("player_cols").AsRT().sizeDelta = new Vector2(366f, 24f);
+							dialog.Find("player_cols").GetComponent<HorizontalLayoutGroup>().spacing = 6f;
+							for (int j = 1; j < dialog.Find("player_cols").childCount; j++)
+                            {
+								var child = dialog.Find("player_cols").GetChild(j);
+								child.AsRT().sizeDelta = new Vector2(24f, 24f);
+
+								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color", "", child.gameObject, new List<Component>
+								{
+									child.GetComponent<Image>(),
+								}, true, 1, SpriteManager.RoundedSide.W));
+							}
 
 							break;
                         }
