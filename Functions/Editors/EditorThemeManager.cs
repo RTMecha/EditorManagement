@@ -127,7 +127,10 @@ namespace EditorManagement.Functions.Editors
                 { "Close Pressed", LSColors.HexToColorAlpha("292929FF") },
                 { "Close Disabled", LSColors.HexToColorAlpha("292929FF") },
                 { "Close X", LSColors.HexToColorAlpha("EFEBEFFF") },
+
                 { "Light Text", LSColors.HexToColorAlpha("E5E1E5FF") },
+                { "Dark Text", LSColors.HexToColorAlpha("323232FF") },
+
                 { "Function 1", LSColors.HexToColorAlpha("4E99F4FF") }, // 0F7BF8FF
                 { "Function 1 Text", LSColors.HexToColorAlpha("1B1B1CFF") },
                 { "Function 2", LSColors.HexToColorAlpha("FFFFFFFF") },
@@ -137,12 +140,21 @@ namespace EditorManagement.Functions.Editors
                 { "Function 2 Pressed", LSColors.HexToColorAlpha("E0E0E0FF") },
                 { "Function 2 Disabled", LSColors.HexToColorAlpha("C7C7C780") },
                 { "Function 2 Text", LSColors.HexToColorAlpha("323232FF") },
+
                 { "List Button 1", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "List Button 1 Normal", LSColors.HexToColorAlpha("2A2A2AFF") },
                 { "List Button 1 Highlight", LSColors.HexToColorAlpha("424242FF") },
                 { "List Button 1 Selected", LSColors.HexToColorAlpha("424242FF") },
                 { "List Button 1 Pressed", LSColors.HexToColorAlpha("424242FF") },
                 { "List Button 1 Disabled", LSColors.HexToColorAlpha("424242FF") },
+
+                { "List Button 2", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "List Button 2 Normal", LSColors.HexToColorAlpha("EDE9EDFF") },
+                { "List Button 2 Highlight", LSColors.HexToColorAlpha("C8C8C8FF") },
+                { "List Button 2 Selected", LSColors.HexToColorAlpha("C8C8C8FF") },
+                { "List Button 2 Pressed", LSColors.HexToColorAlpha("C8C8C8FF") },
+                { "List Button 2 Disabled", LSColors.HexToColorAlpha("96969680") },
+
                 { "Search Field 1", LSColors.HexToColorAlpha("2F2F2FFF") },
                 { "Search Field 1 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Search Field 2", LSColors.HexToColorAlpha("FFFFFFFF") },
@@ -173,6 +185,7 @@ namespace EditorManagement.Functions.Editors
                 { "Timeline Bar", LSColors.HexToColorAlpha("1B1B1CFF") },
                 { "Event/Check", LSColors.HexToColorAlpha("6CCBCFFF") },
                 { "Event/Check Text", LSColors.HexToColorAlpha("EFEBEFFF") },
+
                 { "Dropdown 1", LSColors.HexToColorAlpha("EDE9EDFF") },
                 { "Dropdown 1 Overlay", LSColors.HexToColorAlpha("373737FF") },
                 { "Dropdown 1 Item", LSColors.HexToColorAlpha("F5F5F5FF") },
@@ -187,9 +200,12 @@ namespace EditorManagement.Functions.Editors
                 { "Slider 1 Pressed", LSColors.HexToColorAlpha("C8C8C8FF") },
                 { "Slider 1 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
                 { "Slider 1 Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
+
                 { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
+
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
+
                 { "Timeline Background", LSColors.HexToColorAlpha("1B1B1BFF") },
                 { "Timeline Scrollbar", LSColors.HexToColorAlpha("686868FF") },
                 { "Timeline Scrollbar Normal", LSColors.HexToColorAlpha("676767FF") },
@@ -199,6 +215,7 @@ namespace EditorManagement.Functions.Editors
                 { "Timeline Scrollbar Disabled", LSColors.HexToColorAlpha("676767FF") },
                 { "Timeline Scrollbar Base", LSColors.HexToColorAlpha("3E3E42FF") },
                 { "Timeline Time Scrollbar", LSColors.HexToColorAlpha("3E3E40FF") },
+
                 { "Title Bar Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Title Bar Button", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Title Bar Button Normal", LSColors.HexToColorAlpha("303030FF") },
@@ -211,13 +228,16 @@ namespace EditorManagement.Functions.Editors
                 { "Title Bar Dropdown Selected", LSColors.HexToColorAlpha("303030FF") },
                 { "Title Bar Dropdown Pressed", LSColors.HexToColorAlpha("303030FF") },
                 { "Title Bar Dropdown Disabled", LSColors.HexToColorAlpha("303030FF") },
+
                 { "Warning Confirm", LSColors.HexToColorAlpha("FF3645FF") },
                 { "Warning Cancel", LSColors.HexToColorAlpha("4DB5ABFF") },
+
                 { "Notification Background", LSColors.HexToColorAlpha("212121FF") },
                 { "Notification Info", LSColors.HexToColorAlpha("404040FF") },
                 { "Notification Success", LSColors.HexToColorAlpha("4DB6ACFF") },
                 { "Notification Error", LSColors.HexToColorAlpha("E57373FF") },
                 { "Notification Warning", LSColors.HexToColorAlpha("FFAF38FF") },
+
                 { "Copy", LSColors.HexToColorAlpha("3DADFFFF") },
                 { "Copy Text", LSColors.HexToColorAlpha("1C1C1DFF") },
                 { "Paste", LSColors.HexToColorAlpha("FFAF38FF") },
@@ -310,22 +330,12 @@ namespace EditorManagement.Functions.Editors
                 { "Event Color 11 Editor", LSColors.HexToColorAlpha("FF9800FF") }, // 11
                 { "Event Color 12 Editor", LSColors.HexToColorAlpha("FF5800FF") }, // 12
                 { "Event Color 13 Editor", LSColors.HexToColorAlpha("FF2509FF") }, // 13
-                { "Event Color 14 Editor", LSColors.HexToColorAlpha("FF0F0FFF") }, // 14
-                //{ "Event Color 1", LSColors.HexToColorAlpha("673AB77F") }, // 1
-			    //{ "Event Color 2", LSColors.HexToColorAlpha("41445E7F") }, // 2
-			    //{ "Event Color 3", LSColors.HexToColorAlpha("44627A7F") }, // 3
-			    //{ "Event Color 4", LSColors.HexToColorAlpha("315B6E7F") }, // 4
-			    //{ "Event Color 5", LSColors.HexToColorAlpha("3E6D737F") }, // 5
-			    //{ "Event Color 6", LSColors.HexToColorAlpha("3056537F") }, // 6
-			    //{ "Event Color 7", LSColors.HexToColorAlpha("5069517F") }, // 7
-			    //{ "Event Color 8", LSColors.HexToColorAlpha("515E417F") }, // 8
-			    //{ "Event Color 9", LSColors.HexToColorAlpha("6769457F") }, // 9
-			    //{ "Event Color 10", LSColors.HexToColorAlpha("7263357F") }, // 10
-			    //{ "Event Color 11", LSColors.HexToColorAlpha("FF98007F") }, // 11
-			    //{ "Event Color 12", LSColors.HexToColorAlpha("FF58007F") }, // 12
-			    //{ "Event Color 13", LSColors.HexToColorAlpha("FF25097F") }, // 13
-			    //{ "Event Color 14", LSColors.HexToColorAlpha("FF0F0F7F") }, // 14
-			    //{ "Event Color 15", LSColors.HexToColorAlpha("64B4F67F") }, // 15
+                { "Event Color 14 Editor", LSColors.HexToColorAlpha("FF0F0FFF") }, // 14
+
+                { "Object Keyframe Color 1", LSColors.HexToColorAlpha("F44336FF") }, // 1
+                { "Object Keyframe Color 2", LSColors.HexToColorAlpha("4CAF50FF") }, // 2
+                { "Object Keyframe Color 3", LSColors.HexToColorAlpha("2196F3FF") }, // 3
+                { "Object Keyframe Color 4", LSColors.HexToColorAlpha("FFC107FF") }, // 4
             }),
             new EditorTheme($"{nameof(ThemeSetting.Dark)}", new Dictionary<string, Color>
             {
@@ -341,7 +351,7 @@ namespace EditorManagement.Functions.Editors
                 { "Scrollbar Handle Pressed", LSColors.HexToColorAlpha("606060FF") },
                 { "Scrollbar Handle Disabled", LSColors.HexToColorAlpha("606060FF") },
 
-                { "Scrollbar 2", LSColors.HexToColorAlpha("EEEAEEFF") },
+                { "Scrollbar 2", LSColors.HexToColorAlpha("262526FF") },
                 { "Scrollbar Handle 2", LSColors.HexToColorAlpha("424242FF") },
                 { "Scrollbar Handle 2 Normal", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Scrollbar Handle 2 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
@@ -356,7 +366,10 @@ namespace EditorManagement.Functions.Editors
                 { "Close Pressed", LSColors.HexToColorAlpha("292929FF") },
                 { "Close Disabled", LSColors.HexToColorAlpha("292929FF") },
                 { "Close X", LSColors.HexToColorAlpha("EFEBEFFF") },
+
                 { "Light Text", LSColors.HexToColorAlpha("E5E1E5FF") },
+                { "Dark Text", LSColors.HexToColorAlpha("E5E1E5FF") },
+
                 { "Function 1", LSColors.HexToColorAlpha("1D4675FF") },
                 { "Function 1 Text", LSColors.HexToColorAlpha("E5E1E5FF") },
                 { "Function 2", LSColors.HexToColorAlpha("FFFFFFFF") },
@@ -366,12 +379,21 @@ namespace EditorManagement.Functions.Editors
                 { "Function 2 Pressed", LSColors.HexToColorAlpha("AF5D73FF") },
                 { "Function 2 Disabled", LSColors.HexToColorAlpha("C7C7C780") },
                 { "Function 2 Text", LSColors.HexToColorAlpha("C6C6C6FF") },
+
                 { "List Button 1", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "List Button 1 Normal", LSColors.HexToColorAlpha("111111FF") },
                 { "List Button 1 Highlight", LSColors.HexToColorAlpha("282828FF") },
                 { "List Button 1 Selected", LSColors.HexToColorAlpha("282828FF") },
                 { "List Button 1 Pressed", LSColors.HexToColorAlpha("282828FF") },
                 { "List Button 1 Disabled", LSColors.HexToColorAlpha("282828FF") },
+
+                { "List Button 2", LSColors.HexToColorAlpha("FFFFFFFF") },
+                { "List Button 2 Normal", LSColors.HexToColorAlpha("111111FF") },
+                { "List Button 2 Highlight", LSColors.HexToColorAlpha("282828FF") },
+                { "List Button 2 Selected", LSColors.HexToColorAlpha("282828FF") },
+                { "List Button 2 Pressed", LSColors.HexToColorAlpha("282828FF") },
+                { "List Button 2 Disabled", LSColors.HexToColorAlpha("282828FF") },
+
                 { "Search Field 1", LSColors.HexToColorAlpha("111111FF") },
                 { "Search Field 1 Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Search Field 2", LSColors.HexToColorAlpha("111111FF") },
@@ -402,6 +424,7 @@ namespace EditorManagement.Functions.Editors
                 { "Timeline Bar", LSColors.HexToColorAlpha("030305FF") },
                 { "Event/Check", LSColors.HexToColorAlpha("2196A8FF") },
                 { "Event/Check Text", LSColors.HexToColorAlpha("EFEBEFFF") },
+
                 { "Dropdown 1", LSColors.HexToColorAlpha("373737FF") },
                 { "Dropdown 1 Overlay", LSColors.HexToColorAlpha("EDE9EDFF") },
                 { "Dropdown 1 Item", LSColors.HexToColorAlpha("373737FF") },
@@ -409,6 +432,7 @@ namespace EditorManagement.Functions.Editors
                 { "Toggle 1 Check", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Input Field", LSColors.HexToColorAlpha("252525FF") },
                 { "Input Field Text", LSColors.HexToColorAlpha("EFEBEFFF") },
+
                 { "Slider 1", LSColors.HexToColorAlpha("565656FF") },
                 { "Slider 1 Normal", LSColors.HexToColorAlpha("EFEBEFFF") },
                 { "Slider 1 Highlight", LSColors.HexToColorAlpha("F5F5F5FF") },
@@ -416,9 +440,12 @@ namespace EditorManagement.Functions.Editors
                 { "Slider 1 Pressed", LSColors.HexToColorAlpha("C8C8C8FF") },
                 { "Slider 1 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
                 { "Slider 1 Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
+
                 { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
+
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
+
                 { "Timeline Background", LSColors.HexToColorAlpha("080808FF") },
                 { "Timeline Scrollbar", LSColors.HexToColorAlpha("686868FF") },
                 { "Timeline Scrollbar Normal", LSColors.HexToColorAlpha("676767FF") },
@@ -428,6 +455,7 @@ namespace EditorManagement.Functions.Editors
                 { "Timeline Scrollbar Disabled", LSColors.HexToColorAlpha("676767FF") },
                 { "Timeline Scrollbar Base", LSColors.HexToColorAlpha("3E3E42FF") },
                 { "Timeline Time Scrollbar", LSColors.HexToColorAlpha("3E3E40FF") },
+
                 { "Title Bar Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Title Bar Button", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Title Bar Button Normal", LSColors.HexToColorAlpha("1E1E1EFF") },
@@ -440,8 +468,10 @@ namespace EditorManagement.Functions.Editors
                 { "Title Bar Dropdown Selected", LSColors.HexToColorAlpha("1E1E1EFF") },
                 { "Title Bar Dropdown Pressed", LSColors.HexToColorAlpha("1E1E1EFF") },
                 { "Title Bar Dropdown Disabled", LSColors.HexToColorAlpha("1E1E1EFF") },
+
                 { "Warning Confirm", LSColors.HexToColorAlpha("FF3645FF") },
                 { "Warning Cancel", LSColors.HexToColorAlpha("4DB5ABFF") },
+
                 { "Notification Background", LSColors.HexToColorAlpha("0A0A0AFF") },
                 { "Notification Info", LSColors.HexToColorAlpha("191919FF") },
                 { "Notification Success", LSColors.HexToColorAlpha("6EB5D3FF") },
@@ -542,6 +572,11 @@ namespace EditorManagement.Functions.Editors
                 { "Event Color 12 Editor", LSColors.HexToColorAlpha("FF5800FF") }, // 12
                 { "Event Color 13 Editor", LSColors.HexToColorAlpha("FF2509FF") }, // 13
                 { "Event Color 14 Editor", LSColors.HexToColorAlpha("FF0F0FFF") }, // 14
+
+                { "Object Keyframe Color 1", LSColors.HexToColorAlpha("E57373FF") }, // 1
+                { "Object Keyframe Color 2", LSColors.HexToColorAlpha("81C784FF") }, // 2
+                { "Object Keyframe Color 3", LSColors.HexToColorAlpha("64B5F6FF") }, // 3
+                { "Object Keyframe Color 4", LSColors.HexToColorAlpha("FFB74DFF") }, // 4
             }),
         };
 
@@ -713,19 +748,19 @@ namespace EditorManagement.Functions.Editors
 
         public static void AddToggle(Toggle toggle, string name, Text text = null)
         {
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(name, "Toggle 1", toggle.gameObject, new List<Component>
+            AddElement(new Element(name, "Toggle 1", toggle.gameObject, new List<Component>
             {
                 toggle.image,
             }, true, 1, SpriteManager.RoundedSide.W));
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Checkmark", "Toggle 1 Check", toggle.graphic.gameObject, new List<Component>
+            AddElement(new Element($"{name} Checkmark", "Toggle 1 Check", toggle.graphic.gameObject, new List<Component>
             {
                 toggle.graphic,
             }));
 
             if (text)
             {
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", text.gameObject, new List<Component>
+                AddElement(new Element($"{name} Text", "Toggle 1 Check", text.gameObject, new List<Component>
                 {
                     text,
                 }));
@@ -733,13 +768,13 @@ namespace EditorManagement.Functions.Editors
             }
 
             if (toggle.transform.Find("Text"))
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("Text").gameObject, new List<Component>
+                AddElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("Text").gameObject, new List<Component>
                 {
                     toggle.transform.Find("Text").GetComponent<Text>(),
                 }));
 
             if (toggle.transform.Find("text"))
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
+                AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
                 {
                     toggle.transform.Find("text").GetComponent<Text>(),
                 }));
