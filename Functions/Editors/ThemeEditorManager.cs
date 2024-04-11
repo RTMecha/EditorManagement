@@ -98,7 +98,7 @@ namespace EditorManagement.Functions.Editors
 
 					var image = gameObject.transform.Find("image");
 
-					image.GetComponent<Image>().enabled = false;
+					image.gameObject.AddComponent<Mask>().showMaskGraphic = false;
 
 					var hlg = image.gameObject.AddComponent<HorizontalLayoutGroup>();
 
@@ -554,7 +554,8 @@ namespace EditorManagement.Functions.Editors
 				UseButton = storage.button,
 				EditButton = storage.edit,
 				DeleteButton = storage.delete,
-				Name = storage.text
+				Name = storage.text,
+				BaseImage = storage.baseImage,
 			};
 
 			themePanel.Colors.Add(storage.color1);
@@ -569,30 +570,29 @@ namespace EditorManagement.Functions.Editors
 
 		public List<ThemePanel> ThemePanels { get; set; } = new List<ThemePanel>();
 
+		bool setupLayout;
 		public void RenderThemeContent(Transform p, string search)
 		{
 			var parent = p.Find("themes/viewport/content");
 
-			p.Find("themes").GetComponent<ScrollRect>().horizontal = false;
+			if (!setupLayout)
+            {
+				setupLayout = true;
 
-			if (!parent.GetComponent<GridLayoutGroup>())
-			{
-				parent.gameObject.AddComponent<GridLayoutGroup>();
+				p.Find("themes").GetComponent<ScrollRect>().horizontal = false;
+				var gridLayoutGroup = parent.GetComponent<GridLayoutGroup>() ?? parent.gameObject.AddComponent<GridLayoutGroup>();
+
+				gridLayoutGroup.cellSize = new Vector2(344f, 30f);
+				gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+				gridLayoutGroup.constraintCount = 1;
+				gridLayoutGroup.spacing = new Vector2(4f, 4f);
+				gridLayoutGroup.startAxis = GridLayoutGroup.Axis.Horizontal;
+
+				parent.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.MinSize;
 			}
 
-			var prefabLay = parent.GetComponent<GridLayoutGroup>();
-			prefabLay.cellSize = new Vector2(344f, 30f);
-			prefabLay.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-			prefabLay.constraintCount = 1;
-			prefabLay.spacing = new Vector2(4f, 4f);
-			prefabLay.startAxis = GridLayoutGroup.Axis.Horizontal;
-
-			parent.GetComponent<ContentSizeFitter>().horizontalFit = ContentSizeFitter.FitMode.MinSize;
-
-			if (p.TryFind("theme/themepathers/themes path", out Transform themePath) && themePath.gameObject.TryGetComponent(out InputField themePathIF))
-				themePathIF.text = RTEditor.ThemePath;
-
-			RTEditor.inst.StartCoroutine(RenderThemeList(search));
+			RTEditor.inst.themePathField.text = RTEditor.ThemePath;
+			StartCoroutine(RenderThemeList(search));
 		}
 
 		public IEnumerator RenderThemeList(string search)
