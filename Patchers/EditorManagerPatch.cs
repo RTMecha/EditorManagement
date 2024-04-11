@@ -180,10 +180,12 @@ namespace EditorManagement.Patchers
                     {
                         var dropdownBase = child.transform.GetChild(1).gameObject;
 
+                        dropdownBase.AddComponent<Mask>();
+
                         EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} Dropdown", "Title Bar Dropdown Normal", dropdownBase, new List<Component>
                         {
                             dropdownBase.GetComponent<Image>(),
-                        }));
+                        }, true, 1, SpriteManager.RoundedSide.Bottom));
 
                         for (int j = 0; j < dropdownBase.transform.childCount; j++)
                         {
