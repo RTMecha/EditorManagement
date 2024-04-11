@@ -95,23 +95,35 @@ namespace EditorManagement.Functions.Editors
 
             var prefabParent = new GameObject("prefabs");
             prefabParent.transform.SetParent(transform);
-            EditorPrefabHolder.Instance.PrefabParent = prefabParent.transform;
+            var prefabHolder = EditorPrefabHolder.Instance;
+            prefabHolder.PrefabParent = prefabParent.transform;
 
-            if (ObjEditor.inst != null)
+            if (ObjEditor.inst)
             {
-                EditorPrefabHolder.Instance.FloatInputField = ObjEditor.inst.ObjectView.transform.Find("time").gameObject.Duplicate(prefabParent.transform);
-                var gameObject = EditorPrefabHolder.Instance.FloatInputField;
+                prefabHolder.FloatInputField = ObjEditor.inst.ObjectView.transform.Find("time").gameObject.Duplicate(prefabHolder.PrefabParent, "float input");
 
-                var floatInputFieldStorage = gameObject.AddComponent<FloatInputFieldStorage>();
-                floatInputFieldStorage.leftGreaterButton = gameObject.transform.Find("<<").GetComponent<Button>();
-                floatInputFieldStorage.leftButton = gameObject.transform.Find("<").GetComponent<Button>();
-                floatInputFieldStorage.rightButton = gameObject.transform.Find(">").GetComponent<Button>();
-                floatInputFieldStorage.rightGreaterButton = gameObject.transform.Find(">>").GetComponent<Button>();
-                floatInputFieldStorage.inputField = gameObject.transform.Find("time").GetComponent<InputField>();
-                gameObject.transform.Find("time").gameObject.name = "input";
+                var floatInputFieldStorage = prefabHolder.FloatInputField.AddComponent<InputFieldStorage>();
+                floatInputFieldStorage.leftGreaterButton = prefabHolder.FloatInputField.transform.Find("<<").GetComponent<Button>();
+                floatInputFieldStorage.leftButton = prefabHolder.FloatInputField.transform.Find("<").GetComponent<Button>();
+                floatInputFieldStorage.middleButton = prefabHolder.FloatInputField.transform.Find("|").GetComponent<Button>();
+                floatInputFieldStorage.rightButton = prefabHolder.FloatInputField.transform.Find(">").GetComponent<Button>();
+                floatInputFieldStorage.rightGreaterButton = prefabHolder.FloatInputField.transform.Find(">>").GetComponent<Button>();
+                floatInputFieldStorage.inputField = prefabHolder.FloatInputField.transform.Find("time").GetComponent<InputField>();
+                prefabHolder.FloatInputField.transform.Find("time").gameObject.name = "input";
 
-                if (EditorPrefabHolder.Instance.FloatInputField.transform.Find("lock"))
-                    Destroy(EditorPrefabHolder.Instance.FloatInputField.transform.Find("lock").gameObject);
+                if (prefabHolder.FloatInputField.transform.Find("lock"))
+                    Destroy(prefabHolder.FloatInputField.transform.Find("lock").gameObject);
+
+                prefabHolder.StringInputField = floatInputFieldStorage.inputField.gameObject.Duplicate(prefabHolder.PrefabParent, "string input");
+            }
+
+            if (PrefabEditor.inst)
+            {
+                prefabHolder.DeleteButton = PrefabEditor.inst.AddPrefab.transform.Find("delete").gameObject.Duplicate(prefabHolder.PrefabParent, "delete");
+                var deleteButtonStorage = prefabHolder.DeleteButton.AddComponent<DeleteButtonStorage>();
+                deleteButtonStorage.button = prefabHolder.DeleteButton.GetComponent<Button>();
+                deleteButtonStorage.baseImage = deleteButtonStorage.button.image;
+                deleteButtonStorage.image = prefabHolder.DeleteButton.transform.GetChild(0).GetComponent<Image>();
             }
 
             SetupNotificationValues();
@@ -136,6 +148,7 @@ namespace EditorManagement.Functions.Editors
             CreateDocumentation();
             CreateDebug();
             CreateAutosavePopup();
+            SetupMiscEditorThemes();
 
             if (!RTFile.FileExists(EditorSettingsPath))
                 CreateGlobalSettings();
@@ -258,8 +271,9 @@ namespace EditorManagement.Functions.Editors
         {
             timeEditing = Time.time - timeOffset + savedTimeEditng;
 
-            foreach (var timelineObject in timelineObjects)
+            for (int i = 0; i < timelineObjects.Count; i++)
             {
+                var timelineObject = timelineObjects[i];
                 if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
                 {
                     bool isCurrentLayer = timelineObject.Layer == Layer && layerType == LayerType.Objects;
@@ -273,6 +287,8 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
+            var theme = EditorThemeManager.CurrentTheme;
+            var objectKeyframesRenderBinColor = EditorConfig.Instance.EventKeyframesRenderBinColor.Value;
             if (ObjectEditor.inst && ObjectEditor.inst.CurrentSelection && ObjectEditor.inst.CurrentSelection.IsBeatmapObject && ObjectEditor.inst.CurrentSelection.InternalSelections.Count > 0)
                 foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections)
                 {
@@ -280,14 +296,19 @@ namespace EditorManagement.Functions.Editors
                     {
                         timelineObject.GameObject.SetActive(true);
 
-                        timelineObject.Image.color = timelineObject.selected ? ObjEditor.inst.SelectedColor : ObjEditor.inst.NormalColor;
+                        var color = objectKeyframesRenderBinColor &&
+                            theme.ColorGroups.ContainsKey($"Object Keyframe Color {timelineObject.Type + 1}") ?
+                            theme.ColorGroups[$"Object Keyframe Color {timelineObject.Type + 1}"] : ObjEditor.inst.NormalColor;
+                        color.a = 1f;
+
+                        timelineObject.Image.color = timelineObject.selected ? !objectKeyframesRenderBinColor ? ObjEditor.inst.SelectedColor : EventEditor.inst.Selected : color;
                     }
                 }
 
-            var theme = EditorThemeManager.CurrentTheme;
             var eventKeyframesRenderBinColor = EditorConfig.Instance.EventKeyframesRenderBinColor.Value;
-            foreach (var timelineObject in timelineKeyframes)
+            for (int i = 0; i < timelineKeyframes.Count; i++)
             {
+                var timelineObject = timelineKeyframes[i];
                 if (timelineObject.Data != null && timelineObject.GameObject && timelineObject.Image)
                 {
                     int limit = timelineObject.Type / RTEventEditor.EventLimit;
@@ -307,7 +328,6 @@ namespace EditorManagement.Functions.Editors
                     }
                 }
             }
-
 
             if (Input.GetMouseButtonDown(1) && (parentPickerEnabled || prefabPickerEnabled))
             {
@@ -9750,6 +9770,135 @@ namespace EditorManagement.Functions.Editors
             EditorHelper.AddEditorPopup("Autosaves Popup", objectSearch);
         }
 
+        void SetupMiscEditorThemes()
+        {
+            var checkpointEditor = EditorManager.inst.GetDialog("Checkpoint Editor").Dialog;
+            if (CheckpointEditor.inst.right == null)
+                CheckpointEditor.inst.right = checkpointEditor.Find("data/right");
+
+            if (CheckpointEditor.inst.left == null)
+                CheckpointEditor.inst.left = checkpointEditor.Find("data/left");
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor", "Background", checkpointEditor.gameObject, new List<Component>
+            {
+                checkpointEditor.GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor List", "Background 3", CheckpointEditor.inst.right.gameObject, new List<Component>
+            {
+                CheckpointEditor.inst.right.GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddInputField(CheckpointEditor.inst.right.Find("search").GetComponent<InputField>(), "Checkpoint Editor Search", "Search Field 2");
+
+            var scrollbar = CheckpointEditor.inst.right.Find("checkpoints/Scrollbar Vertical").GetComponent<Scrollbar>();
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor List Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
+            {
+                scrollbar.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var scrollbarHandle = scrollbar.handleRect.gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor List Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
+            {
+                scrollbar.image,
+                scrollbar
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var edit = CheckpointEditor.inst.left.Find("edit");
+            for (int i = 0; i < edit.childCount; i++)
+            {
+                var button = edit.GetChild(i);
+                var buttonComponent = button.GetComponent<Button>();
+
+                if (!buttonComponent)
+                    continue;
+
+                if (button.name == "del")
+                {
+                    var buttonBG = button.GetChild(0).GetComponent<Image>();
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Delete BG", "Delete Keyframe BG", buttonBG.gameObject, new List<Component>
+                    {
+                        buttonBG,
+                    }));
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Delete", "Delete Keyframe Button", buttonBG.gameObject, new List<Component>
+                    {
+                        buttonComponent,
+                        buttonComponent.image,
+                    }, isSelectable: true));
+
+                    continue;
+                }
+
+                Destroy(button.GetComponent<Animator>());
+                buttonComponent.transition = Selectable.Transition.ColorTint;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Button", "Function 2", button.gameObject, new List<Component>
+                {
+                    buttonComponent,
+                    buttonComponent.image
+                }, isSelectable: true));
+            }
+
+            // Labels
+            for (int i = 0; i < CheckpointEditor.inst.left.childCount; i++)
+            {
+                var label = CheckpointEditor.inst.left.GetChild(i);
+                if (label.name == "label" || label.name == "curves_label")
+                {
+                    for (int j = 0; j < label.childCount; j++)
+                    {
+                        var labelText = label.GetChild(j).GetComponent<Text>();
+                        EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Label", "Light Text", labelText.gameObject, new List<Component>
+                            {
+                                labelText,
+                            }));
+                    }
+                }
+            }
+
+            EditorThemeManager.AddInputField(CheckpointEditor.inst.left.Find("name").GetComponent<InputField>(), "Checkpoint Editor Name", "Input Field");
+            var time = CheckpointEditor.inst.left.Find("time");
+            EditorThemeManager.AddInputField(time.Find("time").GetComponent<InputField>(), "Checkpoint Editor Name", "Input Field");
+            for (int i = 1; i < time.childCount; i++)
+            {
+                var button = time.GetChild(i);
+                var buttonComponent = button.GetComponent<Button>();
+
+                Destroy(button.GetComponent<Animator>());
+                buttonComponent.transition = Selectable.Transition.ColorTint;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Button", "Function 2", button.gameObject, new List<Component>
+                {
+                    buttonComponent,
+                    buttonComponent.image
+                }, isSelectable: true));
+            }
+
+            var position = CheckpointEditor.inst.left.Find("position");
+            for (int i = 0; i < position.childCount; i++)
+            {
+                var child = position.GetChild(i);
+                EditorThemeManager.AddInputField(child.GetComponent<InputField>(), "Checkpoint Editor Position", "Input Field");
+
+                for (int j = 1; j < child.childCount; j++)
+                {
+                    var button = child.GetChild(j);
+                    var buttonComponent = button.GetComponent<Button>();
+
+                    Destroy(button.GetComponent<Animator>());
+                    buttonComponent.transition = Selectable.Transition.ColorTint;
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Button", "Function 2", button.gameObject, new List<Component>
+                    {
+                        buttonComponent,
+                        buttonComponent.image
+                    }, isSelectable: true));
+                }
+            }
+        }
+
         #endregion
 
         #region Saving / Loading
@@ -10265,11 +10414,8 @@ namespace EditorManagement.Functions.Editors
             var parent = dialogTmp.Find("themes/viewport/content");
 
             if (ThemeEditorManager.inst.ThemePanels.Count > 0)
-            {
                 ThemeEditorManager.inst.ThemePanels.ForEach(x => Destroy(x.GameObject));
-            }
             ThemeEditorManager.inst.ThemePanels.Clear();
-            //LSHelpers.DeleteChildren(parent);
 
             if (themeAddButton == null)
             {
@@ -10277,10 +10423,26 @@ namespace EditorManagement.Functions.Editors
                 var tf = themeAddButton.transform;
                 themeAddButton.SetActive(true);
                 tf.localScale = Vector2.one;
-                themeAddButton.GetComponent<Button>().onClick.AddListener(delegate ()
+                var button = themeAddButton.GetComponent<Button>();
+                button.onClick.AddListener(delegate ()
                 {
                     ThemeEditorManager.inst.RenderThemeEditor();
                 });
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Panel Create", "List Button 2 Normal", themeAddButton, new List<Component>
+                {
+                    button.image,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Panel Create Icon", "Dark Text", themeAddButton.transform.Find("edit").gameObject, new List<Component>
+                {
+                    themeAddButton.transform.Find("edit").GetComponent<Image>(),
+                }));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Panel Create Text", "Dark Text", themeAddButton.transform.Find("text").gameObject, new List<Component>
+                {
+                    themeAddButton.transform.Find("text").GetComponent<Text>(),
+                }));
             }
 
             int num = 0;
@@ -10325,6 +10487,33 @@ namespace EditorManagement.Functions.Editors
                 themePanel.DeleteButton.onClick.ClearAll();
                 themePanel.DeleteButton.interactable = false;
                 themePanel.Name.text = beatmapTheme.name;
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel", "List Button 2 Normal", themePanel.GameObject, new List<Component>
+                {
+                    themePanel.BaseImage,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Use Button", "", themePanel.UseButton.gameObject, new List<Component>
+                {
+                    themePanel.UseButton.image,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Edit Button", "Dark Text", themePanel.EditButton.gameObject, new List<Component>
+                {
+                    themePanel.EditButton.image,
+                }));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Name Text", "Dark Text", themePanel.Name.gameObject, new List<Component>
+                {
+                    themePanel.Name,
+                }));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Delete Button", "Delete Keyframe Button", themePanel.DeleteButton.gameObject, new List<Component>
+                {
+                    themePanel.DeleteButton,
+                    themePanel.DeleteButton.image,
+                }, isSelectable: true));
+
                 num++;
             }
 
@@ -10398,6 +10587,32 @@ namespace EditorManagement.Functions.Editors
                     themePanel.Name.text = orig.name;
 
                     themePanel.SetActive(RTHelpers.SearchString(themePanel.Theme.name, search));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel", "List Button 2 Normal", themePanel.GameObject, new List<Component>
+                    {
+                        themePanel.BaseImage,
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Use Button", "", themePanel.UseButton.gameObject, new List<Component>
+                    {
+                        themePanel.UseButton.image,
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Edit Button", "Dark Text", themePanel.EditButton.gameObject, new List<Component>
+                    {
+                        themePanel.EditButton.image,
+                    }));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Name Text", "Dark Text", themePanel.Name.gameObject, new List<Component>
+                    {
+                        themePanel.Name,
+                    }));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Delete Button", "Delete Keyframe Button", themePanel.DeleteButton.gameObject, new List<Component>
+                    {
+                        themePanel.DeleteButton,
+                        themePanel.DeleteButton.image,
+                    }, isSelectable: true));
                 }
 
                 if (jn["id"] == null)
