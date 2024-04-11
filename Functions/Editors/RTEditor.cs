@@ -86,6 +86,34 @@ namespace EditorManagement.Functions.Editors
 
             popups = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform;
 
+            Debug.Log($"------ {typeof(RTEditor)} ------\n{typeof(PrefabEditor)} is null: {PrefabEditor.inst == null}\n" +
+                $"{typeof(MarkerEditor)} is null: {MarkerEditor.inst == null}\n" +
+                $"{typeof(ObjEditor)} is null: {ObjEditor.inst == null}\n" +
+                $"{typeof(EventEditor)} is null: {EventEditor.inst == null}\n" +
+                $"{typeof(BackgroundEditor)} is null: {BackgroundEditor.inst == null}\n" +
+                $"{typeof(CheckpointEditor)} is null: {CheckpointEditor.inst == null}\n");
+
+            var prefabParent = new GameObject("prefabs");
+            prefabParent.transform.SetParent(transform);
+            EditorPrefabHolder.Instance.PrefabParent = prefabParent.transform;
+
+            if (ObjEditor.inst != null)
+            {
+                EditorPrefabHolder.Instance.FloatInputField = ObjEditor.inst.ObjectView.transform.Find("time").gameObject.Duplicate(prefabParent.transform);
+                var gameObject = EditorPrefabHolder.Instance.FloatInputField;
+
+                var floatInputFieldStorage = gameObject.AddComponent<FloatInputFieldStorage>();
+                floatInputFieldStorage.leftGreaterButton = gameObject.transform.Find("<<").GetComponent<Button>();
+                floatInputFieldStorage.leftButton = gameObject.transform.Find("<").GetComponent<Button>();
+                floatInputFieldStorage.rightButton = gameObject.transform.Find(">").GetComponent<Button>();
+                floatInputFieldStorage.rightGreaterButton = gameObject.transform.Find(">>").GetComponent<Button>();
+                floatInputFieldStorage.inputField = gameObject.transform.Find("time").GetComponent<InputField>();
+                gameObject.transform.Find("time").gameObject.name = "input";
+
+                if (EditorPrefabHolder.Instance.FloatInputField.transform.Find("lock"))
+                    Destroy(EditorPrefabHolder.Instance.FloatInputField.transform.Find("lock").gameObject);
+            }
+
             SetupNotificationValues();
             SetupTimelineBar();
             SetupTimelineTriggers();

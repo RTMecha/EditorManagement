@@ -34,6 +34,7 @@ namespace EditorManagement
 		public static List<int> allLayers = new List<int>();
 
 		public static EditorConfig EditorConfig { get; set; }
+		public static EditorPrefabHolder EditorPrefabHolder { get; set; }
 
         void Awake()
         {
@@ -70,6 +71,15 @@ namespace EditorManagement
             {
 				Logger.LogError($"Mod failed to initialize configs.\nException: {ex}");
 				throw;
+            }
+			
+            try
+            {
+				EditorPrefabHolder = new EditorPrefabHolder();
+			}
+            catch (Exception ex)
+            {
+				Logger.LogError($"Mod failed to initialize Unity Prefab Holder.\nException: {ex}");
             }
 
 			SetPreviewConfig();

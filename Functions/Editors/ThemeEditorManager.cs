@@ -81,8 +81,53 @@ namespace EditorManagement.Functions.Editors
 				var themeContent = dialog.Find("data/right/theme/themes/viewport/content");				
 				LSHelpers.DeleteChildren(themeContent);
 
-				//StartCoroutine(Wait());
 				CreateThemePopup();
+
+				Debug.Log($"------ {typeof(ThemeEditorManager)} ------\n{typeof(PrefabEditor)} is null: {PrefabEditor.inst == null}\n" +
+					$"{typeof(MarkerEditor)} is null: {MarkerEditor.inst == null}\n" +
+					$"{typeof(ObjEditor)} is null: {ObjEditor.inst == null}\n" +
+					$"{typeof(EventEditor)} is null: {EventEditor.inst == null}\n" +
+					$"{typeof(BackgroundEditor)} is null: {BackgroundEditor.inst == null}\n" +
+					$"{typeof(CheckpointEditor)} is null: {CheckpointEditor.inst == null}\n");
+
+                // Prefab
+                {
+					var gameObject = EventEditor.inst.ThemePanel.Duplicate(transform, "theme-panel");
+
+					var storage = gameObject.AddComponent<ThemePanelStorage>();
+
+					var image = gameObject.transform.Find("image");
+
+					image.GetComponent<Image>().enabled = false;
+
+					var hlg = image.gameObject.AddComponent<HorizontalLayoutGroup>();
+
+					for (int i = 0; i < ThemePreviewColorCount; i++)
+					{
+						var col = new GameObject($"Col{i + 1}");
+						col.transform.SetParent(image);
+						col.transform.localScale = Vector3.one;
+
+						col.AddComponent<RectTransform>();
+
+						if (i == 0)
+							storage.color1 = col.AddComponent<Image>();
+						if (i == 1)
+							storage.color2 = col.AddComponent<Image>();
+						if (i == 2)
+							storage.color3 = col.AddComponent<Image>();
+						if (i == 3)
+							storage.color4 = col.AddComponent<Image>();
+					}
+
+					storage.button = image.GetComponent<Button>();
+					storage.baseImage = gameObject.GetComponent<Image>();
+					storage.text = gameObject.transform.Find("text").GetComponent<Text>();
+					storage.edit = gameObject.transform.Find("edit").GetComponent<Button>();
+					storage.delete = gameObject.transform.Find("delete").GetComponent<Button>();
+
+					EventEditor.inst.ThemePanel = gameObject;
+				}
 			}
 			catch (Exception ex)
             {
@@ -501,32 +546,21 @@ namespace EditorManagement.Functions.Editors
 		{
 			var gameObject = EventEditor.inst.ThemePanel.Duplicate(parent);
 
-			var image = gameObject.transform.Find("image");
-
-			image.GetComponent<Image>().enabled = false;
+			var storage = gameObject.GetComponent<ThemePanelStorage>();
 
 			var themePanel = new ThemePanel
 			{
 				GameObject = gameObject,
-				UseButton = image.GetComponent<Button>(),
-				EditButton = gameObject.transform.Find("edit").GetComponent<Button>(),
-				DeleteButton = gameObject.transform.Find("delete").GetComponent<Button>(),
-				Name = gameObject.transform.Find("text").GetComponent<Text>()
+				UseButton = storage.button,
+				EditButton = storage.edit,
+				DeleteButton = storage.delete,
+				Name = storage.text
 			};
 
-			var hlg = image.gameObject.AddComponent<HorizontalLayoutGroup>();
-
-			for (int i = 0; i < ThemePreviewColorCount; i++)
-			{
-				var col = new GameObject($"Col{i + 1}");
-				col.transform.SetParent(image);
-				col.transform.localScale = Vector3.one;
-
-				col.AddComponent<RectTransform>();
-				themePanel.Colors.Add(col.AddComponent<Image>());
-			}
-
-			//themePanel.SetActive(false);
+			themePanel.Colors.Add(storage.color1);
+			themePanel.Colors.Add(storage.color2);
+			themePanel.Colors.Add(storage.color3);
+			themePanel.Colors.Add(storage.color4);
 
 			ThemePanels.Add(themePanel);
 
@@ -567,7 +601,10 @@ namespace EditorManagement.Functions.Editors
 			{
 				loadingThemes = true;
 
-				ThemePanels.ForEach(x => x.SetActive(RTHelpers.SearchString(x.Theme.name, search)));
+				for (int i = 0; i < ThemePanels.Count; i++)
+                {
+					ThemePanels[i].SetActive(RTHelpers.SearchString(ThemePanels[i].Theme.name, search));
+				}
 
 				loadingThemes = false;
 			}

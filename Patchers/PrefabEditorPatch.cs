@@ -66,6 +66,17 @@ namespace EditorManagement.Patchers
 
                 icon.AddComponent<Image>();
 
+                var storage = gameObject.AddComponent<PrefabPanelStorage>();
+
+                var tf = gameObject.transform;
+                storage.nameText = tf.Find("name").GetComponent<Text>();
+                storage.typeNameText = tf.Find("type-name").GetComponent<Text>();
+                storage.typeImage = tf.Find("category").GetComponent<Image>();
+                storage.typeImageShade = tf.Find("category/type").GetComponent<Image>();
+                storage.typeIconImage = tf.Find("category/type/type").GetComponent<Image>();
+                storage.button = gameObject.GetComponent<Button>();
+                storage.deleteButton = tf.Find("delete").GetComponent<Button>();
+
                 PrefabEditor.inst.AddPrefab = gameObject;
             }
 

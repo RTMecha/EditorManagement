@@ -1940,13 +1940,24 @@ namespace EditorManagement.Functions.Editors
             hover.animatePos = false;
             hover.size = hoversize;
 
-            var name = tf.Find("name").GetComponent<Text>();
-            var typeName = tf.Find("type-name").GetComponent<Text>();
-            var color = tf.Find("category").GetComponent<Image>();
-            var deleteRT = tf.Find("delete").GetComponent<RectTransform>();
-            var addPrefabObject = gameObject.GetComponent<Button>();
-            var delete = tf.Find("delete").GetComponent<Button>();
-            var typeImage = tf.Find("category/type/type").GetComponent<Image>();
+            var storage = gameObject.GetComponent<PrefabPanelStorage>();
+
+            var name = storage.nameText;
+            var typeName = storage.typeNameText;
+            var typeImage = storage.typeImage;
+            var typeImageShade = storage.typeImageShade;
+            var typeIconImage = storage.typeIconImage;
+            var deleteRT = storage.deleteButton.transform.AsRT();
+            var addPrefabObject = storage.button;
+            var delete = storage.deleteButton;
+
+            //var name = tf.Find("name").GetComponent<Text>();
+            //var typeName = tf.Find("type-name").GetComponent<Text>();
+            //var color = tf.Find("category").GetComponent<Image>();
+            //var deleteRT = tf.Find("delete").GetComponent<RectTransform>();
+            //var addPrefabObject = gameObject.GetComponent<Button>();
+            //var delete = tf.Find("delete").GetComponent<Button>();
+            //var typeImage = tf.Find("category/type/type").GetComponent<Image>();
 
             EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button", "Prefab", gameObject, new List<Component>
             {
@@ -1973,14 +1984,14 @@ namespace EditorManagement.Functions.Editors
                 delete.transform.GetChild(0).GetComponent<Image>(),
             }));
             
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Category", "", color.gameObject, new List<Component>
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Category", "", typeImage.gameObject, new List<Component>
             {
-                color,
+                typeImage,
             }, true, 1, SpriteManager.RoundedSide.W));
             
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Category Shade", "", tf.Find("category/type").gameObject, new List<Component>
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Category Shade", "", typeImageShade.gameObject, new List<Component>
             {
-                tf.Find("category/type").GetComponent<Image>(),
+               typeImageShade,
             }, true, 1, SpriteManager.RoundedSide.W));
 
             name.text = prefab.Name;
@@ -1988,11 +1999,11 @@ namespace EditorManagement.Functions.Editors
             var prefabType = prefab.Type >= 0 && prefab.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefab.Type] : PrefabType.InvalidType;
 
             typeName.text = prefabType.Name;
-            color.color = prefabType.Color;
-            typeImage.sprite = prefabType.Icon;
+            typeImage.color = prefabType.Color;
+            typeIconImage.sprite = prefabType.Icon;
 
             TooltipHelper.AddTooltip(gameObject,
-                "<#" + LSColors.ColorToHex(color.color) + ">" + prefab.Name + "</color>",
+                "<#" + LSColors.ColorToHex(typeImage.color) + ">" + prefab.Name + "</color>",
                 "O: " + prefab.Offset +
                 "<br>T: " + typeName.text +
                 "<br>Count: " + prefab.objects.Count +
@@ -2077,8 +2088,8 @@ namespace EditorManagement.Functions.Editors
                     Dialog = dialog,
                     Name = name,
                     TypeText = typeName,
-                    TypeImage = color,
-                    TypeIcon = typeImage,
+                    TypeImage = typeImage,
+                    TypeIcon = typeIconImage,
                     Prefab = prefab,
                     Index = index,
                     FilePath = file
@@ -2116,11 +2127,11 @@ namespace EditorManagement.Functions.Editors
                         var prefabType = prefabToSaveTo.Type >= 0 && prefabToSaveTo.Type < DataManager.inst.PrefabTypes.Count ? (PrefabType)DataManager.inst.PrefabTypes[prefabToSaveTo.Type] : PrefabType.InvalidType;
 
                         typeName.text = prefabType.Name;
-                        color.color = prefabType.Color;
-                        typeImage.sprite = prefabType.Icon;
+                        typeImage.color = prefabType.Color;
+                        typeIconImage.sprite = prefabType.Icon;
 
                         TooltipHelper.AddTooltip(gameObject,
-                            "<#" + LSColors.ColorToHex(color.color) + ">" + prefab.Name + "</color>",
+                            "<#" + LSColors.ColorToHex(typeImage.color) + ">" + prefab.Name + "</color>",
                             "O: " + prefab.Offset +
                             "<br>T: " + typeName.text +
                             "<br>Count: " + prefabToSaveTo.objects.Count +
