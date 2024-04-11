@@ -793,6 +793,8 @@ namespace EditorManagement.Patchers
 
 				if (!icons.gameObject.GetComponent<HorizontalLayoutGroup>())
 				{
+					var timelineObjectStorage = gameObject.AddComponent<TimelineObjectStorage>();
+
 					var @lock = ObjEditor.inst.timelineObjectPrefabLock.Duplicate(icons);
 					@lock.name = "lock";
 					((RectTransform)@lock.transform).anchoredPosition = Vector3.zero;
@@ -834,6 +836,11 @@ namespace EditorManagement.Patchers
 					var hoverUI = gameObject.AddComponent<HoverUI>();
 					hoverUI.animatePos = false;
 					hoverUI.animateSca = true;
+
+					timelineObjectStorage.hoverUI = hoverUI;
+					timelineObjectStorage.image = gameObject.GetComponent<Image>();
+					timelineObjectStorage.eventTrigger = gameObject.GetComponent<EventTrigger>() ?? gameObject.AddComponent<EventTrigger>();
+					timelineObjectStorage.text = gameObject.transform.GetChild(0).GetComponent<TextMeshProUGUI>();
 				}
 
 				ObjEditor.inst.timelineObjectPrefab = gameObject;
