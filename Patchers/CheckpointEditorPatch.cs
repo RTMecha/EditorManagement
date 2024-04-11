@@ -1,8 +1,11 @@
 ﻿using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
 using HarmonyLib;
+using LSFunctions;
 using RTFunctions.Functions;
+using RTFunctions.Functions.Managers;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -204,6 +207,37 @@ namespace EditorManagement.Patchers
 			return false;
         }
 
+		[HarmonyPatch("DeleteCheckpoint")]
+		[HarmonyPrefix]
+		static bool DeleteCheckpointPrefix(int __0)
+		{
+			Debug.Log($"{Instance.className}Deleting checkpoint at [{__0}] index.");
+			DataManager.inst.gameData.beatmapData.checkpoints.RemoveAt(__0);
+			if (DataManager.inst.gameData.beatmapData.checkpoints.Count > 0)
+			{
+				Instance.SetCurrentCheckpoint(Mathf.Clamp(Instance.currentObj - 1, 0, DataManager.inst.gameData.beatmapData.checkpoints.Count - 1));
+			}
+
+			if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
+            {
+				if (CheckpointEditor.inst.checkpoints.Count > 0)
+				{
+					foreach (var obj2 in CheckpointEditor.inst.checkpoints)
+						Destroy(obj2);
+
+					CheckpointEditor.inst.checkpoints.Clear();
+				}
+
+				CheckpointEditor.inst.CreateGhostCheckpoints();
+			}
+			else
+            {
+				CheckpointEditor.inst.CreateCheckpoints();
+			}
+
+			return false;
+        }
+
 		[HarmonyPatch("RenderCheckpoint")]
 		[HarmonyPrefix]
 		static bool RenderCheckpointPrefix(CheckpointEditor __instance, int __0)
@@ -244,5 +278,65 @@ namespace EditorManagement.Patchers
 			}
 			return false;
 		}
+
+		[HarmonyPatch("RenderCheckpointList")]
+		[HarmonyPrefix]
+		static bool RenderCheckpointListPrefix(string __0, int __1)
+		{
+			if (Instance.right == null)
+				Instance.right = EditorManager.inst.GetDialog("Checkpoint Editor").Dialog.Find("data/right");
+
+			var transform = Instance.right.Find("checkpoints/viewport/content");
+			LSHelpers.DeleteChildren(transform, false);
+
+			int num = 0;
+			foreach (var checkpoint in DataManager.inst.gameData.beatmapData.checkpoints)
+			{
+				if (string.IsNullOrEmpty(__0) || checkpoint.name.ToLower().Contains(__0.ToLower()))
+				{
+					var index = num;
+					var gameObject = Instance.checkpointListButtonPrefab.Duplicate(transform, $"{checkpoint.name}_checkpoint");
+					gameObject.transform.localScale = Vector3.one;
+
+					var selected = gameObject.transform.Find("dot").GetComponent<Image>();
+					var name = gameObject.transform.Find("name").GetComponent<Text>();
+					var time = gameObject.transform.Find("time").GetComponent<Text>();
+
+					name.text = checkpoint.name;
+					time.text = FontManager.TextTranslater.SecondsToTime(checkpoint.time);
+					//time.text = checkpoint.time.ToString("F2") + "s";
+					selected.enabled = num == __1;
+					
+					var button = gameObject.GetComponent<Button>();
+					button.onClick.ClearAll();
+					button.onClick.AddListener(delegate
+					{
+						Instance.SetCurrentCheckpoint(index);
+					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel", "List Button 2 Normal", gameObject, new List<Component>
+					{
+						button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel Selected", "Dark Text", selected.gameObject, new List<Component>
+					{
+						selected,
+					}));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel Name", "Dark Text", name.gameObject, new List<Component>
+					{
+						name,
+					}));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel Time", "Dark Text", time.gameObject, new List<Component>
+					{
+						time,
+					}));
+				}
+				num++;
+			}
+			return false;
+        }
 	}
 }
