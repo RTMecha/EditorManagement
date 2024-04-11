@@ -645,6 +645,20 @@ namespace EditorManagement.Functions.Editors
                 inputField.textComponent,
             }));
         }
+        
+        public static void ApplyInputField(InputField inputField, string name, string group)
+        {
+            inputField.image.fillCenter = true;
+            ApplyElement(new Element(name, group, inputField.gameObject, new List<Component>
+            {
+                inputField.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            ApplyElement(new Element($"{name} Text", $"{group} Text", inputField.textComponent.gameObject, new List<Component>
+            {
+                inputField.textComponent,
+            }));
+        }
 
         public static void AddInputFields(GameObject gameObject, bool self, string name, bool selfInput = false, bool searchChildren = true)
         {
