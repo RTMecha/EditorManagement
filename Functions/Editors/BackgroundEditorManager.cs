@@ -51,7 +51,7 @@ namespace EditorManagement.Functions.Editors
 
 			SetSingleInputFieldInt(__instance.left, "iterations/x", backgroundObject.depth);
 
-			SetSingleInputField(__instance.left, "depth/x", backgroundObject.layer);
+			SetSingleInputFieldInt(__instance.left, "depth/x", backgroundObject.layer);
 
 			SetSingleInputField(__instance.left, "zscale/x", backgroundObject.zscale);
 
@@ -98,62 +98,74 @@ namespace EditorManagement.Functions.Editors
 				int colTmp = num;
 				// Top Color
 				{
-					var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
-					gameObject.name = "color gui";
-					gameObject.transform.SetParent(__instance.left.Find("color"));
+					var gameObject = EditorManager.inst.colorGUI.Duplicate(__instance.left.Find("color"), "color gui");
 					gameObject.transform.localScale = Vector3.one;
-					gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
-					gameObject.transform.Find("Image").gameObject.SetActive(false);
+					var button = gameObject.GetComponent<Button>();
+					button.image.color = LSColors.fadeColor(col, 1f);
+					gameObject.transform.Find("Image").gameObject.SetActive(backgroundObject.color == num);
 
-					if (backgroundObject.color == num)
-					{
-						gameObject.transform.Find("Image").gameObject.SetActive(true);
-					}
-
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					button.onClick.AddListener(delegate ()
 					{
 						__instance.SetColor(colTmp);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color", "", gameObject, new List<Component>
+					{
+						button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color Background", "Background", gameObject.transform.Find("Image").gameObject, new List<Component>
+					{
+						gameObject.transform.Find("Image").GetComponent<Image>(),
+					}));
 				}
 
 				// Fade Color
 				{
-					var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
-					gameObject.name = "color gui";
-					gameObject.transform.SetParent(__instance.left.Find("fade-color"));
+					var gameObject = EditorManager.inst.colorGUI.Duplicate(__instance.left.Find("fade-color"), "color gui");
 					gameObject.transform.localScale = Vector3.one;
-					gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
-					gameObject.transform.Find("Image").gameObject.SetActive(false);
+					var button = gameObject.GetComponent<Button>();
+					button.image.color = LSColors.fadeColor(col, 1f);
+					gameObject.transform.Find("Image").gameObject.SetActive(backgroundObject.FadeColor == num);
 
-					if (backgroundObject.FadeColor == num)
-					{
-						gameObject.transform.Find("Image").gameObject.SetActive(true);
-					}
-
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					button.onClick.AddListener(delegate ()
 					{
 						SetFadeColor(__instance, colTmp);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color", "", gameObject, new List<Component>
+					{
+						button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color Background", "Background", gameObject.transform.Find("Image").gameObject, new List<Component>
+					{
+						gameObject.transform.Find("Image").GetComponent<Image>(),
+					}));
 				}
 
 				// Reactive Color
 				{
-					var gameObject = Instantiate(EditorManager.inst.colorGUI, Vector3.zero, Quaternion.identity);
-					gameObject.name = "color gui";
-					gameObject.transform.SetParent(__instance.left.Find("reactive-color"));
+					var gameObject = EditorManager.inst.colorGUI.Duplicate(__instance.left.Find("reactive-color"), "color gui");
 					gameObject.transform.localScale = Vector3.one;
-					gameObject.GetComponent<Image>().color = LSColors.fadeColor(col, 1f);
-					gameObject.transform.Find("Image").gameObject.SetActive(false);
+					var button = gameObject.GetComponent<Button>();
+					button.image.color = LSColors.fadeColor(col, 1f);
+					gameObject.transform.Find("Image").gameObject.SetActive(backgroundObject.reactiveCol == num);
 
-					if (backgroundObject.reactiveCol == num)
-					{
-						gameObject.transform.Find("Image").gameObject.SetActive(true);
-					}
-
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					button.onClick.AddListener(delegate ()
 					{
 						SetReactiveColor(__instance, colTmp);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color", "", gameObject, new List<Component>
+					{
+						button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color Background", "Background", gameObject.transform.Find("Image").gameObject, new List<Component>
+					{
+						gameObject.transform.Find("Image").GetComponent<Image>(),
+					}));
 				}
 				num++;
 			}
@@ -234,7 +246,16 @@ namespace EditorManagement.Functions.Editors
 			{
 				var obj = ObjectEditor.inst.shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
 				if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+				{
 					image.sprite = ShapeManager.inst.Shapes3D[i][0].Icon;
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Shape Sprite", "Toggle 1 Check", image.gameObject, new List<Component>
+					{
+						image,
+					}));
+				}
+
+				var shapeToggle = obj.GetComponent<Toggle>();
+				EditorThemeManager.ApplyToggle(shapeToggle, "Background Editor Shape", checkmark: "Background");
 
 				if (i != 4 && i != 6)
 				{
@@ -263,13 +284,22 @@ namespace EditorManagement.Functions.Editors
 					{
 						var opt = ObjectEditor.inst.shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
 						if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
+						{
 							image1.sprite = ShapeManager.inst.Shapes3D[i][j].Icon;
+							EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Shape Option Sprite", "Toggle 1 Check", image1.gameObject, new List<Component>
+							{
+								image1,
+							}));
+						}
 
 						var layoutElement = opt.AddComponent<LayoutElement>();
 						layoutElement.layoutPriority = 1;
 						layoutElement.minWidth = 32f;
 
 						((RectTransform)opt.transform).sizeDelta = new Vector2(32f, 32f);
+
+						var shapeOptionToggle = opt.GetComponent<Toggle>();
+						EditorThemeManager.ApplyToggle(shapeOptionToggle, "Background Editor Shape Option", checkmark: "Background");
 
 						if (!opt.GetComponent<HoverUI>())
 						{

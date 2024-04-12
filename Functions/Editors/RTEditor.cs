@@ -118,11 +118,11 @@ namespace EditorManagement.Functions.Editors
 
                 prefabHolder.StringInputField = floatInputFieldStorage.inputField.gameObject.Duplicate(prefabHolder.PrefabParent, "string input");
 
-                prefabHolder.FunctionButton = ObjEditor.inst.ObjectView.transform.Find("applyprefab").gameObject.Duplicate(prefabHolder.PrefabParent, "function button");
+                prefabHolder.Function2Button = ObjEditor.inst.ObjectView.transform.Find("applyprefab").gameObject.Duplicate(prefabHolder.PrefabParent, "function 2 button");
 
-                var functionButtonStorage = prefabHolder.FunctionButton.AddComponent<FunctionButtonStorage>();
-                functionButtonStorage.button = prefabHolder.FunctionButton.GetComponent<Button>();
-                functionButtonStorage.text = prefabHolder.FunctionButton.transform.GetChild(0).GetComponent<Text>();
+                var functionButtonStorage = prefabHolder.Function2Button.AddComponent<FunctionButtonStorage>();
+                functionButtonStorage.button = prefabHolder.Function2Button.GetComponent<Button>();
+                functionButtonStorage.text = prefabHolder.Function2Button.transform.GetChild(0).GetComponent<Text>();
             }
 
             if (PrefabEditor.inst)
@@ -133,6 +133,11 @@ namespace EditorManagement.Functions.Editors
                 deleteButtonStorage.baseImage = deleteButtonStorage.button.image;
                 deleteButtonStorage.image = prefabHolder.DeleteButton.transform.GetChild(0).GetComponent<Image>();
             }
+
+            prefabHolder.Function1Button = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event").Duplicate(prefabHolder.PrefabParent, "function 1 button");
+            var functionButton1Storage = prefabHolder.Function1Button.AddComponent<FunctionButtonStorage>();
+            functionButton1Storage.button = prefabHolder.Function1Button.GetComponent<Button>();
+            functionButton1Storage.text = prefabHolder.Function1Button.transform.GetChild(0).GetComponent<Text>();
 
             SetupNotificationValues();
             SetupTimelineBar();
@@ -9903,6 +9908,81 @@ namespace EditorManagement.Functions.Editors
                         buttonComponent,
                         buttonComponent.image
                     }, isSelectable: true));
+                }
+            }
+
+            // Object Options
+            {
+                var options = EditorManager.inst.GetDialog("Object Options Popup").Dialog;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Popup", "Background", options.gameObject, new List<Component>
+                {
+                    options.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Arrow", "Background", options.Find("arrow").gameObject, new List<Component>
+                {
+                    options.Find("arrow").GetComponent<Image>(),
+                }));
+
+                for (int i = 1; i < options.childCount - 1; i++)
+                {
+                    var child = options.GetChild(i);
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button", "Function 3", child.gameObject, new List<Component>
+                    {
+                        child.GetComponent<Image>(),
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button Text", "Function 3 Text", child.GetChild(0).gameObject, new List<Component>
+                    {
+                        child.GetChild(0).GetComponent<Text>(),
+                    }));
+                }
+
+                for (int i = 0; i < options.Find("shapes").childCount; i++)
+                {
+                    var child = options.Find("shapes").GetChild(i);
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button", "Function 3", child.gameObject, new List<Component>
+                    {
+                        child.GetComponent<Image>(),
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button Text", "Function 3 Text", child.GetChild(0).gameObject, new List<Component>
+                    {
+                        child.GetChild(0).GetComponent<Image>(),
+                    }));
+                }
+            }
+
+            // BG Options
+            {
+                var options = EditorManager.inst.GetDialog("BG Options Popup").Dialog;
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Popup", "Background", options.gameObject, new List<Component>
+                {
+                    options.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Arrow", "Background", options.Find("arrow").gameObject, new List<Component>
+                {
+                    options.Find("arrow").GetComponent<Image>(),
+                }));
+
+                for (int i = 1; i < options.childCount; i++)
+                {
+                    var child = options.GetChild(i);
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Button", "Function 3", child.gameObject, new List<Component>
+                    {
+                        child.GetComponent<Image>(),
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Button Text", "Function 3 Text", child.GetChild(0).gameObject, new List<Component>
+                    {
+                        child.GetChild(0).GetComponent<Text>(),
+                    }));
                 }
             }
         }

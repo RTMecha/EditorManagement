@@ -140,6 +140,8 @@ namespace EditorManagement.Functions.Editors
                 { "Function 2 Pressed", LSColors.HexToColorAlpha("E0E0E0FF") },
                 { "Function 2 Disabled", LSColors.HexToColorAlpha("C7C7C780") },
                 { "Function 2 Text", LSColors.HexToColorAlpha("323232FF") },
+                { "Function 3", LSColors.HexToColorAlpha("EDE9EDFF") },
+                { "Function 3 Text", LSColors.HexToColorAlpha("0A0A0AFF") },
 
                 { "List Button 1", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "List Button 1 Normal", LSColors.HexToColorAlpha("2A2A2AFF") },
@@ -162,7 +164,7 @@ namespace EditorManagement.Functions.Editors
 
                 { "Add", LSColors.HexToColorAlpha("4DB6ACFF") },
                 { "Add Text", LSColors.HexToColorAlpha("202020FF") },
-                { "Delete", LSColors.HexToColorAlpha("E67474FF") },
+                { "Delete", LSColors.HexToColorAlpha("E54444FF") },
                 { "Delete Text", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "Delete Keyframe BG", LSColors.HexToColorAlpha("EEEAEEFF") },
                 { "Delete Keyframe Button", LSColors.HexToColorAlpha("FFFFFFFF") },
@@ -379,6 +381,8 @@ namespace EditorManagement.Functions.Editors
                 { "Function 2 Pressed", LSColors.HexToColorAlpha("AF5D73FF") },
                 { "Function 2 Disabled", LSColors.HexToColorAlpha("C7C7C780") },
                 { "Function 2 Text", LSColors.HexToColorAlpha("C6C6C6FF") },
+                { "Function 3", LSColors.HexToColorAlpha("3D3D3DFF") },
+                { "Function 3 Text", LSColors.HexToColorAlpha("C6C6C6FF") },
 
                 { "List Button 1", LSColors.HexToColorAlpha("FFFFFFFF") },
                 { "List Button 1 Normal", LSColors.HexToColorAlpha("111111FF") },
@@ -441,7 +445,7 @@ namespace EditorManagement.Functions.Editors
                 { "Slider 1 Disabled", LSColors.HexToColorAlpha("C8C8C880") },
                 { "Slider 1 Handle", LSColors.HexToColorAlpha("FFFFFFFF") },
 
-                { "Slider", LSColors.HexToColorAlpha("EEEAEEFF") },
+                { "Slider", LSColors.HexToColorAlpha("2D2D2DFF") },
                 { "Slider Handle", LSColors.HexToColorAlpha("424242FF") },
 
                 { "Documentation", LSColors.HexToColorAlpha("D89356FF") },
@@ -632,13 +636,13 @@ namespace EditorManagement.Functions.Editors
 
         }
 
-        public static void AddInputField(InputField inputField, string name, string group)
+        public static void AddInputField(InputField inputField, string name, string group, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
         {
             inputField.image.fillCenter = true;
             AddElement(new Element(name, group, inputField.gameObject, new List<Component>
             {
                 inputField.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
+            }, true, rounded, roundedSide));
 
             AddElement(new Element($"{name} Text", $"{group} Text", inputField.textComponent.gameObject, new List<Component>
             {
@@ -669,7 +673,7 @@ namespace EditorManagement.Functions.Editors
                 if (!inputField)
                     return;
 
-                var input = selfInput ? inputField.transform : gameObject.transform.Find("input") ?? gameObject.transform.Find("Input");
+                var input = selfInput ? inputField.transform : gameObject.transform.Find("input") ?? gameObject.transform.Find("Input") ?? gameObject.transform.Find("text-field");
 
                 AddElement(new Element($"{name} Value", "Input Field", input.gameObject, new List<Component>
                 {
@@ -716,10 +720,11 @@ namespace EditorManagement.Functions.Editors
                 var child = gameObject.transform.GetChild(j);
 
                 var inputField = child.GetComponent<InputField>();
-                var input = selfInput ? inputField.transform : child.Find("input") ?? child.Find("Input");
 
                 if (!inputField)
                     continue;
+
+                var input = selfInput ? inputField.transform : child.Find("input") ?? child.Find("Input") ?? child.Find("text-field");
 
                 AddElement(new Element($"{name} Value", "Input Field", input.gameObject, new List<Component>
                 {
@@ -762,6 +767,7 @@ namespace EditorManagement.Functions.Editors
 
         public static void AddToggle(Toggle toggle, string name, Text text = null)
         {
+            toggle.image.fillCenter = true;
             AddElement(new Element(name, "Toggle 1", toggle.gameObject, new List<Component>
             {
                 toggle.image,
@@ -788,7 +794,42 @@ namespace EditorManagement.Functions.Editors
                 }));
 
             if (toggle.transform.Find("text"))
-                AddElement(new EditorThemeManager.Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
+                AddElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("text").GetComponent<Text>(),
+                }));
+        }
+        
+        public static void ApplyToggle(Toggle toggle, string name, Text text = null, string checkmark = "")
+        {
+            toggle.image.fillCenter = true;
+            ApplyElement(new Element(name, "Toggle 1", toggle.gameObject, new List<Component>
+            {
+                toggle.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            ApplyElement(new Element($"{name} Checkmark", string.IsNullOrEmpty(checkmark) ? "Toggle 1 Check" : checkmark, toggle.graphic.gameObject, new List<Component>
+            {
+                toggle.graphic,
+            }));
+
+            if (text)
+            {
+                ApplyElement(new Element($"{name} Text", "Toggle 1 Check", text.gameObject, new List<Component>
+                {
+                    text,
+                }));
+                return;
+            }
+
+            if (toggle.transform.Find("Text"))
+                ApplyElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("Text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("Text").GetComponent<Text>(),
+                }));
+
+            if (toggle.transform.Find("text"))
+                ApplyElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
                 {
                     toggle.transform.Find("text").GetComponent<Text>(),
                 }));
@@ -896,14 +937,29 @@ namespace EditorManagement.Functions.Editors
 
             public void SetColor(Color color)
             {
-                foreach (var component in Components)
+                try
                 {
-                    if (component is Image image)
-                        image.color = color;
-                    if (component is Text text)
-                        text.color = color;
-                    if (component is TextMeshProUGUI textMeshPro)
-                        textMeshPro.color = color;
+                    foreach (var component in Components)
+                    {
+                        if (component is Image image)
+                            image.color = color;
+                        if (component is Text text)
+                            text.color = color;
+                        if (component is TextMeshProUGUI textMeshPro)
+                            textMeshPro.color = color;
+                    }
+                }
+                catch
+                {
+                    foreach (var component in Components)
+                    {
+                        if (component is Text text)
+                        {
+                            var str = text.text;
+                            text.text = "";
+                            text.text = str;
+                        }
+                    }
                 }
             }
 

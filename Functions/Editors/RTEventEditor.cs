@@ -1354,9 +1354,9 @@ namespace EditorManagement.Functions.Editors
 					var speed = GenerateUIElement("speed", "Single", shake, 15, "Speed");
 
 					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", label, new List<Component>
-				{
-					labelText,
-				}));
+					{
+						labelText,
+					}));
 					EditorThemeManager.AddInputFields(direction["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(interpolation["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(speed["UI"], true, "Event Editor");
@@ -1716,10 +1716,32 @@ namespace EditorManagement.Functions.Editors
 
 			multiKeyframeEditor.Find("Text").gameObject.SetActive(false);
 
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor", "Background", multiKeyframeEditor.gameObject, new List<Component>
+			{
+				multiKeyframeEditor.GetComponent<Image>(),
+			}));
+
+			var multiKeyframeEditorVLG = multiKeyframeEditor.GetComponent<VerticalLayoutGroup>();
+			multiKeyframeEditorVLG.childControlWidth = false;
+			multiKeyframeEditorVLG.childForceExpandWidth = false;
+
+			var data = new GameObject("data");
+			data.transform.SetParent(multiKeyframeEditor);
+			data.transform.localScale = Vector3.one;
+			var dataRT = data.AddComponent<RectTransform>();
+			dataRT.sizeDelta = new Vector2(740f, 100f);
+
+			var dataVLG = data.AddComponent<VerticalLayoutGroup>();
+			dataVLG.childControlHeight = false;
+			dataVLG.childControlWidth = true;
+			dataVLG.childForceExpandHeight = false;
+			dataVLG.childForceExpandWidth = true;
+			dataVLG.spacing = 4f;
+
 			// Label
 			{
 				var labelBase1 = new GameObject("label base");
-				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.SetParent(dataRT);
 				labelBase1.transform.localScale = Vector3.one;
 				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
 				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
@@ -1733,18 +1755,62 @@ namespace EditorManagement.Functions.Editors
 			}
 
 			var timeBase = new GameObject("time");
-			timeBase.transform.SetParent(multiKeyframeEditor);
+			timeBase.transform.SetParent(dataRT);
 			timeBase.transform.localScale = Vector3.one;
 			var timeBaseRT = timeBase.AddComponent<RectTransform>();
 			timeBaseRT.sizeDelta = new Vector2(765f, 38f);
 
-			var time = move.Find("time").gameObject.Duplicate(timeBaseRT, "time");
-			time.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
+			var time = EditorPrefabHolder.Instance.NumberInputField.Duplicate(timeBaseRT, "time");
+			time.transform.AsRT().anchoredPosition = new Vector2(8f, 32f);
+			var timeStorage = time.GetComponent<InputFieldStorage>();
+			time.transform.GetChild(0).name = "time";
+
+			EditorThemeManager.AddInputField(timeStorage.inputField, "View Themes Popup Page Input", "Input Field");
+
+			Destroy(timeStorage.leftGreaterButton.GetComponent<Animator>());
+			timeStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.leftGreaterButton.gameObject, new List<Component>
+			{
+				timeStorage.leftGreaterButton.image,
+				timeStorage.leftGreaterButton,
+			}, isSelectable: true));
+
+			Destroy(timeStorage.leftButton.GetComponent<Animator>());
+			timeStorage.leftButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.leftButton.gameObject, new List<Component>
+			{
+				timeStorage.leftButton.image,
+				timeStorage.leftButton,
+			}, isSelectable: true));
+
+			Destroy(timeStorage.rightButton.GetComponent<Animator>());
+			timeStorage.rightButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.rightButton.gameObject, new List<Component>
+			{
+				timeStorage.rightButton.image,
+				timeStorage.rightButton,
+			}, isSelectable: true));
+
+			Destroy(timeStorage.middleButton.GetComponent<Animator>());
+			timeStorage.middleButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.middleButton.gameObject, new List<Component>
+			{
+				timeStorage.middleButton.image,
+				timeStorage.middleButton,
+			}, isSelectable: true));
+
+			Destroy(timeStorage.rightGreaterButton.GetComponent<Animator>());
+			timeStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.rightGreaterButton.gameObject, new List<Component>
+			{
+				timeStorage.rightGreaterButton.image,
+				timeStorage.rightGreaterButton,
+			}, isSelectable: true));
 
 			// Label
 			{
 				var labelBase1 = new GameObject("label base");
-				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.SetParent(dataRT);
 				labelBase1.transform.localScale = Vector3.one;
 				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
 				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
@@ -1758,7 +1824,7 @@ namespace EditorManagement.Functions.Editors
 			}
 
 			var curveBase = new GameObject("curves");
-			curveBase.transform.SetParent(multiKeyframeEditor);
+			curveBase.transform.SetParent(dataRT);
 			curveBase.transform.localScale = Vector3.one;
 			var curveBaseRT = curveBase.AddComponent<RectTransform>();
 			curveBaseRT.sizeDelta = new Vector2(765f, 38f);
@@ -1766,14 +1832,130 @@ namespace EditorManagement.Functions.Editors
 			var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
 			curves.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
 
-			var valueIndex = GenerateUIElement("value index", "Single", multiKeyframeEditor, 7, "Value Index");
-
-			var value = GenerateUIElement("value", "Single", multiKeyframeEditor, 9, "Value");
+			EditorThemeManager.AddDropdown(curves.GetComponent<Dropdown>(), "Multi Event Keyframe Editor Easing");
 
 			// Label
 			{
 				var labelBase1 = new GameObject("label base");
-				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.SetParent(dataRT);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Value Index");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+			}
+
+			var valueIndexBase = new GameObject("value index");
+			valueIndexBase.transform.SetParent(dataRT);
+			valueIndexBase.transform.localScale = Vector3.one;
+			var valueIndexBaseRT = valueIndexBase.AddComponent<RectTransform>();
+			valueIndexBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+			var valueIndex = EditorPrefabHolder.Instance.NumberInputField.Duplicate(valueIndexBaseRT, "value index");
+			valueIndex.transform.AsRT().anchoredPosition = new Vector2(8f, 32f);
+			var valueIndexStorage = valueIndex.GetComponent<InputFieldStorage>();
+			valueIndex.transform.GetChild(0).name = "input";
+
+			EditorThemeManager.AddInputField(valueIndexStorage.inputField, "View Themes Popup Page Input", "Input Field");
+
+			Destroy(valueIndexStorage.leftButton.GetComponent<Animator>());
+			valueIndexStorage.leftButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueIndexStorage.leftButton.gameObject, new List<Component>
+			{
+				valueIndexStorage.leftButton.image,
+				valueIndexStorage.leftButton,
+			}, isSelectable: true));
+
+			Destroy(valueIndexStorage.rightButton.GetComponent<Animator>());
+			valueIndexStorage.rightButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueIndexStorage.rightButton.gameObject, new List<Component>
+			{
+				valueIndexStorage.rightButton.image,
+				valueIndexStorage.rightButton,
+			}, isSelectable: true));
+
+			Destroy(valueIndexStorage.leftGreaterButton.gameObject);
+			Destroy(valueIndexStorage.middleButton.gameObject);
+			Destroy(valueIndexStorage.rightGreaterButton.gameObject);
+
+			// Label
+			{
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(dataRT);
+				labelBase1.transform.localScale = Vector3.one;
+				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
+				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
+
+				var l = Instantiate(uiDictionary["Label"]);
+				l.name = "label";
+				l.transform.SetParent(labelBase1RT);
+				l.transform.localScale = Vector3.one;
+				GenerateLabels(l.transform, "Value");
+				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
+			}
+
+			var valueBase = new GameObject("value");
+			valueBase.transform.SetParent(dataRT);
+			valueBase.transform.localScale = Vector3.one;
+			var valueBaseRT = valueBase.AddComponent<RectTransform>();
+			valueBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+			var value = EditorPrefabHolder.Instance.NumberInputField.Duplicate(valueBaseRT, "value");
+			value.transform.AsRT().anchoredPosition = new Vector2(8f, 32f);
+			var valueStorage = value.GetComponent<InputFieldStorage>();
+			value.transform.GetChild(0).name = "input";
+
+			EditorThemeManager.AddInputField(valueStorage.inputField, "View Themes Popup Page Input", "Input Field");
+
+			Destroy(valueStorage.leftGreaterButton.GetComponent<Animator>());
+			valueStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.leftGreaterButton.gameObject, new List<Component>
+			{
+				valueStorage.leftGreaterButton.image,
+				valueStorage.leftGreaterButton,
+			}, isSelectable: true));
+
+			Destroy(valueStorage.leftButton.GetComponent<Animator>());
+			valueStorage.leftButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.leftButton.gameObject, new List<Component>
+			{
+				valueStorage.leftButton.image,
+				valueStorage.leftButton,
+			}, isSelectable: true));
+
+			Destroy(valueStorage.rightButton.GetComponent<Animator>());
+			valueStorage.rightButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.rightButton.gameObject, new List<Component>
+			{
+				valueStorage.rightButton.image,
+				valueStorage.rightButton,
+			}, isSelectable: true));
+
+			Destroy(valueStorage.middleButton.GetComponent<Animator>());
+			valueStorage.middleButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.middleButton.gameObject, new List<Component>
+			{
+				valueStorage.middleButton.image,
+				valueStorage.middleButton,
+			}, isSelectable: true));
+
+			Destroy(valueStorage.rightGreaterButton.GetComponent<Animator>());
+			valueStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.rightGreaterButton.gameObject, new List<Component>
+			{
+				valueStorage.rightGreaterButton.image,
+				valueStorage.rightGreaterButton,
+			}, isSelectable: true));
+
+			// Label
+			{
+				var labelBase1 = new GameObject("label base");
+				labelBase1.transform.SetParent(dataRT);
 				labelBase1.transform.localScale = Vector3.one;
 				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
 				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
@@ -1786,17 +1968,21 @@ namespace EditorManagement.Functions.Editors
 				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
 
-			var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+			var snapBase = new GameObject("snap bpm");
+			snapBase.transform.SetParent(dataRT);
+			snapBase.transform.localScale = Vector3.one;
+			var snapBaseRT = snapBase.AddComponent<RectTransform>();
+			snapBaseRT.sizeDelta = new Vector2(765f, 38f);
 
-			var gameObject = eventButton.Duplicate(multiKeyframeEditor, "snap bpm");
-			gameObject.transform.localScale = Vector3.one;
+			var snap = EditorPrefabHolder.Instance.Function1Button.Duplicate(snapBaseRT, "snap bpm");
+			snap.transform.localScale = Vector3.one;
+			var snapStorage = snap.GetComponent<FunctionButtonStorage>();
 
-			((RectTransform)gameObject.transform).sizeDelta = new Vector2(404f, 32f);
+			UIManager.SetRectTransform(snap.transform.AsRT(), new Vector2(8f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(404f, 32f));
 
-			gameObject.transform.GetChild(0).GetComponent<Text>().text = "Snap";
-			gameObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+			snapStorage.text.text = "Snap";
 
-			var button = gameObject.GetComponent<Button>();
+			var button = snapStorage.button;
 			button.onClick.ClearAll();
 			button.onClick.AddListener(delegate ()
 			{
@@ -1812,10 +1998,20 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification($"Snapped all keyframes time!", 2f, EditorManager.NotificationType.Success);
 			});
 
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button", "Function 1", snap, new List<Component>
+			{
+				snapStorage.button.image,
+			}, true, 1, SpriteManager.RoundedSide.W));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button Text", "Function 1 Text", snapStorage.text.gameObject, new List<Component>
+			{
+				snapStorage.text,
+			}));
+
 			// Label
 			{
 				var labelBase1 = new GameObject("label base");
-				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.SetParent(dataRT);
 				labelBase1.transform.localScale = Vector3.one;
 				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
 				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
@@ -1828,15 +2024,21 @@ namespace EditorManagement.Functions.Editors
 				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
 
-			var alignToFirstObject = eventButton.Duplicate(multiKeyframeEditor, "align");
+			var alignToFirstBase = new GameObject("align");
+			alignToFirstBase.transform.SetParent(dataRT);
+			alignToFirstBase.transform.localScale = Vector3.one;
+			var alignToFirstBaseRT = alignToFirstBase.AddComponent<RectTransform>();
+			alignToFirstBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+			var alignToFirstObject = EditorPrefabHolder.Instance.Function1Button.Duplicate(alignToFirstBaseRT, "align");
 			alignToFirstObject.transform.localScale = Vector3.one;
+			var alignToFirstStorage = alignToFirstObject.GetComponent<FunctionButtonStorage>();
 
-			((RectTransform)alignToFirstObject.transform).sizeDelta = new Vector2(404f, 32f);
+			UIManager.SetRectTransform(alignToFirstObject.transform.AsRT(), new Vector2(8f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(404f, 32f));
 
-			alignToFirstObject.transform.GetChild(0).GetComponent<Text>().text = "Align";
-			alignToFirstObject.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
+			alignToFirstStorage.text.text = "Align";
 
-			var alignToFirst = alignToFirstObject.GetComponent<Button>();
+			var alignToFirst = alignToFirstStorage.button;
 			alignToFirst.onClick.ClearAll();
 			alignToFirst.onClick.AddListener(delegate ()
 			{
@@ -1856,10 +2058,20 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification($"Aligned all keyframes to the first keyframe!", 2f, EditorManager.NotificationType.Success);
 			});
 
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button", "Function 1", alignToFirstObject, new List<Component>
+			{
+				alignToFirstStorage.button.image,
+			}, true, 1, SpriteManager.RoundedSide.W));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button Text", "Function 1 Text", alignToFirstStorage.text.gameObject, new List<Component>
+			{
+				alignToFirstStorage.text,
+			}));
+
 			// Label
 			{
 				var labelBase1 = new GameObject("label base");
-				labelBase1.transform.SetParent(multiKeyframeEditor);
+				labelBase1.transform.SetParent(dataRT);
 				labelBase1.transform.localScale = Vector3.one;
 				var labelBase1RT = labelBase1.AddComponent<RectTransform>();
 				labelBase1RT.sizeDelta = new Vector2(765f, 38f);
@@ -1872,14 +2084,21 @@ namespace EditorManagement.Functions.Editors
 				l.transform.AsRT().anchoredPosition = new Vector2(8f, 0f);
 			}
 
-			var pasteAllObject = eventButton.Duplicate(multiKeyframeEditor, "paste");
+			var pasteAllBase = new GameObject("paste");
+			pasteAllBase.transform.SetParent(dataRT);
+			pasteAllBase.transform.localScale = Vector3.one;
+			var pasteAllBaseRT = pasteAllBase.AddComponent<RectTransform>();
+			pasteAllBaseRT.sizeDelta = new Vector2(765f, 38f);
+
+			var pasteAllObject = EditorPrefabHolder.Instance.Function1Button.Duplicate(pasteAllBaseRT, "paste");
 			pasteAllObject.transform.localScale = Vector3.one;
+			var pasteAllStorage = pasteAllObject.GetComponent<FunctionButtonStorage>();
 
-			((RectTransform)pasteAllObject.transform).sizeDelta = new Vector2(404f, 32f);
+			UIManager.SetRectTransform(pasteAllObject.transform.AsRT(), new Vector2(8f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 0.5f), new Vector2(404f, 32f));
 
-			pasteAllObject.transform.GetChild(0).GetComponent<Text>().text = "Paste";
+			pasteAllStorage.text.text = "Paste";
 
-			var pasteAll = pasteAllObject.GetComponent<Button>();
+			var pasteAll = pasteAllStorage.button;
 			pasteAll.onClick.ClearAll();
 			pasteAll.onClick.AddListener(delegate ()
 			{
@@ -1902,6 +2121,16 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification($"Pasted all keyframe data to current selected keyframes!", 2f, EditorManager.NotificationType.Success);
 			});
 
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Paste", "Paste", pasteAllObject, new List<Component>
+			{
+				pasteAllStorage.button.image,
+			}, true, 1, SpriteManager.RoundedSide.W));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Paste Text", "Paste Text", pasteAllStorage.text.gameObject, new List<Component>
+			{
+				pasteAllStorage.text,
+			}));
+
 			#endregion
 
 			// Copy / Paste
@@ -1912,19 +2141,21 @@ namespace EditorManagement.Functions.Editors
 				var edit = dialog.Find("edit");
 				DestroyImmediate(edit.Find("spacer").gameObject);
 
-				var copy = eventButton.Duplicate(edit, "copy", 5);
-				var copyText = copy.transform.GetChild(0).GetComponent<Text>();
+				var copy = EditorPrefabHolder.Instance.Function1Button.Duplicate(edit, "copy", 5);
+				var copyStorage = copy.GetComponent<FunctionButtonStorage>();
+				var copyText = copyStorage.text;
 				copyText.text = "Copy";
 				((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
 
-				var paste = eventButton.Duplicate(edit, "paste", 6);
-				var pasteText = paste.transform.GetChild(0).GetComponent<Text>();
+				var paste = EditorPrefabHolder.Instance.Function1Button.Duplicate(edit, "paste", 6);
+				var pasteStorage = paste.GetComponent<FunctionButtonStorage>();
+				var pasteText = pasteStorage.text;
 				pasteText.text = "Paste";
 				((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
 
 				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Copy", "Copy", copy, new List<Component>
 				{
-					copy.GetComponent<Image>(),
+					copyStorage.button.image,
 				}, true, 1, SpriteManager.RoundedSide.W));
 
 				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Copy Text", "Copy Text", copyText.gameObject, new List<Component>
@@ -1934,7 +2165,7 @@ namespace EditorManagement.Functions.Editors
 
 				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Paste", "Paste", paste, new List<Component>
 				{
-					paste.GetComponent<Image>(),
+					pasteStorage.button.image,
 				}, true, 1, SpriteManager.RoundedSide.W));
 
 				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Paste Text", "Paste Text", pasteText.gameObject, new List<Component>
@@ -1986,31 +2217,117 @@ namespace EditorManagement.Functions.Editors
 
 		public void RenderMultiEventsDialog()
         {
-			var dialog = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog;
-			var time = dialog.Find("time/time/time").GetComponent<InputField>();
+			var dialog = EditorManager.inst.GetDialog("Multi Keyframe Editor").Dialog.Find("data");
+			var timeStorage = dialog.Find("time/time").GetComponent<InputFieldStorage>();
+			var time = timeStorage.inputField;
 			time.onValueChanged.ClearAll();
 			if (time.text == "100.000")
 				time.text = "10";
-			time.onValueChanged.AddListener(delegate (string _val)
+
+			timeStorage.leftGreaterButton.onClick.ClearAll();
+			timeStorage.leftGreaterButton.onClick.AddListener(delegate ()
 			{
-				if (float.TryParse(_val, out float num))
+				if (float.TryParse(time.text, out float num))
 				{
 					num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
 
-                    foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
-                    {
-                        kf.GetData<EventKeyframe>().eventTime = num;
-                    }
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+					{
+						var eventKeyframe = kf.GetData<EventKeyframe>();
+						eventKeyframe.eventTime = Mathf.Clamp(eventKeyframe.eventTime - (num * 10f), 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+					}
 
 					UpdateEventOrder();
 					RenderEventObjects();
 					EventManager.inst.updateEvents();
 				}
 				else
-					LogIncorrectFormat(_val);
+					LogIncorrectFormat(time.text);
 			});
 
-			TriggerHelper.IncreaseDecreaseButtons(time, t: dialog.Find("time/time"));
+			timeStorage.leftButton.onClick.ClearAll();
+			timeStorage.leftButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(time.text, out float num))
+				{
+					num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+					{
+						var eventKeyframe = kf.GetData<EventKeyframe>();
+						eventKeyframe.eventTime = Mathf.Clamp(eventKeyframe.eventTime + num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+					}
+
+					UpdateEventOrder();
+					RenderEventObjects();
+					EventManager.inst.updateEvents();
+				}
+				else
+					LogIncorrectFormat(time.text);
+			});
+
+			timeStorage.middleButton.onClick.ClearAll();
+			timeStorage.middleButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(time.text, out float num))
+				{
+					num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+					{
+						kf.GetData<EventKeyframe>().eventTime = num;
+					}
+
+					UpdateEventOrder();
+					RenderEventObjects();
+					EventManager.inst.updateEvents();
+				}
+				else
+					LogIncorrectFormat(time.text);
+			});
+
+			timeStorage.rightButton.onClick.ClearAll();
+			timeStorage.rightButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(time.text, out float num))
+				{
+					num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+					{
+						var eventKeyframe = kf.GetData<EventKeyframe>();
+						eventKeyframe.eventTime = Mathf.Clamp(eventKeyframe.eventTime - num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+					}
+
+					UpdateEventOrder();
+					RenderEventObjects();
+					EventManager.inst.updateEvents();
+				}
+				else
+					LogIncorrectFormat(time.text);
+			});
+
+			timeStorage.rightGreaterButton.onClick.ClearAll();
+			timeStorage.rightGreaterButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(time.text, out float num))
+				{
+					num = Mathf.Clamp(num, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+
+					foreach (var kf in SelectedKeyframes.Where(x => x.Index != 0))
+					{
+						var eventKeyframe = kf.GetData<EventKeyframe>();
+						eventKeyframe.eventTime = Mathf.Clamp(eventKeyframe.eventTime + (num * 10f), 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+					}
+
+					UpdateEventOrder();
+					RenderEventObjects();
+					EventManager.inst.updateEvents();
+				}
+				else
+					LogIncorrectFormat(time.text);
+			});
+
 			TriggerHelper.AddEventTriggerParams(time.gameObject, TriggerHelper.ScrollDelta(time));
 
 			var curves = dialog.Find("curves/curves").GetComponent<Dropdown>();
@@ -2028,39 +2345,110 @@ namespace EditorManagement.Functions.Editors
 				}
 			});
 
-			var valueIndex = dialog.Find("value index/x").GetComponent<InputField>();
-			valueIndex.onValueChanged.ClearAll();
-			if (valueIndex.text == "25.0")
-				valueIndex.text = "0";
-			valueIndex.onValueChanged.AddListener(delegate (string _val)
+			var valueIndexStorage = dialog.Find("value index/value index").GetComponent<InputFieldStorage>();
+			valueIndexStorage.inputField.onValueChanged.ClearAll();
+			if (valueIndexStorage.inputField.text == "100.000")
+				valueIndexStorage.inputField.text = "0";
+			valueIndexStorage.inputField.onValueChanged.AddListener(delegate (string _val)
 			{
 				if (!int.TryParse(_val, out int n))
-					valueIndex.text = "0";
+					valueIndexStorage.inputField.text = "0";
 			});
 
-			TriggerHelper.IncreaseDecreaseButtonsInt(valueIndex);
-			TriggerHelper.AddEventTriggerParams(valueIndex.gameObject, TriggerHelper.ScrollDeltaInt(valueIndex));
+			TriggerHelper.IncreaseDecreaseButtonsInt(valueIndexStorage.inputField, t: valueIndexStorage.transform);
+			TriggerHelper.AddEventTriggerParams(valueIndexStorage.inputField.gameObject, TriggerHelper.ScrollDeltaInt(valueIndexStorage.inputField));
 
-			var value = dialog.Find("value/x").GetComponent<InputField>();
-			value.onValueChanged.ClearAll();
-			value.onValueChanged.AddListener(delegate (string _val)
+			var valueStorage = dialog.Find("value/value").GetComponent<InputFieldStorage>();
+			valueStorage.inputField.onValueChanged.ClearAll();
+			if (valueStorage.inputField.text == "100.000")
+				valueStorage.inputField.text = "1.0";
+
+			valueStorage.leftGreaterButton.onClick.ClearAll();
+			valueStorage.leftGreaterButton.onClick.AddListener(delegate ()
 			{
-				if (float.TryParse(_val, out float num))
+				if (float.TryParse(valueStorage.inputField.text, out float num))
 				{
 					foreach (var kf in SelectedKeyframes)
 					{
-						var index = Parser.TryParse(valueIndex.text, 0);
+						var index = Parser.TryParse(valueIndexStorage.inputField.text, 0);
+
+						index = Mathf.Clamp(index, 0, kf.GetData<EventKeyframe>().eventValues.Length - 1);
+						kf.GetData<EventKeyframe>().eventValues[index] -= num * 10f;
+					}
+				}
+				else
+					LogIncorrectFormat(valueStorage.inputField.text);
+			});
+
+			valueStorage.leftButton.onClick.ClearAll();
+			valueStorage.leftButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(valueStorage.inputField.text, out float num))
+				{
+					foreach (var kf in SelectedKeyframes)
+					{
+						var index = Parser.TryParse(valueIndexStorage.inputField.text, 0);
+
+						index = Mathf.Clamp(index, 0, kf.GetData<EventKeyframe>().eventValues.Length - 1);
+						kf.GetData<EventKeyframe>().eventValues[index] -= num;
+					}
+				}
+				else
+					LogIncorrectFormat(valueStorage.inputField.text);
+			});
+
+			valueStorage.middleButton.onClick.ClearAll();
+			valueStorage.middleButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(valueStorage.inputField.text, out float num))
+				{
+					foreach (var kf in SelectedKeyframes)
+					{
+						var index = Parser.TryParse(valueIndexStorage.inputField.text, 0);
 
 						index = Mathf.Clamp(index, 0, kf.GetData<EventKeyframe>().eventValues.Length - 1);
 						kf.GetData<EventKeyframe>().eventValues[index] = num;
 					}
 				}
 				else
-					LogIncorrectFormat(_val);
+					LogIncorrectFormat(valueStorage.inputField.text);
 			});
 
-			TriggerHelper.IncreaseDecreaseButtons(value);
-			TriggerHelper.AddEventTriggerParams(value.gameObject, TriggerHelper.ScrollDelta(value));
+			valueStorage.rightButton.onClick.ClearAll();
+			valueStorage.rightButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(valueStorage.inputField.text, out float num))
+				{
+					foreach (var kf in SelectedKeyframes)
+					{
+						var index = Parser.TryParse(valueIndexStorage.inputField.text, 0);
+
+						index = Mathf.Clamp(index, 0, kf.GetData<EventKeyframe>().eventValues.Length - 1);
+						kf.GetData<EventKeyframe>().eventValues[index] += num;
+					}
+				}
+				else
+					LogIncorrectFormat(valueStorage.inputField.text);
+			});
+
+			valueStorage.rightGreaterButton.onClick.ClearAll();
+			valueStorage.rightGreaterButton.onClick.AddListener(delegate ()
+			{
+				if (float.TryParse(valueStorage.inputField.text, out float num))
+				{
+					foreach (var kf in SelectedKeyframes)
+					{
+						var index = Parser.TryParse(valueIndexStorage.inputField.text, 0);
+
+						index = Mathf.Clamp(index, 0, kf.GetData<EventKeyframe>().eventValues.Length - 1);
+						kf.GetData<EventKeyframe>().eventValues[index] += num * 10f;
+					}
+				}
+				else
+					LogIncorrectFormat(valueStorage.inputField.text);
+			});
+
+			TriggerHelper.AddEventTriggerParams(valueStorage.inputField.gameObject, TriggerHelper.ScrollDelta(valueStorage.inputField));
 		}
 
 		public void RenderEventsDialog()

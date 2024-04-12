@@ -37,8 +37,6 @@ namespace EditorManagement.Functions.Editors
         public static InputField searchField;
         public static string searchTerm;
 
-        public static Font editorFont;
-
 		public static InputField saveField;
 
         #endregion
@@ -58,13 +56,10 @@ namespace EditorManagement.Functions.Editors
             else if (inst != this)
                 Destroy(gameObject);
 
-            editorFont = GameObject.Find("TitleBar/File/Text").GetComponent<Text>().font;
+			editorDialogObject = EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject.Duplicate(EditorManager.inst.dialogs, "LevelCombinerDialog");
 
-            editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
-            editorDialogTransform = editorDialogObject.transform;
-            editorDialogObject.name = "LevelCombinerDialog";
+			editorDialogTransform = editorDialogObject.transform;
             editorDialogObject.layer = 5;
-            editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
             editorDialogTransform.localScale = Vector3.one;
             editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
             editorDialogObject.GetComponent<RectTransform>().sizeDelta = new Vector2(0f, 32f);
@@ -80,17 +75,22 @@ namespace EditorManagement.Functions.Editors
 
             editorDialogText.SetSiblingIndex(1);
 
-            editorDialogText.GetComponent<Text>().text = "To combine levels into one, select multiple levels from the list below, set a save path and click save.";
+			var infoText = editorDialogText.GetComponent<Text>();
+			infoText.text = "To combine levels into one, select multiple levels from the list below, set a save path and click save.";
 
 			// Label
 			{
-				var label1 = Instantiate(editorDialogText.gameObject);
-				label1.transform.SetParent(editorDialogTransform);
+				var label1 = editorDialogText.gameObject.Duplicate(editorDialogTransform, "label");
 				label1.transform.localScale = Vector3.one;
-				label1.name = "label";
 
-				label1.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 32f);
-				label1.GetComponent<Text>().text = "Select levels to combine";
+				label1.transform.AsRT().sizeDelta = new Vector2(765f, 32f);
+				var labelText = label1.GetComponent<Text>();
+				labelText.text = "Select levels to combine";
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Label", "Light Text", labelText.gameObject, new List<Component>
+				{
+					labelText,
+				}));
 			}
 
 			var search = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("search-box").gameObject);
@@ -108,7 +108,9 @@ namespace EditorManagement.Functions.Editors
                 StartCoroutine(RenderDialog());
             });
 
-            search.transform.GetChild(0).Find("Placeholder").GetComponent<Text>().text = "Search for level...";
+			EditorThemeManager.AddInputField(searchField, "Level Combiner Search", "Search Field 1", 1, SpriteManager.RoundedSide.Bottom);
+
+			search.transform.GetChild(0).Find("Placeholder").GetComponent<Text>().text = "Search for level...";
 
             var scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
 			scrollView.transform.SetParent(editorDialogTransform);
@@ -119,7 +121,10 @@ namespace EditorManagement.Functions.Editors
 
 			LSHelpers.DeleteChildren(editorDialogContent);
 
-            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 392f);
+			editorDialogContent.GetComponent<VerticalLayoutGroup>().spacing = 4f;
+
+
+			scrollView.transform.AsRT().sizeDelta = new Vector2(765f, 392f);
 
 			EditorHelper.AddEditorDialog("Level Combiner", editorDialogObject);
 
@@ -127,13 +132,17 @@ namespace EditorManagement.Functions.Editors
 			{
 				// Label
 				{
-					var label1 = Instantiate(editorDialogText.gameObject);
-					label1.transform.SetParent(editorDialogTransform);
+					var label1 = editorDialogText.gameObject.Duplicate(editorDialogTransform, "label");
 					label1.transform.localScale = Vector3.one;
-					label1.name = "label";
 
-					label1.GetComponent<RectTransform>().sizeDelta = new Vector2(765f, 32f);
-					label1.GetComponent<Text>().text = "Save path";
+					label1.transform.AsRT().sizeDelta = new Vector2(765f, 32f);
+					var labelText = label1.GetComponent<Text>();
+					labelText.text = "Save path";
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Label", "Light Text", labelText.gameObject, new List<Component>
+					{
+						labelText,
+					}));
 				}
 
 				var save = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("search-box").gameObject);
@@ -142,7 +151,7 @@ namespace EditorManagement.Functions.Editors
 				save.name = "search";
 
 				saveField = save.transform.GetChild(0).GetComponent<InputField>();
-
+				UIManager.SetRectTransform(saveField.image.rectTransform, Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(700f, 32f));
 				saveField.onValueChanged.ClearAll();
 				saveField.characterLimit = 0;
 				saveField.text = RTFile.ApplicationDirectory + RTEditor.editorListSlash + "Combined Level/level.lsb";
@@ -152,30 +161,47 @@ namespace EditorManagement.Functions.Editors
 					savePath = _val;
 				});
 
-				search.transform.GetChild(0).Find("Placeholder").GetComponent<Text>().text = "Set a path...";
+				EditorThemeManager.AddInputField(saveField, "Level Combiner Save Field", "Input Field");
+
+				((Text)saveField.placeholder).text = "Set a path...";
 
 				//Button 1
 				{
-					var b1 = Instantiate(EditorManager.inst.folderButtonPrefab);
-					b1.transform.SetParent(editorDialogTransform);
-					b1.transform.localScale = Vector3.one;
-					b1.name = "combine";
+					var buttonBase = new GameObject("combine");
+					buttonBase.transform.SetParent(editorDialogTransform);
+					buttonBase.transform.localScale = Vector3.one;
 
-					var b1RT = b1.GetComponent<RectTransform>();
-					b1RT.anchoredPosition = new Vector2(436f, 55f);
-					b1RT.anchoredPosition = new Vector2(436f, 55f);
-					//b1RT.anchoredPosition = new Vector2(366f, 55f);
-					b1RT.sizeDelta = new Vector2(100f, 50f);
+					var buttonBaseRT = buttonBase.AddComponent<RectTransform>();
+					buttonBaseRT.anchoredPosition = new Vector2(436f, 55f);
+					buttonBaseRT.sizeDelta = new Vector2(100f, 50f);
 
-					b1.transform.GetChild(0).GetComponent<Text>().text = "Combine & Save";
-					var butt = b1.GetComponent<Button>();
-					butt.onClick.RemoveAllListeners();
-					butt.onClick.AddListener(delegate ()
+					var button = EditorPrefabHolder.Instance.Function2Button.Duplicate(buttonBase.transform, "combine");
+					button.transform.localScale = Vector3.one;
+
+					var buttonStorage = button.GetComponent<FunctionButtonStorage>();
+
+					UIManager.SetRectTransform(button.transform.AsRT(), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(400f, 50f));
+
+					buttonStorage.text.text = "Combine & Save";
+					buttonStorage.button.onClick.RemoveAllListeners();
+					buttonStorage.button.onClick.AddListener(delegate ()
 					{
 						Combine();
 					});
-				}
 
+					Destroy(button.GetComponent<Animator>());
+					buttonStorage.button.transition = Selectable.Transition.ColorTint;
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Button", "Function 2", button, new List<Component>
+					{
+						buttonStorage.button.image,
+						buttonStorage.button,
+					}, true, 1, SpriteManager.RoundedSide.W, true));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Button Text", "Function 2 Text", buttonStorage.text.gameObject, new List<Component>
+					{
+						buttonStorage.text,
+					}));
+				}
 			}
 
 			// Dropdown
@@ -183,6 +209,16 @@ namespace EditorManagement.Functions.Editors
 			{
 				OpenDialog();
 			}, 4);
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Dialog", "Background", editorDialogObject, new List<Component>
+			{
+				editorDialogObject.GetComponent<Image>(),
+			}));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Label", "Light Text", infoText.gameObject, new List<Component>
+			{
+				infoText,
+			}));
 		}
 
         void Update()
@@ -228,7 +264,7 @@ namespace EditorManagement.Functions.Editors
 
 			var iconPosition = config.OpenLevelCoverPosition.Value;
 			var iconScale = config.OpenLevelCoverScale.Value;
-			iconPosition.x += -80f;
+			iconPosition.x += -75f;
 
 			string[] difficultyNames = new string[]
 			{
@@ -250,8 +286,23 @@ namespace EditorManagement.Functions.Editors
 
 				DestroyImmediate(editorWrapper.CombinerGameObject);
 
-				var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(editorDialogContent, $"Folder [{System.IO.Path.GetFileName(editorWrapper.folder)}]");
-				editorWrapper.CombinerGameObject = gameObject;
+				var gameObjectBase = new GameObject($"Folder [{Path.GetFileName(editorWrapper.folder)}]");
+				gameObjectBase.transform.SetParent(editorDialogContent);
+				gameObjectBase.transform.localScale = Vector3.one;
+				var rectTransform = gameObjectBase.AddComponent<RectTransform>();
+
+				var image = gameObjectBase.AddComponent<Image>();
+
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Level Combiner Base", "Function 1", gameObjectBase, new List<Component>
+				{
+					image,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				rectTransform.sizeDelta = new Vector2(750f, 42f);
+
+				var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(rectTransform, "Button");
+				UIManager.SetRectTransform(gameObject.transform.AsRT(), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(745f, 32f));
+				editorWrapper.CombinerGameObject = gameObjectBase;
 
 				var hoverUI = gameObject.AddComponent<HoverUI>();
 				hoverUI.size = buttonHoverSize;
@@ -261,7 +312,7 @@ namespace EditorManagement.Functions.Editors
 				var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
 				text.text = string.Format(format,
-					LSText.ClampString(System.IO.Path.GetFileName(editorWrapper.folder), foldClamp),
+					LSText.ClampString(Path.GetFileName(editorWrapper.folder), foldClamp),
 					LSText.ClampString(metadata.song.title, songClamp),
 					LSText.ClampString(metadata.artist.Name, artiClamp),
 					LSText.ClampString(metadata.creator.steam_name, creaClamp),
@@ -284,25 +335,27 @@ namespace EditorManagement.Functions.Editors
 				levelTip.hint = "</color>" + metadata.song.description;
 				htt.tooltipLangauges.Add(levelTip);
 
-				Action<Button> action = delegate (Button x)
+				Action action = delegate ()
 				{
-					var cb = x.colors;
-					cb.normalColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
-					cb.selectedColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
-					cb.highlightedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
-					cb.pressedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
-					x.colors = cb;
+					image.enabled = editorWrapper.combinerSelected;
 
-					text.color = editorWrapper.combinerSelected ? new Color(0.1173f, 0.0973f, 0.0973f, 1f) : new Color(0.9373f, 0.9216f, 0.9373f, 1f);
+					//var cb = x.colors;
+					//cb.normalColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+					//cb.selectedColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
+					//cb.highlightedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
+					//cb.pressedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
+					//x.colors = cb;
+
+					//text.color = editorWrapper.combinerSelected ? new Color(0.1173f, 0.0973f, 0.0973f, 1f) : new Color(0.9373f, 0.9216f, 0.9373f, 1f);
 				};
 
 				var button = gameObject.GetComponent<Button>();
 				button.onClick.AddListener(delegate ()
 				{
 					editorWrapper.combinerSelected = !editorWrapper.combinerSelected;
-					action.Invoke(button);
+					action.Invoke();
 				});
-				action.Invoke(button);
+				action.Invoke();
 
 				var icon = new GameObject("icon");
 				icon.transform.SetParent(gameObject.transform);

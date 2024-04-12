@@ -144,11 +144,7 @@ namespace EditorManagement.Patchers
                     openFilePopupScrollbar.GetComponent<Scrollbar>()
                 }, true, 1, SpriteManager.RoundedSide.W, true));
 
-                var openFilePopupSearch = openFilePopup.transform.Find("search-box/search").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Search", "Search Field 1", openFilePopupSearch, new List<Component>
-                {
-                    openFilePopupSearch.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom));
+                EditorThemeManager.AddInputField(openFilePopup.transform.Find("search-box/search").GetComponent<InputField>(), "Open File Popup Search", "Search Field 1", 1, SpriteManager.RoundedSide.Bottom);
 
                 EditorThemeManager.AddElement(new EditorThemeManager.Element("Editor Dialog", "Background", EditorManager.inst.dialogs.gameObject, new List<Component>
                 {

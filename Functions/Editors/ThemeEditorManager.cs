@@ -32,7 +32,6 @@ namespace EditorManagement.Functions.Editors
 
 			var dialog = EditorManager.inst.GetDialog("Event Editor").Dialog;
 			var themeParent = dialog.Find("data/left/theme/theme/viewport/content");
-			Debug.Log($"{EditorPlugin.className}ThemeParent: {themeParent == null}");
             try
 			{
 				for (int i = 10; i < 19; i++)
@@ -71,15 +70,99 @@ namespace EditorManagement.Functions.Editors
 					saveUse.transform.GetChild(0).GetComponent<Text>().text = "Save & Use";
 				}
 
+				// Shuffle ID
                 {
 					var shuffleID = createNew.gameObject.Duplicate(actions.parent, "shuffle", 3);
-					shuffleID.transform.GetChild(0).GetComponent<Text>().text = "Shuffle ID";
+					var shuffleIDText = shuffleID.transform.GetChild(0).GetComponent<Text>();
+					shuffleIDText.text = "Shuffle ID";
+
+					var button = shuffleID.GetComponent<Button>();
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button", "Function 2", shuffleID, new List<Component>
+					{
+						button.image,
+						button,
+					}, true, 1, SpriteManager.RoundedSide.W, true));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button Text", "Function 2 Text", shuffleIDText.gameObject, new List<Component>
+					{
+						shuffleIDText,
+					}));
 				}
 
-				dialog.Find("data/left/theme/theme").AsRT().sizeDelta = new Vector2(366f, 572f);
+				dialog.Find("data/left/theme/theme").AsRT().sizeDelta = new Vector2(366f, 570f);
 
 				var themeContent = dialog.Find("data/right/theme/themes/viewport/content");				
 				LSHelpers.DeleteChildren(themeContent);
+
+				EditorThemeManager.AddInputField(dialog.Find("data/left/theme/name").GetComponent<InputField>(), "Theme Editor Name Input Field", "Input Field");
+
+				for (int i = 0; i < actions.childCount; i++)
+                {
+					var child = actions.GetChild(i);
+					var button = child.GetComponent<Button>();
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button", child.name == "cancel" ? "Close" : "Function 2", child.gameObject, new List<Component>
+					{
+						button.image,
+						button,
+					}, true, 1, SpriteManager.RoundedSide.W, true));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button Text", child.name == "cancel" ? "Close X" : "Function 2 Text", child.GetChild(0).gameObject, new List<Component>
+					{
+						child.GetChild(0).GetComponent<Text>(),
+					}));
+                }
+
+				for (int i = 0; i < themeParent.childCount; i++)
+                {
+					var child = themeParent.GetChild(i);
+
+					if (child.name == "label" || child.name == "effect_label")
+                    {
+						EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Label", "Light Text", child.GetChild(0).gameObject, new List<Component>
+						{
+							child.GetChild(0).GetComponent<Text>(),
+						}));
+						continue;
+                    }
+
+					var text = child.Find("text");
+					var preview = child.Find("preview");
+					var hex = child.Find("hex");
+					var pound = hex.Find("pound");
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Part Label", "Light Text", text.gameObject, new List<Component>
+					{
+						text.GetComponent<Text>(),
+					}));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Part Preview", "", preview.gameObject, new List<Component>
+					{
+						preview.GetComponent<Image>(),
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.AddInputField(hex.GetComponent<InputField>(), "Theme Editor Part Input Field", "Input Field");
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Part Input Field Pound", "Input Field Text", pound.gameObject, new List<Component>
+					{
+						pound.GetComponent<Text>(),
+					}));
+                }
+
+
+				var scrollbar = dialog.Find("data/left/theme/theme/Scrollbar Vertical").GetComponent<Scrollbar>();
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
+				{
+					scrollbar.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				var scrollbarHandle = scrollbar.handleRect.gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
+				{
+					scrollbar.image,
+					scrollbar
+				}, true, 1, SpriteManager.RoundedSide.W, true));
 
 				CreateThemePopup();
 
@@ -464,7 +547,7 @@ namespace EditorManagement.Functions.Editors
 
 					var tfv = ObjEditor.inst.ObjectView.transform;
 
-					var useTheme = EditorPrefabHolder.Instance.FunctionButton.Duplicate(buttons.transform, "use");
+					var useTheme = EditorPrefabHolder.Instance.Function2Button.Duplicate(buttons.transform, "use");
 					var useThemeStorage = useTheme.GetComponent<FunctionButtonStorage>();
 					useTheme.SetActive(false);
 					var useThemeText = useThemeStorage.text;
@@ -475,7 +558,7 @@ namespace EditorManagement.Functions.Editors
 					Destroy(useTheme.GetComponent<Animator>());
 					viewThemeStorage.useButton.transition = Selectable.Transition.ColorTint;
 
-					var exportToVG = EditorPrefabHolder.Instance.FunctionButton.Duplicate(buttons.transform, "convert");
+					var exportToVG = EditorPrefabHolder.Instance.Function2Button.Duplicate(buttons.transform, "convert");
 					var exportToVGStorage = exportToVG.GetComponent<FunctionButtonStorage>();
 					exportToVG.SetActive(false);
 					var exportToVGText = exportToVGStorage.text;
