@@ -23,7 +23,8 @@ namespace EditorManagement.Functions
         public GameObject StringInputField { get; set; }
         public GameObject NumberInputField { get; set; }
         public GameObject DeleteButton { get; set; }
-        public GameObject FunctionButton { get; set; }
+        public GameObject Function1Button { get; set; }
+        public GameObject Function2Button { get; set; }
     }
 
     public class DeleteButtonStorage : MonoBehaviour
