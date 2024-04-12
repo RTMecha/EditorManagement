@@ -919,7 +919,8 @@ namespace EditorManagement.Functions.Editors
             LSHelpers.DeleteChildren(keysContent);
 
             var add = PrefabEditor.inst.CreatePrefab.Duplicate(keysContent, "Add Key");
-            add.transform.Find("Text").GetComponent<Text>().text = "Add new Key";
+            var addText = add.transform.Find("Text").GetComponent<Text>();
+            addText.text = "Add new Key";
             ((RectTransform)add.transform).sizeDelta = new Vector2(760f, 32f);
             var addButton = add.GetComponent<Button>();
             addButton.onClick.ClearAll();
@@ -931,6 +932,16 @@ namespace EditorManagement.Functions.Editors
                 RefreshKeybindEditor(keybind);
                 Save();
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Add, add, new List<Component>
+            {
+                addButton.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Add_Text, addText.gameObject, new List<Component>
+            {
+                addText,
+            }));
 
             int num = 0;
             foreach (var key in keybind.keys)
