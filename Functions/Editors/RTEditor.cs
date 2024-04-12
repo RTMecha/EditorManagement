@@ -3701,7 +3701,6 @@ namespace EditorManagement.Functions.Editors
             {
                 objectSearchPopupSearch.GetComponent<Image>(),
             }, true, 1, SpriteManager.RoundedSide.Bottom));
-
         }
 
         void CreateWarningPopup()
@@ -7284,6 +7283,7 @@ namespace EditorManagement.Functions.Editors
             objectSearchRT.sizeDelta = new Vector2(600f, 450f);
             var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
             objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
+            var title = objectSearchPanel.transform.Find("Text").GetComponent<Text>();
             objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Documentation";
             ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
             objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
@@ -7302,7 +7302,7 @@ namespace EditorManagement.Functions.Editors
                 documentationSearch = _value;
                 RefreshDocumentation();
             });
-            searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for document...";
+            ((Text)searchBar.placeholder).text = "Search for document...";
 
             EditorHelper.AddEditorDropdown("Wiki / Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_question.png"), delegate ()
             {
@@ -7347,10 +7347,17 @@ namespace EditorManagement.Functions.Editors
             scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
             scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, editorDialogObject, new List<Component>
+            {
+                editorDialogObject.GetComponent<Image>(),
+            }));
+
             // Introduction
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Introduction", "Welcome to Project Arrhythmia.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -7394,6 +7401,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -7402,6 +7410,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Beatmap Objects", "The very objects that make up Project Arrhythmia levels.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -7719,142 +7729,148 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
 
             // Beatmap Object Keyframes
-            //{
-            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-            //    var documentation = new Document(gameObject, "Beatmap Object Keyframes", "The things that animate objects.");
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Beatmap Object Keyframes", "The things that animate objects.");
 
-            //    // Intro
-            //    {
-            //        var element = new Document.Element("The keyframes in the Beatmap Objects' keyframe timeline allow animating several aspects of a Beatmap Objects' visual.", Document.Element.Type.Text);
-            //        documentation.elements.Add(element);
-            //    }
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
-            //    // None Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_none.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Normal Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_normal.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Toggle Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_toggle.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Scale Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_scale.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Static Homing Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_static_homing.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Dynamic Homing Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_dynamic_homing.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // None Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_none.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Normal Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_normal.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Toggle Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_toggle.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
-                
-            //    // Scale Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_scale.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Intro
+                {
+                    var element = new Document.Element("The keyframes in the Beatmap Objects' keyframe timeline allow animating several aspects of a Beatmap Objects' visual.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
 
-            //    // None Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_none.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    // Normal Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_normal.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Normal Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_normal.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    // Toggle Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_toggle.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Toggle Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_toggle.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    // Static Homing Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_static_homing.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Scale Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_scale.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    // Dynamic Homing Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_dynamic_homing.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Static Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_static_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    // None Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_none.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Dynamic Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_pos_dynamic_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    // Dynamic Homing Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_dynamic_homing.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    var htt = gameObject.AddComponent<HoverTooltip>();
+                // Normal Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_normal.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    var levelTip = new HoverTooltip.Tooltip();
+                // Toggle Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_toggle.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    levelTip.desc = documentation.Name;
-            //    levelTip.hint = documentation.Description;
-            //    htt.tooltipLangauges.Add(levelTip);
+                // Scale Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_sca_scale.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    text.text = documentation.Name;
+                // Normal Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_normal.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    documentations.Add(documentation);
-            //}
+                // Toggle Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_toggle.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Static Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_static_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Dynamic Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_rot_dynamic_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // None Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_none.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                // Dynamic Homing Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_col_dynamic_homing.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
+
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+
+                text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
+
+                documentations.Add(documentation);
+            }
 
             // Prefabs
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Prefabs", "A package of objects that can be transfered to another level. They can also be added to the level as a Prefab Object.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -7947,6 +7963,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -7955,6 +7972,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Prefab Objects", "Individual instances of prefabs.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -8169,66 +8188,75 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
 
             // Background Object
-            //{
-            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-            //    var documentation = new Document(gameObject, "Background Object", "Make classic 3D style backgrounds.");
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Background Object", "Make classic 3D style backgrounds.");
 
-            //    // Intro
-            //    {
-            //        var element = new Document.Element("Background Object intro.", Document.Element.Type.Text);
-            //        documentation.elements.Add(element);
-            //    }
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
-            //    var htt = gameObject.AddComponent<HoverTooltip>();
+                // Intro
+                {
+                    var element = new Document.Element("Background Object intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
 
-            //    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-            //    levelTip.desc = documentation.Name;
-            //    levelTip.hint = documentation.Description;
-            //    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
 
-            //    text.text = documentation.Name;
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-            //    documentations.Add(documentation);
-            //}
+                text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
+
+                documentations.Add(documentation);
+            }
 
             // Events
-            //{
-            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-            //    var documentation = new Document(gameObject, "Events", "Effects to make your level pretty.");
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Events", "Effects to make your level pretty.");
 
-            //    // Intro
-            //    {
-            //        var element = new Document.Element("Events intro.", Document.Element.Type.Text);
-            //        documentation.elements.Add(element);
-            //    }
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
-            //    var htt = gameObject.AddComponent<HoverTooltip>();
+                // Intro
+                {
+                    var element = new Document.Element("Events intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
 
-            //    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-            //    levelTip.desc = documentation.Name;
-            //    levelTip.hint = documentation.Description;
-            //    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
 
-            //    text.text = documentation.Name;
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-            //    documentations.Add(documentation);
-            //}
-            
+                text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
+
+                documentations.Add(documentation);
+            }
+
             // Text Objects
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Text Objects", "Flavor your levels with text!");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -8917,6 +8945,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -8925,6 +8954,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Markers", "Organize and remember details about a level.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -9032,6 +9063,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -9040,6 +9072,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Title Bar", "The thing at the top with dropdowns.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -9154,6 +9188,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -9162,6 +9197,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Timeline Bar", "Modify stuff like audio and editor layer.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -9273,84 +9310,93 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
 
             // Keybinds
-            //{
-            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-            //    var documentation = new Document(gameObject, "Keybinds", "Perform specific actions when pressing set keys.");
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Keybinds", "Perform specific actions when pressing set keys.");
 
-            //    // Intro
-            //    {
-            //        var element = new Document.Element("Keybinds intro.", Document.Element.Type.Text);
-            //        documentation.elements.Add(element);
-            //    }
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
-            //    // Keybinds List Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_keybind_list.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Intro
+                {
+                    var element = new Document.Element("Keybinds intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
 
-            //    // Keybinds Editor Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_keybind_editor.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Keybinds List Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_keybind_list.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    var htt = gameObject.AddComponent<HoverTooltip>();
+                // Keybinds Editor Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_keybind_editor.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-            //    levelTip.desc = documentation.Name;
-            //    levelTip.hint = documentation.Description;
-            //    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
 
-            //    text.text = documentation.Name;
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-            //    documentations.Add(documentation);
-            //}
+                text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
+
+                documentations.Add(documentation);
+            }
 
             // Editor Properties
-            //{
-            //    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
-            //    var documentation = new Document(gameObject, "Editor Properties", "Configure the editor!");
+            {
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var documentation = new Document(gameObject, "Editor Properties", "Configure the editor!");
 
-            //    // Intro
-            //    {
-            //        var element = new Document.Element("Editor Properties intro.", Document.Element.Type.Text);
-            //        documentation.elements.Add(element);
-            //    }
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
-            //    // Editor Properties Image
-            //    {
-            //        var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editor_properties.png", Document.Element.Type.Image);
-            //        documentation.elements.Add(element);
-            //    }
+                // Intro
+                {
+                    var element = new Document.Element("Editor Properties intro.", Document.Element.Type.Text);
+                    documentation.elements.Add(element);
+                }
 
-            //    var htt = gameObject.AddComponent<HoverTooltip>();
+                // Editor Properties Image
+                {
+                    var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_editor_properties.png", Document.Element.Type.Image);
+                    documentation.elements.Add(element);
+                }
 
-            //    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-            //    levelTip.desc = documentation.Name;
-            //    levelTip.hint = documentation.Description;
-            //    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-            //    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                levelTip.desc = documentation.Name;
+                levelTip.hint = documentation.Description;
+                htt.tooltipLangauges.Add(levelTip);
 
-            //    text.text = documentation.Name;
+                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
-            //    documentations.Add(documentation);
-            //}
+                text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
+
+                documentations.Add(documentation);
+            }
 
             // Misc
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Misc", "The stuff that didn't fit in a document of its own.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Editor Level Path
                 {
@@ -9413,6 +9459,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -9422,6 +9469,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "Object Modifiers", "Make your levels dynamic!");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -9491,6 +9540,7 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
@@ -9499,6 +9549,8 @@ namespace EditorManagement.Functions.Editors
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 var documentation = new Document(gameObject, "April fools!", "fol.");
+
+                EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
 
                 // Intro
                 {
@@ -9525,10 +9577,12 @@ namespace EditorManagement.Functions.Editors
                 var text = gameObject.transform.GetChild(0).GetComponent<Text>();
 
                 text.text = documentation.Name;
+                EditorThemeManager.AddLightText(text);
 
                 documentations.Add(documentation);
             }
 
+            // Create level tutorial
             {
                 //var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
                 //var documentation = new Document(gameObject, "Creating a new level", "Description.");
@@ -9546,6 +9600,47 @@ namespace EditorManagement.Functions.Editors
                 //text.text = documentation.Name;
 
                 //documentations.Add(documentation);
+            }
+
+            // Editor Themes
+            {
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectSearch, new List<Component>
+                {
+                    objectSearch.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectSearchPanel.gameObject, new List<Component>
+                {
+                    objectSearchPanel.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Top));
+
+                EditorThemeManager.AddSelectable(x, ThemeGroup.Close);
+
+                var objectSearchPopupCloseX = x.transform.GetChild(0).gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, objectSearchPopupCloseX, new List<Component>
+                {
+                    objectSearchPopupCloseX.GetComponent<Image>(),
+                }));
+
+                EditorThemeManager.AddLightText(title);
+
+                var objectSearchPopupScrollbar = objectSearch.transform.Find("Scrollbar").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectSearchPopupScrollbar, new List<Component>
+                {
+                    objectSearchPopupScrollbar.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+                var objectSearchPopupScrollbarHandle = objectSearchPopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, objectSearchPopupScrollbarHandle, new List<Component>
+                {
+                    objectSearchPopupScrollbarHandle.GetComponent<Image>(),
+                    objectSearchPopupScrollbar.GetComponent<Scrollbar>()
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Search_Field_1, searchBar.gameObject, new List<Component>
+                {
+                    searchBar.image,
+                }, true, 1, SpriteManager.RoundedSide.Bottom));
             }
         }
 
@@ -12940,6 +13035,7 @@ namespace EditorManagement.Functions.Editors
                             var text = l.transform.GetChild(0).GetComponent<Text>();
                             text.text = (string)element.Data;
                             text.alignment = TextAnchor.UpperLeft;
+                            EditorThemeManager.ApplyLightText(text);
 
                             l.transform.AsRT().sizeDelta = new Vector2(722f, 22f);
                             l.transform.GetChild(0).AsRT().sizeDelta = new Vector2(722f, 22f);
@@ -12948,11 +13044,17 @@ namespace EditorManagement.Functions.Editors
 
                             var barImage = bar.GetComponent<Image>();
                             barImage.enabled = true;
-                            barImage.color = new Color(1f, 1f, 1f, 0.03f);
+                            barImage.fillCenter = true;
+
+                            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, bar, new List<Component>
+                            {
+                                barImage,
+                            }, true, 1, SpriteManager.RoundedSide.W));
 
                             if (element.Function != null)
                             {
-                                bar.AddComponent<Button>().onClick.AddListener(() => element.Function.Invoke());
+                                var button = bar.AddComponent<Button>();
+                                button.onClick.AddListener(() => element.Function.Invoke());
                             }
 
                             break;
@@ -12980,7 +13082,13 @@ namespace EditorManagement.Functions.Editors
 
                             var barImage = bar.GetComponent<Image>();
                             barImage.enabled = true;
-                            barImage.color = new Color(1f, 1f, 1f, 0.03f);
+                            barImage.fillCenter = true;
+                            var barMask = bar.AddComponent<Mask>();
+
+                            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, bar, new List<Component>
+                            {
+                                barImage
+                            }, true, 1, SpriteManager.RoundedSide.W));
 
                             var imageObjImage = imageObj.GetComponent<Image>();
                             imageObjImage.enabled = true;
@@ -13023,7 +13131,11 @@ namespace EditorManagement.Functions.Editors
 
                     var barImage = bar.GetComponent<Image>();
                     barImage.enabled = true;
-                    barImage.color = new Color(1f, 1f, 1f, 0.75f);
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, bar, new List<Component>
+                    {
+                        barImage,
+                    }, true, 1, SpriteManager.RoundedSide.W));
                 }
                 num++;
             }
