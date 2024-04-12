@@ -16,6 +16,7 @@ using EditorManagement.Functions.Editors;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.IO;
 using EditorManagement.Functions.Helpers;
+using EditorManagement.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -51,21 +52,38 @@ namespace EditorManagement.Patchers
 
             var transform = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog").transform;
 
-            var slider = transform.Find("snap/bpm/slider").gameObject.GetComponent<Slider>();
+            //var dialog = EditorManager.inst.GetDialog("Settings Editor").Dialog;
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, transform.gameObject, new List<Component>
+            {
+                transform.GetComponent<Image>(),
+            }));
+
+            var snap = transform.Find("snap");
+
+            var slider = snap.Find("bpm/slider").gameObject.GetComponent<Slider>();
             slider.maxValue = 999f;
             slider.minValue = 0f;
 
-            transform.Find("snap/toggle/title").AsRT().sizeDelta = new Vector2(100f, 32f);
-            transform.Find("snap/bpm/title").AsRT().sizeDelta = new Vector2(100f, 32f);
+            EditorThemeManager.AddToggle(snap.Find("toggle/toggle").GetComponent<Toggle>());
+            EditorThemeManager.AddLightText(snap.Find("toggle/title").GetComponent<Text>());
+            EditorThemeManager.AddLightText(snap.Find("bpm/title").GetComponent<Text>());
+            snap.Find("toggle/title").AsRT().sizeDelta = new Vector2(100f, 32f);
+            snap.Find("bpm/title").AsRT().sizeDelta = new Vector2(100f, 32f);
 
-            var snapOffset = transform.Find("snap/bpm").gameObject.Duplicate(transform.Find("snap"), "bpm offset");
-            snapOffset.transform.Find("title").GetComponent<Text>().text = "BPM Offset";
-            snapOffset.transform.Find("title").AsRT().sizeDelta = new Vector2(100f, 32f);
+            var snapOffset = snap.Find("bpm").gameObject.Duplicate(transform.Find("snap"), "bpm offset");
+            var snapOffsetText = snapOffset.transform.Find("title").GetComponent<Text>();
+            snapOffsetText.text = "BPM Offset";
+            snapOffsetText.rectTransform.sizeDelta = new Vector2(100f, 32f);
+            EditorThemeManager.AddLightText(snapOffsetText);
 
-            transform.Find("snap").AsRT().sizeDelta = new Vector2(765f, 140f);
+            snap.AsRT().sizeDelta = new Vector2(765f, 140f);
 
-            var title1 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
-            title1.transform.Find("title").GetComponent<Text>().text = "Editor Information";
+            var title1 = snap.GetChild(0).gameObject.Duplicate(transform, "title");
+            var editorInformationText = title1.transform.Find("title").GetComponent<Text>();
+            editorInformationText.text = "Editor Information";
+
+            EditorThemeManager.AddLightText(editorInformationText);
 
             info.Clear();
             var scrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").gameObject.Duplicate(transform, "Scroll View");
@@ -105,6 +123,11 @@ namespace EditorManagement.Patchers
 
                 iImage.color = new Color(1f, 1f, 1f, 0.12f);
 
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, baseInfo, new List<Component>
+                {
+                    iImage,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
                 var iHLG = baseInfo.AddComponent<HorizontalLayoutGroup>();
 
                 var title = new GameObject("Title");
@@ -118,6 +141,8 @@ namespace EditorManagement.Patchers
                 titleText.alignment = TextAnchor.MiddleLeft;
                 titleText.text = "  " + array[i];
 
+                EditorThemeManager.AddLightText(titleText);
+
                 var infoGO = new GameObject("Title");
                 infoGO.transform.SetParent(iRT);
                 infoGO.transform.localScale = Vector3.one;
@@ -129,10 +154,12 @@ namespace EditorManagement.Patchers
                 infoText.alignment = TextAnchor.MiddleRight;
                 infoText.text = "[ 0 ]";
 
+                EditorThemeManager.AddLightText(infoText);
+
                 info.Add(array[i], infoText);
             }
 
-            //Doggo
+            // Doggo
             var loadingDoggo = new GameObject("loading doggo");
             loadingDoggo.transform.parent = transform;
             var loadingDoggoRect = loadingDoggo.AddComponent<RectTransform>();
@@ -147,7 +174,10 @@ namespace EditorManagement.Patchers
             loadingDoggoLE.ignoreLayout = true;
 
             var title2 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
-            title2.transform.Find("title").GetComponent<Text>().text = "Marker Colors";
+            var markerColorsText = title2.transform.Find("title").GetComponent<Text>();
+            markerColorsText.text = "Marker Colors";
+
+            EditorThemeManager.AddLightText(markerColorsText);
 
             // Marker Colors
             {
@@ -159,7 +189,10 @@ namespace EditorManagement.Patchers
             }
 
             var title3 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
-            title3.transform.Find("title").GetComponent<Text>().text = "Layer Colors";
+            var layerColorsText = title3.transform.Find("title").GetComponent<Text>();
+            layerColorsText.text = "Layer Colors";
+
+            EditorThemeManager.AddLightText(layerColorsText);
 
             // Layer Colors
             {
@@ -195,8 +228,8 @@ namespace EditorManagement.Patchers
             text.alignment = TextAnchor.MiddleLeft;
             text.fontSize = 17;
 
-            var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
-            ((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
+            var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(tagPrefabRT, "Delete");
+            UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(748f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.one, new Vector2(32f, 32f));
         }
 
         [HarmonyPatch("Update")]
@@ -402,7 +435,8 @@ namespace EditorManagement.Patchers
             var add = PrefabEditor.inst.CreatePrefab.Duplicate(markerColorsContent, "Add");
 
             ((RectTransform)add.transform).sizeDelta = new Vector2(402f, 32f);
-            add.transform.Find("Text").GetComponent<Text>().text = "Add Marker Color";
+            var addText = add.transform.Find("Text").GetComponent<Text>();
+            addText.text = "Add Marker Color";
             var addButton = add.GetComponent<Button>();
             addButton.onClick.ClearAll();
             addButton.onClick.AddListener(delegate ()
@@ -411,6 +445,16 @@ namespace EditorManagement.Patchers
                 RTEditor.inst.SaveGlobalSettings();
                 RenderMarkerColors();
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Marker Color Add", "Add", add, new List<Component>
+            {
+                addButton.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Marker Color Add Text", "Add Text", addText.gameObject, new List<Component>
+            {
+                addText,
+            }));
 
             int num = 0;
             foreach (var markerColor in MarkerEditor.inst.markerColors)
@@ -421,6 +465,11 @@ namespace EditorManagement.Patchers
                 gameObject.transform.AsRT().sizeDelta = new Vector2(402f, 32f);
                 var image = gameObject.GetComponent<Image>();
                 image.color = markerColor;
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Marker Color", "", gameObject, new List<Component>
+                {
+                    image,
+                }, true, 2, SpriteManager.RoundedSide.W));
 
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
@@ -436,14 +485,26 @@ namespace EditorManagement.Patchers
                     RTEditor.inst.SaveGlobalSettings();
                 });
 
-                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
-                delete.onClick.ClearAll();
-                delete.onClick.AddListener(delegate ()
+                EditorThemeManager.ApplyInputField(input, "Setting Editor Marker Color Input", "Input Field");
+
+                var deleteStorage = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
+                deleteStorage.button.onClick.ClearAll();
+                deleteStorage.button.onClick.AddListener(delegate ()
                 {
                     MarkerEditor.inst.markerColors.RemoveAt(index);
                     RenderMarkerColors();
                     RTEditor.inst.SaveGlobalSettings();
                 });
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Marker Color Delete", "Delete", deleteStorage.gameObject, new List<Component>
+                {
+                    deleteStorage.baseImage,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Marker Color Delete Sprite", "Delete Text", deleteStorage.image.gameObject, new List<Component>
+                {
+                    deleteStorage.image,
+                }));
 
                 num++;
             }
@@ -456,7 +517,8 @@ namespace EditorManagement.Patchers
             var add = PrefabEditor.inst.CreatePrefab.Duplicate(layerColorsContent, "Add");
 
             ((RectTransform)add.transform).sizeDelta = new Vector2(402f, 32f);
-            add.transform.Find("Text").GetComponent<Text>().text = "Add Layer Color";
+            var addText = add.transform.Find("Text").GetComponent<Text>();
+            addText.text = "Add Layer Color";
             var addButton = add.GetComponent<Button>();
             addButton.onClick.ClearAll();
             addButton.onClick.AddListener(delegate ()
@@ -465,6 +527,16 @@ namespace EditorManagement.Patchers
                 RTEditor.inst.SaveGlobalSettings();
                 RenderLayerColors();
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Layer Color Add", "Add", add, new List<Component>
+            {
+                addButton.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Layer Color Add Text", "Add Text", addText.gameObject, new List<Component>
+            {
+                addText,
+            }));
 
             int num = 0;
             foreach (var layerColor in EditorManager.inst.layerColors)
@@ -475,6 +547,11 @@ namespace EditorManagement.Patchers
                 gameObject.transform.AsRT().sizeDelta = new Vector2(402f, 32f);
                 var image = gameObject.GetComponent<Image>();
                 image.color = layerColor;
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Layer Color", "", gameObject, new List<Component>
+                {
+                    image,
+                }, true, 2, SpriteManager.RoundedSide.W));
 
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
@@ -490,14 +567,26 @@ namespace EditorManagement.Patchers
                     RTEditor.inst.SaveGlobalSettings();
                 });
 
-                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
-                delete.onClick.ClearAll();
-                delete.onClick.AddListener(delegate ()
+                EditorThemeManager.ApplyInputField(input, "Setting Editor Layer Color Input", "Input Field");
+
+                var deleteStorage = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
+                deleteStorage.button.onClick.ClearAll();
+                deleteStorage.button.onClick.AddListener(delegate ()
                 {
                     EditorManager.inst.layerColors.RemoveAt(index);
                     RenderLayerColors();
                     RTEditor.inst.SaveGlobalSettings();
                 });
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Layer Color Delete", "Delete", deleteStorage.gameObject, new List<Component>
+                {
+                    deleteStorage.baseImage,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Layer Color Delete Sprite", "Delete Text", deleteStorage.image.gameObject, new List<Component>
+                {
+                    deleteStorage.image,
+                }));
 
                 num++;
             }

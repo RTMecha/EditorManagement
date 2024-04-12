@@ -11,6 +11,7 @@ using TMPro;
 
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Managers;
+using System.Collections.Generic;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -53,10 +54,26 @@ namespace EditorManagement.Functions.Editors
 				{
 					string backStr = directoryInfo.Parent.FullName;
 					var gameObject = backPrefab.Duplicate(viewport, backStr);
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					var backButton = gameObject.GetComponent<Button>();
+					backButton.onClick.AddListener(delegate ()
 					{
 						UpdateBrowser(backStr, fileExtensions, onSelectFile);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button, gameObject, new List<Component>
+					{
+						backButton.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button_Text, gameObject.transform.GetChild(0).gameObject, new List<Component>
+					{
+						gameObject.transform.GetChild(0).GetComponent<Image>(),
+					}));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button_Text, gameObject.transform.GetChild(1).gameObject, new List<Component>
+					{
+						gameObject.transform.GetChild(1).GetComponent<Text>(),
+					}));
 				}
 				string[] array = directories;
 				for (int i = 0; i < array.Length; i++)
@@ -64,11 +81,23 @@ namespace EditorManagement.Functions.Editors
 					string folder = array[i];
 					string name = new DirectoryInfo(folder).Name;
 					var gameObject = folderPrefab.Duplicate(viewport, name);
-					gameObject.transform.Find("Text").GetComponent<Text>().text = name;
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					var folderPrefabStorage = gameObject.GetComponent<FunctionButtonStorage>();
+					folderPrefabStorage.text.text = name;
+					folderPrefabStorage.button.onClick.ClearAll();
+					folderPrefabStorage.button.onClick.AddListener(delegate ()
 					{
 						UpdateBrowser(folder, fileExtensions, onSelectFile);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Folder_Button, gameObject, new List<Component>
+					{
+						folderPrefabStorage.button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Folder_Button_Text, gameObject, new List<Component>
+					{
+						folderPrefabStorage.text,
+					}));
 				}
 				array = files;
 				for (int i = 0; i < array.Length; i++)
@@ -79,13 +108,23 @@ namespace EditorManagement.Functions.Editors
 					if (fileExtensions.Any(x => x.ToLower() == fileInfoFolder.Extension.ToLower()))
 					{
 						var gameObject = filePrefab.Duplicate(viewport, name);
-						gameObject.transform.Find("Text").GetComponent<Text>().text = name;
-						var button = gameObject.GetComponent<Button>();
-						button.onClick.ClearAll();
-						button.onClick.AddListener(delegate ()
+						var folderPrefabStorage = gameObject.GetComponent<FunctionButtonStorage>();
+						folderPrefabStorage.text.text = name;
+						folderPrefabStorage.button.onClick.ClearAll();
+						folderPrefabStorage.button.onClick.AddListener(delegate ()
 						{
 							onSelectFile?.Invoke(fileInfoFolder.FullName);
 						});
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.File_Button, gameObject, new List<Component>
+						{
+							folderPrefabStorage.button.image,
+						}, true, 1, SpriteManager.RoundedSide.W));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.File_Button_Text, gameObject, new List<Component>
+						{
+							folderPrefabStorage.text,
+						}));
 					}
 				}
 				folderBar.text = defaultDir;
@@ -120,10 +159,27 @@ namespace EditorManagement.Functions.Editors
 				{
 					string backStr = directoryInfo.Parent.FullName;
 					var gameObject = backPrefab.Duplicate(viewport, backStr);
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					var backButton = gameObject.GetComponent<Button>();
+					backButton.onClick.ClearAll();
+					backButton.onClick.AddListener(delegate ()
 					{
 						UpdateBrowser(backStr, fileExtension, specificName, onSelectFile);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button, gameObject, new List<Component>
+					{
+						backButton.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button_Text, gameObject.transform.GetChild(0).gameObject, new List<Component>
+					{
+						gameObject.transform.GetChild(0).GetComponent<Image>(),
+					}));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button_Text, gameObject.transform.GetChild(1).gameObject, new List<Component>
+					{
+						gameObject.transform.GetChild(1).GetComponent<Text>(),
+					}));
 				}
 				string[] array = directories;
 				for (int i = 0; i < array.Length; i++)
@@ -131,11 +187,23 @@ namespace EditorManagement.Functions.Editors
 					string folder = array[i];
 					string name = new DirectoryInfo(folder).Name;
 					var gameObject = folderPrefab.Duplicate(viewport, name);
-					gameObject.transform.Find("Text").GetComponent<Text>().text = name;
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					var folderPrefabStorage = gameObject.GetComponent<FunctionButtonStorage>();
+					folderPrefabStorage.text.text = name;
+					folderPrefabStorage.button.onClick.ClearAll();
+					folderPrefabStorage.button.onClick.AddListener(delegate ()
 					{
 						UpdateBrowser(folder, fileExtension, specificName, onSelectFile);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Folder_Button, gameObject, new List<Component>
+					{
+						folderPrefabStorage.button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Folder_Button_Text, gameObject, new List<Component>
+					{
+						folderPrefabStorage.text,
+					}));
 				}
 				array = files;
 				for (int i = 0; i < array.Length; i++)
@@ -146,13 +214,23 @@ namespace EditorManagement.Functions.Editors
 					if (fileInfoFolder.Extension.ToLower() == fileExtension.ToLower() && (specificName == "" || specificName.ToLower() + fileExtension.ToLower() == name.ToLower()))
 					{
 						var gameObject = filePrefab.Duplicate(viewport, name);
-						gameObject.transform.Find("Text").GetComponent<Text>().text = name;
-						var button = gameObject.GetComponent<Button>();
-						button.onClick.ClearAll();
-						button.onClick.AddListener(delegate ()
+						var folderPrefabStorage = gameObject.GetComponent<FunctionButtonStorage>();
+						folderPrefabStorage.text.text = name;
+						folderPrefabStorage.button.onClick.ClearAll();
+						folderPrefabStorage.button.onClick.AddListener(delegate ()
 						{
 							onSelectFile?.Invoke(fileInfoFolder.FullName);
 						});
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.File_Button, gameObject, new List<Component>
+						{
+							folderPrefabStorage.button.image,
+						}, true, 1, SpriteManager.RoundedSide.W));
+
+						EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.File_Button_Text, gameObject, new List<Component>
+						{
+							folderPrefabStorage.text,
+						}));
 					}
 				}
 				folderBar.text = defaultDir;
@@ -186,10 +264,27 @@ namespace EditorManagement.Functions.Editors
 				{
 					string backStr = directoryInfo.Parent.FullName;
 					var gameObject = backPrefab.Duplicate(viewport, backStr);
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					var backButton = gameObject.GetComponent<Button>();
+					backButton.onClick.ClearAll();
+					backButton.onClick.AddListener(delegate ()
 					{
 						UpdateBrowser(backStr, specificName, onSelectFolder);
 					});
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button, gameObject, new List<Component>
+					{
+						backButton.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button_Text, gameObject.transform.GetChild(0).gameObject, new List<Component>
+					{
+						gameObject.transform.GetChild(0).GetComponent<Image>(),
+					}));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Back_Button_Text, gameObject.transform.GetChild(1).gameObject, new List<Component>
+					{
+						gameObject.transform.GetChild(1).GetComponent<Text>(),
+					}));
 				}
 				string[] array = directories;
 				for (int i = 0; i < array.Length; i++)
@@ -197,8 +292,10 @@ namespace EditorManagement.Functions.Editors
 					string folder = array[i];
 					string name = new DirectoryInfo(folder).Name;
 					var gameObject = folderPrefab.Duplicate(viewport, name);
-					gameObject.transform.Find("Text").GetComponent<Text>().text = name;
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+					var folderPrefabStorage = gameObject.GetComponent<FunctionButtonStorage>();
+					folderPrefabStorage.text.text = name;
+					folderPrefabStorage.button.onClick.ClearAll();
+					folderPrefabStorage.button.onClick.AddListener(delegate ()
 					{
 						UpdateBrowser(folder, specificName, onSelectFolder);
 					});
@@ -212,6 +309,15 @@ namespace EditorManagement.Functions.Editors
 						}
 					};
 
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Folder_Button, gameObject, new List<Component>
+					{
+						folderPrefabStorage.button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Folder_Button_Text, gameObject, new List<Component>
+					{
+						folderPrefabStorage.text,
+					}));
 				}
 				folderBar.text = defaultDir;
 				return;

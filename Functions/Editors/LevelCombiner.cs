@@ -301,7 +301,7 @@ namespace EditorManagement.Functions.Editors
 				rectTransform.sizeDelta = new Vector2(750f, 42f);
 
 				var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(rectTransform, "Button");
-				UIManager.SetRectTransform(gameObject.transform.AsRT(), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(745f, 32f));
+				UIManager.SetRectTransform(gameObject.transform.AsRT(), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(740f, 32f));
 				editorWrapper.CombinerGameObject = gameObjectBase;
 
 				var hoverUI = gameObject.AddComponent<HoverUI>();
