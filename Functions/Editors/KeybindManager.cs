@@ -488,7 +488,8 @@ namespace EditorManagement.Functions.Editors
 
             }));
 
-            popup.transform.Find("Panel/Text").GetComponent<Text>().text = "Edit a Keybind";
+            var popupTitle = popup.transform.Find("Panel/Text").GetComponent<Text>();
+            popupTitle.text = "Edit a Keybind";
 
             var search = popup.transform.Find("search-box/search").GetComponent<InputField>();
             ((Text)search.placeholder).text = "Search for keybind...";
@@ -658,8 +659,6 @@ namespace EditorManagement.Functions.Editors
 
             // Key Prefab
             {
-                var button = GameObject.Find("TimelineBar/GameObject/event");
-
                 keyPrefab = new GameObject("Key");
                 var rectTransform = keyPrefab.AddComponent<RectTransform>();
                 rectTransform.sizeDelta = new Vector2(400f, 32f);
@@ -681,10 +680,9 @@ namespace EditorManagement.Functions.Editors
                 keyTypeDropdownDD.options = Enum.GetNames(typeof(Keybind.Key.Type)).Select(x => new Dropdown.OptionData(x)).ToList();
                 keyTypeDropdownDD.value = 0;
 
-                var watchKey = button.Duplicate(rectTransform, "Key Watcher");
+                var watchKey = EditorPrefabHolder.Instance.Function1Button.Duplicate(rectTransform, "Key Watcher");
                 var text = watchKey.transform.GetChild(0).GetComponent<Text>();
                 text.text = "Set Key";
-                watchKey.transform.GetComponent<Image>().color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
                 watchKey.transform.AsRT().sizeDelta = new Vector2(140f, 32f);
 
                 var keyCodeDropdown = EditorManager.inst.GetDialog("Object Editor").Dialog.Find("data/left/Scroll View/Viewport/Content/autokill/tod-dropdown").gameObject
@@ -709,7 +707,8 @@ namespace EditorManagement.Functions.Editors
                     keyCodeDropdownDD.options.Add(new Dropdown.OptionData(str));
                 }
 
-                var delete = EditorManager.inst.GetDialog("Keybind List Popup").Dialog.Find("Panel/x").gameObject.Duplicate(rectTransform, "Delete");
+                var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(rectTransform, "Delete");
+                delete.transform.AsRT().anchoredPosition = new Vector2(744f, -16f);
             }
 
             EditorHelper.AddEditorDialog("Keybind Editor", editorDialog.gameObject);
@@ -718,6 +717,51 @@ namespace EditorManagement.Functions.Editors
             {
                 OpenPopup();
             });
+
+            // Editor Themes
+            {
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, popup, new List<Component>
+                {
+                    popup.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                var panel = popup.transform.Find("Panel").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, panel, new List<Component>
+                {
+                    panel.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Top));
+
+                EditorThemeManager.AddSelectable(panel.transform.Find("x").GetComponent<Button>(), ThemeGroup.Close);
+
+                var parentSelectorPopupCloseX = panel.transform.Find("x").GetChild(0).gameObject;
+                EditorThemeManager.AddSelectable(close, ThemeGroup.Close);
+
+                EditorThemeManager.AddLightText(popupTitle);
+
+                var scrollbar = popup.transform.Find("Scrollbar").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, scrollbar, new List<Component>
+                {
+                    scrollbar.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+                var scrollbarHandle = scrollbar.transform.Find("Sliding Area/Handle").gameObject;
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, scrollbarHandle, new List<Component>
+                {
+                    scrollbarHandle.GetComponent<Image>(),
+                    scrollbar.GetComponent<Scrollbar>()
+                }, true, 1, SpriteManager.RoundedSide.W, true));
+
+                EditorThemeManager.AddInputField(search, ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, editorDialog.gameObject, new List<Component>
+                {
+                    editorDialog.GetComponent<Image>(),
+                }));
+
+                EditorThemeManager.AddLightText(editorDialog.Find("data/action/title").GetComponent<Text>());
+
+                EditorThemeManager.AddDropdown(this.actionDropdown, "");
+            }
         }
 
         public void OpenPopup()
@@ -731,7 +775,8 @@ namespace EditorManagement.Functions.Editors
             LSHelpers.DeleteChildren(content);
 
             var add = PrefabEditor.inst.CreatePrefab.Duplicate(content);
-            add.transform.Find("Text").GetComponent<Text>().text = "Add new Keybind";
+            var addText = add.transform.Find("Text").GetComponent<Text>();
+            addText.text = "Add new Keybind";
             var addButton = add.GetComponent<Button>();
             addButton.onClick.ClearAll();
             addButton.onClick.AddListener(delegate ()
@@ -744,6 +789,16 @@ namespace EditorManagement.Functions.Editors
                 RefreshKeybindEditor(keybind);
             });
 
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Add, add, new List<Component>
+            {
+                addButton.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Add_Text, addText.gameObject, new List<Component>
+            {
+                addText,
+            }));
+
             int num = 0;
             foreach (var keybind in keybinds)
             {
@@ -754,12 +809,20 @@ namespace EditorManagement.Functions.Editors
                 if (string.IsNullOrEmpty(searchTerm) || name.ToLower().Contains(searchTerm.ToLower()))
                 {
                     var gameObject = EditorManager.inst.spriteFolderButtonPrefab.Duplicate(content, name);
+
+                    EditorThemeManager.ApplySelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
+
                     var button = gameObject.transform.Find("Image").gameObject.AddComponent<Button>();
                     button.onClick.AddListener(delegate ()
                     {
                         EditorManager.inst.ShowDialog("Keybind Editor");
                         RefreshKeybindEditor(keybind);
                     });
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, button.gameObject, new List<Component>
+                    {
+                        button.image
+                    }, true, 1, SpriteManager.RoundedSide.W));
 
                     var ed1 = new GameObject("Edit");
                     ed1.transform.SetParent(gameObject.transform.Find("Image"));
@@ -802,17 +865,37 @@ namespace EditorManagement.Functions.Editors
                         name += ")";
                     }
 
-                    gameObject.transform.Find("folder-name").GetComponent<Text>().text = name;
+                    var nameText = gameObject.transform.Find("folder-name").GetComponent<Text>();
+                    nameText.text = name;
 
-                    var delete = EditorManager.inst.GetDialog("Keybind List Popup").Dialog.Find("Panel/x").gameObject.Duplicate(gameObject.transform, "Delete").GetComponent<Button>();
-                    ((RectTransform)delete.transform).anchoredPosition = Vector2.zero;
-                    delete.onClick.ClearAll();
-                    delete.onClick.AddListener(delegate ()
+                    EditorThemeManager.ApplyLightText(nameText);
+
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(gameObject.transform, "Delete").GetComponent<DeleteButtonStorage>();
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(580f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.one, new Vector2(32f, 32f));
+                    delete.button.onClick.ClearAll();
+                    delete.button.onClick.AddListener(delegate ()
                     {
-                        keybinds.RemoveAt(index);
-                        RefreshKeybindPopup();
-                        Save();
+                        RTEditor.inst.ShowWarningPopup("Are you sure you want to delete this keybind? You cannot undo this.", delegate ()
+                        {
+                            keybinds.RemoveAt(index);
+                            RefreshKeybindPopup();
+                            Save();
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        }, delegate ()
+                        {
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        });
                     });
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+                    {
+                        delete.baseImage,
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+                    {
+                        delete.image,
+                    }));
                 }
 
                 num++;
@@ -855,8 +938,13 @@ namespace EditorManagement.Functions.Editors
                 int index = num;
                 var gameObject = keyPrefab.Duplicate(keysContent, "Key");
                 var type = gameObject.transform.Find("Key Type").GetComponent<Dropdown>();
-                var watch = gameObject.transform.Find("Key Watcher").GetComponent<Button>();
+                var watch = gameObject.transform.Find("Key Watcher").GetComponent<FunctionButtonStorage>();
                 var code = gameObject.transform.Find("Key Code").GetComponent<Dropdown>();
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, gameObject, new List<Component>
+                {
+                    gameObject.GetComponent<Image>(),
+                }, true, 1, SpriteManager.RoundedSide.W));
 
                 var text = gameObject.transform.Find("Key Watcher").GetChild(0).GetComponent<Text>();
                 text.text = "Set Key";
@@ -871,8 +959,10 @@ namespace EditorManagement.Functions.Editors
                     text.text = "Set Key";
                 });
 
-                watch.onClick.ClearAll();
-                watch.onClick.AddListener(delegate ()
+                EditorThemeManager.ApplyDropdown(type);
+
+                watch.button.onClick.ClearAll();
+                watch.button.onClick.AddListener(delegate ()
                 {
                     RTEditor.inst.selectingKey = true;
                     RTEditor.inst.setKey = delegate (KeyCode keyCode)
@@ -899,6 +989,16 @@ namespace EditorManagement.Functions.Editors
                     text.text = "Watching Key";
                 });
 
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_1, watch.gameObject, new List<Component>
+                {
+                    watch.button.image,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_1_Text, watch.text.gameObject, new List<Component>
+                {
+                    watch.text,
+                }));
+
                 code.onValueChanged.ClearAll();
                 code.value = (int)key.KeyCode;
                 code.onValueChanged.AddListener(delegate (int _val)
@@ -909,15 +1009,28 @@ namespace EditorManagement.Functions.Editors
                     text.text = "Set Key";
                 });
 
-                var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
-                delete.onClick.ClearAll();
-                delete.onClick.AddListener(delegate ()
+                EditorThemeManager.ApplyDropdown(code);
+
+                var delete = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
+                delete.button.onClick.ClearAll();
+                delete.button.onClick.AddListener(delegate ()
                 {
                     keybind.keys.RemoveAt(index);
                     RefreshKeybindPopup();
                     RefreshKeybindEditor(keybind);
                     Save();
                 });
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+                {
+                    delete.button.image,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+                {
+                    delete.image,
+                }));
+
                 num++;
             }
 
@@ -959,8 +1072,9 @@ namespace EditorManagement.Functions.Editors
                             TooltipHelper.AddTooltip(bar, setting.Key, "");
 
                             var l = label.Duplicate(bar.transform, "", 0);
-                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
-                            l.transform.AsRT().sizeDelta = new Vector2(688f, 20f);
+                            var labelText = l.transform.GetChild(0).GetComponent<Text>();
+                            labelText.text = setting.Key;
+                            l.transform.AsRT().sizeDelta = new Vector2(688f, 32f);
 
                             l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
@@ -980,6 +1094,8 @@ namespace EditorManagement.Functions.Editors
                                 keybind.settings[setting.Key] = _val.ToString();
                                 Save();
                             });
+
+                            EditorThemeManager.ApplyToggle(xt, "");
 
                             break;
                         }
@@ -1002,7 +1118,8 @@ namespace EditorManagement.Functions.Editors
                             TooltipHelper.AddTooltip(bar, setting.Key, "");
 
                             var l = label.Duplicate(bar.transform, "", 0);
-                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                            var labelText = l.transform.GetChild(0).GetComponent<Text>();
+                            labelText.text = setting.Key;
                             l.transform.AsRT().sizeDelta = new Vector2(354f, 20f);
 
                             l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
@@ -1034,6 +1151,8 @@ namespace EditorManagement.Functions.Editors
                                 Save();
                             });
 
+                            EditorThemeManager.ApplyInputField(xif, ThemeGroup.Input_Field);
+
                             break;
                         }
                     case "eventtype":
@@ -1052,8 +1171,9 @@ namespace EditorManagement.Functions.Editors
                             x.transform.GetChild(0).localScale = Vector3.one;
 
                             var l = label.Duplicate(x.transform, "", 0);
-                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
-                            l.transform.AsRT().sizeDelta = new Vector2(541f, 20f);
+                            var labelText = l.transform.GetChild(0).GetComponent<Text>();
+                            labelText.text = setting.Key;
+                            l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
                             
                             l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
@@ -1088,6 +1208,13 @@ namespace EditorManagement.Functions.Editors
 
                             TriggerHelper.IncreaseDecreaseButtonsInt(xif, t: x.transform);
 
+                            EditorThemeManager.ApplyInputField(xif, ThemeGroup.Input_Field);
+
+                            Destroy(x.transform.Find("<").GetComponent<Animator>());
+                            EditorThemeManager.ApplySelectable(x.transform.Find("<").GetComponent<Button>(), ThemeGroup.Function_2, false);
+                            Destroy(x.transform.Find(">").GetComponent<Animator>());
+                            EditorThemeManager.ApplySelectable(x.transform.Find(">").GetComponent<Button>(), ThemeGroup.Function_2, false);
+
                             break;
                         }
                     case "eventamount":
@@ -1102,7 +1229,8 @@ namespace EditorManagement.Functions.Editors
                             x.transform.GetChild(0).localScale = Vector3.one;
 
                             var l = label.Duplicate(x.transform, "", 0);
-                            l.transform.GetChild(0).GetComponent<Text>().text = setting.Key;
+                            var labelText = l.transform.GetChild(0).GetComponent<Text>();
+                            labelText.text = setting.Key;
                             l.transform.AsRT().sizeDelta = new Vector2(541f, 20f);
 
                             l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
@@ -1137,6 +1265,13 @@ namespace EditorManagement.Functions.Editors
                             TriggerHelper.AddEventTrigger(xif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(xif) });
 
                             TriggerHelper.IncreaseDecreaseButtons(xif, t: x.transform);
+
+                            EditorThemeManager.ApplyInputField(xif, ThemeGroup.Input_Field);
+
+                            Destroy(x.transform.Find("<").GetComponent<Animator>());
+                            EditorThemeManager.ApplySelectable(x.transform.Find("<").GetComponent<Button>(), ThemeGroup.Function_2, false);
+                            Destroy(x.transform.Find(">").GetComponent<Animator>());
+                            EditorThemeManager.ApplySelectable(x.transform.Find(">").GetComponent<Button>(), ThemeGroup.Function_2, false);
 
                             break;
                         }
