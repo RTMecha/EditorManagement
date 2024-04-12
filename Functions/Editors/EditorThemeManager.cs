@@ -650,6 +650,56 @@ namespace EditorManagement.Functions.Editors
 
         }
 
+        public static void ApplyDropdown(Dropdown dropdown)
+        {
+            ApplyElement(new Element(ThemeGroup.Dropdown_1, dropdown.gameObject, new List<Component>
+            {
+                dropdown.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, dropdown.captionText.gameObject, new List<Component>
+            {
+                dropdown.captionText,
+            }));
+
+            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, dropdown.transform.Find("Arrow").gameObject, new List<Component>
+            {
+                dropdown.transform.Find("Arrow").gameObject.GetComponent<Image>(),
+            }));
+
+            if (dropdown.captionImage)
+                ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, dropdown.captionImage.gameObject, new List<Component>
+                {
+                    dropdown.captionImage,
+                }));
+
+            var template = dropdown.transform.Find("Template").gameObject;
+            ApplyElement(new Element(ThemeGroup.Dropdown_1, template, new List<Component>
+            {
+                template.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
+
+            var templateItem = template.transform.Find("Viewport/Content/Item");
+            var templateItemBG = templateItem.Find("Item Background").gameObject;
+            ApplyElement(new Element(ThemeGroup.Dropdown_1_Item, templateItemBG, new List<Component>
+            {
+                templateItemBG.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var templateItemCheckmark = templateItem.Find("Item Checkmark").gameObject;
+            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, templateItemCheckmark, new List<Component>
+            {
+                templateItemCheckmark.GetComponent<Image>(),
+            }));
+
+            var templateItemLabel = templateItem.Find("Item Label").gameObject;
+            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, templateItemLabel, new List<Component>
+            {
+                templateItemLabel.GetComponent<Text>(),
+            }));
+
+        }
+
         public static void AddInputField(InputField inputField, string name, string group, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
         {
             inputField.image.fillCenter = true;
@@ -700,7 +750,7 @@ namespace EditorManagement.Functions.Editors
                 inputField.image,
             }, true, 1, SpriteManager.RoundedSide.W));
 
-            ApplyElement(new Element(EditorTheme.GetGroup($"{group} Text"), inputField.textComponent.gameObject, new List<Component>
+            ApplyElement(new Element(EditorTheme.GetGroup($"{EditorTheme.GetString(group)} Text"), inputField.textComponent.gameObject, new List<Component>
             {
                 inputField.textComponent,
             }));
