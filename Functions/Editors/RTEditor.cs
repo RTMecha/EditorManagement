@@ -310,8 +310,8 @@ namespace EditorManagement.Functions.Editors
                         timelineObject.GameObject.SetActive(true);
 
                         var color = objectKeyframesRenderBinColor &&
-                            theme.ColorGroups.ContainsKey($"Object Keyframe Color {timelineObject.Type + 1}") ?
-                            theme.ColorGroups[$"Object Keyframe Color {timelineObject.Type + 1}"] : ObjEditor.inst.NormalColor;
+                            theme.ContainsGroup($"Object Keyframe Color {timelineObject.Type + 1}") ?
+                            theme.GetColor($"Object Keyframe Color {timelineObject.Type + 1}") : ObjEditor.inst.NormalColor;
                         color.a = 1f;
 
                         timelineObject.Image.color = timelineObject.selected ? !objectKeyframesRenderBinColor ? ObjEditor.inst.SelectedColor : EventEditor.inst.Selected : color;
@@ -333,8 +333,8 @@ namespace EditorManagement.Functions.Editors
                     if (active)
                     {
                         var color = eventKeyframesRenderBinColor &&
-                            theme.ColorGroups.ContainsKey($"Event Color {timelineObject.Type % RTEventEditor.EventLimit + 1} Keyframe") ?
-                            theme.ColorGroups[$"Event Color {timelineObject.Type % RTEventEditor.EventLimit + 1} Keyframe"] : ObjEditor.inst.NormalColor;
+                            theme.ContainsGroup($"Event Color {timelineObject.Type % RTEventEditor.EventLimit + 1} Keyframe") ?
+                            theme.GetColor($"Event Color {timelineObject.Type % RTEventEditor.EventLimit + 1} Keyframe") : ObjEditor.inst.NormalColor;
                         color.a = 1f;
 
                         timelineObject.Image.color = timelineObject.selected ? !eventKeyframesRenderBinColor ? ObjEditor.inst.SelectedColor : EventEditor.inst.Selected : color;
@@ -3143,13 +3143,53 @@ namespace EditorManagement.Functions.Editors
             var fileBrowserBase = fileBrowser.GetComponent<FileBrowserTest>();
             rtfb.viewport = fileBrowserBase.viewport;
             rtfb.backPrefab = fileBrowserBase.backPrefab;
-            rtfb.folderPrefab = fileBrowserBase.folderPrefab;
+
+            rtfb.folderPrefab = fileBrowserBase.folderPrefab.Duplicate(EditorPrefabHolder.Instance.PrefabParent, fileBrowserBase.folderPrefab.name);
+            var folderPrefabStorage = rtfb.folderPrefab.AddComponent<FunctionButtonStorage>();
+            folderPrefabStorage.button = rtfb.folderPrefab.GetComponent<Button>();
+            folderPrefabStorage.text = rtfb.folderPrefab.transform.GetChild(0).GetComponent<Text>();
+
             rtfb.folderBar = fileBrowserBase.folderBar;
             rtfb.oggFileInput = fileBrowserBase.oggFileInput;
-            rtfb.filePrefab = fileBrowserBase.filePrefab;
+            rtfb.filePrefab = fileBrowserBase.filePrefab.Duplicate(EditorPrefabHolder.Instance.PrefabParent, fileBrowserBase.filePrefab.name);
+            var filePrefabStorage = rtfb.filePrefab.AddComponent<FunctionButtonStorage>();
+            filePrefabStorage.button = rtfb.filePrefab.GetComponent<Button>();
+            filePrefabStorage.text = rtfb.filePrefab.transform.GetChild(0).GetComponent<Text>();
+
             Destroy(fileBrowserBase);
 
             EditorHelper.AddEditorPopup("Browser Popup", fileBrowser);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, fileBrowser.gameObject, new List<Component>
+            {
+                fileBrowser.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var panel = fileBrowser.transform.Find("Panel").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Browser Popup Panel", "Background", panel, new List<Component>
+            {
+                panel.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Top));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Browser Popup Close", "Close", close.gameObject, new List<Component>
+            {
+                close.image,
+                close,
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            var closeX = close.transform.GetChild(0).gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("Browser Popup Close X", "Close X", closeX, new List<Component>
+            {
+                closeX.GetComponent<Image>(),
+            }));
+
+            var title = panel.transform.Find("Text").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element("New File Popup Title", "Light Text", title, new List<Component>
+            {
+                title.GetComponent<TextMeshProUGUI>(),
+            }));
+
+            EditorThemeManager.AddInputField(fileBrowser.transform.Find("folder-bar").GetComponent<InputField>(), "", "Input Field");
         }
 
         void SetupTimelinePreview()
@@ -3902,7 +3942,7 @@ namespace EditorManagement.Functions.Editors
             var barButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/time").transform.GetChild(4).gameObject;
             var barButtonImage = barButton.GetComponent<Image>();
 
-            var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
+            var eventButton = EditorPrefabHolder.Instance.Function1Button;
 
             var multiObjectEditorDialog = EditorManager.inst.GetDialog("Multi Object Editor").Dialog;
 
@@ -3961,8 +4001,8 @@ namespace EditorManagement.Functions.Editors
             labelL.SetParent(transform);
             Destroy(parent.Find("label depth").gameObject);
 
-            Action<string, string, bool, UnityAction, UnityAction, UnityAction> inputFieldGenerator
-                = delegate (string name, string placeHolder, bool doMiddle, UnityAction leftButton, UnityAction middleButton, UnityAction rightButton)
+            Action<string, string, bool, UnityAction, UnityAction, UnityAction, Action<InputField>> inputFieldGenerator
+                = delegate (string name, string placeHolder, bool doMiddle, UnityAction leftButton, UnityAction middleButton, UnityAction rightButton, Action<InputField> action)
             {
                 var gameObject = zoom.Duplicate(parent, name);
                 gameObject.transform.localScale = Vector3.one;
@@ -4028,6 +4068,8 @@ namespace EditorManagement.Functions.Editors
                 {
                     layerIF.textComponent,
                 }));
+
+                action(layerIF);
             };
 
             Action<string> labelGenerator = delegate (string name)
@@ -4066,6 +4108,67 @@ namespace EditorManagement.Functions.Editors
                 {
                     textComponent
                 }));
+            };
+
+            Action<string, string, string, UnityAction, UnityAction> multiButtonGenerator = delegate (string name, string function1Text, string function2Text, UnityAction function1, UnityAction function2)
+            {
+                var functionsBase = new GameObject(name);
+                functionsBase.transform.SetParent(parent);
+                functionsBase.transform.localScale = Vector3.one;
+
+                var functionsBaseRT = functionsBase.AddComponent<RectTransform>();
+                functionsBaseRT.sizeDelta = new Vector2(390f, 32f);
+
+                var functionsBaseHLG = functionsBase.AddComponent<HorizontalLayoutGroup>();
+                functionsBaseHLG.childControlHeight = false;
+                functionsBaseHLG.childControlWidth = false;
+                functionsBaseHLG.childForceExpandHeight = false;
+                functionsBaseHLG.childForceExpandWidth = false;
+                functionsBaseHLG.spacing = 8f;
+
+                var funciton1Object = eventButton.Duplicate(functionsBaseRT, name);
+                funciton1Object.transform.localScale = Vector3.one;
+
+                funciton1Object.transform.AsRT().sizeDelta = new Vector2(180f, 32f);
+
+                var funciton1ObjectText = funciton1Object.transform.GetChild(0).GetComponent<Text>();
+                funciton1ObjectText.text = function1Text;
+
+                var funciton1Button = funciton1Object.GetComponent<Button>();
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1, funciton1Object, new List<Component>
+                {
+                    funciton1Button.image
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1_Text, funciton1ObjectText.gameObject, new List<Component>
+                {
+                    funciton1ObjectText
+                }));
+
+                funciton1Button.onClick.ClearAll();
+                funciton1Button.onClick.AddListener(function1);
+
+                var function2Object = eventButton.Duplicate(functionsBaseRT, name);
+                function2Object.transform.localScale = Vector3.one;
+
+                function2Object.transform.AsRT().sizeDelta = new Vector2(180f, 32f);
+
+                var function2ObjectText = function2Object.transform.GetChild(0).GetComponent<Text>();
+                function2ObjectText.text = function2Text;
+
+                var function2Button = function2Object.GetComponent<Button>();
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1, function2Object, new List<Component>
+                {
+                    function2Button.image
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1_Text, function2ObjectText.gameObject, new List<Component>
+                {
+                    function2ObjectText
+                }));
+
+                function2Button.onClick.ClearAll();
+                function2Button.onClick.AddListener(function2);
             };
 
             // man i need to clean this up but aaaa
@@ -4122,6 +4225,9 @@ namespace EditorManagement.Functions.Editors
                             }
                         }
                     }
+                }, delegate (InputField inputField)
+                {
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField));
                 });
             }
 
@@ -4174,6 +4280,9 @@ namespace EditorManagement.Functions.Editors
                             }
                         }
                     }
+                }, delegate (InputField inputField)
+                {
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField));
                 });
             }
 
@@ -4234,6 +4343,9 @@ namespace EditorManagement.Functions.Editors
                             ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         }
                     }
+                }, delegate (InputField inputField)
+                {
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
                 });
             }
 
@@ -4296,6 +4408,9 @@ namespace EditorManagement.Functions.Editors
                             ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         }
                     }
+                }, delegate (InputField inputField)
+                {
+                    TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
                 });
             }
 
@@ -4466,17 +4581,81 @@ namespace EditorManagement.Functions.Editors
                 }, isSelectable: true));
             }
 
-            // Clear Tags
+            // Clear data
             {
-                labelGenerator("Clear all objects' tags");
+                labelGenerator("Clear data from objects");
 
                 buttonGenerator("clear tags", "Clear Tags", parent, delegate ()
                 {
-                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    ShowWarningPopup("You are about to clear tags from all selected objects, this <b>CANNOT</b> be undone!", delegate ()
                     {
-                        beatmapObject.tags.Clear();
-                    }
+                        foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                        {
+                            beatmapObject.tags.Clear();
+                        }
+
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    }, delegate ()
+                    {
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    });
                 });
+
+                buttonGenerator("clear animations", "Clear Animations", parent, delegate ()
+                {
+                    ShowWarningPopup("You are about to clear animations from all selected objects, this <b>CANNOT</b> be undone!", delegate ()
+                    {
+                        foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                        {
+                            var bm = timelineObject.GetData<BeatmapObject>();
+                            foreach (var tkf in timelineObject.InternalSelections)
+                            {
+                                Destroy(tkf.GameObject);
+                            }
+                            timelineObject.InternalSelections.Clear();
+                            for (int i = 0; i < bm.events.Count; i++)
+                            {
+                                bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
+                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0], false);
+                                bm.events[i].Clear();
+                                bm.events[i].Add(firstKF);
+                            }
+                            if (ObjectEditor.inst.SelectedObjects.Count == 1)
+                            {
+                                ObjectEditor.inst.ResizeKeyframeTimeline(bm);
+                                ObjectEditor.inst.RenderKeyframes(bm);
+                            }
+
+                            Updater.UpdateProcessor(bm, "Keyframes");
+                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                        }
+
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    }, delegate ()
+                    {
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    });
+                });
+
+                if (ModCompatibility.ObjectModifiersInstalled)
+                {
+                    buttonGenerator("clear modifiers", "Clear Modifiers", parent, delegate ()
+                    {
+                        ShowWarningPopup("You are about to clear modifiers from all selected objects, this <b>CANNOT</b> be undone!", delegate ()
+                        {
+                            foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                            {
+                                beatmapObject.modifiers.Clear();
+                                Updater.UpdateProcessor(beatmapObject);
+                            }
+
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        }, delegate ()
+                        {
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        });
+                    });
+                }
             }
 
             // Song Time Autokill
@@ -4511,6 +4690,39 @@ namespace EditorManagement.Functions.Editors
                         ObjectEditor.inst.RenderTimelineObject(timelineObject);
                         Updater.UpdateProcessor(bm, "Autokill");
                     }
+                });
+            }
+            
+            // Set Parent
+            {
+                labelGenerator("Set Parent");
+
+                buttonGenerator("set parent (search)", "Search List", parent, delegate ()
+                {
+                    EditorManager.inst.OpenParentPopup();
+                });
+
+                buttonGenerator("set parent (dropper)", "Picker", parent, delegate ()
+                {
+                    parentPickerEnabled = true;
+                    selectingMultiple = true;
+                });
+
+                buttonGenerator("set parent (remove)", "Remove", parent, delegate ()
+                {
+                    ShowWarningPopup("You are about to remove parents from all selected objects, this <b>CANNOT</b> be undone!", delegate ()
+                    {
+                        foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                        {
+                            beatmapObject.parent = "";
+                            Updater.UpdateProcessor(beatmapObject);
+                        }
+
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    }, delegate ()
+                    {
+                        EditorManager.inst.HideDialog("Warning Popup");
+                    });
                 });
             }
             
@@ -4579,9 +4791,27 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            // Lock Swap
+            // Lock
             {
-                labelGenerator("Swap each object's lock state");
+                labelGenerator("Modify time lock state");
+
+                multiButtonGenerator("lock", "On", "Off", delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Locked = true;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                }, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Locked = false;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                });
 
                 buttonGenerator("lock swap", "Swap Lock", parent, delegate ()
                 {
@@ -4594,27 +4824,27 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            // Lock Toggle
+            // Collapse
             {
-                labelGenerator("Toggle all object's lock state");
+                labelGenerator("Modify timeline collapse state");
 
-                bool loggle = false;
-
-                buttonGenerator("lock toggle", "Toggle Lock", parent, delegate ()
+                multiButtonGenerator("collapse", "On", "Off", delegate ()
                 {
-                    loggle = !loggle;
                     foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                     {
-                        timelineObject.Locked = loggle;
+                        timelineObject.Collapse = true;
+
+                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
+                    }
+                }, delegate ()
+                {
+                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
+                    {
+                        timelineObject.Collapse = false;
 
                         ObjectEditor.inst.RenderTimelineObject(timelineObject);
                     }
                 });
-            }
-
-            // Collapse Swap
-            {
-                labelGenerator("Swap each object's collapse state");
 
                 buttonGenerator("collapse swap", "Swap Collapse", parent, delegate ()
                 {
@@ -4627,27 +4857,25 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            // Collapse Toggle
-            {
-                labelGenerator("Toggle all object's collapse state");
-
-                bool coggle = false;
-
-                buttonGenerator("collapse toggle", "Toggle Collapse", parent, delegate ()
-                {
-                    coggle = !coggle;
-                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                    {
-                        timelineObject.Collapse = coggle;
-
-                        ObjectEditor.inst.RenderTimelineObject(timelineObject);
-                    }
-                });
-            }
-            
             // Background Swap
             {
-                labelGenerator("Swap each object's render type");
+                labelGenerator("Modify Object Render Type");
+
+                multiButtonGenerator("render type", "On", "Off", delegate ()
+                {
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.background = true;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                }, delegate ()
+                {
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.background = false;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                });
 
                 buttonGenerator("render type swap", "Swap Render Type", parent, delegate ()
                 {
@@ -4659,26 +4887,25 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            // Background Toggle
+            // LDM Swap
             {
-                labelGenerator("Toggle all object's render type");
+                labelGenerator("Modify Low Detail Mode");
 
-                bool boggle = false;
-
-                buttonGenerator("render type toggle", "Toggle Render Type", parent, delegate ()
+                multiButtonGenerator("ldm", "On", "Off", delegate ()
                 {
-                    boggle = !boggle;
                     foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
                     {
-                        beatmapObject.background = boggle;
+                        beatmapObject.LDM = true;
+                        Updater.UpdateProcessor(beatmapObject);
+                    }
+                }, delegate ()
+                {
+                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
+                    {
+                        beatmapObject.LDM = false;
                         Updater.UpdateProcessor(beatmapObject);
                     }
                 });
-            }
-
-            // LDM Swap
-            {
-                labelGenerator("Swap each object's LDM");
 
                 buttonGenerator("ldm swap", "Swap LDM", parent, delegate ()
                 {
@@ -4686,80 +4913,6 @@ namespace EditorManagement.Functions.Editors
                     {
                         beatmapObject.LDM = !beatmapObject.LDM;
                         Updater.UpdateProcessor(beatmapObject);
-                    }
-                });
-            }
-
-            // LDM Toggle
-            {
-                labelGenerator("Toggle all object's LDM");
-
-                bool doggle = false;
-
-                buttonGenerator("ldm toggle", "Toggle LDM", parent, delegate ()
-                {
-                    doggle = !doggle;
-                    foreach (var beatmapObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>()))
-                    {
-                        beatmapObject.LDM = doggle;
-                        Updater.UpdateProcessor(beatmapObject);
-                    }
-                });
-            }
-
-            // Clear Animations
-            {
-                labelGenerator("Clear Animations");
-
-                buttonGenerator("clear animations", "Clear", parent, delegate ()
-                {
-                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                    {
-                        if (timelineObject.IsBeatmapObject)
-                        {
-                            var bm = timelineObject.GetData<BeatmapObject>();
-                            foreach (var tkf in timelineObject.InternalSelections)
-                            {
-                                Destroy(tkf.GameObject);
-                            }
-                            timelineObject.InternalSelections.Clear();
-                            for (int i = 0; i < bm.events.Count; i++)
-                            {
-                                bm.events[i] = bm.events[i].OrderBy(x => x.eventTime).ToList();
-                                var firstKF = EventKeyframe.DeepCopy((EventKeyframe)bm.events[i][0], false);
-                                bm.events[i].Clear();
-                                bm.events[i].Add(firstKF);
-                            }
-                            if (ObjectEditor.inst.SelectedObjects.Count == 1)
-                            {
-                                ObjectEditor.inst.ResizeKeyframeTimeline(bm);
-                                ObjectEditor.inst.RenderKeyframes(bm);
-                            }
-
-                            Updater.UpdateProcessor(bm, "Keyframes");
-                            ObjectEditor.inst.RenderTimelineObject(timelineObject);
-                        }
-                    }
-                });
-            }
-
-            // Clear Modifiers
-            if (ModCompatibility.ObjectModifiersInstalled)
-            {
-                labelGenerator("Clear Modifiers");
-
-                buttonGenerator("clear modifiers", "Clear", parent, delegate ()
-                {
-                    foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
-                    {
-                        if (timelineObject.IsBeatmapObject)
-                        {
-                            var bm = timelineObject.GetData<BeatmapObject>();
-
-                            bm.modifiers.Clear();
-
-                            Updater.UpdateProcessor(bm);
-                        }
                     }
                 });
             }
@@ -11376,93 +11529,126 @@ namespace EditorManagement.Functions.Editors
                 Destroy(((Transform)obj2).gameObject);
             }
 
-            var gameObject = Instantiate(__instance.folderButtonPrefab);
-            gameObject.name = "No Parent";
-            gameObject.transform.SetParent(transform);
-            gameObject.transform.localScale = Vector3.one;
-            gameObject.transform.GetChild(0).GetComponent<Text>().text = "No Parent";
-            gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
+            var noParent = __instance.folderButtonPrefab.Duplicate(transform);
+            noParent.name = "No Parent";
+            noParent.transform.SetParent(transform);
+            noParent.transform.localScale = Vector3.one;
+            var noParentText = noParent.transform.GetChild(0).GetComponent<Text>();
+            noParentText.text = "No Parent";
+            var noParentButton = noParent.GetComponent<Button>();
+            noParentButton.onClick.ClearAll();
+            noParentButton.onClick.AddListener(delegate ()
             {
-                ObjEditor.inst.SetParent("");
+                var list = ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject);
+                foreach (var timelineObject in list)
+                {
+                    var bm = timelineObject.GetData<BeatmapObject>();
+                    bm.parent = "";
+                    Updater.UpdateProcessor(bm);
+                }
+
                 EditorManager.inst.HideDialog("Parent Selector");
+                if (list.Count() == 1)
+                    StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
             });
+
+            EditorThemeManager.ApplySelectable(noParentButton, ThemeGroup.List_Button_1);
+            EditorThemeManager.ApplyLightText(noParentText);
 
             if (string.IsNullOrEmpty(__instance.parentSearch) || "camera".Contains(__instance.parentSearch.ToLower()))
             {
                 var cam = __instance.folderButtonPrefab.Duplicate(transform, "Camera");
-                cam.transform.GetChild(0).GetComponent<Text>().text = "Camera";
-                cam.GetComponent<Button>().onClick.AddListener(delegate ()
+                var camText = cam.transform.GetChild(0).GetComponent<Text>();
+                var camButton = cam.GetComponent<Button>();
+
+                camText.text = "Camera";
+                camButton.onClick.ClearAll();
+                camButton.onClick.AddListener(delegate ()
                 {
-                    beatmapObject.parent = "CAMERA_PARENT";
-                    Updater.UpdateProcessor(beatmapObject);
+                    var list = ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>());
+                    foreach (var bm in list)
+                    {
+                        bm.parent = "CAMERA_PARENT";
+                        Updater.UpdateProcessor(bm);
+                    }
+
                     EditorManager.inst.HideDialog("Parent Selector");
-                    StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+                    if (list.Count() == 1)
+                        StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
                 });
+
+                EditorThemeManager.ApplySelectable(camButton, ThemeGroup.List_Button_1);
+                EditorThemeManager.ApplyLightText(camText);
             }
 
             foreach (var obj in DataManager.inst.gameData.beatmapObjects)
             {
-                if (!obj.fromPrefab)
+                if (obj.fromPrefab)
+                    continue;
+
+                int index = DataManager.inst.gameData.beatmapObjects.IndexOf(obj);
+                if ((string.IsNullOrEmpty(__instance.parentSearch) || (obj.name + " " + index.ToString("0000")).ToLower().Contains(__instance.parentSearch.ToLower())) && obj.id != beatmapObject.id)
                 {
-                    int num = DataManager.inst.gameData.beatmapObjects.IndexOf(obj);
-                    if ((string.IsNullOrEmpty(__instance.parentSearch) || (obj.name + " " + num.ToString("0000")).ToLower().Contains(__instance.parentSearch.ToLower())) && obj.id != beatmapObject.id)
+                    bool canParent = true;
+                    if (!string.IsNullOrEmpty(obj.parent))
                     {
-                        bool flag = true;
-                        if (!string.IsNullOrEmpty(obj.parent))
+                        string parentID = beatmapObject.id;
+                        while (!string.IsNullOrEmpty(parentID))
                         {
-                            string parentID = beatmapObject.id;
-                            while (!string.IsNullOrEmpty(parentID))
+                            if (parentID == obj.parent)
                             {
-                                if (parentID == obj.parent)
-                                {
-                                    flag = false;
-                                    break;
-                                }
-                                int num2 = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
-                                if (num2 != -1)
-                                {
-                                    parentID = DataManager.inst.gameData.beatmapObjects[num2].id;
-                                }
-                                else
-                                {
-                                    parentID = null;
-                                }
+                                canParent = false;
+                                break;
                             }
-                        }
-                        if (flag)
-                        {
-                            string s = $"{obj.name} {num.ToString("0000")}";
-                            var gameObject2 = __instance.folderButtonPrefab.Duplicate(transform, s);
-                            gameObject2.transform.GetChild(0).GetComponent<Text>().text = s;
-                            gameObject2.GetComponent<Button>().onClick.AddListener(delegate ()
-                            {
-                                string id = obj.id;
-                                beatmapObject.parent = id;
-                                Updater.UpdateProcessor(beatmapObject);
-                                EditorManager.inst.HideDialog("Parent Selector");
-                                StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
-                                Debug.Log($"{__instance.className}Set Parent ID: {id}");
-                            });
+
+                            int parentIndex = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
+
+                            parentID = parentIndex != -1 ? DataManager.inst.gameData.beatmapObjects[parentIndex].id : null;
                         }
                     }
+
+                    if (!canParent)
+                        continue;
+
+                    string s = $"{obj.name} {index.ToString("0000")}";
+                    var objectToParent = __instance.folderButtonPrefab.Duplicate(transform, s);
+                    var objectToParentText = objectToParent.transform.GetChild(0).GetComponent<Text>();
+                    var objectToParentButton = objectToParent.GetComponent<Button>();
+
+                    objectToParentText.text = s;
+                    objectToParentButton.onClick.ClearAll();
+                    objectToParentButton.onClick.AddListener(delegate ()
+                    {
+                        string id = obj.id;
+                        var list = ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject);
+                        foreach (var timelineObject in list)
+                        {
+                            var bm = timelineObject.GetData<BeatmapObject>();
+                            TriggerHelper.SetParent(timelineObject, ObjectEditor.inst.GetTimelineObject((BeatmapObject)obj));
+                            Updater.UpdateProcessor(bm);
+                        }
+
+                        EditorManager.inst.HideDialog("Parent Selector");
+                        if (list.Count() == 1)
+                            StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+                        Debug.Log($"{__instance.className}Set Parent ID: {id}");
+                    });
+
+                    EditorThemeManager.ApplySelectable(objectToParentButton, ThemeGroup.List_Button_1);
+                    EditorThemeManager.ApplyLightText(objectToParentText);
                 }
             }
         }
 
         public void OpenPropertiesWindow(bool _toggle = false)
         {
-            if (EditorManager.inst)
+            if (!EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.gameObject.activeSelf)
             {
-                if (!EditorManager.inst.GetDialog("Editor Properties Popup").Dialog.gameObject.activeSelf)
-                {
-                    EditorManager.inst.ShowDialog("Editor Properties Popup");
-                    RenderPropertiesWindow();
-                }
-                else if (_toggle)
-                {
-                    EditorManager.inst.HideDialog("Editor Properties Popup");
-                }
+                EditorManager.inst.ShowDialog("Editor Properties Popup");
+                RenderPropertiesWindow();
             }
+            else if (_toggle)
+                EditorManager.inst.HideDialog("Editor Properties Popup");
         }
 
         public void ClosePropertiesWindow() => EditorManager.inst.HideDialog("Editor Properties Popup");
