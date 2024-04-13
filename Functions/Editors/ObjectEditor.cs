@@ -3001,14 +3001,35 @@ namespace EditorManagement.Functions.Editors
                     inspect.transform.SetSiblingIndex(index + 1);
                     inspect.name = "inspectbeatmapobject";
 
-                    inspect.transform.GetChild(0).GetComponent<Text>().text = "Inspect BeatmapObject";
+                    var inspectText = inspect.transform.GetChild(0).GetComponent<Text>();
+                    inspectText.text = "Inspect BeatmapObject";
 
                     var inspectGameObject = tfv.Find("applyprefab").gameObject.Duplicate(tfv);
                     inspectGameObject.SetActive(true);
                     inspectGameObject.transform.SetSiblingIndex(index + 2);
                     inspectGameObject.name = "inspect";
 
-                    inspectGameObject.transform.GetChild(0).GetComponent<Text>().text = "Inspect LevelObject";
+                    var inspectGameObjectText = inspectGameObject.transform.GetChild(0).GetComponent<Text>();
+                    inspectGameObjectText.text = "Inspect LevelObject";
+
+                    var inspectButton = inspect.GetComponent<Button>();
+                    var inspectGameObjectButton = inspectGameObject.GetComponent<Button>();
+
+                    Destroy(inspect.GetComponent<Animator>());
+                    inspectButton.transition = Selectable.Transition.ColorTint;
+                    EditorThemeManager.AddSelectable(inspectButton, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, inspectText.gameObject, new List<Component>
+                    {
+                        inspectText,
+                    }));
+
+                    Destroy(inspectGameObject.GetComponent<Animator>());
+                    inspectGameObjectButton.transition = Selectable.Transition.ColorTint;
+                    EditorThemeManager.AddSelectable(inspectGameObjectButton, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, inspectGameObjectText.gameObject, new List<Component>
+                    {
+                        inspectGameObjectText,
+                    }));
                 }
                 
                 if (tfv.Find("inspect"))

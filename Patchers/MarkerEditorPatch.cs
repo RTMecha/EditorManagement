@@ -54,7 +54,7 @@ namespace EditorManagement.Patchers
 
 		static IEnumerator Wait()
         {
-			while (!EditorManager.inst)
+			while (!EditorManager.inst || !EditorPrefabHolder.Instance.NumberInputField)
 				yield return null;
 
 			var dialog = EditorManager.inst.GetDialog("Marker Editor").Dialog;
@@ -88,13 +88,77 @@ namespace EditorManagement.Patchers
 			ttindex.fontSize = 20;
 			ttindex.horizontalOverflow = HorizontalWrapMode.Overflow;
 
-			// Makes label consistent with other labels. Originally said "Marker Time" where other labels do not mention "Marker".
-			Instance.left.GetChild(3).GetChild(0).GetComponent<Text>().text = "Time";
-			// Fixes "Name" label.
-			Instance.left.GetChild(5).GetChild(0).GetComponent<Text>().text = "Description";
+			EditorThemeManager.AddLightText(ttindex);
 
-			//EditorThemeManager.inst.AddElement(new EditorThemeManager.Element("MarkerEditor Background", "Background", dialog.gameObject, new List<Component> { dialog.GetComponent<Image>() }));
-		}
+			// Makes label consistent with other labels. Originally said "Marker Time" where other labels do not mention "Marker".
+			var timeLabel = Instance.left.GetChild(3).GetChild(0).GetComponent<Text>();
+			timeLabel.text = "Time";
+			// Fixes "Name" label.
+			var descriptionLabel = Instance.left.GetChild(5).GetChild(0).GetComponent<Text>();
+			descriptionLabel.text = "Description";
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component> { dialog.GetComponent<Image>() }));
+
+			EditorThemeManager.AddInputField(Instance.right.Find("InputField").GetComponent<InputField>(), ThemeGroup.Search_Field_2);
+
+			var scrollbar = Instance.right.transform.Find("Scrollbar").GetComponent<Scrollbar>();
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_2, scrollbar.gameObject, new List<Component>
+			{
+				scrollbar.GetComponent<Image>(),
+			}, true, 1, SpriteManager.RoundedSide.W));
+
+			var scrollbarHandle = scrollbar.handleRect.gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_2_Handle, scrollbarHandle, new List<Component>
+			{
+				scrollbar.image,
+				scrollbar
+			}, true, 1, SpriteManager.RoundedSide.W, true));
+
+			EditorThemeManager.AddLightText(Instance.left.GetChild(1).GetChild(0).GetComponent<Text>());
+			EditorThemeManager.AddLightText(timeLabel);
+			EditorThemeManager.AddLightText(descriptionLabel);
+
+			EditorThemeManager.AddInputField(Instance.left.Find("name").GetComponent<InputField>());
+			EditorThemeManager.AddInputField(Instance.left.Find("desc").GetComponent<InputField>());
+
+            var time = EditorPrefabHolder.Instance.NumberInputField.Duplicate(Instance.left, "time new", 4);
+            Destroy(Instance.left.Find("time").gameObject);
+
+            var timeStorage = time.GetComponent<InputFieldStorage>();
+            EditorThemeManager.AddInputField(timeStorage.inputField);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftGreaterButton.gameObject, new List<Component>
+            {
+                timeStorage.leftGreaterButton.image,
+                timeStorage.leftGreaterButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftButton.gameObject, new List<Component>
+            {
+                timeStorage.leftButton.image,
+                timeStorage.leftButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.rightButton.gameObject, new List<Component>
+            {
+                timeStorage.rightButton.image,
+                timeStorage.rightButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.middleButton.gameObject, new List<Component>
+            {
+                timeStorage.middleButton.image,
+                timeStorage.middleButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.rightGreaterButton.gameObject, new List<Component>
+            {
+                timeStorage.rightGreaterButton.image,
+                timeStorage.rightGreaterButton,
+            }, isSelectable: true));
+
+            time.name = "time";
+        }
 
 		[HarmonyPatch("Update")]
 		[HarmonyPostfix]
@@ -161,7 +225,7 @@ namespace EditorManagement.Patchers
 				gameObject.transform.localScale = Vector3.one;
 				gameObject.transform.Find("Image").gameObject.SetActive(marker.color == index);
 				var button = gameObject.GetComponent<Button>();
-				((Image)button.targetGraphic).color = color;
+				button.image.color = color;
 				button.onClick.ClearAll();
 				button.onClick.AddListener(delegate
 				{
@@ -169,6 +233,17 @@ namespace EditorManagement.Patchers
 					Instance.SetColor(index);
 					Instance.UpdateColorSelection();
 				});
+
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, gameObject, new List<Component>
+				{
+					button.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Background_1, gameObject.transform.GetChild(0).gameObject, new List<Component>
+				{
+					gameObject.transform.GetChild(0).GetComponent<Image>(),
+				}));
+
 				num++;
 			}
 
@@ -188,7 +263,7 @@ namespace EditorManagement.Patchers
 				Instance.SetDescription(val);
 			});
 
-			var time = Instance.left.Find("time/time").GetComponent<InputField>();
+			var time = Instance.left.Find("time/input").GetComponent<InputField>();
 			time.onValueChanged.ClearAll();
 			time.text = marker.time.ToString();
 			time.onValueChanged.AddListener(delegate (string val)
@@ -253,21 +328,19 @@ namespace EditorManagement.Patchers
 			var parent = Instance.right.Find("markers/list");
 			LSHelpers.DeleteChildren(parent);
 
-			var eventButton = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event");
-
 			//Delete Markers
 			{
-				var sortMarkers = eventButton.Duplicate(parent, "delete markers");
+				var delete = EditorPrefabHolder.Instance.Function1Button.Duplicate(parent, "delete markers");
+				var deleteStorage = delete.GetComponent<FunctionButtonStorage>();
 
-				sortMarkers.transform.GetChild(0).GetComponent<Text>().text = "Delete Markers";
-				sortMarkers.GetComponent<Image>().color = new Color(1f, 0.131f, 0.231f, 1f);
+				var deleteText = deleteStorage.text;
+				deleteText.text = "Delete Markers";
 
-				var sortButton = sortMarkers.GetComponent<Button>();
-				sortButton.onClick.ClearAll();
-				sortButton.onClick.AddListener(delegate ()
+				var deleteButton = deleteStorage.button;
+				deleteButton.onClick.ClearAll();
+				deleteButton.onClick.AddListener(delegate ()
 				{
-					EditorManager.inst.ShowDialog("Warning Popup");
-					RTEditor.inst.RefreshWarningPopup("Are you sure you want to delete ALL markers? (This is irreversible!)", delegate ()
+					RTEditor.inst.ShowWarningPopup("Are you sure you want to delete ALL markers? (This is irreversible!)", delegate ()
 					{
 						EditorManager.inst.DisplayNotification($"Deleted {Markers.Count} markers!", 2f, EditorManager.NotificationType.Success);
 						Markers.Clear();
@@ -282,38 +355,72 @@ namespace EditorManagement.Patchers
 					});
 				});
 
-				if (sortMarkers.GetComponent<HoverUI>())
+				if (delete.GetComponent<HoverUI>())
 				{
-					Destroy(sortMarkers.GetComponent<HoverUI>());
+					Destroy(delete.GetComponent<HoverUI>());
 				}
-				if (sortMarkers.GetComponent<HoverTooltip>())
+				if (delete.GetComponent<HoverTooltip>())
 				{
-					var tt = sortMarkers.GetComponent<HoverTooltip>();
+					var tt = delete.GetComponent<HoverTooltip>();
 					tt.tooltipLangauges.Clear();
 					tt.tooltipLangauges.Add(TooltipHelper.NewTooltip("Delete all markers.", "Clicking this will delete every marker in the level.", new List<string>()));
 				}
+
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete, new List<Component>
+				{
+					deleteButton.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, deleteText.gameObject, new List<Component>
+				{
+					deleteText,
+				}));
 			}
 
 			int num = 0;
 			foreach (var marker in Markers)
 			{
-				if (marker.name.ToLower().Contains(Instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(Instance.sortedName.ToLower()) || string.IsNullOrEmpty(Instance.sortedName))
+				if (string.IsNullOrEmpty(Instance.sortedName) || marker.name.ToLower().Contains(Instance.sortedName.ToLower()) || marker.desc.ToLower().Contains(Instance.sortedName.ToLower()))
 				{
-					var gameObject = Instance.markerButtonPrefab.Duplicate(parent, marker.name + "_marker");
+					var index = num;
+					var gameObject = Instance.markerButtonPrefab.Duplicate(parent, marker.name);
+
 					var name = gameObject.transform.Find("name").GetComponent<Text>();
 					var pos = gameObject.transform.Find("pos").GetComponent<Text>();
 					var image = gameObject.transform.Find("color").GetComponent<Image>();
+
 					name.text = marker.name;
 					pos.text = string.Format("{0:0}:{1:00}.{2:000}", Mathf.Floor(marker.time / 60f), Mathf.Floor(marker.time % 60f), Mathf.Floor(marker.time * 1000f % 1000f));
-					image.color = Instance.markerColors[Mathf.Clamp(marker.color, 0, Instance.markerColors.Count - 1)];
-					int markerIndexTmp = num;
-					gameObject.GetComponent<Button>().onClick.AddListener(delegate ()
-					{
-						Instance.SetCurrentMarker(markerIndexTmp, true);
-					});
 
 					var markerColor = Instance.markerColors[Mathf.Clamp(marker.color, 0, Instance.markerColors.Count - 1)];
+					image.color = markerColor;
+					var button = gameObject.GetComponent<Button>();
+					button.onClick.AddListener(delegate ()
+					{
+						Instance.SetCurrentMarker(index, true);
+					});
+					
 					TooltipHelper.AddTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, gameObject, new List<Component>
+					{
+						button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, image.gameObject, new List<Component>
+					{
+						image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, name.gameObject, new List<Component>
+					{
+						name,
+					}));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, pos.gameObject, new List<Component>
+					{
+						pos,
+					}));
 				}
 				num++;
 			}

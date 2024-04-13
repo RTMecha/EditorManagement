@@ -1,6 +1,7 @@
 ﻿using EditorManagement.Functions;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Helpers;
 using HarmonyLib;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
@@ -119,14 +120,34 @@ namespace EditorManagement.Patchers
                 Destroy(component);
             }
 
-            PrefabEditorManager.inst.prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
-            PrefabEditorManager.inst.prefabSelectorRight = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/right");
-            
+            var dialog = EditorManager.inst.GetDialog("Prefab Selector").Dialog;
+            PrefabEditorManager.inst.prefabSelectorLeft = dialog.Find("data/left");
+            PrefabEditorManager.inst.prefabSelectorRight = dialog.Find("data/right");
+
+            EditorHelper.LogAvailableInstances<PrefabEditor>();
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
+            {
+                dialog.GetComponent<Image>(),
+            }));
+
             var eventDialogTMP = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right");
 
-            var singleInput = eventDialogTMP.Find("move/position/x").gameObject;
-            var vector2Input = eventDialogTMP.Find("move/position").gameObject;
-            var labelTemp = eventDialogTMP.Find("move").transform.GetChild(8).gameObject;
+            var singleInput = eventDialogTMP.Find("move/position/x").gameObject.Duplicate(Instance.transform);
+            var vector2Input = eventDialogTMP.Find("move/position").gameObject.Duplicate(Instance.transform);
+            var labelTemp = eventDialogTMP.Find("move").transform.GetChild(8).gameObject.Duplicate(Instance.transform);
+
+            // Single
+            {
+                var buttonLeft = singleInput.transform.Find("<").GetComponent<Button>();
+                var buttonRight = singleInput.transform.Find(">").GetComponent<Button>();
+
+                Destroy(buttonLeft.GetComponent<Animator>());
+                buttonLeft.transition = Selectable.Transition.ColorTint;
+
+                Destroy(buttonRight.GetComponent<Animator>());
+                buttonRight.transition = Selectable.Transition.ColorTint;
+            }
 
             DestroyImmediate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(4).gameObject);
             DestroyImmediate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(4).gameObject);
@@ -134,15 +155,23 @@ namespace EditorManagement.Patchers
             Action<Transform, string, string> labelGenerator = delegate (Transform parent, string name, string x)
             {
                 var label = labelTemp.Duplicate(parent, $"{name.ToLower()} label");
-                label.transform.GetChild(0).GetComponent<Text>().text = x;
+                var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                labelText.text = x;
                 Destroy(label.transform.GetChild(1).gameObject);
+
+                EditorThemeManager.AddLightText(labelText);
             };
 
             Action<Transform, string, string, string> labelGenerator2 = delegate (Transform parent, string name, string x, string y)
             {
                 var label = labelTemp.Duplicate(parent, $"{name.ToLower()} label");
-                label.transform.GetChild(0).GetComponent<Text>().text = x;
-                label.transform.GetChild(1).GetComponent<Text>().text = y;
+                var xLabel = label.transform.GetChild(0).GetComponent<Text>();
+                var yLabel = label.transform.GetChild(1).GetComponent<Text>();
+                xLabel.text = x;
+                yLabel.text = y;
+
+                EditorThemeManager.AddLightText(xLabel);
+                EditorThemeManager.AddLightText(yLabel);
             };
 
             // AutoKill
@@ -150,6 +179,7 @@ namespace EditorManagement.Patchers
 
             var autoKillType = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
                 .Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "tod-dropdown", 14);
+            var autoKillTypeDD = autoKillType.GetComponent<Dropdown>();
             autoKillType.GetComponent<Dropdown>().options = new List<Dropdown.OptionData>
             {
                 new Dropdown.OptionData("Regular"),
@@ -163,22 +193,78 @@ namespace EditorManagement.Patchers
                 false,
             };
 
-            singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "akoffset");
+            EditorThemeManager.AddDropdown(autoKillTypeDD);
+
+            var ako = singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "akoffset");
+            EditorThemeManager.AddInputField(ako.GetComponent<InputField>());
+            EditorThemeManager.AddSelectable(ako.transform.Find("<").GetComponent<Button>(), ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(ako.transform.Find(">").GetComponent<Button>(), ThemeGroup.Function_2, false);
 
             var setToCurrent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/|").Duplicate(PrefabEditorManager.inst.prefabSelectorLeft.Find("akoffset"), "|");
+
+            var setToCurrentButton = setToCurrent.GetComponent<Button>();
+            Destroy(setToCurrent.GetComponent<Animator>());
+            setToCurrentButton.transition = Selectable.Transition.ColorTint;
+
+            EditorThemeManager.AddSelectable(setToCurrentButton, ThemeGroup.Function_2, false);
 
             // Time
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "time", "Time");
 
-            singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "time");
+            var time = EditorPrefabHolder.Instance.NumberInputField.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "time");
+            var timeStorage = time.GetComponent<InputFieldStorage>();
+            EditorThemeManager.AddInputField(timeStorage.inputField);
 
-            var timeParent = PrefabEditorManager.inst.prefabSelectorLeft.Find("time");
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftGreaterButton.gameObject, new List<Component>
+            {
+                timeStorage.leftGreaterButton.image,
+                timeStorage.leftGreaterButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftButton.gameObject, new List<Component>
+            {
+                timeStorage.leftButton.image,
+                timeStorage.leftButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.rightButton.gameObject, new List<Component>
+            {
+                timeStorage.rightButton.image,
+                timeStorage.rightButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.middleButton.gameObject, new List<Component>
+            {
+                timeStorage.middleButton.image,
+                timeStorage.middleButton,
+            }, isSelectable: true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.rightGreaterButton.gameObject, new List<Component>
+            {
+                timeStorage.rightGreaterButton.image,
+                timeStorage.rightGreaterButton,
+            }, isSelectable: true));
+
+            var timeParent = time.transform;
 
             var locker = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle").Duplicate(timeParent, "lock", 0);
 
             locker.transform.Find("Background/Checkmark").GetComponent<Image>().sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
 
+            EditorThemeManager.AddToggle(locker.GetComponent<Toggle>());
+
             var collapser = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/collapse").Duplicate(timeParent, "collapse", 1);
+
+            EditorThemeManager.AddToggle(collapser.GetComponent<Toggle>(), ThemeGroup.Background_1);
+
+            for (int i = 0; i < collapser.transform.Find("dots").childCount; i++)
+            {
+                var dot = collapser.transform.Find("dots").GetChild(i).GetComponent<Image>();
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, dot.gameObject, new List<Component>
+                {
+                    dot,
+                }));
+            }
 
             // Position
             labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "pos", "Position X Offset", "Position Y Offset");
@@ -188,6 +274,7 @@ namespace EditorManagement.Patchers
             positionX.Init(position.transform.Find("x").GetComponent<InputField>());
             var positionY = position.transform.Find("y").gameObject.AddComponent<InputFieldSwapper>();
             positionY.Init(position.transform.Find("y").GetComponent<InputField>());
+            EditorThemeManager.AddInputFields(position, true, "");
 
             // Scale
             labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "sca", "Scale X Offset", "Scale Y Offset");
@@ -197,6 +284,7 @@ namespace EditorManagement.Patchers
             scaleX.Init(scale.transform.Find("x").GetComponent<InputField>());
             var scaleY = scale.transform.Find("y").gameObject.AddComponent<InputFieldSwapper>();
             scaleY.Init(scale.transform.Find("y").GetComponent<InputField>());
+            EditorThemeManager.AddInputFields(scale, true, "");
 
             // Rotation
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "rot", "Rotation Offset");
@@ -205,19 +293,28 @@ namespace EditorManagement.Patchers
             Destroy(rot.transform.GetChild(1).gameObject);
             var rotX = rot.transform.Find("x").gameObject.AddComponent<InputFieldSwapper>();
             rotX.Init(rot.transform.Find("x").GetComponent<InputField>());
+            EditorThemeManager.AddInputFields(rot, true, "");
 
             // Repeat
             labelGenerator2(PrefabEditorManager.inst.prefabSelectorLeft, "repeat", "Repeat Count", "Repeat Offset Time");
 
-            vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat");
+            var repeat = vector2Input.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "repeat");
+            EditorThemeManager.AddInputFields(repeat, true, "");
 
             // Speed
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "speed", "Speed");
 
-            singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "speed");
+            var speed = singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "speed");
+            EditorThemeManager.AddInputField(speed.GetComponent<InputField>());
+            EditorThemeManager.AddSelectable(speed.transform.Find("<").GetComponent<Button>(), ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(speed.transform.Find(">").GetComponent<Button>(), ThemeGroup.Function_2, false);
 
             // Layers
-            singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft.Find("editor"), "layers", 0);
+            var layersIF = singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft.Find("editor"), "layers", 0).GetComponent<InputField>();
+            layersIF.gameObject.AddComponent<ContrastColors>().Init(layersIF.textComponent, layersIF.image);
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, layersIF.gameObject, new List<Component> { layersIF }, true, 1, RTFunctions.Functions.Managers.SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddSelectable(layersIF.transform.Find("<").GetComponent<Button>(), ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(layersIF.transform.Find(">").GetComponent<Button>(), ThemeGroup.Function_2, false);
 
             // Name
             labelGenerator(PrefabEditorManager.inst.prefabSelectorRight, "name", "Name");
@@ -231,6 +328,7 @@ namespace EditorManagement.Patchers
                 inputField.contentType = InputField.ContentType.Standard;
                 inputField.characterLimit = 0;
                 PrefabEditorManager.inst.nameIF = inputField;
+                EditorThemeManager.AddInputField(inputField);
             });
 
             // Type
@@ -238,28 +336,53 @@ namespace EditorManagement.Patchers
 
             var type = singleInput.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "type");
 
-            PrefabEditorManager.inst.typeImage = type.transform.GetChild(0).GetComponent<Image>();
             type.GetComponentAndPerformAction(delegate (InputField inputField)
             {
+                PrefabEditorManager.inst.typeImage = inputField.image;
                 inputField.characterValidation = InputField.CharacterValidation.None;
                 inputField.contentType = InputField.ContentType.Standard;
                 PrefabEditorManager.inst.typeIF = inputField;
+                inputField.gameObject.AddComponent<ContrastColors>().Init(inputField.textComponent, inputField.image);
+
+                EditorThemeManager.AddSelectable(type.transform.Find("<").GetComponent<Button>(), ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(type.transform.Find(">").GetComponent<Button>(), ThemeGroup.Function_2, false);
             });
 
+            var expandPrefabLabel = PrefabEditorManager.inst.prefabSelectorLeft.GetChild(0).gameObject;
+            var expandPrefabLabelText = expandPrefabLabel.transform.GetChild(0).GetComponent<Text>();
+            var expandPrefab = PrefabEditorManager.inst.prefabSelectorLeft.GetChild(1).gameObject;
+            var expandPrefabButton = expandPrefab.GetComponent<Button>();
+            var expandPrefabText = expandPrefab.transform.GetChild(0).GetComponent<Text>();
+            EditorThemeManager.AddLightText(expandPrefabLabelText);
+            Destroy(expandPrefab.GetComponent<Animator>());
+            expandPrefabButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddSelectable(expandPrefabButton, ThemeGroup.Function_2);
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, expandPrefabText.gameObject, new List<Component>
+            {
+                expandPrefabText
+            }));
+
             // Save Prefab
-            var label = Instantiate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(0).gameObject);
-            label.transform.SetParent(PrefabEditorManager.inst.prefabSelectorRight);
+            var label = expandPrefabLabel.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "save prefab label");
             label.transform.localScale = Vector3.one;
-            label.name = "save prefab label";
             var applyToAllText = label.transform.GetChild(0).GetComponent<Text>();
             applyToAllText.fontSize = 19;
             applyToAllText.text = "Apply to an External Prefab";
 
-            var savePrefab = Instantiate(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(1).gameObject);
-            savePrefab.transform.SetParent(PrefabEditorManager.inst.prefabSelectorRight);
+            var savePrefab = expandPrefab.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "save prefab");
             savePrefab.transform.localScale = Vector3.one;
-            savePrefab.name = "save prefab";
-            savePrefab.transform.GetChild(0).GetComponent<Text>().text = "Select Prefab";
+            var savePrefabText = savePrefab.transform.GetChild(0).GetComponent<Text>();
+            savePrefabText.text = "Select Prefab";
+
+            EditorThemeManager.AddLightText(applyToAllText);
+            var savePrefabButton = savePrefab.GetComponent<Button>();
+            Destroy(savePrefab.GetComponent<Animator>());
+            savePrefabButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddSelectable(savePrefabButton, ThemeGroup.Function_2);
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, savePrefabText.gameObject, new List<Component>
+            {
+                savePrefabText
+            }));
 
             Action<string, string, Action<Text, string>> countGenerator = delegate (string name, string count, Action<Text, string> text)
             {
@@ -275,6 +398,8 @@ namespace EditorManagement.Patchers
             {
                 PrefabEditorManager.inst.objectCount = text;
                 PrefabEditorManager.inst.objectCount.text = count;
+
+                EditorThemeManager.AddLightText(text);
             });
 
             // Prefab Object Count
@@ -282,6 +407,8 @@ namespace EditorManagement.Patchers
             {
                 PrefabEditorManager.inst.prefabObjectCount = text;
                 PrefabEditorManager.inst.prefabObjectCount.text = count;
+
+                EditorThemeManager.AddLightText(text);
             });
 
             // Prefab Object Timeline Count
@@ -289,7 +416,20 @@ namespace EditorManagement.Patchers
             {
                 PrefabEditorManager.inst.prefabObjectTimelineCount = text;
                 PrefabEditorManager.inst.prefabObjectTimelineCount.text = count;
+
+                EditorThemeManager.AddLightText(text);
             });
+
+            DestroyImmediate(PrefabEditorManager.inst.prefabSelectorRight.Find("time").gameObject);
+            var offsetTime = EditorPrefabHolder.Instance.NumberInputField.Duplicate(PrefabEditorManager.inst.prefabSelectorRight, "time", 1);
+            offsetTime.transform.GetChild(0).name = "time";
+            var offsetTimeStorage = offsetTime.GetComponent<InputFieldStorage>();
+            Destroy(offsetTimeStorage.middleButton.gameObject);
+            EditorThemeManager.AddInputField(offsetTimeStorage.inputField);
+            EditorThemeManager.AddSelectable(offsetTimeStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(offsetTimeStorage.leftButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(offsetTimeStorage.rightButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(offsetTimeStorage.rightGreaterButton, ThemeGroup.Function_2, false);
 
             // Object Editor list
 

@@ -322,7 +322,7 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
                 TriggerHelper.IncreaseDecreaseButtons(inputField, t: right.transform.Find("time"));
-                TriggerHelper.AddEventTriggerParams(right.Find("time").gameObject, TriggerHelper.ScrollDelta(inputField));
+                TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
             });
 
             var prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
@@ -382,9 +382,10 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
-            prefabSelectorLeft.Find("time").GetComponentAndPerformAction(delegate (InputField inputField)
+            prefabSelectorLeft.Find("time/input").GetComponentAndPerformAction(delegate (InputField inputField)
             {
-                var locked = inputField.transform.Find("lock").GetComponent<Toggle>();
+                var parent = inputField.transform.parent;
+                var locked = parent.Find("lock").GetComponent<Toggle>();
                 locked.onValueChanged.ClearAll();
                 locked.isOn = currentPrefab.editorData.locked;
                 locked.onValueChanged.AddListener(delegate (bool _val)
@@ -393,7 +394,7 @@ namespace EditorManagement.Functions.Editors
                     ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
                 });
 
-                var collapse = inputField.transform.Find("collapse").GetComponent<Toggle>();
+                var collapse = parent.Find("collapse").GetComponent<Toggle>();
                 collapse.onValueChanged.ClearAll();
                 collapse.isOn = currentPrefab.editorData.collapse;
                 collapse.onValueChanged.AddListener(delegate (bool _val)
@@ -404,22 +405,34 @@ namespace EditorManagement.Functions.Editors
 
                 inputField.NewValueChangedListener(currentPrefab.StartTime.ToString(), delegate (string _val)
                 {
-                    if (!currentPrefab.editorData.locked)
+                    if (currentPrefab.editorData.locked)
+                        return;
+
+                    if (float.TryParse(_val, out float n))
                     {
-                        if (float.TryParse(_val, out float n))
-                        {
-                            n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
-                            currentPrefab.StartTime = n;
-                            Updater.UpdatePrefab(currentPrefab, "starttime");
-                            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
-                        }
-                        else
-                            EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
+                        n = Mathf.Clamp(n, 0f, AudioManager.inst.CurrentAudioSource.clip.length);
+                        currentPrefab.StartTime = n;
+                        Updater.UpdatePrefab(currentPrefab, "starttime");
+                        ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
                     }
+                    else
+                        EditorManager.inst.DisplayNotification("Text is not correct format!", 1f, EditorManager.NotificationType.Error);
                 });
 
-                TriggerHelper.IncreaseDecreaseButtons(inputField);
+                TriggerHelper.IncreaseDecreaseButtons(inputField, t: parent);
                 TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
+
+                parent.Find("|").GetComponentAndPerformAction(delegate (Button button)
+                {
+                    button.onClick.ClearAll();
+                    button.onClick.AddListener(delegate ()
+                    {
+                        if (currentPrefab.editorData.locked)
+                            return;
+
+                        inputField.text = AudioManager.inst.CurrentAudioSource.time.ToString();
+                    });
+                });
             });
 
             //Layer
@@ -428,7 +441,7 @@ namespace EditorManagement.Functions.Editors
 
                 prefabSelectorLeft.Find("editor/layers").GetComponentAndPerformAction(delegate (InputField inputField)
                 {
-                    inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(currentPrefab.editorData.layer);
+                    inputField.image.color = RTEditor.GetLayerColor(currentPrefab.editorData.layer);
                     inputField.NewValueChangedListener((currentPrefab.editorData.layer + 1).ToString(), delegate (string _val)
                     {
                         if (int.TryParse(_val, out int n))
@@ -441,7 +454,7 @@ namespace EditorManagement.Functions.Editors
                             }
 
                             currentPrefab.editorData.layer = RTEditor.GetLayer(a);
-                            inputField.transform.GetChild(0).GetComponent<Image>().color = RTEditor.GetLayerColor(RTEditor.GetLayer(a));
+                            inputField.image.color = RTEditor.GetLayerColor(RTEditor.GetLayer(a));
                             ObjectEditor.inst.RenderTimelineObject(new TimelineObject(currentPrefab));
                         }
                         else

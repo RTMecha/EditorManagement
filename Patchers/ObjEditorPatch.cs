@@ -134,6 +134,8 @@ namespace EditorManagement.Patchers
 			}
 
 			var objectView = ObjEditor.inst.ObjectView.transform;
+			var dialog = ObjEditor.inst.ObjectView.transform.parent.parent.parent.parent.parent;
+			var right = dialog.Find("data/right");
 
 			// Add spacer
 			var spacer = new GameObject("spacer");
@@ -162,14 +164,44 @@ namespace EditorManagement.Patchers
 
 			objectView.Find("name/name").GetComponent<InputField>().characterLimit = 0;
 
-			var labelToCopy = objectView.ChildList().First(x => x.name == "label").gameObject;
+			// Labels
+			for (int j = 0; j < objectView.childCount; j++)
+			{
+				var label = objectView.GetChild(j);
+				if (label.name == "label" || label.name == "collapselabel")
+				{
+					for (int k = 0; k < label.childCount; k++)
+					{
+						var labelText = label.GetChild(k).GetComponent<Text>();
+						EditorThemeManager.AddLightText(labelText);
+					}
+                }
+            }
+
+            for (int i = 0; i < __instance.KeyframeDialogs.Count; i++)
+            {
+                var kfdialog = __instance.KeyframeDialogs[i].transform;
+
+				for (int j = 0; j < kfdialog.childCount; j++)
+				{
+					var label = kfdialog.GetChild(j);
+					if (label.name == "label")
+					{
+						for (int k = 0; k < label.childCount; k++)
+						{
+							var labelText = label.GetChild(k).GetComponent<Text>();
+							EditorThemeManager.AddLightText(labelText);
+						}
+					}
+				}
+			}
+
+            var labelToCopy = objectView.ChildList().First(x => x.name == "label").gameObject;
 
 			// Depth
 			{
-				var depth = Instantiate(singleInput);
-				depth.transform.SetParent(spacer.transform);
+				var depth = singleInput.Duplicate(spacer.transform, "depth");
 				depth.transform.localScale = Vector3.one;
-				depth.name = "depth";
 				depth.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(depth.GetComponent<EventInfo>());
@@ -184,17 +216,38 @@ namespace EditorManagement.Patchers
 
 				sliderObject.transform.AsRT().sizeDelta = new Vector2(352f, 32f);
 				objectView.Find("depth").AsRT().sizeDelta = new Vector2(261f, 32f);
+
+				EditorThemeManager.AddInputField(depthif);
+				var leftButton = depth.transform.Find(">").GetComponent<Button>();
+				var rightButton = depth.transform.Find("<").GetComponent<Button>();
+				Destroy(leftButton.GetComponent<Animator>());
+				Destroy(rightButton.GetComponent<Animator>());
+				leftButton.transition = Selectable.Transition.ColorTint;
+				rightButton.transition = Selectable.Transition.ColorTint;
+
+				EditorThemeManager.AddSelectable(leftButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(rightButton, ThemeGroup.Function_2, false);
+
+				var depthSlider = sliderObject.GetComponent<Slider>();
+				var depthSliderImage = sliderObject.transform.Find("Image").GetComponent<Image>();
+				depthSlider.colors = UIManager.SetColorBlock(depthSlider.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), Color.white, Color.white, Color.white);
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, depthSliderImage.gameObject, new List<Component>
+				{
+					depthSliderImage,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, depthSlider.image.gameObject, new List<Component>
+				{
+					depthSlider.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
 			}
 
 			// Lock
 			{
 				var timeParent = objectView.Find("time");
 
-				var locker = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle"));
-				locker.transform.SetParent(timeParent.transform);
+				var locker = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle").Duplicate(timeParent.transform, "lock", 0);
 				locker.transform.localScale = Vector3.one;
-				locker.transform.SetAsFirstSibling();
-				locker.name = "lock";
 
 				var timeLayout = timeParent.GetComponent<HorizontalLayoutGroup>();
 				timeLayout.childControlWidth = false;
@@ -204,25 +257,63 @@ namespace EditorManagement.Patchers
 
 				var time = timeParent.Find("time");
 				time.AsRT().sizeDelta = new Vector2(151, 32f);
+				var lockToggle = locker.GetComponent<Toggle>();
 
-				locker.transform.Find("Background/Checkmark").GetComponent<Image>().sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
+				((Image)lockToggle.graphic).sprite = ObjEditor.inst.timelineObjectPrefabLock.transform.Find("lock (1)").GetComponent<Image>().sprite;
+
+				EditorThemeManager.AddToggle(lockToggle);
 
 				timeParent.Find("<<").AsRT().sizeDelta = new Vector2(32f, 32f);
 				timeParent.Find("<").AsRT().sizeDelta = new Vector2(16f, 32f);
 				timeParent.Find("|").AsRT().sizeDelta = new Vector2(16f, 32f);
 				timeParent.Find(">").AsRT().sizeDelta = new Vector2(16f, 32f);
 				timeParent.Find(">>").AsRT().sizeDelta = new Vector2(32f, 32f);
+
+				DestroyImmediate(timeParent.Find("<<").GetComponent<Animator>());
+				var leftGreaterButton = timeParent.Find("<<").GetComponent<Button>();
+				leftGreaterButton.transition = Selectable.Transition.ColorTint;
+				DestroyImmediate(timeParent.Find("<").GetComponent<Animator>());
+				var leftButton = timeParent.Find("<").GetComponent<Button>();
+				leftButton.transition = Selectable.Transition.ColorTint;
+				DestroyImmediate(timeParent.Find("|").GetComponent<Animator>());
+				var middleButton = timeParent.Find("|").GetComponent<Button>();
+				middleButton.transition = Selectable.Transition.ColorTint;
+				DestroyImmediate(timeParent.Find(">").GetComponent<Animator>());
+				var rightButton = timeParent.Find(">").GetComponent<Button>();
+				rightButton.transition = Selectable.Transition.ColorTint;
+				DestroyImmediate(timeParent.Find(">>").GetComponent<Animator>());
+				var rightGreaterButton = timeParent.Find(">>").GetComponent<Button>();
+				rightGreaterButton.transition = Selectable.Transition.ColorTint;
+
+				EditorThemeManager.AddSelectable(leftGreaterButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(leftButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(middleButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(rightButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(rightGreaterButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddInputField(timeParent.Find("time").GetComponent<InputField>());
 			}
 
 			// Colors
 			{
-				var colorParent = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color").transform;
+				var colorParent = __instance.KeyframeDialogs[3].transform.Find("color").transform;
 				colorParent.GetComponent<GridLayoutGroup>().spacing = new Vector2(9.32f, 9.32f);
-				for (int i = 10; i < 19; i++)
+
+				for (int i = 1; i < 19; i++)
 				{
-					GameObject col = Instantiate(colorParent.Find("9").gameObject);
-					col.name = i.ToString();
-					col.transform.SetParent(colorParent);
+					if (i >= 10)
+						colorParent.Find("9").gameObject.Duplicate(colorParent, i.ToString());
+
+					var toggle = colorParent.Find(i.ToString()).GetComponent<Toggle>();
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, toggle.gameObject, new List<Component>
+					{
+						toggle.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, toggle.graphic.gameObject, new List<Component>
+					{
+						toggle.graphic,
+					}));
 				}
 			}
 
@@ -233,10 +324,8 @@ namespace EditorManagement.Patchers
 				contentOriginTF.Find("origin-x").gameObject.SetActive(false);
 				contentOriginTF.Find("origin-y").gameObject.SetActive(false);
 
-				var xo = Instantiate(singleInput);
-				xo.transform.SetParent(contentOriginTF.transform);
+				var xo = singleInput.Duplicate(contentOriginTF.transform, "x");
 				xo.transform.localScale = Vector3.one;
-				xo.name = "x";
 				xo.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(xo.GetComponent<EventInfo>());
@@ -244,25 +333,46 @@ namespace EditorManagement.Patchers
 				var xoif = xo.GetComponent<InputField>();
 				xoif.onValueChanged.RemoveAllListeners();
 
-				var yo = Instantiate(singleInput);
-				yo.transform.SetParent(contentOriginTF.transform);
+				var yo = singleInput.Duplicate(contentOriginTF, "y");
 				yo.transform.localScale = Vector3.one;
-				yo.name = "y";
 				yo.transform.Find("input").AsRT().sizeDelta = new Vector2(110f, 32f);
 
 				Destroy(yo.GetComponent<EventInfo>());
 
 				var yoif = yo.GetComponent<InputField>();
 				yoif.onValueChanged.RemoveAllListeners();
+
+				EditorThemeManager.AddInputField(xoif);
+				var xLeftButton = xo.transform.Find(">").GetComponent<Button>();
+				var xRightButton = xo.transform.Find("<").GetComponent<Button>();
+				Destroy(xLeftButton.GetComponent<Animator>());
+				Destroy(xRightButton.GetComponent<Animator>());
+				xLeftButton.transition = Selectable.Transition.ColorTint;
+				xRightButton.transition = Selectable.Transition.ColorTint;
+
+				EditorThemeManager.AddSelectable(xLeftButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(xRightButton, ThemeGroup.Function_2, false);
+
+				EditorThemeManager.AddInputField(yoif);
+				var yLeftButton = yo.transform.Find(">").GetComponent<Button>();
+				var yRightButton = yo.transform.Find("<").GetComponent<Button>();
+				Destroy(yLeftButton.GetComponent<Animator>());
+				Destroy(yRightButton.GetComponent<Animator>());
+				yLeftButton.transition = Selectable.Transition.ColorTint;
+				yRightButton.transition = Selectable.Transition.ColorTint;
+
+				EditorThemeManager.AddSelectable(yLeftButton, ThemeGroup.Function_2, false);
+				EditorThemeManager.AddSelectable(yRightButton, ThemeGroup.Function_2, false);
 			}
 
 			// Opacity
 			{
-				var opacityLabel = Instantiate(__instance.KeyframeDialogs[3].transform.Find("label").gameObject);
-				opacityLabel.transform.SetParent(__instance.KeyframeDialogs[3].transform);
+				var opacityLabel = __instance.KeyframeDialogs[3].transform.Find("label").gameObject.Duplicate(__instance.KeyframeDialogs[3].transform, "opacity_label");
 				opacityLabel.transform.localScale = Vector3.one;
-				opacityLabel.transform.GetChild(0).GetComponent<Text>().text = "Opacity";
-				opacityLabel.name = "opacity_label";
+				var opacityLabelText = opacityLabel.transform.GetChild(0).GetComponent<Text>();
+				opacityLabelText.text = "Opacity";
+
+				EditorThemeManager.AddLightText(opacityLabelText);
 
 				var opacity = Instantiate(__instance.KeyframeDialogs[2].transform.Find("rotation").gameObject);
 				opacity.transform.SetParent(__instance.KeyframeDialogs[3].transform);
@@ -271,8 +381,11 @@ namespace EditorManagement.Patchers
 
 				var collisionToggle = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain/colored").Duplicate(opacity.transform, "collision");
 
-				collisionToggle.transform.Find("Text").GetComponent<Text>().text = "Collide";
+				var collisionToggleText = collisionToggle.transform.Find("Text").GetComponent<Text>();
+				collisionToggleText.text = "Collide";
 				opacity.transform.Find("x/input").AsRT().sizeDelta = new Vector2(136f, 32f);
+
+				EditorThemeManager.AddToggle(collisionToggle.GetComponent<Toggle>(), text: collisionToggleText);
 			}
 
 			// Hue / Sat / Val
@@ -411,6 +524,26 @@ namespace EditorManagement.Patchers
 
 				layers.transform.AsRT().sizeDelta = new Vector2(100f, 32f);
 				objectView.Find("editor/bin").AsRT().sizeDelta = new Vector2(237f, 32f);
+
+				layers.AddComponent<ContrastColors>().Init(layersIF.textComponent, layersIF.image);
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, layers, new List<Component>
+				{
+					layersIF.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				var binSlider = objectView.Find("editor/bin").GetComponent<Slider>();
+				var binSliderImage = binSlider.transform.Find("Image").GetComponent<Image>();
+				binSlider.colors = UIManager.SetColorBlock(binSlider.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), Color.white, Color.white, Color.white);
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, binSliderImage.gameObject, new List<Component>
+				{
+					binSliderImage,
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, binSlider.image.gameObject, new List<Component>
+				{
+					binSlider.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
 			}
 
 			// Clear Parent
@@ -572,13 +705,6 @@ namespace EditorManagement.Patchers
 				var randomColorLabel = position.Find("r_label").gameObject.Duplicate(color, "r_label");
 				var randomColor = randomPosition.gameObject.Duplicate(color, "random");
 
-				//int num = randomColor.transform.childCount;
-				//while (num > 4)
-				//{
-				//    Destroy(randomColor.transform.GetChild(1).gameObject);
-				//    num = randomColor.transform.childCount;
-				//}
-
 				Destroy(randomColor.transform.Find("normal").gameObject);
 				Destroy(randomColor.transform.Find("toggle").gameObject);
 				Destroy(randomColor.transform.Find("scale").gameObject);
@@ -595,10 +721,7 @@ namespace EditorManagement.Patchers
 					new Dropdown.OptionData("Y Only"),
 				};
 
-				//var scroll = color.gameObject.AddComponent<ScrollRect>();
-				//scroll.content = (RectTransform)color;
-				//scroll.viewport = (RectTransform)color;
-				//scroll.horizontal = false;
+				EditorThemeManager.AddDropdown(rAxisDD);
 			}
 
 			// Object Tags
@@ -677,6 +800,8 @@ namespace EditorManagement.Patchers
 					new Dropdown.OptionData("Foreground"),
 					new Dropdown.OptionData("Background"),
 				};
+
+				EditorThemeManager.AddDropdown(renderTypeDD);
 			}
 
 			DestroyImmediate(ObjEditor.inst.KeyframeDialogs[2].transform.GetChild(1).gameObject);
@@ -702,7 +827,7 @@ namespace EditorManagement.Patchers
 				var di = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/grain").transform;
 				var toggle = di.GetChild(13).gameObject.Duplicate(ObjEditor.inst.KeyframeDialogs[3].transform, "shift", 16);
 				var text = toggle.transform.GetChild(1).GetComponent<Text>();
-				toggle.transform.GetChild(1).GetComponent<Text>().text = "Shift Dialog Down";
+				text.text = "Shift Dialog Down";
 				toggle.GetComponentAndPerformAction(delegate (Toggle shift)
 				{
 					shift.onValueChanged.ClearAll();
@@ -733,6 +858,12 @@ namespace EditorManagement.Patchers
 
 						AnimationManager.inst.Play(animation);
 					});
+
+					EditorThemeManager.AddSelectable(shift, ThemeGroup.Function_2);
+					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, text.gameObject, new List<Component>
+					{
+						text,
+					}));
 				});
 			}
 
@@ -879,12 +1010,30 @@ namespace EditorManagement.Patchers
 				var collapseLabel = __instance.ObjectView.transform.Find("collapselabel");
                 var applyPrefab = __instance.ObjectView.transform.Find("applyprefab");
 				var siblingIndex = applyPrefab.GetSiblingIndex();
+				var applyPrefabText = applyPrefab.transform.GetChild(0).GetComponent<Text>();
+
+				var applyPrefabButton = applyPrefab.GetComponent<Button>();
+				Destroy(applyPrefab.GetComponent<Animator>());
+				applyPrefabButton.transition = Selectable.Transition.ColorTint;
+				EditorThemeManager.AddSelectable(applyPrefabButton, ThemeGroup.Function_2);
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, applyPrefabText.gameObject, new List<Component>
+				{
+					applyPrefabText,
+				}));
 
 				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "assignlabel", siblingIndex + 1);
 				assignPrefabLabel.transform.GetChild(0).GetComponent<Text>().text = "Assign Object to a Prefab";
-				var assignPrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "assign", siblingIndex + 2);
-				assignPrefab.transform.GetChild(0).GetComponent<Text>().text = "Assign";
+                var assignPrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "assign", siblingIndex + 2);
+				var assignPrefabText = assignPrefab.transform.GetChild(0).GetComponent<Text>();
+				assignPrefabText.text = "Assign";
 				var assignPrefabButton = assignPrefab.GetComponent<Button>();
+				Destroy(assignPrefab.GetComponent<Animator>());
+				assignPrefabButton.transition = Selectable.Transition.ColorTint;
+				EditorThemeManager.AddSelectable(assignPrefabButton, ThemeGroup.Function_2);
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, assignPrefabText.gameObject, new List<Component>
+				{
+					assignPrefabText,
+				}));
 
 				assignPrefabButton.onClick.ClearAll();
 				assignPrefabButton.onClick.AddListener(delegate ()
@@ -894,8 +1043,16 @@ namespace EditorManagement.Patchers
 				});
 
 				var removePrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "remove", siblingIndex + 3);
-				removePrefab.transform.GetChild(0).GetComponent<Text>().text = "Remove";
+				var removePrefabText = removePrefab.transform.GetChild(0).GetComponent<Text>();
+				removePrefabText.text = "Remove";
 				var removePrefabButton = removePrefab.GetComponent<Button>();
+				Destroy(removePrefab.GetComponent<Animator>());
+				removePrefabButton.transition = Selectable.Transition.ColorTint;
+				EditorThemeManager.AddSelectable(removePrefabButton, ThemeGroup.Function_2);
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, removePrefabText.gameObject, new List<Component>
+				{
+					removePrefabText,
+				}));
 
 				removePrefabButton.onClick.ClearAll();
 				removePrefabButton.onClick.AddListener(delegate ()
@@ -908,7 +1065,59 @@ namespace EditorManagement.Patchers
 				});
 			}
 
-			try
+			// Editor Themes
+			{
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
+				{
+					dialog.GetComponent<Image>(),
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_3, right.gameObject, new List<Component>
+				{
+					right.GetComponent<Image>(),
+				}));
+
+				EditorThemeManager.AddInputField(objectView.Find("name/name").GetComponent<InputField>());
+				EditorThemeManager.AddDropdown(objectView.Find("name/object-type").GetComponent<Dropdown>());
+				EditorThemeManager.AddDropdown(todDropdown.GetComponent<Dropdown>());
+
+				var autokill = objectView.Find("autokill");
+				EditorThemeManager.AddInputField(autokill.Find("tod-value").GetComponent<InputField>());
+
+				var setAutokillButton = autokill.Find("|").GetComponent<Button>();
+				Destroy(setAutokillButton.GetComponent<Animator>());
+				setAutokillButton.transition = Selectable.Transition.ColorTint;
+				EditorThemeManager.AddSelectable(setAutokillButton, ThemeGroup.Function_2, false);
+
+				var collapse = autokill.Find("collapse").GetComponent<Toggle>();
+
+				EditorThemeManager.AddToggle(collapse, ThemeGroup.Background_1);
+
+				for (int i = 0; i < collapse.transform.Find("dots").childCount; i++)
+                {
+					var dot = collapse.transform.Find("dots").GetChild(i).GetComponent<Image>();
+					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, dot.gameObject, new List<Component>
+					{
+						dot,
+					}));
+                }
+
+				var parentButton = objectView.Find("parent/text").GetComponent<Button>();
+				EditorThemeManager.AddSelectable(parentButton, ThemeGroup.Function_2);
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, parentButton.transform.GetChild(0).gameObject, new List<Component>
+				{
+					parentButton.transform.GetChild(0).GetComponent<Text>(),
+				}));
+
+				var moreButton = objectView.Find("parent/more").GetComponent<Button>();
+				Destroy(moreButton.GetComponent<Animator>());
+				moreButton.transition = Selectable.Transition.ColorTint;
+                EditorThemeManager.AddSelectable(moreButton, ThemeGroup.Function_2, false);
+
+				EditorThemeManager.AddInputField(objectView.transform.Find("shapesettings/5").GetComponent<InputField>());
+            }
+
+            try
 			{
 				var move = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/right/move").transform;
 				var multiKeyframeEditor = multiKF.transform;
