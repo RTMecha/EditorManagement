@@ -79,5 +79,19 @@ namespace EditorManagement.Functions.Helpers
                 image.GetComponent<Image>(),
             }));
         }
+
+        public static void LogAvailableInstances<T>()
+        {
+            Debug.Log($"------ {typeof(T)} ------\n{typeof(PrefabEditor)} is null: {PrefabEditor.inst == null}\n" +
+                $"{typeof(EditorManager)} is null: {EditorManager.inst == null}\n" +
+                $"{typeof(MarkerEditor)} is null: {MarkerEditor.inst == null}\n" +
+                $"{typeof(ObjEditor)} is null: {ObjEditor.inst == null}\n" +
+                $"{typeof(EventEditor)} is null: {EventEditor.inst == null}\n" +
+                $"{typeof(BackgroundEditor)} is null: {BackgroundEditor.inst == null}\n" +
+                $"{typeof(CheckpointEditor)} is null: {CheckpointEditor.inst == null}\n");
+
+        }
+
+        public static void LogIsNull<T>(string message, object obj) => Debug.Log($"{message}{typeof(T)} is null: {obj == null}");
     }
 }
