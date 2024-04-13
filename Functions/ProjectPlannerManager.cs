@@ -432,6 +432,7 @@ namespace EditorManagement.Functions
                     albumArt.SetSiblingIndex(2);
 
                     prefab.GetComponent<Image>().sprite = null;
+                    prefab.AddComponent<Mask>().showMaskGraphic = true;
 
                     albumArt.name = "gradient";
                     title.name = "name";
