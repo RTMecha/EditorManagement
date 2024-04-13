@@ -255,7 +255,7 @@ namespace EditorManagement.Functions.Editors
 				}
 
 				var shapeToggle = obj.GetComponent<Toggle>();
-				EditorThemeManager.ApplyToggle(shapeToggle, "Background Editor Shape", checkmark: "Background");
+				EditorThemeManager.ApplyToggle(shapeToggle, ThemeGroup.Background_1);
 
 				if (i != 4 && i != 6)
 				{
