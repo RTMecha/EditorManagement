@@ -89,6 +89,14 @@
 		Close_Disabled,
 		Close_X,
 
+		Picker,
+		Picker_Normal,
+		Picker_Highlighted,
+		Picker_Selected,
+		Picker_Pressed,
+		Picker_Disabled,
+		Picker_Icon,
+
 		Light_Text,
 		Dark_Text,
 

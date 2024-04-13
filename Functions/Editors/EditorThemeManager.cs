@@ -128,6 +128,14 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Close_Disabled, LSColors.HexToColorAlpha("292929FF") },
                 { ThemeGroup.Close_X, LSColors.HexToColorAlpha("EFEBEFFF") },
 
+                { ThemeGroup.Picker, LSColors.HexToColorAlpha("FFFFFFFF") },
+                { ThemeGroup.Picker_Normal, LSColors.HexToColorAlpha("0E7BF7FF") },
+                { ThemeGroup.Picker_Highlighted, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Selected, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Pressed, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Disabled, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Icon, LSColors.HexToColorAlpha("EFEBEFFF") },
+
                 { ThemeGroup.Light_Text, LSColors.HexToColorAlpha("E5E1E5FF") },
                 { ThemeGroup.Dark_Text, LSColors.HexToColorAlpha("323232FF") },
 
@@ -369,12 +377,20 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Scrollbar_2_Handle_Disabled, LSColors.HexToColorAlpha("C8C8C880") },
 
                 { ThemeGroup.Close, LSColors.HexToColorAlpha("FFFFFFFF") },
-                { ThemeGroup.Close_Normal, LSColors.HexToColorAlpha("F44336FF") },
+                { ThemeGroup.Close_Normal, LSColors.HexToColorAlpha("C43C33FF") },
                 { ThemeGroup.Close_Highlighted, LSColors.HexToColorAlpha("292929FF") },
                 { ThemeGroup.Close_Selected, LSColors.HexToColorAlpha("292929FF") },
                 { ThemeGroup.Close_Pressed, LSColors.HexToColorAlpha("292929FF") },
                 { ThemeGroup.Close_Disabled, LSColors.HexToColorAlpha("292929FF") },
                 { ThemeGroup.Close_X, LSColors.HexToColorAlpha("EFEBEFFF") },
+
+                { ThemeGroup.Picker, LSColors.HexToColorAlpha("FFFFFFFF") },
+                { ThemeGroup.Picker_Normal, LSColors.HexToColorAlpha("3A73AFFF") },
+                { ThemeGroup.Picker_Highlighted, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Selected, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Pressed, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Disabled, LSColors.HexToColorAlpha("292929FF") },
+                { ThemeGroup.Picker_Icon, LSColors.HexToColorAlpha("EFEBEFFF") },
 
                 { ThemeGroup.Light_Text, LSColors.HexToColorAlpha("E5E1E5FF") },
                 { ThemeGroup.Dark_Text, LSColors.HexToColorAlpha("E5E1E5FF") },
@@ -892,7 +908,7 @@ namespace EditorManagement.Functions.Editors
                 }));
         }
         
-        public static void AddToggle(Toggle toggle, ThemeGroup checkGroup = ThemeGroup.Null, Text text = null)
+        public static void AddToggle(Toggle toggle, ThemeGroup checkGroup = ThemeGroup.Null, Graphic graphic = null)
         {
             toggle.image.fillCenter = true;
             AddElement(new Element(ThemeGroup.Toggle_1, toggle.gameObject, new List<Component>
@@ -906,11 +922,11 @@ namespace EditorManagement.Functions.Editors
                 toggle.graphic,
             }));
 
-            if (text)
+            if (graphic)
             {
-                AddElement(new Element(checkMarkGroup, text.gameObject, new List<Component>
+                AddElement(new Element(checkMarkGroup, graphic.gameObject, new List<Component>
                 {
-                    text,
+                    graphic,
                 }));
                 return;
             }
@@ -958,6 +974,42 @@ namespace EditorManagement.Functions.Editors
 
             if (toggle.transform.Find("text"))
                 ApplyElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("text").GetComponent<Text>(),
+                }));
+        }
+
+        public static void ApplyToggle(Toggle toggle, ThemeGroup checkGroup = ThemeGroup.Null, Text text = null)
+        {
+            toggle.image.fillCenter = true;
+            ApplyElement(new Element(ThemeGroup.Toggle_1, toggle.gameObject, new List<Component>
+            {
+                toggle.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var checkMarkGroup = checkGroup != ThemeGroup.Null ? checkGroup : ThemeGroup.Toggle_1_Check;
+            ApplyElement(new Element(checkMarkGroup, toggle.graphic.gameObject, new List<Component>
+            {
+                toggle.graphic,
+            }));
+
+            if (text)
+            {
+                ApplyElement(new Element(checkMarkGroup, text.gameObject, new List<Component>
+                {
+                    text,
+                }));
+                return;
+            }
+
+            if (toggle.transform.Find("Text"))
+                ApplyElement(new Element(checkMarkGroup, toggle.transform.Find("Text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("Text").GetComponent<Text>(),
+                }));
+
+            if (toggle.transform.Find("text"))
+                ApplyElement(new Element(checkMarkGroup, toggle.transform.Find("text").gameObject, new List<Component>
                 {
                     toggle.transform.Find("text").GetComponent<Text>(),
                 }));
@@ -1039,6 +1091,14 @@ namespace EditorManagement.Functions.Editors
                     case "Close Pressed": return ThemeGroup.Close_Pressed;
                     case "Close Disabled": return ThemeGroup.Close_Disabled;
                     case "Close X": return ThemeGroup.Close_X;
+
+                    case "Picker": return ThemeGroup.Picker;
+                    case "Picker Normal": return ThemeGroup.Picker_Normal;
+                    case "Picker Highlight": return ThemeGroup.Picker_Highlighted;
+                    case "Picker Selected": return ThemeGroup.Picker_Selected;
+                    case "Picker Pressed": return ThemeGroup.Picker_Pressed;
+                    case "Picker Disabled": return ThemeGroup.Picker_Disabled;
+                    case "Picker Icon": return ThemeGroup.Picker_Icon;
 
                     case "Light Text": return ThemeGroup.Light_Text;
                     case "Dark Text": return ThemeGroup.Dark_Text;
