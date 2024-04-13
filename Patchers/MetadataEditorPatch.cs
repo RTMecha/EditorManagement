@@ -818,12 +818,12 @@ namespace EditorManagement.Patchers
 				RenderTags();
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Tag Add", "Add", add, new List<Component>
+			EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag Add", "Add", add, new List<Component>
 			{
 				addButton.image,
 			}, true, 1, SpriteManager.RoundedSide.W));
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Tag Add Text", "Add Text", addText.gameObject, new List<Component>
+			EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag Add Text", "Add Text", addText.gameObject, new List<Component>
 			{
 				addText,
 			}));
