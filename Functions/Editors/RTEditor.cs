@@ -86,13 +86,6 @@ namespace EditorManagement.Functions.Editors
 
             popups = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform;
 
-            Debug.Log($"------ {typeof(RTEditor)} ------\n{typeof(PrefabEditor)} is null: {PrefabEditor.inst == null}\n" +
-                $"{typeof(MarkerEditor)} is null: {MarkerEditor.inst == null}\n" +
-                $"{typeof(ObjEditor)} is null: {ObjEditor.inst == null}\n" +
-                $"{typeof(EventEditor)} is null: {EventEditor.inst == null}\n" +
-                $"{typeof(BackgroundEditor)} is null: {BackgroundEditor.inst == null}\n" +
-                $"{typeof(CheckpointEditor)} is null: {CheckpointEditor.inst == null}\n");
-
             var prefabParent = new GameObject("prefabs");
             prefabParent.transform.SetParent(transform);
             var prefabHolder = EditorPrefabHolder.Instance;
@@ -104,10 +97,20 @@ namespace EditorManagement.Functions.Editors
 
                 var floatInputFieldStorage = prefabHolder.NumberInputField.AddComponent<InputFieldStorage>();
                 floatInputFieldStorage.leftGreaterButton = prefabHolder.NumberInputField.transform.Find("<<").GetComponent<Button>();
+                DestroyImmediate(floatInputFieldStorage.leftGreaterButton.GetComponent<Animator>());
+                floatInputFieldStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
                 floatInputFieldStorage.leftButton = prefabHolder.NumberInputField.transform.Find("<").GetComponent<Button>();
+                DestroyImmediate(floatInputFieldStorage.leftButton.GetComponent<Animator>());
+                floatInputFieldStorage.leftButton.transition = Selectable.Transition.ColorTint;
                 floatInputFieldStorage.middleButton = prefabHolder.NumberInputField.transform.Find("|").GetComponent<Button>();
+                DestroyImmediate(floatInputFieldStorage.middleButton.GetComponent<Animator>());
+                floatInputFieldStorage.middleButton.transition = Selectable.Transition.ColorTint;
                 floatInputFieldStorage.rightButton = prefabHolder.NumberInputField.transform.Find(">").GetComponent<Button>();
+                DestroyImmediate(floatInputFieldStorage.rightButton.GetComponent<Animator>());
+                floatInputFieldStorage.rightButton.transition = Selectable.Transition.ColorTint;
                 floatInputFieldStorage.rightGreaterButton = prefabHolder.NumberInputField.transform.Find(">>").GetComponent<Button>();
+                DestroyImmediate(floatInputFieldStorage.rightGreaterButton.GetComponent<Animator>());
+                floatInputFieldStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
                 floatInputFieldStorage.inputField = prefabHolder.NumberInputField.transform.Find("time").GetComponent<InputField>();
                 floatInputFieldStorage.inputField.characterValidation = InputField.CharacterValidation.None;
                 floatInputFieldStorage.inputField.characterLimit = 0;

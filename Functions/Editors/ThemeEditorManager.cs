@@ -166,15 +166,8 @@ namespace EditorManagement.Functions.Editors
 
 				CreateThemePopup();
 
-				Debug.Log($"------ {typeof(ThemeEditorManager)} ------\n{typeof(PrefabEditor)} is null: {PrefabEditor.inst == null}\n" +
-					$"{typeof(MarkerEditor)} is null: {MarkerEditor.inst == null}\n" +
-					$"{typeof(ObjEditor)} is null: {ObjEditor.inst == null}\n" +
-					$"{typeof(EventEditor)} is null: {EventEditor.inst == null}\n" +
-					$"{typeof(BackgroundEditor)} is null: {BackgroundEditor.inst == null}\n" +
-					$"{typeof(CheckpointEditor)} is null: {CheckpointEditor.inst == null}\n");
-
-                // Prefab
-                {
+				// Prefab
+				{
 					var gameObject = EventEditor.inst.ThemePanel.Duplicate(transform, "theme-panel");
 
 					var storage = gameObject.AddComponent<ThemePanelStorage>();
