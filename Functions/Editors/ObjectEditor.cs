@@ -1923,20 +1923,38 @@ namespace EditorManagement.Functions.Editors
                     var inputFieldSwapper = gameObject.AddComponent<InputFieldSwapper>();
                     inputFieldSwapper.Init(input, InputFieldSwapper.Type.String);
 
-                    var delete = gameObject.transform.Find("Delete").GetComponent<Button>();
-                    delete.onClick.ClearAll();
-                    delete.onClick.AddListener(delegate ()
+                    var deleteStorage = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
+                    deleteStorage.button.onClick.ClearAll();
+                    deleteStorage.button.onClick.AddListener(delegate ()
                     {
                         beatmapObject.tags.RemoveAt(index);
                         RenderName(beatmapObject);
                     });
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Input_Field, gameObject, new List<Component>
+                    {
+                        gameObject.GetComponent<Image>(),
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.ApplyInputField(input);
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, deleteStorage.gameObject, new List<Component>
+                    {
+                        deleteStorage.baseImage,
+                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, deleteStorage.image.gameObject, new List<Component>
+                    {
+                        deleteStorage.image,
+                    }));
 
                     num++;
                 }
 
                 var add = PrefabEditor.inst.CreatePrefab.Duplicate(tagsParent, "Add");
                 add.transform.localScale = Vector3.one;
-                add.transform.Find("Text").GetComponent<Text>().text = "Add Tag";
+                var addText = add.transform.Find("Text").GetComponent<Text>();
+                addText.text = "Add Tag";
                 var addButton = add.GetComponent<Button>();
                 addButton.onClick.ClearAll();
                 addButton.onClick.AddListener(delegate ()
@@ -1944,6 +1962,16 @@ namespace EditorManagement.Functions.Editors
                     beatmapObject.tags.Add("New Tag");
                     RenderName(beatmapObject);
                 });
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Add, add, new List<Component>
+                {
+                    addButton.image,
+                }, true, 1, SpriteManager.RoundedSide.W));
+
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Add_Text, addText.gameObject, new List<Component>
+                {
+                    addText,
+                }));
             }
         }
 
@@ -2361,7 +2389,6 @@ namespace EditorManagement.Functions.Editors
                 var tog = _p.GetChild(2).GetComponent<Toggle>();
                 tog.onValueChanged.RemoveAllListeners();
                 tog.isOn = beatmapObject.GetParentType(i);
-                tog.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
                 tog.onValueChanged.AddListener(delegate (bool _value)
                 {
                     beatmapObject.SetParentType(index, _value);
@@ -2406,7 +2433,6 @@ namespace EditorManagement.Functions.Editors
                 if (RTEditor.ShowModdedUI)
                 {
                     additive.isOn = beatmapObject.parentAdditive[i] == '1';
-                    additive.graphic.color = new Color(0.1294f, 0.1294f, 0.1294f, 1f);
                     additive.onValueChanged.AddListener(delegate (bool _val)
                     {
                         beatmapObject.SetParentAdditive(index, _val);
@@ -2565,7 +2591,13 @@ namespace EditorManagement.Functions.Editors
                 {
                     var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString(), i);
                     if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+                    {
                         image.sprite = ShapeManager.inst.Shapes2D[i][0].Icon;
+                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, image.gameObject, new List<Component>
+                        {
+                            image,
+                        }));
+                    }
 
                     if (!obj.GetComponent<HoverUI>())
                     {
@@ -2575,7 +2607,10 @@ namespace EditorManagement.Functions.Editors
                         hoverUI.size = 1.1f;
                     }
 
-                    shapeToggles.Add(obj.GetComponent<Toggle>());
+                    var shapeToggle = obj.GetComponent<Toggle>();
+                    EditorThemeManager.ApplyToggle(shapeToggle, ThemeGroup.Background_1);
+
+                    shapeToggles.Add(shapeToggle);
 
                     shapeOptionToggles.Add(new List<Toggle>());
 
@@ -2617,7 +2652,13 @@ namespace EditorManagement.Functions.Editors
                         {
                             var opt = shapeButtonPrefab.Duplicate(shapeSettings.GetChild(i), (j + 1).ToString(), j);
                             if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
+                            {
                                 image1.sprite = ShapeManager.inst.Shapes2D[i][j].Icon;
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, image1.gameObject, new List<Component>
+                                {
+                                    image1,
+                                }));
+                            }
 
                             if (!opt.GetComponent<HoverUI>())
                             {
@@ -2627,7 +2668,10 @@ namespace EditorManagement.Functions.Editors
                                 hoverUI.size = 1.1f;
                             }
 
-                            shapeOptionToggles[i].Add(opt.GetComponent<Toggle>());
+                            var shapeOptionToggle = opt.GetComponent<Toggle>();
+                            EditorThemeManager.ApplyToggle(shapeOptionToggle, ThemeGroup.Background_1);
+
+                            shapeOptionToggles[i].Add(shapeOptionToggle);
 
                             var layoutElement = opt.AddComponent<LayoutElement>();
                             layoutElement.layoutPriority = 1;
@@ -3630,7 +3674,7 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.IncreaseDecreaseButtonsInt(valueIndex);
                     TriggerHelper.AddEventTriggerParams(valueIndex.gameObject, TriggerHelper.ScrollDeltaInt(valueIndex));
 
-                    var value = dialog.Find("value base/value").GetComponent<InputField>();
+                    var value = dialog.Find("value base/value/input").GetComponent<InputField>();
                     value.onValueChanged.ClearAll();
                     value.onValueChanged.AddListener(delegate (string _val)
                     {
@@ -3638,7 +3682,7 @@ namespace EditorManagement.Functions.Editors
                             value.text = "0";
                     });
 
-                    var setValue = value.transform.GetChild(2).GetComponent<Button>();
+                    var setValue = value.transform.parent.GetChild(2).GetComponent<Button>();
                     setValue.onClick.ClearAll();
                     setValue.onClick.AddListener(delegate ()
                     {
@@ -3660,7 +3704,7 @@ namespace EditorManagement.Functions.Editors
                         }
                     });
 
-                    TriggerHelper.IncreaseDecreaseButtons(value);
+                    TriggerHelper.IncreaseDecreaseButtons(value, t: value.transform.parent);
                     TriggerHelper.AddEventTriggerParams(value.gameObject, TriggerHelper.ScrollDelta(value));
 
                 }
