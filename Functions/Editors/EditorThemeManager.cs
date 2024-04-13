@@ -600,7 +600,7 @@ namespace EditorManagement.Functions.Editors
 
         public static Dictionary<string, EditorTheme> EditorThemesDictionary => EditorThemes.ToDictionary(x => x.name, x => x);
 
-        public static void AddDropdown(Dropdown dropdown, string name)
+        public static void AddDropdown(Dropdown dropdown, string name = "")
         {
             AddElement(new Element(name, "Dropdown 1", dropdown.gameObject, new List<Component>
             {
@@ -722,7 +722,7 @@ namespace EditorManagement.Functions.Editors
                 inputField.image,
             }, true, rounded, roundedSide));
 
-            AddElement(new Element(EditorTheme.GetGroup($"{group} Text"), inputField.textComponent.gameObject, new List<Component>
+            AddElement(new Element(EditorTheme.GetGroup($"{EditorTheme.GetString(group)} Text"), inputField.textComponent.gameObject, new List<Component>
             {
                 inputField.textComponent,
             }));
@@ -857,7 +857,7 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public static void AddToggle(Toggle toggle, string name = "", Text text = null)
+        public static void AddToggle(Toggle toggle, string name, Text text = null)
         {
             toggle.image.fillCenter = true;
             AddElement(new Element(name, "Toggle 1", toggle.gameObject, new List<Component>
@@ -892,20 +892,40 @@ namespace EditorManagement.Functions.Editors
                 }));
         }
         
-        public static void AddLightText(Text text)
+        public static void AddToggle(Toggle toggle, ThemeGroup checkGroup = ThemeGroup.Null, Text text = null)
         {
-            AddElement(new Element(ThemeGroup.Light_Text, text.gameObject, new List<Component>
+            toggle.image.fillCenter = true;
+            AddElement(new Element(ThemeGroup.Toggle_1, toggle.gameObject, new List<Component>
             {
-                text,
-            }));
-        }
-        
-        public static void ApplyLightText(Text text)
-        {
-            ApplyElement(new Element(ThemeGroup.Light_Text, text.gameObject, new List<Component>
+                toggle.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var checkMarkGroup = checkGroup != ThemeGroup.Null ? checkGroup : ThemeGroup.Toggle_1_Check;
+            AddElement(new Element(checkMarkGroup, toggle.graphic.gameObject, new List<Component>
             {
-                text,
+                toggle.graphic,
             }));
+
+            if (text)
+            {
+                AddElement(new Element(checkMarkGroup, text.gameObject, new List<Component>
+                {
+                    text,
+                }));
+                return;
+            }
+
+            if (toggle.transform.Find("Text"))
+                AddElement(new Element(checkMarkGroup, toggle.transform.Find("Text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("Text").GetComponent<Text>(),
+                }));
+
+            if (toggle.transform.Find("text"))
+                AddElement(new Element(checkMarkGroup, toggle.transform.Find("text").gameObject, new List<Component>
+                {
+                    toggle.transform.Find("text").GetComponent<Text>(),
+                }));
         }
 
         public static void ApplyToggle(Toggle toggle, string name, Text text = null, string checkmark = "")
@@ -941,6 +961,22 @@ namespace EditorManagement.Functions.Editors
                 {
                     toggle.transform.Find("text").GetComponent<Text>(),
                 }));
+        }
+
+        public static void AddLightText(Text text)
+        {
+            AddElement(new Element(ThemeGroup.Light_Text, text.gameObject, new List<Component>
+            {
+                text,
+            }));
+        }
+        
+        public static void ApplyLightText(Text text)
+        {
+            ApplyElement(new Element(ThemeGroup.Light_Text, text.gameObject, new List<Component>
+            {
+                text,
+            }));
         }
 
         public static void AddSelectable(Selectable selectable, ThemeGroup group, bool canSetRounded = true, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
