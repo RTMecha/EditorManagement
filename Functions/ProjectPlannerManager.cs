@@ -124,6 +124,16 @@ namespace EditorManagement.Functions
             planner = plannerBase.GetChild(0);
             topBarBase = planner.GetChild(0);
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, planner.gameObject, new List<Component>
+            {
+                planner.GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, topBarBase.gameObject, new List<Component>
+            {
+                topBarBase.GetComponent<Image>(),
+            }));
+
             var assets = new GameObject("Planner Assets");
             assetsParent = assets.transform;
             assetsParent.transform.SetParent(transform);
@@ -156,11 +166,7 @@ namespace EditorManagement.Functions
                 Close();
             });
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", close, new List<Component>
-            {
-                close.GetComponent<Image>(),
-                close.GetComponent<Button>(),
-            }, true, 1, SpriteManager.RoundedSide.W, true));
+            EditorThemeManager.AddSelectable(closeButton, ThemeGroup.Close);
 
             var closeX = close.transform.GetChild(0).gameObject;
             EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", closeX, new List<Component>
@@ -185,6 +191,7 @@ namespace EditorManagement.Functions
 
             contentScroll.GetComponent<ScrollRect>().horizontal = false;
 
+            contentScroll.Find("Viewport").GetComponent<Mask>().showMaskGraphic = false;
             content = contentScroll.Find("Viewport/Content");
             contentLayout = content.GetComponent<GridLayoutGroup>();
 
@@ -202,8 +209,24 @@ namespace EditorManagement.Functions
             handleImage.color = new Color(0.878f, 0.878f, 0.878f, 1f);
             handleImage.sprite = null;
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, scrollBarVertical.gameObject, new List<Component>
+            {
+                scrollBarVertical.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+            var scrollbarHandle = scrollBarVertical.transform.Find("Sliding Area/Handle").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, handleImage.gameObject, new List<Component>
+            {
+                handleImage,
+                scrollBarVertical.GetComponent<Scrollbar>()
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
             contentBase.Find("Image").AsRT().anchoredPosition = new Vector2(690f, /*-94f*/ -104f);
             contentBase.Find("Image").AsRT().sizeDelta = new Vector2(1384f, 48f);
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, contentBase.Find("Image").gameObject, new List<Component>
+            {
+                contentBase.Find("Image").GetComponent<Image>(),
+            }));
 
             // List handlers
             {
@@ -223,18 +246,19 @@ namespace EditorManagement.Functions
                     RefreshList();
                 });
 
+                EditorThemeManager.AddInputField(searchField, ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
+
                 var tfv = ObjEditor.inst.ObjectView.transform;
 
-                var addNewItem = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
+                var addNewItem = EditorPrefabHolder.Instance.Function2Button.Duplicate(contentBase, "new", 1);
                 addNewItem.SetActive(true);
-                addNewItem.name = "new";
-                addNewItem.transform.SetSiblingIndex(1);
+                var addNewItemStorage = addNewItem.GetComponent<FunctionButtonStorage>();
                 addNewItem.transform.AsRT().anchoredPosition = new Vector2(120f, 970f);
                 addNewItem.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-                addNewItem.transform.GetChild(0).GetComponent<Text>().text = "Add New Item";
-                var addNewItemButton = addNewItem.GetComponent<Button>();
-                addNewItemButton.onClick.ClearAll();
-                addNewItemButton.onClick.AddListener(delegate ()
+                var addNewItemText = addNewItemStorage.text;
+                addNewItemText.text = "Add New Item";
+                addNewItemStorage.button.onClick.ClearAll();
+                addNewItemStorage.button.onClick.AddListener(delegate ()
                 {
                     Debug.Log($"{EditorPlugin.className}Create new {tabNames[CurrentTab]}");
                     var path = $"{RTFile.ApplicationDirectory}beatmaps/{PlannersPath}";
@@ -391,31 +415,32 @@ namespace EditorManagement.Functions
                     RefreshList();
                 });
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Project Planner Add New Item", "Function 2", addNewItem, new List<Component>
+                addNewItemStorage.button.transition = Selectable.Transition.ColorTint;
+                EditorThemeManager.AddSelectable(addNewItemStorage.button, ThemeGroup.Function_2);
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, addNewItemText.gameObject, new List<Component>
                 {
-                    addNewItem.GetComponent<Image>(),
-                    addNewItemButton
-                }, true, 1, SpriteManager.RoundedSide.W, true));
+                    addNewItemText,
+                }));
 
-                var reload = tfv.Find("applyprefab").gameObject.Duplicate(contentBase);
+                var reload = EditorPrefabHolder.Instance.Function2Button.Duplicate(contentBase, "reload", 2);
                 reload.SetActive(true);
-                reload.name = "reload";
-                reload.transform.SetSiblingIndex(2);
+                var reloadStorage = reload.GetComponent<FunctionButtonStorage>();
                 reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
                 reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-                reload.transform.GetChild(0).GetComponent<Text>().text = "Reload";
-                var reloadButton = reload.GetComponent<Button>();
-                reloadButton.onClick.ClearAll();
-                reloadButton.onClick.AddListener(delegate ()
+                var reloadText = reloadStorage.text;
+                reloadText.text = "Reload";
+                reloadStorage.button.onClick.ClearAll();
+                reloadStorage.button.onClick.AddListener(delegate ()
                 {
                     Load();
                 });
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Project Planner Reload", "Function 2", reload, new List<Component>
+                reloadStorage.button.transition = Selectable.Transition.ColorTint;
+                EditorThemeManager.AddSelectable(reloadStorage.button, ThemeGroup.Function_2);
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, reloadText.gameObject, new List<Component>
                 {
-                    reload.GetComponent<Image>(),
-                    reloadButton
-                }, true, 1, SpriteManager.RoundedSide.W, true));
+                    reloadText,
+                }));
             }
 
             gradientSprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "linear_gradient.png");
@@ -455,10 +480,8 @@ namespace EditorManagement.Functions
                     tmp.enableWordWrapping = true;
                     tmp.text = "This is your story.";
 
-                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
-                    delete.transform.AsRT().anchoredPosition = new Vector2(-18f, -18f);
-                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    delete.transform.AsRT().sizeDelta = new Vector2(26f, 26f);
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefab.transform, "delete");
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(96f, 180f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 26f));
 
                     prefabs.Add(prefab);
                 }
@@ -492,10 +515,8 @@ namespace EditorManagement.Functions
                     tmp.enableWordWrapping = false;
                     tmp.text = "Do this.";
 
-                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
-                    delete.transform.AsRT().anchoredPosition = new Vector2(-32f, -32f);
-                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    delete.transform.AsRT().sizeDelta = new Vector2(38f, 38f);
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefab.transform, "delete");
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(605f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(38f, 38f));
 
                     prefabs.Add(prefab);
                 }
@@ -536,10 +557,8 @@ namespace EditorManagement.Functions
                     tmpArtist.enableWordWrapping = true;
                     tmpArtist.text = "Description";
 
-                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
-                    delete.transform.AsRT().anchoredPosition = new Vector2(-16f, -16f);
-                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    delete.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefab.transform, "delete");
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(-16f, -16f), Vector2.one, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(24f, 24f));
 
                     prefabs.Add(prefab);
                 }
@@ -556,9 +575,7 @@ namespace EditorManagement.Functions
                     prefabImage.color = new Color(0f, 0f, 0f, 0.2f);
 
                     var editPrefab = closePrefab.Duplicate(prefabRT, "edit");
-                    editPrefab.transform.AsRT().anchoredPosition = new Vector2(-46f, -16f);
-                    editPrefab.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    editPrefab.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+                    UIManager.SetRectTransform(editPrefab.transform.AsRT(), new Vector2(-38f, -12f), Vector2.one, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(20f, 20f));
                     editPrefab.transform.GetChild(0).AsRT().sizeDelta = new Vector2(0f, 0f);
                     var editPrefabButton = editPrefab.GetComponent<Button>();
                     editPrefabButton.colors = UIManager.SetColorBlock(editPrefabButton.colors, new Color(0.9f, 0.9f, 0.9f, 1f), Color.white, Color.white, new Color(0.9f, 0.9f, 0.9f, 1f), LSColors.red700);
@@ -566,10 +583,8 @@ namespace EditorManagement.Functions
                     spritePrefabImage.color = new Color(0.037f, 0.037f, 0.037f, 1f);
                     spritePrefabImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_edit.png");
 
-                    var deletePrefab = closePrefab.Duplicate(prefabRT, "delete");
-                    deletePrefab.transform.AsRT().anchoredPosition = new Vector2(-12f, -12f);
-                    deletePrefab.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    deletePrefab.transform.AsRT().sizeDelta = new Vector2(20f, 20f);
+                    var deletePrefab = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefabRT, "delete");
+                    UIManager.SetRectTransform(deletePrefab.transform.AsRT(), new Vector2(-12f, -12f), Vector2.one, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(20f, 20f));
 
                     var prefabScroll = new GameObject("Scroll");
                     prefabScroll.transform.SetParent(prefabRT);
@@ -657,10 +672,11 @@ namespace EditorManagement.Functions
                     spriteImage.color = new Color(0.037f, 0.037f, 0.037f, 1f);
                     spriteImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_edit.png");
 
-                    var delete = closePrefab.Duplicate(timelineButtonPrefab.transform, "delete");
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(timelineButtonPrefab.transform, "delete");
                     delete.transform.AsRT().anchoredPosition = new Vector2(-16f, -16f);
                     delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
                     delete.transform.AsRT().sizeDelta = new Vector2(24f, 24f);
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(-16f, -16f), Vector2.one, Vector2.one, new Vector2(0.5f, 0.5f), new Vector2(24f, 24f));
 
                     timelineAddPrefab = baseCardPrefab.Duplicate(assetsParent, "timeline add prefab");
                     var albumArtAdd = timelineAddPrefab.transform.GetChild(0);
@@ -714,10 +730,8 @@ namespace EditorManagement.Functions
                     tmp.enableWordWrapping = false;
                     tmp.text = DateTime.Now.ToString("g");
 
-                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
-                    delete.transform.AsRT().anchoredPosition = new Vector2(-32f, -32f);
-                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    delete.transform.AsRT().sizeDelta = new Vector2(38f, 38f);
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefab.transform, "delete");
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(605f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(38f, 38f));
 
                     prefabs.Add(prefab);
                 }
@@ -757,23 +771,11 @@ namespace EditorManagement.Functions
                     tmpNoteTitle.fontSize = 16;
 
                     var toggle = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle/toggle").Duplicate(prefabPanelRT, "active");
-                    toggle.transform.AsRT().anchoredPosition = Vector2.zero;
-                    toggle.transform.AsRT().anchorMax = new Vector2(0.87f, 0.5f);
-                    toggle.transform.AsRT().anchorMin = new Vector2(0.87f, 0.5f);
-                    toggle.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    toggle.transform.AsRT().sizeDelta = Vector2.zero;
-                    toggle.transform.GetChild(0).AsRT().anchoredPosition = Vector2.zero;
-                    toggle.transform.GetChild(0).AsRT().anchorMax = Vector2.one;
-                    toggle.transform.GetChild(0).AsRT().anchorMin = Vector2.zero;
-                    toggle.transform.GetChild(0).AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    toggle.transform.GetChild(0).AsRT().sizeDelta = new Vector2(22f, 22f);
+                    UIManager.SetRectTransform(toggle.transform.AsRT(), Vector2.zero, new Vector2(0.87f, 0.5f), new Vector2(0.87f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero);
+                    UIManager.SetRectTransform(toggle.transform.GetChild(0).AsRT(), Vector2.zero, Vector2.one, Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(24f, 24f));
 
                     var editPrefab = closePrefab.Duplicate(prefabPanelRT, "edit");
-                    editPrefab.transform.AsRT().anchoredPosition = new Vector2(-44f, 0f);
-                    editPrefab.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
-                    editPrefab.transform.AsRT().anchorMin = new Vector2(1f, 0.5f);
-                    editPrefab.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    editPrefab.transform.AsRT().sizeDelta = new Vector2(22f, 22f);
+                    UIManager.SetRectTransform(editPrefab.transform.AsRT(), new Vector2(-44f, 0f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 26f));
                     editPrefab.transform.GetChild(0).AsRT().sizeDelta = new Vector2(4f, 4f);
                     var editPrefabButton = editPrefab.GetComponent<Button>();
                     editPrefabButton.colors = UIManager.SetColorBlock(editPrefabButton.colors, new Color(0.9f, 0.9f, 0.9f, 1f), Color.white, Color.white, new Color(0.9f, 0.9f, 0.9f, 1f), LSColors.red700);
@@ -781,12 +783,11 @@ namespace EditorManagement.Functions
                     spritePrefabImage.color = new Color(0.037f, 0.037f, 0.037f, 1f);
                     spritePrefabImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_edit.png");
 
-                    var delete = closePrefab.Duplicate(prefabPanelRT, "delete");
-                    delete.transform.AsRT().anchoredPosition = new Vector2(-16f, 0f);
-                    delete.transform.AsRT().anchorMax = new Vector2(1f, 0.5f);
-                    delete.transform.AsRT().anchorMin = new Vector2(1f, 0.5f);
-                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    delete.transform.AsRT().sizeDelta = new Vector2(22f, 22f);
+                    var closeB = closePrefab.Duplicate(prefabPanelRT, "close");
+                    UIManager.SetRectTransform(closeB.transform.AsRT(), new Vector2(-16f, 0f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 26f));
+
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefabPanelRT, "delete");
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(-16f, 0f), new Vector2(1f, 0.5f), new Vector2(1f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(26f, 26f));
 
                     var noteText = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(prefabRT, "text");
                     noteText.transform.AsRT().anchoredPosition = Vector2.zero;
@@ -827,10 +828,8 @@ namespace EditorManagement.Functions
                     tmp.enableWordWrapping = false;
                     tmp.text = "Kaixo - Pyrolysis";
 
-                    var delete = closePrefab.Duplicate(prefab.transform, "delete");
-                    delete.transform.AsRT().anchoredPosition = new Vector2(-32f, -32f);
-                    delete.transform.AsRT().pivot = new Vector2(0.5f, 0.5f);
-                    delete.transform.AsRT().sizeDelta = new Vector2(38f, 38f);
+                    var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(prefab.transform, "delete");
+                    UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(605f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(38f, 38f));
 
                     prefabs.Add(prefab);
                 }
@@ -880,6 +879,11 @@ namespace EditorManagement.Functions
                 fullViewRT.anchorMax = new Vector2(0f, 1f);
                 fullViewRT.anchorMin = new Vector2(0f, 1f);
 
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, fullView, new List<Component>
+                {
+                    fullViewImage,
+                }));
+
                 documentInputField = fullView.AddComponent<TMP_InputField>();
 
                 var docText = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(fullViewRT, "text");
@@ -901,6 +905,9 @@ namespace EditorManagement.Functions
                 t.alignment = TextAlignmentOptions.TopLeft;
                 t.enableWordWrapping = true;
 
+                EditorThemeManager.AddLightText(documentTitle);
+                EditorThemeManager.AddInputField(documentInputField);
+
                 fullView.SetActive(false);
             }
 
@@ -914,6 +921,11 @@ namespace EditorManagement.Functions
                 editorBaseRT.sizeDelta = new Vector2(537f, 936f);
                 var editorBaseImage = editorBase.AddComponent<Image>();
                 editorBaseImage.color = new Color(0.078f, 0.067f, 0.067f, 1f);
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_3, editorBase, new List<Component>
+                {
+                    editorBaseImage,
+                }));
 
                 var editor = new GameObject("editor");
                 editor.transform.SetParent(editorBaseRT);
@@ -930,8 +942,12 @@ namespace EditorManagement.Functions
                 panelRT.anchorMax = new Vector2(1f, 0.5f);
                 panelRT.anchorMin = new Vector2(0f, 0.5f);
                 panelRT.sizeDelta = new Vector2(14f, 64f);
-                var panelImage = panel.AddComponent<Image>();
-                panelImage.color = new Color(0.310f, 0.467f, 0.737f, 1f);
+                editorTitlePanel = panel.AddComponent<Image>();
+                editorTitlePanel.color = new Color(0.310f, 0.467f, 0.737f, 1f);
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, panel, new List<Component>
+                {
+                    editorTitlePanel,
+                }, true, 1, SpriteManager.RoundedSide.W));
 
                 var editorTitle = baseCardPrefab.transform.Find("artist").gameObject.Duplicate(panelRT, "title");
                 editorTitle.transform.AsRT().anchoredPosition = Vector2.zero;
@@ -942,6 +958,8 @@ namespace EditorManagement.Functions
                 tmpEditorTitle.alignment = TextAlignmentOptions.Center;
                 tmpEditorTitle.fontSize = 32;
                 tmpEditorTitle.text = "<b>- Editor -</b>";
+                panel.AddComponent<ContrastColors>().Init(tmpEditorTitle, editorTitlePanel);
+                panel.SetActive(false);
 
                 // Document
                 {
@@ -966,7 +984,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -977,6 +997,7 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     documentEditorName = text1.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(documentEditorName);
 
                     // Label
                     {
@@ -984,7 +1005,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Text";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Text";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -998,6 +1021,7 @@ namespace EditorManagement.Functions
                     documentEditorText.textComponent.alignment = TextAnchor.UpperLeft;
                     ((Text)documentEditorText.placeholder).alignment = TextAnchor.UpperLeft;
                     documentEditorText.lineType = InputField.LineType.MultiLineNewline;
+                    EditorThemeManager.AddInputField(documentEditorText);
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1026,7 +1050,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Text";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Text";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1037,6 +1063,7 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     todoEditorText = text1.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(todoEditorText);
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1065,7 +1092,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1076,14 +1105,17 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     characterEditorName = text1.GetComponent<InputField>();
-                    
+                    EditorThemeManager.AddInputField(characterEditorName);
+
                     // Label
                     {
                         var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Gender";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Gender";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1094,14 +1126,17 @@ namespace EditorManagement.Functions
                     text2.gameObject.SetActive(true);
 
                     characterEditorGender = text2.GetComponent<InputField>();
-                    
+                    EditorThemeManager.AddInputField(characterEditorGender);
+
                     // Label
                     {
                         var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Description";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Description";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1115,6 +1150,7 @@ namespace EditorManagement.Functions
                     characterEditorDescription.textComponent.alignment = TextAnchor.UpperLeft;
                     ((Text)characterEditorDescription.placeholder).alignment = TextAnchor.UpperLeft;
                     characterEditorDescription.lineType = InputField.LineType.MultiLineNewline;
+                    EditorThemeManager.AddInputField(characterEditorDescription);
 
                     // Label
                     {
@@ -1122,21 +1158,27 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Select Profile Image";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Select Profile Image";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
                     }
 
-                    var tfv = ObjEditor.inst.ObjectView.transform;
-
-                    var reload = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
+                    var reload = EditorPrefabHolder.Instance.Function2Button.Duplicate(g1RT);
+                    var pickProfileStorage = reload.GetComponent<FunctionButtonStorage>();
                     reload.SetActive(true);
                     reload.name = "pick profile";
                     reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
                     reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-                    reload.transform.GetChild(0).GetComponent<Text>().text = "Select";
-                    characterEditorProfileSelector = reload.GetComponent<Button>();
+                    pickProfileStorage.text.text = "Select";
+                    characterEditorProfileSelector = pickProfileStorage.button;
+                    EditorThemeManager.ApplySelectable(characterEditorProfileSelector, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, pickProfileStorage.text.gameObject, new List<Component>
+                    {
+                        pickProfileStorage.text,
+                    }));
 
                     // Label
                     {
@@ -1144,7 +1186,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Character Traits";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Character Traits";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1207,7 +1251,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Lore";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Lore";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1270,7 +1316,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Abilities";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Abilities";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1330,6 +1378,7 @@ namespace EditorManagement.Functions
                     // Tag Prefab
                     {
                         tagPrefab = new GameObject("Tag");
+                        tagPrefab.transform.SetParent(assetsParent);
                         var tagPrefabRT = tagPrefab.AddComponent<RectTransform>();
                         var tagPrefabImage = tagPrefab.AddComponent<Image>();
                         tagPrefabImage.color = new Color(1f, 1f, 1f, 0.12f);
@@ -1340,11 +1389,12 @@ namespace EditorManagement.Functions
                         var input = RTEditor.inst.defaultIF.Duplicate(tagPrefabRT, "Input");
                         input.transform.localScale = Vector3.one;
                         ((RectTransform)input.transform).sizeDelta = new Vector2(500f, 32f);
-                        input.transform.Find("Text").GetComponent<Text>().alignment = TextAnchor.MiddleLeft;
-                        input.transform.Find("Text").GetComponent<Text>().fontSize = 17;
+                        var text = input.transform.Find("Text").GetComponent<Text>();
+                        text.alignment = TextAnchor.MiddleLeft;
+                        text.fontSize = 17;
 
-                        var delete = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.Find("Panel/x").gameObject.Duplicate(tagPrefabRT, "Delete");
-                        ((RectTransform)delete.transform).sizeDelta = new Vector2(32f, 32f);
+                        var delete = EditorPrefabHolder.Instance.DeleteButton.gameObject.Duplicate(tagPrefabRT, "Delete");
+                        UIManager.SetRectTransform(delete.transform.AsRT(), Vector2.zero, Vector2.one, Vector2.one, Vector2.one, new Vector2(32f, 32f));
                     }
 
                     g1.SetActive(false);
@@ -1374,7 +1424,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1385,6 +1437,7 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     timelineEditorName = text1.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(timelineEditorName);
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1413,7 +1466,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1424,6 +1479,7 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     eventEditorName = text1.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(eventEditorName);
 
                     // Label
                     {
@@ -1431,7 +1487,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Description";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Description";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1445,6 +1503,7 @@ namespace EditorManagement.Functions
                     eventEditorDescription.textComponent.alignment = TextAnchor.UpperLeft;
                     ((Text)eventEditorDescription.placeholder).alignment = TextAnchor.UpperLeft;
                     eventEditorDescription.lineType = InputField.LineType.MultiLineNewline;
+                    EditorThemeManager.AddInputField(eventEditorDescription);
 
                     // Label
                     {
@@ -1452,7 +1511,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Path";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Path";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1463,6 +1524,7 @@ namespace EditorManagement.Functions
                     text3.gameObject.SetActive(true);
 
                     eventEditorPath = text3.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(eventEditorPath);
 
                     // Label
                     {
@@ -1470,7 +1532,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Type";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Type";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1485,6 +1549,7 @@ namespace EditorManagement.Functions
                         new Dropdown.OptionData("Cutscene"),
                         new Dropdown.OptionData("Story"),
                     };
+                    EditorThemeManager.AddDropdown(eventEditorType);
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1513,7 +1578,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1524,6 +1591,7 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     scheduleEditorDescription = text1.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(scheduleEditorDescription);
 
                     // Label
                     {
@@ -1531,7 +1599,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Year";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Year";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1542,6 +1612,7 @@ namespace EditorManagement.Functions
                     text2.gameObject.SetActive(true);
 
                     scheduleEditorYear = text2.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(scheduleEditorYear);
 
                     // Label
                     {
@@ -1549,7 +1620,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Month";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Month";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1573,6 +1646,7 @@ namespace EditorManagement.Functions
                         new Dropdown.OptionData("November"),
                         new Dropdown.OptionData("December"),
                     };
+                    EditorThemeManager.AddDropdown(scheduleEditorMonth);
 
                     // Label
                     {
@@ -1580,7 +1654,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Day";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Day";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1591,6 +1667,7 @@ namespace EditorManagement.Functions
                     text3.gameObject.SetActive(true);
 
                     scheduleEditorDay = text3.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(scheduleEditorDay);
 
                     // Label
                     {
@@ -1598,7 +1675,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Hour";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Hour";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1609,14 +1688,17 @@ namespace EditorManagement.Functions
                     text4.gameObject.SetActive(true);
 
                     scheduleEditorHour = text4.GetComponent<InputField>();
-                    
+                    EditorThemeManager.AddInputField(scheduleEditorHour);
+
                     // Label
                     {
                         var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Minute";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Minute";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1627,6 +1709,7 @@ namespace EditorManagement.Functions
                     text5.gameObject.SetActive(true);
 
                     scheduleEditorMinute = text5.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(scheduleEditorMinute);
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1655,7 +1738,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1666,6 +1751,7 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     noteEditorName = text1.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(noteEditorName);
 
                     // Label
                     {
@@ -1673,7 +1759,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Text";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Text";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1687,6 +1775,7 @@ namespace EditorManagement.Functions
                     noteEditorText.textComponent.alignment = TextAnchor.UpperLeft;
                     ((Text)noteEditorText.placeholder).alignment = TextAnchor.UpperLeft;
                     noteEditorText.lineType = InputField.LineType.MultiLineNewline;
+                    EditorThemeManager.AddInputField(noteEditorText);
 
                     // Label
                     {
@@ -1694,7 +1783,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Color";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Color";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1712,7 +1803,18 @@ namespace EditorManagement.Functions
                         var col = Instantiate(colorBase.transform.Find("1").gameObject);
                         col.name = (i + 1).ToString();
                         col.transform.SetParent(noteEditorColorsParent);
-                        noteEditorColors.Add(col.GetComponent<Toggle>());
+                        var toggle = col.GetComponent<Toggle>();
+                        noteEditorColors.Add(toggle);
+
+                        EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, col, new List<Component>
+                        {
+                            toggle.image,
+                        }, true, 1, SpriteManager.RoundedSide.W));
+
+                        EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_3, toggle.graphic.gameObject, new List<Component>
+                        {
+                            toggle.graphic,
+                        }));
                     }
 
                     // Label
@@ -1721,21 +1823,27 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(300f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Reset Position and Scale";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Reset Position and Scale";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
                     }
 
-                    var tfv = ObjEditor.inst.ObjectView.transform;
-
-                    var reload = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
-                    reload.SetActive(true);
-                    reload.name = "reset";
-                    reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
-                    reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-                    reload.transform.GetChild(0).GetComponent<Text>().text = "Reset";
-                    noteEditorReset = reload.GetComponent<Button>();
+                    var reset = EditorPrefabHolder.Instance.Function2Button.gameObject.Duplicate(g1RT);
+                    var resetStorage = reset.GetComponent<FunctionButtonStorage>();
+                    reset.SetActive(true);
+                    reset.name = "reset";
+                    reset.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    reset.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    resetStorage.text.text = "Reset";
+                    noteEditorReset = resetStorage.button;
+                    EditorThemeManager.ApplySelectable(noteEditorReset, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, resetStorage.text.gameObject, new List<Component>
+                    {
+                        resetStorage.text,
+                    }));
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1764,7 +1872,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Path";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Path";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1775,14 +1885,17 @@ namespace EditorManagement.Functions
                     text1.gameObject.SetActive(true);
 
                     ostEditorPath = text1.GetComponent<InputField>();
-                    
+                    EditorThemeManager.AddInputField(ostEditorPath);
+
                     // Label
                     {
                         var label = ObjEditor.inst.ObjectView.transform.Find("label").gameObject.Duplicate(g1RT, "label");
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Name";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Name";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1793,6 +1906,7 @@ namespace EditorManagement.Functions
                     text2.gameObject.SetActive(true);
 
                     ostEditorName = text2.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(ostEditorName);
 
                     // Label
                     {
@@ -1800,21 +1914,27 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(334.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Start Playing OST From Here";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Start Playing OST From Here";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
                     }
 
-                    var tfv = ObjEditor.inst.ObjectView.transform;
-
-                    var reload = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
-                    reload.SetActive(true);
-                    reload.name = "play";
-                    reload.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
-                    reload.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-                    reload.transform.GetChild(0).GetComponent<Text>().text = "Play";
-                    ostEditorPlay = reload.GetComponent<Button>();
+                    var play = EditorPrefabHolder.Instance.Function2Button.Duplicate(g1RT);
+                    var playStorage = play.GetComponent<FunctionButtonStorage>();
+                    play.SetActive(true);
+                    play.name = "play";
+                    play.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    play.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    playStorage.text.text = "Play";
+                    ostEditorPlay = playStorage.button;
+                    EditorThemeManager.ApplySelectable(ostEditorPlay, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, playStorage.text.gameObject, new List<Component>
+                    {
+                        playStorage.text,
+                    }));
 
                     // Label
                     {
@@ -1822,20 +1942,27 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Stop Playing";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Stop Playing";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
                     }
 
-                    var reload3 = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
-                    reload3.SetActive(true);
-                    reload3.name = "stop";
-                    reload3.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
-                    reload3.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
-                    reload3.transform.GetChild(0).GetComponent<Text>().text = "Stop";
-
-                    ostEditorStop = reload3.GetComponent<Button>();
+                    var stop = EditorPrefabHolder.Instance.Function2Button.Duplicate(g1RT);
+                    var stopStorage = stop.GetComponent<FunctionButtonStorage>();
+                    stop.SetActive(true);
+                    stop.name = "stop";
+                    stop.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    stop.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    stopStorage.text.text = "Stop";
+                    ostEditorStop = stopStorage.button;
+                    EditorThemeManager.ApplySelectable(ostEditorStop, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, stopStorage.text.gameObject, new List<Component>
+                    {
+                        stopStorage.text,
+                    }));
 
                     // Label
                     {
@@ -1843,21 +1970,29 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Use Global Path";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Use Global Path";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
                     }
 
-                    var reload2 = tfv.Find("applyprefab").gameObject.Duplicate(g1RT);
-                    reload2.SetActive(true);
-                    reload2.name = "global";
-                    reload2.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
-                    reload2.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
+                    var global = EditorPrefabHolder.Instance.Function2Button.Duplicate(g1RT);
+                    var globalStorage = global.GetComponent<FunctionButtonStorage>();
+                    global.SetActive(true);
+                    global.name = "global";
+                    global.transform.AsRT().anchoredPosition = new Vector2(370f, 970f);
+                    global.transform.AsRT().sizeDelta = new Vector2(200f, 32f);
 
-                    ostEditorUseGlobal = reload2.GetComponent<Button>();
-                    ostEditorUseGlobalText = reload2.transform.GetChild(0).GetComponent<Text>();
+                    ostEditorUseGlobal = globalStorage.button;
+                    ostEditorUseGlobalText = globalStorage.text;
                     ostEditorUseGlobalText.text = "False";
+                    EditorThemeManager.ApplySelectable(ostEditorUseGlobal, ThemeGroup.Function_2);
+                    EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, ostEditorUseGlobalText.gameObject, new List<Component>
+                    {
+                        ostEditorUseGlobalText,
+                    }));
 
                     // Label
                     {
@@ -1865,7 +2000,9 @@ namespace EditorManagement.Functions
                         label.transform.AsRT().pivot = new Vector2(0f, 1f);
                         label.transform.AsRT().sizeDelta = new Vector2(537f, 32f);
                         label.transform.GetChild(0).AsRT().sizeDelta = new Vector2(234.4f, 32f);
-                        label.transform.GetChild(0).GetComponent<Text>().text = "Edit Index";
+                        var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                        labelText.text = "Edit Index";
+                        EditorThemeManager.AddLightText(labelText);
 
                         if (label.transform.childCount == 2)
                             Destroy(label.transform.GetChild(1).gameObject);
@@ -1876,6 +2013,7 @@ namespace EditorManagement.Functions
                     text3.gameObject.SetActive(true);
 
                     ostEditorIndex = text3.GetComponent<InputField>();
+                    EditorThemeManager.AddInputField(ostEditorIndex);
 
                     g1.SetActive(false);
                     editors.Add(g1);
@@ -1885,6 +2023,8 @@ namespace EditorManagement.Functions
             RenderTabs();
             Load();
         }
+
+        public Image editorTitlePanel;
 
         public InputField documentEditorName;
         public InputField documentEditorText;
@@ -2385,12 +2525,14 @@ namespace EditorManagement.Functions
         {
             for (int i = 0; i < editors.Count; i++)
                 editors[i].SetActive(false);
+            editorTitlePanel.gameObject.SetActive(false);
         }
 
         public bool DocumentFullViewActive { get; set; }
         public void OpenDocumentEditor(DocumentItem document)
         {
-            editors[0].SetActive(true);
+            editors[0].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_1];
 
             documentEditorName.onValueChanged.ClearAll();
             documentEditorName.onEndEdit.ClearAll();
@@ -2451,7 +2593,8 @@ namespace EditorManagement.Functions
 
         public void OpenTODOEditor(TODOItem todo)
         {
-            editors[1].SetActive(true);
+            editors[1].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_2];
 
             todoEditorText.onValueChanged.ClearAll();
             todoEditorText.text = todo.Text;
@@ -2469,7 +2612,8 @@ namespace EditorManagement.Functions
 
         public void OpenCharacterEditor(CharacterItem character)
         {
-            editors[2].SetActive(true);
+            editors[2].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_3];
 
             characterEditorName.onValueChanged.ClearAll();
             characterEditorName.text = character.Name;
@@ -2691,7 +2835,8 @@ namespace EditorManagement.Functions
         public void OpenTimelineEditor(TimelineItem timeline)
         {
             SetEditorsInactive();
-            editors[3].SetActive(true);
+            editors[3].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_4];
 
             timelineEditorName.onValueChanged.ClearAll();
             timelineEditorName.text = timeline.Name;
@@ -2710,7 +2855,8 @@ namespace EditorManagement.Functions
         public void OpenEventEditor(TimelineItem.Event level)
         {
             SetEditorsInactive();
-            editors[4].SetActive(true);
+            editors[4].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_4];
 
             eventEditorName.onValueChanged.ClearAll();
             eventEditorName.text = level.Name;
@@ -2762,7 +2908,8 @@ namespace EditorManagement.Functions
 
         public void OpenScheduleEditor(ScheduleItem schedule)
         {
-            editors[5].SetActive(true);
+            editors[5].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_5];
 
             scheduleEditorDescription.onValueChanged.ClearAll();
             scheduleEditorDescription.text = schedule.Description;
@@ -2864,7 +3011,8 @@ namespace EditorManagement.Functions
 
         public void OpenNoteEditor(NoteItem note)
         {
-            editors[6].SetActive(true);
+            editors[6].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_6];
 
             noteEditorName.onValueChanged.ClearAll();
             noteEditorName.text = note.Name;
@@ -2937,7 +3085,8 @@ namespace EditorManagement.Functions
 
         public void OpenOSTEditor(OSTItem ost)
         {
-            editors[7].SetActive(true);
+            editors[7].SetActive(true); editorTitlePanel.gameObject.SetActive(true);
+            editorTitlePanel.color = EditorThemeManager.CurrentTheme.ColorGroups[ThemeGroup.Tab_Color_7];
 
             ostEditorPath.onValueChanged.ClearAll();
             ostEditorPath.onEndEdit.ClearAll();
@@ -3059,12 +3208,18 @@ namespace EditorManagement.Functions
             text.fontStyle = FontStyle.Bold;
             text.text = name;
             gameObject.AddComponent<ContrastColors>().Init(text, image);
+            var toggle = gameObject.GetComponent<Toggle>();
             tabs.Add(gameObject.GetComponent<Toggle>());
 
             EditorThemeManager.AddElement(new EditorThemeManager.Element($"Project Planner Tab {name}", $"Tab Color {tabs.Count}", gameObject, new List<Component>
             {
                 image,
             }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, toggle.graphic.gameObject, new List<Component>
+            {
+                toggle.graphic,
+            }));
 
             return gameObject;
         }
@@ -3082,20 +3237,39 @@ namespace EditorManagement.Functions
                 OpenDocumentEditor(document);
             });
 
+            EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+
             document.NameUI = gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
             document.NameUI.text = document.Name;
+            EditorThemeManager.ApplyLightText(document.NameUI);
 
             document.TextUI = gameObject.transform.Find("words").GetComponent<TextMeshProUGUI>();
             document.TextUI.text = document.Text;
+            EditorThemeManager.ApplyLightText(document.TextUI);
 
-            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+            var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
                 planners.RemoveAll(x => x is DocumentItem && x.ID == document.ID);
                 SaveDocuments();
                 Destroy(gameObject);
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Background_1, gameObject.transform.Find("gradient").gameObject, new List<Component>
+            {
+                gameObject.transform.Find("gradient").GetComponent<Image>(),
+            }));
 
             return gameObject;
         }
@@ -3113,8 +3287,11 @@ namespace EditorManagement.Functions
                 OpenTODOEditor(todo);
             });
 
+            EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+
             todo.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
             todo.TextUI.text = todo.Text;
+            EditorThemeManager.ApplyLightText(todo.TextUI);
 
             var toggle = gameObject.transform.Find("checked").GetComponent<Toggle>();
             todo.CheckedUI = toggle;
@@ -3126,14 +3303,26 @@ namespace EditorManagement.Functions
                 SaveTODO();
             });
 
-            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+            EditorThemeManager.ApplyToggle(toggle);
+
+            var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
                 planners.RemoveAll(x => x is TODOItem && x.ID == todo.ID);
                 SaveTODO();
                 Destroy(gameObject);
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
 
             return gameObject;
         }
@@ -3151,20 +3340,24 @@ namespace EditorManagement.Functions
                 OpenCharacterEditor(character);
             });
 
+            EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+
             character.ProfileUI = gameObject.transform.Find("profile").GetComponent<Image>();
 
             character.DetailsUI = gameObject.transform.Find("details").GetComponent<TextMeshProUGUI>();
+            EditorThemeManager.ApplyLightText(character.DetailsUI);
 
             character.DescriptionUI = gameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
+            EditorThemeManager.ApplyLightText(character.DescriptionUI);
 
             character.ProfileUI.sprite = character.CharacterSprite;
             character.DetailsUI.overflowMode = TextOverflowModes.Truncate;
             character.DetailsUI.text = character.Format(true);
             character.DescriptionUI.text = character.Description;
 
-            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+            var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
                 planners.RemoveAll(x => x is CharacterItem && x.ID == character.ID);
 
@@ -3190,6 +3383,16 @@ namespace EditorManagement.Functions
                 Destroy(gameObject);
             });
 
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
+
             return gameObject;
         }
 
@@ -3201,8 +3404,27 @@ namespace EditorManagement.Functions
 
             timeline.Content = gameObject.transform.Find("Scroll/Viewport/Content");
 
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, gameObject, new List<Component>
+            {
+                gameObject.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var scrollbar = gameObject.transform.Find("Scrollbar");
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, scrollbar.gameObject, new List<Component>
+            {
+                scrollbar.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
+
+            var scrollbarHandle = scrollbar.transform.Find("Sliding Area/Handle").gameObject;
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, scrollbarHandle.gameObject, new List<Component>
+            {
+                scrollbarHandle.GetComponent<Image>(),
+                scrollbar.GetComponent<Scrollbar>()
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
             timeline.NameUI = gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
             timeline.NameUI.text = timeline.Name;
+            EditorThemeManager.ApplyLightText(timeline.NameUI);
 
             var edit = gameObject.transform.Find("edit").GetComponent<Button>();
             edit.onClick.ClearAll();
@@ -3210,15 +3432,35 @@ namespace EditorManagement.Functions
             {
                 OpenTimelineEditor(timeline);
             });
-            
-            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_3, edit.gameObject, new List<Component>
+            {
+                edit.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_3_Text, edit.transform.GetChild(0).gameObject, new List<Component>
+            {
+                edit.transform.GetChild(0).GetComponent<Image>(),
+            }));
+
+            var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
                 planners.RemoveAll(x => x is TimelineItem && x.ID == timeline.ID);
                 SaveTimelines();
                 Destroy(gameObject);
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
 
             timeline.UpdateTimeline();
 
@@ -3238,17 +3480,30 @@ namespace EditorManagement.Functions
                 OpenScheduleEditor(schedule);
             });
 
+            EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+
             schedule.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
             schedule.TextUI.text = schedule.Text;
+            EditorThemeManager.ApplyLightText(schedule.TextUI);
 
-            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+            var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
                 planners.RemoveAll(x => x is ScheduleItem && x.ID == schedule.ID);
                 SaveSchedules();
                 Destroy(gameObject);
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
 
             return gameObject;
         }
@@ -3266,6 +3521,11 @@ namespace EditorManagement.Functions
             {
                 OpenNoteEditor(note);
             };
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Background_3, gameObject, new List<Component>
+            {
+                gameObject.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.Bottom));
 
             // Left
             {
@@ -3350,35 +3610,74 @@ namespace EditorManagement.Functions
                 OpenNoteEditor(note);
             });
 
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_3, edit.gameObject, new List<Component>
+            {
+                edit.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_3_Text, edit.transform.GetChild(0).gameObject, new List<Component>
+            {
+                edit.transform.GetChild(0).GetComponent<Image>(),
+            }));
+
             note.TitleUI = gameObject.transform.Find("panel/title").GetComponent<TextMeshProUGUI>();
             note.TitleUI.text = $"Note - {note.Name}";
+
             note.ActiveUI = gameObject.transform.Find("panel/active").GetComponent<Toggle>();
             note.TopBar = gameObject.transform.Find("panel").GetComponent<Image>();
             note.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
             note.TextUI.text = note.Text;
+            EditorThemeManager.ApplyLightText(note.TextUI);
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Background_3, note.TopBar.gameObject, new List<Component>
+            {
+                 note.TopBar,
+            }, true, 1, SpriteManager.RoundedSide.Top));
+            note.TitleUI.gameObject.AddComponent<ContrastColors>().Init(note.TitleUI, note.TopBar);
 
             note.ActiveUI.onValueChanged.ClearAll();
             note.ActiveUI.isOn = note.Active;
             note.ActiveUI.onValueChanged.AddListener(delegate (bool _val)
             {
                 note.Active = _val;
+                SaveNotes();
             });
 
-            var delete = gameObject.transform.Find("panel/delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+            EditorThemeManager.ApplyToggle(note.ActiveUI);
+
+            var delete = gameObject.transform.Find("panel/delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
-                if (!PlannerActive || CurrentTab != 5)
-                {
-                    note.ActiveUI.isOn = false;
-                }
-                else
-                {
-                    planners.RemoveAll(x => x is NoteItem && x.ID == note.ID);
-                    SaveNotes();
-                    Destroy(gameObject);
-                }
+                planners.RemoveAll(x => x is NoteItem && x.ID == note.ID);
+                SaveNotes();
+                Destroy(gameObject);
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
+
+            var close = gameObject.transform.Find("panel/close").GetComponent<Button>();
+            close.onClick.ClearAll();
+            close.onClick.AddListener(delegate ()
+            {
+                note.ActiveUI.isOn = false;
+            });
+
+            EditorThemeManager.ApplySelectable(close, ThemeGroup.Close);
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Close_X, close.transform.GetChild(0).gameObject, new List<Component>
+            {
+                close.transform.GetChild(0).GetComponent<Image>(),
+            }));
+
+            gameObject.AddComponent<NoteCloseDelete>().Init(delete.gameObject, close.gameObject);
 
             return gameObject;
         }
@@ -3396,12 +3695,15 @@ namespace EditorManagement.Functions
                 OpenOSTEditor(ost);
             });
 
+            EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+
             ost.TextUI = gameObject.transform.Find("text").GetComponent<TextMeshProUGUI>();
             ost.TextUI.text = ost.Name;
+            EditorThemeManager.ApplyLightText(ost.TextUI);
 
-            var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-            delete.onClick.ClearAll();
-            delete.onClick.AddListener(delegate ()
+            var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+            delete.button.onClick.ClearAll();
+            delete.button.onClick.AddListener(delegate ()
             {
                 planners.RemoveAll(x => x is OSTItem && x.ID == ost.ID);
                 SaveOST();
@@ -3411,6 +3713,16 @@ namespace EditorManagement.Functions
 
                 Destroy(gameObject);
             });
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+            {
+                delete.button.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+            {
+                delete.image,
+            }));
 
             return gameObject;
         }
@@ -3716,19 +4028,33 @@ namespace EditorManagement.Functions
                             }
                         });
 
+                        EditorThemeManager.ApplySelectable(level.Button, ThemeGroup.List_Button_1);
+
                         level.NameUI = gameObject.transform.Find("name").GetComponent<TextMeshProUGUI>();
                         level.NameUI.text = $"{level.ElementType}: {level.Name}";
+                        EditorThemeManager.ApplyLightText(level.NameUI);
                         level.DescriptionUI = gameObject.transform.Find("description").GetComponent<TextMeshProUGUI>();
                         level.DescriptionUI.text = level.Description;
+                        EditorThemeManager.ApplyLightText(level.DescriptionUI);
 
-                        var delete = gameObject.transform.Find("delete").GetComponent<Button>();
-                        delete.onClick.ClearAll();
-                        delete.onClick.AddListener(delegate ()
+                        var delete = gameObject.transform.Find("delete").GetComponent<DeleteButtonStorage>();
+                        delete.button.onClick.ClearAll();
+                        delete.button.onClick.AddListener(delegate ()
                         {
                             Levels.RemoveAt(index);
                             UpdateTimeline();
                             inst.SaveTimelines();
                         });
+
+                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+                        {
+                            delete.button.image,
+                        }, true, 1, SpriteManager.RoundedSide.W));
+
+                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+                        {
+                            delete.image,
+                        }));
 
                         var edit = gameObject.transform.Find("edit").GetComponent<Button>();
                         edit.onClick.ClearAll();
@@ -3737,6 +4063,17 @@ namespace EditorManagement.Functions
                             Debug.Log($"{EditorPlugin.className}Editing {Name}");
                             inst.OpenEventEditor(level);
                         });
+
+                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_3, edit.gameObject, new List<Component>
+                        {
+                            edit.image,
+                        }, true, 1, SpriteManager.RoundedSide.W));
+
+                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Function_3_Text, edit.transform.GetChild(0).gameObject, new List<Component>
+                        {
+                            edit.transform.GetChild(0).GetComponent<Image>(),
+                        }));
+
                         num++;
                     }
 
@@ -3756,6 +4093,9 @@ namespace EditorManagement.Functions
                         UpdateTimeline();
                         inst.SaveTimelines();
                     });
+
+                    EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+                    EditorThemeManager.ApplyLightText(Add.transform.GetChild(0).GetComponent<TextMeshProUGUI>());
                 }
                 else
                 {

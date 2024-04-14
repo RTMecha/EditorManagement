@@ -85,6 +85,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             popups = GameObject.Find("Editor Systems/Editor GUI/sizer/main/Popups").transform;
+            wholeTimeline = EditorManager.inst.timelineSlider.transform.parent.parent;
 
             var prefabParent = new GameObject("prefabs");
             prefabParent.transform.SetParent(transform);
@@ -126,6 +127,8 @@ namespace EditorManagement.Functions.Editors
                 var functionButtonStorage = prefabHolder.Function2Button.AddComponent<FunctionButtonStorage>();
                 functionButtonStorage.button = prefabHolder.Function2Button.GetComponent<Button>();
                 functionButtonStorage.text = prefabHolder.Function2Button.transform.GetChild(0).GetComponent<Text>();
+                Destroy(prefabHolder.Function2Button.GetComponent<Animator>());
+                functionButtonStorage.button.transition = Selectable.Transition.ColorTint;
             }
 
             if (PrefabEditor.inst)
@@ -436,6 +439,8 @@ namespace EditorManagement.Functions.Editors
         }
 
         #region Variables
+
+        public Transform wholeTimeline;
 
         public Sprite dropperSprite;
 
@@ -2041,65 +2046,33 @@ namespace EditorManagement.Functions.Editors
                 timelineBarBase.GetComponent<Image>()
             }));
 
-            var timeButton = timeDefault.AddComponent<Button>();
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Format Time Button", "List Button 1", timeDefault, new List<Component>
-            {
-                timeDefault.GetComponent<Image>(),
-                timeButton
-            }, true, 1, SpriteManager.RoundedSide.W, true));
+            EditorThemeManager.AddSelectable(timeDefault.AddComponent<Button>(), ThemeGroup.List_Button_1);
+            EditorThemeManager.AddLightText(timeDefault.transform.GetChild(0).GetComponent<Text>());
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Time Input Field", "Input Field", timeObj, new List<Component>
-            {
-                timeIF.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Time Input Field Text", "Input Field Text", timeIF.textComponent.gameObject, new List<Component>
-            {
-                timeIF.textComponent,
-            }));
+            EditorThemeManager.AddInputField(timeIF);
 
             var play = timelineBar.transform.Find("play").gameObject;
             Destroy(play.GetComponent<Animator>());
             var playButton = play.GetComponent<Button>();
             playButton.transition = Selectable.Transition.ColorTint;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Play Button", "Function 2", play, new List<Component>
-            {
-                play.GetComponent<Image>(),
-                playButton
-            }, isSelectable: true));
+            EditorThemeManager.AddSelectable(playButton, ThemeGroup.Function_2, false);
 
             var leftPitch = timelineBar.transform.Find("<").gameObject;
             Destroy(leftPitch.GetComponent<Animator>());
             var leftPitchButton = leftPitch.GetComponent<Button>();
             leftPitchButton.transition = Selectable.Transition.ColorTint;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Left Pitch Button", "Function 2", leftPitch, new List<Component>
-            {
-                leftPitch.GetComponent<Image>(),
-                leftPitchButton
-            }, isSelectable: true));
+            EditorThemeManager.AddSelectable(leftPitchButton, ThemeGroup.Function_2, false);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Pitch Input Field", "Input Field", pitchObj, new List<Component>
-            {
-                pitchIF.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Pitch Input Field Text", "Input Field Text", pitchIF.textComponent.gameObject, new List<Component>
-            {
-                pitchIF.textComponent,
-            }));
+            EditorThemeManager.AddInputField(pitchIF);
 
             var rightPitch = timelineBar.transform.Find(">").gameObject;
             Destroy(rightPitch.GetComponent<Animator>());
             var rightPitchButton = rightPitch.GetComponent<Button>();
             rightPitchButton.transition = Selectable.Transition.ColorTint;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Right Pitch Button", "Function 2", rightPitch, new List<Component>
-            {
-                rightPitch.GetComponent<Image>(),
-                rightPitchButton
-            }, isSelectable: true));
+            EditorThemeManager.AddSelectable(rightPitchButton, ThemeGroup.Function_2, false);
 
             // Leave this group empty since the color is already handled via the custom layer colors. This is only here for the rounded edges.
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Input Field", "", layersObj, new List<Component>
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, layersObj, new List<Component>
             {
                 layersIF.image,
             }, true, 1, SpriteManager.RoundedSide.W));
@@ -2115,7 +2088,7 @@ namespace EditorManagement.Functions.Editors
                 eventToggleText.GetComponent<Text>(),
             }));
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Event Toggle Checkmark", "Timeline Bar", eventToggle.graphic.gameObject, new List<Component>
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Bar, eventToggle.graphic.gameObject, new List<Component>
             {
                 (Image)eventToggle.graphic,
             }));
@@ -2184,11 +2157,7 @@ namespace EditorManagement.Functions.Editors
             Destroy(playTest.GetComponent<Animator>());
             var playTestButton = playTest.GetComponent<Button>();
             playTestButton.transition = Selectable.Transition.ColorTint;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Play Test Button", "Function 2", playTest, new List<Component>
-            {
-                playTest.GetComponent<Image>(),
-                playTestButton
-            }, isSelectable: true));
+            EditorThemeManager.AddSelectable(playTestButton, ThemeGroup.Function_2, false);
         }
 
         public bool isOverMainTimeline;
@@ -2254,6 +2223,60 @@ namespace EditorManagement.Functions.Editors
 
                 scrollBar.value = pointerEventData.scrollDelta.y > 0f ? scrollBar.value + (0.005f * multiply) : pointerEventData.scrollDelta.y < 0f ? scrollBar.value - (0.005f * multiply) : 0f;
             }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar_Base, EditorManager.inst.timelineScrollbar, new List<Component>
+            {
+                EditorManager.inst.timelineScrollbar.GetComponent<Image>(),
+            }));
+
+            var handle = EditorManager.inst.timelineScrollbar.transform.Find("Sliding Area/Handle").GetComponent<Image>();
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar, handle.gameObject, new List<Component>
+            {
+                handle,
+                EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>(),
+            }, true, 1, SpriteManager.RoundedSide.W, true));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Time_Scrollbar, EditorManager.inst.timelineSlider.transform.Find("Background").gameObject, new List<Component>
+            {
+                EditorManager.inst.timelineSlider.transform.Find("Background").GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Time_Scrollbar, wholeTimeline.gameObject, new List<Component>
+            {
+                wholeTimeline.GetComponent<Image>(),
+            }));
+
+            var zoomSliderBase = EditorManager.inst.zoomSlider.transform.parent;
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, zoomSliderBase.gameObject, new List<Component>
+            {
+                zoomSliderBase.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(0).gameObject, new List<Component>
+            {
+                zoomSliderBase.transform.GetChild(0).GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(2).gameObject, new List<Component>
+            {
+                zoomSliderBase.transform.GetChild(2).GetComponent<Image>(),
+            }));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, EditorManager.inst.zoomSlider.transform.Find("Background").gameObject, new List<Component>
+            {
+                EditorManager.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, EditorManager.inst.zoomSlider.transform.Find("Fill Area/Fill").gameObject, new List<Component>
+            {
+                EditorManager.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, EditorManager.inst.zoomSlider.image.gameObject, new List<Component>
+            {
+                EditorManager.inst.zoomSlider.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
         }
 
         void SetupSelectGUI()
@@ -10768,17 +10791,17 @@ namespace EditorManagement.Functions.Editors
                     ThemeEditorManager.inst.RenderThemeEditor();
                 });
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Panel Create", "List Button 2 Normal", themeAddButton, new List<Component>
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, themeAddButton, new List<Component>
                 {
                     button.image,
                 }, true, 1, SpriteManager.RoundedSide.W));
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Panel Create Icon", "Dark Text", themeAddButton.transform.Find("edit").gameObject, new List<Component>
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themeAddButton.transform.Find("edit").gameObject, new List<Component>
                 {
                     themeAddButton.transform.Find("edit").GetComponent<Image>(),
                 }));
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Panel Create Text", "Dark Text", themeAddButton.transform.Find("text").gameObject, new List<Component>
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themeAddButton.transform.Find("text").gameObject, new List<Component>
                 {
                     themeAddButton.transform.Find("text").GetComponent<Text>(),
                 }));
@@ -10827,27 +10850,27 @@ namespace EditorManagement.Functions.Editors
                 themePanel.DeleteButton.interactable = false;
                 themePanel.Name.text = beatmapTheme.name;
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel", "List Button 2 Normal", themePanel.GameObject, new List<Component>
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, themePanel.GameObject, new List<Component>
                 {
                     themePanel.BaseImage,
                 }, true, 1, SpriteManager.RoundedSide.W));
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Use Button", "", themePanel.UseButton.gameObject, new List<Component>
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, themePanel.UseButton.gameObject, new List<Component>
                 {
                     themePanel.UseButton.image,
                 }, true, 1, SpriteManager.RoundedSide.W));
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Edit Button", "Dark Text", themePanel.EditButton.gameObject, new List<Component>
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.EditButton.gameObject, new List<Component>
                 {
                     themePanel.EditButton.image,
                 }));
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Name Text", "Dark Text", themePanel.Name.gameObject, new List<Component>
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.Name.gameObject, new List<Component>
                 {
                     themePanel.Name,
                 }));
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Delete Button", "Delete Keyframe Button", themePanel.DeleteButton.gameObject, new List<Component>
+                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Keyframe_Button, themePanel.DeleteButton.gameObject, new List<Component>
                 {
                     themePanel.DeleteButton,
                     themePanel.DeleteButton.image,
@@ -10927,27 +10950,27 @@ namespace EditorManagement.Functions.Editors
 
                     themePanel.SetActive(RTHelpers.SearchString(themePanel.Theme.name, search));
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel", "List Button 2 Normal", themePanel.GameObject, new List<Component>
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, themePanel.GameObject, new List<Component>
                     {
                         themePanel.BaseImage,
                     }, true, 1, SpriteManager.RoundedSide.W));
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Use Button", "", themePanel.UseButton.gameObject, new List<Component>
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, themePanel.UseButton.gameObject, new List<Component>
                     {
                         themePanel.UseButton.image,
                     }, true, 1, SpriteManager.RoundedSide.W));
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Edit Button", "Dark Text", themePanel.EditButton.gameObject, new List<Component>
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.EditButton.gameObject, new List<Component>
                     {
                         themePanel.EditButton.image,
                     }));
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Name Text", "Dark Text", themePanel.Name.gameObject, new List<Component>
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.Name.gameObject, new List<Component>
                     {
                         themePanel.Name,
                     }));
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Theme Panel Delete Button", "Delete Keyframe Button", themePanel.DeleteButton.gameObject, new List<Component>
+                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Keyframe_Button, themePanel.DeleteButton.gameObject, new List<Component>
                     {
                         themePanel.DeleteButton,
                         themePanel.DeleteButton.image,

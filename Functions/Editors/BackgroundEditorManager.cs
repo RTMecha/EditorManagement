@@ -630,7 +630,8 @@ namespace EditorManagement.Functions.Editors
 			act.transform.SetParent(BackgroundEditor.inst.left);
 			act.transform.localScale = Vector3.one;
 			act.name = "active";
-			act.transform.Find("Text").GetComponent<Text>().text = "Show Modifiers";
+			var activeText = act.transform.Find("Text").GetComponent<Text>();
+			activeText.text = "Show Modifiers";
 
 			var toggle = act.GetComponent<Toggle>();
 			toggle.onValueChanged.RemoveAllListeners();
@@ -642,6 +643,8 @@ namespace EditorManagement.Functions.Editors
 				if (CurrentSelectedBG)
 					StartCoroutine(RenderModifiers(CurrentSelectedBG));
 			});
+
+			EditorThemeManager.AddToggle(toggle, graphic: activeText);
 
 			var e = Instantiate(bmb);
 
@@ -708,38 +711,12 @@ namespace EditorManagement.Functions.Editors
 			mcpTextText.fontSize = 19;
 			mcpTextText.color = new Color(0.9373f, 0.9216f, 0.9373f);
 
-			var delete = new GameObject("Delete");
-			delete.transform.SetParent(mcpLabelRT);
+			var delete = EditorPrefabHolder.Instance.DeleteButton.Duplicate(mcpLabelRT, "Delete");
 			delete.transform.localScale = Vector3.one;
-
-			var deleteRT = delete.AddComponent<RectTransform>();
-			var deleteImage = delete.AddComponent<Image>();
-			var deleteButton = delete.AddComponent<Button>();
-			deleteButton.colors = UIManager.SetColorBlock(deleteButton.colors,
-				new Color(0.9569f, 0.2627f, 0.2118f),
-				new Color(0.1647f, 0.1647f, 0.1647f),
-				new Color(0.1294f, 0.1294f, 0.1294f),
-				new Color(0.1647f, 0.1647f, 0.1647f),
-				new Color(0.7843f, 0.7843f, 0.7843f, 0.502f), 0.1f);
-
-			var deleteLayoutElement = delete.AddComponent<LayoutElement>();
+			var deleteLayoutElement = delete.GetComponent<LayoutElement>() ?? delete.GetComponent<LayoutElement>();
 			deleteLayoutElement.minWidth = 32f;
 
-			deleteRT.sizeDelta = new Vector2(32f, 32f);
-
-			var deleteX = new GameObject("Image");
-			deleteX.transform.SetParent(deleteRT);
-			deleteX.transform.localScale = Vector3.one;
-
-			var deleteXRT = deleteX.AddComponent<RectTransform>();
-			deleteXRT.anchoredPosition = Vector2.zero;
-			deleteXRT.anchorMax = Vector2.one;
-			deleteXRT.anchorMin = Vector2.zero;
-			deleteXRT.pivot = new Vector2(0.5f, 0.5f);
-			deleteXRT.sizeDelta = new Vector2(-8f, -8f);
-
-			var deleteXImage = deleteX.AddComponent<Image>();
-			deleteXImage.sprite = SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_close.png");
+			UIManager.SetRectTransform(delete.transform.AsRT(), new Vector2(150f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(32f, 32f));
 
 			var mcpSpacerMid = new GameObject("Spacer Middle");
 			mcpSpacerMid.transform.SetParent(mcpRT);
@@ -862,12 +839,18 @@ namespace EditorManagement.Functions.Editors
                 {
                     int index = num;
                     var gameObject = modifierCardPrefab.Duplicate(content, modifier.commands[0]);
-                    gameObject.transform.localScale = Vector3.one;
-                    gameObject.transform.Find("Label/Text").GetComponent<Text>().text = modifier.commands[0];
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, gameObject, new List<Component>
+					{
+						gameObject.GetComponent<Image>(),
+					}, true, 1, SpriteManager.RoundedSide.W));
+					gameObject.transform.localScale = Vector3.one;
+					var modifierTitle = gameObject.transform.Find("Label/Text").GetComponent<Text>();
+					modifierTitle.text = modifier.commands[0];
+					EditorThemeManager.ApplyLightText(modifierTitle);
 
-                    var delete = gameObject.transform.Find("Label/Delete").GetComponent<Button>();
-                    delete.onClick.ClearAll();
-                    delete.onClick.AddListener(delegate ()
+					var delete = gameObject.transform.Find("Label/Delete").GetComponent<DeleteButtonStorage>();
+                    delete.button.onClick.ClearAll();
+                    delete.button.onClick.AddListener(delegate ()
                     {
 						backgroundObject.modifiers[currentPage].RemoveAt(index);
 						backgroundObject.positionOffset = Vector3.zero;
@@ -880,14 +863,26 @@ namespace EditorManagement.Functions.Editors
                         StartCoroutine(RenderModifiers(backgroundObject));
                     });
 
-                    var layout = gameObject.transform.Find("Layout");
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete, delete.gameObject, new List<Component>
+					{
+						delete.button.image,
+					}, true, 1, SpriteManager.RoundedSide.W));
+
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Text, delete.image.gameObject, new List<Component>
+					{
+						delete.image,
+					}));
+
+					var layout = gameObject.transform.Find("Layout");
 
                     var constant = booleanBar.Duplicate(layout, "Constant");
                     constant.transform.localScale = Vector3.one;
 
-                    constant.transform.Find("Text").GetComponent<Text>().text = "Constant";
+					var constantText = constant.transform.Find("Text").GetComponent<Text>();
+					constantText.text = "Constant";
+					EditorThemeManager.ApplyLightText(constantText);
 
-                    var toggle = constant.transform.Find("Toggle").GetComponent<Toggle>();
+					var toggle = constant.transform.Find("Toggle").GetComponent<Toggle>();
                     toggle.onValueChanged.ClearAll();
                     toggle.isOn = modifier.constant;
                     toggle.onValueChanged.AddListener(delegate (bool _val)
@@ -895,12 +890,14 @@ namespace EditorManagement.Functions.Editors
                         modifier.constant = _val;
                         modifier.active = false;
                     });
+					EditorThemeManager.ApplyToggle(toggle);
 
-                    if (modifier.type == BeatmapObject.Modifier.Type.Trigger)
+					if (modifier.type == BeatmapObject.Modifier.Type.Trigger)
                     {
                         var not = booleanBar.Duplicate(layout, "Not");
                         not.transform.localScale = Vector3.one;
-                        not.transform.Find("Text").GetComponent<Text>().text = "Not";
+						var notText = not.transform.Find("Text").GetComponent<Text>();
+						notText.text = "Not";
 
                         var notToggle = not.transform.Find("Toggle").GetComponent<Toggle>();
                         notToggle.onValueChanged.ClearAll();
@@ -910,151 +907,233 @@ namespace EditorManagement.Functions.Editors
                             modifier.not = _val;
                             modifier.active = false;
                         });
-                    }
+
+						EditorThemeManager.ApplyLightText(notText);
+						EditorThemeManager.ApplyToggle(notToggle);
+					}
 
                     Action<string, int, float> singleGenerator = delegate (string label, int type, float defaultValue)
-                    {
-                        var single = numberInput.Duplicate(layout, label);
-                        single.transform.localScale = Vector3.one;
-                        single.transform.Find("Text").GetComponent<Text>().text = label;
+					{
+						var single = numberInput.Duplicate(layout, label);
+						single.transform.localScale = Vector3.one;
+						var labelText = single.transform.Find("Text").GetComponent<Text>();
+						labelText.text = label;
 
-                        var inputField = single.transform.Find("Input").GetComponent<InputField>();
-                        inputField.onValueChanged.ClearAll();
-                        inputField.textComponent.alignment = TextAnchor.MiddleCenter;
-                        inputField.text = Parser.TryParse(type == 0 ? modifier.value : modifier.commands[type], defaultValue).ToString();
-                        inputField.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (float.TryParse(_val, out float num))
-                            {
-                                if (type == 0)
-                                    modifier.value = num.ToString();
-                                else
-                                    modifier.commands[type] = num.ToString();
-                            }
+						var inputField = single.transform.Find("Input").GetComponent<InputField>();
+						inputField.onValueChanged.ClearAll();
+						inputField.textComponent.alignment = TextAnchor.MiddleCenter;
+						inputField.text = Parser.TryParse(type == 0 ? modifier.value : modifier.commands[type], defaultValue).ToString();
+						inputField.onValueChanged.AddListener(delegate (string _val)
+						{
+							if (float.TryParse(_val, out float num))
+							{
+								if (type == 0)
+									modifier.value = num.ToString();
+								else
+									modifier.commands[type] = num.ToString();
+							}
 
-                            modifier.active = false;
-                        });
+							modifier.active = false;
+						});
 
-                        TriggerHelper.IncreaseDecreaseButtons(inputField, t: single.transform);
-                        TriggerHelper.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
-                    };
+						EditorThemeManager.ApplyLightText(labelText);
+						EditorThemeManager.ApplyInputField(inputField);
+						var leftButton = single.transform.Find("<").GetComponent<Button>();
+						var rightButton = single.transform.Find(">").GetComponent<Button>();
+						leftButton.transition = Selectable.Transition.ColorTint;
+						rightButton.transition = Selectable.Transition.ColorTint;
+						EditorThemeManager.ApplySelectable(leftButton, ThemeGroup.Function_2, false);
+						EditorThemeManager.ApplySelectable(rightButton, ThemeGroup.Function_2, false);
+
+						TriggerHelper.IncreaseDecreaseButtons(inputField, t: single.transform);
+						TriggerHelper.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(inputField) });
+
+						var inputFieldSwapper = inputField.gameObject.AddComponent<InputFieldSwapper>();
+						inputFieldSwapper.Init(inputField, InputFieldSwapper.Type.Num);
+					};
 
                     Action<string, int, int> integerGenerator = delegate (string label, int type, int defaultValue)
-                    {
-                        var single = numberInput.Duplicate(layout, label);
-                        single.transform.localScale = Vector3.one;
-                        single.transform.Find("Text").GetComponent<Text>().text = label;
+					{
+						var single = numberInput.Duplicate(layout, label);
+						single.transform.localScale = Vector3.one;
+						var labelText = single.transform.Find("Text").GetComponent<Text>();
+						labelText.text = label;
 
-                        var inputField = single.transform.Find("Input").GetComponent<InputField>();
-                        inputField.onValueChanged.ClearAll();
-                        inputField.textComponent.alignment = TextAnchor.MiddleCenter;
-                        inputField.text = Parser.TryParse(type == 0 ? modifier.value : modifier.commands[type], defaultValue).ToString();
-                        inputField.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (int.TryParse(_val, out int num))
-                            {
-                                if (type == 0)
-                                    modifier.value = num.ToString();
-                                else
-                                    modifier.commands[type] = num.ToString();
-                            }
+						var inputField = single.transform.Find("Input").GetComponent<InputField>();
+						inputField.onValueChanged.ClearAll();
+						inputField.textComponent.alignment = TextAnchor.MiddleCenter;
+						inputField.text = Parser.TryParse(type == 0 ? modifier.value : modifier.commands[type], defaultValue).ToString();
+						inputField.onValueChanged.AddListener(delegate (string _val)
+						{
+							if (int.TryParse(_val, out int num))
+							{
+								if (type == 0)
+									modifier.value = num.ToString();
+								else
+									modifier.commands[type] = num.ToString();
+							}
 
-                            modifier.active = false;
-                        });
+							modifier.active = false;
+						});
 
-                        TriggerHelper.IncreaseDecreaseButtonsInt(inputField, t: single.transform);
-                        TriggerHelper.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField) });
-                    };
+						EditorThemeManager.ApplyLightText(labelText);
+						EditorThemeManager.ApplyInputField(inputField);
+						var leftButton = single.transform.Find("<").GetComponent<Button>();
+						var rightButton = single.transform.Find(">").GetComponent<Button>();
+						leftButton.transition = Selectable.Transition.ColorTint;
+						rightButton.transition = Selectable.Transition.ColorTint;
+						EditorThemeManager.ApplySelectable(leftButton, ThemeGroup.Function_2, false);
+						EditorThemeManager.ApplySelectable(rightButton, ThemeGroup.Function_2, false);
+
+						TriggerHelper.IncreaseDecreaseButtonsInt(inputField, t: single.transform);
+						TriggerHelper.AddEventTrigger(inputField.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDeltaInt(inputField) });
+
+						var inputFieldSwapper = inputField.gameObject.AddComponent<InputFieldSwapper>();
+						inputFieldSwapper.Init(inputField, InputFieldSwapper.Type.Num);
+					};
 
                     Action<string, int, bool> boolGenerator = delegate (string label, int type, bool defaultValue)
-                    {
-                        var global = booleanBar.Duplicate(layout, label);
-                        global.transform.localScale = Vector3.one;
-                        global.transform.Find("Text").GetComponent<Text>().text = label;
+					{
+						var global = booleanBar.Duplicate(layout, label);
+						global.transform.localScale = Vector3.one;
+						var labelText = global.transform.Find("Text").GetComponent<Text>();
+						labelText.text = label;
 
-                        var globalToggle = global.transform.Find("Toggle").GetComponent<Toggle>();
-                        globalToggle.onValueChanged.ClearAll();
-                        globalToggle.isOn = Parser.TryParse(type == 0 ? modifier.value : modifier.commands[type], defaultValue);
-                        globalToggle.onValueChanged.AddListener(delegate (bool _val)
-                        {
-                            if (type == 0)
-                                modifier.value = _val.ToString();
-                            else
-                                modifier.commands[type] = _val.ToString();
-                            modifier.active = false;
-                        });
-                    };
+						var globalToggle = global.transform.Find("Toggle").GetComponent<Toggle>();
+						globalToggle.onValueChanged.ClearAll();
+						globalToggle.isOn = Parser.TryParse(type == 0 ? modifier.value : modifier.commands[type], defaultValue);
+						globalToggle.onValueChanged.AddListener(delegate (bool _val)
+						{
+							if (type == 0)
+								modifier.value = _val.ToString();
+							else
+								modifier.commands[type] = _val.ToString();
+							modifier.active = false;
+						});
+
+						EditorThemeManager.ApplyLightText(labelText);
+						EditorThemeManager.ApplyToggle(globalToggle);
+					};
 
                     Action<string, int> stringGenerator = delegate (string label, int type)
-                    {
-                        var path = stringInput.Duplicate(layout, label);
-                        path.transform.localScale = Vector3.one;
-                        path.transform.Find("Text").GetComponent<Text>().text = label;
+					{
+						var path = stringInput.Duplicate(layout, label);
+						path.transform.localScale = Vector3.one;
+						var labelText = path.transform.Find("Text").GetComponent<Text>();
+						labelText.text = label;
 
-                        var pathInputField = path.transform.Find("Input").GetComponent<InputField>();
-                        pathInputField.onValueChanged.ClearAll();
-                        pathInputField.textComponent.alignment = TextAnchor.MiddleLeft;
-                        pathInputField.text = type == 0 ? modifier.value : modifier.commands[type];
-                        pathInputField.onValueChanged.AddListener(delegate (string _val)
-                        {
-                            if (type == 0)
-                                modifier.value = _val;
-                            else
-                                modifier.commands[type] = _val;
-                            modifier.active = false;
-                        });
-                    };
+						var pathInputField = path.transform.Find("Input").GetComponent<InputField>();
+						pathInputField.onValueChanged.ClearAll();
+						pathInputField.textComponent.alignment = TextAnchor.MiddleLeft;
+						pathInputField.text = type == 0 ? modifier.value : modifier.commands[type];
+						pathInputField.onValueChanged.AddListener(delegate (string _val)
+						{
+							if (type == 0)
+								modifier.value = _val;
+							else
+								modifier.commands[type] = _val;
+							modifier.active = false;
+						});
+
+						EditorThemeManager.ApplyLightText(labelText);
+						EditorThemeManager.ApplyInputField(pathInputField);
+					};
 
                     Action<string, int> colorGenerator = delegate (string label, int type)
-                    {
-                        var startColorBase = numberInput.Duplicate(layout, label);
-                        startColorBase.transform.localScale = Vector3.one;
+					{
+						var startColorBase = numberInput.Duplicate(layout, label);
+						startColorBase.transform.localScale = Vector3.one;
 
-                        startColorBase.transform.Find("Text").GetComponent<Text>().text = label;
+						startColorBase.transform.Find("Text").GetComponent<Text>().text = label;
 
-                        Destroy(startColorBase.transform.Find("Input").gameObject);
-                        Destroy(startColorBase.transform.Find(">").gameObject);
-                        Destroy(startColorBase.transform.Find("<").gameObject);
+						Destroy(startColorBase.transform.Find("Input").gameObject);
+						Destroy(startColorBase.transform.Find(">").gameObject);
+						Destroy(startColorBase.transform.Find("<").gameObject);
 
-                        var startColors = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color"));
-                        startColors.transform.SetParent(startColorBase.transform);
-                        startColors.transform.localScale = Vector3.one;
-                        startColors.name = "color";
+						var startColors = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/right/color/color"));
+						startColors.transform.SetParent(startColorBase.transform);
+						startColors.transform.localScale = Vector3.one;
+						startColors.name = "color";
 
-                        if (startColors.TryGetComponent(out GridLayoutGroup scglg))
-                        {
-                            scglg.cellSize = new Vector2(16f, 16f);
-                            scglg.spacing = new Vector2(4.66f, 2.5f);
-                        }
+						if (startColors.TryGetComponent(out GridLayoutGroup scglg))
+						{
+							scglg.cellSize = new Vector2(16f, 16f);
+							scglg.spacing = new Vector2(4.66f, 2.5f);
+						}
 
-                        startColors.transform.AsRT().sizeDelta = new Vector2(183f, 32f);
+						startColors.transform.AsRT().sizeDelta = new Vector2(183f, 32f);
 
-                        SetObjectColors(startColors.GetComponentsInChildren<Toggle>(), type, Parser.TryParse(modifier.commands[type], 0), modifier);
-                    };
+						var toggles = startColors.GetComponentsInChildren<Toggle>();
+
+						foreach (var toggle in toggles)
+						{
+							EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, toggle.gameObject, new List<Component>
+							{
+								toggle.image,
+							}, true, 1, SpriteManager.RoundedSide.W));
+
+							EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, toggle.graphic.gameObject, new List<Component>
+							{
+								toggle.graphic,
+							}));
+						}
+
+						SetObjectColors(startColors.GetComponentsInChildren<Toggle>(), type, Parser.TryParse(modifier.commands[type], 0), modifier);
+					};
 
                     Action<string, int, List<string>> dropdownGenerator = delegate (string label, int type, List<string> options)
-                    {
-                        var dd = dropdownBar.Duplicate(layout, label);
-                        dd.transform.localScale = Vector3.one;
-                        dd.transform.Find("Text").GetComponent<Text>().text = label;
+					{
+						var dd = dropdownBar.Duplicate(layout, label);
+						dd.transform.localScale = Vector3.one;
+						var labelText = dd.transform.Find("Text").GetComponent<Text>();
+						labelText.text = label;
 
-                        Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
-                        Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+						Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+						Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
 
-                        var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
-                        d.onValueChanged.RemoveAllListeners();
-                        d.options.Clear();
+						var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+						d.onValueChanged.RemoveAllListeners();
+						d.options.Clear();
 
-                        d.options = options.Select(x => new Dropdown.OptionData(x)).ToList();
+						d.options = options.Select(x => new Dropdown.OptionData(x)).ToList();
 
-                        d.value = Parser.TryParse(modifier.commands[type], 0);
+						d.value = Parser.TryParse(modifier.commands[type], 0);
 
-                        d.onValueChanged.AddListener(delegate (int _val)
-                        {
-                            modifier.commands[type] = _val.ToString();
-                            modifier.active = false;
-                        });
-                    };
+						d.onValueChanged.AddListener(delegate (int _val)
+						{
+							modifier.commands[type] = _val.ToString();
+							modifier.active = false;
+						});
+
+						EditorThemeManager.ApplyDropdown(d);
+					};
+					
+                    Action<string, int, List<Dropdown.OptionData>> dropdownGenerator2 = delegate (string label, int type, List<Dropdown.OptionData> options)
+					{
+						var dd = dropdownBar.Duplicate(layout, label);
+						dd.transform.localScale = Vector3.one;
+						var labelText = dd.transform.Find("Text").GetComponent<Text>();
+						labelText.text = label;
+
+						Destroy(dd.transform.Find("Dropdown").GetComponent<HoverTooltip>());
+						Destroy(dd.transform.Find("Dropdown").GetComponent<HideDropdownOptions>());
+
+						var d = dd.transform.Find("Dropdown").GetComponent<Dropdown>();
+						d.onValueChanged.RemoveAllListeners();
+						d.options.Clear();
+
+						d.options = options;
+
+						d.value = Parser.TryParse(modifier.commands[type], 0);
+
+						d.onValueChanged.AddListener(delegate (int _val)
+						{
+							modifier.commands[type] = _val.ToString();
+							modifier.active = false;
+						});
+
+						EditorThemeManager.ApplyDropdown(d);
+					};
 
                     var cmd = modifier.commands[0];
                     switch (cmd)
@@ -1083,7 +1162,7 @@ namespace EditorManagement.Functions.Editors
 								singleGenerator("Z", 4, 0f);
 								boolGenerator("Relative", 5, true);
 
-								dropdownGenerator("Easing", 6, EditorManager.inst.CurveOptions.Select(x => x.name).ToList());
+								dropdownGenerator2("Easing", 6, EditorManager.inst.CurveOptions.Select(x => new Dropdown.OptionData(x.name, x.icon)).ToList());
 
 								break;
 							}
@@ -1127,7 +1206,10 @@ namespace EditorManagement.Functions.Editors
                         EditorManager.inst.ShowDialog("Default Background Modifiers Popup");
                         RefreshDefaultModifiersList(backgroundObject);
                     });
-                }
+
+					EditorThemeManager.ApplySelectable(butt, ThemeGroup.List_Button_1);
+					EditorThemeManager.ApplyLightText(button.transform.GetChild(0).GetComponent<Text>());
+				}
             }
 
             yield break;
@@ -1185,11 +1267,13 @@ namespace EditorManagement.Functions.Editors
 		{
 			var qap = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog;
 			var dialog = qap.gameObject.Duplicate(qap.parent, "Default Background Modifiers Popup");
+			var panel = dialog.transform.Find("Panel").gameObject;
 
 			EditorHelper.AddEditorPopup("Default Background Modifiers Popup", dialog);
 
 			var search = dialog.transform.Find("search-box/search").GetComponent<InputField>();
 			search.onValueChanged.ClearAll();
+			((Text)search.placeholder).text = "Search for default modifier...";
 			search.text = searchTerm;
 			search.onValueChanged.AddListener(delegate (string _val)
 			{
@@ -1198,12 +1282,53 @@ namespace EditorManagement.Functions.Editors
 					RefreshDefaultModifiersList(CurrentSelectedBG);
 			});
 
-			var close = dialog.transform.Find("Panel/x").GetComponent<Button>();
+			var close = panel.transform.Find("x").GetComponent<Button>();
 			close.onClick.ClearAll();
 			close.onClick.AddListener(delegate ()
 			{
 				EditorManager.inst.HideDialog("Default Background Modifiers Popup");
 			});
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
+			{
+				dialog.GetComponent<Image>(),
+			}, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, panel, new List<Component>
+			{
+				panel.GetComponent<Image>(),
+			}, true, 1, SpriteManager.RoundedSide.Top));
+
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close, close.gameObject, new List<Component>
+			{
+				close.image,
+				close,
+			}, true, 1, SpriteManager.RoundedSide.W, true));
+
+			var closeX = close.transform.GetChild(0).gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, closeX, new List<Component>
+			{
+				closeX.GetComponent<Image>(),
+			}));
+
+			var title = panel.transform.Find("Text").GetComponent<Text>();
+			title.text = "Choose a modifer to add";
+			EditorThemeManager.AddLightText(title);
+
+			var scrollbar = dialog.transform.Find("Scrollbar").gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, scrollbar, new List<Component>
+			{
+				scrollbar.GetComponent<Image>(),
+			}, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+
+			var scrollbarHandle = scrollbar.transform.Find("Sliding Area/Handle").gameObject;
+			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, scrollbarHandle, new List<Component>
+			{
+				scrollbarHandle.GetComponent<Image>(),
+				scrollbar.GetComponent<Scrollbar>()
+			}, true, 1, SpriteManager.RoundedSide.W, true));
+
+			EditorThemeManager.AddInputField(search, ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
 		}
 
 		public int currentPage;
@@ -1227,13 +1352,14 @@ namespace EditorManagement.Functions.Editors
 
 					var name = defaultModifiers[i].commands[0] + " (" + defaultModifiers[i].type.ToString() + ")";
 
-					var button = EditorManager.inst.folderButtonPrefab.Duplicate(contentM, name);
+					var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(contentM, name);
 
-					button.transform.GetChild(0).GetComponent<Text>().text = name;
+					var modifierName = gameObject.transform.GetChild(0).GetComponent<Text>();
+					modifierName.text = name;
 
-					var butt = button.GetComponent<Button>();
-					butt.onClick.RemoveAllListeners();
-					butt.onClick.AddListener(delegate ()
+					var button = gameObject.GetComponent<Button>();
+					button.onClick.RemoveAllListeners();
+					button.onClick.AddListener(delegate ()
 					{
 						var cmd = defaultModifiers[tmpIndex].commands[0];
 
@@ -1243,6 +1369,9 @@ namespace EditorManagement.Functions.Editors
 						StartCoroutine(RenderModifiers(backgroundObject));
 						EditorManager.inst.HideDialog("Default Background Modifiers Popup");
 					});
+
+					EditorThemeManager.ApplyLightText(modifierName);
+					EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
 				}
 			}
 		}

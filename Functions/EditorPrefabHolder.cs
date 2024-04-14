@@ -97,16 +97,31 @@ namespace EditorManagement.Functions
         public Text text;
 
         [SerializeField]
+        public Text baseColorsText;
+
+        [SerializeField]
         public List<Image> baseColors;
+
+        [SerializeField]
+        public Text playerColorsText;
 
         [SerializeField]
         public List<Image> playerColors;
 
         [SerializeField]
+        public Text objectColorsText;
+
+        [SerializeField]
         public List<Image> objectColors;
 
         [SerializeField]
+        public Text backgroundColorsText;
+
+        [SerializeField]
         public List<Image> backgroundColors;
+
+        [SerializeField]
+        public Text effectColorsText;
 
         [SerializeField]
         public List<Image> effectColors;

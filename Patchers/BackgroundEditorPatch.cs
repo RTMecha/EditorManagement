@@ -945,6 +945,7 @@ namespace EditorManagement.Patchers
 			var active = __instance.left.Find("name/active").GetComponent<Toggle>();
 			Destroy(active.GetComponent<Animator>());
 			active.transition = Selectable.Transition.ColorTint;
+			active.colors = UIManager.SetColorBlock(active.colors, Color.white, new Color(0.7f, 0.7f, 0.7f), new Color(0.7f, 0.7f, 0.7f), new Color(0.7f, 0.7f, 0.7f), new Color(0.7f, 0.7f, 0.7f));
 			EditorThemeManager.AddToggle(active, "Background Editor Active");
 			__instance.left.Find("name/name").AsRT().sizeDelta = new Vector2(300f, 32f);
 			EditorThemeManager.AddInputField(__instance.left.Find("name/name").GetComponent<InputField>(), "Background Editor Name", "Input Field");
@@ -1122,7 +1123,7 @@ namespace EditorManagement.Patchers
 						__instance.SetCurrentBackground(bgIndexTmp);
 					});
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Panel", "List Button 2 Normal", gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, gameObject, new List<Component>
 					{
 						button.image,
 					}, true, 1, SpriteManager.RoundedSide.W));
@@ -1132,12 +1133,12 @@ namespace EditorManagement.Patchers
 						image,
 					}, true, 1, SpriteManager.RoundedSide.W));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Panel Name", "Dark Text", name.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, name.gameObject, new List<Component>
 					{
 						name,
 					}));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Panel Position", "Dark Text", text.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, text.gameObject, new List<Component>
 					{
 						text,
 					}));

@@ -65,11 +65,31 @@ namespace EditorManagement.Patchers
             slider.maxValue = 999f;
             slider.minValue = 0f;
 
+            DestroyImmediate(snap.Find("bpm/<").gameObject);
+            DestroyImmediate(snap.Find("bpm/>").gameObject);
             EditorThemeManager.AddToggle(snap.Find("toggle/toggle").GetComponent<Toggle>());
             EditorThemeManager.AddLightText(snap.Find("toggle/title").GetComponent<Text>());
             EditorThemeManager.AddLightText(snap.Find("bpm/title").GetComponent<Text>());
             snap.Find("toggle/title").AsRT().sizeDelta = new Vector2(100f, 32f);
             snap.Find("bpm/title").AsRT().sizeDelta = new Vector2(100f, 32f);
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, snap.transform.Find("title_/Panel/icon").gameObject, new List<Component>
+            {
+                snap.transform.Find("title_/Panel/icon").GetComponent<Image>(),
+            }));
+            EditorThemeManager.AddLightText(snap.transform.Find("title_/title").GetComponent<Text>());
+
+            var bpmSlider = snap.Find("bpm/slider").GetComponent<Slider>();
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, bpmSlider.transform.Find("Background").gameObject, new List<Component>
+            {
+                bpmSlider.transform.Find("Background").GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, bpmSlider.gameObject, new List<Component>
+            {
+                bpmSlider.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddInputField(snap.Find("bpm/input").GetComponent<InputField>());
 
             var snapOffset = snap.Find("bpm").gameObject.Duplicate(transform.Find("snap"), "bpm offset");
             var snapOffsetText = snapOffset.transform.Find("title").GetComponent<Text>();
@@ -77,12 +97,28 @@ namespace EditorManagement.Patchers
             snapOffsetText.rectTransform.sizeDelta = new Vector2(100f, 32f);
             EditorThemeManager.AddLightText(snapOffsetText);
 
+            var bpmOffsetSlider = snapOffset.transform.Find("slider").GetComponent<Slider>();
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, bpmOffsetSlider.transform.Find("Background").gameObject, new List<Component>
+            {
+                bpmOffsetSlider.transform.Find("Background").GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, bpmOffsetSlider.gameObject, new List<Component>
+            {
+                bpmOffsetSlider.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddInputField(snapOffset.transform.Find("input").GetComponent<InputField>());
+
             snap.AsRT().sizeDelta = new Vector2(765f, 140f);
 
-            var title1 = snap.GetChild(0).gameObject.Duplicate(transform, "title");
+            var title1 = snap.GetChild(0).gameObject.Duplicate(transform, "info title");
             var editorInformationText = title1.transform.Find("title").GetComponent<Text>();
             editorInformationText.text = "Editor Information";
 
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, title1.transform.Find("Panel/icon").gameObject, new List<Component>
+            {
+                title1.transform.Find("Panel/icon").GetComponent<Image>(),
+            }));
             EditorThemeManager.AddLightText(editorInformationText);
 
             info.Clear();
@@ -173,9 +209,13 @@ namespace EditorManagement.Patchers
 
             loadingDoggoLE.ignoreLayout = true;
 
-            var title2 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+            var title2 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform, "marker colors title");
             var markerColorsText = title2.transform.Find("title").GetComponent<Text>();
             markerColorsText.text = "Marker Colors";
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, title2.transform.Find("Panel/icon").gameObject, new List<Component>
+            {
+                title2.transform.Find("Panel/icon").GetComponent<Image>(),
+            }));
 
             EditorThemeManager.AddLightText(markerColorsText);
 
@@ -188,9 +228,13 @@ namespace EditorManagement.Patchers
                 markerColorsContent = markersScrollView.transform.Find("Viewport/Content");
             }
 
-            var title3 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform);
+            var title3 = transform.Find("snap").GetChild(0).gameObject.Duplicate(transform, "layer colors title");
             var layerColorsText = title3.transform.Find("title").GetComponent<Text>();
             layerColorsText.text = "Layer Colors";
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, title3.transform.Find("Panel/icon").gameObject, new List<Component>
+            {
+                title3.transform.Find("Panel/icon").GetComponent<Image>(),
+            }));
 
             EditorThemeManager.AddLightText(layerColorsText);
 
@@ -409,7 +453,6 @@ namespace EditorManagement.Patchers
             SetBPMSlider(slider, input);
             SetBPMInputField(slider, input);
 
-            TriggerHelper.IncreaseDecreaseButtons(input, amount: 1f, t: transform.Find("snap/bpm"));
             TriggerHelper.AddEventTriggerParams(input.gameObject,
                 TriggerHelper.ScrollDelta(input, 1f));
             
@@ -418,7 +461,6 @@ namespace EditorManagement.Patchers
             SetBPMOffsetSlider(sliderOffset, inputOffset);
             SetBPMOffsetInputField(sliderOffset, inputOffset);
 
-            TriggerHelper.IncreaseDecreaseButtons(inputOffset, t: transform.Find("snap/bpm offset"));
             TriggerHelper.AddEventTriggerParams(inputOffset.gameObject,
                 TriggerHelper.ScrollDelta(inputOffset));
 

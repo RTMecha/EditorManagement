@@ -310,7 +310,9 @@ namespace EditorManagement.Patchers
 				markerObject.GetComponent<Image>().color = markerColor;
 
 				var text = markerObject.transform.Find("Text");
-				text.GetComponent<Text>().text = marker.name;
+				var textComponent = text.GetComponent<Text>();
+				textComponent.text = marker.name;
+				EditorThemeManager.ApplyLightText(textComponent);
 				text.transform.AsRT().sizeDelta = new Vector2(EditorConfig.Instance.MarkerTextWidth.Value, 20f);
 				markerObject.SetActive(true);
 
@@ -412,12 +414,12 @@ namespace EditorManagement.Patchers
 						image,
 					}, true, 1, SpriteManager.RoundedSide.W));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, name.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, name.gameObject, new List<Component>
 					{
 						name,
 					}));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, pos.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, pos.gameObject, new List<Component>
 					{
 						pos,
 					}));

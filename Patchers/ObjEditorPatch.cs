@@ -1136,7 +1136,7 @@ namespace EditorManagement.Patchers
 					applyPrefabText,
 				}));
 
-				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "assignlabel", siblingIndex + 1);
+				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "label", siblingIndex + 1);
 				assignPrefabLabel.transform.GetChild(0).GetComponent<Text>().text = "Assign Object to a Prefab";
                 var assignPrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "assign", siblingIndex + 2);
 				var assignPrefabText = assignPrefab.transform.GetChild(0).GetComponent<Text>();
@@ -1241,6 +1241,11 @@ namespace EditorManagement.Patchers
 						var bg = topPanel.GetChild(0).GetComponent<Image>();
 						var title = topPanel.GetChild(1).GetComponent<Text>();
 						bg.gameObject.AddComponent<ContrastColors>().Init(title, bg);
+
+						EditorThemeManager.AddElement(new EditorThemeManager.Element("", $"Object Keyframe Color {i + 1}", bg.gameObject, new List<Component>
+						{
+							bg,
+						}));
 
 						var edit = kfdialog.Find("edit");
 						for (int j = 0; j < edit.childCount; j++)
@@ -1356,6 +1361,87 @@ namespace EditorManagement.Patchers
                 {
 					Debug.LogError($"\nException: {ex}");
                 }
+
+				var timeline = ObjEditor.inst.objTimelineContent.parent.parent;
+				var scrollbar = timeline.Find("Scrollbar Horizontal");
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar_Base, scrollbar.gameObject, new List<Component>
+				{
+					scrollbar.GetComponent<Image>(),
+				}));
+
+				var handle = scrollbar.transform.Find("Sliding Area/Handle").GetComponent<Image>();
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar, handle.gameObject, new List<Component>
+				{
+					handle,
+					scrollbar.GetComponent<Scrollbar>(),
+				}, true, 1, SpriteManager.RoundedSide.W, true));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Time_Scrollbar, ObjEditor.inst.objTimelineSlider.transform.Find("Background").gameObject, new List<Component>
+				{
+					ObjEditor.inst.objTimelineSlider.transform.Find("Background").GetComponent<Image>(),
+				}));
+
+                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, timeline.gameObject, new List<Component>
+                {
+                    timeline.GetComponent<Image>(),
+                }));
+
+				var objectEditorScrollbar = dialog.Find("data/left/Scroll View/Scrollbar Vertical").gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectEditorScrollbar, new List<Component>
+				{
+					objectEditorScrollbar.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				var objectEditorScrollbarHandle = objectEditorScrollbar.transform.Find("Sliding Area/Handle").gameObject;
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, objectEditorScrollbarHandle, new List<Component>
+				{
+					objectEditorScrollbarHandle.GetComponent<Image>(),
+					objectEditorScrollbar.GetComponent<Scrollbar>()
+				}, true, 1, SpriteManager.RoundedSide.W, true));
+
+				var zoomSliderBase = ObjEditor.inst.zoomSlider.transform.parent;
+
+				var gameObject = new GameObject("zoom back");
+				gameObject.transform.SetParent(zoomSliderBase.parent);
+				gameObject.transform.SetSiblingIndex(1);
+
+				var rectTransform = gameObject.AddComponent<RectTransform>();
+				var image = gameObject.AddComponent<Image>();
+				UIManager.SetRectTransform(rectTransform, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(128f, 25f));
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar_Base, gameObject, new List<Component>
+				{
+					image,
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, zoomSliderBase.gameObject, new List<Component>
+				{
+					zoomSliderBase.GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(0).gameObject, new List<Component>
+				{
+					zoomSliderBase.transform.GetChild(0).GetComponent<Image>(),
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(2).gameObject, new List<Component>
+				{
+					zoomSliderBase.transform.GetChild(2).GetComponent<Image>(),
+				}));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, ObjEditor.inst.zoomSlider.transform.Find("Background").gameObject, new List<Component>
+				{
+					ObjEditor.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, ObjEditor.inst.zoomSlider.transform.Find("Fill Area/Fill").gameObject, new List<Component>
+				{
+					ObjEditor.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(),
+				}, true, 1, SpriteManager.RoundedSide.W));
+
+				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, ObjEditor.inst.zoomSlider.image.gameObject, new List<Component>
+				{
+					ObjEditor.inst.zoomSlider.image,
+				}, true, 1, SpriteManager.RoundedSide.W));
 			}
 
 			__instance.SelectedColor = EditorConfig.Instance.ObjectSelectionColor.Value;

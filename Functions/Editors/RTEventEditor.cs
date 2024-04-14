@@ -3686,7 +3686,6 @@ namespace EditorManagement.Functions.Editors
 				if (enabled)
 				{
 					img.color = theme.ContainsGroup($"Event Color {i % EventLimit + 1}") ? theme.GetColor($"Event Color {i % EventLimit + 1}") : Color.white;
-					img.color = LSColors.fadeColor(img.color, 0.5f);
 				}
 
 				EventLabels[i].enabled = enabled;

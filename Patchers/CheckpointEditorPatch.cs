@@ -314,22 +314,22 @@ namespace EditorManagement.Patchers
 						Instance.SetCurrentCheckpoint(index);
 					});
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel", "List Button 2 Normal", gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, gameObject, new List<Component>
 					{
 						button.image,
 					}, true, 1, SpriteManager.RoundedSide.W));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel Selected", "Dark Text", selected.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, selected.gameObject, new List<Component>
 					{
 						selected,
 					}));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel Name", "Dark Text", name.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, name.gameObject, new List<Component>
 					{
 						name,
 					}));
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Checkpoint Panel Time", "Dark Text", time.gameObject, new List<Component>
+					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, time.gameObject, new List<Component>
 					{
 						time,
 					}));

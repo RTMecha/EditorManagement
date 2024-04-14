@@ -6,7 +6,7 @@
 		Dark,
 		Light,
 		Vision,
-		Techno,
+		Butter,
 		Arrhythmia,
 		Modern,
 		Beats
@@ -124,6 +124,7 @@
 		List_Button_2_Selected,
 		List_Button_2_Pressed,
 		List_Button_2_Disabled,
+		List_Button_2_Text,
 
 		Back_Button,
 		Back_Button_Text,
