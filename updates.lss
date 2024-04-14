@@ -1,3 +1,38 @@
+2.5.0 > [Apr 14, 2024] (jeez this update is massive)
+- Added Editor Themes. Currently includes Legacy, Dark, Light, Vision, Butter, Arrhythmia, Modern and Beats!
+- The editor now has a toggleable option for rounded corners!
+- Copied Event Keyframes are now transferable between instances of PA, much like copied Beatmap Objects / Prefab Objects.
+- Added some configs for Markers.
+- Fixed a bug with Jump to Previous / Next Marker keybinds that prevented it from properly jumping and it causing the index order to not update, meaning when you click a marker it doesn't assign the proper one.
+- Added BPM Offset to editor level settings.
+- Fixed Force Snap BPM keyframes snapping the first keyframes, when that shouldn't be happening.
+- Fixed Background Editor breaking.
+- Fixed Some Grammar Issues.
+- Timeline scrollbars can now be navigated using the scrollwheel if you hover your mouse over them.
+- Fixed OST Tab not using the Music Volume setting.
+- Fixed Object Selection color not updating.
+- Fixed UI scale issue with the description input field in the External Prefab Editor.
+- Fixed an issue with parent settings not being selectable if the parent's name is empty.
+- Fixed Autosave updating.
+- Easing dropdowns can now be scrolled on to change their value. If you don't like this, you can turn it off via Editor Preferences.
+- Theme Editor no longer displays 8 digit hex codes if Saving Saves Theme Opacity config is off.
+- Reworked Save Prefab button to allow the user to select a specific Prefab to apply to.
+- A Beatmap Objects' Prefab reference can now be set via a few buttons in the single Object editor and the Multi Object editor.
+- Ease Type labels are now consistent across all keyframes.
+- Added a notice to the Shake Event Keyframe editor that lets you know the Interpolation and Speed features are not final and will most likely change at some point, so it's best not to use it in actual levels for now.
+- Prefab system works better now.
+- Changing editor, prefab and theme paths has a bit more functionality now.
+- Added Level Templates. (currently no way to create a new template, this will be worked on in a later patch)
+- Deleting Object keyframes now selects the previous keyframe in the list (for example, say you selected keyframes from index 4 to 7 and delete them, it'll select the keyframe at index 3).
+- Fixed the delete Event Keyframe button being broken. It now properly deletes selected keyframes.
+- Fixed Checkpoint Editor delete button breaking.
+- Prefab Type Popup now has a scrollbar.
+- Level Combiner selections are now outlined instead of highlighted.
+- Gave parent additive toggles a unique sprite.
+- Added the following configs:
+-- Select Pasted Keyframes.
+-- Marker Default Color.
+-- Event Keyframes Use Bin Color.
 2.4.22 > [Apr 2, 2024]
 - Added copyAxis modifier to Background Object Modifiers Editor.
 2.4.21 > [Apr 2, 2024]
