@@ -760,7 +760,7 @@ namespace EditorManagement.Functions.Editors
 
                 EditorThemeManager.AddLightText(editorDialog.Find("data/action/title").GetComponent<Text>());
 
-                EditorThemeManager.AddDropdown(this.actionDropdown, "");
+                EditorThemeManager.AddDropdown(this.actionDropdown);
             }
         }
 
@@ -1106,7 +1106,7 @@ namespace EditorManagement.Functions.Editors
                                 Save();
                             });
 
-                            EditorThemeManager.ApplyToggle(xt, "");
+                            EditorThemeManager.ApplyToggle(xt);
 
                             break;
                         }

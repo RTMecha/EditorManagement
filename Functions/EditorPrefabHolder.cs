@@ -27,6 +27,12 @@ namespace EditorManagement.Functions
         public GameObject Function2Button { get; set; }
     }
 
+    public class FolderButtonStorage : FunctionButtonStorage
+    {
+        [SerializeField]
+        public Clickable clickable;
+    }
+
     public class DeleteButtonStorage : MonoBehaviour
     {
         [SerializeField]

@@ -87,10 +87,7 @@ namespace EditorManagement.Functions.Editors
 				var labelText = label1.GetComponent<Text>();
 				labelText.text = "Select levels to combine";
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Label", "Light Text", labelText.gameObject, new List<Component>
-				{
-					labelText,
-				}));
+				EditorThemeManager.AddLightText(labelText);
 			}
 
 			var search = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("search-box").gameObject);
@@ -108,7 +105,7 @@ namespace EditorManagement.Functions.Editors
                 StartCoroutine(RenderDialog());
             });
 
-			EditorThemeManager.AddInputField(searchField, "Level Combiner Search", "Search Field 1", 1, SpriteManager.RoundedSide.Bottom);
+			EditorThemeManager.AddInputField(searchField, ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
 
 			search.transform.GetChild(0).Find("Placeholder").GetComponent<Text>().text = "Search for level...";
 
@@ -139,10 +136,7 @@ namespace EditorManagement.Functions.Editors
 					var labelText = label1.GetComponent<Text>();
 					labelText.text = "Save path";
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Label", "Light Text", labelText.gameObject, new List<Component>
-					{
-						labelText,
-					}));
+					EditorThemeManager.AddLightText(labelText);
 				}
 
 				var save = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("search-box").gameObject);
@@ -161,7 +155,7 @@ namespace EditorManagement.Functions.Editors
 					savePath = _val;
 				});
 
-				EditorThemeManager.AddInputField(saveField, "Level Combiner Save Field", "Input Field");
+				EditorThemeManager.AddInputField(saveField);
 
 				((Text)saveField.placeholder).text = "Set a path...";
 
@@ -189,18 +183,8 @@ namespace EditorManagement.Functions.Editors
 						Combine();
 					});
 
-					Destroy(button.GetComponent<Animator>());
-					buttonStorage.button.transition = Selectable.Transition.ColorTint;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Button", "Function 2", button, new List<Component>
-					{
-						buttonStorage.button.image,
-						buttonStorage.button,
-					}, true, 1, SpriteManager.RoundedSide.W, true));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Button Text", "Function 2 Text", buttonStorage.text.gameObject, new List<Component>
-					{
-						buttonStorage.text,
-					}));
+					EditorThemeManager.AddSelectable(buttonStorage.button, ThemeGroup.Function_2);
+					EditorThemeManager.AddGraphic(buttonStorage.text, ThemeGroup.Function_2_Text);
 				}
 			}
 
@@ -210,21 +194,9 @@ namespace EditorManagement.Functions.Editors
 				OpenDialog();
 			}, 4);
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Dialog", "Background", editorDialogObject, new List<Component>
-			{
-				editorDialogObject.GetComponent<Image>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Level Combiner Label", "Light Text", infoText.gameObject, new List<Component>
-			{
-				infoText,
-			}));
+			EditorThemeManager.AddGraphic(editorDialogObject.GetComponent<Image>(), ThemeGroup.Background_1);
+			EditorThemeManager.AddLightText(infoText);
 		}
-
-        void Update()
-        {
-
-        }
 
         public void OpenDialog()
         {
@@ -293,25 +265,21 @@ namespace EditorManagement.Functions.Editors
 
 				var image = gameObjectBase.AddComponent<Image>();
 
-				EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Level Combiner Base", "Function 1", gameObjectBase, new List<Component>
-				{
-					image,
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.ApplyGraphic(image, ThemeGroup.Function_1, true);
 
 				rectTransform.sizeDelta = new Vector2(750f, 42f);
 
 				var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(rectTransform, "Button");
 				UIManager.SetRectTransform(gameObject.transform.AsRT(), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(740f, 32f));
 				editorWrapper.CombinerGameObject = gameObjectBase;
+				var folderButtonStorage = gameObject.GetComponent<FolderButtonStorage>();
 
 				var hoverUI = gameObject.AddComponent<HoverUI>();
 				hoverUI.size = buttonHoverSize;
 				hoverUI.animatePos = false;
 				hoverUI.animateSca = true;
 
-				var text = gameObject.transform.GetChild(0).GetComponent<Text>();
-
-				text.text = string.Format(format,
+				folderButtonStorage.text.text = string.Format(format,
 					LSText.ClampString(Path.GetFileName(editorWrapper.folder), foldClamp),
 					LSText.ClampString(metadata.song.title, songClamp),
 					LSText.ClampString(metadata.artist.Name, artiClamp),
@@ -320,9 +288,9 @@ namespace EditorManagement.Functions.Editors
 					LSText.ClampString(metadata.song.description, descClamp),
 					LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
 
-				text.horizontalOverflow = horizontalOverflow;
-				text.verticalOverflow = verticalOverflow;
-				text.fontSize = fontSize;
+				folderButtonStorage.text.horizontalOverflow = horizontalOverflow;
+				folderButtonStorage.text.verticalOverflow = verticalOverflow;
+				folderButtonStorage.text.fontSize = fontSize;
 
 				var htt = gameObject.AddComponent<HoverTooltip>();
 
@@ -338,19 +306,9 @@ namespace EditorManagement.Functions.Editors
 				Action action = delegate ()
 				{
 					image.enabled = editorWrapper.combinerSelected;
-
-					//var cb = x.colors;
-					//cb.normalColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
-					//cb.selectedColor = editorWrapper.combinerSelected ? new Color(0.7447f, 0.7247f, 0.7047f, 1f) : new Color(0.1647f, 0.1647f, 0.1647f, 1f);
-					//cb.highlightedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
-					//cb.pressedColor = editorWrapper.combinerSelected ? new Color(0.9447f, 0.9247f, 0.9047f, 1f) : new Color(0.2588f, 0.2588f, 0.2588f, 1f);
-					//x.colors = cb;
-
-					//text.color = editorWrapper.combinerSelected ? new Color(0.1173f, 0.0973f, 0.0973f, 1f) : new Color(0.9373f, 0.9216f, 0.9373f, 1f);
 				};
 
-				var button = gameObject.GetComponent<Button>();
-				button.onClick.AddListener(delegate ()
+				folderButtonStorage.button.onClick.AddListener(delegate ()
 				{
 					editorWrapper.combinerSelected = !editorWrapper.combinerSelected;
 					action.Invoke();
@@ -370,16 +328,8 @@ namespace EditorManagement.Functions.Editors
 
 				iconImage.sprite = editorWrapper.albumArt ?? SteamWorkshop.inst.defaultSteamImageSprite;
 
-				EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Combiner Button {num}", "List Button 1", gameObject, new List<Component>
-				{
-					gameObject.GetComponent<Image>(),
-					button,
-				}, true, 1, SpriteManager.RoundedSide.W, true));
-
-				EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num} Text", "Light Text", text.gameObject, new List<Component>
-				{
-					text,
-				}));
+				EditorThemeManager.ApplySelectable(folderButtonStorage.button, ThemeGroup.List_Button_1);
+				EditorThemeManager.ApplyLightText(folderButtonStorage.text);
 
 				string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
 
@@ -400,77 +350,81 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public void Combine()
-        {
+		public void Combine()
+		{
 			var combineList = new List<GameData>();
 			var list = new List<string>();
 			var paths = new List<string>();
 			var selected = EditorManager.inst.loadedLevels.Select(x => x as EditorWrapper).Where(x => x.combinerSelected);
 
 			foreach (var editorWrapper in selected)
-            {
-				if (RTFile.FileExists(editorWrapper.folder + "/level.lsb"))
-                {
-					Debug.Log($"{EditorManager.inst.className}Parsing GameData from {Path.GetFileName(editorWrapper.folder)}");
-					paths.Add(editorWrapper.folder + "/level.lsb");
-					list.Add(Path.GetFileName(editorWrapper.folder));
-					combineList.Add(GameData.Parse(SimpleJSON.JSON.Parse(RTFile.ReadFromFile(editorWrapper.folder + "/level.lsb"))));
-                }
-            }
+			{
+				if (!RTFile.FileExists(editorWrapper.folder + "/level.lsb"))
+					continue;
+
+				Debug.Log($"{EditorManager.inst.className}Parsing GameData from {Path.GetFileName(editorWrapper.folder)}");
+				paths.Add(editorWrapper.folder + "/level.lsb");
+				list.Add(Path.GetFileName(editorWrapper.folder));
+				combineList.Add(GameData.Parse(SimpleJSON.JSON.Parse(RTFile.ReadFromFile(editorWrapper.folder + "/level.lsb"))));
+			}
 
 			Debug.Log($"{EditorManager.inst.className}Can Combine: {combineList.Count > 0 && !string.IsNullOrEmpty(savePath)}" +
 				$"\nGameData Count: {combineList.Count}" +
 				$"\nSavePath: {savePath}");
 
-			if (combineList.Count > 0 && !string.IsNullOrEmpty(savePath))
-            {
-				var combinedGameData = ProjectData.Combiner.Combine(combineList.ToArray());
-
-				string save = savePath;
-				if (!save.Contains("level.lsb") && save.LastIndexOf('/') == save.Length - 1)
-					save += "level.lsb";
-				else if (!save.Contains("/level.lsb"))
-					save += "/level.lsb";
-
-				if (!save.Contains(RTFile.ApplicationDirectory) && !save.Contains(RTEditor.editorListSlash))
-					save = RTFile.ApplicationDirectory + RTEditor.editorListSlash + save;
-				else if (!save.Contains(RTFile.ApplicationDirectory))
-					save = RTFile.ApplicationDirectory + save;
-
-				foreach (var file in paths)
-				{
-					if (!RTFile.FileExists(file))
-						return;
-
-					var directory = Path.GetDirectoryName(save);
-					if (!RTFile.DirectoryExists(directory))
-						Directory.CreateDirectory(directory);
-
-					var files1 = Directory.GetFiles(Path.GetDirectoryName(file));
-
-					foreach (var file2 in files1)
-					{
-						string dir = Path.GetDirectoryName(file2);
-						if (!RTFile.DirectoryExists(dir))
-						{
-							Directory.CreateDirectory(dir);
-						}
-
-						if (Path.GetFileName(file2) != "level.lsb" && !RTFile.FileExists(file2.Replace(Path.GetDirectoryName(file), directory)))
-							File.Copy(file2, file2.Replace(Path.GetDirectoryName(file), directory));
-					}
-				}
-
-				StartCoroutine(ProjectData.Writer.SaveData(save, combinedGameData, delegate ()
-				{
-					EditorManager.inst.DisplayNotification($"Combined {FontManager.TextTranslater.ArrayToString(list.ToArray())} to {savePath}!", 3f, EditorManager.NotificationType.Success);
-				}));
+			if (combineList.Count < 2)
+			{
+				EditorManager.inst.DisplayNotification("More than one level needs to be selected.", 1f, EditorManager.NotificationType.Error);
+				return;
 			}
 
-            if (selected.Count() < 1)
-                EditorManager.inst.DisplayNotification("Cannot combine without a any levels selected!", 1f, EditorManager.NotificationType.Error);
-			else if (string.IsNullOrEmpty(savePath))
+			if (string.IsNullOrEmpty(savePath))
+			{
 				EditorManager.inst.DisplayNotification("Cannot combine with an empty path!", 1f, EditorManager.NotificationType.Error);
-        }
+				return;
+			}
+
+			var combinedGameData = ProjectData.Combiner.Combine(combineList.ToArray());
+
+			string save = savePath;
+			if (!save.Contains("level.lsb") && save.LastIndexOf('/') == save.Length - 1)
+				save += "level.lsb";
+			else if (!save.Contains("/level.lsb"))
+				save += "/level.lsb";
+
+			if (!save.Contains(RTFile.ApplicationDirectory) && !save.Contains(RTEditor.editorListSlash))
+				save = RTFile.ApplicationDirectory + RTEditor.editorListSlash + save;
+			else if (!save.Contains(RTFile.ApplicationDirectory))
+				save = RTFile.ApplicationDirectory + save;
+
+			foreach (var file in paths)
+			{
+				if (!RTFile.FileExists(file))
+					return;
+
+				var directory = Path.GetDirectoryName(save);
+				if (!RTFile.DirectoryExists(directory))
+					Directory.CreateDirectory(directory);
+
+				var files1 = Directory.GetFiles(Path.GetDirectoryName(file));
+
+				foreach (var file2 in files1)
+				{
+					string dir = Path.GetDirectoryName(file2);
+					if (!RTFile.DirectoryExists(dir))
+					{
+						Directory.CreateDirectory(dir);
+					}
+
+					if (Path.GetFileName(file2) != "level.lsb" && !RTFile.FileExists(file2.Replace(Path.GetDirectoryName(file), directory)))
+						File.Copy(file2, file2.Replace(Path.GetDirectoryName(file), directory));
+				}
+			}
+
+			StartCoroutine(ProjectData.Writer.SaveData(save, combinedGameData, delegate ()
+			{
+				EditorManager.inst.DisplayNotification($"Combined {FontManager.TextTranslater.ArrayToString(list.ToArray())} to {savePath}!", 3f, EditorManager.NotificationType.Success);
+			}));
+		}
     }
 }

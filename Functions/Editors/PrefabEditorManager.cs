@@ -119,147 +119,56 @@ namespace EditorManagement.Functions.Editors
                 prefabCreatorOffsetSlider = PrefabEditor.inst.dialog.Find("data/offset/slider").GetComponent<Slider>();
                 prefabCreatorOffset = PrefabEditor.inst.dialog.Find("data/offset/input").GetComponent<InputField>();
 
-
                 // Editor Theme
                 {
                     #region External
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup", "Background", PrefabEditor.inst.externalPrefabDialog.gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.externalPrefabDialog.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+                    EditorThemeManager.AddGraphic(PrefabEditor.inst.externalPrefabDialog.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
 
                     var externalPanel = PrefabEditor.inst.externalPrefabDialog.Find("Panel");
                     externalPanel.AsRT().sizeDelta = new Vector2(32f, 32f);
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Panel", "Background", externalPanel.gameObject, new List<Component>
-                    {
-                        externalPanel.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.Top));
+                    EditorThemeManager.AddGraphic(externalPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
 
                     var externalClose = externalPanel.Find("x").GetComponent<Button>();
                     Destroy(externalClose.GetComponent<Animator>());
                     externalClose.transition = Selectable.Transition.ColorTint;
                     externalClose.image.rectTransform.anchoredPosition = Vector2.zero;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Close", "Close", externalClose.gameObject, new List<Component>
-                    {
-                        externalClose.image,
-                        externalClose,
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
+                    EditorThemeManager.AddSelectable(externalClose, ThemeGroup.Close);
+                    EditorThemeManager.AddGraphic(externalClose.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
-                    var externalCloseX = externalClose.transform.GetChild(0).gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Close X", "Close X", externalCloseX, new List<Component>
-                    {
-                        externalCloseX.GetComponent<Image>(),
-                    }));
+                    EditorThemeManager.AddLightText(externalPanel.Find("Text").GetComponent<Text>());
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Title", "Light Text", externalPanel.Find("Text").gameObject, new List<Component>
-                    {
-                        externalPanel.Find("Text").GetComponent<Text>(),
-                    }));
+                    EditorThemeManager.AddScrollbar(PrefabEditor.inst.externalPrefabDialog.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
 
-                    var externalScrollbar = PrefabEditor.inst.externalPrefabDialog.transform.Find("Scrollbar").gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Scrollbar", "Background", externalScrollbar, new List<Component>
-                    {
-                        externalScrollbar.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-                    var externalScrollbarHandle = externalScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Scrollbar Handle", "Scrollbar Handle", externalScrollbarHandle, new List<Component>
-                    {
-                        externalScrollbarHandle.GetComponent<Image>(),
-                        externalScrollbar.GetComponent<Scrollbar>()
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Search", "Search Field 2", PrefabEditor.inst.externalSearch.gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.externalSearch.image,
-                    }, true, 1, SpriteManager.RoundedSide.Bottom));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Search Text", "Search Field 2 Text", PrefabEditor.inst.externalSearch.textComponent.gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.externalSearch.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(PrefabEditor.inst.externalSearch, ThemeGroup.Search_Field_2);
 
                     #endregion
 
                     #region Internal
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup", "Background", PrefabEditor.inst.internalPrefabDialog.gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.internalPrefabDialog.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+                    EditorThemeManager.AddGraphic(PrefabEditor.inst.internalPrefabDialog.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
 
                     var internalPanel = PrefabEditor.inst.internalPrefabDialog.Find("Panel");
                     internalPanel.AsRT().sizeDelta = new Vector2(32f, 32f);
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Panel", "Background", internalPanel.gameObject, new List<Component>
-                    {
-                        internalPanel.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.Top));
+                    EditorThemeManager.AddGraphic(internalPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
 
                     var internalClose = internalPanel.Find("x").GetComponent<Button>();
                     Destroy(internalClose.GetComponent<Animator>());
                     internalClose.transition = Selectable.Transition.ColorTint;
                     internalClose.image.rectTransform.anchoredPosition = Vector2.zero;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Close", "Close", internalClose.gameObject, new List<Component>
-                    {
-                        internalClose.image,
-                        internalClose,
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
+                    EditorThemeManager.AddSelectable(internalClose, ThemeGroup.Close);
+                    EditorThemeManager.AddGraphic(internalClose.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
-                    var internalCloseX = internalClose.transform.GetChild(0).gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Close X", "Close X", internalCloseX, new List<Component>
-                    {
-                        internalCloseX.GetComponent<Image>(),
-                    }));
+                    EditorThemeManager.AddLightText(internalPanel.Find("Text").GetComponent<Text>());
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Title", "Light Text", internalPanel.Find("Text").gameObject, new List<Component>
-                    {
-                        internalPanel.Find("Text").GetComponent<Text>(),
-                    }));
+                    EditorThemeManager.AddScrollbar(PrefabEditor.inst.internalPrefabDialog.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
 
-                    var internalScrollbar = PrefabEditor.inst.internalPrefabDialog.transform.Find("Scrollbar").gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Scrollbar", "Background", internalScrollbar, new List<Component>
-                    {
-                        internalScrollbar.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+                    EditorThemeManager.AddInputField(PrefabEditor.inst.internalSearch, ThemeGroup.Search_Field_2);
 
-                    var internalScrollbarHandle = internalScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Scrollbar Handle", "Scrollbar Handle", internalScrollbarHandle, new List<Component>
-                    {
-                        internalScrollbarHandle.GetComponent<Image>(),
-                        internalScrollbar.GetComponent<Scrollbar>()
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
+                    EditorThemeManager.AddGraphic(PrefabEditor.inst.internalPrefabDialog.Find("select_prefab").GetComponent<Image>(), ThemeGroup.Background_2, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Search", "Search Field 2", PrefabEditor.inst.internalSearch.gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.internalSearch.image,
-                    }, true, 1, SpriteManager.RoundedSide.Bottom));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Search Text", "Search Field 2 Text", PrefabEditor.inst.internalSearch.textComponent.gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.internalSearch.textComponent,
-                    }));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Selector Base", "Background 2", PrefabEditor.inst.internalPrefabDialog.Find("select_prefab").gameObject, new List<Component>
-                    {
-                        PrefabEditor.inst.internalPrefabDialog.Find("select_prefab").GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Selector Button", "Function 2", selectQuickPrefabButton.gameObject, new List<Component>
-                    {
-                        selectQuickPrefabButton.image,
-                        selectQuickPrefabButton
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Selector Button Text", "Function 2 Text", selectQuickPrefabButton.transform.GetChild(0).gameObject, new List<Component>
-                    {
-                        selectQuickPrefabButton.transform.GetChild(0).GetComponent<Text>(),
-                    }));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Internal Prefab Popup Selection Text", "Light Text", selectQuickPrefabText.gameObject, new List<Component>
-                    {
-                        selectQuickPrefabText,
-                    }));
+                    EditorThemeManager.AddSelectable(selectQuickPrefabButton, ThemeGroup.Function_2);
+                    EditorThemeManager.AddLightText(selectQuickPrefabText);
 
                     #endregion
                 }
@@ -965,49 +874,14 @@ namespace EditorManagement.Functions.Editors
             scrollbar.transform.AsRT().sizeDelta = new Vector2(32f, 600f);
             scrollRectSR.verticalScrollbar = scrollbar.GetComponent<Scrollbar>();
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup", "Background", gameObject, new List<Component>
-            {
-                gameObject.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+            EditorThemeManager.AddGraphic(gameObject.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
+            EditorThemeManager.AddGraphic(maskImage, ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
+            EditorThemeManager.AddGraphic(panelRT.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
+            EditorThemeManager.AddSelectable(closeButton, ThemeGroup.Close);
+            EditorThemeManager.AddGraphic(closeButton.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+            EditorThemeManager.AddLightText(title);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Mask", "Background", mask, new List<Component>
-            {
-                maskImage,
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Panel", "Background", panelRT.gameObject, new List<Component>
-            {
-                panelRT.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Top));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Close", "Close", closeButton.gameObject, new List<Component>
-            {
-                closeButton.image,
-                closeButton,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            var closeX = closeButton.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Close X", "Close X", closeX, new List<Component>
-            {
-                closeX.GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Title", "Light Text", title.gameObject, new List<Component>
-            {
-                title,
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Scrollbar", "Background", scrollbar, new List<Component>
-            {
-                scrollbar.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-            var scrollbarHandle = scrollbar.transform.Find("Sliding Area/Handle").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Types Popup Scrollbar Handle", "Scrollbar Handle", scrollbarHandle, new List<Component>
-            {
-                scrollbarHandle.GetComponent<Image>(),
-                scrollbar.GetComponent<Scrollbar>()
-            }, true, 1, SpriteManager.RoundedSide.W, true));
+            EditorThemeManager.AddScrollbar(scrollRectSR.verticalScrollbar, scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
 
             // Prefab Type Prefab
             prefabTypePrefab = new GameObject("Prefab Type");
@@ -1184,15 +1058,8 @@ namespace EditorManagement.Functions.Editors
                 RenderPrefabTypesPopup(current, onSelect);
             });
 
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Create Button", "Add", createPrefabType, new List<Component>
-            {
-                createPrefabTypeButton.image
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Create Button Text", "Add Text", createPrefabTypeText.gameObject, new List<Component>
-            {
-                createPrefabTypeText
-            }));
+            EditorThemeManager.ApplyGraphic(createPrefabTypeButton.image, ThemeGroup.Add);
+            EditorThemeManager.ApplyGraphic(createPrefabTypeText, ThemeGroup.Add_Text);
 
             int num = 0;
             foreach (var prefabType in DataManager.inst.PrefabTypes.Select(x => x as PrefabType))
@@ -1211,15 +1078,8 @@ namespace EditorManagement.Functions.Editors
                 
                 toggle.image.color = prefabType.Color;
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Toggle", "", toggle.gameObject, new List<Component>()
-                {
-                    toggle.image
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Toggle", "Background", toggle.graphic.gameObject, new List<Component>()
-                {
-                    toggle.graphic
-                }));
+                EditorThemeManager.ApplyGraphic(toggle.image, ThemeGroup.Null, true);
+                EditorThemeManager.ApplyGraphic(toggle.graphic, ThemeGroup.Background_1);
 
                 var icon = gameObject.transform.Find("Toggle/Icon").GetComponent<Image>();
                 icon.sprite = prefabType.Icon;
@@ -1266,7 +1126,7 @@ namespace EditorManagement.Functions.Editors
                     RenderPrefabTypesPopup(index, onSelect);
                 });
 
-                EditorThemeManager.AddInputField(inputField, "Prefab Type Name", "Input Field");
+                EditorThemeManager.AddInputField(inputField);
 
                 var color = gameObject.transform.Find("Color").GetComponent<InputField>();
                 color.onValueChanged.ClearAll();
@@ -1284,7 +1144,7 @@ namespace EditorManagement.Functions.Editors
                     SavePrefabTypes();
                 });
 
-                EditorThemeManager.AddInputField(color, "Prefab Type Name", "Input Field");
+                EditorThemeManager.AddInputField(color);
 
                 var deleteStorage = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
                 deleteStorage.button.onClick.ClearAll();
@@ -1322,15 +1182,8 @@ namespace EditorManagement.Functions.Editors
                     SavePrefabTypes();
                 });
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Delete", "Delete", deleteStorage.gameObject, new List<Component>
-                {
-                    deleteStorage.baseImage,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Delete Sprite", "Delete Text", deleteStorage.image.gameObject, new List<Component>
-                {
-                    deleteStorage.image,
-                }));
+                EditorThemeManager.ApplyGraphic(deleteStorage.baseImage, ThemeGroup.Delete, true);
+                EditorThemeManager.ApplyGraphic(deleteStorage.image, ThemeGroup.Delete_Text, true);
 
                 var setImageStorage = gameObject.transform.Find("Set Icon").GetComponent<FunctionButtonStorage>();
                 setImageStorage.button.onClick.ClearAll();
@@ -1352,15 +1205,8 @@ namespace EditorManagement.Functions.Editors
 
                 setImageStorage.text.text = "Set Icon";
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Set Icon Button", "Function 1", setImageStorage.button.gameObject, new List<Component>
-                {
-                    setImageStorage.button.image,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Type Set Icon Button Text", "Function 1 Text", setImageStorage.text.gameObject, new List<Component>
-                {
-                    setImageStorage.text,
-                }));
+                EditorThemeManager.ApplyGraphic(setImageStorage.button.image, ThemeGroup.Function_1, true);
+                EditorThemeManager.ApplyGraphic(setImageStorage.text, ThemeGroup.Function_1_Text, true);
 
                 num++;
             }
@@ -1439,10 +1285,7 @@ namespace EditorManagement.Functions.Editors
             var labelTypeText = labelType.GetComponent<Text>();
             labelTypeText.text = "Type";
             labelTypeText.alignment = TextAnchor.UpperLeft;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Editor Label", "Light Text", labelType.gameObject, new List<Component>
-            {
-                labelTypeText,
-            }));
+            EditorThemeManager.AddLightText(labelTypeText);
 
             var prefabTypeBase = new GameObject("Prefab Type Base");
             prefabTypeBase.transform.SetParent(editorDialogTransform);
@@ -1465,22 +1308,11 @@ namespace EditorManagement.Functions.Editors
             externalType = prefabType.GetComponent<Button>();
             externalTypeImage = prefabType.GetComponent<Image>();
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Editor Type Button", "", prefabType, new List<Component>
-            {
-                externalTypeImage,
-            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddGraphic(externalTypeImage, ThemeGroup.Null, true);
 
             prefabTypeText.gameObject.AddComponent<ContrastColors>().Init(prefabTypeText, externalTypeImage);
 
-            // Spacer
-            {
-                var spacer = new GameObject("spacer2");
-                spacer.transform.SetParent(editorDialogTransform);
-                spacer.transform.localScale = Vector3.one;
-
-                var spacerRT = spacer.AddComponent<RectTransform>();
-                spacerRT.sizeDelta = new Vector2(765f, 24f);
-            }
+            RTEditor.GenerateSpacer("spacer2", editorDialogTransform, new Vector2(765f, 24f));
 
             var labelDescriptionBase = new GameObject("Description Label");
             labelDescriptionBase.transform.SetParent(editorDialogTransform);
@@ -1496,10 +1328,7 @@ namespace EditorManagement.Functions.Editors
             var labelDescriptionText = labelDescription.GetComponent<Text>();
             labelDescriptionText.text = "Description";
             labelDescriptionText.alignment = TextAnchor.UpperLeft;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Editor Label", "Light Text", labelDescription.gameObject, new List<Component>
-            {
-                labelDescriptionText,
-            }));
+            EditorThemeManager.AddLightText(labelDescriptionText);
 
             var textBase1 = new GameObject("Text Base 1");
             textBase1.transform.SetParent(editorDialogTransform);
@@ -1520,17 +1349,9 @@ namespace EditorManagement.Functions.Editors
             ((Text)externalDescriptionField.placeholder).text = "Set description...";
             ((Text)externalDescriptionField.placeholder).color = new Color(0.1961f, 0.1961f, 0.1961f, 0.5f);
 
-            EditorThemeManager.AddInputField(externalDescriptionField, "External Prefab Editor Description", "Input Field");
+            EditorThemeManager.AddInputField(externalDescriptionField);
 
-            // Spacer
-            {
-                var spacer = new GameObject("spacer3");
-                spacer.transform.SetParent(editorDialogTransform);
-                spacer.transform.localScale = Vector3.one;
-
-                var spacerRT = spacer.AddComponent<RectTransform>();
-                spacerRT.sizeDelta = new Vector2(765f, 160f);
-            }
+            RTEditor.GenerateSpacer("spacer3", editorDialogTransform, new Vector2(765f, 160f));
 
             var buttonsBase = new GameObject("buttons base");
             buttonsBase.transform.SetParent(editorDialogTransform);
@@ -1562,36 +1383,11 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorDialog("Prefab External Dialog", editorDialogObject);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Dialog", "Background", editorDialogObject, new List<Component>
-            {
-                editorDialogObject.GetComponent<Image>(),
-            }));
-
-            Destroy(importPrefab.GetComponent<Animator>());
-            importPrefabStorage.button.transition = Selectable.Transition.ColorTint;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Button", "Function 2", importPrefab, new List<Component>
-            {
-                importPrefabStorage.button.image,
-                importPrefabStorage.button,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            Destroy(exportToVG.GetComponent<Animator>());
-            exportToVGStorage.button.transition = Selectable.Transition.ColorTint;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Button", "Function 2", exportToVG, new List<Component>
-            {
-                exportToVGStorage.button.image,
-                exportToVGStorage.button,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Button Text", "Function 2 Text", importPrefabStorage.text.gameObject, new List<Component>
-            {
-                importPrefabStorage.text,
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Button Text", "Function 2 Text", exportToVGStorage.text.gameObject, new List<Component>
-            {
-                exportToVGStorage.text,
-            }));
+            EditorThemeManager.AddGraphic(editorDialogObject.GetComponent<Image>(), ThemeGroup.Background_1);
+            EditorThemeManager.AddSelectable(importPrefabStorage.button, ThemeGroup.Function_2);
+            EditorThemeManager.AddSelectable(exportToVGStorage.button, ThemeGroup.Function_2);
+            EditorThemeManager.AddGraphic(importPrefabStorage.text, ThemeGroup.Function_2_Text);
+            EditorThemeManager.AddGraphic(exportToVGStorage.text, ThemeGroup.Function_2_Text);
         }
 
         public void RenderPrefabExternalDialog(PrefabPanel prefabPanel)
@@ -2009,15 +1805,8 @@ namespace EditorManagement.Functions.Editors
                     createInternal = true;
                 });
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Internal Prefab Popup Create", "Add", gameObject, new List<Component>
-                {
-                    x.image,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Internal Prefab Popup Create Text", "Add Text", text.gameObject, new List<Component>
-                {
-                    text,
-                }));
+                EditorThemeManager.ApplyGraphic(x.image, ThemeGroup.Add, true);
+                EditorThemeManager.ApplyGraphic(text, ThemeGroup.Add_Text);
             });
 
             var nameHorizontalOverflow = config.PrefabInternalNameHorizontalWrap.Value;
@@ -2092,48 +1881,13 @@ namespace EditorManagement.Functions.Editors
             var addPrefabObject = storage.button;
             var delete = storage.deleteButton;
 
-            //var name = tf.Find("name").GetComponent<Text>();
-            //var typeName = tf.Find("type-name").GetComponent<Text>();
-            //var color = tf.Find("category").GetComponent<Image>();
-            //var deleteRT = tf.Find("delete").GetComponent<RectTransform>();
-            //var addPrefabObject = gameObject.GetComponent<Button>();
-            //var delete = tf.Find("delete").GetComponent<Button>();
-            //var typeImage = tf.Find("category/type/type").GetComponent<Image>();
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button", "Prefab", gameObject, new List<Component>
-            {
-                gameObject.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Name", "Prefab Text", name.gameObject, new List<Component>
-            {
-                name,
-            }));
-            
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Type Name", "Prefab Text", typeName.gameObject, new List<Component>
-            {
-                typeName,
-            }));
-            
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Delete", "Delete", delete.gameObject, new List<Component>
-            {
-                delete.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-            
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Delete Sprite", "Delete Text", delete.transform.GetChild(0).gameObject, new List<Component>
-            {
-                delete.transform.GetChild(0).GetComponent<Image>(),
-            }));
-            
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Category", "", typeImage.gameObject, new List<Component>
-            {
-                typeImage,
-            }, true, 1, SpriteManager.RoundedSide.W));
-            
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Prefab Button Category Shade", "", typeImageShade.gameObject, new List<Component>
-            {
-               typeImageShade,
-            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.ApplySelectable(addPrefabObject, ThemeGroup.List_Button_2);
+            EditorThemeManager.ApplyLightText(name);
+            EditorThemeManager.ApplyLightText(typeName);
+            EditorThemeManager.ApplyGraphic(delete.image, ThemeGroup.Delete, true);
+            EditorThemeManager.ApplyGraphic(delete.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Delete_Text, true);
+            EditorThemeManager.ApplyGraphic(typeImage, ThemeGroup.Null, true);
+            EditorThemeManager.ApplyGraphic(typeImageShade, ThemeGroup.Null, true);
 
             name.text = prefab.Name;
 

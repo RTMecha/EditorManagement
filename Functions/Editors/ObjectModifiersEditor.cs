@@ -1853,70 +1853,12 @@ namespace EditorManagement.Functions.Editors
 
         public void CreateDefaultModifiersList()
         {
-            var qap = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog;
-            var dialog = qap.gameObject.Duplicate(qap.parent, "Default Modifiers Popup");
-            var panel = dialog.transform.Find("Panel").gameObject;
-
-            EditorHelper.AddEditorPopup("Default Modifiers Popup", dialog);
-
-            var search = dialog.transform.Find("search-box/search").GetComponent<InputField>();
-            search.onValueChanged.ClearAll();
-            ((Text)search.placeholder).text = "Search for default modifier...";
-            search.text = searchTerm;
-            search.onValueChanged.AddListener(delegate (string _val)
+            var defaultModifiersList = RTEditor.inst.GeneratePopup("Default Modifiers Popup", "Choose a modifer to add", Vector2.zero, new Vector2(600f, 400f), delegate (string _val)
             {
                 searchTerm = _val;
                 if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
                     RefreshDefaultModifiersList(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
-            });
-
-            var close = panel.transform.Find("x").GetComponent<Button>();
-            close.onClick.ClearAll();
-            close.onClick.AddListener(delegate ()
-            {
-                EditorManager.inst.HideDialog("Default Modifiers Popup");
-            });
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
-            {
-                dialog.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, panel, new List<Component>
-            {
-                panel.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Top));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close, close.gameObject, new List<Component>
-            {
-                close.image,
-                close,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            var closeX = close.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, closeX, new List<Component>
-            {
-                closeX.GetComponent<Image>(),
-            }));
-
-            var title = panel.transform.Find("Text").GetComponent<Text>();
-            title.text = "Choose a modifer to add";
-            EditorThemeManager.AddLightText(title);
-
-            var scrollbar = dialog.transform.Find("Scrollbar").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, scrollbar, new List<Component>
-            {
-                scrollbar.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-            var scrollbarHandle = scrollbar.transform.Find("Sliding Area/Handle").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, scrollbarHandle, new List<Component>
-            {
-                scrollbarHandle.GetComponent<Image>(),
-                scrollbar.GetComponent<Scrollbar>()
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            EditorThemeManager.AddInputField(search, ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
+            }, placeholderText: "Search for default Modifier...");
         }
 
         public string searchTerm;

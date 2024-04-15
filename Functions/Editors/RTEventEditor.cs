@@ -204,15 +204,8 @@ namespace EditorManagement.Functions.Editors
 			eventEditorDialog = EditorManager.inst.GetDialog("Event Editor").Dialog;
 			EventEditor.inst.EventColors = EventLayerColors;
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Dialog", "Background 3", eventEditorDialog.gameObject, new List<Component>
-			{
-				eventEditorDialog.GetComponent<Image>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Dialog Right", "Background", EventEditor.inst.dialogRight.gameObject, new List<Component>
-			{
-				EventEditor.inst.dialogRight.GetComponent<Image>(),
-			}));
+			EditorThemeManager.AddGraphic(eventEditorDialog.GetComponent<Image>(), ThemeGroup.Background_3);
+			EditorThemeManager.AddGraphic(EventEditor.inst.dialogRight.GetComponent<Image>(), ThemeGroup.Background_1);
 
 			for (int i = 0; i < EventEditor.inst.dialogRight.childCount; i++)
 			{
@@ -238,51 +231,33 @@ namespace EditorManagement.Functions.Editors
                     {
 						var buttonBG = button.GetChild(0).GetComponent<Image>();
 
-						EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete BG", "Delete Keyframe BG", buttonBG.gameObject, new List<Component>
-						{
-							buttonBG,
-						}));
-						
-						EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete", "Delete Keyframe Button", buttonBG.gameObject, new List<Component>
-						{
-							buttonComponent,
-							buttonComponent.image,
-						}, isSelectable: true));
+						EditorThemeManager.AddGraphic(buttonBG, ThemeGroup.Delete_Keyframe_BG);
+						EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Delete_Keyframe_Button, false);
 
 						continue;
                     }
 
 					Destroy(button.GetComponent<Animator>());
 					buttonComponent.transition = Selectable.Transition.ColorTint;
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
-					{
-						buttonComponent,
-						buttonComponent.image
-					}, isSelectable: true));
+					EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
 				}
 
 				// Labels
 				for (int j = 0; j < dialog.childCount; j++)
-                {
+				{
 					var label = dialog.GetChild(j);
-					if (label.name == "label" || label.name == "curves_label")
-                    {
-						for (int k = 0; k < label.childCount; k++)
-                        {
-							var labelText = label.GetChild(k).GetComponent<Text>();
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", labelText.gameObject, new List<Component>
-							{
-								labelText,
-							}));
-                        }
-                    }
-                }
+
+					if (!(label.name == "label" || label.name == "curves_label"))
+						continue;
+
+					for (int k = 0; k < label.childCount; k++)
+						EditorThemeManager.AddLightText(label.GetChild(k).GetComponent<Text>());
+				}
 
 				var timeBase = dialog.Find("time");
 				var timeInput = timeBase.Find("time").GetComponent<InputField>();
 
-				EditorThemeManager.AddInputField(timeInput, "Event Editor Time", "Input Field");
+				EditorThemeManager.AddInputField(timeInput);
 
 				for (int j = 1; j < timeBase.childCount; j++)
 				{
@@ -294,63 +269,10 @@ namespace EditorManagement.Functions.Editors
 
 					Destroy(button.GetComponent<Animator>());
 					buttonComponent.transition = Selectable.Transition.ColorTint;
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
-					{
-						buttonComponent,
-						buttonComponent.image
-					}, isSelectable: true));
+					EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
 				}
 
-				#region Easing Dropdown
-
-				var easing = dialog.Find("curves").GetComponent<Dropdown>();
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing", "Dropdown 1", easing.gameObject, new List<Component>
-				{
-					easing.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Text", "Dropdown 1 Overlay", easing.captionText.gameObject, new List<Component>
-				{
-					easing.captionText,
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Arrow", "Dropdown 1 Overlay", easing.transform.Find("Arrow").gameObject, new List<Component>
-				{
-					easing.transform.Find("Arrow").gameObject.GetComponent<Image>(),
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Preview", "Dropdown 1 Overlay", easing.captionImage.gameObject, new List<Component>
-				{
-					easing.captionImage,
-				}));
-
-				var template = easing.transform.Find("Template").gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1", template, new List<Component>
-				{
-					template.GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.Bottom));
-
-				var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1 Item", templateItem, new List<Component>
-				{
-					templateItem.GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
-				{
-					templateItemCheckmark.GetComponent<Image>(),
-				}));
-
-				var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
-				{
-					templateItemLabel.GetComponent<Text>(),
-				}));
-
-				#endregion
+				EditorThemeManager.AddDropdown(dialog.Find("curves").GetComponent<Dropdown>());
 
 				switch (i)
                 {
@@ -382,61 +304,28 @@ namespace EditorManagement.Functions.Editors
                         {
 							var themesSearch = dialog.Find("theme-search").GetComponent<InputField>();
 
-							EditorThemeManager.AddInputField(themesSearch, "Event Editor Theme Search", "Search Field 2");
+							EditorThemeManager.AddInputField(themesSearch, ThemeGroup.Search_Field_2);
 
 							var themes = dialog.Find("themes").GetComponent<Image>();
 
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes", "Background 3", themes.gameObject, new List<Component>
-							{
-								themes,
-							}));
+							EditorThemeManager.AddGraphic(themes, ThemeGroup.Background_3);
+							EditorThemeManager.AddGraphic(dialog.Find("themes/viewport").GetComponent<Image>(), ThemeGroup.Null, true);
 
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes Mask", "", dialog.Find("themes/viewport").gameObject, new List<Component>
-							{
-								dialog.Find("themes/viewport").GetComponent<Image>(),
-							}, true, 1, SpriteManager.RoundedSide.W));
-
-							var scrollbar = themes.transform.Find("Scrollbar Vertical").GetComponent<Scrollbar>();
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
-							{
-								scrollbar.GetComponent<Image>(),
-							}, true, 1, SpriteManager.RoundedSide.W));
-
-							var scrollbarHandle = scrollbar.handleRect.gameObject;
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Themes Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
-							{
-								scrollbar.image,
-								scrollbar
-							}, true, 1, SpriteManager.RoundedSide.W, true));
+							EditorThemeManager.AddScrollbar(themes.transform.Find("Scrollbar Vertical").GetComponent<Scrollbar>(), scrollbarGroup: ThemeGroup.Scrollbar_2, handleGroup: ThemeGroup.Scrollbar_2_Handle);
 
 							var current = dialog.Find("current_title");
 							current.AsRT().sizeDelta = new Vector2(366f, 24f);
 
 							for (int k = 0; k < current.childCount; k++)
-							{
-								var labelText = current.GetChild(k).GetComponent<Text>();
-								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", labelText.gameObject, new List<Component>
-								{
-									labelText,
-								}));
-							}
+								EditorThemeManager.AddLightText(current.GetChild(k).GetComponent<Text>());
 
 							var objectCols = dialog.Find("object_cols/text").GetComponent<Text>();
 							var bgCols = dialog.Find("bg_cols/text").GetComponent<Text>();
 							var playerCols = dialog.Find("player_cols/text").GetComponent<Text>();
 
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", objectCols.gameObject, new List<Component>
-							{
-								objectCols,
-							}));
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", bgCols.gameObject, new List<Component>
-							{
-								bgCols,
-							}));
-							EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", playerCols.gameObject, new List<Component>
-							{
-								playerCols,
-							}));
+							EditorThemeManager.AddLightText(dialog.Find("object_cols/text").GetComponent<Text>());
+							EditorThemeManager.AddLightText(dialog.Find("bg_cols/text").GetComponent<Text>());
+							EditorThemeManager.AddLightText(dialog.Find("player_cols/text").GetComponent<Text>());
 
 							dialog.Find("object_cols").AsRT().sizeDelta = new Vector2(366f, 24f);
 							dialog.Find("object_cols").GetComponent<HorizontalLayoutGroup>().spacing = 6f;
@@ -445,10 +334,7 @@ namespace EditorManagement.Functions.Editors
 								var child = dialog.Find("object_cols").GetChild(j);
 								child.AsRT().sizeDelta = new Vector2(24f, 24f);
 
-								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color", "", child.gameObject, new List<Component>
-								{
-									child.GetComponent<Image>(),
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Null, true);
 							}
 
 							dialog.Find("bg_cols").AsRT().sizeDelta = new Vector2(366f, 24f);
@@ -458,10 +344,7 @@ namespace EditorManagement.Functions.Editors
 								var child = dialog.Find("bg_cols").GetChild(j);
 								child.AsRT().sizeDelta = new Vector2(24f, 24f);
 
-								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color", "", child.gameObject, new List<Component>
-								{
-									child.GetComponent<Image>(),
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Null, true);
 							}
 
 							dialog.Find("player_cols").AsRT().sizeDelta = new Vector2(366f, 24f);
@@ -471,10 +354,7 @@ namespace EditorManagement.Functions.Editors
 								var child = dialog.Find("player_cols").GetChild(j);
 								child.AsRT().sizeDelta = new Vector2(24f, 24f);
 
-								EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color", "", child.gameObject, new List<Component>
-								{
-									child.GetComponent<Image>(),
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Null, true);
 							}
 
 							break;
@@ -507,7 +387,7 @@ namespace EditorManagement.Functions.Editors
 								if (valueNames[j] == "colored" || valueNames[j] == "roundness")
 								{
 									var toggle = dialog.Find(valueNames[j] == "colored" ? "colored" : "roundness/rounded").GetComponent<Toggle>();
-									EditorThemeManager.AddToggle(toggle, "Event Editor Toggle");
+									EditorThemeManager.AddToggle(toggle);
 
 									if (valueNames[j] == "colored")
 										continue;
@@ -1109,10 +989,7 @@ namespace EditorManagement.Functions.Editors
 				var labelText = label.GetComponent<Text>();
 				labelText.text = labels[i];
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", label, new List<Component>
-				{
-					labelText
-				}));
+				EditorThemeManager.AddLightText(labelText);
 			}
         }
 
@@ -1175,16 +1052,8 @@ namespace EditorManagement.Functions.Editors
 				{
 					var buttonBG = button.GetChild(0).GetComponent<Image>();
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete BG", "Delete Keyframe BG", buttonBG.gameObject, new List<Component>
-						{
-							buttonBG,
-						}));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Delete", "Delete Keyframe Button", buttonBG.gameObject, new List<Component>
-						{
-							buttonComponent,
-							buttonComponent.image,
-						}, isSelectable: true));
+					EditorThemeManager.AddGraphic(buttonBG, ThemeGroup.Delete_Keyframe_BG);
+					EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Delete_Keyframe_Button, false);
 
 					continue;
 				}
@@ -1192,34 +1061,24 @@ namespace EditorManagement.Functions.Editors
 				Destroy(button.GetComponent<Animator>());
 				buttonComponent.transition = Selectable.Transition.ColorTint;
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
-					{
-						buttonComponent,
-						buttonComponent.image
-					}, isSelectable: true));
+				EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
 			}
 
 			// Labels
 			for (int j = 0; j < dialog.transform.childCount; j++)
 			{
 				var label = dialog.transform.GetChild(j);
-				if (label.name == "label" || label.name == "curves_label")
-				{
-					for (int k = 0; k < label.childCount; k++)
-					{
-						var labelText = label.GetChild(k).GetComponent<Text>();
-						EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", labelText.gameObject, new List<Component>
-							{
-								labelText,
-							}));
-					}
-				}
+				if (!(label.name == "label" || label.name == "curves_label"))
+					continue;
+
+				for (int k = 0; k < label.childCount; k++)
+					EditorThemeManager.AddLightText(label.GetChild(k).GetComponent<Text>());
 			}
 
 			var timeBase = dialog.transform.Find("time");
 			var timeInput = timeBase.Find("time").GetComponent<InputField>();
 
-			EditorThemeManager.AddInputField(timeInput, "Event Editor Time", "Input Field");
+			EditorThemeManager.AddInputField(timeInput);
 
 			for (int j = 1; j < timeBase.childCount; j++)
 			{
@@ -1231,61 +1090,10 @@ namespace EditorManagement.Functions.Editors
 
 				Destroy(button.GetComponent<Animator>());
 				buttonComponent.transition = Selectable.Transition.ColorTint;
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Button", "Function 2", button.gameObject, new List<Component>
-					{
-						buttonComponent,
-						buttonComponent.image
-					}, isSelectable: true));
+				EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2);
 			}
 
-			#region Easing Dropdown
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing", "Dropdown 1", easing.gameObject, new List<Component>
-			{
-				easing.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Text", "Dropdown 1 Overlay", easing.captionText.gameObject, new List<Component>
-			{
-				easing.captionText,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Arrow", "Dropdown 1 Overlay", easing.transform.Find("Arrow").gameObject, new List<Component>
-			{
-				easing.transform.Find("Arrow").gameObject.GetComponent<Image>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Preview", "Dropdown 1 Overlay", easing.captionImage.gameObject, new List<Component>
-			{
-				easing.captionImage,
-			}));
-
-			var template = easing.transform.Find("Template").gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1", template, new List<Component>
-			{
-				template.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.Bottom));
-
-			var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template", "Dropdown 1 Item", templateItem, new List<Component>
-			{
-				templateItem.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
-			{
-				templateItemCheckmark.GetComponent<Image>(),
-			}));
-
-			var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Easing Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
-			{
-				templateItemLabel.GetComponent<Text>(),
-			}));
-
-			#endregion
+			EditorThemeManager.AddDropdown(easing);
 
 			return dialog;
 		}
@@ -1310,15 +1118,8 @@ namespace EditorManagement.Functions.Editors
 
 				toggle.AddComponent<Mask>();
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color Toggle Background", "Background", toggle, new List<Component>
-				{
-					t.graphic
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Color Toggle", "", toggle, new List<Component>
-				{
-					t.image
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.AddGraphic(t.image, ThemeGroup.Null, true);
+				EditorThemeManager.AddGraphic(t.graphic, ThemeGroup.Background_1);
 
 				toggles.Add(t);
 			}
@@ -1353,10 +1154,7 @@ namespace EditorManagement.Functions.Editors
 					var interpolation = GenerateUIElement("interpolation", "Single", shake, 13, "Interpolation");
 					var speed = GenerateUIElement("speed", "Single", shake, 15, "Speed");
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Label", "Light Text", label, new List<Component>
-					{
-						labelText,
-					}));
+					EditorThemeManager.AddLightText(labelText);
 					EditorThemeManager.AddInputFields(direction["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(interpolation["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(speed["UI"], true, "Event Editor");
@@ -1453,15 +1251,15 @@ namespace EditorManagement.Functions.Editors
 					var mode = gradient.transform.Find("curves").gameObject.Duplicate(gradient.transform, "mode");
 					var modeDropdown = mode.GetComponent<Dropdown>();
 					modeDropdown.options = new List<Dropdown.OptionData>
-				{
-					new Dropdown.OptionData("Linear"),
-					new Dropdown.OptionData("Additive"),
-					new Dropdown.OptionData("Multiply"),
-					new Dropdown.OptionData("Screen"),
-				};
+					{
+						new Dropdown.OptionData("Linear"),
+						new Dropdown.OptionData("Additive"),
+						new Dropdown.OptionData("Multiply"),
+						new Dropdown.OptionData("Screen"),
+					};
 
 					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
-					EditorThemeManager.AddDropdown(modeDropdown, "Event Editor Gradient Mode");
+					EditorThemeManager.AddDropdown(modeDropdown);
 				}
 
 				var doubleVision = GenerateEventDialog("doublevision");
@@ -1505,7 +1303,7 @@ namespace EditorManagement.Functions.Editors
 					var activeText = active["UI"].transform.Find("Text").GetComponent<Text>();
 					activeText.text = "Active";
 
-					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), graphic: activeText);
 				}
 
 				var invert = GenerateEventDialog("invert");
@@ -1526,7 +1324,7 @@ namespace EditorManagement.Functions.Editors
 					var rotation = GenerateUIElement("rotation", "Single", timeline.transform, 14, "Rotation");
 					var colors = SetupColorButtons("colors", "Colors", timeline.transform, 16, timelineColorButtons);
 
-					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), graphic: activeText);
 					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
@@ -1550,11 +1348,11 @@ namespace EditorManagement.Functions.Editors
 					var outOfBoundsText = outOfBounds["UI"].transform.Find("Text").GetComponent<Text>();
 					outOfBoundsText.text = "Out of Bounds";
 
-					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
-					EditorThemeManager.AddToggle(moveable["UI"].GetComponent<Toggle>(), "Event Editor Toggle", moveableText);
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), graphic: activeText);
+					EditorThemeManager.AddToggle(moveable["UI"].GetComponent<Toggle>(), graphic: moveableText);
 					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
-					EditorThemeManager.AddToggle(outOfBounds["UI"].GetComponent<Toggle>(), "Event Editor Toggle", outOfBoundsText);
+					EditorThemeManager.AddToggle(outOfBounds["UI"].GetComponent<Toggle>(), graphic: outOfBoundsText);
 
 				}
 
@@ -1577,9 +1375,9 @@ namespace EditorManagement.Functions.Editors
 					var limitVertical = GenerateUIElement("limit vertical", "Vector2", follow.transform, 18, "Limit Up", "Limit Down");
 					var anchor = GenerateUIElement("anchor", "Single", follow.transform, 20, "Anchor");
 
-					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), "Event Editor Toggle", activeText);
-					EditorThemeManager.AddToggle(moveable["UI"].GetComponent<Toggle>(), "Event Editor Toggle", moveableText);
-					EditorThemeManager.AddToggle(rotateable["UI"].GetComponent<Toggle>(), "Event Editor Toggle", rotateableText);
+					EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), graphic: activeText);
+					EditorThemeManager.AddToggle(moveable["UI"].GetComponent<Toggle>(), graphic: moveableText);
+					EditorThemeManager.AddToggle(rotateable["UI"].GetComponent<Toggle>(), graphic: rotateableText);
 					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(limitHorizontal["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(limitVertical["UI"], true, "Event Editor");
@@ -1616,15 +1414,15 @@ namespace EditorManagement.Functions.Editors
 					var renderTypeD = gradient.transform.Find("curves").gameObject.Duplicate(videoBG.transform, "rendertype");
 					var renderTypeDropdown = renderTypeD.GetComponent<Dropdown>();
 					renderTypeDropdown.options = new List<Dropdown.OptionData>
-				{
-					new Dropdown.OptionData("Background"),
-					new Dropdown.OptionData("Foreground"),
-				};
+					{
+						new Dropdown.OptionData("Background"),
+						new Dropdown.OptionData("Foreground"),
+					};
 
 					EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
 					EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
-					EditorThemeManager.AddDropdown(renderTypeDropdown, "Event Editor");
+					EditorThemeManager.AddDropdown(renderTypeDropdown);
 				}
 
 				var sharpen = GenerateEventDialog("sharpen");
@@ -1644,13 +1442,13 @@ namespace EditorManagement.Functions.Editors
 					var direction = gradient.transform.Find("curves").gameObject.Duplicate(bars.transform, "direction");
 					var directionDropdown = direction.GetComponent<Dropdown>();
 					directionDropdown.options = new List<Dropdown.OptionData>
-				{
-					new Dropdown.OptionData("Horizontal"),
-					new Dropdown.OptionData("Vertical"),
-				};
+					{
+						new Dropdown.OptionData("Horizontal"),
+						new Dropdown.OptionData("Vertical"),
+					};
 
 					EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
-					EditorThemeManager.AddDropdown(directionDropdown, "Event Editor");
+					EditorThemeManager.AddDropdown(directionDropdown);
 				}
 
 				var danger = GenerateEventDialog("danger");
@@ -1691,9 +1489,9 @@ namespace EditorManagement.Functions.Editors
 					var allowText = allow["UI"].transform.Find("Text").GetComponent<Text>();
 					allowText.text = "Force";
 
-					EditorThemeManager.AddToggle(force["UI"].GetComponent<Toggle>(), "Event Editor Toggle", forceText);
+					EditorThemeManager.AddToggle(force["UI"].GetComponent<Toggle>(), graphic: forceText);
 					EditorThemeManager.AddInputFields(resolution["UI"], true, "Event Editor");
-					EditorThemeManager.AddToggle(allow["UI"].GetComponent<Toggle>(), "Event Editor Toggle", allowText);
+					EditorThemeManager.AddToggle(allow["UI"].GetComponent<Toggle>(), graphic: allowText);
 				}
 
 				var windowPositionX = GenerateEventDialog("windowpositionx");
@@ -1716,10 +1514,7 @@ namespace EditorManagement.Functions.Editors
 
 			multiKeyframeEditor.Find("Text").gameObject.SetActive(false);
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor", "Background", multiKeyframeEditor.gameObject, new List<Component>
-			{
-				multiKeyframeEditor.GetComponent<Image>(),
-			}));
+			EditorThemeManager.AddGraphic(multiKeyframeEditor.GetComponent<Image>(), ThemeGroup.Background_1);
 
 			var multiKeyframeEditorVLG = multiKeyframeEditor.GetComponent<VerticalLayoutGroup>();
 			multiKeyframeEditorVLG.childControlWidth = false;
@@ -1765,47 +1560,13 @@ namespace EditorManagement.Functions.Editors
 			var timeStorage = time.GetComponent<InputFieldStorage>();
 			time.transform.GetChild(0).name = "time";
 
-			EditorThemeManager.AddInputField(timeStorage.inputField, "View Themes Popup Page Input", "Input Field");
+			EditorThemeManager.AddInputField(timeStorage.inputField);
 
-			Destroy(timeStorage.leftGreaterButton.GetComponent<Animator>());
-			timeStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.leftGreaterButton.gameObject, new List<Component>
-			{
-				timeStorage.leftGreaterButton.image,
-				timeStorage.leftGreaterButton,
-			}, isSelectable: true));
-
-			Destroy(timeStorage.leftButton.GetComponent<Animator>());
-			timeStorage.leftButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.leftButton.gameObject, new List<Component>
-			{
-				timeStorage.leftButton.image,
-				timeStorage.leftButton,
-			}, isSelectable: true));
-
-			Destroy(timeStorage.rightButton.GetComponent<Animator>());
-			timeStorage.rightButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.rightButton.gameObject, new List<Component>
-			{
-				timeStorage.rightButton.image,
-				timeStorage.rightButton,
-			}, isSelectable: true));
-
-			Destroy(timeStorage.middleButton.GetComponent<Animator>());
-			timeStorage.middleButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.middleButton.gameObject, new List<Component>
-			{
-				timeStorage.middleButton.image,
-				timeStorage.middleButton,
-			}, isSelectable: true));
-
-			Destroy(timeStorage.rightGreaterButton.GetComponent<Animator>());
-			timeStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", timeStorage.rightGreaterButton.gameObject, new List<Component>
-			{
-				timeStorage.rightGreaterButton.image,
-				timeStorage.rightGreaterButton,
-			}, isSelectable: true));
+			EditorThemeManager.AddSelectable(timeStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.leftButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.middleButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.rightButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.rightGreaterButton, ThemeGroup.Function_2, false);
 
 			// Label
 			{
@@ -1832,7 +1593,7 @@ namespace EditorManagement.Functions.Editors
 			var curves = move.Find("curves").gameObject.Duplicate(curveBaseRT, "curves");
 			curves.transform.AsRT().anchoredPosition = new Vector2(191f, 0f);
 
-			EditorThemeManager.AddDropdown(curves.GetComponent<Dropdown>(), "Multi Event Keyframe Editor Easing");
+			EditorThemeManager.AddDropdown(curves.GetComponent<Dropdown>());
 
 			// Label
 			{
@@ -1861,23 +1622,10 @@ namespace EditorManagement.Functions.Editors
 			var valueIndexStorage = valueIndex.GetComponent<InputFieldStorage>();
 			valueIndex.transform.GetChild(0).name = "input";
 
-			EditorThemeManager.AddInputField(valueIndexStorage.inputField, "View Themes Popup Page Input", "Input Field");
+			EditorThemeManager.AddInputField(valueIndexStorage.inputField);
 
-			Destroy(valueIndexStorage.leftButton.GetComponent<Animator>());
-			valueIndexStorage.leftButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueIndexStorage.leftButton.gameObject, new List<Component>
-			{
-				valueIndexStorage.leftButton.image,
-				valueIndexStorage.leftButton,
-			}, isSelectable: true));
-
-			Destroy(valueIndexStorage.rightButton.GetComponent<Animator>());
-			valueIndexStorage.rightButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueIndexStorage.rightButton.gameObject, new List<Component>
-			{
-				valueIndexStorage.rightButton.image,
-				valueIndexStorage.rightButton,
-			}, isSelectable: true));
+			EditorThemeManager.AddSelectable(valueIndexStorage.leftButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(valueIndexStorage.rightButton, ThemeGroup.Function_2, false);
 
 			Destroy(valueIndexStorage.leftGreaterButton.gameObject);
 			Destroy(valueIndexStorage.middleButton.gameObject);
@@ -1910,47 +1658,13 @@ namespace EditorManagement.Functions.Editors
 			var valueStorage = value.GetComponent<InputFieldStorage>();
 			value.transform.GetChild(0).name = "input";
 
-			EditorThemeManager.AddInputField(valueStorage.inputField, "View Themes Popup Page Input", "Input Field");
+			EditorThemeManager.AddInputField(valueStorage.inputField);
 
-			Destroy(valueStorage.leftGreaterButton.GetComponent<Animator>());
-			valueStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.leftGreaterButton.gameObject, new List<Component>
-			{
-				valueStorage.leftGreaterButton.image,
-				valueStorage.leftGreaterButton,
-			}, isSelectable: true));
-
-			Destroy(valueStorage.leftButton.GetComponent<Animator>());
-			valueStorage.leftButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.leftButton.gameObject, new List<Component>
-			{
-				valueStorage.leftButton.image,
-				valueStorage.leftButton,
-			}, isSelectable: true));
-
-			Destroy(valueStorage.rightButton.GetComponent<Animator>());
-			valueStorage.rightButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.rightButton.gameObject, new List<Component>
-			{
-				valueStorage.rightButton.image,
-				valueStorage.rightButton,
-			}, isSelectable: true));
-
-			Destroy(valueStorage.middleButton.GetComponent<Animator>());
-			valueStorage.middleButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.middleButton.gameObject, new List<Component>
-			{
-				valueStorage.middleButton.image,
-				valueStorage.middleButton,
-			}, isSelectable: true));
-
-			Destroy(valueStorage.rightGreaterButton.GetComponent<Animator>());
-			valueStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", valueStorage.rightGreaterButton.gameObject, new List<Component>
-			{
-				valueStorage.rightGreaterButton.image,
-				valueStorage.rightGreaterButton,
-			}, isSelectable: true));
+			EditorThemeManager.AddSelectable(valueStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(valueStorage.leftButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(valueStorage.middleButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(valueStorage.rightButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(valueStorage.rightGreaterButton, ThemeGroup.Function_2, false);
 
 			// Label
 			{
@@ -1998,15 +1712,8 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification($"Snapped all keyframes time!", 2f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button", "Function 1", snap, new List<Component>
-			{
-				snapStorage.button.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button Text", "Function 1 Text", snapStorage.text.gameObject, new List<Component>
-			{
-				snapStorage.text,
-			}));
+			EditorThemeManager.AddGraphic(snapStorage.button.image, ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(snapStorage.text, ThemeGroup.Function_1_Text);
 
 			// Label
 			{
@@ -2058,15 +1765,8 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification($"Aligned all keyframes to the first keyframe!", 2f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button", "Function 1", alignToFirstObject, new List<Component>
-			{
-				alignToFirstStorage.button.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Button Text", "Function 1 Text", alignToFirstStorage.text.gameObject, new List<Component>
-			{
-				alignToFirstStorage.text,
-			}));
+			EditorThemeManager.AddGraphic(alignToFirstStorage.button.image, ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(alignToFirstStorage.text, ThemeGroup.Function_1_Text);
 
 			// Label
 			{
@@ -2121,15 +1821,8 @@ namespace EditorManagement.Functions.Editors
 				EditorManager.inst.DisplayNotification($"Pasted all keyframe data to current selected keyframes!", 2f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Paste", "Paste", pasteAllObject, new List<Component>
-			{
-				pasteAllStorage.button.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Event Keyframe Editor Paste Text", "Paste Text", pasteAllStorage.text.gameObject, new List<Component>
-			{
-				pasteAllStorage.text,
-			}));
+			EditorThemeManager.AddGraphic(pasteAllStorage.button.image, ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(pasteAllStorage.text, ThemeGroup.Function_1_Text);
 
 			#endregion
 
@@ -2153,25 +1846,11 @@ namespace EditorManagement.Functions.Editors
 				pasteText.text = "Paste";
 				((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Copy", "Copy", copy, new List<Component>
-				{
-					copyStorage.button.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.AddGraphic(copyStorage.button.image, ThemeGroup.Copy, true);
+				EditorThemeManager.AddGraphic(copyStorage.text, ThemeGroup.Copy_Text);
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Copy Text", "Copy Text", copyText.gameObject, new List<Component>
-				{
-					copyText,
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Paste", "Paste", paste, new List<Component>
-				{
-					pasteStorage.button.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Event Editor Paste Text", "Paste Text", pasteText.gameObject, new List<Component>
-				{
-					pasteText,
-				}));
+				EditorThemeManager.AddGraphic(pasteStorage.button.image, ThemeGroup.Paste, true);
+				EditorThemeManager.AddGraphic(pasteStorage.text, ThemeGroup.Paste_Text);
 			}
 		}
 

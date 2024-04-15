@@ -488,15 +488,8 @@ namespace EditorManagement.Patchers
                 RenderMarkerColors();
             });
 
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Marker Color Add", "Add", add, new List<Component>
-            {
-                addButton.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Marker Color Add Text", "Add Text", addText.gameObject, new List<Component>
-            {
-                addText,
-            }));
+            EditorThemeManager.ApplyGraphic(addButton.image, ThemeGroup.Add, true);
+            EditorThemeManager.ApplyGraphic(addText, ThemeGroup.Add_Text);
 
             int num = 0;
             foreach (var markerColor in MarkerEditor.inst.markerColors)
@@ -508,10 +501,7 @@ namespace EditorManagement.Patchers
                 var image = gameObject.GetComponent<Image>();
                 image.color = markerColor;
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Marker Color", "", gameObject, new List<Component>
-                {
-                    image,
-                }, true, 2, SpriteManager.RoundedSide.W));
+                EditorThemeManager.ApplyGraphic(image, ThemeGroup.Null, true, 2);
 
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
@@ -527,7 +517,7 @@ namespace EditorManagement.Patchers
                     RTEditor.inst.SaveGlobalSettings();
                 });
 
-                EditorThemeManager.ApplyInputField(input, "Setting Editor Marker Color Input", "Input Field");
+                EditorThemeManager.ApplyInputField(input);
 
                 var deleteStorage = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
                 deleteStorage.button.onClick.ClearAll();
@@ -538,15 +528,8 @@ namespace EditorManagement.Patchers
                     RTEditor.inst.SaveGlobalSettings();
                 });
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Marker Color Delete", "Delete", deleteStorage.gameObject, new List<Component>
-                {
-                    deleteStorage.baseImage,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Marker Color Delete Sprite", "Delete Text", deleteStorage.image.gameObject, new List<Component>
-                {
-                    deleteStorage.image,
-                }));
+                EditorThemeManager.ApplyGraphic(deleteStorage.baseImage, ThemeGroup.Delete);
+                EditorThemeManager.ApplyGraphic(deleteStorage.image, ThemeGroup.Delete_Text);
 
                 num++;
             }
@@ -570,15 +553,8 @@ namespace EditorManagement.Patchers
                 RenderLayerColors();
             });
 
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Layer Color Add", "Add", add, new List<Component>
-            {
-                addButton.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Settings Layer Color Add Text", "Add Text", addText.gameObject, new List<Component>
-            {
-                addText,
-            }));
+            EditorThemeManager.ApplyGraphic(addButton.image, ThemeGroup.Add, true);
+            EditorThemeManager.ApplyGraphic(addText, ThemeGroup.Add_Text);
 
             int num = 0;
             foreach (var layerColor in EditorManager.inst.layerColors)
@@ -590,10 +566,7 @@ namespace EditorManagement.Patchers
                 var image = gameObject.GetComponent<Image>();
                 image.color = layerColor;
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Layer Color", "", gameObject, new List<Component>
-                {
-                    image,
-                }, true, 2, SpriteManager.RoundedSide.W));
+                EditorThemeManager.ApplyGraphic(image, ThemeGroup.Null, true, 2);
 
                 var input = gameObject.transform.Find("Input").GetComponent<InputField>();
                 input.onValueChanged.ClearAll();
@@ -609,7 +582,7 @@ namespace EditorManagement.Patchers
                     RTEditor.inst.SaveGlobalSettings();
                 });
 
-                EditorThemeManager.ApplyInputField(input, "Setting Editor Layer Color Input", "Input Field");
+                EditorThemeManager.ApplyInputField(input);
 
                 var deleteStorage = gameObject.transform.Find("Delete").GetComponent<DeleteButtonStorage>();
                 deleteStorage.button.onClick.ClearAll();
@@ -620,15 +593,8 @@ namespace EditorManagement.Patchers
                     RTEditor.inst.SaveGlobalSettings();
                 });
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Layer Color Delete", "Delete", deleteStorage.gameObject, new List<Component>
-                {
-                    deleteStorage.baseImage,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Setting Editor Layer Color Delete Sprite", "Delete Text", deleteStorage.image.gameObject, new List<Component>
-                {
-                    deleteStorage.image,
-                }));
+                EditorThemeManager.ApplyGraphic(deleteStorage.baseImage, ThemeGroup.Delete);
+                EditorThemeManager.ApplyGraphic(deleteStorage.image, ThemeGroup.Delete_Text);
 
                 num++;
             }

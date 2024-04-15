@@ -122,66 +122,21 @@ namespace EditorManagement.Patchers
 					BackgroundEditorManager.inst.CreateBackgrounds(result);
 			});
 
-			bgRight.transform.Find("backgrounds").GetComponent<RectTransform>().sizeDelta = new Vector2(366f, 524f);
+			bgRight.transform.Find("backgrounds").AsRT().sizeDelta = new Vector2(366f, 524f);
 
 			#region Editor Themes
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor", "Background", dialog.gameObject, new List<Component>
-			{
-				dialog.GetComponent<Image>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor List", "Background 3", bgRight, new List<Component>
-			{
-				bgRight.GetComponent<Image>(),
-			}));
-
-			EditorThemeManager.AddInputField(bgRight.transform.Find("search").GetComponent<InputField>(), "Checkpoint Editor Search", "Search Field 2");
-
-			var scrollbar = bgRight.transform.Find("backgrounds/Scrollbar Vertical").GetComponent<Scrollbar>();
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor List Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
-			{
-				scrollbar.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			var scrollbarHandle = scrollbar.handleRect.gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor List Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
-			{
-				scrollbar.image,
-				scrollbar
-			}, true, 1, SpriteManager.RoundedSide.W, true));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Create", "Add", bgRight.transform.Find("create").gameObject, new List<Component>
-			{
-				bgRight.transform.Find("create").GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Create Text", "Add Text", bgRight.transform.Find("create").GetChild(0).gameObject, new List<Component>
-			{
-				bgRight.transform.Find("create").GetChild(0).GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddInputField(name, "Background Editor Create Multiple Input", "Input Field");
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Create Multiple", "Add", createAll, new List<Component>
-			{
-				buttonCreate.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Create Multiple Text", "Add Text", createAllText.gameObject, new List<Component>
-			{
-				createAllText,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Delete", "Delete", destroyAll, new List<Component>
-			{
-				destroyAllButtons.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Delete Text", "Delete Text", destroyAllText.gameObject, new List<Component>
-			{
-				destroyAllText,
-			}));
+			EditorThemeManager.AddGraphic(dialog.GetComponent<Image>(), ThemeGroup.Background_1);
+			EditorThemeManager.AddGraphic(bgRight.GetComponent<Image>(), ThemeGroup.Background_3);
+			EditorThemeManager.AddInputField(bgRight.transform.Find("search").GetComponent<InputField>(), ThemeGroup.Search_Field_2);
+			EditorThemeManager.AddScrollbar(bgRight.transform.Find("backgrounds/Scrollbar Vertical").GetComponent<Scrollbar>(), scrollbarGroup: ThemeGroup.Scrollbar_2, handleGroup: ThemeGroup.Scrollbar_2_Handle);
+			EditorThemeManager.AddGraphic(bgRight.transform.Find("create").GetComponent<Image>(), ThemeGroup.Add, true);
+			EditorThemeManager.AddGraphic(bgRight.transform.Find("create").GetChild(0).GetComponent<Text>(), ThemeGroup.Add_Text);
+			EditorThemeManager.AddInputField(name);
+			EditorThemeManager.AddGraphic(buttonCreate.image, ThemeGroup.Add, true);
+			EditorThemeManager.AddGraphic(createAllText, ThemeGroup.Add_Text);
+			EditorThemeManager.AddGraphic(destroyAllButtons.image, ThemeGroup.Delete, true);
+			EditorThemeManager.AddGraphic(destroyAllText, ThemeGroup.Delete_Text);
 
 			#endregion
 
@@ -911,25 +866,10 @@ namespace EditorManagement.Patchers
 					var removeBlockText = removeBlock.transform.GetChild(0).GetComponent<Text>();
 					removeBlockText.text = "Del";
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Modifier Block Add", "Add", addBlock, new List<Component>
-					{
-						addBlock.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Modifier Block Add Text", "Add Text", addBlockText.gameObject, new List<Component>
-					{
-						addBlockText,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Modifier Block Add", "Delete", removeBlock, new List<Component>
-					{
-						removeBlock.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Modifier Block Add Text", "Delete Text", removeBlockText.gameObject, new List<Component>
-					{
-						removeBlockText,
-					}));
+					EditorThemeManager.AddGraphic(addBlock.GetComponent<Image>(), ThemeGroup.Add, true);
+					EditorThemeManager.AddGraphic(addBlockText, ThemeGroup.Add_Text);
+					EditorThemeManager.AddGraphic(removeBlock.GetComponent<Image>(), ThemeGroup.Delete, true);
+					EditorThemeManager.AddGraphic(removeBlockText, ThemeGroup.Delete_Text);
 
 					BackgroundEditorManager.inst.CreateModifiersOnAwake();
 					BackgroundEditorManager.inst.CreateDefaultModifiersList();
@@ -946,16 +886,16 @@ namespace EditorManagement.Patchers
 			Destroy(active.GetComponent<Animator>());
 			active.transition = Selectable.Transition.ColorTint;
 			active.colors = UIManager.SetColorBlock(active.colors, Color.white, new Color(0.7f, 0.7f, 0.7f), new Color(0.7f, 0.7f, 0.7f), new Color(0.7f, 0.7f, 0.7f), new Color(0.7f, 0.7f, 0.7f));
-			EditorThemeManager.AddToggle(active, "Background Editor Active");
+			EditorThemeManager.AddToggle(active);
 			__instance.left.Find("name/name").AsRT().sizeDelta = new Vector2(300f, 32f);
-			EditorThemeManager.AddInputField(__instance.left.Find("name/name").GetComponent<InputField>(), "Background Editor Name", "Input Field");
+			EditorThemeManager.AddInputField(__instance.left.Find("name/name").GetComponent<InputField>());
 			EditorThemeManager.AddInputFields(__instance.left.Find("depth").gameObject, true, "Background Editor Depth");
 			EditorThemeManager.AddInputFields(__instance.left.Find("iterations").gameObject, true, "Background Editor Iterations");
 			EditorThemeManager.AddInputFields(__instance.left.Find("zscale").gameObject, true, "Background Editor Z Scale");
 			EditorThemeManager.AddInputFields(__instance.left.Find("position").gameObject, true, "Background Editor Position");
 			EditorThemeManager.AddInputFields(__instance.left.Find("scale").gameObject, true, "Background Editor Scale");
 			EditorThemeManager.AddInputFields(__instance.left.Find("depth-rotation").gameObject, true, "Background Editor 3D Rotation");
-			EditorThemeManager.AddInputField(__instance.left.Find("rotation/x").GetComponent<InputField>(), "Background Editor Rotation", "Input Field");
+			EditorThemeManager.AddInputField(__instance.left.Find("rotation/x").GetComponent<InputField>());
 
             var rotationSliderImage = __instance.left.Find("rotation/slider/Image").GetComponent<Image>();
             var rotationSlider = __instance.left.Find("rotation/slider").GetComponent<Slider>();
@@ -976,7 +916,7 @@ namespace EditorManagement.Patchers
 				EditorThemeManager.AddGraphic(child.Find("Label").GetComponent<Text>(), ThemeGroup.Function_2_Text);
             }
 
-			EditorThemeManager.AddInputField(__instance.left.Find("reactive/x").GetComponent<InputField>(), "Background Editor Reactive", "Input Field");
+			EditorThemeManager.AddInputField(__instance.left.Find("reactive/x").GetComponent<InputField>());
 
             var reactiveSliderImage = __instance.left.Find("reactive/slider/Image").GetComponent<Image>();
             var reactiveSlider = __instance.left.Find("reactive/slider").GetComponent<Slider>();
@@ -1009,14 +949,11 @@ namespace EditorManagement.Patchers
 			for (int i = 0; i < __instance.left.childCount; i++)
 			{
 				var child = __instance.left.GetChild(i);
-				if (child.name == "label")
-				{
-					for (int j = 0; j < child.childCount; j++)
-					{
-						var labelText = child.GetChild(j).GetComponent<Text>();
-						EditorThemeManager.AddLightText(labelText);
-					}
-				}
+				if (child.name != "label")
+					continue;
+
+				for (int j = 0; j < child.childCount; j++)
+					EditorThemeManager.AddLightText(child.GetChild(j).GetComponent<Text>());
 			}
 
 			#endregion

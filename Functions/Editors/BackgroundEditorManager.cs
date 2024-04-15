@@ -96,77 +96,10 @@ namespace EditorManagement.Functions.Editors
 			foreach (var col in GameManager.inst.LiveTheme.backgroundColors)
 			{
 				int colTmp = num;
-				// Top Color
-				{
-					var gameObject = EditorManager.inst.colorGUI.Duplicate(__instance.left.Find("color"), "color gui");
-					gameObject.transform.localScale = Vector3.one;
-					var button = gameObject.GetComponent<Button>();
-					button.image.color = LSColors.fadeColor(col, 1f);
-					gameObject.transform.Find("Image").gameObject.SetActive(backgroundObject.color == num);
+				SetColorToggle(col, colTmp, backgroundObject.color, __instance.left.Find("color"), __instance.SetColor);
+				SetColorToggle(col, colTmp, backgroundObject.FadeColor, __instance.left.Find("fade-color"), SetFadeColor);
+				SetColorToggle(col, colTmp, backgroundObject.reactiveCol, __instance.left.Find("reactive-color"), SetReactiveColor);
 
-					button.onClick.AddListener(delegate ()
-					{
-						__instance.SetColor(colTmp);
-					});
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color", "", gameObject, new List<Component>
-					{
-						button.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color Background", "Background", gameObject.transform.Find("Image").gameObject, new List<Component>
-					{
-						gameObject.transform.Find("Image").GetComponent<Image>(),
-					}));
-				}
-
-				// Fade Color
-				{
-					var gameObject = EditorManager.inst.colorGUI.Duplicate(__instance.left.Find("fade-color"), "color gui");
-					gameObject.transform.localScale = Vector3.one;
-					var button = gameObject.GetComponent<Button>();
-					button.image.color = LSColors.fadeColor(col, 1f);
-					gameObject.transform.Find("Image").gameObject.SetActive(backgroundObject.FadeColor == num);
-
-					button.onClick.AddListener(delegate ()
-					{
-						SetFadeColor(__instance, colTmp);
-					});
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color", "", gameObject, new List<Component>
-					{
-						button.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color Background", "Background", gameObject.transform.Find("Image").gameObject, new List<Component>
-					{
-						gameObject.transform.Find("Image").GetComponent<Image>(),
-					}));
-				}
-
-				// Reactive Color
-				{
-					var gameObject = EditorManager.inst.colorGUI.Duplicate(__instance.left.Find("reactive-color"), "color gui");
-					gameObject.transform.localScale = Vector3.one;
-					var button = gameObject.GetComponent<Button>();
-					button.image.color = LSColors.fadeColor(col, 1f);
-					gameObject.transform.Find("Image").gameObject.SetActive(backgroundObject.reactiveCol == num);
-
-					button.onClick.AddListener(delegate ()
-					{
-						SetReactiveColor(__instance, colTmp);
-					});
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color", "", gameObject, new List<Component>
-					{
-						button.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Color Background", "Background", gameObject.transform.Find("Image").gameObject, new List<Component>
-					{
-						gameObject.transform.Find("Image").GetComponent<Image>(),
-					}));
-				}
 				num++;
 			}
 
@@ -210,8 +143,25 @@ namespace EditorManagement.Functions.Editors
 			__instance.dialog.gameObject.SetActive(true);
 		}
 
+		public void SetColorToggle(Color color, int currentColor, int colTmp, Transform parent, Action<int> onSetColor)
+		{
+			var gameObject = EditorManager.inst.colorGUI.Duplicate(parent, "color gui");
+			gameObject.transform.localScale = Vector3.one;
+			var button = gameObject.GetComponent<Button>();
+			button.image.color = LSColors.fadeColor(color, 1f);
+			gameObject.transform.Find("Image").gameObject.SetActive(currentColor == colTmp);
+
+			button.onClick.AddListener(delegate ()
+			{
+				onSetColor.Invoke(colTmp);
+			});
+
+			EditorThemeManager.ApplyGraphic(button.image, ThemeGroup.Null, true);
+			EditorThemeManager.ApplyGraphic(gameObject.transform.Find("Image").GetComponent<Image>(), ThemeGroup.Background_1);
+		}
+
 		public void SetShape(BackgroundObject backgroundObject, int index)
-        {
+		{
 			var shape = BackgroundEditor.inst.left.Find("shape");
 			var shapeSettings = BackgroundEditor.inst.left.Find("shapesettings");
 
@@ -248,10 +198,7 @@ namespace EditorManagement.Functions.Editors
 				if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
 				{
 					image.sprite = ShapeManager.inst.Shapes3D[i][0].Icon;
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Shape Sprite", "Toggle 1 Check", image.gameObject, new List<Component>
-					{
-						image,
-					}));
+					EditorThemeManager.ApplyGraphic(image, ThemeGroup.Toggle_1_Check);
 				}
 
 				var shapeToggle = obj.GetComponent<Toggle>();
@@ -286,10 +233,7 @@ namespace EditorManagement.Functions.Editors
 						if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
 						{
 							image1.sprite = ShapeManager.inst.Shapes3D[i][j].Icon;
-							EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Editor Shape Option Sprite", "Toggle 1 Check", image1.gameObject, new List<Component>
-							{
-								image1,
-							}));
+							EditorThemeManager.ApplyGraphic(image1, ThemeGroup.Toggle_1_Check);
 						}
 
 						var layoutElement = opt.AddComponent<LayoutElement>();
@@ -299,7 +243,7 @@ namespace EditorManagement.Functions.Editors
 						((RectTransform)opt.transform).sizeDelta = new Vector2(32f, 32f);
 
 						var shapeOptionToggle = opt.GetComponent<Toggle>();
-						EditorThemeManager.ApplyToggle(shapeOptionToggle, "Background Editor Shape Option", checkmark: "Background");
+						EditorThemeManager.ApplyToggle(shapeOptionToggle, checkGroup: ThemeGroup.Background_1);
 
 						if (!opt.GetComponent<HoverUI>())
 						{
@@ -322,26 +266,27 @@ namespace EditorManagement.Functions.Editors
 				backgroundObject.SetShape(shapeSettings.childCount - 1 - 1, 0);
 
 				BackgroundEditor.inst.OpenDialog(index);
+				return;
 			}
 
-			if (backgroundObject.shape.type == 4)
+			var shapeType = backgroundObject.shape.type;
+
+			if (shapeType == 4)
 			{
-				Debug.Log($"{ObjEditor.inst.className}Shape is text, so we make the size larger for better readability.");
-				shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
+				// Make the text larger for better readability.
+				shapeSettings.transform.AsRT().sizeDelta = new Vector2(351f, 74f);
 				var child = shapeSettings.GetChild(4);
-				child.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 74f);
+				child.AsRT().sizeDelta = new Vector2(351f, 74f);
 				child.Find("Text").GetComponent<Text>().alignment = TextAnchor.UpperLeft;
 				child.Find("Placeholder").GetComponent<Text>().alignment = TextAnchor.UpperLeft;
 				child.GetComponent<InputField>().lineType = InputField.LineType.MultiLineNewline;
 			}
 			else
 			{
-				Debug.Log($"{ObjEditor.inst.className}Shape is not text so we reset size.");
-				shapeSettings.GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
-				shapeSettings.GetChild(4).GetComponent<RectTransform>().sizeDelta = new Vector2(351f, 32f);
+				shapeSettings.AsRT().sizeDelta = new Vector2(351f, 32f);
+				shapeSettings.GetChild(4).AsRT().sizeDelta = new Vector2(351f, 32f);
 			}
 
-			Debug.Log($"{ObjEditor.inst.className}Set the shape option as active.");
 			shapeSettings.GetChild(backgroundObject.shape.type).gameObject.SetActive(true);
 			for (int i = 1; i <= ShapeManager.inst.Shapes3D.Count; i++)
 			{
@@ -372,51 +317,29 @@ namespace EditorManagement.Functions.Editors
 				}
 			}
 
-			if (backgroundObject.shape.type != 4 && backgroundObject.shape.type != 6)
+			if (shapeType == 4 || shapeType == 6)
 			{
-				for (int i = 0; i < shapeSettings.GetChild(backgroundObject.shape.type).childCount - 1; i++)
+				EditorManager.inst.DisplayNotification($"{(shapeType == 4 ? "Text" : "Image")} background not supported.", 2f, EditorManager.NotificationType.Error);
+				backgroundObject.SetShape(0, 0);
+				return;
+			}
+
+			for (int i = 0; i < shapeSettings.GetChild(backgroundObject.shape.type).childCount - 1; i++)
+			{
+				int buttonTmp = i;
+				var shoggle = shapeSettings.GetChild(backgroundObject.shape.type).GetChild(i).GetComponent<Toggle>();
+
+				shoggle.onValueChanged.RemoveAllListeners();
+				shoggle.isOn = backgroundObject.shape.option == i;
+				shoggle.onValueChanged.AddListener(delegate (bool _value)
 				{
-					int buttonTmp = i;
-					var shoggle = shapeSettings.GetChild(backgroundObject.shape.type).GetChild(i).GetComponent<Toggle>();
+					if (!_value)
+						return;
 
-					shoggle.onValueChanged.RemoveAllListeners();
-					shoggle.isOn = backgroundObject.shape.option == i;
-					shoggle.onValueChanged.AddListener(delegate (bool _value)
-					{
-						if (_value)
-						{
-							backgroundObject.SetShape(backgroundObject.shape.type, buttonTmp);
+					backgroundObject.SetShape(backgroundObject.shape.type, buttonTmp);
 
-							BackgroundEditor.inst.OpenDialog(index);
-						}
-					});
-				}
-			}
-			else if (backgroundObject.shape.type == 4)
-			{
-				EditorManager.inst.DisplayNotification("Text background not supported.", 2f, EditorManager.NotificationType.Error);
-				backgroundObject.SetShape(0, 0);
-				//var textIF = shapeSettings.Find("5").GetComponent<InputField>();
-				//textIF.onValueChanged.ClearAll();
-				//textIF.text = backgroundObject.text;
-				//textIF.onValueChanged.AddListener(delegate (string _value)
-				//{
-				//	backgroundObject.text = _value;
-
-				//	BackgroundManager.inst.UpdateBackgrounds();
-				//});
-			}
-			else if (backgroundObject.shape.type == 6)
-			{
-				EditorManager.inst.DisplayNotification("Image background not supported.", 2f, EditorManager.NotificationType.Error);
-				backgroundObject.SetShape(0, 0);
-				//var select = shapeSettings.Find("7/select").GetComponent<Button>();
-				//select.onClick.RemoveAllListeners();
-				//select.onClick.AddListener(delegate ()
-				//{
-				//	OpenImageSelector(beatmapObject);
-				//});
-				//shapeSettings.Find("7/text").GetComponent<Text>().text = string.IsNullOrEmpty(backgroundObject.text) ? "No image selected" : backgroundObject.text;
+					BackgroundEditor.inst.OpenDialog(index);
+				});
 			}
 		}
 
@@ -531,17 +454,17 @@ namespace EditorManagement.Functions.Editors
 			}
 		}
 
-		public void SetFadeColor(BackgroundEditor __instance, int _col)
+		public void SetFadeColor(int _col)
 		{
 			CurrentSelectedBG.FadeColor = _col;
-			__instance.UpdateBackground(__instance.currentObj);
+			BackgroundEditor.inst.UpdateBackground(BackgroundEditor.inst.currentObj);
 			UpdateColorList("fade-color");
 		}
 
-		public void SetReactiveColor(BackgroundEditor __instance, int _col)
+		public void SetReactiveColor(int _col)
 		{
 			CurrentSelectedBG.reactiveCol = _col;
-			__instance.UpdateBackground(__instance.currentObj);
+			BackgroundEditor.inst.UpdateBackground(BackgroundEditor.inst.currentObj);
 			UpdateColorList("reactive-color");
 		}
 
@@ -1265,70 +1188,12 @@ namespace EditorManagement.Functions.Editors
 
 		public void CreateDefaultModifiersList()
 		{
-			var qap = EditorManager.inst.GetDialog("Quick Actions Popup").Dialog;
-			var dialog = qap.gameObject.Duplicate(qap.parent, "Default Background Modifiers Popup");
-			var panel = dialog.transform.Find("Panel").gameObject;
-
-			EditorHelper.AddEditorPopup("Default Background Modifiers Popup", dialog);
-
-			var search = dialog.transform.Find("search-box/search").GetComponent<InputField>();
-			search.onValueChanged.ClearAll();
-			((Text)search.placeholder).text = "Search for default modifier...";
-			search.text = searchTerm;
-			search.onValueChanged.AddListener(delegate (string _val)
+			var defaultModifiersList = RTEditor.inst.GeneratePopup("Default Background Modifiers Popup", "Choose a modifer to add", Vector2.zero, new Vector2(600f, 400f), delegate (string _val)
 			{
 				searchTerm = _val;
 				if (CurrentSelectedBG)
 					RefreshDefaultModifiersList(CurrentSelectedBG);
-			});
-
-			var close = panel.transform.Find("x").GetComponent<Button>();
-			close.onClick.ClearAll();
-			close.onClick.AddListener(delegate ()
-			{
-				EditorManager.inst.HideDialog("Default Background Modifiers Popup");
-			});
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
-			{
-				dialog.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, panel, new List<Component>
-			{
-				panel.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.Top));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close, close.gameObject, new List<Component>
-			{
-				close.image,
-				close,
-			}, true, 1, SpriteManager.RoundedSide.W, true));
-
-			var closeX = close.transform.GetChild(0).gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, closeX, new List<Component>
-			{
-				closeX.GetComponent<Image>(),
-			}));
-
-			var title = panel.transform.Find("Text").GetComponent<Text>();
-			title.text = "Choose a modifer to add";
-			EditorThemeManager.AddLightText(title);
-
-			var scrollbar = dialog.transform.Find("Scrollbar").gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, scrollbar, new List<Component>
-			{
-				scrollbar.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-			var scrollbarHandle = scrollbar.transform.Find("Sliding Area/Handle").gameObject;
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, scrollbarHandle, new List<Component>
-			{
-				scrollbarHandle.GetComponent<Image>(),
-				scrollbar.GetComponent<Scrollbar>()
-			}, true, 1, SpriteManager.RoundedSide.W, true));
-
-			EditorThemeManager.AddInputField(search, ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
+			}, placeholderText: "Search for default Modifier...");
 		}
 
 		public int currentPage;

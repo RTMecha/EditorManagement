@@ -231,15 +231,9 @@ namespace EditorManagement.Patchers
 				var depthSlider = sliderObject.GetComponent<Slider>();
 				var depthSliderImage = sliderObject.transform.Find("Image").GetComponent<Image>();
 				depthSlider.colors = UIManager.SetColorBlock(depthSlider.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), Color.white, Color.white, Color.white);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, depthSliderImage.gameObject, new List<Component>
-				{
-					depthSliderImage,
-				}, true, 1, SpriteManager.RoundedSide.W));
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, depthSlider.image.gameObject, new List<Component>
-				{
-					depthSlider.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.AddGraphic(depthSliderImage, ThemeGroup.Slider_2, true);
+				EditorThemeManager.AddGraphic(depthSlider.image, ThemeGroup.Slider_2_Handle, true);
 			}
 
 			// Lock
@@ -305,15 +299,8 @@ namespace EditorManagement.Patchers
 
 					var toggle = colorParent.Find(i.ToString()).GetComponent<Toggle>();
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, toggle.gameObject, new List<Component>
-					{
-						toggle.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_3, toggle.graphic.gameObject, new List<Component>
-					{
-						toggle.graphic,
-					}));
+					EditorThemeManager.AddGraphic(toggle.image, ThemeGroup.Null, true);
+					EditorThemeManager.AddGraphic(toggle.graphic, ThemeGroup.Background_3);
 				}
 			}
 
@@ -530,23 +517,13 @@ namespace EditorManagement.Patchers
 
 				layers.AddComponent<ContrastColors>().Init(layersIF.textComponent, layersIF.image);
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, layers, new List<Component>
-				{
-					layersIF.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.AddGraphic(layersIF.image, ThemeGroup.Null, true);
 
 				var binSlider = objectView.Find("editor/bin").GetComponent<Slider>();
 				var binSliderImage = binSlider.transform.Find("Image").GetComponent<Image>();
 				binSlider.colors = UIManager.SetColorBlock(binSlider.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), Color.white, Color.white, Color.white);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, binSliderImage.gameObject, new List<Component>
-				{
-					binSliderImage,
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, binSlider.image.gameObject, new List<Component>
-				{
-					binSlider.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.AddGraphic(binSliderImage, ThemeGroup.Slider_2, true);
+				EditorThemeManager.AddGraphic(binSlider.image, ThemeGroup.Slider_2_Handle, true);
 			}
 
 			// Clear Parent
@@ -595,30 +572,18 @@ namespace EditorManagement.Patchers
 					parentPickerIcon.sprite = dropperImage.sprite;
 
 				var searchParent = parent.transform.Find("parent").GetComponent<Image>();
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_3, searchParent.gameObject, new List<Component>
-				{
-					searchParent,
-				}, true, 1, SpriteManager.RoundedSide.W));
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_3_Text, searchParent.transform.GetChild(0).gameObject, new List<Component>
-				{
-					searchParent.transform.GetChild(0).GetComponent<Image>(),
-				}));
+				EditorThemeManager.AddGraphic(searchParent, ThemeGroup.Function_3, true);
+				EditorThemeManager.AddGraphic(searchParent.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Function_3_Text);
 
 				Destroy(resetParent.GetComponent<Animator>());
 				resetParentButton.transition = Selectable.Transition.ColorTint;
 				EditorThemeManager.AddSelectable(resetParentButton, ThemeGroup.Close);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, resetParent.transform.GetChild(0).gameObject, new List<Component>
-				{
-					resetParent.transform.GetChild(0).GetComponent<Image>(),
-				}));
+				EditorThemeManager.AddGraphic(resetParent.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
 				Destroy(parentPicker.GetComponent<Animator>());
 				parentPickerButton.transition = Selectable.Transition.ColorTint;
 				EditorThemeManager.AddSelectable(parentPickerButton, ThemeGroup.Picker);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Picker_Icon, parentPickerIcon.gameObject, new List<Component>
-				{
-					parentPickerIcon,
-				}));
+				EditorThemeManager.AddGraphic(parentPickerIcon, ThemeGroup.Picker_Icon);
 
 				parent.transform.Find("parent").AsRT().sizeDelta = new Vector2(32f, 32f);
 				parent.transform.Find("more").AsRT().sizeDelta = new Vector2(32f, 32f);
@@ -688,25 +653,11 @@ namespace EditorManagement.Patchers
 					pasteText.text = "Paste";
 					((RectTransform)paste.transform).sizeDelta = new Vector2(70f, 32f);
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Copy, copy, new List<Component>
-					{
-						copy.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.W));
+					EditorThemeManager.AddGraphic(copy.GetComponent<Image>(), ThemeGroup.Copy, true);
+					EditorThemeManager.AddGraphic(copyText, ThemeGroup.Copy_Text);
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Copy_Text, copyText.gameObject, new List<Component>
-					{
-						copyText,
-					}));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste, paste, new List<Component>
-					{
-						paste.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste_Text, pasteText.gameObject, new List<Component>
-					{
-						pasteText,
-					}));
+					EditorThemeManager.AddGraphic(paste.GetComponent<Image>(), ThemeGroup.Paste, true);
+					EditorThemeManager.AddGraphic(pasteText, ThemeGroup.Paste_Text);
 				}
 			}
 
@@ -767,15 +718,8 @@ namespace EditorManagement.Patchers
                 {
 					var toggle = randomColorTarget.transform.GetChild(i).GetComponent<Toggle>();
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, toggle.gameObject, new List<Component>
-					{
-						toggle.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, toggle.graphic.gameObject, new List<Component>
-					{
-						toggle.graphic,
-					}));
+					EditorThemeManager.AddGraphic(toggle.image, ThemeGroup.Null, true);
+					EditorThemeManager.AddGraphic(toggle.graphic, ThemeGroup.Background_1);
 				}
 
 				var randomColorLabel = position.Find("r_label").gameObject.Duplicate(color, "r_label");
@@ -938,10 +882,7 @@ namespace EditorManagement.Patchers
 					});
 
 					EditorThemeManager.AddSelectable(shift, ThemeGroup.Function_2);
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, text.gameObject, new List<Component>
-					{
-						text,
-					}));
+					EditorThemeManager.AddGraphic(text, ThemeGroup.Function_2_Text);
 				});
 			}
 
@@ -983,17 +924,11 @@ namespace EditorManagement.Patchers
 					var offset = parent.GetChild(3).gameObject;
 
 					EditorThemeManager.AddToggle(type.GetComponent<Toggle>(), ThemeGroup.Background_1);
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, type.transform.Find("Image").gameObject, new List<Component>
-					{
-						type.transform.Find("Image").GetComponent<Image>(),
-					}));
+					EditorThemeManager.AddGraphic(type.transform.Find("Image").GetComponent<Image>(), ThemeGroup.Toggle_1_Check);
 					EditorThemeManager.AddInputField(offset.GetComponent<InputField>());
 					EditorThemeManager.AddToggle(additive.GetComponent<Toggle>(), ThemeGroup.Background_1);
 					var additiveImage = additive.transform.Find("Image").GetComponent<Image>();
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, additiveImage.gameObject, new List<Component>
-					{
-						additiveImage,
-					}));
+					EditorThemeManager.AddGraphic(additiveImage, ThemeGroup.Toggle_1_Check);
 					EditorThemeManager.AddInputField(parallax.GetComponent<InputField>());
 
 					var path = $"{RTFile.ApplicationDirectory}{RTFunctions.FunctionsPlugin.BepInExAssetsPath}editor_gui_{array[i]}_addtoggle.png";
@@ -1091,22 +1026,15 @@ namespace EditorManagement.Patchers
 
 					EditorThemeManager.AddLightText(objectView.Find("shapesettings/7/text").GetComponent<Text>());
 
-                    var copy = button.Duplicate(objectView.Find("shapesettings/7"), "set", 5);
-					var text = copy.transform.GetChild(0).GetComponent<Text>();
-					text.text = "Set Data";
-					((RectTransform)copy.transform).sizeDelta = new Vector2(70f, 32f);
+                    var setData = button.Duplicate(objectView.Find("shapesettings/7"), "set", 5);
+					var setDataText = setData.transform.GetChild(0).GetComponent<Text>();
+					setDataText.text = "Set Data";
+					((RectTransform)setData.transform).sizeDelta = new Vector2(70f, 32f);
 
-					copy.GetComponent<LayoutElement>().minWidth = 130f;
+					setData.GetComponent<LayoutElement>().minWidth = 130f;
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1, copy, new List<Component>
-					{
-						copy.transform.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1_Text, text.gameObject, new List<Component>
-					{
-						text,
-					}));
+					EditorThemeManager.AddGraphic(setData.GetComponent<Image>(), ThemeGroup.Function_1, true);
+					EditorThemeManager.AddGraphic(setDataText, ThemeGroup.Function_1_Text);
 				}
 			}
 
@@ -1133,10 +1061,7 @@ namespace EditorManagement.Patchers
 				Destroy(applyPrefab.GetComponent<Animator>());
 				applyPrefabButton.transition = Selectable.Transition.ColorTint;
 				EditorThemeManager.AddSelectable(applyPrefabButton, ThemeGroup.Function_2);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, applyPrefabText.gameObject, new List<Component>
-				{
-					applyPrefabText,
-				}));
+				EditorThemeManager.AddGraphic(applyPrefabText, ThemeGroup.Function_2_Text);
 
 				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "assignlabel", siblingIndex + 1);
 				var assignPrefabLabelText = assignPrefabLabel.transform.GetChild(0).GetComponent<Text>();
@@ -1149,10 +1074,7 @@ namespace EditorManagement.Patchers
 				Destroy(assignPrefab.GetComponent<Animator>());
 				assignPrefabButton.transition = Selectable.Transition.ColorTint;
 				EditorThemeManager.AddSelectable(assignPrefabButton, ThemeGroup.Function_2);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, assignPrefabText.gameObject, new List<Component>
-				{
-					assignPrefabText,
-				}));
+				EditorThemeManager.AddGraphic(assignPrefabText, ThemeGroup.Function_2_Text);
 
 				assignPrefabButton.onClick.ClearAll();
 				assignPrefabButton.onClick.AddListener(delegate ()
@@ -1168,10 +1090,7 @@ namespace EditorManagement.Patchers
 				Destroy(removePrefab.GetComponent<Animator>());
 				removePrefabButton.transition = Selectable.Transition.ColorTint;
 				EditorThemeManager.AddSelectable(removePrefabButton, ThemeGroup.Function_2);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, removePrefabText.gameObject, new List<Component>
-				{
-					removePrefabText,
-				}));
+				EditorThemeManager.AddGraphic(removePrefabText, ThemeGroup.Function_2_Text);
 
 				removePrefabButton.onClick.ClearAll();
 				removePrefabButton.onClick.AddListener(delegate ()
@@ -1186,16 +1105,8 @@ namespace EditorManagement.Patchers
 
 			// Editor Themes
 			{
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
-				{
-					dialog.GetComponent<Image>(),
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_3, right.gameObject, new List<Component>
-				{
-					right.GetComponent<Image>(),
-				}));
-
+				EditorThemeManager.AddGraphic(dialog.GetComponent<Image>(), ThemeGroup.Background_1);
+				EditorThemeManager.AddGraphic(right.GetComponent<Image>(), ThemeGroup.Background_3);
 				EditorThemeManager.AddInputField(objectView.Find("name/name").GetComponent<InputField>());
 				EditorThemeManager.AddDropdown(objectView.Find("name/object-type").GetComponent<Dropdown>());
 				EditorThemeManager.AddDropdown(todDropdown.GetComponent<Dropdown>());
@@ -1215,18 +1126,12 @@ namespace EditorManagement.Patchers
 				for (int i = 0; i < collapse.transform.Find("dots").childCount; i++)
                 {
 					var dot = collapse.transform.Find("dots").GetChild(i).GetComponent<Image>();
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Dark_Text, dot.gameObject, new List<Component>
-					{
-						dot,
-					}));
+					EditorThemeManager.AddGraphic(collapse.transform.Find("dots").GetChild(i).GetComponent<Image>(), ThemeGroup.Dark_Text);
                 }
 
 				var parentButton = objectView.Find("parent/text").GetComponent<Button>();
 				EditorThemeManager.AddSelectable(parentButton, ThemeGroup.Function_2);
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2_Text, parentButton.transform.GetChild(0).gameObject, new List<Component>
-				{
-					parentButton.transform.GetChild(0).GetComponent<Text>(),
-				}));
+				EditorThemeManager.AddGraphic(parentButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Function_2_Text);
 
 				var moreButton = objectView.Find("parent/more").GetComponent<Button>();
 				Destroy(moreButton.GetComponent<Animator>());
@@ -1246,10 +1151,7 @@ namespace EditorManagement.Patchers
 						var title = topPanel.GetChild(1).GetComponent<Text>();
 						bg.gameObject.AddComponent<ContrastColors>().Init(title, bg);
 
-						EditorThemeManager.AddElement(new EditorThemeManager.Element("", $"Object Keyframe Color {i + 1}", bg.gameObject, new List<Component>
-						{
-							bg,
-						}));
+						EditorThemeManager.AddGraphic(bg, EditorThemeManager.EditorTheme.GetGroup($"Object Keyframe Color {i + 1}"));
 
 						var edit = kfdialog.Find("edit");
 						for (int j = 0; j < edit.childCount; j++)
@@ -1265,13 +1167,7 @@ namespace EditorManagement.Patchers
 
 							if (button.name == "del")
 							{
-								var buttonBG = button.GetChild(0).GetComponent<Image>();
-
-								EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Delete_Keyframe_BG, buttonBG.gameObject, new List<Component>
-								{
-									buttonBG,
-								}));
-
+								EditorThemeManager.AddGraphic(button.GetChild(0).GetComponent<Image>(), ThemeGroup.Delete_Keyframe_BG);
 								EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Delete_Keyframe_Button, false);
 
 								continue;
@@ -1352,10 +1248,7 @@ namespace EditorManagement.Patchers
 								continue;
 
 							EditorThemeManager.AddToggle(toggle, ThemeGroup.Background_3);
-							EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, toggle.transform.Find("Image").gameObject, new List<Component>
-						{
-							toggle.transform.Find("Image").GetComponent<Image>(),
-						}));
+							EditorThemeManager.AddGraphic(toggle.transform.Find("Image").GetComponent<Image>(), ThemeGroup.Toggle_1_Check);
 						}
 
 						EditorThemeManager.AddInputField(kfdialog.Find("random/interval-input").GetComponent<InputField>());
@@ -1367,41 +1260,12 @@ namespace EditorManagement.Patchers
                 }
 
 				var timeline = ObjEditor.inst.objTimelineContent.parent.parent;
-				var scrollbar = timeline.Find("Scrollbar Horizontal");
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar_Base, scrollbar.gameObject, new List<Component>
-				{
-					scrollbar.GetComponent<Image>(),
-				}));
 
-				var handle = scrollbar.transform.Find("Sliding Area/Handle").GetComponent<Image>();
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar, handle.gameObject, new List<Component>
-				{
-					handle,
-					scrollbar.GetComponent<Scrollbar>(),
-				}, true, 1, SpriteManager.RoundedSide.W, true));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Time_Scrollbar, ObjEditor.inst.objTimelineSlider.transform.Find("Background").gameObject, new List<Component>
-				{
-					ObjEditor.inst.objTimelineSlider.transform.Find("Background").GetComponent<Image>(),
-				}));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, timeline.gameObject, new List<Component>
-                {
-                    timeline.GetComponent<Image>(),
-                }));
-
-				var objectEditorScrollbar = dialog.Find("data/left/Scroll View/Scrollbar Vertical").gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectEditorScrollbar, new List<Component>
-				{
-					objectEditorScrollbar.GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				var objectEditorScrollbarHandle = objectEditorScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, objectEditorScrollbarHandle, new List<Component>
-				{
-					objectEditorScrollbarHandle.GetComponent<Image>(),
-					objectEditorScrollbar.GetComponent<Scrollbar>()
-				}, true, 1, SpriteManager.RoundedSide.W, true));
+				EditorThemeManager.AddScrollbar(timeline.Find("Scrollbar Horizontal").GetComponent<Scrollbar>(),
+					scrollbarGroup: ThemeGroup.Timeline_Scrollbar_Base, handleGroup: ThemeGroup.Timeline_Scrollbar, canSetScrollbarRounded: false);
+				EditorThemeManager.AddGraphic(ObjEditor.inst.objTimelineSlider.transform.Find("Background").GetComponent<Image>(), ThemeGroup.Timeline_Time_Scrollbar);
+				EditorThemeManager.AddGraphic(timeline.GetComponent<Image>(), ThemeGroup.Background_1);
+				EditorThemeManager.AddScrollbar(dialog.Find("data/left/Scroll View/Scrollbar Vertical").GetComponent<Scrollbar>());
 
 				var zoomSliderBase = ObjEditor.inst.zoomSlider.transform.parent;
 
@@ -1412,40 +1276,13 @@ namespace EditorManagement.Patchers
 				var rectTransform = gameObject.AddComponent<RectTransform>();
 				var image = gameObject.AddComponent<Image>();
 				UIManager.SetRectTransform(rectTransform, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(128f, 25f));
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar_Base, gameObject, new List<Component>
-				{
-					image,
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, zoomSliderBase.gameObject, new List<Component>
-				{
-					zoomSliderBase.GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(0).gameObject, new List<Component>
-				{
-					zoomSliderBase.transform.GetChild(0).GetComponent<Image>(),
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(2).gameObject, new List<Component>
-				{
-					zoomSliderBase.transform.GetChild(2).GetComponent<Image>(),
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, ObjEditor.inst.zoomSlider.transform.Find("Background").gameObject, new List<Component>
-				{
-					ObjEditor.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, ObjEditor.inst.zoomSlider.transform.Find("Fill Area/Fill").gameObject, new List<Component>
-				{
-					ObjEditor.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, ObjEditor.inst.zoomSlider.image.gameObject, new List<Component>
-				{
-					ObjEditor.inst.zoomSlider.image,
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.AddGraphic(image, ThemeGroup.Timeline_Scrollbar_Base);
+				EditorThemeManager.AddGraphic(zoomSliderBase.GetComponent<Image>(), ThemeGroup.Background_1, true);
+				EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Slider_2, true);
+				EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(2).GetComponent<Image>(), ThemeGroup.Slider_2, true);
+				EditorThemeManager.AddGraphic(ObjEditor.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(), ThemeGroup.Slider_2, true);
+				EditorThemeManager.AddGraphic(ObjEditor.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(), ThemeGroup.Slider_2, true);
+				EditorThemeManager.AddGraphic(ObjEditor.inst.zoomSlider.image, ThemeGroup.Slider_2_Handle, true);
 			}
 
 			__instance.SelectedColor = EditorConfig.Instance.ObjectSelectionColor.Value;
@@ -1614,15 +1451,8 @@ namespace EditorManagement.Patchers
 				}
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1, snapToBPM.gameObject, new List<Component>
-			{
-				snapToBPM.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_1_Text, snapToBPMText.gameObject, new List<Component>
-			{
-				snapToBPMText,
-			}));
+			EditorThemeManager.AddGraphic(snapToBPM.image, ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(snapToBPMText, ThemeGroup.Function_1_Text);
 
 			// Label
 			{
@@ -1704,15 +1534,8 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("Pasted keyframe data to selected keyframes!", 2f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste, pasteAllObject, new List<Component>
-			{
-				pasteAll.image
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste_Text, pasteAllText.gameObject, new List<Component>
-				{
-					pasteAllText,
-				}));
+			EditorThemeManager.AddGraphic(pasteAll.image, ThemeGroup.Paste, true);
+			EditorThemeManager.AddGraphic(pasteAllText, ThemeGroup.Paste_Text);
 
 			// Label
 			{
@@ -1777,15 +1600,8 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("Pasted position keyframe data to selected position keyframes!", 3f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste, pastePosObject, new List<Component>
-			{
-				pastePos.image
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste_Text, pastePosText.gameObject, new List<Component>
-			{
-				pastePosText,
-			}));
+			EditorThemeManager.AddGraphic(pastePos.image, ThemeGroup.Paste, true);
+			EditorThemeManager.AddGraphic(pastePosText, ThemeGroup.Paste_Text);
 
 			var pasteScaObject = eventButton.Duplicate(pastePosScaRT, "paste");
 			pasteScaObject.transform.localScale = Vector3.one;
@@ -1825,15 +1641,8 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("Pasted scale keyframe data to selected scale keyframes!", 3f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste, pasteScaObject, new List<Component>
-			{
-				pasteSca.image
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste_Text, pasteScaText.gameObject, new List<Component>
-			{
-				pasteScaText,
-			}));
+			EditorThemeManager.AddGraphic(pasteSca.image, ThemeGroup.Paste, true);
+			EditorThemeManager.AddGraphic(pasteScaText, ThemeGroup.Paste_Text);
 
 			// Label
 			{
@@ -1898,15 +1707,8 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("Pasted rotation keyframe data to selected rotation keyframes!", 3f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste, pasteRotObject, new List<Component>
-			{
-				pasteRot.image
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste_Text, pasteRotText.gameObject, new List<Component>
-			{
-				pasteRotText,
-			}));
+			EditorThemeManager.AddGraphic(pasteRot.image, ThemeGroup.Paste, true);
+			EditorThemeManager.AddGraphic(pasteRotText, ThemeGroup.Paste_Text);
 
 			var pasteColObject = eventButton.Duplicate(pasteRotColObjectRT, "paste");
 			pasteColObject.transform.localScale = Vector3.one;
@@ -1946,15 +1748,8 @@ namespace EditorManagement.Patchers
 				EditorManager.inst.DisplayNotification("Pasted color keyframe data to selected color keyframes!", 3f, EditorManager.NotificationType.Success);
 			});
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste, pasteColObject, new List<Component>
-			{
-				pasteCol.image
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Paste_Text, pasteColText.gameObject, new List<Component>
-			{
-				pasteColText,
-			}));
+			EditorThemeManager.AddGraphic(pasteCol.image, ThemeGroup.Paste, true);
+			EditorThemeManager.AddGraphic(pasteColText, ThemeGroup.Paste_Text);
 
 			yield break;
 		}

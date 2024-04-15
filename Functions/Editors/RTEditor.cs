@@ -686,43 +686,16 @@ namespace EditorManagement.Functions.Editors
                 else
                     ((Text)textComponent).text = text;
 
-                //if (type == EditorManager.NotificationType.Info)
-                //    notif.transform.Find("text").GetComponent<TextMeshProUGUI>().text = text;
-                //else
-                //    notif.transform.Find("text").GetComponent<Text>().text = text;
                 notif.transform.SetParent(EditorManager.inst.notification.transform);
                 if (config.NotificationDirection.Value == Direction.Down)
                     notif.transform.SetAsFirstSibling();
                 notif.transform.localScale = Vector3.one;
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Background", "Notification Background", notif, new List<Component>
-                {
-                    notif.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                var notifPanel = notif.transform.Find("bg/bg").gameObject;
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Panel", $"Notification {type}", notifPanel, new List<Component>
-                {
-                    notifPanel.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Top));
-
-                var notifText = notif.transform.Find("text").gameObject;
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Text", "Light Text", notifText, new List<Component>
-                {
-                    textComponent,
-                }));
-
-                var notifIcon = notif.transform.Find("bg/Image").gameObject;
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Icon", "Light Text", notifIcon, new List<Component>
-                {
-                    notifIcon.GetComponent<Image>(),
-                }));
-
-                var notifTitle = notif.transform.Find("bg/title").gameObject;
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Tooltip Title", "Light Text", notifTitle, new List<Component>
-                {
-                    notifTitle.GetComponent<Text>(),
-                }));
+                EditorThemeManager.ApplyGraphic(notif.GetComponent<Image>(), ThemeGroup.Notification_Background, true);
+                EditorThemeManager.ApplyGraphic(notif.transform.Find("bg/bg").GetComponent<Image>(), EditorThemeManager.EditorTheme.GetGroup($"Notification {type}"), true, roundedSide: SpriteManager.RoundedSide.Top);
+                EditorThemeManager.ApplyGraphic(textComponent, ThemeGroup.Light_Text);
+                EditorThemeManager.ApplyGraphic(notif.transform.Find("bg/Image").GetComponent<Image>(), ThemeGroup.Light_Text);
+                EditorThemeManager.ApplyLightText(notif.transform.Find("bg/title").GetComponent<Text>());
 
                 RebuildNotificationLayout();
 
@@ -793,34 +766,11 @@ namespace EditorManagement.Functions.Editors
             }
 
             var tooltip = EditorManager.inst.tooltip.transform.parent.gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Background", "Notification Background", tooltip, new List<Component>
-            {
-                tooltip.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var tooltipPanel = tooltip.transform.Find("bg/bg").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Panel", "Notification Info", tooltipPanel, new List<Component>
-            {
-                tooltipPanel.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Top));
-
-            var tooltipText = tooltip.transform.Find("text").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Text", "Light Text", tooltipText, new List<Component>
-            {
-                tooltipText.GetComponent<TextMeshProUGUI>(),
-            }));
-
-            var tooltipIcon = tooltip.transform.Find("bg/Image").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Icon", "Light Text", tooltipIcon, new List<Component>
-            {
-                tooltipIcon.GetComponent<Image>(),
-            }));
-
-            var tooltipTitle = tooltip.transform.Find("bg/title").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Tooltip Title", "Light Text", tooltipTitle, new List<Component>
-            {
-                tooltipTitle.GetComponent<Text>(),
-            }));
+            EditorThemeManager.AddGraphic(tooltip.GetComponent<Image>(), ThemeGroup.Notification_Background, true);
+            EditorThemeManager.AddGraphic(tooltip.transform.Find("bg/bg").GetComponent<Image>(), ThemeGroup.Notification_Info, true, roundedSide: SpriteManager.RoundedSide.Top);
+            EditorThemeManager.AddLightText(tooltip.transform.Find("text").GetComponent<TextMeshProUGUI>());
+            EditorThemeManager.AddGraphic(tooltip.transform.Find("bg/Image").GetComponent<Image>(), ThemeGroup.Light_Text);
+            EditorThemeManager.AddLightText(tooltip.transform.Find("bg/title").GetComponent<Text>());
         }
 
         #endregion
@@ -1893,6 +1843,82 @@ namespace EditorManagement.Functions.Editors
 
         #region Generate UI
 
+        public static GameObject GenerateSpacer(string name, Transform parent, Vector2 size)
+        {
+            var spacer = new GameObject(name);
+            spacer.transform.SetParent(parent);
+            spacer.transform.localScale = Vector3.one;
+
+            var spacerRT = spacer.AddComponent<RectTransform>();
+            spacerRT.sizeDelta = size;
+
+            return spacer;
+        }
+
+        public Popup GeneratePopup(string name, string title, Vector2 defaultPosition, Vector2 size, Action<string> refreshSearch = null, Action close = null, string placeholderText = "Search...")
+        {
+            var popupInstance = new Popup();
+            popupInstance.Name = name;
+            var popup = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
+                .Duplicate(popups, name);
+            popup.transform.localPosition = Vector3.zero;
+
+            var inSize = size == Vector2.zero ? new Vector2(600f, 450f) : size;
+            popup.transform.AsRT().anchoredPosition = defaultPosition;
+            popup.transform.AsRT().sizeDelta = inSize;
+            popupInstance.TopPanel = (RectTransform)popup.transform.Find("Panel");
+            popupInstance.TopPanel.sizeDelta = new Vector2(inSize.x + 32f, 32f);
+            var text = popupInstance.TopPanel.Find("Text").GetComponent<Text>();
+            text.text = title;
+
+            ((RectTransform)popup.transform.Find("search-box")).sizeDelta = new Vector2(inSize.x, 32f);
+            popupInstance.Grid = popup.transform.Find("mask/content").GetComponent<GridLayoutGroup>();
+            popupInstance.Grid.cellSize = new Vector2(inSize.x - 5f, 32f);
+            popup.transform.Find("Scrollbar").AsRT().sizeDelta = new Vector2(32f, inSize.y);
+
+            popupInstance.Close = popupInstance.TopPanel.Find("x").GetComponent<Button>();
+            popupInstance.Close.onClick.RemoveAllListeners();
+            popupInstance.Close.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.HideDialog(name);
+                close.Invoke();
+            });
+
+            popupInstance.SearchField = popup.transform.Find("search-box/search").GetComponent<InputField>();
+            popupInstance.SearchField.onValueChanged.ClearAll();
+            popupInstance.SearchField.onValueChanged.AddListener((string _val) => refreshSearch?.Invoke(_val));
+            ((Text)popupInstance.SearchField.placeholder).text = placeholderText;
+            popupInstance.Content = popup.transform.Find("mask/content");
+
+            EditorHelper.AddEditorPopup(name, popup);
+
+            EditorThemeManager.AddGraphic(popup.GetComponent<Image>(), ThemeGroup.Background_1, true);
+
+            EditorThemeManager.AddGraphic(popupInstance.TopPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
+
+            EditorThemeManager.AddSelectable(popupInstance.Close, ThemeGroup.Close);
+
+            EditorThemeManager.AddGraphic(popupInstance.Close.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+
+            EditorThemeManager.AddLightText(text);
+
+            EditorThemeManager.AddScrollbar(popup.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
+
+            EditorThemeManager.AddInputField(popup.transform.Find("search-box/search").GetComponent<InputField>(), ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
+
+            return popupInstance;
+        }
+
+        public class Popup
+        {
+            public string Name { get; set; }
+            public Button Close { get; set; }
+            public InputField SearchField { get; set; }
+            public Transform Content { get; set; }
+            public GridLayoutGroup Grid { get; set; }
+            public RectTransform TopPanel { get; set; }
+        }
+
         void SetupTimelineBar()
         {
             var __instance = EditorManager.inst;
@@ -2041,11 +2067,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             var timelineBarBase = timelineBar.transform.parent.gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Timeline Bar", "Timeline Bar", timelineBarBase, new List<Component>
-            {
-                timelineBarBase.GetComponent<Image>()
-            }));
-
+            EditorThemeManager.AddGraphic(timelineBarBase.GetComponent<Image>(), ThemeGroup.Timeline_Bar);
             EditorThemeManager.AddSelectable(timeDefault.AddComponent<Button>(), ThemeGroup.List_Button_1);
             EditorThemeManager.AddLightText(timeDefault.transform.GetChild(0).GetComponent<Text>());
 
@@ -2072,86 +2094,31 @@ namespace EditorManagement.Functions.Editors
             EditorThemeManager.AddSelectable(rightPitchButton, ThemeGroup.Function_2, false);
 
             // Leave this group empty since the color is already handled via the custom layer colors. This is only here for the rounded edges.
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, layersObj, new List<Component>
-            {
-                layersIF.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddGraphic(layersIF.image, ThemeGroup.Null, true);
+            EditorThemeManager.AddGraphic(eventToggle.image, ThemeGroup.Event_Check, true);
+            EditorThemeManager.AddGraphic(eventToggle.transform.Find("Background/Text").GetComponent<Text>(), ThemeGroup.Event_Check_Text);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Event Toggle", "Event/Check", eventToggle.gameObject, new List<Component>
-            {
-                eventToggle.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var eventToggleText = eventToggle.transform.Find("Background/Text").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Layer Event Toggle Text", "Event/Check Text", eventToggleText, new List<Component>
-            {
-                eventToggleText.GetComponent<Text>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Bar, eventToggle.graphic.gameObject, new List<Component>
-            {
-                (Image)eventToggle.graphic,
-            }));
+            EditorThemeManager.AddGraphic(eventToggle.graphic, ThemeGroup.Timeline_Bar);
 
             var prefabButton = timelineBar.transform.Find("prefab").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Button", "Prefab", prefabButton, new List<Component>
-            {
-                prefabButton.GetComponent<Image>()
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var prefabButtonText = prefabButton.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Prefab Button Text", "Prefab Text", prefabButtonText, new List<Component>
-            {
-                prefabButtonText.GetComponent<Text>()
-            }));
+            EditorThemeManager.AddGraphic(prefabButton.GetComponent<Image>(), ThemeGroup.Prefab, true);
+            EditorThemeManager.AddGraphic(prefabButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Prefab_Text);
 
             var objectButton = timelineBar.transform.Find("object").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Button", "Object", objectButton, new List<Component>
-            {
-                objectButton.GetComponent<Image>()
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var objectButtonText = objectButton.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Button Text", "Object Text", objectButtonText, new List<Component>
-            {
-                objectButtonText.GetComponent<Text>()
-            }));
+            EditorThemeManager.AddGraphic(objectButton.GetComponent<Image>(), ThemeGroup.Object, true);
+            EditorThemeManager.AddGraphic(objectButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Object_Text);
 
             var markerButton = timelineBar.transform.Find("event").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Marker Button", "Marker", markerButton, new List<Component>
-            {
-                markerButton.GetComponent<Image>()
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var markerButtonText = markerButton.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Marker Button Text", "Marker Text", markerButtonText, new List<Component>
-            {
-                markerButtonText.GetComponent<Text>()
-            }));
+            EditorThemeManager.AddGraphic(markerButton.GetComponent<Image>(), ThemeGroup.Marker, true);
+            EditorThemeManager.AddGraphic(markerButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Marker_Text);
 
             var checkpointButton = timelineBar.transform.Find("checkpoint").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Button", "Checkpoint", markerButton, new List<Component>
-            {
-                checkpointButton.GetComponent<Image>()
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var checkpointButtonText = checkpointButton.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Button Text", "Checkpoint Text", checkpointButtonText, new List<Component>
-            {
-                checkpointButtonText.GetComponent<Text>()
-            }));
+            EditorThemeManager.AddGraphic(checkpointButton.GetComponent<Image>(), ThemeGroup.Checkpoint, true);
+            EditorThemeManager.AddGraphic(checkpointButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Checkpoint_Text);
 
             var backgroundButton = timelineBar.transform.Find("background").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Button", "Background Object", markerButton, new List<Component>
-            {
-                backgroundButton.GetComponent<Image>()
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var backgroundButtonText = backgroundButton.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Button Text", "Background Object Text", backgroundButtonText, new List<Component>
-            {
-                backgroundButtonText.GetComponent<Text>()
-            }));
+            EditorThemeManager.AddGraphic(backgroundButton.GetComponent<Image>(), ThemeGroup.Background_Object, true);
+            EditorThemeManager.AddGraphic(backgroundButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Background_Object_Text);
 
             var playTest = timelineBar.transform.Find("playtest").gameObject;
             Destroy(playTest.GetComponent<Animator>());
@@ -2210,59 +2177,21 @@ namespace EditorManagement.Functions.Editors
                 scrollBar.value = pointerEventData.scrollDelta.y > 0f ? scrollBar.value + (0.005f * multiply) : pointerEventData.scrollDelta.y < 0f ? scrollBar.value - (0.005f * multiply) : 0f;
             }));
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar_Base, EditorManager.inst.timelineScrollbar, new List<Component>
-            {
-                EditorManager.inst.timelineScrollbar.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddScrollbar(EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>(),
+                scrollbarGroup: ThemeGroup.Timeline_Scrollbar_Base, handleGroup: ThemeGroup.Timeline_Scrollbar, canSetScrollbarRounded: false);
 
-            var handle = EditorManager.inst.timelineScrollbar.transform.Find("Sliding Area/Handle").GetComponent<Image>();
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Scrollbar, handle.gameObject, new List<Component>
-            {
-                handle,
-                EditorManager.inst.timelineScrollbar.GetComponent<Scrollbar>(),
-            }, true, 1, SpriteManager.RoundedSide.W, true));
+            EditorThemeManager.AddGraphic(EditorManager.inst.timelineSlider.transform.Find("Background").GetComponent<Image>(), ThemeGroup.Timeline_Time_Scrollbar);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Time_Scrollbar, EditorManager.inst.timelineSlider.transform.Find("Background").gameObject, new List<Component>
-            {
-                EditorManager.inst.timelineSlider.transform.Find("Background").GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Timeline_Time_Scrollbar, wholeTimeline.gameObject, new List<Component>
-            {
-                wholeTimeline.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddGraphic(wholeTimeline.GetComponent<Image>(), ThemeGroup.Timeline_Time_Scrollbar);
 
             var zoomSliderBase = EditorManager.inst.zoomSlider.transform.parent;
+            EditorThemeManager.AddGraphic(zoomSliderBase.GetComponent<Image>(), ThemeGroup.Background_1, true);
+            EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Slider_2, true);
+            EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(2).GetComponent<Image>(), ThemeGroup.Slider_2, true);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, zoomSliderBase.gameObject, new List<Component>
-            {
-                zoomSliderBase.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(0).gameObject, new List<Component>
-            {
-                zoomSliderBase.transform.GetChild(0).GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, zoomSliderBase.transform.GetChild(2).gameObject, new List<Component>
-            {
-                zoomSliderBase.transform.GetChild(2).GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, EditorManager.inst.zoomSlider.transform.Find("Background").gameObject, new List<Component>
-            {
-                EditorManager.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, EditorManager.inst.zoomSlider.transform.Find("Fill Area/Fill").gameObject, new List<Component>
-            {
-                EditorManager.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, EditorManager.inst.zoomSlider.image.gameObject, new List<Component>
-            {
-                EditorManager.inst.zoomSlider.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddGraphic(EditorManager.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(), ThemeGroup.Slider_2, true);
+            EditorThemeManager.AddGraphic(EditorManager.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(), ThemeGroup.Slider_2, true);
+            EditorThemeManager.AddGraphic(EditorManager.inst.zoomSlider.image, ThemeGroup.Slider_2_Handle, true);
         }
 
         void SetupSelectGUI()
@@ -2833,7 +2762,7 @@ namespace EditorManagement.Functions.Editors
                     UpdateEditorPath(true);
                 });
 
-                EditorThemeManager.AddSelectable(levelListRButton, ThemeGroup.Function_2);
+                EditorThemeManager.AddSelectable(levelListRButton, ThemeGroup.Function_2, false);
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
@@ -2922,20 +2851,12 @@ namespace EditorManagement.Functions.Editors
                     UpdateThemePath(true);
                 });
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Dialog Reloader", "Function 2", themePathReloader, new List<Component>
-                {
-                    themePathReloader.GetComponent<Image>(),
-                    levelListRButton
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(levelListRButton, ThemeGroup.Function_2, false);
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
                 if (RTFile.FileExists(refreshImage))
-                {
-                    var spriteReloader = themePathReloader.GetComponent<Image>();
-
-                    spriteReloader.sprite = SpriteManager.LoadSprite(refreshImage);
-                }
+                    levelListRButton.image.sprite = SpriteManager.LoadSprite(refreshImage);
             }
 
             // Prefab Path
@@ -3018,7 +2939,7 @@ namespace EditorManagement.Functions.Editors
                     UpdatePrefabPath(true);
                 });
 
-                EditorThemeManager.AddSelectable(levelListRButton, ThemeGroup.Function_2);
+                EditorThemeManager.AddSelectable(levelListRButton, ThemeGroup.Function_2, false);
 
                 string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
 
@@ -3080,7 +3001,7 @@ namespace EditorManagement.Functions.Editors
 
             EditorThemeManager.AddLightText(panel.transform.Find("Text").GetComponent<TextMeshProUGUI>());
 
-            EditorThemeManager.AddInputField(fileBrowser.transform.Find("folder-bar").GetComponent<InputField>(), "", "Input Field");
+            EditorThemeManager.AddInputField(fileBrowser.transform.Find("folder-bar").GetComponent<InputField>());
         }
 
         void SetupTimelinePreview()
@@ -3416,10 +3337,7 @@ namespace EditorManagement.Functions.Editors
             rectTransform.anchoredPosition = Vector2.zero;
             rectTransform.sizeDelta = new Vector2(10000f, 10000f);
 
-            PreviewCover = new EditorThemeManager.Element("Preview Cover", "Preview Cover", gameObject, new List<Component>
-            {
-                image,
-            });
+            PreviewCover = new EditorThemeManager.Element(ThemeGroup.Preview_Cover, gameObject, new List<Component> { image, });
             EditorThemeManager.AddElement(PreviewCover);
 
             gameObject.SetActive(!RTHelpers.AprilFools);
@@ -3427,89 +3345,17 @@ namespace EditorManagement.Functions.Editors
 
         void CreateObjectSearch()
         {
-            var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Object Search");
-            objectSearch.transform.localPosition = Vector3.zero;
-
-            var objectSearchRT = (RectTransform)objectSearch.transform;
-            objectSearchRT.sizeDelta = new Vector2(600f, 450f);
-            var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
-            objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
-
-            var title = objectSearchPanel.transform.Find("Text").GetComponent<Text>();
-            title.text = "Object Search";
-            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
-            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
-
-            var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
-            x.onClick.RemoveAllListeners();
-            x.onClick.AddListener(delegate ()
+            var objectSearchPopup = GeneratePopup("Object Search Popup", "Object Search", Vector2.zero, new Vector2(600f, 450f), delegate (string _val)
             {
-                EditorManager.inst.HideDialog("Object Search Popup");
-            });
-
-            var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
-            searchBar.onValueChanged.ClearAll();
-            searchBar.onValueChanged.AddListener(delegate (string _value)
-            {
-                objectSearchTerm = _value;
+                objectSearchTerm = _val;
                 RefreshObjectSearch(x => ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(x), Input.GetKey(KeyCode.LeftControl)));
-            });
-            searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for object...";
+            }, placeholderText: "Search for object...");
 
             EditorHelper.AddEditorDropdown("Search Objects", "", "Edit", SearchSprite, delegate ()
             {
                 EditorManager.inst.ShowDialog("Object Search Popup");
                 RefreshObjectSearch(x => ObjectEditor.inst.SetCurrentObject(ObjectEditor.inst.GetTimelineObject(x), Input.GetKey(KeyCode.LeftControl)));
             });
-
-            EditorHelper.AddEditorPopup("Object Search Popup", objectSearch);
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup", "Background", objectSearch, new List<Component>
-            {
-                objectSearch.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup Panel", "Background", objectSearchPanel.gameObject, new List<Component>
-            {
-                objectSearchPanel.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Top));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", x.gameObject, new List<Component>
-            {
-                x.GetComponent<Image>(),
-                x,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            var objectSearchPopupCloseX = x.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", objectSearchPopupCloseX, new List<Component>
-            {
-                objectSearchPopupCloseX.GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Title", "Light Text", title.gameObject, new List<Component>
-            {
-                title,
-            }));
-
-            var objectSearchPopupScrollbar = objectSearch.transform.Find("Scrollbar").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", objectSearchPopupScrollbar, new List<Component>
-            {
-                objectSearchPopupScrollbar.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-            var objectSearchPopupScrollbarHandle = objectSearchPopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar Handle", "Scrollbar Handle", objectSearchPopupScrollbarHandle, new List<Component>
-            {
-                objectSearchPopupScrollbarHandle.GetComponent<Image>(),
-                objectSearchPopupScrollbar.GetComponent<Scrollbar>()
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            var objectSearchPopupSearch = objectSearch.transform.Find("search-box/search").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Search", "Search Field 1", objectSearchPopupSearch, new List<Component>
-            {
-                objectSearchPopupSearch.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom));
         }
 
         void CreateWarningPopup()
@@ -3568,10 +3414,9 @@ namespace EditorManagement.Functions.Editors
             sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
             sizeFitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
 
-            var mainRT = main.GetComponent<RectTransform>();
-            mainRT.sizeDelta = new Vector2(400f, 160f);
+            main.transform.AsRT().sizeDelta = new Vector2(400f, 160f);
 
-            main.Find("Level Name").GetComponent<RectTransform>().sizeDelta = new Vector2(292f, 64f);
+            main.Find("Level Name").AsRT().sizeDelta = new Vector2(292f, 64f);
 
             var panel = main.Find("Panel");
 
@@ -3588,56 +3433,19 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorPopup("Warning Popup", warningPopup);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup", "Background", main.gameObject, new List<Component>
-            {
-                main.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddGraphic(main.GetComponent<Image>(), ThemeGroup.Background_1, true);
+            EditorThemeManager.AddGraphic(panel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Panel", "Background", panel.gameObject, new List<Component>
-            {
-                panel.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Top));
+            EditorThemeManager.AddSelectable(close, ThemeGroup.Close, true);
+            EditorThemeManager.AddGraphic(close.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Close", "Close", close.gameObject, new List<Component>
-            {
-                close.GetComponent<Image>(),
-                close,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
+            EditorThemeManager.AddLightText(title);
 
-            var warningPopupCloseX = close.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Close X", "Close X", warningPopupCloseX, new List<Component>
-            {
-                warningPopupCloseX.GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Title", "Light Text", title.gameObject, new List<Component>
-            {
-                title,
-            }));
-
-            var warningPopupText = main.Find("Level Name").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Label", "Light Text", warningPopupText, new List<Component>
-            {
-                warningPopupText.GetComponent<Text>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Confirm", "Warning Confirm", submit1Button.gameObject, new List<Component>
-            {
-                submit1Image
-            }, true, 1, SpriteManager.RoundedSide.W));
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Confirm Text", "Add Text", submit1Button.transform.GetChild(0).gameObject, new List<Component>
-            {
-                submit1Button.transform.GetChild(0).GetComponent<Text>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Cancel", "Warning Cancel", submit2Button.gameObject, new List<Component>
-            {
-                submit2Image
-            }, true, 1, SpriteManager.RoundedSide.W));
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Warning Popup Cancel Text", "Add Text", submit2Button.transform.GetChild(0).gameObject, new List<Component>
-            {
-                submit2Button.transform.GetChild(0).GetComponent<Text>(),
-            }));
+            EditorThemeManager.AddLightText(main.Find("Level Name").GetComponent<Text>());
+            EditorThemeManager.AddGraphic(submit1Image, ThemeGroup.Warning_Confirm, true);
+            EditorThemeManager.AddGraphic(submit1Button.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Add_Text);
+            EditorThemeManager.AddGraphic(submit2Image, ThemeGroup.Warning_Cancel, true);
+            EditorThemeManager.AddGraphic(submit2Image.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Add_Text);
         }
 
         void CreateREPLEditor()
@@ -3751,10 +3559,7 @@ namespace EditorManagement.Functions.Editors
 
             var multiObjectEditorDialog = EditorManager.inst.GetDialog("Multi Object Editor").Dialog;
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Multi Object Editor", "Background", multiObjectEditorDialog.gameObject, new List<Component>
-            {
-                multiObjectEditorDialog.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddGraphic(multiObjectEditorDialog.GetComponent<Image>(), ThemeGroup.Background_1);
 
             var dataLeft = multiObjectEditorDialog.Find("data/left");
 
@@ -3766,7 +3571,7 @@ namespace EditorManagement.Functions.Editors
 
             LSHelpers.DeleteChildren(parent);
 
-            scrollView.GetComponent<RectTransform>().sizeDelta = new Vector2(383f, 690f);
+            scrollView.transform.AsRT().sizeDelta = new Vector2(383f, 690f);
 
             dataLeft.GetChild(1).gameObject.SetActive(true);
 
@@ -3786,10 +3591,7 @@ namespace EditorManagement.Functions.Editors
                 "The current version of the editor doesn't support any editing functionality.",
                 "On the left you'll see all the Multi Object Editor tools you'll need.");
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Info", "Light Text", textHolderText.gameObject, new List<Component>
-            {
-                textHolderText,
-            }));
+            EditorThemeManager.AddLightText(textHolderText);
 
             var updateMultiObjectInfo = textHolder.gameObject.AddComponent<UpdateMultiObjectInfo>();
             updateMultiObjectInfo.Text = textHolderText;
@@ -4239,16 +4041,7 @@ namespace EditorManagement.Functions.Editors
                 inputField.text = "name";
                 ((Text)inputField.placeholder).text = "Enter tag...";
 
-                var inputFieldInput = multiNameSet.transform.GetChild(0).Find("input");
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Tags", "Input Field", inputFieldInput.gameObject, new List<Component>
-                {
-                    inputFieldInput.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Tags", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
-                {
-                    inputField.textComponent,
-                }));
+                EditorThemeManager.AddInputField(inputField);
 
                 Destroy(multiNameSet.transform.GetChild(0).Find("<").gameObject);
 
@@ -4288,12 +4081,7 @@ namespace EditorManagement.Functions.Editors
                 });
                 Destroy(add.GetComponent<Animator>());
                 addButton.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor + tags", "Function 2", add.gameObject, new List<Component>
-                {
-                    addImage,
-                    addButton,
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(addButton, ThemeGroup.Function_2, false);
             }
 
             // Clear data
@@ -5043,15 +4831,7 @@ namespace EditorManagement.Functions.Editors
                 var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
                 oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Name Swapper", "Input Field", oldName, new List<Component>
-                {
-                    oldName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Name Swapper", "Input Field Text", oldNameIF.textComponent.gameObject, new List<Component>
-                {
-                    oldNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(oldNameIF);
 
                 var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new name");
 
@@ -5071,15 +4851,7 @@ namespace EditorManagement.Functions.Editors
                 var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
                 newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Name Swapper", "Input Field", newName, new List<Component>
-                {
-                    newName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Name Swapper", "Input Field Text", newNameIF.textComponent.gameObject, new List<Component>
-                {
-                    newNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(newNameIF);
 
                 var replace = eventButton.Duplicate(replaceName.transform, "replace");
                 replace.transform.localScale = Vector3.one;
@@ -5090,15 +4862,8 @@ namespace EditorManagement.Functions.Editors
 
                 replaceText.text = "Replace";
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Replace", "Function 1", replace, new List<Component>
-                {
-                    replace.GetComponent<Image>()
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Replace", "Function 1 Text", replaceText.gameObject, new List<Component>
-                {
-                    replaceText
-                }));
+                EditorThemeManager.AddGraphic(replace.GetComponent<Image>(), ThemeGroup.Function_1, true);
+                EditorThemeManager.AddGraphic(replaceText, ThemeGroup.Function_1_Text);
 
                 var button = replace.GetComponent<Button>();
                 button.onClick.ClearAll();
@@ -5145,15 +4910,7 @@ namespace EditorManagement.Functions.Editors
                 var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
                 oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Tag Swapper", "Input Field", oldName, new List<Component>
-                {
-                    oldName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Tag Swapper", "Input Field Text", oldNameIF.textComponent.gameObject, new List<Component>
-                {
-                    oldNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(oldNameIF);
 
                 var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new tag");
 
@@ -5173,15 +4930,7 @@ namespace EditorManagement.Functions.Editors
                 var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
                 newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Tag Swapper", "Input Field", newName, new List<Component>
-                {
-                    newName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Tag Swapper", "Input Field Text", newNameIF.textComponent.gameObject, new List<Component>
-                {
-                    newNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(newNameIF);
 
                 var replace = eventButton.Duplicate(replaceName.transform, "replace");
                 replace.transform.localScale = Vector3.one;
@@ -5192,15 +4941,8 @@ namespace EditorManagement.Functions.Editors
 
                 replaceText.text = "Replace";
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Replace", "Function 1", replace, new List<Component>
-                {
-                    replace.GetComponent<Image>()
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Replace", "Function 1 Text", replaceText.gameObject, new List<Component>
-                {
-                    replaceText
-                }));
+                EditorThemeManager.AddGraphic(replace.GetComponent<Image>(), ThemeGroup.Function_1, true);
+                EditorThemeManager.AddGraphic(replaceText, ThemeGroup.Function_1_Text);
 
                 var button = replace.GetComponent<Button>();
                 button.onClick.ClearAll();
@@ -5249,15 +4991,7 @@ namespace EditorManagement.Functions.Editors
                 var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
                 oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Swapper", "Input Field", oldName, new List<Component>
-                {
-                    oldName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Text Swapper", "Input Field Text", oldNameIF.textComponent.gameObject, new List<Component>
-                {
-                    oldNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(oldNameIF);
 
                 var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new text");
 
@@ -5277,15 +5011,7 @@ namespace EditorManagement.Functions.Editors
                 var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
                 newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Swapper", "Input Field", newName, new List<Component>
-                {
-                    newName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Text Swapper", "Input Field Text", newNameIF.textComponent.gameObject, new List<Component>
-                {
-                    newNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(newNameIF);
 
                 var replace = eventButton.Duplicate(replaceName.transform, "replace");
                 replace.transform.localScale = Vector3.one;
@@ -5296,15 +5022,8 @@ namespace EditorManagement.Functions.Editors
 
                 replaceText.text = "Replace";
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Replace", "Function 1", replace, new List<Component>
-                {
-                    replace.GetComponent<Image>()
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Replace", "Function 1 Text", replaceText.gameObject, new List<Component>
-                {
-                    replaceText
-                }));
+                EditorThemeManager.AddGraphic(replace.GetComponent<Image>(), ThemeGroup.Function_1, true);
+                EditorThemeManager.AddGraphic(replaceText, ThemeGroup.Function_1_Text);
 
                 var button = replace.GetComponent<Button>();
                 button.onClick.ClearAll();
@@ -5352,15 +5071,7 @@ namespace EditorManagement.Functions.Editors
                 var oldNameSwapper = oldName.AddComponent<InputFieldSwapper>();
                 oldNameSwapper.Init(oldNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Modifier Swapper", "Input Field", oldName, new List<Component>
-                {
-                    oldName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Modifier Swapper", "Input Field Text", oldNameIF.textComponent.gameObject, new List<Component>
-                {
-                    oldNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(oldNameIF);
 
                 var newName = GameObject.Find("TimelineBar/GameObject/Time Input").Duplicate(multiSyncRT, "new modifier");
 
@@ -5380,15 +5091,7 @@ namespace EditorManagement.Functions.Editors
                 var newNameSwapper = newName.AddComponent<InputFieldSwapper>();
                 newNameSwapper.Init(newNameIF, InputFieldSwapper.Type.String);
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Modifier Swapper", "Input Field", newName, new List<Component>
-                {
-                    newName.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Modifier Swapper", "Input Field Text", newNameIF.textComponent.gameObject, new List<Component>
-                {
-                    newNameIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(newNameIF);
 
                 var replace = eventButton.Duplicate(replaceName.transform, "replace");
                 replace.transform.localScale = Vector3.one;
@@ -5399,15 +5102,8 @@ namespace EditorManagement.Functions.Editors
 
                 replaceText.text = "Replace";
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Replace", "Function 1", replace, new List<Component>
-                {
-                    replace.GetComponent<Image>()
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Replace", "Function 1 Text", replaceText.gameObject, new List<Component>
-                {
-                    replaceText
-                }));
+                EditorThemeManager.AddGraphic(replace.GetComponent<Image>(), ThemeGroup.Function_1, true);
+                EditorThemeManager.AddGraphic(replaceText, ThemeGroup.Function_1_Text);
 
                 var button = replace.GetComponent<Button>();
                 button.onClick.ClearAll();
@@ -5488,38 +5184,18 @@ namespace EditorManagement.Functions.Editors
                 TriggerHelper.AddEventTriggerParams(opacityObject, TriggerHelper.ScrollDelta(opacityIF, max: 1f));
                 TriggerHelper.IncreaseDecreaseButtons(opacityIF, max: 1f);
 
-                var opacityInput = opacityObject.transform.GetChild(0).Find("input");
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Opacity", "Input Field", opacityInput.gameObject, new List<Component>
-                {
-                    opacityInput.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Opacity", "Input Field Text", opacityIF.textComponent.gameObject, new List<Component>
-                {
-                    opacityIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(opacityIF);
 
                 var opacityButtonLeft = opacityIF.transform.Find("<").GetComponent<Button>();
-
-                Destroy(opacityButtonLeft.GetComponent<Animator>());
-                opacityButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Opacity", "Function 2", opacityButtonLeft.gameObject, new List<Component>
-                {
-                    opacityButtonLeft.GetComponent<Image>(),
-                    opacityButtonLeft,
-                }, isSelectable: true));
-
                 var opacityButtonRight = opacityIF.transform.Find(">").GetComponent<Button>();
 
+                Destroy(opacityButtonLeft.GetComponent<Animator>());
                 Destroy(opacityButtonRight.GetComponent<Animator>());
+                opacityButtonLeft.transition = Selectable.Transition.ColorTint;
                 opacityButtonRight.transition = Selectable.Transition.ColorTint;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Opacity", "Function 2", opacityButtonRight.gameObject, new List<Component>
-                {
-                    opacityButtonRight.GetComponent<Image>(),
-                    opacityButtonRight,
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(opacityButtonLeft, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(opacityButtonRight, ThemeGroup.Function_2, false);
 
                 labelGenerator("Hue");
 
@@ -5537,38 +5213,18 @@ namespace EditorManagement.Functions.Editors
                 TriggerHelper.AddEventTriggerParams(hueObject, TriggerHelper.ScrollDelta(hueIF));
                 TriggerHelper.IncreaseDecreaseButtons(hueIF);
 
-                var hueInput = hueObject.transform.GetChild(0).Find("input");
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Hue", "Input Field", hueInput.gameObject, new List<Component>
-                {
-                    hueInput.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Hue", "Input Field Text", hueIF.textComponent.gameObject, new List<Component>
-                {
-                    hueIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(hueIF);
 
                 var hueButtonLeft = hueIF.transform.Find("<").GetComponent<Button>();
-
-                Destroy(hueButtonLeft.GetComponent<Animator>());
-                hueButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Hue", "Function 2", hueButtonLeft.gameObject, new List<Component>
-                {
-                    hueButtonLeft.GetComponent<Image>(),
-                    hueButtonLeft,
-                }, isSelectable: true));
-
                 var hueButtonRight = hueIF.transform.Find(">").GetComponent<Button>();
 
+                Destroy(hueButtonLeft.GetComponent<Animator>());
                 Destroy(hueButtonRight.GetComponent<Animator>());
+                hueButtonLeft.transition = Selectable.Transition.ColorTint;
                 hueButtonRight.transition = Selectable.Transition.ColorTint;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Hue", "Function 2", hueButtonRight.gameObject, new List<Component>
-                {
-                    hueButtonRight.GetComponent<Image>(),
-                    hueButtonRight,
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(hueButtonLeft, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(hueButtonRight, ThemeGroup.Function_2, false);
 
                 labelGenerator("Saturation");
 
@@ -5586,38 +5242,17 @@ namespace EditorManagement.Functions.Editors
                 TriggerHelper.AddEventTriggerParams(satObject, TriggerHelper.ScrollDelta(satIF));
                 TriggerHelper.IncreaseDecreaseButtons(satIF);
 
-                var satInput = satObject.transform.GetChild(0).Find("input");
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Saturation", "Input Field", satInput.gameObject, new List<Component>
-                {
-                    satInput.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Saturation", "Input Field Text", satIF.textComponent.gameObject, new List<Component>
-                {
-                    satIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(satIF);
 
                 var satButtonLeft = satIF.transform.Find("<").GetComponent<Button>();
-
-                Destroy(satButtonLeft.GetComponent<Animator>());
-                satButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Saturation", "Function 2", satButtonLeft.gameObject, new List<Component>
-                {
-                    satButtonLeft.GetComponent<Image>(),
-                    satButtonLeft,
-                }, isSelectable: true));
-
                 var satButtonRight = satIF.transform.Find(">").GetComponent<Button>();
-
+                Destroy(satButtonLeft.GetComponent<Animator>());
                 Destroy(satButtonRight.GetComponent<Animator>());
+                satButtonLeft.transition = Selectable.Transition.ColorTint;
                 satButtonRight.transition = Selectable.Transition.ColorTint;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Saturation", "Function 2", satButtonRight.gameObject, new List<Component>
-                {
-                    satButtonRight.GetComponent<Image>(),
-                    satButtonRight,
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(satButtonLeft, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(satButtonRight, ThemeGroup.Function_2, false);
 
                 labelGenerator("Value");
 
@@ -5635,38 +5270,18 @@ namespace EditorManagement.Functions.Editors
                 TriggerHelper.AddEventTriggerParams(valObject, TriggerHelper.ScrollDelta(valIF));
                 TriggerHelper.IncreaseDecreaseButtons(valIF);
 
-                var valInput = valObject.transform.GetChild(0).Find("input");
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Value", "Input Field", valInput.gameObject, new List<Component>
-                {
-                    valInput.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Value", "Input Field Text", valIF.textComponent.gameObject, new List<Component>
-                {
-                    valIF.textComponent,
-                }));
+                EditorThemeManager.AddInputField(valIF);
 
                 var valButtonLeft = valIF.transform.Find("<").GetComponent<Button>();
-
-                Destroy(valButtonLeft.GetComponent<Animator>());
-                valButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Value", "Function 2", valButtonLeft.gameObject, new List<Component>
-                {
-                    valButtonLeft.GetComponent<Image>(),
-                    valButtonLeft,
-                }, isSelectable: true));
-
                 var valButtonRight = valIF.transform.Find(">").GetComponent<Button>();
 
+                Destroy(valButtonLeft.GetComponent<Animator>());
                 Destroy(valButtonRight.GetComponent<Animator>());
+                valButtonLeft.transition = Selectable.Transition.ColorTint;
                 valButtonRight.transition = Selectable.Transition.ColorTint;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Value", "Function 2", valButtonRight.gameObject, new List<Component>
-                {
-                    valButtonRight.GetComponent<Image>(),
-                    valButtonRight,
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(valButtonLeft, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(valButtonRight, ThemeGroup.Function_2, false);
 
                 labelGenerator("Ease Type");
 
@@ -5687,50 +5302,7 @@ namespace EditorManagement.Functions.Editors
                         curves.value = curves.value == curves.options.Count - 1 ? 0 : curves.value + 1;
                 }));
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby", "Dropdown 1", curvesObject, new List<Component>
-                {
-                    curvesObject.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Text", "Dropdown 1 Overlay", curvesObject.transform.Find("Label").gameObject, new List<Component>
-                {
-                    curvesObject.transform.Find("Label").gameObject.GetComponent<Text>(),
-                }));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Arrow", "Dropdown 1 Overlay", curvesObject.transform.Find("Arrow").gameObject, new List<Component>
-                {
-                    curvesObject.transform.Find("Arrow").gameObject.GetComponent<Image>(),
-                }));
-
-                if (curvesObject.transform.Find("Preview"))
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Preview", "Dropdown 1 Overlay", curvesObject.transform.Find("Preview").gameObject, new List<Component>
-                    {
-                        curvesObject.transform.Find("Preview").gameObject.GetComponent<Image>(),
-                    }));
-
-                var template = curvesObject.transform.Find("Template").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1", template, new List<Component>
-                {
-                    template.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom));
-
-                var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1 Item", templateItem, new List<Component>
-                {
-                    templateItem.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
-                {
-                    templateItemCheckmark.GetComponent<Image>(),
-                }));
-
-                var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
-                {
-                    templateItemLabel.GetComponent<Text>(),
-                }));
+                EditorThemeManager.AddDropdown(curves);
 
                 // Assign to All
                 {
@@ -5782,38 +5354,17 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(gameObject, TriggerHelper.ScrollDeltaInt(indexIF));
                     TriggerHelper.IncreaseDecreaseButtonsInt(indexIF);
 
-                    var input = gameObject.transform.GetChild(0).Find("input");
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Index", "Input Field", input.gameObject, new List<Component>
-                    {
-                        input.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Index", "Input Field Text", indexIF.textComponent.gameObject, new List<Component>
-                    {
-                        indexIF.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(indexIF);
 
                     var indexButtonLeft = indexIF.transform.Find("<").GetComponent<Button>();
-
-                    Destroy(indexButtonLeft.GetComponent<Animator>());
-                    indexButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Index", "Function 2", indexButtonLeft.gameObject, new List<Component>
-                    {
-                        indexButtonLeft.GetComponent<Image>(),
-                        indexButtonLeft,
-                    }, isSelectable: true));
-
                     var indexButtonRight = indexIF.transform.Find(">").GetComponent<Button>();
-
+                    Destroy(indexButtonLeft.GetComponent<Animator>());
                     Destroy(indexButtonRight.GetComponent<Animator>());
+                    indexButtonLeft.transition = Selectable.Transition.ColorTint;
                     indexButtonRight.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Index", "Function 2", indexButtonRight.gameObject, new List<Component>
-                    {
-                        indexButtonRight.GetComponent<Image>(),
-                        indexButtonRight,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(indexButtonLeft, ThemeGroup.Function_2, false);
+                    EditorThemeManager.AddSelectable(indexButtonRight, ThemeGroup.Function_2, false);
 
                     buttonGenerator("assign to index", "Assign", parent, delegate ()
                     {
@@ -5906,38 +5457,17 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
                     TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
 
-                    var input = pasteAllTypesToAllIndex.transform.GetChild(0).Find("input");
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Index", "Input Field", input.gameObject, new List<Component>
-                    {
-                        input.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Index", "Input Field Text", pasteAllTypesToAllIndexIF.textComponent.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexIF.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
 
                     var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Index", "Function 2", pasteAllTypesToAllIndexButtonLeft.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonLeft.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonLeft,
-                    }, isSelectable: true));
-
                     var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-
+                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
                     Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
+                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
                     pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Index", "Function 2", pasteAllTypesToAllIndexButtonRight.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonRight.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonRight,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
 
                     var pasteAllTypesBase = new GameObject("paste all types");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -5961,15 +5491,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToAllText = pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToAllText.text = "Paste to All";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToAllObject, new List<Component>
-                    {
-                        pasteAllTypesToAllObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToAllText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
                     pasteAllTypesToAll.onClick.ClearAll();
@@ -6060,15 +5583,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToIndexText = pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToIndexText.text = "Paste to Index";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToIndexObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToIndexText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
                     pasteAllTypesToIndex.onClick.ClearAll();
@@ -6164,38 +5680,17 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
                     TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
 
-                    var input = pasteAllTypesToAllIndex.transform.GetChild(0).Find("input");
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Index", "Input Field", input.gameObject, new List<Component>
-                    {
-                        input.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Index", "Input Field Text", pasteAllTypesToAllIndexIF.textComponent.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexIF.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
 
                     var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Index", "Function 2", pasteAllTypesToAllIndexButtonLeft.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonLeft.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonLeft,
-                    }, isSelectable: true));
-
                     var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-
+                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
                     Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
+                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
                     pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Index", "Function 2", pasteAllTypesToAllIndexButtonRight.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonRight.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonRight,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
 
                     var pasteAllTypesBase = new GameObject("paste position");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -6219,15 +5714,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToAllText = pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToAllText.text = "Paste to All";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToAllObject, new List<Component>
-                    {
-                        pasteAllTypesToAllObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToAllText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
                     pasteAllTypesToAll.onClick.ClearAll();
@@ -6267,15 +5755,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToIndexText = pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToIndexText.text = "Paste to Index";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToIndexObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToIndexText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
                     pasteAllTypesToIndex.onClick.ClearAll();
@@ -6323,38 +5804,17 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
                     TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
 
-                    var input = pasteAllTypesToAllIndex.transform.GetChild(0).Find("input");
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Index", "Input Field", input.gameObject, new List<Component>
-                    {
-                        input.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Index", "Input Field Text", pasteAllTypesToAllIndexIF.textComponent.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexIF.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
 
                     var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Index", "Function 2", pasteAllTypesToAllIndexButtonLeft.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonLeft.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonLeft,
-                    }, isSelectable: true));
-
                     var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-
+                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
                     Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
+                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
                     pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Index", "Function 2", pasteAllTypesToAllIndexButtonRight.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonRight.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonRight,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
 
                     var pasteAllTypesBase = new GameObject("paste scale");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -6378,15 +5838,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToAllText = pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToAllText.text = "Paste to All";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToAllObject, new List<Component>
-                    {
-                        pasteAllTypesToAllObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToAllText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
                     pasteAllTypesToAll.onClick.ClearAll();
@@ -6426,15 +5879,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToIndexText = pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToIndexText.text = "Paste to Index";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToIndexObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToIndexText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
                     pasteAllTypesToIndex.onClick.ClearAll();
@@ -6482,38 +5928,17 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
                     TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
 
-                    var input = pasteAllTypesToAllIndex.transform.GetChild(0).Find("input");
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Index", "Input Field", input.gameObject, new List<Component>
-                    {
-                        input.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Index", "Input Field Text", pasteAllTypesToAllIndexIF.textComponent.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexIF.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
 
                     var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Index", "Function 2", pasteAllTypesToAllIndexButtonLeft.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonLeft.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonLeft,
-                    }, isSelectable: true));
-
                     var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-
+                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
                     Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
+                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
                     pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Index", "Function 2", pasteAllTypesToAllIndexButtonRight.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonRight.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonRight,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
 
                     var pasteAllTypesBase = new GameObject("paste rotation");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -6537,15 +5962,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToAllText = pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToAllText.text = "Paste to All";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToAllObject, new List<Component>
-                    {
-                        pasteAllTypesToAllObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToAllText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
                     pasteAllTypesToAll.onClick.ClearAll();
@@ -6585,15 +6003,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToIndexText = pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToIndexText.text = "Paste to Index";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToIndexObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToIndexText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
                     pasteAllTypesToIndex.onClick.ClearAll();
@@ -6641,38 +6052,17 @@ namespace EditorManagement.Functions.Editors
                     TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
                     TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
 
-                    var input = pasteAllTypesToAllIndex.transform.GetChild(0).Find("input");
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Index", "Input Field", input.gameObject, new List<Component>
-                    {
-                        input.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor InputField Text Index", "Input Field Text", pasteAllTypesToAllIndexIF.textComponent.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexIF.textComponent,
-                    }));
+                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
 
                     var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor < Index", "Function 2", pasteAllTypesToAllIndexButtonLeft.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonLeft.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonLeft,
-                    }, isSelectable: true));
-
                     var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-
+                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
                     Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
+                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
                     pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor > Index", "Function 2", pasteAllTypesToAllIndexButtonRight.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllIndexButtonRight.GetComponent<Image>(),
-                        pasteAllTypesToAllIndexButtonRight,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
+                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
 
                     var pasteAllTypesBase = new GameObject("paste color");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -6696,15 +6086,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToAllText = pasteAllTypesToAllObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToAllText.text = "Paste to All";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToAllObject, new List<Component>
-                    {
-                        pasteAllTypesToAllObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToAllText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToAllText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToAllText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToAll = pasteAllTypesToAllObject.GetComponent<Button>();
                     pasteAllTypesToAll.onClick.ClearAll();
@@ -6744,15 +6127,8 @@ namespace EditorManagement.Functions.Editors
                     var pasteAllTypesToIndexText = pasteAllTypesToIndexObject.transform.GetChild(0).GetComponent<Text>();
                     pasteAllTypesToIndexText.text = "Paste to Index";
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Paste", "Paste", pasteAllTypesToIndexObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexObject.GetComponent<Image>()
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Multi Object Editor Button Text Paste", "Paste Text", pasteAllTypesToIndexText.gameObject, new List<Component>
-                    {
-                        pasteAllTypesToIndexText
-                    }));
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexObject.GetComponent<Image>(), ThemeGroup.Paste, true);
+                    EditorThemeManager.AddGraphic(pasteAllTypesToIndexText, ThemeGroup.Paste_Text);
 
                     var pasteAllTypesToIndex = pasteAllTypesToIndexObject.GetComponent<Button>();
                     pasteAllTypesToIndex.onClick.ClearAll();
@@ -6852,20 +6228,16 @@ namespace EditorManagement.Functions.Editors
                 crumbs.localPosition = new Vector3(0f, 225f, 0f);
                 crumbs.GetComponent<HorizontalLayoutGroup>().spacing = 5.5f;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Editor Properties Crumbs", "Background", crumbs.gameObject, new List<Component>
-                {
-                    crumbs.GetComponent<Image>(),
-                }));
+                EditorThemeManager.AddGraphic(crumbs.GetComponent<Image>(), ThemeGroup.Background_1);
             }
 
             // Categories
             {
-                Action<string, Color, EditorProperty.EditorPropCategory> categoryTabGenerator = delegate (string name, Color color, EditorProperty.EditorPropCategory editorPropCategory)
+                Action<string, EditorProperty.EditorPropCategory> categoryTabGenerator = delegate (string name, EditorProperty.EditorPropCategory editorPropCategory)
                 {
                     var gameObject = prefabTMP.Duplicate(editorProperties.transform.Find("crumbs"), name);
                     gameObject.layer = 5;
                     var rectTransform = (RectTransform)gameObject.transform;
-                    var image = gameObject.GetComponent<Image>();
                     var button = gameObject.GetComponent<Button>();
 
                     var hoverUI = gameObject.AddComponent<HoverUI>();
@@ -6877,8 +6249,6 @@ namespace EditorManagement.Functions.Editors
 
                     rectTransform.sizeDelta = new Vector2(100f, 32f);
                     rectTransform.anchorMin = new Vector2(-0.1f, -0.1f);
-
-                    image.color = color;
 
                     var hoverTooltip = gameObject.GetComponent<HoverTooltip>();
 
@@ -6901,28 +6271,23 @@ namespace EditorManagement.Functions.Editors
                     textRectTransform.anchoredPosition = Vector2.zero;
                     textText.text = name;
                     textText.alignment = TextAnchor.MiddleCenter;
-                    textText.color = LSColors.ContrastColor(color);
                     textText.font = FontManager.inst.Inconsolata;
                     textText.fontSize = 20;
 
-                    gameObject.AddComponent<ContrastColors>().Init(textText, image);
+                    gameObject.AddComponent<ContrastColors>().Init(textText, gameObject.GetComponent<Image>());
 
                     int category = (int)editorPropCategory + 1;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Editor Properties Tab {category} - {editorPropCategory}", $"Tab Color {category}", gameObject, new List<Component>
-                    {
-                        image,
-                        button
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
+                    EditorThemeManager.AddSelectable(button, EditorThemeManager.EditorTheme.GetGroup($"Tab Color {category}"));
                 };
 
-                categoryTabGenerator("General", LSColors.HexToColor("FFE7E7"), EditorProperty.EditorPropCategory.General);
-                categoryTabGenerator("Timeline", LSColors.HexToColor("C0ACE1"), EditorProperty.EditorPropCategory.Timeline);
-                categoryTabGenerator("Data", LSColors.HexToColor("F17BB8"), EditorProperty.EditorPropCategory.Data);
-                categoryTabGenerator("Editor GUI", LSColors.HexToColor("2F426D"), EditorProperty.EditorPropCategory.EditorGUI);
-                categoryTabGenerator("Animations", LSColors.HexToColor("4076DF"), EditorProperty.EditorPropCategory.Animations);
-                categoryTabGenerator("Fields", LSColors.HexToColor("6CCBCF"), EditorProperty.EditorPropCategory.Fields);
-                categoryTabGenerator("Preview", LSColors.HexToColor("1B1B1C"), EditorProperty.EditorPropCategory.Preview);
+                categoryTabGenerator("General", EditorProperty.EditorPropCategory.General);
+                categoryTabGenerator("Timeline", EditorProperty.EditorPropCategory.Timeline);
+                categoryTabGenerator("Data", EditorProperty.EditorPropCategory.Data);
+                categoryTabGenerator("Editor GUI", EditorProperty.EditorPropCategory.EditorGUI);
+                categoryTabGenerator("Animations", EditorProperty.EditorPropCategory.Animations);
+                categoryTabGenerator("Fields", EditorProperty.EditorPropCategory.Fields);
+                categoryTabGenerator("Preview", EditorProperty.EditorPropCategory.Preview);
             }
 
             EditorHelper.AddEditorDropdown("Preferences", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_preferences-white.png"), delegate ()
@@ -6939,51 +6304,13 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorPopup("Editor Properties Popup", editorProperties);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup", "Background", editorProperties, new List<Component>
-            {
-                editorProperties.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Search Popup Panel", "Background", editorPropertiesPanel.gameObject, new List<Component>
-            {
-                editorPropertiesPanel.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Top));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", x.gameObject, new List<Component>
-            {
-                x.GetComponent<Image>(),
-                x,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            var objectSearchPopupCloseX = x.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", objectSearchPopupCloseX, new List<Component>
-            {
-                objectSearchPopupCloseX.GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Title", "Light Text", title.gameObject, new List<Component>
-            {
-                title,
-            }));
-
-            var editorPropertiesScrollbar = editorProperties.transform.Find("Scrollbar").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", editorPropertiesScrollbar, new List<Component>
-            {
-                editorPropertiesScrollbar.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-            var editorPropertiesScrollbarHandle = editorPropertiesScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar Handle", "Scrollbar Handle", editorPropertiesScrollbarHandle, new List<Component>
-            {
-                editorPropertiesScrollbarHandle.GetComponent<Image>(),
-                editorPropertiesScrollbar.GetComponent<Scrollbar>()
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            var editorPropertiesSearch = editorProperties.transform.Find("search-box/search").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Search", "Search Field 1", editorPropertiesSearch, new List<Component>
-            {
-                editorPropertiesSearch.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom));
+            EditorThemeManager.AddGraphic(editorProperties.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
+            EditorThemeManager.AddGraphic(editorPropertiesPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
+            EditorThemeManager.AddSelectable(x, ThemeGroup.Close);
+            EditorThemeManager.AddGraphic(x.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+            EditorThemeManager.AddLightText(title);
+            EditorThemeManager.AddScrollbar(editorProperties.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
+            EditorThemeManager.AddInputField(editorProperties.transform.Find("search-box/search").GetComponent<InputField>(), ThemeGroup.Search_Field_1, roundedSide: SpriteManager.RoundedSide.Bottom);
         }
 
         public Text documentationTitle;
@@ -6991,42 +6318,17 @@ namespace EditorManagement.Functions.Editors
         public Transform documentationContent;
         void CreateDocumentation()
         {
-            var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Documentation Popup");
-            objectSearch.transform.localPosition = Vector3.zero;
-
-            var objectSearchRT = (RectTransform)objectSearch.transform;
-            objectSearchRT.sizeDelta = new Vector2(600f, 450f);
-            var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
-            objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
-            var title = objectSearchPanel.transform.Find("Text").GetComponent<Text>();
-            objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Documentation";
-            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
-            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
-
-            var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
-            x.onClick.RemoveAllListeners();
-            x.onClick.AddListener(delegate ()
+            var documentationPopup = GeneratePopup("Documentation Popup", "Documentation", Vector2.zero, new Vector2(600f, 450f), delegate (string _val)
             {
-                EditorManager.inst.HideDialog("Documentation Popup");
-            });
-
-            var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
-            searchBar.onValueChanged.ClearAll();
-            searchBar.onValueChanged.AddListener(delegate (string _value)
-            {
-                documentationSearch = _value;
+                documentationSearch = _val;
                 RefreshDocumentation();
-            });
-            ((Text)searchBar.placeholder).text = "Search for document...";
+            }, placeholderText: "Search for document...");
 
             EditorHelper.AddEditorDropdown("Wiki / Documentation", "", "Help", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_question.png"), delegate ()
             {
                 EditorManager.inst.ShowDialog("Documentation Popup");
                 RefreshDocumentation();
             });
-
-            EditorHelper.AddEditorPopup("Documentation Popup", objectSearch);
 
             var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
             var editorDialogTransform = editorDialogObject.transform;
@@ -7063,14 +6365,11 @@ namespace EditorManagement.Functions.Editors
             scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
             scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, editorDialogObject, new List<Component>
-            {
-                editorDialogObject.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddGraphic(editorDialogObject.GetComponent<Image>(), ThemeGroup.Background_1);
 
             // Introduction
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Introduction", "Welcome to Project Arrhythmia.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7124,7 +6423,7 @@ namespace EditorManagement.Functions.Editors
             
             // Beatmap Objects
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Beatmap Objects", "The very objects that make up Project Arrhythmia levels.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7452,7 +6751,7 @@ namespace EditorManagement.Functions.Editors
 
             // Beatmap Object Keyframes
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Beatmap Object Keyframes", "The things that animate objects.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7583,7 +6882,7 @@ namespace EditorManagement.Functions.Editors
 
             // Prefabs
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Prefabs", "A package of objects that can be transfered to another level. They can also be added to the level as a Prefab Object.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7686,7 +6985,7 @@ namespace EditorManagement.Functions.Editors
             
             // Prefab Objects
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Prefab Objects", "Individual instances of prefabs.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7911,7 +7210,7 @@ namespace EditorManagement.Functions.Editors
 
             // Background Object
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Background Object", "Make classic 3D style backgrounds.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7940,7 +7239,7 @@ namespace EditorManagement.Functions.Editors
 
             // Events
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Events", "Effects to make your level pretty.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -7969,7 +7268,7 @@ namespace EditorManagement.Functions.Editors
 
             // Text Objects
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Text Objects", "Flavor your levels with text!");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -8668,7 +7967,7 @@ namespace EditorManagement.Functions.Editors
 
             // Markers
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Markers", "Organize and remember details about a level.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -8786,7 +8085,7 @@ namespace EditorManagement.Functions.Editors
 
             // Title Bar
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Title Bar", "The thing at the top with dropdowns.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -8911,7 +8210,7 @@ namespace EditorManagement.Functions.Editors
             
             // Timeline Bar
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Timeline Bar", "Modify stuff like audio and editor layer.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -9033,7 +8332,7 @@ namespace EditorManagement.Functions.Editors
 
             // Keybinds
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Keybinds", "Perform specific actions when pressing set keys.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -9074,7 +8373,7 @@ namespace EditorManagement.Functions.Editors
 
             // Editor Properties
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Editor Properties", "Configure the editor!");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -9109,7 +8408,7 @@ namespace EditorManagement.Functions.Editors
 
             // Misc
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Misc", "The stuff that didn't fit in a document of its own.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -9183,7 +8482,7 @@ namespace EditorManagement.Functions.Editors
             // Modifiers
             if (ModCompatibility.ObjectModifiersInstalled)
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "Object Modifiers", "Make your levels dynamic!");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -9263,7 +8562,7 @@ namespace EditorManagement.Functions.Editors
 
             if (RTHelpers.AprilFools)
             {
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 var documentation = new Document(gameObject, "April fools!", "fol.");
 
                 EditorThemeManager.AddSelectable(gameObject.GetComponent<Button>(), ThemeGroup.List_Button_1);
@@ -9300,7 +8599,7 @@ namespace EditorManagement.Functions.Editors
 
             // Create level tutorial
             {
-                //var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Document");
+                //var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
                 //var documentation = new Document(gameObject, "Creating a new level", "Description.");
 
                 //var htt = gameObject.AddComponent<HoverTooltip>();
@@ -9317,400 +8616,335 @@ namespace EditorManagement.Functions.Editors
 
                 //documentations.Add(documentation);
             }
-
-            // Editor Themes
-            {
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectSearch, new List<Component>
-                {
-                    objectSearch.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectSearchPanel.gameObject, new List<Component>
-                {
-                    objectSearchPanel.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Top));
-
-                EditorThemeManager.AddSelectable(x, ThemeGroup.Close);
-
-                var objectSearchPopupCloseX = x.transform.GetChild(0).gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, objectSearchPopupCloseX, new List<Component>
-                {
-                    objectSearchPopupCloseX.GetComponent<Image>(),
-                }));
-
-                EditorThemeManager.AddLightText(title);
-
-                var objectSearchPopupScrollbar = objectSearch.transform.Find("Scrollbar").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, objectSearchPopupScrollbar, new List<Component>
-                {
-                    objectSearchPopupScrollbar.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-                var objectSearchPopupScrollbarHandle = objectSearchPopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, objectSearchPopupScrollbarHandle, new List<Component>
-                {
-                    objectSearchPopupScrollbarHandle.GetComponent<Image>(),
-                    objectSearchPopupScrollbar.GetComponent<Scrollbar>()
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Search_Field_1, searchBar.gameObject, new List<Component>
-                {
-                    searchBar.image,
-                }, true, 1, SpriteManager.RoundedSide.Bottom));
-            }
         }
 
         public List<string> debugs = new List<string>();
         public string debugSearch;
         void CreateDebug()
         {
-            if (ModCompatibility.mods.ContainsKey("UnityExplorer"))
+            if (!ModCompatibility.mods.ContainsKey("UnityExplorer"))
+                return;
+
+            var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
+            var uiManager = AccessTools.TypeByName("UnityExplorer.UI.UIManager");
+
+            var debuggerPopup = GeneratePopup("Debugger Popup", "Debugger (Only use this if you know what you're doing)", Vector2.zero, new Vector2(600f, 450f), delegate (string _val)
             {
-                var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
-                var uiManager = AccessTools.TypeByName("UnityExplorer.UI.UIManager");
+                debugSearch = _val;
+                RefreshDebugger();
+            }, placeholderText: "Search for function...");
 
-                var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                    .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Debugger Popup");
-                objectSearch.transform.localPosition = Vector3.zero;
+            EditorHelper.AddEditorDropdown("Debugger", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "debugger.png"), delegate ()
+            {
+                EditorManager.inst.ShowDialog("Debugger Popup");
+                RefreshDocumentation();
+            });
 
-                var objectSearchRT = (RectTransform)objectSearch.transform;
-                objectSearchRT.sizeDelta = new Vector2(600f, 450f);
-                var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
-                objectSearchPanel.sizeDelta = new Vector2(632f, 32f);
-                objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Debugger (Only use this if you know what you're doing)";
-                ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
-                objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 32f);
+            // Inspect DataManager
+            {
+                string name = "DataManager";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
-                x.onClick.RemoveAllListeners();
-                x.onClick.AddListener(delegate ()
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "DataManager is a pretty important storage component of Project Arrhythmia.";
+                htt.tooltipLangauges.Add(levelTip);
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    EditorManager.inst.HideDialog("Debugger Popup");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { DataManager.inst, null });
                 });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                var searchBar = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
-                searchBar.onValueChanged.ClearAll();
-                searchBar.onValueChanged.AddListener(delegate (string _value)
+            // Inspect EditorManager
+            {
+                string name = "EditorManager";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "EditorManager is the component that handles general editor stuff.";
+                htt.tooltipLangauges.Add(levelTip);
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    debugSearch = _value;
-                    RefreshDebugger();
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { EditorManager.inst, null });
                 });
-                searchBar.transform.Find("Placeholder").GetComponent<Text>().text = "Search for function...";
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                EditorHelper.AddEditorDropdown("Debugger", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "debugger.png"), delegate ()
+            // Inspect RTEditor
+            {
+                string name = "RTEditor";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
+
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "RTEditor is the component that handles modded general editor stuff.";
+                htt.tooltipLangauges.Add(levelTip);
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    EditorManager.inst.ShowDialog("Debugger Popup");
-                    RefreshDocumentation();
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { inst, null });
                 });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                EditorHelper.AddEditorPopup("Debugger Popup", objectSearch);
+            // Inspect ObjEditor
+            {
+                string name = "ObjEditor";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                // Inspect DataManager
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "ObjEditor is the component that handles object editor stuff.";
+                htt.tooltipLangauges.Add(levelTip);
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "DataManager";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { ObjEditor.inst, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect ObjectEditor
+            {
+                string name = "ObjectEditor";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "DataManager is a pretty important storage component of Project Arrhythmia.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { DataManager.inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "ObjectEditor is the component that handles modded object editor stuff.";
+                htt.tooltipLangauges.Add(levelTip);
 
-                // Inspect EditorManager
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "EditorManager";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { ObjectEditor.inst, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect ObjectManager
+            {
+                string name = "ObjectManager";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "EditorManager is the component that handles general editor stuff.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { EditorManager.inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "ObjectManager is the component that handles regular object stuff.";
+                htt.tooltipLangauges.Add(levelTip);
 
-                // Inspect RTEditor
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "RTEditor";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { ObjectManager.inst, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect GameManager
+            {
+                string name = "GameManager";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "RTEditor is the component that handles modded general editor stuff.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "GameManager is the component that handles regular object stuff.";
+                htt.tooltipLangauges.Add(levelTip);
 
-                // Inspect ObjEditor
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "ObjEditor";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { GameManager.inst, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect Object Editor UI
+            {
+                string name = "Object Editor UI";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "ObjEditor is the component that handles object editor stuff.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { ObjEditor.inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "Object Editor UI.";
+                htt.tooltipLangauges.Add(levelTip);
 
-                // Inspect ObjectEditor
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "ObjectEditor";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { ObjEditor.inst.ObjectView, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect LevelProcessor
+            {
+                string name = "LevelProcessor";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "ObjectEditor is the component that handles modded object editor stuff.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { ObjectEditor.inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
-                
-                // Inspect ObjectManager
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "LevelProcessor is the main handler for updating object animation and spawning / despawning objects.";
+                htt.tooltipLangauges.Add(levelTip);
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "ObjectManager";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { Updater.levelProcessor, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect GameData
+            {
+                string name = "GameData";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "ObjectManager is the component that handles regular object stuff.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { ObjectManager.inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "GameData stores all the level data.";
+                htt.tooltipLangauges.Add(levelTip);
 
-                // Inspect GameManager
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "GameManager";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { GameData.Current, null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+            // Inspect Current Event Keyframe
+            {
+                string name = "Current Event Keyframe";
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Inspect {name}");
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                var htt = gameObject.AddComponent<HoverTooltip>();
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "GameManager is the component that handles regular object stuff.";
-                    htt.tooltipLangauges.Add(levelTip);
+                var levelTip = new HoverTooltip.Tooltip();
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { GameManager.inst, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                levelTip.desc = $"Inspect {name}";
+                levelTip.hint = "The current selected Event Keyframe. Based on the type and index number.";
+                htt.tooltipLangauges.Add(levelTip);
 
-                // Inspect Object Editor UI
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "Object Editor UI";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
+                    if (EventEditor.inst.currentEventType >= GameData.Current.eventObjects.allEvents.Count || EventEditor.inst.currentEvent >= GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType].Count)
+                        return;
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
+                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+                    .Invoke(inspector, new object[] { GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent], null });
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
+            }
 
-                    var levelTip = new HoverTooltip.Tooltip();
+            var functions = RTFile.ApplicationDirectory + "beatmaps/functions";
+            if (!RTFile.DirectoryExists(functions))
+                return;
 
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "Object Editor UI.";
-                    htt.tooltipLangauges.Add(levelTip);
+            var files = Directory.GetFiles(functions, "*.cs");
+            for (int i = 0; i < files.Length; i++)
+            {
+                var file = files[i];
 
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { ObjEditor.inst.ObjectView, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+                debugs.Add($"Custom Code Function: {file}");
 
-                // Inspect LevelProcessor
+                var htt = gameObject.AddComponent<HoverTooltip>();
+
+                var levelTip = new HoverTooltip.Tooltip();
+
+                levelTip.desc = $"{file}";
+                levelTip.hint = "A custom code file. Make sure you know what you're doing before using this.";
+                htt.tooltipLangauges.Add(levelTip);
+
+                var button = gameObject.GetComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
                 {
-                    string name = "LevelProcessor";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
-
-                    var htt = gameObject.AddComponent<HoverTooltip>();
-
-                    var levelTip = new HoverTooltip.Tooltip();
-
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "LevelProcessor is the main handler for updating object animation and spawning / despawning objects.";
-                    htt.tooltipLangauges.Add(levelTip);
-
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { Updater.levelProcessor, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
-
-                // Inspect GameData
-                {
-                    string name = "GameData";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
-
-                    var htt = gameObject.AddComponent<HoverTooltip>();
-
-                    var levelTip = new HoverTooltip.Tooltip();
-
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "GameData stores all the level data.";
-                    htt.tooltipLangauges.Add(levelTip);
-
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { GameData.Current, null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
-
-                // Inspect Current Event Keyframe
-                {
-                    string name = "Current Event Keyframe";
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Inspect {name}");
-
-                    var htt = gameObject.AddComponent<HoverTooltip>();
-
-                    var levelTip = new HoverTooltip.Tooltip();
-
-                    levelTip.desc = $"Inspect {name}";
-                    levelTip.hint = "The current selected Event Keyframe. Based on the type and index number.";
-                    htt.tooltipLangauges.Add(levelTip);
-
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        if (EventEditor.inst.currentEventType >= GameData.Current.eventObjects.allEvents.Count || EventEditor.inst.currentEvent >= GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType].Count )
-                            return;
-
-                        uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                        inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                        .Invoke(inspector, new object[] { GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent], null });
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-                }
-
-                var functions = RTFile.ApplicationDirectory + "beatmaps/functions";
-                if (!RTFile.DirectoryExists(functions))
-                    return;
-
-                var files = Directory.GetFiles(functions, "*.cs");
-                for (int i = 0; i < files.Length; i++)
-                {
-                    var file = files[i];
-
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(objectSearch.transform.Find("mask/content"), "Function");
-                    debugs.Add($"Custom Code Function: {file}");
-
-                    var htt = gameObject.AddComponent<HoverTooltip>();
-
-                    var levelTip = new HoverTooltip.Tooltip();
-
-                    levelTip.desc = $"{file}";
-                    levelTip.hint = "A custom code file. Make sure you know what you're doing before using this.";
-                    htt.tooltipLangauges.Add(levelTip);
-
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
-                    {
-                        RTCode.Evaluate(RTFile.ReadFromFile(file));
-                    });
-                    gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Custom Code Function: {file}";
-                }
+                    RTCode.Evaluate(RTFile.ReadFromFile(file));
+                });
+                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Custom Code Function: {file}";
             }
         }
 
@@ -9719,32 +8953,9 @@ namespace EditorManagement.Functions.Editors
         public InputField autosaveSearchField;
         void CreateAutosavePopup()
         {
-            var objectSearch = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-                .Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Autosaves Popup");
-            objectSearch.transform.localPosition = Vector3.zero;
-
-            var objectSearchRT = (RectTransform)objectSearch.transform;
-            objectSearchRT.anchoredPosition = new Vector2(572f, 0f);
-            objectSearchRT.sizeDelta = new Vector2(460f, 350f);
-            var objectSearchPanel = (RectTransform)objectSearch.transform.Find("Panel");
-            objectSearchPanel.sizeDelta = new Vector2(492f, 32f);
-            objectSearchPanel.transform.Find("Text").GetComponent<Text>().text = "Autosaves";
-            ((RectTransform)objectSearch.transform.Find("search-box")).sizeDelta = new Vector2(460f, 32f);
-            objectSearch.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(455f, 32f);
-            objectSearch.transform.Find("Scrollbar").AsRT().sizeDelta = new Vector2(32f, 350f);
-
-            var x = objectSearchPanel.transform.Find("x").GetComponent<Button>();
-            x.onClick.RemoveAllListeners();
-            x.onClick.AddListener(delegate ()
-            {
-                EditorManager.inst.HideDialog("Autosaves Popup");
-            });
-
-            autosaveSearchField = objectSearch.transform.Find("search-box/search").GetComponent<InputField>();
-            objectSearch.transform.Find("search-box/search/Placeholder").GetComponent<Text>().text = "Search for autosave...";
-            autosaveContent = objectSearch.transform.Find("mask/content");
-
-            EditorHelper.AddEditorPopup("Autosaves Popup", objectSearch);
+            var autosavePopup = GeneratePopup("Autosave Popup", "Autosaves", new Vector2(572f, 0f), new Vector2(460f, 350f), placeholderText: "Search autosaves...");
+            autosaveSearchField = autosavePopup.SearchField;
+            autosaveContent = autosavePopup.Content;
         }
 
         void SetupMiscEditorThemes()
@@ -9756,30 +8967,13 @@ namespace EditorManagement.Functions.Editors
             if (CheckpointEditor.inst.left == null)
                 CheckpointEditor.inst.left = checkpointEditor.Find("data/left");
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor", "Background", checkpointEditor.gameObject, new List<Component>
-            {
-                checkpointEditor.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddGraphic(checkpointEditor.GetComponent<Image>(), ThemeGroup.Background_1);
+            EditorThemeManager.AddGraphic(CheckpointEditor.inst.GetComponent<Image>(), ThemeGroup.Background_3);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor List", "Background 3", CheckpointEditor.inst.right.gameObject, new List<Component>
-            {
-                CheckpointEditor.inst.right.GetComponent<Image>(),
-            }));
-
-            EditorThemeManager.AddInputField(CheckpointEditor.inst.right.Find("search").GetComponent<InputField>(), "Checkpoint Editor Search", "Search Field 2");
+            EditorThemeManager.AddInputField(CheckpointEditor.inst.right.Find("search").GetComponent<InputField>(), ThemeGroup.Search_Field_2);
 
             var scrollbar = CheckpointEditor.inst.right.Find("checkpoints/Scrollbar Vertical").GetComponent<Scrollbar>();
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor List Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
-            {
-                scrollbar.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var scrollbarHandle = scrollbar.handleRect.gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor List Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
-            {
-                scrollbar.image,
-                scrollbar
-            }, true, 1, SpriteManager.RoundedSide.W, true));
+            EditorThemeManager.AddScrollbar(scrollbar, scrollbarGroup: ThemeGroup.Scrollbar_2, handleGroup: ThemeGroup.Scrollbar_2_Handle);
 
             var edit = CheckpointEditor.inst.left.Find("edit");
             for (int i = 0; i < edit.childCount; i++)
@@ -9794,16 +8988,9 @@ namespace EditorManagement.Functions.Editors
                 {
                     var buttonBG = button.GetChild(0).GetComponent<Image>();
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Delete BG", "Delete Keyframe BG", buttonBG.gameObject, new List<Component>
-                    {
-                        buttonBG,
-                    }));
+                    EditorThemeManager.AddGraphic(buttonBG, ThemeGroup.Delete_Keyframe_BG);
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Delete", "Delete Keyframe Button", buttonBG.gameObject, new List<Component>
-                    {
-                        buttonComponent,
-                        buttonComponent.image,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Delete_Keyframe_Button, false);
 
                     continue;
                 }
@@ -9811,33 +8998,24 @@ namespace EditorManagement.Functions.Editors
                 Destroy(button.GetComponent<Animator>());
                 buttonComponent.transition = Selectable.Transition.ColorTint;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Button", "Function 2", button.gameObject, new List<Component>
-                {
-                    buttonComponent,
-                    buttonComponent.image
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
             }
 
             // Labels
             for (int i = 0; i < CheckpointEditor.inst.left.childCount; i++)
             {
                 var label = CheckpointEditor.inst.left.GetChild(i);
-                if (label.name == "label" || label.name == "curves_label")
-                {
-                    for (int j = 0; j < label.childCount; j++)
-                    {
-                        var labelText = label.GetChild(j).GetComponent<Text>();
-                        EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Label", "Light Text", labelText.gameObject, new List<Component>
-                            {
-                                labelText,
-                            }));
-                    }
-                }
+
+                if (!(label.name == "label" || label.name == "curves_label"))
+                    continue;
+
+                for (int j = 0; j < label.childCount; j++)
+                    EditorThemeManager.AddLightText(label.GetChild(j).GetComponent<Text>());
             }
 
-            EditorThemeManager.AddInputField(CheckpointEditor.inst.left.Find("name").GetComponent<InputField>(), "Checkpoint Editor Name", "Input Field");
+            EditorThemeManager.AddInputField(CheckpointEditor.inst.left.Find("name").GetComponent<InputField>());
             var time = CheckpointEditor.inst.left.Find("time");
-            EditorThemeManager.AddInputField(time.Find("time").GetComponent<InputField>(), "Checkpoint Editor Name", "Input Field");
+            EditorThemeManager.AddInputField(time.Find("time").GetComponent<InputField>());
             for (int i = 1; i < time.childCount; i++)
             {
                 var button = time.GetChild(i);
@@ -9846,18 +9024,14 @@ namespace EditorManagement.Functions.Editors
                 Destroy(button.GetComponent<Animator>());
                 buttonComponent.transition = Selectable.Transition.ColorTint;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Button", "Function 2", button.gameObject, new List<Component>
-                {
-                    buttonComponent,
-                    buttonComponent.image
-                }, isSelectable: true));
+                EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
             }
 
             var position = CheckpointEditor.inst.left.Find("position");
             for (int i = 0; i < position.childCount; i++)
             {
                 var child = position.GetChild(i);
-                EditorThemeManager.AddInputField(child.GetComponent<InputField>(), "Checkpoint Editor Position", "Input Field");
+                EditorThemeManager.AddInputField(child.GetComponent<InputField>());
 
                 for (int j = 1; j < child.childCount; j++)
                 {
@@ -9867,11 +9041,7 @@ namespace EditorManagement.Functions.Editors
                     Destroy(button.GetComponent<Animator>());
                     buttonComponent.transition = Selectable.Transition.ColorTint;
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Checkpoint Editor Button", "Function 2", button.gameObject, new List<Component>
-                    {
-                        buttonComponent,
-                        buttonComponent.image
-                    }, isSelectable: true));
+                    EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
                 }
             }
 
@@ -9879,44 +9049,23 @@ namespace EditorManagement.Functions.Editors
             {
                 var options = EditorManager.inst.GetDialog("Object Options Popup").Dialog;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Popup", "Background", options.gameObject, new List<Component>
-                {
-                    options.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Arrow", "Background", options.Find("arrow").gameObject, new List<Component>
-                {
-                    options.Find("arrow").GetComponent<Image>(),
-                }));
+                EditorThemeManager.AddGraphic(options.GetComponent<Image>(), ThemeGroup.Background_1, true);
+                EditorThemeManager.AddGraphic(options.Find("arrow").GetComponent<Image>(), ThemeGroup.Background_1);
 
                 for (int i = 1; i < options.childCount - 1; i++)
                 {
                     var child = options.GetChild(i);
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button", "Function 3", child.gameObject, new List<Component>
-                    {
-                        child.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button Text", "Function 3 Text", child.GetChild(0).gameObject, new List<Component>
-                    {
-                        child.GetChild(0).GetComponent<Text>(),
-                    }));
+                    EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Function_3, true);
+                    EditorThemeManager.AddGraphic(child.GetChild(0).GetComponent<Text>(), ThemeGroup.Function_3_Text);
                 }
 
                 for (int i = 0; i < options.Find("shapes").childCount; i++)
                 {
                     var child = options.Find("shapes").GetChild(i);
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button", "Function 3", child.gameObject, new List<Component>
-                    {
-                        child.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Options Button Text", "Function 3 Text", child.GetChild(0).gameObject, new List<Component>
-                    {
-                        child.GetChild(0).GetComponent<Image>(),
-                    }));
+                    EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Function_3, true);
+                    EditorThemeManager.AddGraphic(child.GetChild(0).GetComponent<Text>(), ThemeGroup.Function_3_Text);
                 }
             }
 
@@ -9924,29 +9073,15 @@ namespace EditorManagement.Functions.Editors
             {
                 var options = EditorManager.inst.GetDialog("BG Options Popup").Dialog;
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Popup", "Background", options.gameObject, new List<Component>
-                {
-                    options.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Arrow", "Background", options.Find("arrow").gameObject, new List<Component>
-                {
-                    options.Find("arrow").GetComponent<Image>(),
-                }));
+                EditorThemeManager.AddGraphic(options.GetComponent<Image>(), ThemeGroup.Background_1, true);
+                EditorThemeManager.AddGraphic(options.Find("arrow").GetComponent<Image>(), ThemeGroup.Background_1);
 
                 for (int i = 1; i < options.childCount; i++)
                 {
                     var child = options.GetChild(i);
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Button", "Function 3", child.gameObject, new List<Component>
-                    {
-                        child.GetComponent<Image>(),
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("BG Options Button Text", "Function 3 Text", child.GetChild(0).gameObject, new List<Component>
-                    {
-                        child.GetChild(0).GetComponent<Text>(),
-                    }));
+                    EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Function_3, true);
+                    EditorThemeManager.AddGraphic(child.GetChild(0).GetComponent<Text>(), ThemeGroup.Function_3_Text);
                 }
             }
         }
@@ -10003,7 +9138,6 @@ namespace EditorManagement.Functions.Editors
             var list = new List<Coroutine>();
             var files = Directory.GetDirectories(RTFile.ApplicationDirectory + editorListPath);
 
-            int num = 0;
             foreach (var file in files)
             {
                 if (!RTFile.FileExists(file + "/level.lsb"))
@@ -10013,137 +9147,127 @@ namespace EditorManagement.Functions.Editors
                 var name = Path.GetFileName(path);
                 var metadataStr = RTFile.ReadFromFile(file + "/metadata.lsb");
 
-                if (metadataStr != null)
+                if (metadataStr == null)
                 {
-                    var metadata = MetaData.Parse(JSON.Parse(metadataStr));
+                    Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{name}]!");
+                    continue;
+                }
 
-                    var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(path)}]");
+                var metadata = MetaData.Parse(JSON.Parse(metadataStr));
 
-                    var editorWrapper = new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite);
+                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(path)}]");
+                var folderButtonStorage = gameObject.GetComponent<FolderButtonStorage>();
 
-                    var hoverUI = gameObject.AddComponent<HoverUI>();
-                    hoverUI.size = buttonHoverSize;
-                    hoverUI.animatePos = false;
-                    hoverUI.animateSca = true;
+                var editorWrapper = new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite);
 
-                    var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                var hoverUI = gameObject.AddComponent<HoverUI>();
+                hoverUI.size = buttonHoverSize;
+                hoverUI.animatePos = false;
+                hoverUI.animateSca = true;
 
-                    text.text = string.Format(format,
-                        LSText.ClampString(Path.GetFileName(path), foldClamp),
-                        LSText.ClampString(metadata.song.title, songClamp),
-                        LSText.ClampString(metadata.artist.Name, artiClamp),
-                        LSText.ClampString(metadata.creator.steam_name, creaClamp),
-                        metadata.song.difficulty,
-                        LSText.ClampString(metadata.song.description, descClamp),
-                        LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
+                folderButtonStorage.text.text = string.Format(format,
+                    LSText.ClampString(Path.GetFileName(path), foldClamp),
+                    LSText.ClampString(metadata.song.title, songClamp),
+                    LSText.ClampString(metadata.artist.Name, artiClamp),
+                    LSText.ClampString(metadata.creator.steam_name, creaClamp),
+                    metadata.song.difficulty,
+                    LSText.ClampString(metadata.song.description, descClamp),
+                    LSText.ClampString(metadata.beatmap.date_edited, dateClamp));
 
-                    text.horizontalOverflow = horizontalOverflow;
-                    text.verticalOverflow = verticalOverflow;
-                    text.fontSize = fontSize;
+                folderButtonStorage.text.horizontalOverflow = horizontalOverflow;
+                folderButtonStorage.text.verticalOverflow = verticalOverflow;
+                folderButtonStorage.text.fontSize = fontSize;
 
-                    var htt = gameObject.AddComponent<HoverTooltip>();
+                var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
+                    DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
 
-                    var levelTip = new HoverTooltip.Tooltip();
+                gameObject.AddComponent<HoverTooltip>().tooltipLangauges.Add(new HoverTooltip.Tooltip
+                {
+                    desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title,
+                    hint = "</color>" + metadata.song.description,
+                });
 
-                    var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
-                        DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
-
-                    levelTip.desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title;
-                    levelTip.hint = "</color>" + metadata.song.description;
-                    htt.tooltipLangauges.Add(levelTip);
-
-                    var button = gameObject.GetComponent<Button>();
-                    button.onClick.AddListener(delegate ()
+                folderButtonStorage.clickable.onClick = delegate (PointerEventData pointerEventData)
+                {
+                    if (choosingLevelTemplate)
                     {
-                        if (choosingLevelTemplate)
-                        {
-                            EditorManager.inst.HideDialog("Open File Popup");
+                        EditorManager.inst.HideDialog("Open File Popup");
 
-                            return;
-                        }
-
-                        // If clicking on the level button shows the autosaves popup or not.
-                        if (Input.GetKey(KeyCode.LeftShift))
-                        {
-                            EditorManager.inst.ShowDialog("Autosaves Popup");
-                            RefreshAutosaveList(editorWrapper);
-                        }
-                        else
-                        {
-                            StartCoroutine(LoadLevel(path));
-                            EditorManager.inst.HideDialog("Open File Popup");
-                        }
-                    });
-
-                    var icon = new GameObject("icon");
-                    icon.transform.SetParent(gameObject.transform);
-                    icon.transform.localScale = Vector3.one;
-                    icon.layer = 5;
-                    var iconRT = icon.AddComponent<RectTransform>();
-                    icon.AddComponent<CanvasRenderer>();
-                    var iconImage = icon.AddComponent<Image>();
-
-                    iconRT.anchoredPosition = iconPosition;
-                    iconRT.sizeDelta = iconScale;
-
-                    // Close
-                    if (showDeleteButton)
-                    {
-                        var delete = close.gameObject.Duplicate(gameObject.transform, "delete");
-
-                        delete.GetComponent<RectTransform>().anchoredPosition = new Vector2(-5f, 0f);
-
-                        string levelName = path;
-
-                        var deleteButton = delete.GetComponent<Button>();
-                        deleteButton.onClick.ClearAll();
-                        deleteButton.onClick.AddListener(delegate ()
-                        {
-                            EditorManager.inst.ShowDialog("Warning Popup");
-                            RefreshWarningPopup("Are you sure you want to delete this level? (It will be moved to a recycling folder)", delegate ()
-                            {
-                                DeleteLevelFunction(levelName);
-                                EditorManager.inst.DisplayNotification("Deleted level!", 2f, EditorManager.NotificationType.Success);
-                                EditorManager.inst.GetLevelList();
-                                EditorManager.inst.HideDialog("Warning Popup");
-                            }, delegate ()
-                            {
-                                EditorManager.inst.HideDialog("Warning Popup");
-                            });
-                        });
+                        return;
                     }
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num}", "List Button 1", gameObject, new List<Component>
+                    if (pointerEventData.button == PointerEventData.InputButton.Right)
                     {
-                        gameObject.GetComponent<Image>(),
-                        button,
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
+                        EditorManager.inst.ShowDialog("Autosaves Popup");
+                        RefreshAutosaveList(editorWrapper);
+                        return;
+                    }
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num} Text", "Light Text", text.gameObject, new List<Component>
+                    StartCoroutine(LoadLevel(path));
+                    EditorManager.inst.HideDialog("Open File Popup");
+                };
+                folderButtonStorage.button.onClick.ClearAll();
+
+                EditorThemeManager.ApplySelectable(folderButtonStorage.button, ThemeGroup.List_Button_1);
+                EditorThemeManager.ApplyLightText(folderButtonStorage.text);
+
+                var icon = new GameObject("icon");
+                icon.transform.SetParent(gameObject.transform);
+                icon.transform.localScale = Vector3.one;
+                icon.layer = 5;
+                var iconRT = icon.AddComponent<RectTransform>();
+                icon.AddComponent<CanvasRenderer>();
+                var iconImage = icon.AddComponent<Image>();
+
+                iconRT.anchoredPosition = iconPosition;
+                iconRT.sizeDelta = iconScale;
+
+                // Delete
+                if (showDeleteButton)
+                {
+                    var delete = close.gameObject.Duplicate(gameObject.transform, "delete");
+
+                    delete.transform.AsRT().anchoredPosition = new Vector2(-5f, 0f);
+
+                    string levelName = path;
+
+                    var deleteButton = delete.GetComponent<Button>();
+                    deleteButton.onClick.ClearAll();
+                    deleteButton.onClick.AddListener(delegate ()
                     {
-                        text,
-                    }));
-
-                    list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
-                    {
-                        iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
-                        editorWrapper.albumArt = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
-
-                        EditorManager.inst.loadedLevels.Add(editorWrapper);
-                    }, delegate
-                    {
-                        anyFailed = true;
-                        failedLevels.Add(Path.GetFileName(path));
-
-                        iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
-                        editorWrapper.albumArt = SteamWorkshop.inst.defaultSteamImageSprite;
-
-                        EditorManager.inst.loadedLevels.Add(editorWrapper);
-                    })));
+                        EditorManager.inst.ShowDialog("Warning Popup");
+                        RefreshWarningPopup("Are you sure you want to delete this level? (It will be moved to a recycling folder)", delegate ()
+                        {
+                            DeleteLevelFunction(levelName);
+                            EditorManager.inst.DisplayNotification("Deleted level!", 2f, EditorManager.NotificationType.Success);
+                            EditorManager.inst.GetLevelList();
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        }, delegate ()
+                        {
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        });
+                    });
                 }
-                else
-                    Debug.LogError($"{EditorManager.inst.className}Could not load metadata for [{name}]!");
-                num++;
+
+                EditorThemeManager.ApplySelectable(folderButtonStorage.button, ThemeGroup.List_Button_1);
+                EditorThemeManager.ApplyLightText(folderButtonStorage.text);
+
+                list.Add(StartCoroutine(GetAlbumSprite(file, delegate (Sprite cover)
+                {
+                    iconImage.sprite = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
+                    editorWrapper.albumArt = cover ?? SteamWorkshop.inst.defaultSteamImageSprite;
+
+                    EditorManager.inst.loadedLevels.Add(editorWrapper);
+                }, delegate
+                {
+                    anyFailed = true;
+                    failedLevels.Add(Path.GetFileName(path));
+
+                    iconImage.sprite = SteamWorkshop.inst.defaultSteamImageSprite;
+                    editorWrapper.albumArt = SteamWorkshop.inst.defaultSteamImageSprite;
+
+                    EditorManager.inst.loadedLevels.Add(editorWrapper);
+                })));
             }
 
             if (list.Count >= 1)
@@ -10259,11 +9383,11 @@ namespace EditorManagement.Functions.Editors
             Debug.Log($"{EditorPlugin.className}Loading audio for {name}...");
             if (RTFile.FileExists(fullPath + "/level.ogg"))
             {
-                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.ogg", AudioType.OGGVORBIS, x => song = x, delegate (string onError) { hadError = true; errorMessage = onError; }));
+                yield return StartCoroutine(AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.ogg", AudioType.OGGVORBIS, x => song = x, delegate (string onError) { hadError = true; errorMessage = onError; }));
             }
             else if (RTFile.FileExists(fullPath + "/level.wav"))
             {
-                yield return StartCoroutine(RTFunctions.Functions.Managers.Networking.AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.wav", AudioType.WAV, x => song = x, delegate (string onError) { hadError = true; errorMessage = onError; }));
+                yield return StartCoroutine(AlephNetworkManager.DownloadAudioClip("file://" + fullPath + "/level.wav", AudioType.WAV, x => song = x, delegate (string onError) { hadError = true; errorMessage = onError; }));
             }
             else if (RTFile.FileExists(fullPath + "/level.mp3"))
             {
@@ -10366,7 +9490,7 @@ namespace EditorManagement.Functions.Editors
             }
 
             SetFileInfo($"Loading Themes for [ {name} ]");
-            /*yield return */StartCoroutine(LoadThemes());
+            StartCoroutine(LoadThemes());
 
             Debug.Log($"{EditorPlugin.className}Music is null: {song == null}");
 
@@ -10388,7 +9512,6 @@ namespace EditorManagement.Functions.Editors
             SetFileInfo($"Updating Timeline for [ {name} ]");
             EditorManager.inst.UpdateTimelineSizes();
             GameManager.inst.UpdateTimeline();
-            EditorManager.inst.ClearDialogs();
             MetadataEditor.inst.Render();
 
             CheckpointEditor.inst.CreateGhostCheckpoints();
@@ -10481,20 +9604,9 @@ namespace EditorManagement.Functions.Editors
                     ThemeEditorManager.inst.RenderThemeEditor();
                 });
 
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, themeAddButton, new List<Component>
-                {
-                    button.image,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themeAddButton.transform.Find("edit").gameObject, new List<Component>
-                {
-                    themeAddButton.transform.Find("edit").GetComponent<Image>(),
-                }));
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themeAddButton.transform.Find("text").gameObject, new List<Component>
-                {
-                    themeAddButton.transform.Find("text").GetComponent<Text>(),
-                }));
+                EditorThemeManager.AddGraphic(button.image, ThemeGroup.List_Button_2_Normal, true);
+                EditorThemeManager.AddGraphic(themeAddButton.transform.Find("edit").GetComponent<Image>(), ThemeGroup.List_Button_2_Text);
+                EditorThemeManager.AddGraphic(themeAddButton.transform.Find("text").GetComponent<Text>(), ThemeGroup.List_Button_2_Text);
             }
 
             int num = 0;
@@ -10540,31 +9652,11 @@ namespace EditorManagement.Functions.Editors
                 themePanel.DeleteButton.interactable = false;
                 themePanel.Name.text = beatmapTheme.name;
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, themePanel.GameObject, new List<Component>
-                {
-                    themePanel.BaseImage,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, themePanel.UseButton.gameObject, new List<Component>
-                {
-                    themePanel.UseButton.image,
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.EditButton.gameObject, new List<Component>
-                {
-                    themePanel.EditButton.image,
-                }));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.Name.gameObject, new List<Component>
-                {
-                    themePanel.Name,
-                }));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Keyframe_Button, themePanel.DeleteButton.gameObject, new List<Component>
-                {
-                    themePanel.DeleteButton,
-                    themePanel.DeleteButton.image,
-                }, isSelectable: true));
+                EditorThemeManager.AddGraphic(themePanel.BaseImage, ThemeGroup.List_Button_2_Normal, true);
+                EditorThemeManager.AddGraphic(themePanel.UseButton.image, ThemeGroup.Null, true);
+                EditorThemeManager.AddGraphic(themePanel.EditButton.image, ThemeGroup.List_Button_2_Text);
+                EditorThemeManager.AddGraphic(themePanel.Name, ThemeGroup.List_Button_2_Text);
+                EditorThemeManager.AddSelectable(themePanel.DeleteButton, ThemeGroup.Delete_Keyframe_Button, false);
 
                 num++;
             }
@@ -10640,31 +9732,11 @@ namespace EditorManagement.Functions.Editors
 
                     themePanel.SetActive(RTHelpers.SearchString(themePanel.Theme.name, search));
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, themePanel.GameObject, new List<Component>
-                    {
-                        themePanel.BaseImage,
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, themePanel.UseButton.gameObject, new List<Component>
-                    {
-                        themePanel.UseButton.image,
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.EditButton.gameObject, new List<Component>
-                    {
-                        themePanel.EditButton.image,
-                    }));
-
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, themePanel.Name.gameObject, new List<Component>
-                    {
-                        themePanel.Name,
-                    }));
-
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Delete_Keyframe_Button, themePanel.DeleteButton.gameObject, new List<Component>
-                    {
-                        themePanel.DeleteButton,
-                        themePanel.DeleteButton.image,
-                    }, isSelectable: true));
+                    EditorThemeManager.AddGraphic(themePanel.BaseImage, ThemeGroup.List_Button_2_Normal, true);
+                    EditorThemeManager.AddGraphic(themePanel.UseButton.image, ThemeGroup.Null, true);
+                    EditorThemeManager.AddGraphic(themePanel.EditButton.image, ThemeGroup.List_Button_2_Text);
+                    EditorThemeManager.AddGraphic(themePanel.Name, ThemeGroup.List_Button_2_Text);
+                    EditorThemeManager.AddSelectable(themePanel.DeleteButton, ThemeGroup.Delete_Keyframe_Button, false);
                 }
 
                 if (jn["id"] == null)
@@ -10744,15 +9816,8 @@ namespace EditorManagement.Functions.Editors
                         PrefabEditorManager.inst.createInternal = false;
                     });
 
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Create", "Add", prefabExternalAddButton, new List<Component>
-                    {
-                        x.image,
-                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element("External Prefab Popup Create Text", "Add Text", text.gameObject, new List<Component>
-                    {
-                        text,
-                    }));
+                    EditorThemeManager.AddGraphic(x.image, ThemeGroup.Add, true);
+                    EditorThemeManager.AddGraphic(text, ThemeGroup.Add_Text);
                 });
             }
             else
@@ -11105,16 +10170,8 @@ namespace EditorManagement.Functions.Editors
 
                     image.sprite = ShapeManager.inst.Shapes2D[shape][shapeOption].Icon;
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Beatmap Object", "List Button 1", buttonPrefab, new List<Component>
-                    {
-                        b.GetComponent<Image>(),
-                        b,
-                    }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Beatmap Object Text", "Light Text", buttonText.gameObject, new List<Component>
-                    {
-                        buttonText,
-                    }));
+                    EditorThemeManager.ApplySelectable(b, ThemeGroup.List_Button_1);
+                    EditorThemeManager.ApplyLightText(buttonText);
 
                     string desc = "";
                     string hint = "";
@@ -11298,18 +10355,6 @@ namespace EditorManagement.Functions.Editors
                 };
 
                 string difficultyName = difficultyNames[Mathf.Clamp(metadata.song.difficulty, 0, difficultyNames.Length - 1)];
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num}", "List Button 1", ((EditorWrapper)metadataWrapper).GameObject, new List<Component>
-                {
-                    ((EditorWrapper)metadataWrapper).GameObject.GetComponent<Image>(),
-                    ((EditorWrapper)metadataWrapper).GameObject.GetComponent<Button>(),
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                var text = ((EditorWrapper)metadataWrapper).GameObject.transform.GetChild(0).gameObject;
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"Level Button {num} Text", "Light Text", text, new List<Component>
-                {
-                    text.GetComponent<Text>(),
-                }));
 
                 ((EditorWrapper)metadataWrapper).SetActive((RTFile.FileExists(folder + "/level.ogg") ||
                     RTFile.FileExists(folder + "/level.wav") ||
@@ -11991,16 +11036,10 @@ namespace EditorManagement.Functions.Editors
                     {
                         TooltipHelper.AddTooltip(gameObject, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
 
-                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Base", "List Button 1 Normal", gameObject, new List<Component>
-                        {
-                            gameObject.GetComponent<Image>(),
-                        }, true, 1, SpriteManager.RoundedSide.W));
+                        EditorThemeManager.ApplyGraphic(gameObject.GetComponent<Image>(), ThemeGroup.List_Button_1_Normal, true);
                     }
-                    
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Base", "Light Text", gameObject, new List<Component>
-                    {
-                        text,
-                    }, true, 1, SpriteManager.RoundedSide.W));
+
+                    EditorThemeManager.ApplyLightText(text);
 
                     switch (prop.valueType)
                     {
@@ -12020,15 +11059,7 @@ namespace EditorManagement.Functions.Editors
                                     prop.configEntry.BoxedValue = _val;
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Toggle", "Toggle 1", toggle.gameObject, new List<Component>
-                                {
-                                    toggle.image,
-                                }, true, 1, SpriteManager.RoundedSide.W));
-                                
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Toggle Checkmark", "Toggle 1 Check", toggle.graphic.gameObject, new List<Component>
-                                {
-                                    toggle.graphic,
-                                }));
+                                EditorThemeManager.ApplyToggle(toggle);
 
                                 break;
                             }
@@ -12068,33 +11099,17 @@ namespace EditorManagement.Functions.Editors
                                     TriggerHelper.IncreaseDecreaseButtonsInt(inputField, t: gameObject.transform);
                                 }
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
-                                {
-                                    inputField.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
-                                {
-                                    inputField.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(inputField);
 
                                 var left = gameObject.transform.Find("<").GetComponent<Button>();
                                 Destroy(left.GetComponent<Animator>());
                                 left.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Function 2", left.gameObject, new List<Component>
-                                {
-                                    left.image,
-                                    left,
-                                }, isSelectable: true));
+                                EditorThemeManager.ApplySelectable(left, ThemeGroup.Function_2, false);
 
                                 var right = gameObject.transform.Find(">").GetComponent<Button>();
                                 Destroy(right.GetComponent<Animator>());
                                 right.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Function 2", right.gameObject, new List<Component>
-                                {
-                                    right.image,
-                                    right,
-                                }, isSelectable: true));
+                                EditorThemeManager.ApplySelectable(right, ThemeGroup.Function_2, false);
 
                                 break;
                             }
@@ -12134,33 +11149,17 @@ namespace EditorManagement.Functions.Editors
                                     TriggerHelper.IncreaseDecreaseButtons(inputField, t: gameObject.transform);
                                 }
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
-                                {
-                                    inputField.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
-                                {
-                                    inputField.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(inputField);
 
                                 var left = gameObject.transform.Find("<").GetComponent<Button>();
                                 Destroy(left.GetComponent<Animator>());
                                 left.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", left.gameObject, new List<Component>
-                                {
-                                    left.image,
-                                    left,
-                                }, isSelectable: true));
+                                EditorThemeManager.ApplySelectable(left, ThemeGroup.Function_2, false);
 
                                 var right = gameObject.transform.Find(">").GetComponent<Button>();
                                 Destroy(right.GetComponent<Animator>());
                                 right.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", right.gameObject, new List<Component>
-                                {
-                                    right.image,
-                                    right,
-                                }, isSelectable: true));
+                                EditorThemeManager.ApplySelectable(right, ThemeGroup.Function_2, false);
 
                                 break;
                             }
@@ -12219,15 +11218,7 @@ namespace EditorManagement.Functions.Editors
                                         setSlider?.Invoke(result);
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
-                                {
-                                    inputField.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
-                                {
-                                    inputField.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(inputField);
 
                                 if (prop.configEntry.Description.AcceptableValues != null)
                                 {
@@ -12246,16 +11237,13 @@ namespace EditorManagement.Functions.Editors
                                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDeltaInt(inputField));
                                 }
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider", "Slider 1", slider.gameObject, new List<Component>
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, slider.gameObject, new List<Component>
                                 {
                                     slider.transform.Find("Background").GetComponent<Image>(),
                                     slider
                                 }, true, 1, SpriteManager.RoundedSide.W, true));
-                                
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider Handle", "Slider 1 Handle", slider.gameObject, new List<Component>
-                                {
-                                    slider.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
+
+                                EditorThemeManager.ApplyGraphic(slider.image, ThemeGroup.Slider_2_Handle, true);
 
                                 break;
                             }
@@ -12311,15 +11299,7 @@ namespace EditorManagement.Functions.Editors
                                         setSlider?.Invoke(result);
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
-                                {
-                                    inputField.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
-                                {
-                                    inputField.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(inputField);
 
                                 slider.onValueChanged.AddListener(delegate (float _val)
                                 {
@@ -12347,16 +11327,13 @@ namespace EditorManagement.Functions.Editors
                                     TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
                                 }
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider", "Slider 1", slider.gameObject, new List<Component>
+                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, slider.gameObject, new List<Component>
                                 {
                                     slider.transform.Find("Background").GetComponent<Image>(),
                                     slider
                                 }, true, 1, SpriteManager.RoundedSide.W, true));
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Slider Handle", "Slider 1 Handle", slider.gameObject, new List<Component>
-                                {
-                                    slider.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
+                                EditorThemeManager.ApplyGraphic(slider.image, ThemeGroup.Slider_2_Handle, true);
 
                                 break;
                             }
@@ -12377,15 +11354,7 @@ namespace EditorManagement.Functions.Editors
                                     prop.configEntry.BoxedValue = _val;
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", inputField.gameObject, new List<Component>
-                                {
-                                    inputField.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
-                                {
-                                    inputField.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(inputField);
 
                                 break;
                             }
@@ -12413,33 +11382,16 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", vxif.gameObject, new List<Component>
-                                {
-                                    vxif.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", vxif.textComponent.gameObject, new List<Component>
-                                {
-                                    vxif.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(vxif);
 
                                 var leftX = vxif.transform.Find("<").GetComponent<Button>();
-                                Destroy(leftX.GetComponent<Animator>());
-                                leftX.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", leftX.gameObject, new List<Component>
-                                {
-                                    leftX.image,
-                                    leftX,
-                                }, isSelectable: true));
-
                                 var rightX = vxif.transform.Find(">").GetComponent<Button>();
+                                Destroy(leftX.GetComponent<Animator>());
                                 Destroy(rightX.GetComponent<Animator>());
+                                leftX.transition = Selectable.Transition.ColorTint;
                                 rightX.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", rightX.gameObject, new List<Component>
-                                {
-                                    rightX.image,
-                                    rightX,
-                                }, isSelectable: true));
+                                EditorThemeManager.ApplySelectable(leftX, ThemeGroup.Function_2, false);
+                                EditorThemeManager.ApplySelectable(rightX, ThemeGroup.Function_2, false);
 
                                 var vyif = vector2.transform.Find("y").GetComponent<InputField>();
                                 vyif.onValueChanged.RemoveAllListeners();
@@ -12453,33 +11405,16 @@ namespace EditorManagement.Functions.Editors
                                     }
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", vyif.gameObject, new List<Component>
-                                {
-                                    vyif.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", vyif.textComponent.gameObject, new List<Component>
-                                {
-                                    vyif.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(vyif);
 
                                 var leftY = vyif.transform.Find("<").GetComponent<Button>();
-                                Destroy(leftY.GetComponent<Animator>());
-                                leftY.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", leftY.gameObject, new List<Component>
-                                {
-                                    leftY.image,
-                                    leftY,
-                                }, isSelectable: true));
-
                                 var rightY = vyif.transform.Find(">").GetComponent<Button>();
                                 Destroy(rightY.GetComponent<Animator>());
+                                Destroy(leftY.GetComponent<Animator>());
+                                leftY.transition = Selectable.Transition.ColorTint;
                                 rightY.transition = Selectable.Transition.ColorTint;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Button", "Function 2", rightY.gameObject, new List<Component>
-                                {
-                                    rightY.image,
-                                    rightY,
-                                }, isSelectable: true));
+                                EditorThemeManager.ApplySelectable(leftY, ThemeGroup.Function_2, false);
+                                EditorThemeManager.ApplySelectable(rightY, ThemeGroup.Function_2, false);
 
                                 TriggerHelper.AddEventTrigger(vxif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(vxif) });
                                 TriggerHelper.AddEventTrigger(vyif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(vyif) });
@@ -12523,15 +11458,8 @@ namespace EditorManagement.Functions.Editors
                                         onKeySet = RenderPropertiesWindow;
                                     });
 
-                                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Keybind Assign", "Function 1", selector.gameObject, new List<Component>
-                                    {
-                                        button.image
-                                    }, true, 1, SpriteManager.RoundedSide.W));
-
-                                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Keybind Assign Text", "Function 1 Text", selectorText.gameObject, new List<Component>
-                                    {
-                                        selectorText
-                                    }));
+                                    EditorThemeManager.ApplyGraphic(button.image, ThemeGroup.Function_1, true);
+                                    EditorThemeManager.ApplyGraphic(selectorText, ThemeGroup.Function_1_Text);
                                 }
 
                                 var hide = gameObject.transform.Find("dropdown").GetComponent<HideDropdownOptions>();
@@ -12564,44 +11492,7 @@ namespace EditorManagement.Functions.Editors
                                     prop.configEntry.BoxedValue = _val;
                                 });
 
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby", "Dropdown 1", dropdown.gameObject, new List<Component>
-                                {
-                                    dropdown.image,
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Text", "Dropdown 1 Overlay", dropdown.captionText.gameObject, new List<Component>
-                                {
-                                    dropdown.captionText,
-                                }));
-
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Arrow", "Dropdown 1 Overlay", dropdown.transform.Find("Arrow").gameObject, new List<Component>
-                                {
-                                    dropdown.transform.Find("Arrow").gameObject.GetComponent<Image>(),
-                                }));
-
-                                var template = dropdown.transform.Find("Template").gameObject;
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1", template, new List<Component>
-                                {
-                                    template.GetComponent<Image>(),
-                                }, true, 1, SpriteManager.RoundedSide.Bottom));
-
-                                var templateItem = template.transform.Find("Viewport/Content/Item/Item Background").gameObject;
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template", "Dropdown 1 Item", templateItem, new List<Component>
-                                {
-                                    templateItem.GetComponent<Image>(),
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                var templateItemCheckmark = template.transform.Find("Viewport/Content/Item/Item Checkmark").gameObject;
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
-                                {
-                                    templateItemCheckmark.GetComponent<Image>(),
-                                }));
-
-                                var templateItemLabel = template.transform.Find("Viewport/Content/Item/Item Label").gameObject;
-                                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Orderby Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
-                                {
-                                    templateItemLabel.GetComponent<Text>(),
-                                }));
+                                EditorThemeManager.ApplyDropdown(dropdown);
 
                                 break;
                             }
@@ -12617,10 +11508,7 @@ namespace EditorManagement.Functions.Editors
                                 var configColorImage = configColor.GetComponent<Image>();
                                 configColorImage.color = (Color)prop.configEntry.BoxedValue;
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Color", "", configColor, new List<Component>
-                                {
-                                    configColorImage,
-                                }, true, 1, SpriteManager.RoundedSide.W));
+                                EditorThemeManager.ApplyGraphic(configColorImage, ThemeGroup.Null, true);
 
                                 var dropperImage = configColor.transform.Find("dropper").GetComponent<Image>();
                                 dropperImage.color = RTHelpers.InvertColorHue(RTHelpers.InvertColorValue((Color)prop.configEntry.BoxedValue));
@@ -12646,15 +11534,7 @@ namespace EditorManagement.Functions.Editors
 
                                 TriggerHelper.AddEventTriggerParams(configColor, TriggerHelper.CreatePreviewClickTrigger(configColorImage, dropperImage, hexField, (Color)prop.configEntry.BoxedValue, "Editor Properties Popup"));
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field", "Input Field", hexField.gameObject, new List<Component>
-                                {
-                                    hexField.image
-                                }, true, 1, SpriteManager.RoundedSide.W));
-
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Input Field Text", "Input Field Text", hexField.textComponent.gameObject, new List<Component>
-                                {
-                                    hexField.textComponent
-                                }));
+                                EditorThemeManager.ApplyInputField(hexField);
 
                                 break;
                             }
@@ -12668,11 +11548,7 @@ namespace EditorManagement.Functions.Editors
                                     prop.action?.Invoke();
                                 });
 
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Editor Property Base", "List Button 1", gameObject, new List<Component>
-                                {
-                                    gameObject.GetComponent<Image>(),
-                                    button
-                                }, true, 1, SpriteManager.RoundedSide.W, true));
+                                EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
 
                                 break;
                             }
@@ -12762,10 +11638,7 @@ namespace EditorManagement.Functions.Editors
                             barImage.enabled = true;
                             barImage.fillCenter = true;
 
-                            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, bar, new List<Component>
-                            {
-                                barImage,
-                            }, true, 1, SpriteManager.RoundedSide.W));
+                            EditorThemeManager.ApplyGraphic(barImage, ThemeGroup.List_Button_1_Normal, true);
 
                             if (element.Function != null)
                             {
@@ -12801,10 +11674,7 @@ namespace EditorManagement.Functions.Editors
                             barImage.fillCenter = true;
                             var barMask = bar.AddComponent<Mask>();
 
-                            EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, bar, new List<Component>
-                            {
-                                barImage
-                            }, true, 1, SpriteManager.RoundedSide.W));
+                            EditorThemeManager.ApplyGraphic(barImage, ThemeGroup.List_Button_1_Normal, true);
 
                             var imageObjImage = imageObj.GetComponent<Image>();
                             imageObjImage.enabled = true;
@@ -12848,10 +11718,7 @@ namespace EditorManagement.Functions.Editors
                     var barImage = bar.GetComponent<Image>();
                     barImage.enabled = true;
 
-                    EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, bar, new List<Component>
-                    {
-                        barImage,
-                    }, true, 1, SpriteManager.RoundedSide.W));
+                    EditorThemeManager.ApplyGraphic(barImage, ThemeGroup.Light_Text, true);
                 }
                 num++;
             }
@@ -12880,8 +11747,6 @@ namespace EditorManagement.Functions.Editors
                 RefreshAutosaveList(editorWrapper);
             });
 
-            var backupPrefab = timelineBar.transform.Find("event");
-
             var buttonHoverSize = EditorConfig.Instance.OpenLevelButtonHoverSize.Value;
 
             LSHelpers.DeleteChildren(autosaveContent);
@@ -12891,19 +11756,17 @@ namespace EditorManagement.Functions.Editors
             foreach (var file in files)
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(autosaveContent, $"Folder [{Path.GetFileName(file)}]");
+                var folderButtonStorage = gameObject.GetComponent<FolderButtonStorage>();
 
                 var hoverUI = gameObject.AddComponent<HoverUI>();
                 hoverUI.size = buttonHoverSize;
                 hoverUI.animatePos = false;
                 hoverUI.animateSca = true;
 
-                var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+                folderButtonStorage.text.text = Path.GetFileName(file);
 
-                text.text = Path.GetFileName(file);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+                folderButtonStorage.button.onClick.ClearAll();
+                folderButtonStorage.button.onClick.AddListener(delegate ()
                 {
                     StartCoroutine(LoadLevel(editorWrapper.folder, file.Replace("\\", "/").Replace(editorWrapper.folder + "/", "")));
                     EditorManager.inst.HideDialog("Open File Popup");
@@ -12911,17 +11774,14 @@ namespace EditorManagement.Functions.Editors
 
                 string tmpFile = file;
 
-                var backup = backupPrefab.gameObject.Duplicate(gameObject.transform, "backup");
+                var backup = EditorPrefabHolder.Instance.Function1Button.Duplicate(gameObject.transform, "backup");
+                var backupHolder = backup.GetComponent<FunctionButtonStorage>();
                 backup.transform.localScale = Vector3.one;
                 backup.transform.AsRT().anchoredPosition = new Vector2(450f, -16f);
                 backup.transform.AsRT().sizeDelta = new Vector2(80f, 28f);
-                var backupText = backup.transform.GetChild(0).GetComponent<Text>();
-                backupText.text = "Backup";
-                backupText.color = new Color(0.1098f, 0.1098f, 0.1137f, 1f);
-                var backupButton = backup.GetComponent<Button>();
-                ((Image)backupButton.targetGraphic).color = new Color(0.3922f, 0.7098f, 0.9647f, 1f);
-                backupButton.onClick.ClearAll();
-                backupButton.onClick.AddListener(delegate ()
+                backupHolder.text.text = "Backup";
+                backupHolder.button.onClick.ClearAll();
+                backupHolder.button.onClick.AddListener(delegate ()
                 {
                     var fi = new FileInfo(tmpFile);
 
@@ -12933,16 +11793,20 @@ namespace EditorManagement.Functions.Editors
                     }
 
                     var fileName = Path.GetFileName(tmpFile);
-                    text.text = fileName;
+                    folderButtonStorage.text.text = fileName;
                     gameObject.name = $"Folder [{fileName}]";
 
-                    button.onClick.ClearAll();
-                    button.onClick.AddListener(delegate ()
+                    folderButtonStorage.button.onClick.ClearAll();
+                    folderButtonStorage.button.onClick.AddListener(delegate ()
                     {
                         StartCoroutine(LoadLevel(editorWrapper.folder, tmpFile.Replace("\\", "/").Replace(editorWrapper.folder + "/", "")));
                         EditorManager.inst.HideDialog("Open File Popup");
                     });
                 });
+
+                EditorThemeManager.ApplySelectable(folderButtonStorage.button, ThemeGroup.List_Button_1);
+                EditorThemeManager.ApplyGraphic(backupHolder.button.image, ThemeGroup.Function_1, true);
+                EditorThemeManager.ApplyGraphic(backupHolder.text, ThemeGroup.Function_1_Text);
             }
         }
 
@@ -12969,21 +11833,9 @@ namespace EditorManagement.Functions.Editors
                 UpdateSelectedTemplate(baseTitle, texts);
             });
 
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template", "List Button 1", baseLevelTemplateGameObject.gameObject, new List<Component>
-            {
-                baseLevelTemplateGameObject.GetComponent<Image>(),
-                baseButton,
-            }, true, 1, SpriteManager.RoundedSide.W, true));
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template Preview Base", "", basePreviewBase.gameObject, new List<Component>
-            {
-                basePreviewBase.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"New Level Template Text", "Light Text", baseTitle.gameObject, new List<Component>
-            {
-                baseTitle,
-            }));
+            EditorThemeManager.ApplySelectable(baseButton, ThemeGroup.List_Button_1);
+            EditorThemeManager.ApplyGraphic(basePreviewBase.GetComponent<Image>(), ThemeGroup.Null, true);
+            EditorThemeManager.ApplyLightText(baseTitle);
 
             var baseDirectory = RTFile.ApplicationDirectory + "beatmaps/templates";
 
@@ -13021,27 +11873,12 @@ namespace EditorManagement.Functions.Editors
                 title.text = $"{fileName}{(currentLevelTemplate == index ? " [SELECTED]" : "")}";
                 texts.Add(title);
 
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template", "List Button 1", levelTemplateGameObject, new List<Component>
-                {
-                    levelTemplateGameObject.GetComponent<Image>(),
-                    button,
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element("New Level Template Preview Base", "", previewBase.gameObject, new List<Component>
-                {
-                    previewBase.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.ApplyElement(new EditorThemeManager.Element($"New Level Template Text", "Light Text", baseTitle.gameObject, new List<Component>
-                {
-                    baseTitle,
-                }));
+                EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+                EditorThemeManager.ApplyGraphic(previewBase.GetComponent<Image>(), ThemeGroup.Null, true);
+                EditorThemeManager.ApplyLightText(title);
 
                 if (RTFile.FileExists(directory + "/preview.png"))
-                    StartCoroutine(AlephNetworkManager.DownloadImageTexture(directory + "/preview.png", delegate (Texture2D texture2D)
-                    {
-                        previewImage.sprite = SpriteManager.CreateSprite(texture2D);
-                    }));
+                    previewImage.sprite = SpriteManager.LoadSprite(directory + "/preview.png");
                 else
                 {
                     previewImage.color = new Color(1f, 1f, 1f, 0.1f);

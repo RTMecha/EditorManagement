@@ -78,16 +78,8 @@ namespace EditorManagement.Functions.Editors
 
 					var button = shuffleID.GetComponent<Button>();
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button", "Function 2", shuffleID, new List<Component>
-					{
-						button.image,
-						button,
-					}, true, 1, SpriteManager.RoundedSide.W, true));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button Text", "Function 2 Text", shuffleIDText.gameObject, new List<Component>
-					{
-						shuffleIDText,
-					}));
+					EditorThemeManager.AddSelectable(button, ThemeGroup.Function_2);
+					EditorThemeManager.AddGraphic(shuffleIDText, ThemeGroup.Function_2_Text);
 				}
 
 				dialog.Find("data/left/theme/theme").AsRT().sizeDelta = new Vector2(366f, 570f);
@@ -95,23 +87,15 @@ namespace EditorManagement.Functions.Editors
 				var themeContent = dialog.Find("data/right/theme/themes/viewport/content");				
 				LSHelpers.DeleteChildren(themeContent);
 
-				EditorThemeManager.AddInputField(dialog.Find("data/left/theme/name").GetComponent<InputField>(), "Theme Editor Name Input Field", "Input Field");
+				EditorThemeManager.AddInputField(dialog.Find("data/left/theme/name").GetComponent<InputField>());
 
 				for (int i = 0; i < actions.childCount; i++)
                 {
 					var child = actions.GetChild(i);
 					var button = child.GetComponent<Button>();
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button", child.name == "cancel" ? "Close" : "Function 2", child.gameObject, new List<Component>
-					{
-						button.image,
-						button,
-					}, true, 1, SpriteManager.RoundedSide.W, true));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Button Text", child.name == "cancel" ? "Close X" : "Function 2 Text", child.GetChild(0).gameObject, new List<Component>
-					{
-						child.GetChild(0).GetComponent<Text>(),
-					}));
+					EditorThemeManager.AddSelectable(button, child.name == "cancel" ? ThemeGroup.Close : ThemeGroup.Function_2);
+					EditorThemeManager.AddGraphic(child.GetChild(0).GetComponent<Text>(), child.name == "cancel" ? ThemeGroup.Close_X : ThemeGroup.Function_2_Text);
                 }
 
 				for (int i = 0; i < themeParent.childCount; i++)
@@ -120,49 +104,20 @@ namespace EditorManagement.Functions.Editors
 
 					if (child.name == "label" || child.name == "effect_label")
                     {
-						EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Label", "Light Text", child.GetChild(0).gameObject, new List<Component>
-						{
-							child.GetChild(0).GetComponent<Text>(),
-						}));
+						EditorThemeManager.AddLightText(child.GetChild(0).GetComponent<Text>());
 						continue;
                     }
 
-					var text = child.Find("text");
-					var preview = child.Find("preview");
 					var hex = child.Find("hex");
 					var pound = hex.Find("pound");
 
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Part Label", "Light Text", text.gameObject, new List<Component>
-					{
-						text.GetComponent<Text>(),
-					}));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Part Preview", "", preview.gameObject, new List<Component>
-					{
-						preview.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.AddInputField(hex.GetComponent<InputField>(), "Theme Editor Part Input Field", "Input Field");
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Part Input Field Pound", "Input Field Text", pound.gameObject, new List<Component>
-					{
-						pound.GetComponent<Text>(),
-					}));
+					EditorThemeManager.AddLightText(child.Find("text").GetComponent<Text>());
+					EditorThemeManager.AddGraphic(child.Find("preview").GetComponent<Image>(), ThemeGroup.Null, true);
+					EditorThemeManager.AddInputField(hex.GetComponent<InputField>());
+					EditorThemeManager.AddGraphic(pound.GetComponent<Text>(), ThemeGroup.Input_Field_Text);
                 }
 
-
-				var scrollbar = dialog.Find("data/left/theme/theme/Scrollbar Vertical").GetComponent<Scrollbar>();
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Scrollbar", "Scrollbar 2", scrollbar.gameObject, new List<Component>
-				{
-					scrollbar.GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				var scrollbarHandle = scrollbar.handleRect.gameObject;
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Theme Editor Scrollbar Handle", "Scrollbar Handle 2", scrollbarHandle, new List<Component>
-				{
-					scrollbar.image,
-					scrollbar
-				}, true, 1, SpriteManager.RoundedSide.W, true));
+				EditorThemeManager.AddScrollbar(dialog.Find("data/left/theme/theme/Scrollbar Vertical").GetComponent<Scrollbar>(), scrollbarGroup: ThemeGroup.Scrollbar_2, handleGroup: ThemeGroup.Scrollbar_2_Handle);
 
 				CreateThemePopup();
 
@@ -221,48 +176,17 @@ namespace EditorManagement.Functions.Editors
 		{
 			try
 			{
-				var themePopup = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
-					.Duplicate(EditorManager.inst.GetDialog("Parent Selector").Dialog.GetParent(), "Theme Popup");
-				themePopup.transform.localPosition = Vector3.zero;
-
-				themePopup.transform.AsRT().sizeDelta = new Vector2(600f, 450f);
-				var themePopupPanel = themePopup.transform.Find("Panel").AsRT();
-				themePopupPanel.sizeDelta = new Vector2(632f, 32f);
-
-				var themePopupTitle = themePopupPanel.Find("Text").GetComponent<Text>();
-				themePopupTitle.text = "Beatmap Themes";
-				((RectTransform)themePopup.transform.Find("search-box")).sizeDelta = new Vector2(600f, 32f);
-				themePopup.transform.Find("mask/content").GetComponent<GridLayoutGroup>().cellSize = new Vector2(600f, 362f);
-
-				var x = themePopupPanel.Find("x").GetComponent<Button>();
-				x.onClick.RemoveAllListeners();
-				x.onClick.AddListener(delegate ()
+				var themesPopup = RTEditor.inst.GeneratePopup("Theme Popup", "Beatmap Themes", Vector2.zero, new Vector2(600f, 450f), delegate (string _val)
 				{
-					EditorManager.inst.HideDialog("Theme Popup");
-				});
-
-				var searchBar = themePopup.transform.Find("search-box/search").GetComponent<InputField>();
-				searchBar.onValueChanged.ClearAll();
-				searchBar.onValueChanged.AddListener(delegate (string _value)
-				{
-					themeSearch = _value;
+					themeSearch = _val;
 					RefreshThemeSearch();
-				});
-				((Text)searchBar.placeholder).text = "Search for theme...";
+				}, placeholderText: "Search for theme...");
 
-				EditorHelper.AddEditorDropdown("View Themes", "", "View", RTEditor.inst.SearchSprite, delegate ()
-				{
-					EditorManager.inst.ShowDialog("Theme Popup");
-					RefreshThemeSearch();
-				});
-
-				themeContent = themePopup.transform.Find("mask/content");
-
-				EditorHelper.AddEditorPopup("Theme Popup", themePopup);
+				themeContent = themesPopup.Content;
 
 				// Page
-                {
-					var page = EditorPrefabHolder.Instance.NumberInputField.Duplicate(themePopupPanel, "page");
+				{
+					var page = EditorPrefabHolder.Instance.NumberInputField.Duplicate(themesPopup.TopPanel, "page");
 					page.transform.AsRT().anchoredPosition = new Vector2(240f, 16f);
 					pageStorage = page.GetComponent<InputFieldStorage>();
 					pageStorage.inputField.onValueChanged.ClearAll();
@@ -306,39 +230,11 @@ namespace EditorManagement.Functions.Editors
 
 					Destroy(pageStorage.middleButton.gameObject);
 
-					EditorThemeManager.AddInputField(pageStorage.inputField, "View Themes Popup Page Input", "Input Field");
-
-					Destroy(pageStorage.leftGreaterButton.GetComponent<Animator>());
-					pageStorage.leftGreaterButton.transition = Selectable.Transition.ColorTint;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.leftGreaterButton.gameObject, new List<Component>
-					{
-						pageStorage.leftGreaterButton.image,
-						pageStorage.leftGreaterButton,
-					}, isSelectable: true));
-
-					Destroy(pageStorage.leftButton.GetComponent<Animator>());
-					pageStorage.leftButton.transition = Selectable.Transition.ColorTint;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.leftButton.gameObject, new List<Component>
-					{
-						pageStorage.leftButton.image,
-						pageStorage.leftButton,
-					}, isSelectable: true));
-
-					Destroy(pageStorage.rightButton.GetComponent<Animator>());
-					pageStorage.rightButton.transition = Selectable.Transition.ColorTint;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.rightButton.gameObject, new List<Component>
-					{
-						pageStorage.rightButton.image,
-						pageStorage.rightButton,
-					}, isSelectable: true));
-
-					Destroy(pageStorage.rightGreaterButton.GetComponent<Animator>());
-					pageStorage.rightGreaterButton.transition = Selectable.Transition.ColorTint;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element("View Themes Popup Page Button", "Function 2", pageStorage.rightGreaterButton.gameObject, new List<Component>
-					{
-						pageStorage.rightGreaterButton.image,
-						pageStorage.rightGreaterButton,
-					}, isSelectable: true));
+					EditorThemeManager.AddInputField(pageStorage.inputField);
+					EditorThemeManager.AddSelectable(pageStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+					EditorThemeManager.AddSelectable(pageStorage.leftButton, ThemeGroup.Function_2, false);
+					EditorThemeManager.AddSelectable(pageStorage.rightButton, ThemeGroup.Function_2, false);
+					EditorThemeManager.AddSelectable(pageStorage.rightGreaterButton, ThemeGroup.Function_2, false);
 				}
 
 				// Prefab
@@ -569,44 +465,6 @@ namespace EditorManagement.Functions.Editors
 
 					Destroy(themePopupPanelPrefab.GetComponent<Button>());
 				}
-
-				// Editor Theme
-				{
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, themePopup, new List<Component>
-					{
-						themePopup.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
-
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, themePopupPanel.gameObject, new List<Component>
-					{
-						themePopupPanel.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.Top));
-
-					EditorThemeManager.AddSelectable(x, ThemeGroup.Close);
-
-					var themePopupCloseX = x.transform.GetChild(0).gameObject;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, themePopupCloseX, new List<Component>
-					{
-						themePopupCloseX.GetComponent<Image>(),
-					}));
-
-					EditorThemeManager.AddLightText(themePopupTitle);
-
-					var themePopupScrollbar = themePopup.transform.Find("Scrollbar").gameObject;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, themePopupScrollbar, new List<Component>
-					{
-						themePopupScrollbar.GetComponent<Image>(),
-					}, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-					var themePopupScrollbarHandle = themePopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-					EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, themePopupScrollbarHandle, new List<Component>
-					{
-						themePopupScrollbarHandle.GetComponent<Image>(),
-						themePopupScrollbar.GetComponent<Scrollbar>()
-					}, true, 1, SpriteManager.RoundedSide.W, true));
-
-					EditorThemeManager.AddInputField(searchBar, ThemeGroup.Search_Field_1);
-				}
 			}
 			catch (Exception ex)
 			{
@@ -645,35 +503,18 @@ namespace EditorManagement.Functions.Editors
 						EditorThemeManager.ApplyLightText(viewThemeStorage.backgroundColorsText);
 						EditorThemeManager.ApplyLightText(viewThemeStorage.effectColorsText);
 
-						viewThemeStorage.baseColors[0].color = beatmapTheme.backgroundColor;
-						viewThemeStorage.baseColors[1].color = beatmapTheme.guiColor;
-						viewThemeStorage.baseColors[2].color = beatmapTheme.guiAccentColor;
-
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.baseColors[0].gameObject, new List<Component>
-						{
-							viewThemeStorage.baseColors[0],
-						}, true, 1, SpriteManager.RoundedSide.W));
-
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.baseColors[1].gameObject, new List<Component>
-						{
-							viewThemeStorage.baseColors[1],
-						}, true, 1, SpriteManager.RoundedSide.W));
-
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.baseColors[2].gameObject, new List<Component>
-						{
-							viewThemeStorage.baseColors[2],
-						}, true, 1, SpriteManager.RoundedSide.W));
+                        for (int i = 0; i < viewThemeStorage.baseColors.Count; i++)
+                        {
+                            viewThemeStorage.baseColors[i].color = i == 0 ? beatmapTheme.backgroundColor : i == 1 ? beatmapTheme.guiAccentColor : beatmapTheme.guiAccentColor;
+							EditorThemeManager.ApplyGraphic(viewThemeStorage.baseColors[i], ThemeGroup.Null, true);
+						}
 
 						for (int i = 0; i < viewThemeStorage.playerColors.Count; i++)
 						{
 							if (i < beatmapTheme.playerColors.Count)
                             {
                                 viewThemeStorage.playerColors[i].color = beatmapTheme.playerColors[i];
-
-								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.playerColors[i].gameObject, new List<Component>
-								{
-									viewThemeStorage.playerColors[i],
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.ApplyGraphic(viewThemeStorage.playerColors[i], ThemeGroup.Null, true);
 							}
                             else
                                 viewThemeStorage.playerColors[i].gameObject.SetActive(false);
@@ -684,11 +525,7 @@ namespace EditorManagement.Functions.Editors
 							if (i < beatmapTheme.objectColors.Count)
                             {
                                 viewThemeStorage.objectColors[i].color = beatmapTheme.objectColors[i];
-
-								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.objectColors[i].gameObject, new List<Component>
-								{
-									viewThemeStorage.objectColors[i],
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.ApplyGraphic(viewThemeStorage.objectColors[i], ThemeGroup.Null, true);
 							}
                             else
                                 viewThemeStorage.objectColors[i].gameObject.SetActive(false);
@@ -699,11 +536,7 @@ namespace EditorManagement.Functions.Editors
 							if (i < beatmapTheme.backgroundColors.Count)
                             {
                                 viewThemeStorage.backgroundColors[i].color = beatmapTheme.backgroundColors[i];
-
-								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.backgroundColors[i].gameObject, new List<Component>
-								{
-									viewThemeStorage.backgroundColors[i],
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.ApplyGraphic(viewThemeStorage.backgroundColors[i], ThemeGroup.Null, true);
 							}
                             else
                                 viewThemeStorage.backgroundColors[i].gameObject.SetActive(false);
@@ -714,11 +547,7 @@ namespace EditorManagement.Functions.Editors
 							if (i < beatmapTheme.effectColors.Count)
                             {
                                 viewThemeStorage.effectColors[i].color = beatmapTheme.effectColors[i];
-
-								EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Color", "", viewThemeStorage.effectColors[i].gameObject, new List<Component>
-								{
-									viewThemeStorage.effectColors[i],
-								}, true, 1, SpriteManager.RoundedSide.W));
+								EditorThemeManager.ApplyGraphic(viewThemeStorage.effectColors[i], ThemeGroup.Null, true);
 							}
                             else
                                 viewThemeStorage.effectColors[i].gameObject.SetActive(false);
@@ -778,39 +607,15 @@ namespace EditorManagement.Functions.Editors
 							EditorManager.inst.DisplayNotification($"Converted Theme {beatmapTheme.name.ToLower()}.lst from LS format to VG format and saved to {beatmapTheme.name.ToLower()}.vgt!", 4f, EditorManager.NotificationType.Success);
 						});
 
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel", "List Button 1 Normal", gameObject, new List<Component>
-						{
-							viewThemeStorage.baseImage,
-						}, true, 1, SpriteManager.RoundedSide.W));
-
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Text", "Light Text", viewThemeStorage.text.gameObject, new List<Component>
-						{
-							viewThemeStorage.text,
-						}));
+						EditorThemeManager.ApplyGraphic(viewThemeStorage.baseImage, ThemeGroup.List_Button_1_Normal, true);
+						EditorThemeManager.ApplyLightText(viewThemeStorage.text);
+						EditorThemeManager.ApplySelectable(use, ThemeGroup.Function_2);
+						EditorThemeManager.ApplyGraphic(useStorage.text, ThemeGroup.Function_2_Text);
+						EditorThemeManager.ApplySelectable(convert, ThemeGroup.Function_2);
+						EditorThemeManager.ApplyGraphic(convertStorage.text, ThemeGroup.Function_2_Text);
 
 						use.gameObject.SetActive(true);
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Use", "Function 2", use.gameObject, new List<Component>
-						{
-							use.image,
-							use,
-						}, true, 1, SpriteManager.RoundedSide.W, true));
-
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Use Text", "Function 2 Text", useStorage.text.gameObject, new List<Component>
-						{
-							useStorage.text,
-						}));
-
 						convert.gameObject.SetActive(true);
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Convert", "Function 2", convert.gameObject, new List<Component>
-						{
-							convert.image,
-							convert,
-						}, true, 1, SpriteManager.RoundedSide.W, true));
-
-						EditorThemeManager.ApplyElement(new EditorThemeManager.Element("View Theme Panel Convert Text", "Function 2 Text", convertStorage.text.gameObject, new List<Component>
-						{
-							convertStorage.text,
-						}));
 					}
 
 					num++;

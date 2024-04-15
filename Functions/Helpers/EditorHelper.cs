@@ -48,36 +48,23 @@ namespace EditorManagement.Functions.Helpers
 
             var parent = RTEditor.inst.titleBar.Find($"{dropdown}/{dropdown} Dropdown");
 
-            var propWin = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar/Edit/Edit Dropdown/Cut").Duplicate(parent, name, siblingIndex < 0 ? parent.childCount : siblingIndex);
-            propWin.transform.Find("Text").GetComponent<Text>().text = name;
-            propWin.transform.Find("Text").GetComponent<RectTransform>().sizeDelta = new Vector2(224f, 0f);
-            propWin.transform.Find("Text 1").GetComponent<Text>().text = key;
+            var gameObject = RTEditor.inst.titleBar.Find("Edit/Edit Dropdown/Cut").gameObject.Duplicate(parent, name, siblingIndex < 0 ? parent.childCount : siblingIndex);
+            gameObject.transform.Find("Text").GetComponent<Text>().text = name;
+            gameObject.transform.Find("Text").AsRT().sizeDelta = new Vector2(224f, 0f);
+            gameObject.transform.Find("Text 1").GetComponent<Text>().text = key;
 
-            var propWinButton = propWin.GetComponent<Button>();
+            var propWinButton = gameObject.GetComponent<Button>();
             propWinButton.onClick.ClearAll();
             propWinButton.onClick.AddListener(unityAction);
 
-            propWin.SetActive(true);
+            gameObject.SetActive(true);
 
-            propWin.transform.Find("Image").GetComponent<Image>().sprite = sprite;
+            var image = gameObject.transform.Find("Image").GetComponent<Image>();
+            gameObject.transform.Find("Image").GetComponent<Image>().sprite = sprite;
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {parent.name} - {name}", "Title Bar Dropdown", propWin, new List<Component>
-            {
-                propWin.GetComponent<Image>(),
-                propWinButton,
-            }, isSelectable: true));
-
-            var text2 = propWin.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {parent.name} - {name} Text", "Title Bar Text", text2, new List<Component>
-            {
-                text2.GetComponent<Text>(),
-            }));
-
-            var image = propWin.transform.Find("Image").gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {parent.name} - {name} Image", "Title Bar Text", image, new List<Component>
-            {
-                image.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddSelectable(propWinButton, ThemeGroup.Title_Bar_Dropdown, false);
+            EditorThemeManager.AddGraphic(gameObject.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Title_Bar_Text);
+            EditorThemeManager.AddGraphic(image, ThemeGroup.Title_Bar_Text);
         }
 
         public static void LogAvailableInstances<T>()

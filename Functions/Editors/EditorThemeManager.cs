@@ -2162,7 +2162,7 @@ namespace EditorManagement.Functions.Editors
 
         public static Dictionary<string, EditorTheme> EditorThemesDictionary => EditorThemes.ToDictionary(x => x.name, x => x);
 
-        public static void AddDropdown(Dropdown dropdown, string name = "")
+        public static void AddDropdown(Dropdown dropdown)
         {
             AddGraphic(dropdown.image, ThemeGroup.Dropdown_1, true);
             AddGraphic(dropdown.captionText, ThemeGroup.Dropdown_1_Overlay);
@@ -2200,20 +2200,6 @@ namespace EditorManagement.Functions.Editors
                 ApplyGraphic(dropdown.itemImage, ThemeGroup.Dropdown_1_Overlay);
         }
 
-        public static void AddInputField(InputField inputField, string name, string group, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
-        {
-            inputField.image.fillCenter = true;
-            AddElement(new Element(name, group, inputField.gameObject, new List<Component>
-            {
-                inputField.image,
-            }, true, rounded, roundedSide));
-
-            AddElement(new Element($"{name} Text", $"{group} Text", inputField.textComponent.gameObject, new List<Component>
-            {
-                inputField.textComponent,
-            }));
-        }
-        
         public static void AddInputField(InputField inputField, ThemeGroup group = ThemeGroup.Input_Field, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
         {
             inputField.image.fillCenter = true;
@@ -2228,20 +2214,6 @@ namespace EditorManagement.Functions.Editors
             }));
         }
         
-        public static void AddInputField(TMP_InputField inputField, string name, string group, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
-        {
-            inputField.image.fillCenter = true;
-            AddElement(new Element(name, group, inputField.gameObject, new List<Component>
-            {
-                inputField.image,
-            }, true, rounded, roundedSide));
-
-            AddElement(new Element($"{name} Text", $"{group} Text", inputField.textComponent.gameObject, new List<Component>
-            {
-                inputField.textComponent,
-            }));
-        }
-        
         public static void AddInputField(TMP_InputField inputField, ThemeGroup group = ThemeGroup.Input_Field, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
         {
             inputField.image.fillCenter = true;
@@ -2251,20 +2223,6 @@ namespace EditorManagement.Functions.Editors
             }, true, rounded, roundedSide));
 
             AddElement(new Element(EditorTheme.GetGroup($"{EditorTheme.GetString(group)} Text"), inputField.textComponent.gameObject, new List<Component>
-            {
-                inputField.textComponent,
-            }));
-        }
-        
-        public static void ApplyInputField(InputField inputField, string name, string group)
-        {
-            inputField.image.fillCenter = true;
-            ApplyElement(new Element(name, group, inputField.gameObject, new List<Component>
-            {
-                inputField.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            ApplyElement(new Element($"{name} Text", $"{group} Text", inputField.textComponent.gameObject, new List<Component>
             {
                 inputField.textComponent,
             }));
@@ -2295,12 +2253,12 @@ namespace EditorManagement.Functions.Editors
 
                 var input = selfInput ? inputField.transform : gameObject.transform.Find("input") ?? gameObject.transform.Find("Input") ?? gameObject.transform.Find("text-field");
 
-                AddElement(new Element($"{name} Value", "Input Field", input.gameObject, new List<Component>
+                AddElement(new Element(ThemeGroup.Input_Field, input.gameObject, new List<Component>
                 {
                     selfInput ? inputField.image : input.GetComponent<Image>(),
                 }, true, 1, SpriteManager.RoundedSide.W));
 
-                AddElement(new Element($"{name} Value Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                AddElement(new Element(ThemeGroup.Input_Field_Text, inputField.textComponent.gameObject, new List<Component>
                 {
                     inputField.textComponent,
                 }));
@@ -2320,17 +2278,8 @@ namespace EditorManagement.Functions.Editors
                 UnityEngine.Object.Destroy(buttonRightComponent.GetComponent<Animator>());
                 buttonRightComponent.transition = Selectable.Transition.ColorTint;
 
-                AddElement(new Element($"{name} Button", "Function 2", buttonLeft.gameObject, new List<Component>
-                {
-                    buttonLeftComponent,
-                    buttonLeftComponent.image
-                }, isSelectable: true));
-
-                AddElement(new Element($"{name} Button", "Function 2", buttonRight.gameObject, new List<Component>
-                {
-                    buttonRightComponent,
-                    buttonRightComponent.image
-                }, isSelectable: true));
+                AddSelectable(buttonLeftComponent, ThemeGroup.Function_2, false);
+                AddSelectable(buttonRightComponent, ThemeGroup.Function_2, false);
 
                 return;
             }
@@ -2346,12 +2295,12 @@ namespace EditorManagement.Functions.Editors
 
                 var input = selfInput ? inputField.transform : child.Find("input") ?? child.Find("Input") ?? child.Find("text-field");
 
-                AddElement(new Element($"{name} Value", "Input Field", input.gameObject, new List<Component>
+                AddElement(new Element(ThemeGroup.Input_Field, input.gameObject, new List<Component>
                 {
                     selfInput ? inputField.image : input.GetComponent<Image>(),
                 }, true, 1, SpriteManager.RoundedSide.W));
 
-                AddElement(new Element($"{name} Value Text", "Input Field Text", inputField.textComponent.gameObject, new List<Component>
+                AddElement(new Element(ThemeGroup.Input_Field_Text, inputField.textComponent.gameObject, new List<Component>
                 {
                     inputField.textComponent,
                 }));
@@ -2371,55 +2320,11 @@ namespace EditorManagement.Functions.Editors
                 UnityEngine.Object.Destroy(buttonRightComponent.GetComponent<Animator>());
                 buttonRightComponent.transition = Selectable.Transition.ColorTint;
 
-                AddElement(new Element($"{name} Button", "Function 2", buttonLeft.gameObject, new List<Component>
-                {
-                    buttonLeftComponent,
-                    buttonLeftComponent.image
-                }, isSelectable: true));
-
-                AddElement(new Element($"{name} Button", "Function 2", buttonRight.gameObject, new List<Component>
-                {
-                    buttonRightComponent,
-                    buttonRightComponent.image
-                }, isSelectable: true));
+                AddSelectable(buttonLeftComponent, ThemeGroup.Function_2, false);
+                AddSelectable(buttonRightComponent, ThemeGroup.Function_2, false);
             }
         }
 
-        public static void AddToggle(Toggle toggle, string name, Text text = null)
-        {
-            toggle.image.fillCenter = true;
-            AddElement(new Element(name, "Toggle 1", toggle.gameObject, new List<Component>
-            {
-                toggle.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            AddElement(new Element($"{name} Checkmark", "Toggle 1 Check", toggle.graphic.gameObject, new List<Component>
-            {
-                toggle.graphic,
-            }));
-
-            if (text)
-            {
-                AddElement(new Element($"{name} Text", "Toggle 1 Check", text.gameObject, new List<Component>
-                {
-                    text,
-                }));
-                return;
-            }
-
-            if (toggle.transform.Find("Text"))
-                AddElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("Text").gameObject, new List<Component>
-                {
-                    toggle.transform.Find("Text").GetComponent<Text>(),
-                }));
-
-            if (toggle.transform.Find("text"))
-                AddElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
-                {
-                    toggle.transform.Find("text").GetComponent<Text>(),
-                }));
-        }
-        
         public static void AddToggle(Toggle toggle, ThemeGroup checkGroup = ThemeGroup.Null, Graphic graphic = null)
         {
             toggle.image.fillCenter = true;
@@ -2451,41 +2356,6 @@ namespace EditorManagement.Functions.Editors
 
             if (toggle.transform.Find("text"))
                 AddElement(new Element(checkMarkGroup, toggle.transform.Find("text").gameObject, new List<Component>
-                {
-                    toggle.transform.Find("text").GetComponent<Text>(),
-                }));
-        }
-
-        public static void ApplyToggle(Toggle toggle, string name, Text text = null, string checkmark = "")
-        {
-            toggle.image.fillCenter = true;
-            ApplyElement(new Element(name, "Toggle 1", toggle.gameObject, new List<Component>
-            {
-                toggle.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            ApplyElement(new Element($"{name} Checkmark", string.IsNullOrEmpty(checkmark) ? "Toggle 1 Check" : checkmark, toggle.graphic.gameObject, new List<Component>
-            {
-                toggle.graphic,
-            }));
-
-            if (text)
-            {
-                ApplyElement(new Element($"{name} Text", "Toggle 1 Check", text.gameObject, new List<Component>
-                {
-                    text,
-                }));
-                return;
-            }
-
-            if (toggle.transform.Find("Text"))
-                ApplyElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("Text").gameObject, new List<Component>
-                {
-                    toggle.transform.Find("Text").GetComponent<Text>(),
-                }));
-
-            if (toggle.transform.Find("text"))
-                ApplyElement(new Element($"{name} Text", "Toggle 1 Check", toggle.transform.Find("text").gameObject, new List<Component>
                 {
                     toggle.transform.Find("text").GetComponent<Text>(),
                 }));
@@ -2991,7 +2861,6 @@ namespace EditorManagement.Functions.Editors
 
             public Element(string name, string group, GameObject gameObject, List<Component> components, bool canSetRounded = false, int rounded = 0, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W, bool isSelectable = false)
             {
-                //this.name = name;
                 this.group = group;
                 GameObject = gameObject;
                 Components = components;
@@ -3001,10 +2870,6 @@ namespace EditorManagement.Functions.Editors
                 this.isSelectable = isSelectable;
             }
 
-            /// <summary>
-            /// Debug purposes only
-            /// </summary>
-            //public string name;
             public string group;
             public ThemeGroup themeGroup = ThemeGroup.Null;
 

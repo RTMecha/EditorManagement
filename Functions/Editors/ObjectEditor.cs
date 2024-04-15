@@ -119,12 +119,7 @@ namespace EditorManagement.Functions.Editors
                 comp.triggers.RemoveAll(x => x.eventID == EventTriggerType.PointerUp);
                 comp.triggers.Add(entry);
 
-                var image = idRight.GetChild(i).GetComponent<Image>();
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Object Editor Keyframe Bin", $"Object Keyframe Color {i + 1}", image.gameObject, new List<Component>
-                {
-                    image,
-                }));
+                EditorThemeManager.AddGraphic(idRight.GetChild(i).GetComponent<Image>(), EditorThemeManager.EditorTheme.GetGroup($"Object Keyframe Color {i + 1}"));
             }
 
             ObjEditor.inst.objTimelineSlider.onValueChanged.RemoveAllListeners();

@@ -6,6 +6,7 @@ using EditorManagement.Functions.Helpers;
 using HarmonyLib;
 using LSFunctions;
 using RTFunctions.Functions;
+using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.Data.Player;
 using RTFunctions.Functions.IO;
@@ -109,7 +110,7 @@ namespace EditorManagement.Patchers
 
             EditorThemeManager.AddScrollbar(openFilePopup.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
 
-            EditorThemeManager.AddInputField(openFilePopup.transform.Find("search-box/search").GetComponent<InputField>(), "Open File Popup Search", "Search Field 1", 1, SpriteManager.RoundedSide.Bottom);
+            EditorThemeManager.AddInputField(openFilePopup.transform.Find("search-box/search").GetComponent<InputField>(), ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
 
             EditorThemeManager.AddGraphic(EditorManager.inst.dialogs.GetComponent<Image>(), ThemeGroup.Background_1);
 
@@ -199,6 +200,13 @@ namespace EditorManagement.Patchers
 
             __instance.hasLoadedLevel = false;
             __instance.loading = false;
+
+            var levelButtonPrefab = __instance.folderButtonPrefab.Duplicate(__instance.transform, __instance.folderButtonPrefab.name);
+            var levelButtonPrefabStorage = levelButtonPrefab.AddComponent<FolderButtonStorage>();
+            levelButtonPrefabStorage.clickable = levelButtonPrefab.AddComponent<Clickable>();
+            levelButtonPrefabStorage.button = levelButtonPrefab.GetComponent<Button>();
+            levelButtonPrefabStorage.text = levelButtonPrefab.transform.GetChild(0).GetComponent<Text>();
+            __instance.folderButtonPrefab = levelButtonPrefab;
 
             RTEditor.Init(__instance);
             KeybindManager.Init(__instance);
