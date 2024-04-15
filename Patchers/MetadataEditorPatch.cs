@@ -15,6 +15,8 @@ using RTFunctions.Functions.Managers.Networking;
 using EditorManagement.Functions;
 using System.Collections.Generic;
 using RTFunctions.Functions.Managers;
+using RTFunctions.Functions.Components;
+using UnityEngine.EventSystems;
 
 namespace EditorManagement.Patchers
 {
@@ -190,170 +192,61 @@ namespace EditorManagement.Patchers
 			zipText.fontSize = 18;
 			zipText.text = "ZIP Level";
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Convert", "Function 1", convert, new List<Component>
-			{
-				convertImage,
-			}, true, 1, SpriteManager.RoundedSide.W));
+			content.Find("id").gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f);
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Convert Text", "Function 1 Text", convertText.gameObject, new List<Component>
-			{
-				convertText,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Upload", "Function 1", upload, new List<Component>
-			{
-				upload.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Upload Text", "Function 1 Text", uploadText.gameObject, new List<Component>
-			{
-				uploadText,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor ZIP", "Function 1", zip, new List<Component>
-			{
-				zip.GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor ZIP Text", "Function 1 Text", zipText.gameObject, new List<Component>
-			{
-				zipText,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor", "Background", dialog.gameObject, new List<Component>
-			{
-				dialog.GetComponent<Image>(),
-			}));
+			EditorThemeManager.AddGraphic(convertImage, ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(convertText, ThemeGroup.Function_1_Text);
+			EditorThemeManager.AddGraphic(upload.GetComponent<Image>(), ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(uploadText, ThemeGroup.Function_1_Text);
+			EditorThemeManager.AddGraphic(zip.GetComponent<Image>(), ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(zipText, ThemeGroup.Function_1_Text);
+			EditorThemeManager.AddGraphic(dialog.GetComponent<Image>(), ThemeGroup.Background_1);
 
 			var artist = content.Find("artist");
 			var song = content.Find("song");
 			var creator = content.Find("creator");
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artist Title", "Light Text", artist.Find("title/title").gameObject, new List<Component>
-			{
-				artist.Find("title/title").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddLightText(artist.Find("title/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(song.Find("title_/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("title/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(artist.Find("name/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(artist.Find("link/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(song.Find("title/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(song.Find("difficulty/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("cover_art/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("cover_art/title (1)").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("name/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("link/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("description/Panel/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(creator.Find("tags/Panel/title").GetComponent<Text>());
+			EditorThemeManager.AddLightText(content.Find("agreement/text").GetComponent<Text>());
+			EditorThemeManager.AddLightText(content.Find("id/id").GetComponent<Text>());
+			EditorThemeManager.AddLightText(content.Find("id/revisions").GetComponent<Text>());
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Song Title", "Light Text", song.Find("title_/title").gameObject, new List<Component>
-			{
-				song.Find("title_/title").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddInputField(artist.Find("name/input").GetComponent<InputField>());
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Title", "Light Text", creator.Find("title/title").gameObject, new List<Component>
-			{
-				creator.Find("title/title").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddGraphic(artist.Find("link/inputs/openurl").GetComponent<Image>(), ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(artist.Find("link/inputs/openurl/Image").GetComponent<Image>(), ThemeGroup.Function_1_Text);
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artist Name Title", "Light Text", artist.Find("name/title").gameObject, new List<Component>
-			{
-				artist.Find("name/title").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddInputField(artist.Find("link/inputs/input").GetComponent<InputField>());
 
-			EditorThemeManager.AddInputField(artist.Find("name/input").GetComponent<InputField>(), "Metadata Editor Artist Name", "Input Field");
+			EditorThemeManager.AddDropdown(artist.Find("link/inputs/dropdown").GetComponent<Dropdown>());
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artist Link Title", "Light Text", artist.Find("link/title").gameObject, new List<Component>
-			{
-				artist.Find("link/title").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddInputField(song.Find("title/input").GetComponent<InputField>());
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artlist Link Open", "Function 1", artist.Find("link/inputs/openurl").gameObject, new List<Component>
-			{
-				artist.Find("link/inputs/openurl").GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
+			EditorThemeManager.AddGraphic(creator.Find("cover_art/browse").GetComponent<Image>(), ThemeGroup.Function_2_Normal, true);
+			EditorThemeManager.AddGraphic(creator.Find("cover_art/browse/Text").GetComponent<Text>(), ThemeGroup.Function_2_Text);
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artlist Link Open Sprite", "Function 1 Text", artist.Find("link/inputs/openurl/Image").gameObject, new List<Component>
-			{
-				artist.Find("link/inputs/openurl/Image").GetComponent<Image>(),
-			}));
+			EditorThemeManager.AddInputField(creator.Find("name/input").GetComponent<InputField>());
 
-			EditorThemeManager.AddInputField(artist.Find("link/inputs/input").GetComponent<InputField>(), "Metadata Editor Artist Link", "Input Field");
+			EditorThemeManager.AddGraphic(creator.Find("link/inputs/openurl").GetComponent<Image>(), ThemeGroup.Function_1, true);
+			EditorThemeManager.AddGraphic(creator.Find("link/inputs/openurl/Image").GetComponent<Image>(), ThemeGroup.Function_1_Text);
 
-			EditorThemeManager.AddDropdown(artist.Find("link/inputs/dropdown").GetComponent<Dropdown>(), "Metadata Editor Artist Link Type");
+			EditorThemeManager.AddInputField(creator.Find("link/inputs/input").GetComponent<InputField>());
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Song Name Title", "Light Text", song.Find("title/title").gameObject, new List<Component>
-			{
-				song.Find("title/title").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddDropdown(creator.Find("link/inputs/dropdown").GetComponent<Dropdown>());
 
-			EditorThemeManager.AddInputField(song.Find("title/input").GetComponent<InputField>(), "Metadata Editor Artist Name", "Input Field");
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Song Difficulty Title", "Light Text", song.Find("difficulty/title").gameObject, new List<Component>
-			{
-				song.Find("difficulty/title").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Cover Title", "Light Text", creator.Find("cover_art/title").gameObject, new List<Component>
-			{
-				creator.Find("cover_art/title").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Cover Browse", "Function 2 Normal", creator.Find("cover_art/browse").gameObject, new List<Component>
-			{
-				creator.Find("cover_art/browse").GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Cover Browse Text", "Function 2 Text", creator.Find("cover_art/browse/Text").gameObject, new List<Component>
-			{
-				creator.Find("cover_art/browse/Text").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Cover Title", "Light Text", creator.Find("cover_art/title (1)").gameObject, new List<Component>
-			{
-				creator.Find("cover_art/title (1)").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Name Title", "Light Text", creator.Find("name/title").gameObject, new List<Component>
-			{
-				creator.Find("name/title").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddInputField(creator.Find("name/input").GetComponent<InputField>(), "Metadata Editor Creator Name", "Input Field");
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Link Title", "Light Text", creator.Find("link/title").gameObject, new List<Component>
-			{
-				creator.Find("link/title").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artlist Link Open", "Function 1", creator.Find("link/inputs/openurl").gameObject, new List<Component>
-			{
-				creator.Find("link/inputs/openurl").GetComponent<Image>(),
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Artlist Link Open Sprite", "Function 1 Text", creator.Find("link/inputs/openurl/Image").gameObject, new List<Component>
-			{
-				creator.Find("link/inputs/openurl/Image").GetComponent<Image>(),
-			}));
-
-			EditorThemeManager.AddInputField(creator.Find("link/inputs/input").GetComponent<InputField>(), "Metadata Editor Creator Link", "Input Field");
-
-			EditorThemeManager.AddDropdown(creator.Find("link/inputs/dropdown").GetComponent<Dropdown>(), "Metadata Editor Creator Link Type");
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Description Title", "Light Text", creator.Find("description/Panel/title").gameObject, new List<Component>
-			{
-				creator.Find("description/Panel/title").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddInputField(creator.Find("description/input").GetComponent<InputField>(), "Metadata Editor Creator Description", "Input Field");
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Creator Tags Title", "Light Text", creator.Find("tags/Panel/title").gameObject, new List<Component>
-			{
-				creator.Find("tags/Panel/title").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Agreement", "Light Text", content.Find("agreement/text").gameObject, new List<Component>
-			{
-				content.Find("agreement/text").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor ID", "Light Text", content.Find("id/id").gameObject, new List<Component>
-			{
-				content.Find("id/id").GetComponent<Text>(),
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Metadata Editor Revisions", "Light Text", content.Find("id/revisions").gameObject, new List<Component>
-			{
-				content.Find("id/revisions").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddInputField(creator.Find("description/input").GetComponent<InputField>());
 		}
 
 		static void SetToggleList()
@@ -564,8 +457,15 @@ namespace EditorManagement.Patchers
 			//    content.GetChild(i).gameObject.SetActive(false);
 			//}
 
-			bool hasID = !string.IsNullOrEmpty(moddedMetadata.serverID);
-			content.Find("id/id").GetComponent<Text>().text = hasID ? $"ID: {moddedMetadata.serverID}" : "Upload to get more info!";
+			bool hasID = !string.IsNullOrEmpty(moddedMetadata.ID);
+			content.Find("id/id").GetComponent<Text>().text = hasID ? $"ID: {moddedMetadata.ID} (Click this text to copy)" : "No ID assigned.";
+			var idClickable = content.Find("id").GetComponent<Clickable>() ?? content.Find("id").gameObject.AddComponent<Clickable>();
+			idClickable.onClick = delegate (PointerEventData eventData)
+			{
+				LSText.CopyToClipboard(moddedMetadata.ID);
+				EditorManager.inst.DisplayNotification($"Copied ID: {moddedMetadata.ID} to your clipboard!", 1.5f, EditorManager.NotificationType.Success);
+			};
+
 			content.Find("id/revisions").gameObject.SetActive(hasID);
 			if (hasID)
 				content.Find("id/revisions").GetComponent<Text>().text = "Version: " + DataManager.inst.metaData.beatmap.version_number.ToString();
@@ -787,22 +687,12 @@ namespace EditorManagement.Patchers
 					RenderTags();
 				});
 
-				EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag", "Input Field", gameObject, new List<Component>
-				{
-					gameObject.GetComponent<Image>(),
-				}, true, 1, SpriteManager.RoundedSide.W));
+				EditorThemeManager.ApplyGraphic(gameObject.GetComponent<Image>(), ThemeGroup.Input_Field, true);
 
-				EditorThemeManager.ApplyInputField(input, "Metadata Editor Tag", "Input Field");
+				EditorThemeManager.ApplyInputField(input);
 
-				EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag Delete", "Delete", deleteStorage.gameObject, new List<Component>
-				{
-					deleteStorage.baseImage,
-				}, true, 1, SpriteManager.RoundedSide.W));
-
-				EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag Delete Sprite", "Delete Text", deleteStorage.image.gameObject, new List<Component>
-				{
-					deleteStorage.image,
-				}));
+				EditorThemeManager.ApplyGraphic(deleteStorage.baseImage, ThemeGroup.Delete, true);
+				EditorThemeManager.ApplyGraphic(deleteStorage.image, ThemeGroup.Delete_Text);
 			}
 
 			var add = PrefabEditor.inst.CreatePrefab.Duplicate(content.Find("creator/tags/Scroll View/Viewport/Content"), "Add");
@@ -818,15 +708,8 @@ namespace EditorManagement.Patchers
 				RenderTags();
 			});
 
-			EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag Add", "Add", add, new List<Component>
-			{
-				addButton.image,
-			}, true, 1, SpriteManager.RoundedSide.W));
-
-			EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Metadata Editor Tag Add Text", "Add Text", addText.gameObject, new List<Component>
-			{
-				addText,
-			}));
+			EditorThemeManager.ApplyGraphic(addButton.image, ThemeGroup.Add, true);
+			EditorThemeManager.ApplyGraphic(addText, ThemeGroup.Add_Text);
 		}
 	}
 }
