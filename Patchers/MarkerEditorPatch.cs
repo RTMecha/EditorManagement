@@ -59,6 +59,7 @@ namespace EditorManagement.Patchers
 
 			var dialog = EditorManager.inst.GetDialog("Marker Editor").Dialog;
 
+			Instance.dialog = dialog;
 			Instance.left = dialog.Find("data/left");
 			Instance.right = dialog.Find("data/right");
 
@@ -134,6 +135,20 @@ namespace EditorManagement.Patchers
 			EditorThemeManager.AddSelectable(timeStorage.rightGreaterButton, ThemeGroup.Function_2, false);
 
             time.name = "time";
+
+			if (!EditorPrefabHolder.Instance.Function2Button)
+            {
+				Debug.LogError($"{EditorPlugin.className}No Function 2 button for some reason.");
+				yield break;
+            }
+
+			var makeNote = EditorPrefabHolder.Instance.Function2Button.Duplicate(Instance.left, "convert to note", 8);
+			var makeNoteStorage = makeNote.GetComponent<FunctionButtonStorage>();
+			makeNoteStorage.text.text = "Convert to Planner Note";
+			makeNoteStorage.button.onClick.ClearAll();
+
+			EditorThemeManager.AddSelectable(makeNoteStorage.button, ThemeGroup.Function_2);
+			EditorThemeManager.AddGraphic(makeNoteStorage.text, ThemeGroup.Function_2_Text);
         }
 
 		[HarmonyPatch("Update")]
@@ -256,6 +271,26 @@ namespace EditorManagement.Patchers
 			{
 				time.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 			});
+
+			if (Instance.left.Find("convert to note"))
+            {
+				var button = Instance.left.Find("convert to note").GetComponent<Button>();
+				button.onClick.ClearAll();
+				button.onClick.AddListener(delegate ()
+				{
+					var note = new ProjectPlannerManager.NoteItem();
+					note.Active = true;
+					note.Name = marker.name;
+					note.Color = marker.color;
+					note.Position = new Vector2(Screen.width / 2, Screen.height / 2);
+					note.Text = marker.desc;
+					ProjectPlannerManager.inst.planners.Add(note);
+					ProjectPlannerManager.inst.GenerateNote(note);
+
+					ProjectPlannerManager.inst.SaveNotes();
+				});
+			}
+
 			EditorManager.inst.ShowDialog("Marker Editor");
 			Instance.UpdateMarkerList();
 			Instance.RenderMarkers();
