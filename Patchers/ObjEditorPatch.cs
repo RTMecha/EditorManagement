@@ -865,7 +865,9 @@ namespace EditorManagement.Patchers
 				label.transform.SetSiblingIndex(index);
 
 				Destroy(label.transform.GetChild(1).gameObject);
-				label.transform.GetChild(0).GetComponent<Text>().text = "Render Type";
+				var labelText = label.transform.GetChild(0).GetComponent<Text>();
+				labelText.text = "Render Type";
+				EditorThemeManager.AddLightText(labelText);
 
 				var renderType = objectView.Find("autokill/tod-dropdown").gameObject
 					.Duplicate(objectView, "rendertype", index + 1);
@@ -1136,8 +1138,10 @@ namespace EditorManagement.Patchers
 					applyPrefabText,
 				}));
 
-				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "label", siblingIndex + 1);
-				assignPrefabLabel.transform.GetChild(0).GetComponent<Text>().text = "Assign Object to a Prefab";
+				var assignPrefabLabel = collapseLabel.gameObject.Duplicate(__instance.ObjectView.transform, "assignlabel", siblingIndex + 1);
+				var assignPrefabLabelText = assignPrefabLabel.transform.GetChild(0).GetComponent<Text>();
+				assignPrefabLabelText.text = "Assign Object to a Prefab";
+				EditorThemeManager.AddLightText(assignPrefabLabelText);
                 var assignPrefab = applyPrefab.gameObject.Duplicate(__instance.ObjectView.transform, "assign", siblingIndex + 2);
 				var assignPrefabText = assignPrefab.transform.GetChild(0).GetComponent<Text>();
 				assignPrefabText.text = "Assign";

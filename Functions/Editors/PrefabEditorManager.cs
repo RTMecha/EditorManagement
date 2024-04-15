@@ -1881,18 +1881,20 @@ namespace EditorManagement.Functions.Editors
             {
                 if (RTHelpers.SearchString(beatmapObject.name, PrefabEditor.inst.gridSearch.text))
                 {
-                    var tmpGridObj = PrefabEditor.inst.selectionPrefab.Duplicate(PrefabEditor.inst.gridContent, "grid");
-                    tmpGridObj.transform.Find("text").GetComponent<Text>().text = beatmapObject.name;
-                    int tmpIndex = num;
+                    var selection = PrefabEditor.inst.selectionPrefab.Duplicate(PrefabEditor.inst.gridContent, "grid");
+                    var text = selection.transform.Find("text").GetComponent<Text>();
+                    text.text = beatmapObject.name;
 
                     if (RTEditor.inst.timelineObjects.TryFind(x => x.ID == beatmapObject.id, out TimelineObject timelineObject))
                     {
-                        tmpGridObj.GetComponentAndPerformAction(delegate (Toggle x)
+                        selection.GetComponentAndPerformAction(delegate (Toggle x)
                         {
                             x.NewValueChangedListener(timelineObject.selected, delegate (bool _val)
                             {
                                 timelineObject.selected = _val;
                             });
+
+                            EditorThemeManager.ApplyToggle(x, text: text);
                         });
                     }
                 }
@@ -1943,7 +1945,6 @@ namespace EditorManagement.Functions.Editors
 
             TriggerHelper.AddEventTriggerParams(offsetInput.gameObject, TriggerHelper.ScrollDelta(offsetInput));
 
-            TriggerHelper.IncreaseDecreaseButtons(offsetInput, t: PrefabEditor.inst.dialog.Find("data/offset"));
             PrefabEditor.inst.dialog.Find("data/type/Show Type Editor").GetComponent<Image>().color =
                 DataManager.inst.PrefabTypes[Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, DataManager.inst.PrefabTypes.Count - 1)].Color;
 

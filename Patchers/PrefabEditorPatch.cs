@@ -6,6 +6,7 @@ using HarmonyLib;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
+using RTFunctions.Functions.Managers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -433,7 +434,32 @@ namespace EditorManagement.Patchers
 
             // Object Editor list
 
-            var prefabEditorData = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data");
+            var prefabEditorData = Instance.dialog.Find("data");
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Light_Text, prefabEditorData.Find("title/Panel/icon").gameObject, new List<Component>
+            {
+                prefabEditorData.Find("title/Panel/icon").GetComponent<Image>(),
+            }));
+            EditorThemeManager.AddLightText(prefabEditorData.Find("title/title").GetComponent<Text>());
+            EditorThemeManager.AddLightText(prefabEditorData.Find("name/title").GetComponent<Text>());
+            EditorThemeManager.AddLightText(prefabEditorData.Find("offset/title").GetComponent<Text>());
+            EditorThemeManager.AddLightText(prefabEditorData.Find("type/title").GetComponent<Text>());
+            EditorThemeManager.AddInputField(prefabEditorData.Find("name/input").GetComponent<InputField>());
+
+            Destroy(prefabEditorData.Find("offset/<").gameObject);
+            Destroy(prefabEditorData.Find("offset/>").gameObject);
+
+            var offsetSlider = prefabEditorData.Find("offset/slider").GetComponent<Slider>();
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2, offsetSlider.transform.Find("Background").gameObject, new List<Component>
+            {
+                offsetSlider.transform.Find("Background").GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Slider_2_Handle, offsetSlider.gameObject, new List<Component>
+            {
+                offsetSlider.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
+            EditorThemeManager.AddInputField(prefabEditorData.Find("offset/input").GetComponent<InputField>());
 
             var prefabType = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event")
                 .Duplicate(prefabEditorData.Find("type"), "Show Type Editor");
@@ -441,7 +467,8 @@ namespace EditorManagement.Patchers
             Destroy(prefabEditorData.Find("type/types").gameObject);
 
             ((RectTransform)prefabType.transform).sizeDelta = new Vector2(132f, 34f);
-            prefabType.transform.Find("Text").GetComponent<Text>().text = "Open Prefab Type Editor";
+            var prefabTypeText = prefabType.transform.Find("Text").GetComponent<Text>();
+            prefabTypeText.text = "Open Prefab Type Editor";
             var prefabTypeButton = prefabType.GetComponent<Button>();
             prefabTypeButton.onClick.ClearAll();
             prefabTypeButton.onClick.AddListener(delegate ()
@@ -454,25 +481,67 @@ namespace EditorManagement.Patchers
                             DataManager.inst.PrefabTypes[Mathf.Clamp(PrefabEditor.inst.NewPrefabType, 0, DataManager.inst.PrefabTypes.Count - 1)].Color;
                 });
             });
+            prefabType.AddComponent<ContrastColors>().Init(prefabTypeText, prefabTypeButton.image);
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Null, prefabType, new List<Component>
+            {
+                prefabTypeButton.image,
+            }, true, 1, SpriteManager.RoundedSide.W));
 
             ((RectTransform)prefabEditorData.Find("spacer")).sizeDelta = new Vector2(749f, 32f);
             ((RectTransform)prefabEditorData.Find("type")).sizeDelta = new Vector2(749f,  48f);
 
             var descriptionGO = prefabEditorData.Find("name").gameObject.Duplicate(prefabEditorData, "description", 4);
             ((RectTransform)descriptionGO.transform).sizeDelta = new Vector2(749f, 108f);
-            descriptionGO.transform.Find("title").GetComponent<Text>().text = "Desc";
+            var descriptionTitle = descriptionGO.transform.Find("title").GetComponent<Text>();
+            descriptionTitle.text = "Desc";
+            EditorThemeManager.AddLightText(descriptionTitle);
+            var descriptionInputField = descriptionGO.transform.Find("input").GetComponent<InputField>();
+            ((Text)descriptionInputField.placeholder).alignment = TextAnchor.UpperLeft;
+            ((Text)descriptionInputField.placeholder).text = "Enter description...";
+            EditorThemeManager.AddInputField(descriptionInputField);
 
-            EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection").gameObject.SetActive(true);
-            ((RectTransform)EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection").transform).sizeDelta = new Vector2(749f, 300f);
-            var search = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection/search-box/search").GetComponent<InputField>();
+            var selection = prefabEditorData.Find("selection");
+            selection.gameObject.SetActive(true);
+            selection.AsRT().sizeDelta = new Vector2(749f, 300f);
+            var search = selection.Find("search-box/search").GetComponent<InputField>();
             search.onValueChanged.ClearAll();
             search.onValueChanged.AddListener(delegate (string _val)
             {
                 PrefabEditorManager.inst.ReloadSelectionContent();
             });
-            var selectionGroup = EditorManager.inst.GetDialog("Prefab Editor").Dialog.Find("data/selection/mask/content").GetComponent<GridLayoutGroup>();
+
+            EditorThemeManager.AddInputField(search, ThemeGroup.Search_Field_2);
+            var selectionGroup = selection.Find("mask/content").GetComponent<GridLayoutGroup>();
             selectionGroup.cellSize = new Vector2(172.5f, 32f);
             selectionGroup.constraintCount = 4;
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_3, selection.gameObject, new List<Component>
+            {
+                selection.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Add, Instance.dialog.Find("submit/submit").gameObject, new List<Component>
+            {
+                Instance.dialog.Find("submit/submit").GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Add_Text, Instance.dialog.Find("submit/submit/Text").gameObject, new List<Component>
+            {
+                Instance.dialog.Find("submit/submit/Text").GetComponent<Text>(),
+            }));
+
+            var scrollbar = selection.Find("scrollbar").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_2, scrollbar, new List<Component>
+            {
+                scrollbar.GetComponent<Image>(),
+            }, true, 1, SpriteManager.RoundedSide.W));
+
+            var scrollbarHandle = scrollbar.transform.Find("sliding_area/Handle").gameObject;
+            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_2_Handle, scrollbarHandle, new List<Component>
+            {
+                scrollbarHandle.GetComponent<Image>(),
+                scrollbar.GetComponent<Scrollbar>()
+            }, true, 1, SpriteManager.RoundedSide.W, true));
 
             return false;
         }
