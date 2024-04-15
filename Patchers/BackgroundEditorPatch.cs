@@ -962,37 +962,18 @@ namespace EditorManagement.Patchers
 			rotationSlider.colors = UIManager.SetColorBlock(rotationSlider.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), Color.white, Color.white, Color.white);
             rotationSlider.transform.AsRT().sizeDelta = new Vector2(207f, 32f);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Slider", "Slider", rotationSliderImage.gameObject, new List<Component>
-            {
-                rotationSliderImage,
-            }, true, 1, SpriteManager.RoundedSide.W));
+			EditorThemeManager.AddSlider(rotationSlider, rotationSliderImage);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Slider Handle", "Slider Handle", rotationSlider.handleRect.gameObject, new List<Component>
-            {
-				rotationSlider.handleRect.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            for (int i = 0; i < __instance.left.Find("reactive-ranges").childCount; i++)
+			for (int i = 0; i < __instance.left.Find("reactive-ranges").childCount; i++)
             {
 				var child = __instance.left.Find("reactive-ranges").GetChild(i);
 				var toggle = child.GetComponent<Toggle>();
 				var background = toggle.image;
 				var checkmark = toggle.graphic;
 
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Reactive", "Function 2 Normal", background.gameObject, new List<Component>
-				{
-					background,
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Reactive Checkmark", "Function 2 Highlight", checkmark.gameObject, new List<Component>
-				{
-					checkmark,
-				}));
-
-				EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Reactive Label", "Function 2 Text", child.Find("Label").gameObject, new List<Component>
-				{
-					child.Find("Label").GetComponent<Text>(),
-				}));
+				EditorThemeManager.AddGraphic(background, ThemeGroup.Function_2_Normal, true);
+				EditorThemeManager.AddGraphic(checkmark, ThemeGroup.Function_2_Highlighted);
+				EditorThemeManager.AddGraphic(child.Find("Label").GetComponent<Text>(), ThemeGroup.Function_2_Text);
             }
 
 			EditorThemeManager.AddInputField(__instance.left.Find("reactive/x").GetComponent<InputField>(), "Background Editor Reactive", "Input Field");
@@ -1002,15 +983,7 @@ namespace EditorManagement.Patchers
 			reactiveSlider.colors = UIManager.SetColorBlock(reactiveSlider.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), Color.white, Color.white, Color.white);
 			reactiveSlider.transform.AsRT().sizeDelta = new Vector2(207f, 32f);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Slider", "Slider", reactiveSliderImage.gameObject, new List<Component>
-            {
-                reactiveSliderImage,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Slider Handle", "Slider Handle", reactiveSlider.handleRect.gameObject, new List<Component>
-            {
-				reactiveSlider.handleRect.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
+			EditorThemeManager.AddSlider(reactiveSlider, reactiveSliderImage);
 
             EditorThemeManager.AddInputFields(__instance.left.Find("reactive-position-samples").gameObject, true, "Background Editor Reactive");
 			EditorThemeManager.AddInputFields(__instance.left.Find("reactive-position-intensity").gameObject, true, "Background Editor Reactive");
@@ -1028,20 +1001,9 @@ namespace EditorManagement.Patchers
 			var fadeBackground = fadeToggle.image;
 			var fadeCheckmark = fadeToggle.graphic;
 
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Reactive", "Function 2 Normal", fadeBackground.gameObject, new List<Component>
-			{
-				fadeBackground,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Reactive Checkmark", "Function 2 Highlight", fadeCheckmark.gameObject, new List<Component>
-			{
-				fadeCheckmark,
-			}));
-
-			EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Reactive Label", "Function 2 Text", fade.Find("Label").gameObject, new List<Component>
-			{
-				fade.Find("Label").GetComponent<Text>(),
-			}));
+			EditorThemeManager.AddGraphic(fadeBackground, ThemeGroup.Function_2_Normal, true);
+			EditorThemeManager.AddGraphic(fadeCheckmark, ThemeGroup.Function_2_Highlighted, true);
+			EditorThemeManager.AddGraphic(fade.Find("Label").GetComponent<Text>(), ThemeGroup.Function_2_Text, true);
 
 			// Labels
 			for (int i = 0; i < __instance.left.childCount; i++)
@@ -1052,10 +1014,7 @@ namespace EditorManagement.Patchers
 					for (int j = 0; j < child.childCount; j++)
 					{
 						var labelText = child.GetChild(j).GetComponent<Text>();
-						EditorThemeManager.AddElement(new EditorThemeManager.Element("Background Editor Label", "Light Text", labelText.gameObject, new List<Component>
-						{
-							labelText,
-						}));
+						EditorThemeManager.AddLightText(labelText);
 					}
 				}
 			}
@@ -1103,7 +1062,7 @@ namespace EditorManagement.Patchers
 				if (backgroundObject.name.ToLower().Contains(__instance.sortedName.ToLower()) || string.IsNullOrEmpty(__instance.sortedName))
 				{
 					var gameObject = Instantiate(__instance.backgroundButtonPrefab, Vector3.zero, Quaternion.identity);
-					gameObject.name = backgroundObject.name + "_bg";
+					gameObject.name = backgroundObject.name;
 					gameObject.transform.SetParent(parent);
 					gameObject.transform.localScale = Vector3.one;
 
@@ -1123,25 +1082,10 @@ namespace EditorManagement.Patchers
 						__instance.SetCurrentBackground(bgIndexTmp);
 					});
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, gameObject, new List<Component>
-					{
-						button.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element("Background Panel Image", "", image.gameObject, new List<Component>
-					{
-						image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, name.gameObject, new List<Component>
-					{
-						name,
-					}));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, text.gameObject, new List<Component>
-					{
-						text,
-					}));
+					EditorThemeManager.ApplyGraphic(button.image, ThemeGroup.List_Button_2_Normal, true);
+					EditorThemeManager.ApplyGraphic(image, ThemeGroup.Null, true);
+					EditorThemeManager.ApplyGraphic(name, ThemeGroup.List_Button_2_Text);
+					EditorThemeManager.ApplyGraphic(text, ThemeGroup.List_Button_2_Text);
 				}
 				num++;
 			}

@@ -127,35 +127,11 @@ namespace EditorManagement.Patchers
             var timeStorage = time.GetComponent<InputFieldStorage>();
             EditorThemeManager.AddInputField(timeStorage.inputField);
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftGreaterButton.gameObject, new List<Component>
-            {
-                timeStorage.leftGreaterButton.image,
-                timeStorage.leftGreaterButton,
-            }, isSelectable: true));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftButton.gameObject, new List<Component>
-            {
-                timeStorage.leftButton.image,
-                timeStorage.leftButton,
-            }, isSelectable: true));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.rightButton.gameObject, new List<Component>
-            {
-                timeStorage.rightButton.image,
-                timeStorage.rightButton,
-            }, isSelectable: true));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.middleButton.gameObject, new List<Component>
-            {
-                timeStorage.middleButton.image,
-                timeStorage.middleButton,
-            }, isSelectable: true));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.rightGreaterButton.gameObject, new List<Component>
-            {
-                timeStorage.rightGreaterButton.image,
-                timeStorage.rightGreaterButton,
-            }, isSelectable: true));
+			EditorThemeManager.AddSelectable(timeStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.leftButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.middleButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.rightButton, ThemeGroup.Function_2, false);
+			EditorThemeManager.AddSelectable(timeStorage.rightGreaterButton, ThemeGroup.Function_2, false);
 
             time.name = "time";
         }
@@ -404,25 +380,10 @@ namespace EditorManagement.Patchers
 					
 					TooltipHelper.AddTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, gameObject, new List<Component>
-					{
-						button.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Null, image.gameObject, new List<Component>
-					{
-						image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, name.gameObject, new List<Component>
-					{
-						name,
-					}));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, pos.gameObject, new List<Component>
-					{
-						pos,
-					}));
+					EditorThemeManager.ApplyGraphic(button.image, ThemeGroup.List_Button_2_Normal, true);
+					EditorThemeManager.ApplyGraphic(image, ThemeGroup.Null, true);
+					EditorThemeManager.ApplyGraphic(name, ThemeGroup.List_Button_2_Text);
+					EditorThemeManager.ApplyGraphic(pos, ThemeGroup.List_Button_2_Text);
 				}
 				num++;
 			}

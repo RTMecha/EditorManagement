@@ -3038,9 +3038,11 @@ namespace EditorManagement.Functions.Editors
                     label.transform.SetSiblingIndex(index);
 
                     Destroy(label.transform.GetChild(1).gameObject);
-                    label.transform.GetChild(0).GetComponent<Text>().text = "Unity Explorer";
+                    var labelText = label.transform.GetChild(0).GetComponent<Text>();
+                    labelText.text = "Unity Explorer";
+                    EditorThemeManager.AddLightText(labelText);
 
-                    var inspect = tfv.Find("applyprefab").gameObject.Duplicate(tfv);
+                    var inspect = EditorPrefabHolder.Instance.Function2Button.Duplicate(tfv);
                     inspect.SetActive(true);
                     inspect.transform.SetSiblingIndex(index + 1);
                     inspect.name = "inspectbeatmapobject";
@@ -3048,7 +3050,7 @@ namespace EditorManagement.Functions.Editors
                     var inspectText = inspect.transform.GetChild(0).GetComponent<Text>();
                     inspectText.text = "Inspect BeatmapObject";
 
-                    var inspectGameObject = tfv.Find("applyprefab").gameObject.Duplicate(tfv);
+                    var inspectGameObject = EditorPrefabHolder.Instance.Function2Button.Duplicate(tfv);
                     inspectGameObject.SetActive(true);
                     inspectGameObject.transform.SetSiblingIndex(index + 2);
                     inspectGameObject.name = "inspect";
@@ -3755,7 +3757,7 @@ namespace EditorManagement.Functions.Editors
             left.interactable = selected.Count() == 1 && firstKF.Index != 0;
             left.onClick.AddListener(delegate ()
             {
-                AddCurrentKeyframe(beatmapObject, -1, true);
+                SetCurrentKeyframe(beatmapObject, firstKF.Index - 1, true);
             });
 
             kfdialog.Find("edit/|").GetComponentInChildren<Text>().text = firstKF.Index == 0 ? "S" : firstKF.Index == beatmapObject.events[firstKF.Type].Count - 1 ? "E" : firstKF.Index.ToString();
@@ -3766,7 +3768,7 @@ namespace EditorManagement.Functions.Editors
             right.interactable = selected.Count() == 1 && firstKF.Index < beatmapObject.events[type].Count - 1;
             right.onClick.AddListener(delegate ()
             {
-                AddCurrentKeyframe(beatmapObject, 1, true);
+                SetCurrentKeyframe(beatmapObject, firstKF.Index + 1, true);
             });
 
             var superRight = kfdialog.Find("edit/>>").GetComponent<Button>();
@@ -3775,7 +3777,7 @@ namespace EditorManagement.Functions.Editors
             superRight.interactable = selected.Count() == 1 && firstKF.Index < beatmapObject.events[type].Count - 1;
             superRight.onClick.AddListener(delegate ()
             {
-                AddCurrentKeyframe(beatmapObject, int.MaxValue, true);
+                SetCurrentKeyframe(beatmapObject, beatmapObject.events[type].Count - 1, true);
             });
 
             var copy = kfdialog.Find("edit/copy").GetComponent<Button>();

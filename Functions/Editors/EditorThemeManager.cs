@@ -24,18 +24,10 @@ namespace EditorManagement.Functions.Editors
     /// </summary>
     public class EditorThemeManager
     {
-        public static bool DebugMode { get; set; } = true;
-
         public static void Update()
         {
             if (EditorManager.inst == null && EditorGUIElements.Count > 0)
                 Clear();
-
-            if (EditorManager.inst && DebugMode && !LSHelpers.IsUsingInputField())
-            {
-                if (Input.GetKeyDown(KeyCode.G))
-                    EditorConfig.Instance.EditorTheme.Value = EditorConfig.Instance.EditorTheme.Value == ThemeSetting.Legacy ? ThemeSetting.Dark : ThemeSetting.Legacy;
-            }
         }
 
         public static void Clear() => EditorGUIElements.Clear();
@@ -84,13 +76,14 @@ namespace EditorManagement.Functions.Editors
         {
             element.ApplyTheme(CurrentTheme);
 
-            if (element.GameObject != null)
-            {
-                var id = LSText.randomNumString(16);
-                element.GameObject.AddComponent<EditorThemeElement>().Init(element, id);
-                if (!TemporaryEditorGUIElements.ContainsKey(id))
-                    TemporaryEditorGUIElements.Add(id, element);
-            }
+            if (element.GameObject == null)
+                return;
+
+            var id = LSText.randomNumString(16);
+            element.GameObject.AddComponent<EditorThemeElement>().Init(element, id);
+
+            if (!TemporaryEditorGUIElements.ContainsKey(id))
+                TemporaryEditorGUIElements.Add(id, element);
         }
 
         public static List<Element> EditorGUIElements { get; set; } = new List<Element>();
@@ -334,7 +327,8 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Event_Color_12_Keyframe, LSColors.HexToColorAlpha("B96000FF") }, // 12
                 { ThemeGroup.Event_Color_13_Keyframe, LSColors.HexToColorAlpha("B12411FF") }, // 13
                 { ThemeGroup.Event_Color_14_Keyframe, LSColors.HexToColorAlpha("B12424FF") }, // 14
-                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+
                 { ThemeGroup.Event_Color_1_Editor, LSColors.HexToColorAlpha("564B6AFF") }, // 1
                 { ThemeGroup.Event_Color_2_Editor, LSColors.HexToColorAlpha("41445EFF") }, // 2
                 { ThemeGroup.Event_Color_3_Editor, LSColors.HexToColorAlpha("44627AFF") }, // 3
@@ -404,7 +398,7 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Function_2_Selected, LSColors.HexToColorAlpha("3D3D3DFF") },
                 { ThemeGroup.Function_2_Pressed, LSColors.HexToColorAlpha("AF5D73FF") },
                 { ThemeGroup.Function_2_Disabled, LSColors.HexToColorAlpha("C7C7C780") },
-                { ThemeGroup.Function_2_Text, LSColors.HexToColorAlpha("C6C6C6FF") },
+                { ThemeGroup.Function_2_Text, LSColors.HexToColorAlpha("EFEBEFFF") },
                 { ThemeGroup.Function_3, LSColors.HexToColorAlpha("3D3D3DFF") },
                 { ThemeGroup.Function_3_Text, LSColors.HexToColorAlpha("C6C6C6FF") },
 
@@ -421,7 +415,7 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.List_Button_2_Selected, LSColors.HexToColorAlpha("282828FF") },
                 { ThemeGroup.List_Button_2_Pressed, LSColors.HexToColorAlpha("282828FF") },
                 { ThemeGroup.List_Button_2_Disabled, LSColors.HexToColorAlpha("282828FF") },
-                { ThemeGroup.List_Button_2_Text, LSColors.HexToColorAlpha("323232FF") },
+                { ThemeGroup.List_Button_2_Text, LSColors.HexToColorAlpha("EFEBEFFF") },
 
                 { ThemeGroup.Back_Button, LSColors.HexToColorAlpha("264756FF") },
                 { ThemeGroup.Back_Button_Text, LSColors.HexToColorAlpha("F5F5F5FF") },
@@ -850,7 +844,8 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Event_Color_12_Keyframe, LSColors.HexToColorAlpha("B96000FF") }, // 12
                 { ThemeGroup.Event_Color_13_Keyframe, LSColors.HexToColorAlpha("B12411FF") }, // 13
                 { ThemeGroup.Event_Color_14_Keyframe, LSColors.HexToColorAlpha("B12424FF") }, // 14
-                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+
                 { ThemeGroup.Event_Color_1_Editor, LSColors.HexToColorAlpha("564B6AFF") }, // 1
                 { ThemeGroup.Event_Color_2_Editor, LSColors.HexToColorAlpha("41445EFF") }, // 2
                 { ThemeGroup.Event_Color_3_Editor, LSColors.HexToColorAlpha("44627AFF") }, // 3
@@ -1625,7 +1620,8 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Event_Color_12_Keyframe, LSColors.HexToColorAlpha("B96000FF") }, // 12
                 { ThemeGroup.Event_Color_13_Keyframe, LSColors.HexToColorAlpha("B12411FF") }, // 13
                 { ThemeGroup.Event_Color_14_Keyframe, LSColors.HexToColorAlpha("B12424FF") }, // 14
-                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+
                 { ThemeGroup.Event_Color_1_Editor, LSColors.HexToColorAlpha("564B6AFF") }, // 1
                 { ThemeGroup.Event_Color_2_Editor, LSColors.HexToColorAlpha("41445EFF") }, // 2
                 { ThemeGroup.Event_Color_3_Editor, LSColors.HexToColorAlpha("44627AFF") }, // 3
@@ -1882,7 +1878,8 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Event_Color_12_Keyframe, new Color(0.4f, 1f, 0.5333f, 1f) }, // 12
                 { ThemeGroup.Event_Color_13_Keyframe, new Color(0.2588f, 0.6392f, 0.349f, 1f) }, // 13
                 { ThemeGroup.Event_Color_14_Keyframe, new Color(0.298f, 0.9882f, 0.8824f, 1f) }, // 14
-                { ThemeGroup.Event_Color_15_Keyframe, new Color(0.2667f, 0.4863f, 0.9961f, 1f) }, // 15
+                { ThemeGroup.Event_Color_15_Keyframe, new Color(0.2667f, 0.4863f, 0.9961f, 1f) }, // 15
+
                 { ThemeGroup.Event_Color_1_Editor, LSColors.HexToColorAlpha("41436BFF") }, // 1
                 { ThemeGroup.Event_Color_2_Editor, LSColors.HexToColorAlpha("41436BFF") }, // 2
                 { ThemeGroup.Event_Color_3_Editor, LSColors.HexToColorAlpha("41436BFF") }, // 3
@@ -1951,10 +1948,10 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Function_2_Highlighted, LSColors.HexToColorAlpha("E01D75FF") },
                 { ThemeGroup.Function_2_Selected, LSColors.HexToColorAlpha("E01D75FF") },
                 { ThemeGroup.Function_2_Pressed, LSColors.HexToColorAlpha("E01D75FF") },
-                { ThemeGroup.Function_2_Disabled, LSColors.HexToColorAlpha("C7C7C780") },
+                { ThemeGroup.Function_2_Disabled, LSColors.HexToColorAlpha("54063A80") },
                 { ThemeGroup.Function_2_Text, LSColors.HexToColorAlpha("323232FF") },
-                { ThemeGroup.Function_3, LSColors.HexToColorAlpha("EDE9EDFF") },
-                { ThemeGroup.Function_3_Text, LSColors.HexToColorAlpha("0A0A0AFF") },
+                { ThemeGroup.Function_3, LSColors.HexToColorAlpha("56CDEAFF") },
+                { ThemeGroup.Function_3_Text, LSColors.HexToColorAlpha("E0007BFF") },
 
                 { ThemeGroup.List_Button_1, LSColors.HexToColorAlpha("FFFFFFFF") },
                 { ThemeGroup.List_Button_1_Normal, LSColors.HexToColorAlpha("254368FF") },
@@ -2139,7 +2136,8 @@ namespace EditorManagement.Functions.Editors
                 { ThemeGroup.Event_Color_12_Keyframe, LSColors.HexToColorAlpha("B96000FF") }, // 12
                 { ThemeGroup.Event_Color_13_Keyframe, LSColors.HexToColorAlpha("B12411FF") }, // 13
                 { ThemeGroup.Event_Color_14_Keyframe, LSColors.HexToColorAlpha("B12424FF") }, // 14
-                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+                { ThemeGroup.Event_Color_15_Keyframe, LSColors.HexToColorAlpha("64B4F6FF") }, // 15
+
                 { ThemeGroup.Event_Color_1_Editor, LSColors.HexToColorAlpha("564B6AFF") }, // 1
                 { ThemeGroup.Event_Color_2_Editor, LSColors.HexToColorAlpha("41445EFF") }, // 2
                 { ThemeGroup.Event_Color_3_Editor, LSColors.HexToColorAlpha("44627AFF") }, // 3
@@ -2166,102 +2164,40 @@ namespace EditorManagement.Functions.Editors
 
         public static void AddDropdown(Dropdown dropdown, string name = "")
         {
-            AddElement(new Element(name, "Dropdown 1", dropdown.gameObject, new List<Component>
-            {
-                dropdown.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            AddElement(new Element($"{name} Text", "Dropdown 1 Overlay", dropdown.captionText.gameObject, new List<Component>
-            {
-                dropdown.captionText,
-            }));
-
-            AddElement(new Element($"{name} Arrow", "Dropdown 1 Overlay", dropdown.transform.Find("Arrow").gameObject, new List<Component>
-            {
-                dropdown.transform.Find("Arrow").gameObject.GetComponent<Image>(),
-            }));
-
+            AddGraphic(dropdown.image, ThemeGroup.Dropdown_1, true);
+            AddGraphic(dropdown.captionText, ThemeGroup.Dropdown_1_Overlay);
+            AddGraphic(dropdown.transform.Find("Arrow").GetComponent<Image>(), ThemeGroup.Dropdown_1_Overlay);
             if (dropdown.captionImage)
-                AddElement(new Element($"{name} Preview", "Dropdown 1 Overlay", dropdown.captionImage.gameObject, new List<Component>
-                {
-                    dropdown.captionImage,
-                }));
+                AddGraphic(dropdown.captionImage, ThemeGroup.Dropdown_1_Overlay);
 
-            var template = dropdown.transform.Find("Template").gameObject;
-            AddElement(new Element($"{name} Template", "Dropdown 1", template, new List<Component>
-            {
-                template.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom));
+            var template = dropdown.template.gameObject;
+            AddGraphic(template.GetComponent<Image>(), ThemeGroup.Dropdown_1, true, roundedSide: SpriteManager.RoundedSide.Bottom);
 
             var templateItem = template.transform.Find("Viewport/Content/Item");
-            var templateItemBG = templateItem.Find("Item Background").gameObject;
-            AddElement(new Element($"{name} Template", "Dropdown 1 Item", templateItemBG, new List<Component>
-            {
-                templateItemBG.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var templateItemCheckmark = templateItem.Find("Item Checkmark").gameObject;
-            AddElement(new Element($"{name} Template Checkmark", "Dropdown 1 Overlay", templateItemCheckmark, new List<Component>
-            {
-                templateItemCheckmark.GetComponent<Image>(),
-            }));
-
-            var templateItemLabel = templateItem.Find("Item Label").gameObject;
-            AddElement(new Element($"{name} Template Label", "Dropdown 1 Overlay", templateItemLabel, new List<Component>
-            {
-                templateItemLabel.GetComponent<Text>(),
-            }));
-
+            AddGraphic(templateItem.Find("Item Background").GetComponent<Image>(), ThemeGroup.Dropdown_1_Item, true);
+            AddGraphic(templateItem.Find("Item Checkmark").GetComponent<Image>(), ThemeGroup.Dropdown_1_Overlay);
+            AddGraphic(dropdown.itemText, ThemeGroup.Dropdown_1_Overlay);
+            if (dropdown.itemImage)
+                AddGraphic(dropdown.itemImage, ThemeGroup.Dropdown_1_Overlay);
         }
 
         public static void ApplyDropdown(Dropdown dropdown)
         {
-            ApplyElement(new Element(ThemeGroup.Dropdown_1, dropdown.gameObject, new List<Component>
-            {
-                dropdown.image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, dropdown.captionText.gameObject, new List<Component>
-            {
-                dropdown.captionText,
-            }));
-
-            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, dropdown.transform.Find("Arrow").gameObject, new List<Component>
-            {
-                dropdown.transform.Find("Arrow").gameObject.GetComponent<Image>(),
-            }));
-
+            ApplyGraphic(dropdown.image, ThemeGroup.Dropdown_1, true);
+            ApplyGraphic(dropdown.captionText, ThemeGroup.Dropdown_1_Overlay);
+            ApplyGraphic(dropdown.transform.Find("Arrow").GetComponent<Image>(), ThemeGroup.Dropdown_1_Overlay);
             if (dropdown.captionImage)
-                ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, dropdown.captionImage.gameObject, new List<Component>
-                {
-                    dropdown.captionImage,
-                }));
+                ApplyGraphic(dropdown.captionImage, ThemeGroup.Dropdown_1_Overlay);
 
-            var template = dropdown.transform.Find("Template").gameObject;
-            ApplyElement(new Element(ThemeGroup.Dropdown_1, template, new List<Component>
-            {
-                template.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.Bottom));
+            var template = dropdown.template.gameObject;
+            ApplyGraphic(template.GetComponent<Image>(), ThemeGroup.Dropdown_1, true, roundedSide: SpriteManager.RoundedSide.Bottom);
 
             var templateItem = template.transform.Find("Viewport/Content/Item");
-            var templateItemBG = templateItem.Find("Item Background").gameObject;
-            ApplyElement(new Element(ThemeGroup.Dropdown_1_Item, templateItemBG, new List<Component>
-            {
-                templateItemBG.GetComponent<Image>(),
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            var templateItemCheckmark = templateItem.Find("Item Checkmark").gameObject;
-            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, templateItemCheckmark, new List<Component>
-            {
-                templateItemCheckmark.GetComponent<Image>(),
-            }));
-
-            var templateItemLabel = templateItem.Find("Item Label").gameObject;
-            ApplyElement(new Element(ThemeGroup.Dropdown_1_Overlay, templateItemLabel, new List<Component>
-            {
-                templateItemLabel.GetComponent<Text>(),
-            }));
-
+            ApplyGraphic(templateItem.Find("Item Background").GetComponent<Image>(), ThemeGroup.Dropdown_1_Item, true);
+            ApplyGraphic(templateItem.Find("Item Checkmark").GetComponent<Image>(), ThemeGroup.Dropdown_1_Overlay);
+            ApplyGraphic(dropdown.itemText, ThemeGroup.Dropdown_1_Overlay);
+            if (dropdown.itemImage)
+                ApplyGraphic(dropdown.itemImage, ThemeGroup.Dropdown_1_Overlay);
         }
 
         public static void AddInputField(InputField inputField, string name, string group, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
@@ -2639,6 +2575,74 @@ namespace EditorManagement.Functions.Editors
                 selectable.image,
                 selectable,
             }, canSetRounded, rounded, roundedSide, true));
+        }
+
+        public static void AddGraphic(Graphic graphic, ThemeGroup group, bool canSetRounded = false, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
+        {
+            AddElement(new Element(group, graphic.gameObject, new List<Component>
+            {
+                graphic,
+            }, canSetRounded, rounded, roundedSide));
+        }
+        
+        public static void ApplyGraphic(Graphic graphic, ThemeGroup group, bool canSetRounded = false, int rounded = 1, SpriteManager.RoundedSide roundedSide = SpriteManager.RoundedSide.W)
+        {
+            ApplyElement(new Element(group, graphic.gameObject, new List<Component>
+            {
+                graphic,
+            }, canSetRounded, rounded, roundedSide));
+        }
+
+        public static void AddScrollbar(Scrollbar scrollbar, Image backgroundImage = null, ThemeGroup scrollbarGroup = ThemeGroup.Background_1, ThemeGroup handleGroup = ThemeGroup.Scrollbar_1_Handle,
+            bool canSetScrollbarRounded = true, bool canSetHandleRounded = true, int scrollbarRounded = 1, int handleRounded = 1,
+            SpriteManager.RoundedSide scrollbarRoundedSide = SpriteManager.RoundedSide.W, SpriteManager.RoundedSide handleRoundedSide = SpriteManager.RoundedSide.W)
+        {
+            AddGraphic(backgroundImage ?? scrollbar.GetComponent<Image>(), scrollbarGroup, canSetScrollbarRounded, scrollbarRounded, scrollbarRoundedSide);
+
+            AddElement(new Element(handleGroup, scrollbar.image.gameObject, new List<Component>
+            {
+                scrollbar.image,
+                scrollbar
+            }, canSetHandleRounded, handleRounded, handleRoundedSide, true));
+        }
+        
+        public static void ApplyScrollbar(Scrollbar scrollbar, Image backgroundImage = null, ThemeGroup scrollbarGroup = ThemeGroup.Background_1, ThemeGroup handleGroup = ThemeGroup.Scrollbar_1_Handle,
+            bool canSetScrollbarRounded = true, bool canSetHandleRounded = true, int scrollbarRounded = 1, int handleRounded = 1,
+            SpriteManager.RoundedSide scrollbarRoundedSide = SpriteManager.RoundedSide.W, SpriteManager.RoundedSide handleRoundedSide = SpriteManager.RoundedSide.W)
+        {
+            ApplyGraphic(backgroundImage ?? scrollbar.GetComponent<Image>(), scrollbarGroup, canSetScrollbarRounded, scrollbarRounded, scrollbarRoundedSide);
+
+            ApplyElement(new Element(handleGroup, scrollbar.image.gameObject, new List<Component>
+            {
+                scrollbar.image,
+                scrollbar
+            }, canSetHandleRounded, handleRounded, handleRoundedSide, true));
+        }
+        
+        public static void AddSlider(Slider slider, Image backgroundImage = null, ThemeGroup sliderGroup = ThemeGroup.Slider_2, ThemeGroup handleGroup = ThemeGroup.Slider_2_Handle,
+            bool canSetSliderRounded = true, bool canSetHandleRounded = true, int sliderRounded = 1, int handleRounded = 1,
+            SpriteManager.RoundedSide sliderRoundedSide = SpriteManager.RoundedSide.W, SpriteManager.RoundedSide handleRoundedSide = SpriteManager.RoundedSide.W, bool selectable = false)
+        {
+            AddGraphic(backgroundImage ?? slider.GetComponent<Image>(), sliderGroup, canSetSliderRounded, sliderRounded, sliderRoundedSide);
+
+            AddElement(new Element(handleGroup, slider.image.gameObject, new List<Component>
+            {
+                slider.image,
+                slider
+            }, canSetHandleRounded, handleRounded, handleRoundedSide, selectable));
+        }
+
+        public static void ApplySlider(Slider slider, Image backgroundImage = null, ThemeGroup sliderGroup = ThemeGroup.Slider_2, ThemeGroup handleGroup = ThemeGroup.Slider_2_Handle,
+            bool canSetSliderRounded = true, bool canSetHandleRounded = true, int sliderRounded = 1, int handleRounded = 1,
+            SpriteManager.RoundedSide sliderRoundedSide = SpriteManager.RoundedSide.W, SpriteManager.RoundedSide handleRoundedSide = SpriteManager.RoundedSide.W, bool selectable = false)
+        {
+            ApplyGraphic(backgroundImage ?? slider.GetComponent<Image>(), sliderGroup, canSetSliderRounded, sliderRounded, sliderRoundedSide);
+
+            ApplyElement(new Element(handleGroup, slider.image.gameObject, new List<Component>
+            {
+                slider.image,
+                slider
+            }, canSetHandleRounded, handleRounded, handleRoundedSide, selectable));
         }
 
         public class EditorTheme

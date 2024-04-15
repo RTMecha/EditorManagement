@@ -214,29 +214,26 @@ namespace EditorManagement.Patchers
 			Debug.Log($"{Instance.className}Deleting checkpoint at [{__0}] index.");
 			DataManager.inst.gameData.beatmapData.checkpoints.RemoveAt(__0);
 			if (DataManager.inst.gameData.beatmapData.checkpoints.Count > 0)
-			{
 				Instance.SetCurrentCheckpoint(Mathf.Clamp(Instance.currentObj - 1, 0, DataManager.inst.gameData.beatmapData.checkpoints.Count - 1));
-			}
 
-			if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
-            {
-				if (CheckpointEditor.inst.checkpoints.Count > 0)
-				{
-					foreach (var obj2 in CheckpointEditor.inst.checkpoints)
-						Destroy(obj2);
-
-					CheckpointEditor.inst.checkpoints.Clear();
-				}
-
-				CheckpointEditor.inst.CreateGhostCheckpoints();
-			}
-			else
-            {
+			if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
+			{
 				CheckpointEditor.inst.CreateCheckpoints();
+				return false;
 			}
+
+			if (CheckpointEditor.inst.checkpoints.Count > 0)
+			{
+				foreach (var obj2 in CheckpointEditor.inst.checkpoints)
+					Destroy(obj2);
+
+				CheckpointEditor.inst.checkpoints.Clear();
+			}
+
+			CheckpointEditor.inst.CreateGhostCheckpoints();
 
 			return false;
-        }
+		}
 
 		[HarmonyPatch("RenderCheckpoint")]
 		[HarmonyPrefix]
@@ -304,7 +301,6 @@ namespace EditorManagement.Patchers
 
 					name.text = checkpoint.name;
 					time.text = FontManager.TextTranslater.SecondsToTime(checkpoint.time);
-					//time.text = checkpoint.time.ToString("F2") + "s";
 					selected.enabled = num == __1;
 					
 					var button = gameObject.GetComponent<Button>();
@@ -314,25 +310,10 @@ namespace EditorManagement.Patchers
 						Instance.SetCurrentCheckpoint(index);
 					});
 
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Normal, gameObject, new List<Component>
-					{
-						button.image,
-					}, true, 1, SpriteManager.RoundedSide.W));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, selected.gameObject, new List<Component>
-					{
-						selected,
-					}));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, name.gameObject, new List<Component>
-					{
-						name,
-					}));
-
-					EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_2_Text, time.gameObject, new List<Component>
-					{
-						time,
-					}));
+					EditorThemeManager.ApplyGraphic(button.image, ThemeGroup.List_Button_2_Normal, true);
+					EditorThemeManager.ApplyGraphic(selected, ThemeGroup.List_Button_2_Text);
+					EditorThemeManager.ApplyGraphic(name, ThemeGroup.List_Button_2_Text);
+					EditorThemeManager.ApplyGraphic(time, ThemeGroup.List_Button_2_Text);
 				}
 				num++;
 			}

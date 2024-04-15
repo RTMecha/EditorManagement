@@ -92,221 +92,110 @@ namespace EditorManagement.Patchers
             }
 
             // Editor Theme Setup
-            try
+            EditorThemeManager.AddGraphic(EditorManager.inst.timeline.transform.parent.Find("Panel 2").GetComponent<Image>(), ThemeGroup.Timeline_Background);
+
+            var openFilePopup = __instance.GetDialog("Open File Popup").Dialog.gameObject;
+            EditorThemeManager.AddGraphic(openFilePopup.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
+
+            var openFilePopupPanel = openFilePopup.transform.Find("Panel").gameObject;
+            EditorThemeManager.AddGraphic(openFilePopupPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
+
+            var openFilePopupClose = openFilePopupPanel.transform.Find("x").gameObject;
+            EditorThemeManager.AddSelectable(openFilePopupClose.GetComponent<Button>(), ThemeGroup.Close);
+                
+            EditorThemeManager.AddGraphic(openFilePopupClose.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+
+            EditorThemeManager.AddLightText(openFilePopupPanel.transform.Find("Text").GetComponent<Text>());
+
+            EditorThemeManager.AddScrollbar(openFilePopup.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
+
+            EditorThemeManager.AddInputField(openFilePopup.transform.Find("search-box/search").GetComponent<InputField>(), "Open File Popup Search", "Search Field 1", 1, SpriteManager.RoundedSide.Bottom);
+
+            EditorThemeManager.AddGraphic(EditorManager.inst.dialogs.GetComponent<Image>(), ThemeGroup.Background_1);
+
+            var titleBar = EditorManager.inst.GUIMain.transform.Find("TitleBar").gameObject;
+            EditorThemeManager.AddGraphic(titleBar.GetComponent<Image>(), ThemeGroup.Background_1);
+
+            for (int i = 0; i < titleBar.transform.childCount; i++)
             {
-                var timelineBackground = EditorManager.inst.timeline.transform.parent.Find("Panel 2").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Timeline Background", "Timeline Background", timelineBackground, new List<Component>
-                {
-                    timelineBackground.GetComponent<Image>(),
-                }));
+                var child = titleBar.transform.GetChild(i).gameObject;
+                EditorThemeManager.AddSelectable(child.GetComponent<Button>(), ThemeGroup.Title_Bar_Button, false);
 
-                var openFilePopup = __instance.GetDialog("Open File Popup").Dialog.gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup", "Background", openFilePopup, new List<Component>
-                {
-                    openFilePopup.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom_Left_I));
+                var text = child.transform.GetChild(0).gameObject;
+                EditorThemeManager.AddGraphic(child.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Title_Bar_Text);
 
-                var openFilePopupPanel = openFilePopup.transform.Find("Panel").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Panel", "Background", openFilePopupPanel, new List<Component>
+                if (child.transform.childCount > 1)
                 {
-                    openFilePopupPanel.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Top));
+                    var dropdownBase = child.transform.GetChild(1).gameObject;
 
-                var openFilePopupClose = openFilePopupPanel.transform.Find("x").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close", "Close", openFilePopupClose, new List<Component>
-                {
-                    openFilePopupClose.GetComponent<Image>(),
-                    openFilePopupClose.GetComponent<Button>(),
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-                
-                var openFilePopupCloseX = openFilePopupClose.transform.GetChild(0).gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", openFilePopupCloseX, new List<Component>
-                {
-                    openFilePopupCloseX.GetComponent<Image>(),
-                }));
-                
-                var openFilePopupTitle = openFilePopupPanel.transform.Find("Text").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Title", "Light Text", openFilePopupTitle, new List<Component>
-                {
-                    openFilePopupTitle.GetComponent<Text>(),
-                }));
+                    dropdownBase.AddComponent<Mask>();
 
-                var openFilePopupScrollbar = openFilePopup.transform.Find("Scrollbar").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar", "Background", openFilePopupScrollbar, new List<Component>
-                {
-                    openFilePopupScrollbar.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
+                    EditorThemeManager.AddGraphic(dropdownBase.GetComponent<Image>(), ThemeGroup.Title_Bar_Dropdown_Normal, true, roundedSide: SpriteManager.RoundedSide.Bottom);
 
-                var openFilePopupScrollbarHandle = openFilePopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Scrollbar Handle", "Scrollbar Handle", openFilePopupScrollbarHandle, new List<Component>
-                {
-                    openFilePopupScrollbarHandle.GetComponent<Image>(),
-                    openFilePopupScrollbar.GetComponent<Scrollbar>()
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                EditorThemeManager.AddInputField(openFilePopup.transform.Find("search-box/search").GetComponent<InputField>(), "Open File Popup Search", "Search Field 1", 1, SpriteManager.RoundedSide.Bottom);
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Editor Dialog", "Background", EditorManager.inst.dialogs.gameObject, new List<Component>
-                {
-                    EditorManager.inst.dialogs.GetComponent<Image>(),
-                }));
-
-                var titleBar = EditorManager.inst.GUIMain.transform.Find("TitleBar").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Title Bar Base", "Background", titleBar, new List<Component>
-                {
-                    titleBar.GetComponent<Image>(),
-                }));
-
-                for (int i = 0; i < titleBar.transform.childCount; i++)
-                {
-                    var child = titleBar.transform.GetChild(i).gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name}", "Title Bar Button", child, new List<Component>
+                    for (int j = 0; j < dropdownBase.transform.childCount; j++)
                     {
-                        child.GetComponent<Image>(),
-                        child.GetComponent<Button>(),
-                    }, isSelectable: true));
+                        var childB = dropdownBase.transform.GetChild(j).gameObject;
+                        EditorThemeManager.AddSelectable(childB.GetComponent<Button>(), ThemeGroup.Title_Bar_Dropdown, false);
 
-                    var text = child.transform.GetChild(0).gameObject;
-                    EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} Text", "Title Bar Text", text, new List<Component>
-                    {
-                        text.GetComponent<Text>(),
-                    }));
+                        var text2 = childB.transform.GetChild(0).gameObject;
+                        EditorThemeManager.AddGraphic(childB.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Title_Bar_Text);
 
-                    if (child.transform.childCount > 1)
-                    {
-                        var dropdownBase = child.transform.GetChild(1).gameObject;
-
-                        dropdownBase.AddComponent<Mask>();
-
-                        EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} Dropdown", "Title Bar Dropdown Normal", dropdownBase, new List<Component>
-                        {
-                            dropdownBase.GetComponent<Image>(),
-                        }, true, 1, SpriteManager.RoundedSide.Bottom));
-
-                        for (int j = 0; j < dropdownBase.transform.childCount; j++)
-                        {
-                            var childB = dropdownBase.transform.GetChild(j).gameObject;
-                            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} - {childB.name}", "Title Bar Dropdown", childB, new List<Component>
-                            {
-                                childB.GetComponent<Image>(),
-                                childB.GetComponent<Button>(),
-                            }, isSelectable: true));
-
-                            var text2 = childB.transform.GetChild(0).gameObject;
-                            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} - {childB.name} Text", "Title Bar Text", text2, new List<Component>
-                            {
-                                text2.GetComponent<Text>(),
-                            }));
-
-                            var image = childB.transform.Find("Image").gameObject;
-                            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Title Bar {child.name} - {childB.name} Image", "Title Bar Text", image, new List<Component>
-                            {
-                                image.GetComponent<Image>(),
-                            }));
-                        }
+                        var image = childB.transform.Find("Image").gameObject;
+                        EditorThemeManager.AddGraphic(childB.transform.Find("Image").GetComponent<Image>(), ThemeGroup.Title_Bar_Text);
                     }
                 }
-
-                var saveAsPopup = __instance.GetDialog("Save As Popup").Dialog.GetChild(0).gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup", "Background", saveAsPopup, new List<Component>
-                {
-                    saveAsPopup.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                var saveAsPopupPanel = saveAsPopup.transform.Find("Panel").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Panel", "Background", saveAsPopupPanel, new List<Component>
-                {
-                    saveAsPopupPanel.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Top));
-
-                var saveAsPopupClose = saveAsPopupPanel.transform.Find("x").gameObject;
-                Destroy(saveAsPopupClose.GetComponent<Animator>());
-                var saveAsPopupCloseButton = saveAsPopupClose.GetComponent<Button>();
-                saveAsPopupCloseButton.transition = Selectable.Transition.ColorTint;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Close", "Close", saveAsPopupClose, new List<Component>
-                {
-                    saveAsPopupClose.GetComponent<Image>(),
-                    saveAsPopupCloseButton,
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                var saveAsPopupCloseX = saveAsPopupClose.transform.GetChild(0).gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Close X", "Close X", saveAsPopupCloseX, new List<Component>
-                {
-                    saveAsPopupCloseX.GetComponent<Image>(),
-                }));
-
-                EditorThemeManager.AddLightText(saveAsPopupPanel.transform.Find("Text").GetComponent<Text>());
-                EditorThemeManager.AddLightText(saveAsPopup.transform.Find("Level Name").GetComponent<Text>());
-
-                EditorThemeManager.AddInputField(saveAsPopup.transform.Find("level-name").GetComponent<InputField>(), ThemeGroup.Input_Field);
-
-                var create = saveAsPopup.transform.Find("submit").gameObject;
-                Destroy(create.GetComponent<Animator>());
-                create.GetComponent<Button>().transition = Selectable.Transition.ColorTint;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Create", "Add", create, new List<Component>
-                {
-                    create.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                var createText = create.transform.Find("text").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Save As Popup Create Text", "Add Text", createText, new List<Component>
-                {
-                    createText.GetComponent<Text>(),
-                }));
-
-                var fileInfoPopup = __instance.GetDialog("File Info Popup").Dialog.gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("File Info Popup", "Background", fileInfoPopup, new List<Component>
-                {
-                    fileInfoPopup.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                EditorThemeManager.AddLightText(fileInfoPopup.transform.Find("title").GetComponent<Text>());
-
-                EditorThemeManager.AddLightText(fileInfoPopup.transform.Find("text").GetComponent<Text>());
-
-                var parentSelectorPopup = EditorManager.inst.GetDialog("Parent Selector").Dialog;
-
-                EditorThemeManager.AddElement(new EditorThemeManager.Element("Parent Selector Popup", "Background", parentSelectorPopup.gameObject, new List<Component>
-                {
-                    parentSelectorPopup.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.W));
-
-                var parentSelectorPopupPanel = parentSelectorPopup.transform.Find("Panel").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, parentSelectorPopupPanel, new List<Component>
-                {
-                    parentSelectorPopupPanel.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Top));
-
-                EditorThemeManager.AddSelectable(parentSelectorPopupPanel.transform.Find("x").GetComponent<Button>(), ThemeGroup.Close);
-
-                var parentSelectorPopupCloseX = parentSelectorPopupPanel.transform.Find("x").GetChild(0).gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Close_X, parentSelectorPopupCloseX, new List<Component>
-                {
-                    parentSelectorPopupCloseX.GetComponent<Image>(),
-                }));
-
-                EditorThemeManager.AddLightText(parentSelectorPopupPanel.transform.Find("Text").GetComponent<Text>());
-
-                var parentSelectorPopupScrollbar = parentSelectorPopup.transform.Find("Scrollbar").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, parentSelectorPopupScrollbar, new List<Component>
-                {
-                    parentSelectorPopupScrollbar.GetComponent<Image>(),
-                }, true, 1, SpriteManager.RoundedSide.Bottom_Right_I));
-
-                var parentSelectorPopupScrollbarHandle = parentSelectorPopupScrollbar.transform.Find("Sliding Area/Handle").gameObject;
-                EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Scrollbar_1_Handle, parentSelectorPopupScrollbarHandle, new List<Component>
-                {
-                    parentSelectorPopupScrollbarHandle.GetComponent<Image>(),
-                    parentSelectorPopupScrollbar.GetComponent<Scrollbar>()
-                }, true, 1, SpriteManager.RoundedSide.W, true));
-
-                EditorThemeManager.AddInputField(parentSelectorPopup.transform.Find("search-box/search").GetComponent<InputField>(), ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
-
             }
-            catch (Exception ex)
-            {
-                Debug.LogError($"{EditorPlugin.className}Failed to setup Editor Theme elements.\nException: {ex}");
-            }
+
+            var saveAsPopup = __instance.GetDialog("Save As Popup").Dialog.GetChild(0).gameObject;
+            EditorThemeManager.AddGraphic(saveAsPopup.GetComponent<Image>(), ThemeGroup.Background_1, true);
+
+            var saveAsPopupPanel = saveAsPopup.transform.Find("Panel").gameObject;
+            EditorThemeManager.AddGraphic(saveAsPopupPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
+
+            var saveAsPopupClose = saveAsPopupPanel.transform.Find("x").gameObject;
+            Destroy(saveAsPopupClose.GetComponent<Animator>());
+            var saveAsPopupCloseButton = saveAsPopupClose.GetComponent<Button>();
+            saveAsPopupCloseButton.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddSelectable(saveAsPopupCloseButton, ThemeGroup.Close);
+
+            EditorThemeManager.AddGraphic(saveAsPopupClose.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+
+            EditorThemeManager.AddLightText(saveAsPopupPanel.transform.Find("Text").GetComponent<Text>());
+            EditorThemeManager.AddLightText(saveAsPopup.transform.Find("Level Name").GetComponent<Text>());
+
+            EditorThemeManager.AddInputField(saveAsPopup.transform.Find("level-name").GetComponent<InputField>(), ThemeGroup.Input_Field);
+
+            var create = saveAsPopup.transform.Find("submit").GetComponent<Button>();
+            Destroy(create.GetComponent<Animator>());
+            create.transition = Selectable.Transition.ColorTint;
+            EditorThemeManager.AddGraphic(create.image, ThemeGroup.Add, true);
+
+            var createText = create.transform.Find("text").gameObject;
+            EditorThemeManager.AddGraphic(create.transform.Find("text").GetComponent<Text>(), ThemeGroup.Add_Text);
+
+            var fileInfoPopup = __instance.GetDialog("File Info Popup").Dialog.gameObject;
+            EditorThemeManager.AddGraphic(fileInfoPopup.GetComponent<Image>(), ThemeGroup.Background_1, true);
+
+            EditorThemeManager.AddLightText(fileInfoPopup.transform.Find("title").GetComponent<Text>());
+
+            EditorThemeManager.AddLightText(fileInfoPopup.transform.Find("text").GetComponent<Text>());
+
+            var parentSelectorPopup = EditorManager.inst.GetDialog("Parent Selector").Dialog;
+            EditorThemeManager.AddGraphic(parentSelectorPopup.GetComponent<Image>(), ThemeGroup.Background_1, true);
+
+            var parentSelectorPopupPanel = parentSelectorPopup.transform.Find("Panel").gameObject;
+            EditorThemeManager.AddGraphic(parentSelectorPopupPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
+
+            EditorThemeManager.AddSelectable(parentSelectorPopupPanel.transform.Find("x").GetComponent<Button>(), ThemeGroup.Close);
+
+            var parentSelectorPopupCloseX = parentSelectorPopupPanel.transform.Find("x").GetChild(0).gameObject;
+            EditorThemeManager.AddGraphic(parentSelectorPopupPanel.transform.Find("x").GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+
+            EditorThemeManager.AddLightText(parentSelectorPopupPanel.transform.Find("Text").GetComponent<Text>());
+
+            EditorThemeManager.AddScrollbar(parentSelectorPopup.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
+
+            EditorThemeManager.AddInputField(parentSelectorPopup.transform.Find("search-box/search").GetComponent<InputField>(), ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
 
             __instance.hasLoadedLevel = false;
             __instance.loading = false;
@@ -429,6 +318,15 @@ namespace EditorManagement.Patchers
                         Instance.SetPlayersInvinsible(true);
                         Instance.SetEditRenderArea();
                         GameManager.inst.UpdateTimeline();
+
+                        if (EditorConfig.Instance.ResetHealthInEditor.Value && InputDataManager.inst.players.Count > 0)
+                        {
+                            foreach (var player in PlayerManager.Players)
+                            {
+                                if (player.PlayerModel != null && player.PlayerModel.basePart != null)
+                                    player.Health = player.PlayerModel.basePart.health;
+                            }
+                        }
                     }
                     else if (Instance.ClosedEditor)
                     {
@@ -438,6 +336,8 @@ namespace EditorManagement.Patchers
                         AudioManager.inst.CurrentAudioSource.Play();
                         Instance.SetNormalRenderArea();
                         GameManager.inst.UpdateTimeline();
+
+                        EventSystem.current.SetSelectedGameObject(null);
                     }
 
                     Instance.updatePointer();
