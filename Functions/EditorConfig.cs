@@ -30,6 +30,7 @@ namespace EditorManagement.Functions
 
             Debug = Config.Bind("General", "Debug", false, "If enabled, specific debugging functions for the editor will be enabled.");
             EditorZenMode = Config.Bind("General", "Editor Zen Mode", false, "If on, the player will not take damage in Preview Mode.");
+            ResetHealthInEditor = Config.Bind("General", "Reset Health In Editor View", true, "If on, the player's health will reset when the creator exits Preview Mode.");
             BPMSnapsKeyframes = Config.Bind("General", "BPM Snaps Keyframes", false, "Makes object's keyframes snap if Snap BPM is enabled.");
             BPMSnapDivisions = Config.Bind("General", "BPM Snap Divisions", 4f, "How many times the snap is divided into. Can be good for songs that don't do 4 divisions.");
             DraggingPlaysSound = Config.Bind("General", "Dragging Plays Sound", true, "If dragging an object plays a sound.");
@@ -116,6 +117,7 @@ namespace EditorManagement.Functions
             NotificationDirection = Config.Bind("Editor GUI", "Notification Direction", Direction.Down, "Direction the notifications popup from.");
             NotificationsDisplay = Config.Bind("Editor GUI", "Notifications Display", true, "If the notifications should display. Does not include the help box.");
             AdjustPositionInputs = Config.Bind("Editor GUI", "Adjust Position Inputs", true, "If position keyframe input fields should be adjusted so they're in a proper row rather than having Z Axis below X Axis without a label. Drawback with doing this is it makes the fields smaller than normal.");
+            ShowDropdownOnHover = Config.Bind("Editor GUI", "Show Dropdowns on Hover", false, "If your mouse enters a dropdown bar, it will automatically show the dropdown list.");
             HideVisualElementsWhenObjectIsEmpty = Config.Bind("Editor GUI", "Hide Visual Elements When Object Is Empty", true, "If the Beatmap Object is empty, anything related to the visuals of the object doesn't show.");
             OpenLevelPosition = Config.Bind("Editor GUI", "Open Level Position", Vector2.zero, "The position of the Open Level popup.");
             OpenLevelScale = Config.Bind("Editor GUI", "Open Level Scale", new Vector2(600f, 400f), "The size of the Open Level popup.");
@@ -1134,6 +1136,7 @@ namespace EditorManagement.Functions
 
         public ConfigEntry<bool> Debug { get; set; }
         public ConfigEntry<bool> EditorZenMode { get; set; }
+        public ConfigEntry<bool> ResetHealthInEditor { get; set; }
         public ConfigEntry<bool> BPMSnapsKeyframes { get; set; }
         public ConfigEntry<float> BPMSnapDivisions { get; set; }
         public ConfigEntry<bool> DraggingPlaysSound { get; set; }
@@ -1220,6 +1223,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Direction> NotificationDirection { get; set; }
         public ConfigEntry<bool> NotificationsDisplay { get; set; }
         public ConfigEntry<bool> AdjustPositionInputs { get; set; }
+        public ConfigEntry<bool> ShowDropdownOnHover { get; set; }
         public ConfigEntry<bool> HideVisualElementsWhenObjectIsEmpty { get; set; }
         public ConfigEntry<Vector2> OpenLevelPosition { get; set; }
         public ConfigEntry<Vector2> OpenLevelScale { get; set; }
