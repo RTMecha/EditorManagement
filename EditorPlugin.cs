@@ -24,7 +24,7 @@ using RTFunctions.Functions.Data;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.0")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.1")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -521,6 +521,22 @@ namespace EditorManagement
 			return false;
 		}
 	}
+
+	[HarmonyPatch(typeof(DropdownHovered))]
+	public class DropdownHoveredPatch
+    {
+		[HarmonyPatch("OnPointerEnter")]
+		[HarmonyPrefix]
+		static bool OnPointerEnterPrefix(DropdownHovered __instance, PointerEventData __0)
+        {
+			var dropdown = __instance.GetComponent<Dropdown>();
+			if (!dropdown || !EditorConfig.Instance.ShowDropdownOnHover.Value)
+				return false;
+
+			dropdown.Show();
+			return false;
+        }
+    }
 
 	[HarmonyPatch(typeof(LSFunctions.LSHelpers))]
 	public class LSHelpersPatch
