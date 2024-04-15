@@ -1,3 +1,8 @@
+2.5.1 > [Apr 15, 2024]
+- Removed debug feature with editor themes.
+- Applied a few UI elements that I forgot to do to editor themes.
+- Added a config for resetting health when exitting back to the editor from preview mode.
+- Added a config for showing dropdowns on mouse hover.
 2.5.0 > [Apr 14, 2024] (jeez this update is massive)
 - Added Editor Themes. Currently includes Legacy, Dark, Light, Vision, Butter, Arrhythmia, Modern and Beats!
 - The editor now has a toggleable option for rounded corners!
