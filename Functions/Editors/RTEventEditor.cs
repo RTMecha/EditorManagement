@@ -1090,7 +1090,7 @@ namespace EditorManagement.Functions.Editors
 
                 Destroy(button.GetComponent<Animator>());
                 buttonComponent.transition = Selectable.Transition.ColorTint;
-                EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2);
+                EditorThemeManager.AddSelectable(buttonComponent, ThemeGroup.Function_2, false);
             }
 
             EditorThemeManager.AddDropdown(easing);
