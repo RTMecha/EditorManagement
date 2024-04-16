@@ -1,15 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿
+using EditorManagement.Functions.Editors;
+using RTFunctions.Functions;
 using UnityEngine;
 using UnityEngine.UI;
-
-using RTFunctions.Functions;
-using RTFunctions.Functions.Data;
-
-using EditorManagement.Functions.Editors;
 
 namespace EditorManagement.Functions.Helpers
 {

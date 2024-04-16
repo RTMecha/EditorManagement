@@ -16,12 +16,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
 using BaseEventKeyframe = DataManager.GameData.EventKeyframe;
 using BasePrefab = DataManager.GameData.Prefab;
 using ObjectType = RTFunctions.Functions.Data.BeatmapObject.ObjectType;
@@ -269,7 +267,7 @@ namespace EditorManagement.Functions.Editors
             {
                 yield break;
             }
-            
+
             if (prefabObjectIDs.Count > 0)
                 list.Where(x => x.IsPrefabObject)
                     .Select(x => x.GetData<PrefabObject>()).ToList()
@@ -1450,7 +1448,7 @@ namespace EditorManagement.Functions.Editors
 
                 string nullName = "";
 
-                var image =  timelineObject.Image;
+                var image = timelineObject.Image;
 
                 var color = ObjEditor.inst.NormalColor;
 
@@ -2815,7 +2813,7 @@ namespace EditorManagement.Functions.Editors
 
                 num++;
             }
-            
+
             if (beatmapObject.shape != 4 && beatmapObject.shape != 6)
             {
                 num = 0;
@@ -3072,7 +3070,7 @@ namespace EditorManagement.Functions.Editors
                         inspectGameObjectText,
                     }));
                 }
-                
+
                 if (tfv.Find("inspect"))
                 {
                     bool active = Updater.TryGetObject(beatmapObject, out RTFunctions.Functions.Optimization.Objects.LevelObject levelObject);
@@ -4154,8 +4152,8 @@ namespace EditorManagement.Functions.Editors
                                 foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
                                     keyframe.eventValues[1] = Mathf.Clamp(-n + 1, 0f, 1f);
 
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
+                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                if (UpdateObjects)
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
@@ -4170,8 +4168,8 @@ namespace EditorManagement.Functions.Editors
                         collision.onValueChanged.AddListener(delegate (bool _val)
                         {
                             beatmapObject.opacityCollision = _val;
-                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                if (UpdateObjects)
+                            // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                            if (UpdateObjects)
                                 Updater.UpdateProcessor(beatmapObject);
                         });
 
@@ -4185,8 +4183,8 @@ namespace EditorManagement.Functions.Editors
                             {
                                 firstKF.GetData<EventKeyframe>().eventValues[2] = n;
 
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
+                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                if (UpdateObjects)
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
@@ -4206,8 +4204,8 @@ namespace EditorManagement.Functions.Editors
                             {
                                 firstKF.GetData<EventKeyframe>().eventValues[3] = n;
 
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
+                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                if (UpdateObjects)
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
@@ -4225,8 +4223,8 @@ namespace EditorManagement.Functions.Editors
                             {
                                 firstKF.GetData<EventKeyframe>().eventValues[4] = n;
 
-                                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                                    if (UpdateObjects)
+                                // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                                if (UpdateObjects)
                                     Updater.UpdateProcessor(beatmapObject, "Keyframes");
                             }
                         });
@@ -4392,8 +4390,8 @@ namespace EditorManagement.Functions.Editors
                     foreach (var keyframe in selected.Select(x => x.GetData<EventKeyframe>()))
                         keyframe.relative = _val;
 
-                        // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
-                        if (UpdateObjects)
+                    // Since keyframe value has no affect on the timeline object, we will only need to update the physical object.
+                    if (UpdateObjects)
                         Updater.UpdateProcessor(beatmapObject, "Keyframes");
                 });
             }
@@ -4608,8 +4606,8 @@ namespace EditorManagement.Functions.Editors
             for (int i = 0; i < beatmapObject.events.Count; i++)
             {
                 beatmapObject.events[i] = (from x in beatmapObject.events[i]
-                                            orderby x.eventTime
-                                            select x).ToList();
+                                           orderby x.eventTime
+                                           select x).ToList();
             }
 
             RenderKeyframes(beatmapObject);

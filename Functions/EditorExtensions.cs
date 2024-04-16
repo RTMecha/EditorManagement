@@ -1,25 +1,14 @@
-﻿using System;
-using System.Reflection;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using HarmonyLib;
-
-using UnityEngine;
-
+﻿using HarmonyLib;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data;
-
+using System;
+using System.Linq;
+using System.Reflection;
+using UnityEngine;
 using BeatmapObject = DataManager.GameData.BeatmapObject;
 using EventKeyframe = DataManager.GameData.EventKeyframe;
 using Prefab = DataManager.GameData.Prefab;
 using PrefabObject = DataManager.GameData.PrefabObject;
-using BackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectSelection = ObjEditor.ObjectSelection;
-using KeyframeSelection = EventEditor.KeyframeSelection;
 
 namespace EditorManagement.Functions
 {
@@ -68,16 +57,16 @@ namespace EditorManagement.Functions
                 firstPrefabObjectTime = 0f;
             else
                 firstPrefabObjectTime = (from x in prefab.prefabObjects
-                     orderby x.StartTime
-                     select x).First().StartTime;
+                                         orderby x.StartTime
+                                         select x).First().StartTime;
 
             float firstObjectTime;
             if (prefab.objects.Count <= 0)
                 firstObjectTime = 0f;
             else
                 firstObjectTime = (from x in prefab.objects
-                     orderby x.StartTime
-                     select x).First().StartTime;
+                                   orderby x.StartTime
+                                   select x).First().StartTime;
 
             float time = Mathf.Min(firstPrefabObjectTime, firstObjectTime);
             float length = 0f;
@@ -101,7 +90,7 @@ namespace EditorManagement.Functions
 
             return prefab.Type < DataManager.inst.PrefabTypes.Count ? DataManager.inst.PrefabTypes[prefab.Type].Color : PrefabType.InvalidType.Color;
         }
-        
+
         public static Color GetPrefabTypeColor(this PrefabObject _beatmapObject)
         {
             var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == _beatmapObject.prefabID);

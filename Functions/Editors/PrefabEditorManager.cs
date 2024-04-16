@@ -1075,7 +1075,7 @@ namespace EditorManagement.Functions.Editors
                     onSelect?.Invoke(index);
                     RenderPrefabTypesPopup(index, onSelect);
                 });
-                
+
                 toggle.image.color = prefabType.Color;
 
                 EditorThemeManager.ApplyGraphic(toggle.image, ThemeGroup.Null, true);
@@ -1109,7 +1109,7 @@ namespace EditorManagement.Functions.Editors
                         {
                             File.Delete(file);
                         }
-                        
+
                         foreach (var directory in Directory.GetDirectories(RTFile.ApplicationDirectory + "beatmaps/prefabtypes/" + oldName, "*", SearchOption.AllDirectories))
                         {
                             Directory.Delete(directory);
@@ -1238,7 +1238,7 @@ namespace EditorManagement.Functions.Editors
         #endregion
 
         #region Prefabs
-        
+
         public Button externalType;
         public Image externalTypeImage;
 
@@ -1336,7 +1336,7 @@ namespace EditorManagement.Functions.Editors
 
             var textBase1RT = textBase1.AddComponent<RectTransform>();
             textBase1RT.sizeDelta = new Vector2(765f, 300f);
-            
+
             var description = RTEditor.inst.defaultIF.Duplicate(textBase1RT);
             description.transform.localScale = Vector3.one;
             description.transform.AsRT().anchoredPosition = Vector2.zero;
@@ -1368,7 +1368,7 @@ namespace EditorManagement.Functions.Editors
             buttonsHLG.spacing = 60f;
 
             buttons.transform.AsRT().sizeDelta = new Vector2(600f, 32f);
-            
+
             var importPrefab = EditorPrefabHolder.Instance.Function2Button.Duplicate(buttons.transform, "import");
             var importPrefabStorage = importPrefab.GetComponent<FunctionButtonStorage>();
             importPrefab.SetActive(true);

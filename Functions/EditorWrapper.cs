@@ -1,6 +1,5 @@
-﻿using UnityEngine;
-
-using RTFunctions.Functions.Data;
+﻿using RTFunctions.Functions.Data;
+using UnityEngine;
 
 namespace EditorManagement.Functions
 {

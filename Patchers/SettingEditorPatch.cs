@@ -1,22 +1,15 @@
-﻿using System;
+﻿using EditorManagement.Functions;
+using EditorManagement.Functions.Editors;
+using EditorManagement.Functions.Helpers;
+using HarmonyLib;
+using LSFunctions;
+using RTFunctions.Functions;
+using RTFunctions.Functions.Managers;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-
-using HarmonyLib;
-
 using UnityEngine;
 using UnityEngine.UI;
-
-using LSFunctions;
-
-using RTFunctions.Functions;
-
-using EditorManagement.Functions.Editors;
-using RTFunctions.Functions.Managers;
-using RTFunctions.Functions.IO;
-using EditorManagement.Functions.Helpers;
-using EditorManagement.Functions;
 
 namespace EditorManagement.Patchers
 {
@@ -357,10 +350,10 @@ namespace EditorManagement.Patchers
 
                 if (info.ContainsKey("Camera Position") && info["Camera Position"])
                     info["Camera Position"].text = $"[ X: {Camera.main.transform.position.x}, Y: {Camera.main.transform.position.y} ]  ";
-                
+
                 if (info.ContainsKey("Camera Zoom") && info["Camera Zoom"])
                     info["Camera Zoom"].text = $"[ {Camera.main.orthographicSize} ]  ";
-                
+
                 if (info.ContainsKey("Camera Rotation") && info["Camera Rotation"])
                     info["Camera Rotation"].text = $"[ {Camera.main.transform.rotation.eulerAngles.z} ]  ";
 
@@ -381,7 +374,7 @@ namespace EditorManagement.Patchers
                 RTEditor.inst.SetTimelineGridSize();
             });
         }
-        
+
         static void SetBPMInputField(Slider slider, InputField input)
         {
             input.onValueChanged.RemoveAllListeners();
@@ -408,7 +401,7 @@ namespace EditorManagement.Patchers
                 RTEditor.inst.SaveSettings();
             });
         }
-        
+
         static void SetBPMOffsetInputField(Slider slider, InputField input)
         {
             input.onValueChanged.RemoveAllListeners();
@@ -455,7 +448,7 @@ namespace EditorManagement.Patchers
 
             TriggerHelper.AddEventTriggerParams(input.gameObject,
                 TriggerHelper.ScrollDelta(input, 1f));
-            
+
             var sliderOffset = transform.Find("snap/bpm offset/slider").GetComponent<Slider>();
             var inputOffset = transform.Find("snap/bpm offset/input").GetComponent<InputField>();
             SetBPMOffsetSlider(sliderOffset, inputOffset);

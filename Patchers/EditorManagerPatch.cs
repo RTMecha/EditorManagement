@@ -16,13 +16,11 @@ using RTFunctions.Functions.Optimization;
 using SimpleJSON;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using DGEase = DG.Tweening.Ease;
 
 namespace EditorManagement.Patchers
 {
@@ -59,8 +57,8 @@ namespace EditorManagement.Patchers
             __instance.RefreshDialogDictionary();
 
             var easingDropdowns = (from x in Resources.FindObjectsOfTypeAll<Dropdown>()
-                        where x.gameObject != null && x.gameObject.name == "curves"
-                        select x).ToList();
+                                   where x.gameObject != null && x.gameObject.name == "curves"
+                                   select x).ToList();
 
             RTEditor.EasingDropdowns.Clear();
 
@@ -103,7 +101,7 @@ namespace EditorManagement.Patchers
 
             var openFilePopupClose = openFilePopupPanel.transform.Find("x").gameObject;
             EditorThemeManager.AddSelectable(openFilePopupClose.GetComponent<Button>(), ThemeGroup.Close);
-                
+
             EditorThemeManager.AddGraphic(openFilePopupClose.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
             EditorThemeManager.AddLightText(openFilePopupPanel.transform.Find("Text").GetComponent<Text>());

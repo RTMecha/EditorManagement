@@ -1,18 +1,8 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿using EditorManagement.Functions.Editors;
 using HarmonyLib;
-
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
-
-using RTFunctions.Patchers;
-
-using EditorManagement.Functions.Editors;
 
 namespace EditorManagement.Patchers
 {
@@ -56,7 +46,7 @@ namespace EditorManagement.Patchers
             ThemeEditorManager.inst.DeleteTheme((RTFunctions.Functions.Data.BeatmapTheme)__0);
             return false;
         }
-        
+
         [HarmonyPatch("SaveTheme")]
         [HarmonyPrefix]
         static bool SaveThemePrefix(DataManager.BeatmapTheme __0)

@@ -1,9 +1,4 @@
 ﻿using EditorManagement.Functions.Editors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace EditorManagement.Functions.Components
@@ -13,8 +8,6 @@ namespace EditorManagement.Functions.Components
     /// </summary>
     public class EditorThemeElement : MonoBehaviour
     {
-        bool init = false;
-        int lastTheme = 0;
         public string id;
 
         public EditorThemeManager.Element Element { get; set; }
@@ -23,9 +16,7 @@ namespace EditorManagement.Functions.Components
         {
             Element = element;
             Element.ApplyTheme(EditorThemeManager.CurrentTheme);
-            lastTheme = EditorThemeManager.currentTheme;
             this.id = id;
-            init = true;
         }
 
         void OnDestroy()

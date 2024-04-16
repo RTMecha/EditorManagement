@@ -1,28 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
-
-using UnityEngine;
-using UnityEngine.UI;
-
-using SimpleJSON;
-using LSFunctions;
-using TMPro;
-using Crosstales.FB;
-
-using RTFunctions.Functions;
-using RTFunctions.Functions.Components;
-using RTFunctions.Functions.IO;
-using RTFunctions.Functions.Managers;
-
+﻿using Crosstales.FB;
 using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
+using LSFunctions;
+using RTFunctions.Functions;
+using RTFunctions.Functions.IO;
+using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Managers.Networking;
+using SimpleJSON;
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
 namespace EditorManagement.Functions
 {
@@ -169,10 +162,7 @@ namespace EditorManagement.Functions
             EditorThemeManager.AddSelectable(closeButton, ThemeGroup.Close);
 
             var closeX = close.transform.GetChild(0).gameObject;
-            EditorThemeManager.AddElement(new EditorThemeManager.Element("Open File Popup Close X", "Close X", closeX, new List<Component>
-            {
-                closeX.GetComponent<Image>(),
-            }));
+            EditorThemeManager.AddGraphic(close.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
             EditorHelper.AddEditorDropdown("Open Project Planner", "", "Edit", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "editor_gui_planner.png"), delegate ()
             {
@@ -2411,7 +2401,7 @@ namespace EditorManagement.Functions
                     note.Name = jn["notes"][i]["name"];
                 else
                     note.Name = "";
-                
+
                 note.Position = new Vector2(jn["notes"][i]["pos"]["x"].AsFloat, jn["notes"][i]["pos"]["y"].AsFloat);
                 note.Scale = new Vector2(jn["notes"][i]["sca"]["x"].AsFloat, jn["notes"][i]["sca"]["y"].AsFloat);
                 if (jn["notes"][i]["size"] != null)
@@ -2517,7 +2507,7 @@ namespace EditorManagement.Functions
 
         bool CheckOn(string searchTerm)
             => searchTerm == "\"true\"" || searchTerm == "\"on\"" || searchTerm == "\"done\"" || searchTerm == "\"finished\"" || searchTerm == "\"checked\"";
-        
+
         bool CheckOff(string searchTerm)
             => searchTerm == "\"false\"" || searchTerm == "\"off\"" || searchTerm == "\"not done\"" || searchTerm == "\"not finished\"" || searchTerm == "\"unfinished\"" || searchTerm == "\"unchecked\"";
 
@@ -2569,7 +2559,7 @@ namespace EditorManagement.Functions
                 SaveDocuments();
             });
         }
-        
+
         void HandleDocumentEditorPreview(DocumentItem document)
         {
             DocumentFullViewActive = true;
@@ -2627,7 +2617,7 @@ namespace EditorManagement.Functions
             {
                 character.Save();
             });
-            
+
             characterEditorGender.onValueChanged.ClearAll();
             characterEditorGender.text = character.Gender;
             characterEditorGender.onValueChanged.AddListener(delegate (string _val)
@@ -2640,7 +2630,7 @@ namespace EditorManagement.Functions
             {
                 character.Save();
             });
-            
+
             characterEditorDescription.onValueChanged.ClearAll();
             characterEditorDescription.text = character.Description;
             characterEditorDescription.onValueChanged.AddListener(delegate (string _val)
@@ -2883,7 +2873,7 @@ namespace EditorManagement.Functions
             {
                 SaveTimelines();
             });
-            
+
             eventEditorPath.onValueChanged.ClearAll();
             eventEditorPath.text = level.Path == null ? "" : level.Path;
             eventEditorPath.onValueChanged.AddListener(delegate (string _val)
@@ -3211,15 +3201,8 @@ namespace EditorManagement.Functions
             var toggle = gameObject.GetComponent<Toggle>();
             tabs.Add(gameObject.GetComponent<Toggle>());
 
-            EditorThemeManager.AddElement(new EditorThemeManager.Element($"Project Planner Tab {name}", $"Tab Color {tabs.Count}", gameObject, new List<Component>
-            {
-                image,
-            }, true, 1, SpriteManager.RoundedSide.W));
-
-            EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, toggle.graphic.gameObject, new List<Component>
-            {
-                toggle.graphic,
-            }));
+            EditorThemeManager.AddGraphic(image, EditorThemeManager.EditorTheme.GetGroup($"Tab Color {tabs.Count}"), true);
+            EditorThemeManager.AddGraphic(toggle.graphic, ThemeGroup.Background_1);
 
             return gameObject;
         }
@@ -3544,7 +3527,7 @@ namespace EditorManagement.Functions
                 noteDraggableLeft.part = NoteDraggable.DragPart.Left;
                 noteDraggableLeft.note = note;
             }
-            
+
             // Right
             {
                 var left = new GameObject("right");
@@ -3580,7 +3563,7 @@ namespace EditorManagement.Functions
                 noteDraggableLeft.part = NoteDraggable.DragPart.Up;
                 noteDraggableLeft.note = note;
             }
-            
+
             // Down
             {
                 var left = new GameObject("down");
@@ -3738,7 +3721,7 @@ namespace EditorManagement.Functions
             EditorManager.inst.editorState = EditorManager.EditorState.Intro;
             UpdateStateUI();
         }
-        
+
         public void Close()
         {
             EditorManager.inst.editorState = EditorManager.EditorState.Main;
@@ -3972,10 +3955,10 @@ namespace EditorManagement.Functions
 
                 for (int i = 0; i < CharacterTraits.Count; i++)
                     jn["tr"][i] = CharacterTraits[i];
-                
+
                 for (int i = 0; i < CharacterLore.Count; i++)
                     jn["lo"][i] = CharacterLore[i];
-                
+
                 for (int i = 0; i < CharacterAbilities.Count; i++)
                     jn["ab"][i] = CharacterAbilities[i];
 
@@ -4155,7 +4138,7 @@ namespace EditorManagement.Functions
             {
                 return $"{day}/{(month < 10 ? "0" + month.ToString() : month.ToString())}/{year} {(hour > 12 ? hour - 12 : hour)}:{minute} {(hour > 12 ? "PM" : "AM")}";
             }
-            
+
             public string FormatDate(int day, int month, int year, int hour, int minute, string apm)
             {
                 return $"{day}/{(month < 10 ? "0" + month.ToString() : month.ToString())}/{year} {(hour)}:{minute} {apm}";

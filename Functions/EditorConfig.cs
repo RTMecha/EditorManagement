@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 using BepInEx.Configuration;
 using LSFunctions;
 using UnityEngine;
@@ -276,7 +271,7 @@ namespace EditorManagement.Functions
             OpenFilePopupPosXCloseEase = Config.Bind("Animations", "Open File Popup Close Position X Ease", Easings.Linear, "The easing of opening.");
             OpenFilePopupPosYOpenEase = Config.Bind("Animations", "Open File Popup Open Position Y Ease", Easings.Linear, "The easing of opening.");
             OpenFilePopupPosYCloseEase = Config.Bind("Animations", "Open File Popup Close Position Y Ease", Easings.Linear, "The easing of opening.");
-            
+
             OpenFilePopupScaActive = Config.Bind("Animations", "Open File Popup Animate Scale", true, "If scale should be animated.");
             OpenFilePopupScaOpen = Config.Bind("Animations", "Open File Popup Open Scale", Vector2.one, "Where the animation starts when the popup is closing and ends when the popup is opening.");
             OpenFilePopupScaClose = Config.Bind("Animations", "Open File Popup Close Scale", Vector2.zero, "Where the animation starts when the popup is opening and ends when the popup is closing.");
@@ -286,7 +281,7 @@ namespace EditorManagement.Functions
             OpenFilePopupScaXCloseEase = Config.Bind("Animations", "Open File Popup Close Scale X Ease", Easings.InCirc, "The easing of opening.");
             OpenFilePopupScaYOpenEase = Config.Bind("Animations", "Open File Popup Open Scale Y Ease", Easings.OutElastic, "The easing of opening.");
             OpenFilePopupScaYCloseEase = Config.Bind("Animations", "Open File Popup Close Scale Y Ease", Easings.InCirc, "The easing of opening.");
-            
+
             OpenFilePopupRotActive = Config.Bind("Animations", "Open File Popup Animate Rotation", false, "If rotation should be animated.");
             OpenFilePopupRotOpen = Config.Bind("Animations", "Open File Popup Open Rotation", 0f, "Where the animation starts when the popup is closing and ends when the popup is opening.");
             OpenFilePopupRotClose = Config.Bind("Animations", "Open File Popup Close Rotation", 0f, "Where the animation starts when the popup is opening and ends when the popup is closing.");
@@ -310,7 +305,7 @@ namespace EditorManagement.Functions
             NewFilePopupPosXCloseEase = Config.Bind("Animations", "New File Popup Close Position X Ease", Easings.Linear, "The easing of opening.");
             NewFilePopupPosYOpenEase = Config.Bind("Animations", "New File Popup Open Position Y Ease", Easings.Linear, "The easing of opening.");
             NewFilePopupPosYCloseEase = Config.Bind("Animations", "New File Popup Close Position Y Ease", Easings.Linear, "The easing of opening.");
-            
+
             NewFilePopupScaActive = Config.Bind("Animations", "New File Popup Animate Scale", true, "If scale should be animated.");
             NewFilePopupScaOpen = Config.Bind("Animations", "New File Popup Open Scale", Vector2.one, "Where the animation starts when the popup is closing and ends when the popup is opening.");
             NewFilePopupScaClose = Config.Bind("Animations", "New File Popup Close Scale", Vector2.zero, "Where the animation starts when the popup is opening and ends when the popup is closing.");
@@ -320,7 +315,7 @@ namespace EditorManagement.Functions
             NewFilePopupScaXCloseEase = Config.Bind("Animations", "New File Popup Close Scale X Ease", Easings.InCirc, "The easing of opening.");
             NewFilePopupScaYOpenEase = Config.Bind("Animations", "New File Popup Open Scale Y Ease", Easings.OutElastic, "The easing of opening.");
             NewFilePopupScaYCloseEase = Config.Bind("Animations", "New File Popup Close Scale Y Ease", Easings.InCirc, "The easing of opening.");
-            
+
             NewFilePopupRotActive = Config.Bind("Animations", "New File Popup Animate Rotation", false, "If rotation should be animated.");
             NewFilePopupRotOpen = Config.Bind("Animations", "New File Popup Open Rotation", 0f, "Where the animation starts when the popup is closing and ends when the popup is opening.");
             NewFilePopupRotClose = Config.Bind("Animations", "New File Popup Close Rotation", 0f, "Where the animation starts when the popup is opening and ends when the popup is closing.");
@@ -344,7 +339,7 @@ namespace EditorManagement.Functions
             SaveAsPopupPosXCloseEase = Config.Bind("Animations", "Save As Popup Close Position X Ease", Easings.Linear, "The easing of opening.");
             SaveAsPopupPosYOpenEase = Config.Bind("Animations", "Save As Popup Open Position Y Ease", Easings.Linear, "The easing of opening.");
             SaveAsPopupPosYCloseEase = Config.Bind("Animations", "Save As Popup Close Position Y Ease", Easings.Linear, "The easing of opening.");
-            
+
             SaveAsPopupScaActive = Config.Bind("Animations", "Save As Popup Animate Scale", true, "If scale should be animated.");
             SaveAsPopupScaOpen = Config.Bind("Animations", "Save As Popup Open Scale", Vector2.one, "Where the animation starts when the popup is closing and ends when the popup is opening.");
             SaveAsPopupScaClose = Config.Bind("Animations", "Save As Popup Close Scale", Vector2.zero, "Where the animation starts when the popup is opening and ends when the popup is closing.");
@@ -354,7 +349,7 @@ namespace EditorManagement.Functions
             SaveAsPopupScaXCloseEase = Config.Bind("Animations", "Save As Popup Close Scale X Ease", Easings.InCirc, "The easing of opening.");
             SaveAsPopupScaYOpenEase = Config.Bind("Animations", "Save As Popup Open Scale Y Ease", Easings.OutElastic, "The easing of opening.");
             SaveAsPopupScaYCloseEase = Config.Bind("Animations", "Save As Popup Close Scale Y Ease", Easings.InCirc, "The easing of opening.");
-            
+
             SaveAsPopupRotActive = Config.Bind("Animations", "Save As Popup Animate Rotation", false, "If rotation should be animated.");
             SaveAsPopupRotOpen = Config.Bind("Animations", "Save As Popup Open Rotation", 0f, "Where the animation starts when the popup is closing and ends when the popup is opening.");
             SaveAsPopupRotClose = Config.Bind("Animations", "Save As Popup Close Rotation", 0f, "Where the animation starts when the popup is opening and ends when the popup is closing.");
@@ -1383,7 +1378,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Easings> OpenFilePopupPosXCloseEase { get; set; }
         public ConfigEntry<Easings> OpenFilePopupPosYOpenEase { get; set; }
         public ConfigEntry<Easings> OpenFilePopupPosYCloseEase { get; set; }
-        
+
         public ConfigEntry<bool> OpenFilePopupScaActive { get; set; }
         public ConfigEntry<Vector2> OpenFilePopupScaOpen { get; set; }
         public ConfigEntry<Vector2> OpenFilePopupScaClose { get; set; }
@@ -1393,7 +1388,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Easings> OpenFilePopupScaXCloseEase { get; set; }
         public ConfigEntry<Easings> OpenFilePopupScaYOpenEase { get; set; }
         public ConfigEntry<Easings> OpenFilePopupScaYCloseEase { get; set; }
-        
+
         public ConfigEntry<bool> OpenFilePopupRotActive { get; set; }
         public ConfigEntry<float> OpenFilePopupRotOpen { get; set; }
         public ConfigEntry<float> OpenFilePopupRotClose { get; set; }
@@ -1417,7 +1412,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Easings> NewFilePopupPosXCloseEase { get; set; }
         public ConfigEntry<Easings> NewFilePopupPosYOpenEase { get; set; }
         public ConfigEntry<Easings> NewFilePopupPosYCloseEase { get; set; }
-        
+
         public ConfigEntry<bool> NewFilePopupScaActive { get; set; }
         public ConfigEntry<Vector2> NewFilePopupScaOpen { get; set; }
         public ConfigEntry<Vector2> NewFilePopupScaClose { get; set; }
@@ -1427,7 +1422,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Easings> NewFilePopupScaXCloseEase { get; set; }
         public ConfigEntry<Easings> NewFilePopupScaYOpenEase { get; set; }
         public ConfigEntry<Easings> NewFilePopupScaYCloseEase { get; set; }
-        
+
         public ConfigEntry<bool> NewFilePopupRotActive { get; set; }
         public ConfigEntry<float> NewFilePopupRotOpen { get; set; }
         public ConfigEntry<float> NewFilePopupRotClose { get; set; }
@@ -1451,7 +1446,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Easings> SaveAsPopupPosXCloseEase { get; set; }
         public ConfigEntry<Easings> SaveAsPopupPosYOpenEase { get; set; }
         public ConfigEntry<Easings> SaveAsPopupPosYCloseEase { get; set; }
-        
+
         public ConfigEntry<bool> SaveAsPopupScaActive { get; set; }
         public ConfigEntry<Vector2> SaveAsPopupScaOpen { get; set; }
         public ConfigEntry<Vector2> SaveAsPopupScaClose { get; set; }
@@ -1461,7 +1456,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Easings> SaveAsPopupScaXCloseEase { get; set; }
         public ConfigEntry<Easings> SaveAsPopupScaYOpenEase { get; set; }
         public ConfigEntry<Easings> SaveAsPopupScaYCloseEase { get; set; }
-        
+
         public ConfigEntry<bool> SaveAsPopupRotActive { get; set; }
         public ConfigEntry<float> SaveAsPopupRotOpen { get; set; }
         public ConfigEntry<float> SaveAsPopupRotClose { get; set; }

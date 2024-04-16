@@ -28,7 +28,7 @@ namespace EditorManagement.Functions.Editors
         public RectTransform scrollViewRT;
 
         public bool showModifiers;
-        
+
         public GameObject modifierCardPrefab;
         public GameObject modifierAddPrefab;
 
@@ -69,7 +69,7 @@ namespace EditorManagement.Functions.Editors
             }
             catch
             {
-                
+
             }
         }
 
@@ -373,7 +373,7 @@ namespace EditorManagement.Functions.Editors
                         var inputFieldSwapper = inputField.gameObject.AddComponent<InputFieldSwapper>();
                         inputFieldSwapper.Init(inputField, InputFieldSwapper.Type.Num);
                     };
-                    
+
                     Action<string, int, int> integerGenerator = delegate (string label, int type, int defaultValue)
                     {
                         var single = numberInput.Duplicate(layout, label);
@@ -413,7 +413,7 @@ namespace EditorManagement.Functions.Editors
                         var inputFieldSwapper = inputField.gameObject.AddComponent<InputFieldSwapper>();
                         inputFieldSwapper.Init(inputField, InputFieldSwapper.Type.Num);
                     };
-                    
+
                     Action<string, int, bool> boolGenerator = delegate (string label, int type, bool defaultValue)
                     {
                         var global = booleanBar.Duplicate(layout, label);
@@ -529,7 +529,7 @@ namespace EditorManagement.Functions.Editors
 
                         EditorThemeManager.ApplyDropdown(d);
                     };
-                    
+
                     Action<string, int, List<Dropdown.OptionData>> dropdownGenerator2 = delegate (string label, int type, List<Dropdown.OptionData> options)
                     {
                         var dd = dropdownBar.Duplicate(layout, label);
@@ -717,19 +717,6 @@ namespace EditorManagement.Functions.Editors
                                         cmd == "setWindowTitle" ? "Title" :
                                         cmd == "realTimeDayWeekEquals" ? "Day" :
                                         "Path", 0);
-
-                                if (cmd == "code")
-                                {
-                                    var clickable = layout.Find("Code").gameObject.GetComponent<Clickable>() ?? layout.Find("Code").gameObject.AddComponent<Clickable>();
-
-                                    clickable.onDown = delegate (PointerEventData pointerEventData)
-                                    {
-                                        RTEditor.inst.RefreshREPLEditor(modifier.value, delegate (string _val)
-                                        {
-                                            modifier.value = _val;
-                                        });
-                                    };
-                                }
 
                                 break;
                             }
@@ -1541,10 +1528,10 @@ namespace EditorManagement.Functions.Editors
                             {
                                 if (modifier.commands.Count < 6)
                                     modifier.commands.Add("0");
-                                
+
                                 if (modifier.commands.Count < 7)
                                     modifier.commands.Add("1");
-                                
+
                                 if (modifier.commands.Count < 8)
                                     modifier.commands.Add("0");
 
@@ -1836,19 +1823,6 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public void OpenREPLEditor(BeatmapObject.Modifier modifier, string value)
-        {
-            RTEditor.inst.RefreshREPLEditor(value, delegate (string _val)
-            {
-                RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(modifier.modifierObject));
-            });
-
-            RTEditor.inst.replEditor.onValueChanged.AddListener(delegate (string _val)
-            {
-                modifier.value = _val;
-            });
-        }
-
         #region Default Modifiers
 
         public void CreateDefaultModifiersList()
@@ -2040,7 +2014,7 @@ namespace EditorManagement.Functions.Editors
 
             return gameObject;
         }
-        
+
         GameObject StringInput()
         {
             var gameObject = Base("String");

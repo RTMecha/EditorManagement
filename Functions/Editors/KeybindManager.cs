@@ -1,38 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using SimpleJSON;
-using LSFunctions;
-
-using EditorManagement.Functions.Components;
+﻿using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
+using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
 using RTFunctions.Functions.Optimization;
-
-using BaseBeatmapObject = DataManager.GameData.BeatmapObject;
-using BaseEventKeyframe = DataManager.GameData.EventKeyframe;
-using BasePrefab = DataManager.GameData.Prefab;
-using BasePrefabObject = DataManager.GameData.PrefabObject;
-using BaseBackgroundObject = DataManager.GameData.BackgroundObject;
-
-using ObjectType = RTFunctions.Functions.Data.BeatmapObject.ObjectType;
+using SimpleJSON;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using AutoKillType = DataManager.GameData.BeatmapObject.AutoKillType;
-
+using ObjectType = RTFunctions.Functions.Data.BeatmapObject.ObjectType;
 using SelectionType = ObjEditor.ObjectSelection.SelectionType;
-using BaseObjectSelection = ObjEditor.ObjectSelection;
-using BaseObjectKeyframeSelection = ObjEditor.KeyframeSelection;
-using EventKeyframeSelection = EventEditor.KeyframeSelection;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -97,7 +81,7 @@ namespace EditorManagement.Functions.Editors
             {
                 dragging = false;
             }
-            
+
             if (Input.GetMouseButtonDown(1) && selectedKeyframe && originalValues != null && dragging)
             {
                 dragging = false;
@@ -214,14 +198,14 @@ namespace EditorManagement.Functions.Editors
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftShift),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.E),
             }, 12));
-            
+
             // Undo
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Z),
             }, 13));
-            
+
             // Redo
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -229,7 +213,7 @@ namespace EditorManagement.Functions.Editors
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftShift),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Z),
             }, 14));
-            
+
             // Toggle Playing Song
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -263,90 +247,90 @@ namespace EditorManagement.Functions.Editors
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Period),
             }, 34));
-            
+
             // Set Last Keyframe In Type
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Comma),
             }, 35));
-            
+
             // Set Next Keyframe In Type
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Period),
             }, 36));
-            
+
             // Set Previous Keyframe In Type
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Comma),
             }, 37));
-            
+
             // Add Pitch
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.UpArrow),
             }, 38));
-            
+
             // Sub Pitch
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.DownArrow),
             }, 39));
-            
+
             // Toggle Show Help
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.H),
             }, 40));
-            
+
             // Go To Current
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Insert),
             }, 41));
-            
+
             // Go To Start
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Home),
             }, 42));
-            
+
             // Go To End
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.End),
             }, 43));
-            
+
             // Create New Marker
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.M),
             }, 44));
-            
+
             // Spawn Prefab
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Slash),
             }, 57));
-            
+
             // Cut
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.X),
             }, 46));
-            
+
             // Copy
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Pressed, KeyCode.LeftControl),
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.C),
             }, 47));
-            
+
             // Paste
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -356,7 +340,7 @@ namespace EditorManagement.Functions.Editors
             {
                 { "Remove Prefab Instance ID", "False" }
             }));
-            
+
             // Duplicate
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -372,13 +356,13 @@ namespace EditorManagement.Functions.Editors
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Backspace),
             }, 50));
-            
+
             // Delete (Delete key)
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
                 new Keybind.Key(Keybind.Key.Type.Down, KeyCode.Delete),
             }, 50));
-            
+
             // ToggleZenMode
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -396,7 +380,7 @@ namespace EditorManagement.Functions.Editors
                 { "Use Nearest", "True" },
                 { "Use Previous", "False" },
             }));
-            
+
             // TransformScale
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -407,7 +391,7 @@ namespace EditorManagement.Functions.Editors
                 { "Use Nearest", "True" },
                 { "Use Previous", "False" },
             }));
-            
+
             // TransformRotation
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -419,7 +403,7 @@ namespace EditorManagement.Functions.Editors
                 { "Use Nearest", "True" },
                 { "Use Previous", "False" },
             }));
-            
+
             // ToggleProjectPlanner
             keybinds.Add(new Keybind(LSText.randomNumString(16), new List<Keybind.Key>
             {
@@ -984,7 +968,7 @@ namespace EditorManagement.Functions.Editors
                         text.text = "Set Key";
                     };
 
-                    RTEditor.inst.onKeySet = delegate()
+                    RTEditor.inst.onKeySet = delegate ()
                     {
                         code.onValueChanged.ClearAll();
                         code.value = (int)key.KeyCode;
@@ -1185,7 +1169,7 @@ namespace EditorManagement.Functions.Editors
                             var labelText = l.transform.GetChild(0).GetComponent<Text>();
                             labelText.text = setting.Key;
                             l.transform.AsRT().sizeDelta = new Vector2(541f, 32f);
-                            
+
                             l.transform.GetChild(0).AsRT().anchoredPosition = new Vector2(10f, -5f);
 
                             var image = x.GetComponent<Image>();
@@ -1492,7 +1476,7 @@ namespace EditorManagement.Functions.Editors
             {
 
             }
-            
+
             var amount = 1f;
             if (keybind.settings.ContainsKey("EventAmount") && float.TryParse(keybind.settings["EventAmount"], out amount))
             {
@@ -1533,7 +1517,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
         }
-        
+
         public static void DecreaseKeyframeValue(Keybind keybind)
         {
             var type = 0;
@@ -1553,7 +1537,7 @@ namespace EditorManagement.Functions.Editors
             {
 
             }
-            
+
             var amount = 1f;
             if (keybind.settings.ContainsKey("EventAmount") && float.TryParse(keybind.settings["EventAmount"], out amount))
             {
@@ -1594,7 +1578,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
         }
-        
+
         public static void SetKeyframeValue(Keybind keybind)
         {
             var type = 0;
@@ -1614,7 +1598,7 @@ namespace EditorManagement.Functions.Editors
             {
 
             }
-            
+
             var amount = 1f;
             if (keybind.settings.ContainsKey("EventAmount") && float.TryParse(keybind.settings["EventAmount"], out amount))
             {
@@ -1726,7 +1710,7 @@ namespace EditorManagement.Functions.Editors
                 ObjectEditor.inst.RenderTimelineObject(timelineObject);
             }
         }
-        
+
         public static void SubObjectLayer(Keybind keybind)
         {
             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
@@ -1758,7 +1742,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
         }
-        
+
         public static void CycleObjectTypeDown(Keybind keybind)
         {
             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
@@ -1792,7 +1776,7 @@ namespace EditorManagement.Functions.Editors
                     SetCurrentMarker(Mathf.Clamp(currentMarker + 2, 0, DataManager.inst.gameData.beatmapData.markers.Count - 1), true, EditorConfig.Instance.BringToSelection.Value);
             }
         }
-        
+
         public static void JumpToPreviousMarker(Keybind keybind)
         {
             if (DataManager.inst.gameData.beatmapData.markers.Count > 0)
@@ -1811,7 +1795,7 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
             EditorManager.inst.ShowDialog("Save As Popup");
         }
-        
+
         public static void OpenNewLevel(Keybind keybind)
         {
             EditorManager.inst.ClearDialogs(new EditorManager.EditorDialog.DialogType[1]);
@@ -1839,7 +1823,7 @@ namespace EditorManagement.Functions.Editors
                 ObjectEditor.inst.SetCurrentObject(RTEditor.inst.timelineObjects[index + 1], EditorConfig.Instance.BringToSelection.Value);
             }
         }
-        
+
         public static void SelectPreviousObject(Keybind keybind)
         {
             var currentSelection = ObjectEditor.inst.CurrentSelection;
@@ -1869,7 +1853,7 @@ namespace EditorManagement.Functions.Editors
                 AudioManager.inst.SetMusicTime(DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventTime);
             }
         }
-        
+
         public static void SetLastKeyframeInType(Keybind keybind)
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
@@ -1887,7 +1871,7 @@ namespace EditorManagement.Functions.Editors
                 AudioManager.inst.SetMusicTime(DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventTime);
             }
         }
-        
+
         public static void SetNextKeyframeInType(Keybind keybind)
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
@@ -1909,7 +1893,7 @@ namespace EditorManagement.Functions.Editors
                 AudioManager.inst.SetMusicTime(DataManager.inst.gameData.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent].eventTime);
             }
         }
-        
+
         public static void SetPreviousKeyframeInType(Keybind keybind)
         {
             if (RTEditor.inst.layerType == RTEditor.LayerType.Objects)
@@ -1956,7 +1940,7 @@ namespace EditorManagement.Functions.Editors
             if (tlScrollbar)
                 tlScrollbar.value = AudioManager.inst.CurrentAudioSource.time / AudioManager.inst.CurrentAudioSource.clip.length;
         }
-        
+
         public static void GoToStart(Keybind keybind)
         {
             if (!tlScrollbar && RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar", out GameObject gm) && gm.TryGetComponent(out Scrollbar sb))
@@ -1965,7 +1949,7 @@ namespace EditorManagement.Functions.Editors
             if (tlScrollbar)
                 tlScrollbar.value = 0f;
         }
-        
+
         public static void GoToEnd(Keybind keybind)
         {
             if (!tlScrollbar && RTExtensions.TryFind("Editor Systems/Editor GUI/sizer/main/whole-timeline/Scrollbar", out GameObject gm) && gm.TryGetComponent(out Scrollbar sb))
@@ -2101,7 +2085,7 @@ namespace EditorManagement.Functions.Editors
 
             inst.SetValues(0);
         }
-        
+
         public static void TransformScale(Keybind keybind)
         {
             if (keybind.settings.ContainsKey("Create Keyframe") && bool.TryParse(keybind.settings["Create Keyframe"], out bool createKeyframe))
@@ -2121,7 +2105,7 @@ namespace EditorManagement.Functions.Editors
 
             inst.SetValues(1);
         }
-        
+
         public static void TransformRotation(Keybind keybind)
         {
             if (keybind.settings.ContainsKey("Create Keyframe") && bool.TryParse(keybind.settings["Create Keyframe"], out bool createKeyframe))
@@ -2464,7 +2448,7 @@ namespace EditorManagement.Functions.Editors
                                 if (dragOffset.x < finalVector.x)
                                     firstDirection = RTObject.Axis.NegX;
                             }
-                            
+
                             if (Input.GetKey(KeyCode.Y))
                             {
                                 if (dragOffset.x > finalVector.x)
@@ -2475,7 +2459,7 @@ namespace EditorManagement.Functions.Editors
 
                             if (firstDirection == RTObject.Axis.NegX || firstDirection == RTObject.Axis.PosX)
                                 selectedKeyframe.eventValues[1] = dragKeyframeValues.y;
-                            
+
                             if (firstDirection == RTObject.Axis.NegY || firstDirection == RTObject.Axis.PosY)
                                 selectedKeyframe.eventValues[0] = dragKeyframeValues.x;
 

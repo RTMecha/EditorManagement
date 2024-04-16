@@ -1,26 +1,16 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.EventSystems;
-
-using HarmonyLib;
-using LSFunctions;
-
-using EditorManagement.Functions;
-using EditorManagement.Functions.Components;
+﻿using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Helpers;
-
+using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Data.Player;
 using RTFunctions.Functions.IO;
 using RTFunctions.Functions.Managers;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.UI;
 
 namespace EditorManagement.Functions.Editors
 {
@@ -149,7 +139,7 @@ namespace EditorManagement.Functions.Editors
                     playerModelIndexIF = b1.GetComponent<InputField>();
                     playerModelIndexIF.onValueChanged.ClearAll();
                 }
-                
+
                 //Button 1
                 {
                     var b1 = Instantiate(EditorManager.inst.folderButtonPrefab);

@@ -1,19 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
-
+﻿
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
-
-using LSFunctions;
-
-using EditorManagement.Functions.Editors;
-
-using RTFunctions.Functions;
+using UnityEngine.UI;
 
 namespace EditorManagement.Functions.Components
 {
@@ -60,7 +48,7 @@ namespace EditorManagement.Functions.Components
                         }
                         else
                             if (EditorManager.inst)
-                                EditorManager.inst.DisplayNotification("Could not invert number!", 1f, EditorManager.NotificationType.Error);
+                            EditorManager.inst.DisplayNotification("Could not invert number!", 1f, EditorManager.NotificationType.Error);
                     }
                     if (type == Type.String)
                         inputField.text = Flip(inputField.text);

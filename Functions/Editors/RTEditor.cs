@@ -161,7 +161,6 @@ namespace EditorManagement.Functions.Editors
             CreatePreviewCover();
             CreateObjectSearch();
             CreateWarningPopup();
-            CreateREPLEditor();
             CreateMultiObjectEditor();
             CreatePropertiesWindow();
             CreateDocumentation();
@@ -186,13 +185,6 @@ namespace EditorManagement.Functions.Editors
                 var gameObject = new GameObject("ObjectModifiersEditor");
                 gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
                 gameObject.AddComponent<ObjectModifiersEditor>();
-            }
-            
-            // Level Modifiers Editor
-            {
-                var gameObject = new GameObject("LevelModifiersEditor");
-                gameObject.transform.SetParent(GameObject.Find("Editor Systems").transform);
-                gameObject.AddComponent<LevelModifiersEditor>();
             }
 
             // Level Combiner
@@ -233,7 +225,7 @@ namespace EditorManagement.Functions.Editors
             doggoImage = doggoObject.GetComponent<Image>();
             timelineTime = EditorManager.inst.timelineTime.GetComponent<Text>();
             EditorPlugin.SetNotificationProperties();
-            
+
             timelineSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
 
             ModCompatibility.sharedFunctions.AddSet("ParentPickerDisable", (Action)delegate ()
@@ -300,7 +292,7 @@ namespace EditorManagement.Functions.Editors
                     if (isCurrentLayer)
                     {
                         timelineObject.Image.color = timelineObject.selected ? ObjEditor.inst.SelectedColor :
-                            timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) ? timelineObject.GetData<BeatmapObject>().GetPrefabTypeColor():
+                            timelineObject.IsBeatmapObject && !string.IsNullOrEmpty(timelineObject.GetData<BeatmapObject>().prefabID) ? timelineObject.GetData<BeatmapObject>().GetPrefabTypeColor() :
                             timelineObject.IsPrefabObject ? timelineObject.GetData<PrefabObject>().GetPrefabTypeColor() : ObjEditor.inst.NormalColor;
                     }
                 }
@@ -505,9 +497,6 @@ namespace EditorManagement.Functions.Editors
         public GameObject defaultIF;
 
         public string objectSearchTerm = "";
-
-        public GameObject replBase;
-        public InputField replEditor;
 
         public Transform titleBar;
 
@@ -799,11 +788,6 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
-        public bool IsObjectDialog => EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Object);
-
-        public bool IsTimeline => (EditorManager.inst.IsCurrentDialog(EditorManager.EditorDialog.DialogType.Timeline) &&
-            EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Object)) || EditorManager.inst.IsDialogActive(EditorManager.EditorDialog.DialogType.Prefab);
-
         #endregion
 
         #region Timeline Objects
@@ -1032,7 +1016,7 @@ namespace EditorManagement.Functions.Editors
         {
             Debug.LogFormat("{0}Generating Legacy Waveform (Fast)", EditorPlugin.className);
             var tex = new Texture2D(width, height, EditorConfig.Instance.WaveformTextureFormat.Value, false);
-            
+
             float[] samples = new float[audio.samples * audio.channels];
             float[] waveform = new float[width];
             audio.GetData(samples, 0);
@@ -1635,8 +1619,8 @@ namespace EditorManagement.Functions.Editors
 
                         StartCoroutine(ObjectEditor.inst.DeleteKeyframes());
                     }
-                else
-                    EditorManager.inst.DisplayNotification("Can't delete first keyframe.", 1f, EditorManager.NotificationType.Error);
+                    else
+                        EditorManager.inst.DisplayNotification("Can't delete first keyframe.", 1f, EditorManager.NotificationType.Error);
                 return;
             }
             if (isOverMainTimeline && layerType == LayerType.Objects)
@@ -2186,8 +2170,8 @@ namespace EditorManagement.Functions.Editors
 
             var zoomSliderBase = EditorManager.inst.zoomSlider.transform.parent;
             EditorThemeManager.AddGraphic(zoomSliderBase.GetComponent<Image>(), ThemeGroup.Background_1, true);
-            EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Slider_2, true);
-            EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(2).GetComponent<Image>(), ThemeGroup.Slider_2, true);
+            EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Slider_2);
+            EditorThemeManager.AddGraphic(zoomSliderBase.transform.GetChild(2).GetComponent<Image>(), ThemeGroup.Slider_2);
 
             EditorThemeManager.AddGraphic(EditorManager.inst.zoomSlider.transform.Find("Background").GetComponent<Image>(), ThemeGroup.Slider_2, true);
             EditorThemeManager.AddGraphic(EditorManager.inst.zoomSlider.transform.Find("Fill Area/Fill").GetComponent<Image>(), ThemeGroup.Slider_2, true);
@@ -2348,7 +2332,7 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.DisplayNotification("Load a level before switching to Arcade Mode!", 2f, EditorManager.NotificationType.Error);
                 }
             }, 7);
-            
+
             EditorHelper.AddEditorDropdown("Open Level Browser", "", "File", titleBar.Find("File/File Dropdown/Open/Image").GetComponent<Image>().sprite, delegate ()
             {
                 EditorManager.inst.ShowDialog("Browser Popup");
@@ -3448,111 +3432,6 @@ namespace EditorManagement.Functions.Editors
             EditorThemeManager.AddGraphic(submit2Image.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Add_Text);
         }
 
-        void CreateREPLEditor()
-        {
-            var font = EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/Text").GetComponent<Text>().font;
-
-            replBase = new GameObject("REPL Editor");
-            replBase.transform.SetParent(EditorManager.inst.GetDialog("Quick Actions Popup").Dialog.parent);
-            replBase.transform.localScale = Vector3.one;
-            var replRT = replBase.AddComponent<RectTransform>();
-
-            replRT.anchoredPosition = Vector2.zero;
-
-            var uiField = UIManager.GenerateUIInputField("REPL Editor", replBase.transform);
-
-            replEditor = (InputField)uiField["InputField"];
-
-            ((Image)uiField["Image"]).color = new Color(0.1132075f, 0.1132075f, 0.1132075f);
-
-            replEditor.lineType = InputField.LineType.MultiLineNewline;
-            replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
-            replEditor.textComponent.font = font;
-
-            ((RectTransform)uiField["RectTransform"]).anchoredPosition = Vector2.zero;
-            ((RectTransform)uiField["RectTransform"]).sizeDelta = new Vector2(1000f, 550f);
-
-            var uiTop = UIManager.GenerateUIImage("Panel", replBase.transform);
-
-            UIManager.SetRectTransform((RectTransform)uiTop["RectTransform"], new Vector2(0f, 291f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1000f, 32f));
-
-            ((Image)uiTop["Image"]).color = new Color(0.1973585f, 0.1973585f, 0.1973585f);
-
-            var close = Instantiate(EditorManager.inst.GetDialog("Open File Popup").Dialog.Find("Panel/x").gameObject);
-            close.transform.SetParent(((GameObject)uiTop["GameObject"]).transform);
-            close.transform.localScale = Vector3.one;
-
-            close.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-
-            var closeButton = close.GetComponent<Button>();
-            closeButton.onClick.ClearAll();
-            closeButton.onClick.AddListener(delegate ()
-            {
-                EditorManager.inst.HideDialog("REPL Editor Popup");
-                //StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection));
-            });
-
-            var uiTitle = UIManager.GenerateUIText("Title", ((GameObject)uiTop["GameObject"]).transform);
-            UIManager.SetRectTransform(((RectTransform)uiTitle["RectTransform"]), new Vector2(-350f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(300f, 32f));
-            ((Text)uiTitle["Text"]).text = "REPL Editor";
-            ((Text)uiTitle["Text"]).alignment = TextAnchor.MiddleLeft;
-            ((Text)uiTitle["Text"]).font = font;
-
-            //var rtext = Instantiate(replEditor.textComponent.gameObject);
-            //rtext.transform.SetParent(replEditor.transform);
-            //rtext.transform.localScale = Vector3.one;
-
-            //var rttext = rtext.GetComponent<RectTransform>();
-            //rttext.anchoredPosition = new Vector2(2f, 0f);
-            //rttext.sizeDelta = new Vector2(-12f, -8f);
-
-            var selectUI = ((GameObject)uiTop["GameObject"]).AddComponent<SelectGUI>();
-            selectUI.target = replBase.transform;
-
-            //((RectTransform)replEditor.textComponent.transform).anchoredPosition = new Vector2(9999f, 9999f);
-            replEditor.textComponent.color = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
-            //replEditor.textComponent.GetComponent<CanvasRenderer>().cull = true;
-
-            replEditor.customCaretColor = true;
-            replEditor.caretColor = new Color(0.9788679f, 0.9788679f, 0.9788679f, 1f);
-
-            //replText = rtext.GetComponent<Text>();
-
-            var uiBottom = UIManager.GenerateUIImage("Panel", replBase.transform);
-
-            UIManager.SetRectTransform((RectTransform)uiBottom["RectTransform"], new Vector2(0f, -291f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(1000f, 32f));
-
-            ((Image)uiBottom["Image"]).color = new Color(0.1973585f, 0.1973585f, 0.1973585f);
-
-            var evaluator = UIManager.GenerateUIButton("Evaluate", ((GameObject)uiBottom["GameObject"]).transform);
-
-            UIManager.SetRectTransform((RectTransform)evaluator["RectTransform"], new Vector2(400f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(200f, 32f));
-
-            var button = (Button)evaluator["Button"];
-            button.onClick.AddListener(delegate ()
-            {
-                RTCode.Evaluate(replEditor.text);
-            });
-
-            try
-            {
-                var text = AssetManager.inst.TextObject.Duplicate((RectTransform)evaluator["RectTransform"], "Text");
-                ((RectTransform)text.transform).anchoredPosition = Vector2.zero;
-                ((RectTransform)text.transform).sizeDelta = new Vector2(200f, 32f);
-                var t = text.GetComponent<Text>();
-                t.alignment = TextAnchor.MiddleCenter;
-                t.text = "Evaluate";
-            }
-            catch
-            {
-
-            }
-
-            replBase.SetActive(false);
-
-            EditorHelper.AddEditorPopup("REPL Editor Popup", replBase);
-        }
-
         void CreateMultiObjectEditor()
         {
             var eventButton = EditorPrefabHolder.Instance.Function1Button;
@@ -4178,7 +4057,7 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
-            
+
             // No Autokill
             {
                 labelGenerator("Set to No Autokill");
@@ -4195,7 +4074,7 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
-            
+
             // Set Parent
             {
                 labelGenerator("Set Parent");
@@ -4228,7 +4107,7 @@ namespace EditorManagement.Functions.Editors
                     });
                 });
             }
-            
+
             // Force Snap BPM
             {
                 labelGenerator("Force Snap Start Time to BPM");
@@ -4277,7 +4156,7 @@ namespace EditorManagement.Functions.Editors
                     prefabPickerEnabled = true;
                 });
             }
-            
+
             // Remove Prefab Reference
             {
                 labelGenerator("Remove Prefab Reference");
@@ -4607,7 +4486,7 @@ namespace EditorManagement.Functions.Editors
                         });
                     });
                 }
-                
+
                 // Parent Parallax
                 {
                     buttonGenerator("parent parallax", "PP", syncLayout.transform, delegate ()
@@ -4877,7 +4756,7 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
-            
+
             // Replace Tags
             {
                 labelGenerator("Replace Tags");
@@ -4958,7 +4837,7 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
             }
-            
+
             // Replace Text
             {
                 labelGenerator("Replace Text");
@@ -6386,13 +6265,13 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("<b>DOCUMENTATION INFO</b>", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Vanilla
                 {
                     var element = new Document.Element("<b>[VANILLA]</b> represents a feature from original Legacy, with very minor tweaks done to it if any.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Modded
                 {
                     var element = new Document.Element("<b>[MODDED]</b> represents a feature added by mods. These features will not work in unmodded PA.", Document.Element.Type.Text);
@@ -6404,7 +6283,7 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("<b>[PATCHED]</b> represents a feature modified by mods. They're either in newer versions of PA or are partially modded, meaning they might not work in regular PA.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 var htt = gameObject.AddComponent<HoverTooltip>();
 
                 var levelTip = new HoverTooltip.Tooltip();
@@ -6420,7 +6299,7 @@ namespace EditorManagement.Functions.Editors
 
                 documentations.Add(documentation);
             }
-            
+
             // Beatmap Objects
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
@@ -6442,7 +6321,7 @@ namespace EditorManagement.Functions.Editors
                         "Clicking on the ID will copy it to your clipboard.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // LDM
                 {
                     var element = new Document.Element("<b>LDM (Low Detail Mode) [MODDED]</b>\nLDM is useful for having objects not render for lower end devices. If the option is on and the user has " +
@@ -6725,7 +6604,7 @@ namespace EditorManagement.Functions.Editors
                             "can be found in the Modifiers documentation. [WIP]", Document.Element.Type.Text);
                         documentation.elements.Add(element);
                     }
-                    
+
                     // Object Modifiers Image
                     {
                         var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_object_modifiers_edit.png", Document.Element.Type.Image);
@@ -6982,7 +6861,7 @@ namespace EditorManagement.Functions.Editors
 
                 documentations.Add(documentation);
             }
-            
+
             // Prefab Objects
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
@@ -7043,14 +6922,14 @@ namespace EditorManagement.Functions.Editors
                         "have the toggle UI for this, however you can still use it in unmodded PA via hitting Ctrl + L.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Collapse
                 {
                     var element = new Document.Element("<b>Collapse [PATCHED]</b>\nIf on, collapses the Prefab Objects' timeline object. This is patched because it literally doesn't " +
                         "work in unmodded PA.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Start Time
                 {
                     var element = new Document.Element("<b>Start Time [VANILLA]</b>\nWhere the objects spawned from the Prefab Object start.", Document.Element.Type.Text);
@@ -7279,7 +7158,7 @@ namespace EditorManagement.Functions.Editors
                         "fonts and formats Text Objects can use. Also do note to ignore the spaces in the formattings as the UI text will just make the text like <b>this</b>.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // FORMATTING
                 {
                     var element = new Document.Element("<b>- FORMATTING -</b>", Document.Element.Type.Text);
@@ -7291,7 +7170,7 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("<b>[VANILLA]</b> < b> - For making text <b>BOLD</b>. Use </ b> to clear.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Italic
                 {
                     var element = new Document.Element("<b>[VANILLA]</b> < i> - For making text <i>italic</i>. Use </ i> to clear.", Document.Element.Type.Text);
@@ -7353,7 +7232,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Arrhythmia
                 {
                     var element = new Document.Element("<b>[MODDED]</b> Arrhythmia - The font from the earliest builds of Project Arrhythmia.", Document.Element.Type.Text);
@@ -7386,7 +7265,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Matoran Language 2
                 {
                     var element = new Document.Element("<b>[MODDED]</b> Matoran Language 2 - The language used by the Matoran in the BIONICLE series.", Document.Element.Type.Text);
@@ -7691,7 +7570,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Monster Friend Fore
                 {
                     string font = "Monster Friend Fore";
@@ -7715,7 +7594,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Oxygene
                 {
                     var element = new Document.Element("<b>[MODDED]</b> Oxygene - The font from the title of Geometry Dash.", Document.Element.Type.Text);
@@ -7738,7 +7617,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Piraka
                 {
                     string font = "Piraka";
@@ -7912,7 +7791,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Comic Sans Bold
                 {
                     string font = "Comic Sans Bold";
@@ -7936,7 +7815,7 @@ namespace EditorManagement.Functions.Editors
                     };
                     documentation.elements.Add(element);
                 }
-                
+
                 // Comic Sans Light
                 {
                     string font = "Comic Sans Light";
@@ -8101,7 +7980,7 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("BepInEx/plugins/Assets/Documentation/doc_td.png", Document.Element.Type.Image);
                     documentation.elements.Add(element);
                 }
-                
+
                 // File
                 {
                     var element = new Document.Element("<b>File [PATCHED]</b>" +
@@ -8207,7 +8086,7 @@ namespace EditorManagement.Functions.Editors
 
                 documentations.Add(documentation);
             }
-            
+
             // Timeline Bar
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(documentationPopup.Content, "Document");
@@ -8283,7 +8162,7 @@ namespace EditorManagement.Functions.Editors
                         "Persistent was replaced with No Autokill.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Marker
                 {
                     var element = new Document.Element("<b>Marker [VANILLA]</b>\nCreates a Marker.", Document.Element.Type.Text);
@@ -8418,7 +8297,7 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("<b>Editor Level Path [MODDED]</b>\nThe path within the Project Arrhythmia/beatmaps directory that is used for the editor level list.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Refresh
                 {
                     var element = new Document.Element("<b>Refresh [MODDED]</b>\nRefreshes the editor level list.", Document.Element.Type.Text);
@@ -8430,7 +8309,7 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("<b>Descending [MODDED]</b>\nIf the editor level list should be descending or ascending.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // Order
                 {
                     var element = new Document.Element("<b>Order [MODDED]</b>\nHow the editor level list should be ordered." +
@@ -8494,26 +8373,26 @@ namespace EditorManagement.Functions.Editors
                         "activates. This document is heavily WIP and will be added to over time.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // setPitch
                 {
                     var element = new Document.Element("<b>setPitch</b> - Modifies the speed of the game and the pitch of the audio. If you have EventsCore installed, it sets a multiplied offset from the " +
                         "audio keyframe's pitch value. However unlike that, setPitch can go into the negatives allowing for reversed audio.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // addPitch
                 {
                     var element = new Document.Element("<b>addPitch</b> - Does the same as above, except adds to the pitch offset.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // setMusicTime
                 {
                     var element = new Document.Element("<b>setMusicTime</b> - Sets the Audio Time to go to any point in the song, allowing for skipping specific sections of a song.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // playSound
                 {
                     var element = new Document.Element("<b>playSound</b> - Plays an external sound. The following details what each value in the modifier does." +
@@ -8531,13 +8410,13 @@ namespace EditorManagement.Functions.Editors
                     var element = new Document.Element("<b>playSoundOnline</b> - Same as above except plays from a link. The global toggle does nothing here.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // loadLevel
                 {
                     var element = new Document.Element("<b>loadLevel</b> - Loads a level from the current level folder path.", Document.Element.Type.Text);
                     documentation.elements.Add(element);
                 }
-                
+
                 // loadLevelInternal
                 {
                     var element = new Document.Element("<b>loadLevelInternal</b> - Same as above, except it always loads from the current levels own path.", Document.Element.Type.Text);
@@ -8968,7 +8847,7 @@ namespace EditorManagement.Functions.Editors
                 CheckpointEditor.inst.left = checkpointEditor.Find("data/left");
 
             EditorThemeManager.AddGraphic(checkpointEditor.GetComponent<Image>(), ThemeGroup.Background_1);
-            EditorThemeManager.AddGraphic(CheckpointEditor.inst.GetComponent<Image>(), ThemeGroup.Background_3);
+            EditorThemeManager.AddGraphic(CheckpointEditor.inst.right.GetComponent<Image>(), ThemeGroup.Background_3);
 
             EditorThemeManager.AddInputField(CheckpointEditor.inst.right.Find("search").GetComponent<InputField>(), ThemeGroup.Search_Field_2);
 
@@ -9045,6 +8924,7 @@ namespace EditorManagement.Functions.Editors
                 }
             }
 
+            Debug.Log($"{EditorPlugin.className}Setting Object Options Popup");
             // Object Options
             {
                 var options = EditorManager.inst.GetDialog("Object Options Popup").Dialog;
@@ -9065,7 +8945,7 @@ namespace EditorManagement.Functions.Editors
                     var child = options.Find("shapes").GetChild(i);
 
                     EditorThemeManager.AddGraphic(child.GetComponent<Image>(), ThemeGroup.Function_3, true);
-                    EditorThemeManager.AddGraphic(child.GetChild(0).GetComponent<Text>(), ThemeGroup.Function_3_Text);
+                    EditorThemeManager.AddGraphic(child.GetChild(0).GetComponent<Image>(), ThemeGroup.Function_3_Text);
                 }
             }
 
@@ -9198,7 +9078,7 @@ namespace EditorManagement.Functions.Editors
 
                     if (pointerEventData.button == PointerEventData.InputButton.Right)
                     {
-                        EditorManager.inst.ShowDialog("Autosaves Popup");
+                        EditorManager.inst.ShowDialog("Autosave Popup");
                         RefreshAutosaveList(editorWrapper);
                         return;
                     }
@@ -10256,22 +10136,6 @@ namespace EditorManagement.Functions.Editors
 
             submit1Button.onClick.AddListener(confirmDelegate);
             submit2Button.onClick.AddListener(cancelDelegate);
-        }
-
-        public void RefreshREPLEditor(string value, UnityAction<string> onEndEdit)
-        {
-            EditorManager.inst.ShowDialog("REPL Editor Popup");
-            replEditor.onValueChanged.ClearAll();
-            replEditor.text = value;
-
-            //replText.text = RTCode.ConvertREPLTest(replEditor.textComponent.text);
-            replEditor.onValueChanged.AddListener(delegate (string _val)
-            {
-                //StartCoroutine(SetREPLEditorTextDelay(0.2f));
-            });
-
-            replEditor.onEndEdit.RemoveAllListeners();
-            replEditor.onEndEdit.AddListener(onEndEdit);
         }
 
         public static List<LevelFolder<MetadataWrapper>> levelItems = new List<LevelFolder<MetadataWrapper>>();
@@ -11563,7 +11427,7 @@ namespace EditorManagement.Functions.Editors
         {
             if (RTFileBrowser.inst)
             {
-                RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory, ".lsb", "level",  x => StartCoroutine(LoadLevel(x.Replace("\\", "/").Replace("/level.lsb", ""))));
+                RTFileBrowser.inst.UpdateBrowser(RTFile.ApplicationDirectory, ".lsb", "level", x => StartCoroutine(LoadLevel(x.Replace("\\", "/").Replace("/level.lsb", ""))));
             }
         }
 
@@ -11729,7 +11593,7 @@ namespace EditorManagement.Functions.Editors
         public void RefreshDebugger()
         {
             var parent = EditorManager.inst.GetDialog("Debugger Popup").Dialog.transform.Find("mask/content");
-            
+
             for (int i = 0; i < debugs.Count; i++)
             {
                 var current = parent.GetChild(i);
@@ -11777,8 +11641,7 @@ namespace EditorManagement.Functions.Editors
                 var backup = EditorPrefabHolder.Instance.Function1Button.Duplicate(gameObject.transform, "backup");
                 var backupHolder = backup.GetComponent<FunctionButtonStorage>();
                 backup.transform.localScale = Vector3.one;
-                backup.transform.AsRT().anchoredPosition = new Vector2(450f, -16f);
-                backup.transform.AsRT().sizeDelta = new Vector2(80f, 28f);
+                UIManager.SetRectTransform(backup.transform.AsRT(), new Vector2(450f, 0f), new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(1f, 0.5f), new Vector2(80f, 28f));
                 backupHolder.text.text = "Backup";
                 backupHolder.button.onClick.ClearAll();
                 backupHolder.button.onClick.AddListener(delegate ()
@@ -11894,7 +11757,7 @@ namespace EditorManagement.Functions.Editors
 
             UpdateSelectedTemplate(baseTitle, texts);
         }
-        
+
         void UpdateSelectedTemplate(Text baseTitle, List<Text> texts)
         {
             baseTitle.text = $"Default Template{(currentLevelTemplate == -1 ? " [SELECTED]" : "")}";
@@ -12406,7 +12269,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupPosYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenFilePopupScaActive),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupScaOpen),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.OpenFilePopupScaClose),
@@ -12416,7 +12279,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.OpenFilePopupScaYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.OpenFilePopupRotActive),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenFilePopupRotOpen),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.OpenFilePopupRotClose),
@@ -12440,7 +12303,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupPosYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NewFilePopupScaActive),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupScaOpen),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.NewFilePopupScaClose),
@@ -12450,7 +12313,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NewFilePopupScaYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.NewFilePopupRotActive),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NewFilePopupRotOpen),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NewFilePopupRotClose),
@@ -12474,7 +12337,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupPosYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SaveAsPopupScaActive),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupScaOpen),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.SaveAsPopupScaClose),
@@ -12484,7 +12347,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.SaveAsPopupScaYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SaveAsPopupRotActive),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SaveAsPopupRotOpen),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.SaveAsPopupRotClose),
@@ -12508,7 +12371,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupPosYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.QuickActionsPopupScaActive),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupScaOpen),
             new EditorProperty(EditorProperty.ValueType.Vector2, EditorPlugin.EditorConfig.QuickActionsPopupScaClose),
@@ -12518,7 +12381,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaXCloseEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaYOpenEase),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.QuickActionsPopupScaYCloseEase),
-            
+
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.QuickActionsPopupRotActive),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.QuickActionsPopupRotOpen),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.QuickActionsPopupRotClose),
@@ -13283,7 +13146,7 @@ namespace EditorManagement.Functions.Editors
                 PosYOpenEaseConfig = EditorConfig.Instance.OpenFilePopupPosYOpenEase,
                 PosXCloseEaseConfig = EditorConfig.Instance.OpenFilePopupPosXCloseEase,
                 PosYCloseEaseConfig = EditorConfig.Instance.OpenFilePopupPosYCloseEase,
-                
+
                 ScaActiveConfig = EditorConfig.Instance.OpenFilePopupScaActive,
                 ScaOpenConfig = EditorConfig.Instance.OpenFilePopupScaOpen,
                 ScaCloseConfig = EditorConfig.Instance.OpenFilePopupScaClose,
@@ -13293,7 +13156,7 @@ namespace EditorManagement.Functions.Editors
                 ScaYOpenEaseConfig = EditorConfig.Instance.OpenFilePopupScaYOpenEase,
                 ScaXCloseEaseConfig = EditorConfig.Instance.OpenFilePopupScaXCloseEase,
                 ScaYCloseEaseConfig = EditorConfig.Instance.OpenFilePopupScaYCloseEase,
-                
+
                 RotActiveConfig = EditorConfig.Instance.OpenFilePopupRotActive,
                 RotOpenConfig = EditorConfig.Instance.OpenFilePopupRotOpen,
                 RotCloseConfig = EditorConfig.Instance.OpenFilePopupRotClose,
@@ -14095,7 +13958,7 @@ namespace EditorManagement.Functions.Editors
             public ConfigEntry<Easings> PosXCloseEaseConfig { get; set; }
             public ConfigEntry<Easings> PosYOpenEaseConfig { get; set; }
             public ConfigEntry<Easings> PosYCloseEaseConfig { get; set; }
-            
+
             // Scale
             public ConfigEntry<bool> ScaActiveConfig { get; set; }
             public ConfigEntry<Vector2> ScaOpenConfig { get; set; }
@@ -14106,7 +13969,7 @@ namespace EditorManagement.Functions.Editors
             public ConfigEntry<Easings> ScaXCloseEaseConfig { get; set; }
             public ConfigEntry<Easings> ScaYOpenEaseConfig { get; set; }
             public ConfigEntry<Easings> ScaYCloseEaseConfig { get; set; }
-            
+
             // Rotation
             public ConfigEntry<bool> RotActiveConfig { get; set; }
             public ConfigEntry<float> RotOpenConfig { get; set; }
@@ -14172,7 +14035,7 @@ namespace EditorManagement.Functions.Editors
                 configEntry = _configEntry;
                 description = _configEntry.Description.Description;
             }
-            
+
             public EditorProperty(ValueType _valueType, EditorPropCategory _editorProp, ConfigEntryBase _configEntry)
             {
                 name = _configEntry.Definition.Key;
@@ -14181,7 +14044,7 @@ namespace EditorManagement.Functions.Editors
                 configEntry = _configEntry;
                 description = _configEntry.Description.Description;
             }
-            
+
             public EditorProperty(string _name, ValueType _valueType, EditorPropCategory _editorProp, ConfigEntryBase _configEntry)
             {
                 name = _name;
@@ -14190,7 +14053,7 @@ namespace EditorManagement.Functions.Editors
                 configEntry = _configEntry;
                 description = _configEntry.Description.Description;
             }
-            
+
             public EditorProperty(string _name, ValueType _valueType, EditorPropCategory _editorProp, ConfigEntryBase _configEntry, string _description)
             {
                 name = _name;

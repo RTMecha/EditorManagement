@@ -1,6 +1,5 @@
-﻿using HarmonyLib;
-
-using EditorManagement.Functions.Editors;
+﻿using EditorManagement.Functions.Editors;
+using HarmonyLib;
 
 namespace EditorManagement.Patchers
 {

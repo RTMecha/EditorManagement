@@ -473,7 +473,7 @@ namespace EditorManagement.Patchers
             prefabTypeButton.onClick.ClearAll();
             prefabTypeButton.onClick.AddListener(delegate ()
             {
-                PrefabEditorManager.inst.OpenPrefabTypePopup(PrefabEditor.inst.NewPrefabType, delegate(int index)
+                PrefabEditorManager.inst.OpenPrefabTypePopup(PrefabEditor.inst.NewPrefabType, delegate (int index)
                 {
                     PrefabEditor.inst.NewPrefabType = index;
                     if (PrefabEditor.inst.dialog)
@@ -488,7 +488,7 @@ namespace EditorManagement.Patchers
             }, true, 1, SpriteManager.RoundedSide.W));
 
             ((RectTransform)prefabEditorData.Find("spacer")).sizeDelta = new Vector2(749f, 32f);
-            ((RectTransform)prefabEditorData.Find("type")).sizeDelta = new Vector2(749f,  48f);
+            ((RectTransform)prefabEditorData.Find("type")).sizeDelta = new Vector2(749f, 48f);
 
             var descriptionGO = prefabEditorData.Find("name").gameObject.Duplicate(prefabEditorData, "description", 4);
             ((RectTransform)descriptionGO.transform).sizeDelta = new Vector2(749f, 108f);
@@ -594,7 +594,7 @@ namespace EditorManagement.Patchers
         {
             return false;
         }
-        
+
         [HarmonyPatch("DeleteInternalPrefab")]
         [HarmonyPrefix]
         static bool DeleteInternalPrefabPrefix(int __0)
@@ -602,7 +602,7 @@ namespace EditorManagement.Patchers
             PrefabEditorManager.inst.DeleteInternalPrefab(__0);
             return false;
         }
-        
+
         [HarmonyPatch("ExpandCurrentPrefab")]
         [HarmonyPrefix]
         static bool ExpandCurrentPrefabPrefix()
@@ -610,7 +610,7 @@ namespace EditorManagement.Patchers
             PrefabEditorManager.inst.ExpandCurrentPrefab();
             return false;
         }
-        
+
         [HarmonyPatch("CollapseCurrentPrefab")]
         [HarmonyPrefix]
         static bool CollapseCurrentPrefabPrefix()
@@ -724,7 +724,7 @@ namespace EditorManagement.Patchers
 
             return false;
         }
-        
+
         [HarmonyPatch("OpenPopup")]
         [HarmonyPrefix]
         static bool OpenPopupPrefix()
