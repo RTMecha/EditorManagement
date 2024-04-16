@@ -1064,7 +1064,7 @@ namespace EditorManagement.Functions.Editors
                             bar.transform.localScale = Vector3.one;
                             bar.name = "input [BOOL]";
 
-                            TooltipHelper.AddTooltip(bar, setting.Key, "");
+                            TooltipHelper.AddHoverTooltip(bar, setting.Key, "");
 
                             var l = label.Duplicate(bar.transform, "", 0);
                             var labelText = l.transform.GetChild(0).GetComponent<Text>();
@@ -1110,7 +1110,7 @@ namespace EditorManagement.Functions.Editors
                             bar.transform.localScale = Vector3.one;
                             bar.name = "input [STRING]";
 
-                            TooltipHelper.AddTooltip(bar, setting.Key, "");
+                            TooltipHelper.AddHoverTooltip(bar, setting.Key, "");
 
                             var l = label.Duplicate(bar.transform, "", 0);
                             var labelText = l.transform.GetChild(0).GetComponent<Text>();
@@ -1176,7 +1176,7 @@ namespace EditorManagement.Functions.Editors
                             image.enabled = true;
                             image.color = new Color(1f, 1f, 1f, 0.03f);
 
-                            TooltipHelper.AddTooltip(x, setting.Key, "");
+                            TooltipHelper.AddHoverTooltip(x, setting.Key, "");
 
                             var input = x.transform.Find("input");
 
@@ -1234,7 +1234,7 @@ namespace EditorManagement.Functions.Editors
                             image.enabled = true;
                             image.color = new Color(1f, 1f, 1f, 0.03f);
 
-                            TooltipHelper.AddTooltip(x, setting.Key, "");
+                            TooltipHelper.AddHoverTooltip(x, setting.Key, "");
 
                             var input = x.transform.Find("input");
 
@@ -1345,6 +1345,7 @@ namespace EditorManagement.Functions.Editors
             ForceSnapBPM, // 60
             AddLayer, // 61
             ParentPicker, // 62
+            ToggleMouseTooltip, // 63
         };
 
         public static void CustomCode(Keybind keybind)
@@ -2211,6 +2212,13 @@ namespace EditorManagement.Functions.Editors
             RTEditor.inst.objectToParent = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
         }
 
+        public static void ToggleMouseTooltip(Keybind keybind)
+        {
+            var o = !EditorConfig.Instance.MouseTooltipDisplay.Value;
+            EditorConfig.Instance.MouseTooltipDisplay.Value = o;
+            EditorManager.inst.DisplayNotification($"Set tooltip {(o ? "on" : "off")}", 1.5f, EditorManager.NotificationType.Success);
+        }
+
         #endregion
 
         #region Settings
@@ -2337,6 +2345,7 @@ namespace EditorManagement.Functions.Editors
                 { "Layer", "1" }
             }, // 61
             null, // 62
+            null, // 63
         };
 
         #endregion

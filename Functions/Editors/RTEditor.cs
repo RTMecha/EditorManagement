@@ -39,6 +39,7 @@ namespace EditorManagement.Functions.Editors
     public class RTEditor : MonoBehaviour
     {
         public static RTEditor inst;
+        public List<EditorThemeManager.EditorTheme> EditorThemes => EditorThemeManager.EditorThemes;
 
         public float timeInEditorOffset;
         public static void Init(EditorManager editorManager) => editorManager?.gameObject?.AddComponent<RTEditor>();
@@ -228,6 +229,20 @@ namespace EditorManagement.Functions.Editors
 
             timelineSlider = EditorManager.inst.timelineSlider.GetComponent<Slider>();
 
+            DestroyImmediate(EditorManager.inst.mouseTooltip);
+            mouseTooltip = EditorManager.inst.notificationPrefabs[0].Duplicate(EditorManager.inst.notification.transform.parent, "tooltip");
+            EditorManager.inst.mouseTooltip = mouseTooltip;
+            mouseTooltipRT = mouseTooltip.transform.AsRT();
+            UIManager.SetRectTransform(mouseTooltipRT, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, new Vector2(250f, 32f));
+            mouseTooltipRT.localScale = new Vector3(0.9f, 0.9f, 1f);
+            mouseTooltipText = mouseTooltip.transform.Find("text").GetComponent<TextMeshProUGUI>();
+
+            EditorThemeManager.AddGraphic(mouseTooltip.GetComponent<Image>(), ThemeGroup.Notification_Background, true);
+            EditorThemeManager.AddGraphic(mouseTooltipRT.Find("bg/bg").GetComponent<Image>(), ThemeGroup.Notification_Info, true, roundedSide: SpriteManager.RoundedSide.Top);
+            EditorThemeManager.AddLightText(mouseTooltipText);
+            EditorThemeManager.AddGraphic(mouseTooltipRT.Find("bg/Image").GetComponent<Image>(), ThemeGroup.Light_Text);
+            EditorThemeManager.AddLightText(mouseTooltipRT.Find("bg/title").GetComponent<Text>());
+
             ModCompatibility.sharedFunctions.AddSet("ParentPickerDisable", (Action)delegate ()
             {
                 parentPickerEnabled = false;
@@ -352,10 +367,9 @@ namespace EditorManagement.Functions.Editors
             {
                 float num = (float)Screen.width / 1920f;
                 num = 1f / num;
-                float x = mousePickerRT.sizeDelta.x;
-                float y = mousePickerRT.sizeDelta.y;
                 mousePickerRT.anchoredPosition = Input.mousePosition * num;
             }
+            UpdateTooltip();
 
             if (selectingKey)
             {
@@ -430,6 +444,50 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public bool tooltipActive;
+        public float tooltipTime;
+        public float tooltipTimeOffset;
+        public float maxTooltipTime = 2f;
+        void UpdateTooltip()
+        {
+            tooltipTime = Time.time - tooltipTimeOffset;
+
+            if (tooltipActive)
+            {
+                float num = (float)Screen.width / 1920f;
+                num = 1f / num;
+                float x = mouseTooltipRT.sizeDelta.x;
+                float y = mouseTooltipRT.sizeDelta.y;
+                var tooltipOffset = Vector3.zero;
+
+                // flips tooltip if mouse is close to the edge of the screen.
+                if ((Input.mousePosition.x + x + 32f) * num >= 1920f)
+                    tooltipOffset.x -= x + 8f;
+                else
+                    tooltipOffset.x = 8f;
+
+                // flips tooltip if mouse is close to the edge of the screen.
+                if ((Input.mousePosition.y + y + 32f) * num >= 1080f)
+                    tooltipOffset.y -= y;
+
+                var position = (Input.mousePosition + tooltipOffset) * num;
+                position.x = Mathf.Clamp(position.x, 40f, 1880f);
+                position.y = Mathf.Clamp(position.y, 40f, 1040f);
+                mouseTooltipRT.anchoredPosition = position;
+            }
+
+            if (tooltipTime > maxTooltipTime && tooltipActive)
+            {
+                tooltipActive = false;
+                mouseTooltip?.SetActive(false);
+            }
+
+            if (!EditorConfig.Instance.MouseTooltipDisplay.Value)
+            {
+                mouseTooltip?.SetActive(false);
+            }
+        }
+
         #region Variables
 
         public Transform wholeTimeline;
@@ -455,44 +513,31 @@ namespace EditorManagement.Functions.Editors
         public static bool ShowModdedUI { get; set; }
 
         public bool ienumRunning;
+
+        public Slider timelineSlider;
+
+        public TextMeshProUGUI tooltipText;
+
+        // Mouse Picker
+        public GameObject mousePicker;
+        RectTransform mousePickerRT;
+        public GameObject mouseTooltip;
+        public RectTransform mouseTooltipRT;
+        public TextMeshProUGUI mouseTooltipText;
         public bool parentPickerEnabled = false;
         public bool prefabPickerEnabled = false;
         public bool selectingMultiple = false;
 
-        public Slider timelineSlider;
-
-        public GameObject mousePicker;
-        RectTransform mousePickerRT;
-
         public BeatmapObject objectToParent;
 
-        public InputField layersIF;
-        Image layersImage;
-        public Image LayersImage
-        {
-            get
-            {
-                if (!layersImage)
-                    layersImage = layersIF.GetComponent<Image>();
-                return layersImage;
-            }
-        }
-
-        Toggle layerToggle;
-        public Toggle LayerToggle
-        {
-            get
-            {
-                if (!layerToggle && layersIF.transform.parent.Find("6"))
-                    layerToggle = layersIF.transform.parent.Find("6").GetComponent<Toggle>();
-                return layerToggle;
-            }
-        }
-
+        // Timelime Bar
         public GameObject timelineBar;
-
-        public InputField pitchIF;
-        public InputField timeIF;
+        public InputField timeField;
+        public Text timelineTime;
+        public InputField pitchField;
+        public InputField editorLayerField;
+        public Image editorLayerImage;
+        public Toggle eventLayerToggle;
 
         public GameObject defaultIF;
 
@@ -500,12 +545,10 @@ namespace EditorManagement.Functions.Editors
 
         public Transform titleBar;
 
+        // File Info
         public Text fileInfoText;
-
         public GameObject doggoObject;
         public Image doggoImage;
-
-        public Text timelineTime;
 
         public Image timelineSliderHandle;
         public Image timelineSliderRuler;
@@ -527,6 +570,7 @@ namespace EditorManagement.Functions.Editors
 
         public static EditorProperty.EditorPropCategory currentCategory = EditorProperty.EditorPropCategory.General;
 
+        // Key
         public bool selectingKey = false;
         public Action onKeySet;
         public Action<KeyCode> setKey;
@@ -754,10 +798,11 @@ namespace EditorManagement.Functions.Editors
                 notifyGroup.childAlignment = TextAnchor.UpperLeft;
             }
 
+            tooltipText = EditorManager.inst.tooltip.GetComponent<TextMeshProUGUI>();
             var tooltip = EditorManager.inst.tooltip.transform.parent.gameObject;
             EditorThemeManager.AddGraphic(tooltip.GetComponent<Image>(), ThemeGroup.Notification_Background, true);
             EditorThemeManager.AddGraphic(tooltip.transform.Find("bg/bg").GetComponent<Image>(), ThemeGroup.Notification_Info, true, roundedSide: SpriteManager.RoundedSide.Top);
-            EditorThemeManager.AddLightText(tooltip.transform.Find("text").GetComponent<TextMeshProUGUI>());
+            EditorThemeManager.AddLightText(tooltipText);
             EditorThemeManager.AddGraphic(tooltip.transform.Find("bg/Image").GetComponent<Image>(), ThemeGroup.Light_Text);
             EditorThemeManager.AddLightText(tooltip.transform.Find("bg/title").GetComponent<Text>());
         }
@@ -1748,21 +1793,21 @@ namespace EditorManagement.Functions.Editors
 
             Layer = layer;
             TimelineOverlayImage.color = GetLayerColor(layer);
-            LayersImage.color = GetLayerColor(layer);
+            editorLayerImage.color = GetLayerColor(layer);
 
-            layersIF.onValueChanged.RemoveAllListeners();
-            layersIF.text = (layer + 1).ToString();
-            layersIF.onValueChanged.AddListener(delegate (string _value)
+            editorLayerField.onValueChanged.RemoveAllListeners();
+            editorLayerField.text = (layer + 1).ToString();
+            editorLayerField.onValueChanged.AddListener(delegate (string _value)
             {
                 if (int.TryParse(_value, out int num))
                     SetLayer(Mathf.Clamp(num - 1, 0, int.MaxValue));
             });
 
-            if (LayerToggle)
+            if (eventLayerToggle)
             {
-                LayerToggle.onValueChanged.ClearAll();
-                LayerToggle.isOn = layerType == LayerType.Events;
-                LayerToggle.onValueChanged.AddListener(delegate (bool _val)
+                eventLayerToggle.onValueChanged.ClearAll();
+                eventLayerToggle.isOn = layerType == LayerType.Events;
+                eventLayerToggle.onValueChanged.AddListener(delegate (bool _val)
                 {
                     SetLayer(_val ? LayerType.Events : LayerType.Objects);
                 });
@@ -1914,9 +1959,9 @@ namespace EditorManagement.Functions.Editors
 
             Destroy(GameObject.Find("TimelineBar/GameObject/6").GetComponent<EventTrigger>());
 
-            var eventToggle = GameObject.Find("TimelineBar/GameObject/6").GetComponent<Toggle>();
-            eventToggle.onValueChanged.ClearAll();
-            eventToggle.onValueChanged.AddListener(delegate (bool _val)
+            eventLayerToggle = GameObject.Find("TimelineBar/GameObject/6").GetComponent<Toggle>();
+            eventLayerToggle.onValueChanged.ClearAll();
+            eventLayerToggle.onValueChanged.AddListener(delegate (bool _val)
             {
                 layerType = _val ? LayerType.Events : LayerType.Objects;
             });
@@ -1941,20 +1986,21 @@ namespace EditorManagement.Functions.Editors
                 timeObj.transform.localScale = Vector3.one;
                 timeObj.name = "Time Input";
 
-                timeIF = timeObj.GetComponent<InputField>();
+                timeField = timeObj.GetComponent<InputField>();
 
                 //Triggers.AddTooltip(timeObj, "Shows the exact current time of song.", "Type in the input field to go to a precise time in the level.");
+                TooltipHelper.AssignTooltip(timeObj, "Time Input", 3f);
 
                 timeObj.transform.SetAsFirstSibling();
                 timeObj.SetActive(true);
-                ((Text)timeIF.placeholder).text = "Set time...";
-                ((Text)timeIF.placeholder).alignment = TextAnchor.MiddleCenter;
-                ((Text)timeIF.placeholder).fontSize = 16;
-                ((Text)timeIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
-                timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
-                timeIF.characterValidation = InputField.CharacterValidation.Decimal;
+                ((Text)timeField.placeholder).text = "Set time...";
+                ((Text)timeField.placeholder).alignment = TextAnchor.MiddleCenter;
+                ((Text)timeField.placeholder).fontSize = 16;
+                ((Text)timeField.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
+                timeField.text = AudioManager.inst.CurrentAudioSource.time.ToString();
+                timeField.characterValidation = InputField.CharacterValidation.Decimal;
 
-                timeIF.onValueChanged.AddListener(delegate (string _value)
+                timeField.onValueChanged.AddListener(delegate (string _value)
                 {
                     if (float.TryParse(_value, out float num))
                     {
@@ -1962,7 +2008,7 @@ namespace EditorManagement.Functions.Editors
                     }
                 });
 
-                TriggerHelper.AddEventTrigger(timeObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF) });
+                TriggerHelper.AddEventTrigger(timeObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeField) });
             }
 
             var layersObj = Instantiate(timeObj);
@@ -1976,42 +2022,39 @@ namespace EditorManagement.Functions.Editors
                 {
                     layersObj.transform.GetChild(i).localScale = Vector3.one;
                 }
-                //layersObj.GetComponent<HoverTooltip>().tooltipLangauges.Add(Triggers.NewTooltip("Input any positive number to go to that editor layer.", "Layers will only show specific objects that are on that layer. Can be good to use for organizing levels.", new List<string> { "Middle Mouse Button" }));
 
-                layersIF = layersObj.GetComponent<InputField>();
-                layersIF.textComponent.alignment = TextAnchor.MiddleCenter;
+                TooltipHelper.AssignTooltip(layersObj, "Editor Layer", 3f);
 
-                layersIF.text = GetLayerString(EditorManager.inst.layer);
+                editorLayerField = layersObj.GetComponent<InputField>();
+                editorLayerField.textComponent.alignment = TextAnchor.MiddleCenter;
 
-                var layerImage = layersObj.GetComponent<Image>();
+                editorLayerField.text = GetLayerString(EditorManager.inst.layer);
 
-                layersObj.AddComponent<ContrastColors>().Init(layersIF.textComponent, layerImage);
+                editorLayerImage = editorLayerField.image;
 
-                layersIF.characterValidation = InputField.CharacterValidation.None;
-                layersIF.contentType = InputField.ContentType.Standard;
-                ((Text)layersIF.placeholder).text = "Set layer...";
-                ((Text)layersIF.placeholder).alignment = TextAnchor.MiddleCenter;
-                ((Text)layersIF.placeholder).fontSize = 16;
-                ((Text)layersIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
-                layersIF.onValueChanged.RemoveAllListeners();
-                layersIF.onValueChanged.AddListener(delegate (string _value)
+                layersObj.AddComponent<ContrastColors>().Init(editorLayerField.textComponent, editorLayerImage);
+
+                editorLayerField.characterValidation = InputField.CharacterValidation.None;
+                editorLayerField.contentType = InputField.ContentType.Standard;
+                ((Text)editorLayerField.placeholder).text = "Set layer...";
+                ((Text)editorLayerField.placeholder).alignment = TextAnchor.MiddleCenter;
+                ((Text)editorLayerField.placeholder).fontSize = 16;
+                ((Text)editorLayerField.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
+                editorLayerField.onValueChanged.RemoveAllListeners();
+                editorLayerField.onValueChanged.AddListener(delegate (string _value)
                 {
                     if (int.TryParse(_value, out int num))
-                    {
                         SetLayer(Mathf.Clamp(num - 1, 0, int.MaxValue));
-                    }
                 });
 
-                layerImage.color = GetLayerColor(EditorManager.inst.layer);
+                editorLayerImage.color = GetLayerColor(EditorManager.inst.layer);
 
                 TriggerHelper.AddEventTriggerParams(layersObj,
-                    TriggerHelper.ScrollDeltaInt(layersIF, 1, 1, int.MaxValue), TriggerHelper.CreateEntry(EventTriggerType.PointerDown, delegate (BaseEventData eventData)
+                    TriggerHelper.ScrollDeltaInt(editorLayerField, 1, 1, int.MaxValue), TriggerHelper.CreateEntry(EventTriggerType.PointerDown, delegate (BaseEventData eventData)
                     {
                         var pointerEventData = (PointerEventData)eventData;
                         if (pointerEventData.button == PointerEventData.InputButton.Middle)
-                        {
                             EditorPlugin.ListObjectLayers();
-                        }
                     }));
             }
 
@@ -2021,26 +2064,21 @@ namespace EditorManagement.Functions.Editors
                 pitchObj.transform.SetSiblingIndex(5);
                 pitchObj.name = "pitch";
                 pitchObj.transform.localScale = Vector3.one;
+                TooltipHelper.AssignTooltip(pitchObj, "Pitch", 3f);
 
-                pitchIF = pitchObj.GetComponent<InputField>();
-                ((Text)pitchIF.placeholder).text = "Pitch";
-                ((Text)pitchIF.placeholder).alignment = TextAnchor.MiddleCenter;
-                ((Text)pitchIF.placeholder).fontSize = 16;
-                ((Text)pitchIF.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
-                pitchIF.onValueChanged.RemoveAllListeners();
-                pitchIF.onValueChanged.AddListener(delegate (string _val)
+                pitchField = pitchObj.GetComponent<InputField>();
+                ((Text)pitchField.placeholder).text = "Pitch";
+                ((Text)pitchField.placeholder).alignment = TextAnchor.MiddleCenter;
+                ((Text)pitchField.placeholder).fontSize = 16;
+                ((Text)pitchField.placeholder).horizontalOverflow = HorizontalWrapMode.Overflow;
+                pitchField.onValueChanged.RemoveAllListeners();
+                pitchField.onValueChanged.AddListener(delegate (string _val)
                 {
                     if (float.TryParse(_val, out float num))
-                    {
                         AudioManager.inst.SetPitch(num);
-                    }
-                    else
-                    {
-                        EditorManager.inst.DisplayNotification("Input is not correct format!", 1f, EditorManager.NotificationType.Error);
-                    }
                 });
 
-                TriggerHelper.AddEventTrigger(pitchObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pitchIF, 0.1f, 10f) });
+                TriggerHelper.AddEventTrigger(pitchObj, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pitchField, 0.1f, 10f) });
 
                 //Triggers.AddTooltip(pitchObj, "Change the pitch of the song", "", new List<string> { "Up / Down Arrow" }, clear: true);
 
@@ -2055,7 +2093,7 @@ namespace EditorManagement.Functions.Editors
             EditorThemeManager.AddSelectable(timeDefault.AddComponent<Button>(), ThemeGroup.List_Button_1);
             EditorThemeManager.AddLightText(timeDefault.transform.GetChild(0).GetComponent<Text>());
 
-            EditorThemeManager.AddInputField(timeIF);
+            EditorThemeManager.AddInputField(timeField);
 
             var play = timelineBar.transform.Find("play").gameObject;
             Destroy(play.GetComponent<Animator>());
@@ -2069,7 +2107,7 @@ namespace EditorManagement.Functions.Editors
             leftPitchButton.transition = Selectable.Transition.ColorTint;
             EditorThemeManager.AddSelectable(leftPitchButton, ThemeGroup.Function_2, false);
 
-            EditorThemeManager.AddInputField(pitchIF);
+            EditorThemeManager.AddInputField(pitchField);
 
             var rightPitch = timelineBar.transform.Find(">").gameObject;
             Destroy(rightPitch.GetComponent<Animator>());
@@ -2078,11 +2116,11 @@ namespace EditorManagement.Functions.Editors
             EditorThemeManager.AddSelectable(rightPitchButton, ThemeGroup.Function_2, false);
 
             // Leave this group empty since the color is already handled via the custom layer colors. This is only here for the rounded edges.
-            EditorThemeManager.AddGraphic(layersIF.image, ThemeGroup.Null, true);
-            EditorThemeManager.AddGraphic(eventToggle.image, ThemeGroup.Event_Check, true);
-            EditorThemeManager.AddGraphic(eventToggle.transform.Find("Background/Text").GetComponent<Text>(), ThemeGroup.Event_Check_Text);
+            EditorThemeManager.AddGraphic(editorLayerField.image, ThemeGroup.Null, true);
+            EditorThemeManager.AddGraphic(eventLayerToggle.image, ThemeGroup.Event_Check, true);
+            EditorThemeManager.AddGraphic(eventLayerToggle.transform.Find("Background/Text").GetComponent<Text>(), ThemeGroup.Event_Check_Text);
 
-            EditorThemeManager.AddGraphic(eventToggle.graphic, ThemeGroup.Timeline_Bar);
+            EditorThemeManager.AddGraphic(eventLayerToggle.graphic, ThemeGroup.Timeline_Bar);
 
             var prefabButton = timelineBar.transform.Find("prefab").gameObject;
             EditorThemeManager.AddGraphic(prefabButton.GetComponent<Image>(), ThemeGroup.Prefab, true);
@@ -2660,7 +2698,7 @@ namespace EditorManagement.Functions.Editors
 
             EditorThemeManager.AddToggle(toggle);
 
-            TooltipHelper.AddTooltip(toggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
+            TooltipHelper.AddHoverTooltip(toggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
 
             CreateGlobalSettings();
             LoadGlobalSettings();
@@ -2759,7 +2797,7 @@ namespace EditorManagement.Functions.Editors
                 var themePathSpacer = EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme").GetChild(2).gameObject
                     .Duplicate(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme"), "themepathers", 8);
 
-                var themePathGO = timeIF.gameObject.Duplicate(themePathSpacer.transform, "themes path");
+                var themePathGO = timeField.gameObject.Duplicate(themePathSpacer.transform, "themes path");
                 ((RectTransform)themePathGO.transform).anchoredPosition = new Vector2(150f, 0f);
                 ((RectTransform)themePathGO.transform).sizeDelta = new Vector2(300f, 34f);
 
@@ -2845,7 +2883,7 @@ namespace EditorManagement.Functions.Editors
 
             // Prefab Path
             {
-                var prefabPathGO = timeIF.gameObject.Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "prefabs path");
+                var prefabPathGO = timeField.gameObject.Duplicate(EditorManager.inst.GetDialog("Prefab Popup").Dialog.Find("external prefabs"), "prefabs path");
 
                 ((RectTransform)prefabPathGO.transform).anchoredPosition = config.PrefabExternalPrefabPathPos.Value;
                 ((RectTransform)prefabPathGO.transform).sizeDelta = new Vector2(config.PrefabExternalPrefabPathLength.Value, 32f);
@@ -9166,6 +9204,7 @@ namespace EditorManagement.Functions.Editors
                 var difficultyColor = metadata.song.difficulty >= 0 && metadata.song.difficulty < DataManager.inst.difficulties.Count ?
                     DataManager.inst.difficulties[metadata.song.difficulty].color : LSColors.themeColors["none"].color;
 
+                TooltipHelper.AssignTooltip(gameObject, "Level List Button", 3f);
                 gameObject.AddComponent<HoverTooltip>().tooltipLangauges.Add(new HoverTooltip.Tooltip
                 {
                     desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title,
@@ -9581,7 +9620,7 @@ namespace EditorManagement.Functions.Editors
 
             SetAutoSave();
 
-            TriggerHelper.AddEventTrigger(timeIF.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeIF, max: AudioManager.inst.CurrentAudioSource.clip.length) });
+            TriggerHelper.AddEventTrigger(timeField.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(timeField, max: AudioManager.inst.CurrentAudioSource.clip.length) });
 
             // Load Settings like timeline position, editor layer, bpm active, etc
             LoadSettings();
@@ -10245,7 +10284,7 @@ namespace EditorManagement.Functions.Editors
                             "<br>COL: " + "<#" + RTHelpers.ColorToHex(GetObjectColor(beatmapObject, false)) + ">" + "█ <b>#" + RTHelpers.ColorToHex(GetObjectColor(beatmapObject, true)) + "</b></color>" +
                             ptr;
 
-                        TooltipHelper.AddTooltip(buttonPrefab, desc, hint);
+                        TooltipHelper.AddHoverTooltip(buttonPrefab, desc, hint);
                     }
                 }
             }
@@ -11046,7 +11085,7 @@ namespace EditorManagement.Functions.Editors
 
                     if (prop.valueType != EditorProperty.ValueType.Function)
                     {
-                        TooltipHelper.AddTooltip(gameObject, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
+                        TooltipHelper.AddHoverTooltip(gameObject, prop.name, prop.description, new List<string> { prop.configEntry.BoxedValue.GetType().ToString() });
 
                         EditorThemeManager.ApplyGraphic(gameObject.GetComponent<Image>(), ThemeGroup.List_Button_1_Normal, true);
                     }
@@ -11552,7 +11591,7 @@ namespace EditorManagement.Functions.Editors
                             }
                         case EditorProperty.ValueType.Function:
                             {
-                                TooltipHelper.AddTooltip(gameObject, prop.name, prop.description, new List<string> { "Function" });
+                                TooltipHelper.AddHoverTooltip(gameObject, prop.name, prop.description, new List<string> { "Function" });
 
                                 var button = gameObject.GetComponent<Button>();
                                 button.onClick.AddListener(delegate ()
@@ -12252,6 +12291,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HoverUIPlaySound),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ImportPrefabsDirectly),
             new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.ThemesPerPage),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.MouseTooltipDisplay),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NotificationWidth),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NotificationSize),
             new EditorProperty(EditorProperty.ValueType.Enum, EditorPlugin.EditorConfig.NotificationDirection),
