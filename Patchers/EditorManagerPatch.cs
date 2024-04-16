@@ -100,7 +100,12 @@ namespace EditorManagement.Patchers
             EditorThemeManager.AddGraphic(openFilePopupPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
 
             var openFilePopupClose = openFilePopupPanel.transform.Find("x").gameObject;
-            EditorThemeManager.AddSelectable(openFilePopupClose.GetComponent<Button>(), ThemeGroup.Close);
+            var openFilePopupCloseButton = openFilePopupClose.GetComponent<Button>();
+            openFilePopupCloseButton.onClick.AddListener(() =>
+            {
+                RTEditor.inst.choosingLevelTemplate = false;
+            });
+            EditorThemeManager.AddSelectable(openFilePopupCloseButton, ThemeGroup.Close);
 
             EditorThemeManager.AddGraphic(openFilePopupClose.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
 
@@ -200,8 +205,7 @@ namespace EditorManagement.Patchers
             __instance.loading = false;
 
             var levelButtonPrefab = __instance.folderButtonPrefab.Duplicate(__instance.transform, __instance.folderButtonPrefab.name);
-            var levelButtonPrefabStorage = levelButtonPrefab.AddComponent<FolderButtonStorage>();
-            levelButtonPrefabStorage.clickable = levelButtonPrefab.AddComponent<Clickable>();
+            var levelButtonPrefabStorage = levelButtonPrefab.AddComponent<FunctionButtonStorage>();
             levelButtonPrefabStorage.button = levelButtonPrefab.GetComponent<Button>();
             levelButtonPrefabStorage.text = levelButtonPrefab.transform.GetChild(0).GetComponent<Text>();
             __instance.folderButtonPrefab = levelButtonPrefab;
@@ -745,7 +749,7 @@ namespace EditorManagement.Patchers
         {
             if (Instance.hasLoadedLevel)
             {
-                Instance.ClearDialogs();
+                Instance.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
                 Instance.ShowDialog("Save As Popup");
                 return false;
             }
@@ -793,6 +797,7 @@ namespace EditorManagement.Patchers
             if (Instance.openFileSearch == null)
                 Instance.openFileSearch = "";
 
+            RTEditor.inst.choosingLevelTemplate = false;
             component.text = Instance.openFileSearch;
             Instance.ClearDialogs(EditorManager.EditorDialog.DialogType.Popup);
             Instance.RenderOpenBeatmapPopup();

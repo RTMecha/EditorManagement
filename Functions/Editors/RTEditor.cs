@@ -2453,7 +2453,7 @@ namespace EditorManagement.Functions.Editors
 
                             if (RTFile.FileExists(path + "/metadata.vgm") && RTFile.FileExists(path + "/audio.ogg") && RTFile.FileExists(path + "/cover.jpg"))
                             {
-                                var copyTo = path.Replace(Path.GetDirectoryName(path).Replace("\\", "/"), RTFile.ApplicationDirectory + editorListPath);
+                                var copyTo = path.Replace(Path.GetDirectoryName(path).Replace("\\", "/"), RTFile.ApplicationDirectory + editorListSlash);
 
                                 if (!RTFile.DirectoryExists(copyTo))
                                     Directory.CreateDirectory(copyTo);
@@ -3106,7 +3106,13 @@ namespace EditorManagement.Functions.Editors
             newFilePopupDetection.onEnable = delegate (bool _val)
             {
                 if (!_val)
+                {
+                    if (choosingLevelTemplate)
+                        EditorManager.inst.HideDialog("Open File Popup");
+
+                    choosingLevelTemplate = false;
                     EditorManager.inst.HideDialog("New Level Template Dialog");
+                }
             };
 
             EditorThemeManager.AddGraphic(newFilePopup.GetComponent<Image>(), ThemeGroup.Background_1, true);
@@ -3219,6 +3225,8 @@ namespace EditorManagement.Functions.Editors
         public Transform newLevelTemplateContent;
         public GameObject newLevelTemplatePrefab;
         public Sprite newLevelTemplateBaseSprite;
+        public InputField nameInput;
+        public Sprite currentTemplateSprite;
         void CreateNewLevelTemplateDialog()
         {
             var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
@@ -3258,8 +3266,8 @@ namespace EditorManagement.Functions.Editors
             var scrollViewLE = scrollView.AddComponent<LayoutElement>();
             scrollViewLE.ignoreLayout = true;
 
-            scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
-            scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
+            scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 280f);
+            scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 542f);
 
             newLevelTemplatePrefab = EditorManager.inst.folderButtonPrefab.Duplicate(transform, "Template");
 
@@ -3301,10 +3309,106 @@ namespace EditorManagement.Functions.Editors
             noLevelText.text = "No Preview";
             noLevel.SetActive(false);
 
-            StartCoroutine(AlephNetworkManager.DownloadImageTexture(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "default_template.png", delegate (Texture2D texture2D)
+            StartCoroutine(AlephNetworkManager.DownloadImageTexture(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "default_template.png", (Texture2D texture2D) =>
             {
                 newLevelTemplateBaseSprite = SpriteManager.CreateSprite(texture2D);
             }));
+
+            var gameObject = new GameObject("create");
+            gameObject.transform.SetParent(editorDialogTransform);
+            gameObject.transform.SetSiblingIndex(2);
+            gameObject.transform.localScale = Vector3.one;
+            var rectTransform = gameObject.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(765f, 32f);
+
+            var createLevelTemplateButton = EditorPrefabHolder.Instance.Function2Button.Duplicate(rectTransform, "create");
+            UIManager.SetRectTransform(createLevelTemplateButton.transform.AsRT(), new Vector2(200f, 42f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(322f, 32f));
+            var createLevelTemplateButtonStorage = createLevelTemplateButton.GetComponent<FunctionButtonStorage>();
+            createLevelTemplateButtonStorage.text.text = "Create a new template";
+            createLevelTemplateButtonStorage.button.onClick.ClearAll();
+            createLevelTemplateButtonStorage.button.onClick.AddListener(() =>
+            {
+                choosingLevelTemplate = true;
+                EditorManager.inst.ShowDialog("Open File Popup");
+                EditorManager.inst.RenderOpenBeatmapPopup();
+
+                EditorManager.inst.DisplayNotification("Choose a level to create a template from.", 4f, EditorManager.NotificationType.Info);
+            });
+
+            var gameObject2 = new GameObject("name");
+            gameObject2.transform.SetParent(editorDialogTransform);
+            gameObject2.transform.SetSiblingIndex(3);
+            gameObject2.transform.localScale = Vector3.one;
+            var rectTransform2 = gameObject2.AddComponent<RectTransform>();
+            rectTransform2.sizeDelta = new Vector2(765f, 32f);
+
+            nameInput = EditorPrefabHolder.Instance.NumberInputField.GetComponent<InputFieldStorage>().inputField.gameObject.Duplicate(rectTransform2, "name").GetComponent<InputField>();
+            nameInput.onValueChanged.ClearAll();
+            nameInput.text = "New Level Template";
+            UIManager.SetRectTransform(nameInput.image.rectTransform, new Vector2(160f, 42f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(400f, 32f));
+
+            var gameObject3 = new GameObject("preview");
+            gameObject3.transform.SetParent(editorDialogTransform);
+            gameObject3.transform.SetSiblingIndex(4);
+            gameObject3.transform.localScale = Vector3.one;
+            var rectTransform3 = gameObject3.AddComponent<RectTransform>();
+            rectTransform3.sizeDelta = new Vector2(765f, 32f);
+
+            var preview = new GameObject("preview");
+            preview.transform.SetParent(rectTransform3);
+            preview.transform.localScale = Vector3.one;
+
+            var previewImage = preview.AddComponent<Image>();
+            UIManager.SetRectTransform(previewImage.rectTransform, new Vector2(-200f, 76f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(240f, 135f));
+
+            var choosePreviewButton = EditorPrefabHolder.Instance.Function2Button.Duplicate(rectTransform3, "choose");
+            UIManager.SetRectTransform(choosePreviewButton.transform.AsRT(), new Vector2(200f, 42f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(322f, 32f));
+            var choosePreviewButtonStorage = choosePreviewButton.GetComponent<FunctionButtonStorage>();
+            choosePreviewButtonStorage.text.text = "Select a preview";
+            choosePreviewButtonStorage.button.onClick.ClearAll();
+            choosePreviewButtonStorage.button.onClick.AddListener(() =>
+            {
+                ShowWarningPopup("Select a file browser.", () =>
+                {
+                    string text = FileBrowser.OpenSingleFile("Select a preview image to use!", RTFile.ApplicationDirectory, "png");
+                    if (!string.IsNullOrEmpty(text))
+                    {
+                        var sprite = SpriteManager.LoadSprite(text);
+
+                        if (sprite.texture.width != 480 || sprite.texture.height != 270)
+                        {
+                            EditorManager.inst.DisplayNotification("Preview image resolution must be 480p x 270p", 3f, EditorManager.NotificationType.Warning);
+                            EditorManager.inst.HideDialog("Warning Popup");
+                            return;
+                        }
+
+                        currentTemplateSprite = sprite;
+                        previewImage.sprite = currentTemplateSprite;
+                    }
+                    EditorManager.inst.HideDialog("Warning Popup");
+                }, () =>
+                {
+                    EditorManager.inst.ShowDialog("Browser Popup");
+                    RTFileBrowser.inst.UpdateBrowser(Directory.GetCurrentDirectory(), new string[] { ".png" }, onSelectFile: delegate (string _val)
+                    {
+                        if (!string.IsNullOrEmpty(_val))
+                        {
+                            EditorManager.inst.HideDialog("Browser Popup");
+                            var sprite = SpriteManager.LoadSprite(_val);
+
+                            if (sprite.texture.width != 480 || sprite.texture.height != 270)
+                            {
+                                EditorManager.inst.DisplayNotification("Preview image resolution must be 480p x 270p", 3f, EditorManager.NotificationType.Warning);
+                                return;
+                            }
+
+                            currentTemplateSprite = sprite;
+                            previewImage.sprite = currentTemplateSprite;
+                        }
+                    });
+                    EditorManager.inst.HideDialog("Warning Popup");
+                }, "System Browser", "Editor Browser");
+            });
         }
 
         void CreatePreviewCover()
@@ -9036,7 +9140,8 @@ namespace EditorManagement.Functions.Editors
                 var metadata = MetaData.Parse(JSON.Parse(metadataStr));
 
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(transform, $"Folder [{Path.GetFileName(path)}]");
-                var folderButtonStorage = gameObject.GetComponent<FolderButtonStorage>();
+                var folderButtonStorage = gameObject.GetComponent<FunctionButtonStorage>();
+                var folderButtonFunction = gameObject.AddComponent<FolderButtonFunction>();
 
                 var editorWrapper = new EditorWrapper(gameObject, metadata, path, SteamWorkshop.inst.defaultSteamImageSprite);
 
@@ -9067,16 +9172,60 @@ namespace EditorManagement.Functions.Editors
                     hint = "</color>" + metadata.song.description,
                 });
 
-                folderButtonStorage.clickable.onClick = delegate (PointerEventData pointerEventData)
+                folderButtonStorage.button.onClick.ClearAll();
+                folderButtonFunction.onClick = (PointerEventData eventData) =>
                 {
                     if (choosingLevelTemplate)
                     {
+                        if (string.IsNullOrEmpty(nameInput.text))
+                        {
+                            EditorManager.inst.DisplayNotification($"Level template name is empty. Name it something unique via the input field in the Level Template editor.", 3f, EditorManager.NotificationType.Error);
+                            return;
+                        }
+                        
+                        if (nameInput.text[nameInput.text.Length - 1] == '/' || nameInput.text[nameInput.text.Length - 1] == '\\')
+                        {
+                            EditorManager.inst.DisplayNotification($"Name cannot end with a / or a \\.", 3f, EditorManager.NotificationType.Error);
+                            return;
+                        }
+
+                        if (RTFile.DirectoryExists($"{RTFile.ApplicationDirectory}beatmaps/templates/{nameInput.text}"))
+                        {
+                            EditorManager.inst.DisplayNotification($"Level template with the name \"{nameInput.text}\" already exists! Set the name to something else.", 3f, EditorManager.NotificationType.Error);
+                            return;
+                        }
+
                         EditorManager.inst.HideDialog("Open File Popup");
+
+                        ShowWarningPopup("Are you sure you want to make a new level template?", () =>
+                        {
+                            choosingLevelTemplate = false;
+
+                            var copyTo = $"{RTFile.ApplicationDirectory}beatmaps/templates/{RTFile.ValidateDirectory(nameInput.text)}";
+                            if (RTFile.DirectoryExists(copyTo))
+                            {
+                                EditorManager.inst.DisplayNotification($"Level template with the name \"{nameInput.text}\" already exists!", 3f, EditorManager.NotificationType.Error);
+                                return;
+                            }
+
+                            Directory.CreateDirectory(copyTo);
+                            File.Copy(file + "/level.lsb", copyTo + "/level.lsb");
+
+                            if (currentTemplateSprite)
+                                currentTemplateSprite.Save(copyTo + "/preview.png");
+
+                            RefreshNewLevelTemplates();
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        }, () =>
+                        {
+                            EditorManager.inst.ShowDialog("Open File Popup");
+                            EditorManager.inst.HideDialog("Warning Popup");
+                        });
 
                         return;
                     }
 
-                    if (pointerEventData.button == PointerEventData.InputButton.Right)
+                    if (eventData.button == PointerEventData.InputButton.Right)
                     {
                         EditorManager.inst.ShowDialog("Autosave Popup");
                         RefreshAutosaveList(editorWrapper);
@@ -9086,7 +9235,6 @@ namespace EditorManagement.Functions.Editors
                     StartCoroutine(LoadLevel(path));
                     EditorManager.inst.HideDialog("Open File Popup");
                 };
-                folderButtonStorage.button.onClick.ClearAll();
 
                 EditorThemeManager.ApplySelectable(folderButtonStorage.button, ThemeGroup.List_Button_1);
                 EditorThemeManager.ApplyLightText(folderButtonStorage.text);
@@ -11620,7 +11768,7 @@ namespace EditorManagement.Functions.Editors
             foreach (var file in files)
             {
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(autosaveContent, $"Folder [{Path.GetFileName(file)}]");
-                var folderButtonStorage = gameObject.GetComponent<FolderButtonStorage>();
+                var folderButtonStorage = gameObject.GetComponent<FunctionButtonStorage>();
 
                 var hoverUI = gameObject.AddComponent<HoverUI>();
                 hoverUI.size = buttonHoverSize;
