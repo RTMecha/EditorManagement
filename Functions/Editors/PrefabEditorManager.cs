@@ -1897,7 +1897,7 @@ namespace EditorManagement.Functions.Editors
             typeImage.color = prefabType.Color;
             typeIconImage.sprite = prefabType.Icon;
 
-            TooltipHelper.AddTooltip(gameObject,
+            TooltipHelper.AddHoverTooltip(gameObject,
                 "<#" + LSColors.ColorToHex(typeImage.color) + ">" + prefab.Name + "</color>",
                 "O: " + prefab.Offset +
                 "<br>T: " + typeName.text +
@@ -2025,7 +2025,7 @@ namespace EditorManagement.Functions.Editors
                         typeImage.color = prefabType.Color;
                         typeIconImage.sprite = prefabType.Icon;
 
-                        TooltipHelper.AddTooltip(gameObject,
+                        TooltipHelper.AddHoverTooltip(gameObject,
                             "<#" + LSColors.ColorToHex(typeImage.color) + ">" + prefab.Name + "</color>",
                             "O: " + prefab.Offset +
                             "<br>T: " + typeName.text +

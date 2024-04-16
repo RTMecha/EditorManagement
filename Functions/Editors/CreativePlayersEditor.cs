@@ -855,7 +855,7 @@ namespace EditorManagement.Functions.Editors
 
             LSHelpers.DeleteChildren(bar.transform);
 
-            TooltipHelper.AddTooltip(bar, key, "");
+            TooltipHelper.AddHoverTooltip(bar, key, "");
 
             var l = label.Duplicate(bar.transform, "label", 0);
             l.transform.localScale = Vector3.one;
@@ -1203,7 +1203,7 @@ namespace EditorManagement.Functions.Editors
                     LSHelpers.DeleteChildren(bar.transform);
                     bar.transform.AsRT().sizeDelta = new Vector2(750f, 116f);
 
-                    TooltipHelper.AddTooltip(bar, key, "");
+                    TooltipHelper.AddHoverTooltip(bar, key, "");
 
                     var l = label.Duplicate(bar.transform, "label", 0);
                     l.transform.localScale = Vector3.one;
@@ -1254,7 +1254,7 @@ namespace EditorManagement.Functions.Editors
 
                     LSHelpers.DeleteChildren(bar.transform);
 
-                    TooltipHelper.AddTooltip(bar, key, "");
+                    TooltipHelper.AddHoverTooltip(bar, key, "");
 
                     var l = label.Duplicate(bar.transform, "label", 0);
                     l.transform.localScale = Vector3.one;
@@ -1327,7 +1327,7 @@ namespace EditorManagement.Functions.Editors
             var b = BarGenerator(singleInput, label, parent, "input [NULL]", "Cannot edit default Player Models!");
             b.transform.Find("label").AsRT().sizeDelta = new Vector2(554f, 20f);
 
-            TooltipHelper.AddTooltip(b, "Default player models cannot be edited.", "");
+            TooltipHelper.AddHoverTooltip(b, "Default player models cannot be edited.", "");
 
             yield break;
         }
@@ -2024,7 +2024,7 @@ namespace EditorManagement.Functions.Editors
 
                     dup.GetComponent<RectTransform>().anchoredPosition = new Vector2(0f, 0f);
 
-                    TooltipHelper.AddTooltip(dup, "Duplicate Object", "Creates a complete copy of this object.");
+                    TooltipHelper.AddHoverTooltip(dup, "Duplicate Object", "Creates a complete copy of this object.");
 
                     var dupButton = dup.GetComponent<Button>();
                     var cb = dupButton.colors;
@@ -2359,7 +2359,7 @@ namespace EditorManagement.Functions.Editors
                                 if (i == 23)
                                 {
                                     list[i].image.color = RTHelpers.BeatmapTheme.playerColors[playerModelIndex];
-                                    TooltipHelper.AddTooltip(list[i].gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
+                                    TooltipHelper.AddHoverTooltip(list[i].gameObject, "Current Player Color", "This represents the color the player would normally always use. For example: Player One uses color 1, Player Two uses color 2, etc.");
                                 }
                                 if (i == 24)
                                 {
@@ -2371,7 +2371,7 @@ namespace EditorManagement.Functions.Editors
                                     }
 
                                     list[i].image.color = col;
-                                    TooltipHelper.AddTooltip(list[i].gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
+                                    TooltipHelper.AddHoverTooltip(list[i].gameObject, "Custom Color", "Uses a custom hex code set by you. Do remember this will break levels that use themes heavily such as fade black/white themes.");
                                 }
                                 if (i == 25)
                                 {

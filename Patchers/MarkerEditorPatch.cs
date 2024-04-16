@@ -406,7 +406,7 @@ namespace EditorManagement.Patchers
                         Instance.SetCurrentMarker(index, true);
                     });
 
-                    TooltipHelper.AddTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
+                    TooltipHelper.AddHoverTooltip(gameObject, "<#" + LSColors.ColorToHex(markerColor) + ">" + marker.name + " [ " + marker.time + " ]</color>", marker.desc, new List<string>());
 
                     EditorThemeManager.ApplyGraphic(button.image, ThemeGroup.List_Button_2_Normal, true);
                     EditorThemeManager.ApplyGraphic(image, ThemeGroup.Null, true);
