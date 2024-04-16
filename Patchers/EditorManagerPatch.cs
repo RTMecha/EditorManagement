@@ -18,6 +18,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -215,6 +216,15 @@ namespace EditorManagement.Patchers
 
             ThemeEditorManager.Init(ThemeEditor.inst);
 
+            try
+            {
+                GameManager.inst.playerGUI.transform.Find("Interface").gameObject.SetActive(false);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"{EditorPlugin.className}Could not set interface inactive.\n{ex}");
+            }
+
             // New Level Name input field contains text but newLevelName does not, so people might end up making an empty named level if they don't name it anything else.
             __instance.newLevelName = "New Awesome Beatmap";
 
@@ -373,11 +383,11 @@ namespace EditorManagement.Patchers
 
             if (Instance.GUI.activeSelf == true && Instance.isEditing == true)
             {
-                if (RTEditor.inst.timeIF && !RTEditor.inst.timeIF.isFocused)
-                    RTEditor.inst.timeIF.text = AudioManager.inst.CurrentAudioSource.time.ToString();
+                if (RTEditor.inst.timeField && !RTEditor.inst.timeField.isFocused)
+                    RTEditor.inst.timeField.text = AudioManager.inst.CurrentAudioSource.time.ToString();
 
-                if (RTEditor.inst.pitchIF && !RTEditor.inst.pitchIF.isFocused)
-                    RTEditor.inst.pitchIF.text = ModCompatibility.sharedFunctions.ContainsKey("EventsCorePitchOffset") ?
+                if (RTEditor.inst.pitchField && !RTEditor.inst.pitchField.isFocused)
+                    RTEditor.inst.pitchField.text = ModCompatibility.sharedFunctions.ContainsKey("EventsCorePitchOffset") ?
                         ((float)ModCompatibility.sharedFunctions["EventsCorePitchOffset"]).ToString() : AudioManager.inst.pitch.ToString();
 
                 if (RTEditor.inst.doggoImage)
@@ -612,8 +622,8 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool updatePointerPrefix()
         {
-            Vector2 point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
-            Rect rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
+            var point = new Vector2(Input.mousePosition.x, Input.mousePosition.y);
+            var rect = new Rect(0f, 0.305f * (float)Screen.height, (float)Screen.width, (float)Screen.height * 0.025f);
             if (Instance.updateAudioTime && Input.GetMouseButtonUp(0) && rect.Contains(point))
             {
                 AudioManager.inst.CurrentAudioSource.time = Instance.audioTimeForSlider / Instance.Zoom;
@@ -624,7 +634,7 @@ namespace EditorManagement.Patchers
                 var slider = RTEditor.inst.timelineSlider;
                 slider.minValue = 0f;
                 slider.maxValue = AudioManager.inst.CurrentAudioSource.clip.length * Instance.Zoom;
-                Instance.audioTimeForSlider = Instance.timelineSlider.GetComponent<Slider>().value;
+                Instance.audioTimeForSlider = slider.value;
                 Instance.updateAudioTime = true;
                 Instance.wasDraggingPointer = true;
                 if (Mathf.Abs(Instance.audioTimeForSlider / Instance.Zoom - Instance.prevAudioTime) < 2f)
@@ -1114,6 +1124,19 @@ namespace EditorManagement.Patchers
         {
             if (__0)
                 RTEditor.inst.RebuildNotificationLayout();
+        }
+
+        [HarmonyPatch("UpdateTooltip")]
+        [HarmonyPrefix]
+        static bool UpdateTooltipPrefix()
+        {
+            if (!RTEditor.inst.tooltipText)
+                EditorManager.inst.tooltip.GetComponent<TextMeshProUGUI>().text = Instance.tooltipString;
+
+            RTEditor.inst.tooltipText?.SetText(Instance.tooltipString);
+            LayoutRebuilder.ForceRebuildLayoutImmediate(Instance.tooltip.transform.AsRT());
+
+            return false;
         }
 
         [HarmonyPatch("GetSprite")]
