@@ -341,10 +341,25 @@ namespace EditorManagement.Patchers
 
                         if (EditorConfig.Instance.ResetHealthInEditor.Value && InputDataManager.inst.players.Count > 0)
                         {
-                            foreach (var player in PlayerManager.Players)
+                            try
                             {
-                                if (player.PlayerModel != null && player.PlayerModel.basePart != null)
-                                    player.Health = player.PlayerModel.basePart.health;
+                                foreach (var player in PlayerManager.Players)
+                                {
+                                    if (ModCompatibility.CreativePlayersInstalled && player.PlayerModel != null && player.PlayerModel.basePart != null)
+                                    {
+                                        player.health = player.PlayerModel.basePart.health;
+                                        player.Player.UpdateTail(player.health, Vector3.zero);
+                                    }
+                                    else if (!ModCompatibility.CreativePlayersInstalled)
+                                    {
+                                        player.health = 3;
+                                        player.Player.UpdateTail(3, Vector3.zero);
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Debug.LogError($"{ex}");
                             }
                         }
                     }
