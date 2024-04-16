@@ -18,7 +18,7 @@ using UnityEngine.UI;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.3")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.4")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -566,7 +566,7 @@ namespace EditorManagement
         static bool IsUsingInputFieldPrefix(ref bool __result)
         {
             __result = EventSystem.current && EventSystem.current.currentSelectedGameObject &&
-                (EventSystem.current.currentSelectedGameObject.GetComponentInChildren<InputField>() || EventSystem.current.currentSelectedGameObject.GetComponentInChildren<TMPro.TMP_InputField>());
+                (EventSystem.current.currentSelectedGameObject.GetComponent<InputField>() || EventSystem.current.currentSelectedGameObject.GetComponent<TMPro.TMP_InputField>());
             return false;
         }
     }
