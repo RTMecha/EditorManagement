@@ -266,7 +266,7 @@ namespace EditorManagement.Functions.Editors
                 var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(rectTransform, "Button");
                 UIManager.SetRectTransform(gameObject.transform.AsRT(), Vector2.zero, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(740f, 32f));
                 editorWrapper.CombinerGameObject = gameObjectBase;
-                var folderButtonStorage = gameObject.GetComponent<FolderButtonStorage>();
+                var folderButtonStorage = gameObject.GetComponent<FunctionButtonStorage>();
 
                 var hoverUI = gameObject.AddComponent<HoverUI>();
                 hoverUI.size = buttonHoverSize;
