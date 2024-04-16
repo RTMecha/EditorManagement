@@ -37,6 +37,7 @@ namespace EditorManagement.Functions.Components
         }
 
         public float time = 2f;
+        [NonSerialized]
         public List<HoverTooltip.Tooltip> tooltips = new List<HoverTooltip.Tooltip>();
     }
 }
