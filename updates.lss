@@ -1,3 +1,7 @@
+2.5.5 > [Apr 17, 2024]
+- Made a few changes to the Arrhythmia theme.
+- Potentially fixed a bug with reset health config breaking the editor on preview exit.
+- Fixed an error log with the mouse tooltip.
 2.5.4 > [Apr 17, 2024]
 - Fixed a few UI elements' sprites being removed.
 - Started working on new mouse tooltip system.
