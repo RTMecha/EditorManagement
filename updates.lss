@@ -1,3 +1,8 @@
+2.5.2 > [Apr 16, 2024]
+- Did quite a bit of internal code cleanup.
+- Moved where editor themes are stored due to it chewing up compile time.
+- Added Convert to Planner Note button to the Marker editor. This creates a new Project Planner Note based on the Marker you're currently selecting.
+- Added level ID display to Metadata editor. You can click on the ID to copy it and use it for modifiers that need a level ID.
 2.5.1 > [Apr 15, 2024]
 - Removed debug feature with editor themes.
 - Applied a few UI elements that I forgot to do to editor themes.
