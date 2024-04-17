@@ -1,3 +1,5 @@
+2.5.7 > [Apr 17, 2024]
+- Fixed theme page and search not working together.
 2.5.6 > [Apr 17, 2024]
 - Added a page system to the theme Event Keyframe.
 - Fixed Prefabs in the Prefab popups being assigned the incorrect color.
