@@ -36,7 +36,32 @@ namespace EditorManagement.Functions.Helpers
             { "Level List Button", new List<HoverTooltip.Tooltip>
             {
                 NewTooltip("A level from your editor folder.",
-                    "Left-click to open the level and right click to open the autosave popup.", lanuage: Language.English),
+                    "Left click to open the level and right click to open the autosave popup.", lanuage: Language.English),
+            } },
+            { "External Prefab List Button", new List<HoverTooltip.Tooltip>
+            {
+                NewTooltip("A prefab from your prefabs folder.",
+                    "Left click to open the External Prefab window, or if your Import Prefabs Directly setting is on, to import the prefab directly into your level.", lanuage: Language.English),
+            } },
+            { "Internal Prefab List Button", new List<HoverTooltip.Tooltip>
+            {
+                NewTooltip("A prefab from the level itself.",
+                    "Left click to add the Prefab to the level as a Prefab Object. You can also assign this as a Quick Prefab by selecting the Quick Prefab button below and selecting this Prefab.", lanuage: Language.English),
+            } },
+            { "Editor Path", new List<HoverTooltip.Tooltip>
+            {
+                NewTooltip("The editor directory in your beatmaps folder.",
+                    "Type in the field to change where your levels are loaded from. Right click the field to open a quick folder selection.", lanuage: Language.English),
+            } },
+            { "Prefab Path", new List<HoverTooltip.Tooltip>
+            {
+                NewTooltip("The prefabs directory in your beatmaps folder.",
+                    "Type in the field to change where your prefabs are loaded from. Right click the field to open a quick folder selection.", lanuage: Language.English),
+            } },
+            { "Theme Path", new List<HoverTooltip.Tooltip>
+            {
+                NewTooltip("The themes directory in your beatmaps folder.",
+                    "Type in the field to change where your prefabs are loaded from. Right click the field to open a quick folder selection.", lanuage: Language.English),
             } },
         };
 
