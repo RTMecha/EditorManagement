@@ -470,7 +470,7 @@ namespace EditorManagement.Functions.Editors
                     case "Scrollbar 2": return ThemeGroup.Scrollbar_2;
                     case "Scrollbar Handle 2": return ThemeGroup.Scrollbar_2_Handle;
                     case "Scrollbar Handle 2 Normal": return ThemeGroup.Scrollbar_2_Handle_Normal;
-                    case "Scrollbar Handle 2 Highlight": return ThemeGroup.Scrollbar_2_Handle_Hightlighted;
+                    case "Scrollbar Handle 2 Highlight": return ThemeGroup.Scrollbar_2_Handle_Highlighted;
                     case "Scrollbar Handle 2 Selected": return ThemeGroup.Scrollbar_2_Handle_Selected;
                     case "Scrollbar Handle 2 Pressed": return ThemeGroup.Scrollbar_2_Handle_Pressed;
                     case "Scrollbar Handle 2 Disabled": return ThemeGroup.Scrollbar_2_Handle_Disabled;
@@ -729,7 +729,7 @@ namespace EditorManagement.Functions.Editors
                     case ThemeGroup.Scrollbar_2: return "Scrollbar 2";
                     case ThemeGroup.Scrollbar_2_Handle: return "Scrollbar Handle 2";
                     case ThemeGroup.Scrollbar_2_Handle_Normal: return "Scrollbar Handle 2 Normal";
-                    case ThemeGroup.Scrollbar_2_Handle_Hightlighted: return "Scrollbar Handle 2 Highlight";
+                    case ThemeGroup.Scrollbar_2_Handle_Highlighted: return "Scrollbar Handle 2 Highlight";
                     case ThemeGroup.Scrollbar_2_Handle_Selected: return "Scrollbar Handle 2 Selected";
                     case ThemeGroup.Scrollbar_2_Handle_Pressed: return "Scrollbar Handle 2 Pressed";
                     case ThemeGroup.Scrollbar_2_Handle_Disabled: return "Scrollbar Handle 2 Disabled";
