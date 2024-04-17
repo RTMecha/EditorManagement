@@ -1,3 +1,7 @@
+2.5.6 > [Apr 17, 2024]
+- Added a page system to the theme Event Keyframe.
+- Fixed Prefabs in the Prefab popups being assigned the incorrect color.
+- Added a few more tooltips.
 2.5.5 > [Apr 17, 2024]
 - Made a few changes to the Arrhythmia theme.
 - Potentially fixed a bug with reset health config breaking the editor on preview exit.
