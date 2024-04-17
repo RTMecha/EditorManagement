@@ -1910,7 +1910,7 @@ namespace EditorManagement.Functions.Editors
             popupInstance.Close.onClick.AddListener(delegate ()
             {
                 EditorManager.inst.HideDialog(name);
-                close.Invoke();
+                close?.Invoke();
             });
 
             popupInstance.SearchField = popup.transform.Find("search-box/search").GetComponent<InputField>();
@@ -2894,7 +2894,7 @@ namespace EditorManagement.Functions.Editors
                 {
                     if (int.TryParse(_val, out int p))
                     {
-                        ThemeEditorManager.inst.eventThemePage = Mathf.Clamp(p, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage);
+                        ThemeEditorManager.inst.eventThemePage = Mathf.Clamp(p, 0, ThemeEditorManager.inst.ThemesCount / ThemeEditorManager.eventThemesPerPage);
 
                         StartCoroutine(ThemeEditorManager.inst.RenderThemeList(
                             EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme/theme-search").GetComponent<InputField>().text));
@@ -2912,21 +2912,21 @@ namespace EditorManagement.Functions.Editors
                 pageStorage.leftButton.onClick.AddListener(delegate ()
                 {
                     if (int.TryParse(pageStorage.inputField.text, out int p))
-                        pageStorage.inputField.text = Mathf.Clamp(p - 1, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+                        pageStorage.inputField.text = Mathf.Clamp(p - 1, 0, ThemeEditorManager.inst.ThemesCount / ThemeEditorManager.eventThemesPerPage).ToString();
                 });
 
                 pageStorage.rightButton.onClick.ClearAll();
                 pageStorage.rightButton.onClick.AddListener(delegate ()
                 {
                     if (int.TryParse(pageStorage.inputField.text, out int p))
-                        pageStorage.inputField.text = Mathf.Clamp(p + 1, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+                        pageStorage.inputField.text = Mathf.Clamp(p + 1, 0, ThemeEditorManager.inst.ThemesCount / ThemeEditorManager.eventThemesPerPage).ToString();
                 });
 
                 pageStorage.rightGreaterButton.onClick.ClearAll();
                 pageStorage.rightGreaterButton.onClick.AddListener(delegate ()
                 {
                     if (int.TryParse(pageStorage.inputField.text, out int p))
-                        pageStorage.inputField.text = (DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+                        pageStorage.inputField.text = (ThemeEditorManager.inst.ThemesCount / ThemeEditorManager.eventThemesPerPage).ToString();
                 });
 
                 Destroy(pageStorage.middleButton.gameObject);
