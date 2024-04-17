@@ -185,6 +185,8 @@ namespace EditorManagement.Functions.Editors
 
                 themeContent = themesPopup.Content;
 
+                themesPopup.Grid.cellSize = new Vector2(600f, 362f);
+
                 EditorHelper.AddEditorDropdown("View Themes", "", "View", RTEditor.inst.SearchSprite, delegate ()
                 {
                     EditorManager.inst.ShowDialog("Theme Popup");
