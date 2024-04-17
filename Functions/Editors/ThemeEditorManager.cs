@@ -687,19 +687,33 @@ namespace EditorManagement.Functions.Editors
         public static InputFieldStorage eventPageStorage;
         public int eventThemePage;
         public static int eventThemesPerPage = 30;
+        public string searchTerm;
+        public int CurrentEventThemePage => eventThemePage + 1;
+        public int MinEventTheme => MaxEventTheme - eventThemesPerPage;
+        public int MaxEventTheme => CurrentEventThemePage * eventThemesPerPage;
+        public int ThemesCount => ThemePanels.Where(x => RTHelpers.SearchString(x.Theme.name, searchTerm)).Count();
         public IEnumerator RenderThemeList(string search)
         {
             if (!loadingThemes && !EventEditor.inst.eventDrag)
             {
                 loadingThemes = true;
 
-                var layer = eventThemePage + 1;
-                int max = layer * eventThemesPerPage;
+                searchTerm = search;
 
-                TriggerHelper.AddEventTriggerParams(eventPageStorage.inputField.gameObject, TriggerHelper.ScrollDeltaInt(eventPageStorage.inputField, max: AllThemes.Count / eventThemesPerPage));
-
+                int num = 0;
                 for (int i = 0; i < ThemePanels.Count; i++)
-                    ThemePanels[i].SetActive(i >= max - eventThemesPerPage && i < max && RTHelpers.SearchString(ThemePanels[i].Theme.name, search));
+                {
+                    var searchBool = RTHelpers.SearchString(ThemePanels[i].Theme.name, search);
+                    if (searchBool)
+                        num++;
+
+                    ThemePanels[i].SetActive(num >= MinEventTheme && num < MaxEventTheme && searchBool);
+                }
+
+                if (ThemesCount > eventThemesPerPage)
+                    TriggerHelper.AddEventTriggerParams(eventPageStorage.inputField.gameObject, TriggerHelper.ScrollDeltaInt(eventPageStorage.inputField, max: ThemesCount / eventThemesPerPage));
+                else
+                    TriggerHelper.AddEventTriggerParams(eventPageStorage.inputField.gameObject);
 
                 loadingThemes = false;
             }
