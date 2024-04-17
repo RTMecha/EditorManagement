@@ -135,6 +135,7 @@ namespace EditorManagement.Patchers
                 "Markers Count",
                 "Objects Alive Count",
                 "Time in Editor",
+                "Level opened amount",
                 "Song Progress",
                 "Camera Position",
                 "Camera Zoom",
@@ -342,6 +343,10 @@ namespace EditorManagement.Patchers
                 if (info.ContainsKey("Time in Editor") && info["Time in Editor"])
                 {
                     info["Time in Editor"].text = $"[ {FontManager.TextTranslater.SecondsToTime(RTEditor.inst.timeEditing)} ]  ";
+                }
+                if (info.ContainsKey("Level opened amount") && info["Level opened amount"])
+                {
+                    info["Level opened amount"].text = $"[ {RTEditor.inst.openAmount} ]  ";
                 }
                 if (info.ContainsKey("Song Progress") && info["Song Progress"])
                 {
