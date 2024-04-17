@@ -4,11 +4,28 @@
     <TargetFramework>net46</TargetFramework>
     <AssemblyName>EditorManagement</AssemblyName>
     <Description>My first plugin</Description>
-    <Version>2.5.5</Version>
+    <Version>2.5.6</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <!-- Change this to your BepInEx plugins folder -->
+    <PluginGamePath>E:/Project Launcher/instances/System Error Creating/BepInEx/plugins/</PluginGamePath>
+  </PropertyGroup>
 
+  <!-- Post-build event for Debug configuration -->
+  <Target Name="PostBuildEventDebug" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Debug'">
+    <Message Text="Debug post-build event running..." Importance="high" />
+    <Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)$(AssemblyName).dll&quot;" />
+  </Target>
+
+  <!-- Post-build event for Release configuration -->
+  <Target Name="PostBuildEventRelease" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'">
+    <Message Text="Release post-build event running..." Importance="high" />
+    <Exec Command="echo F|xcopy /Y &quot;$(MSBuildProjectDirectory)\$(OutDir)$(AssemblyName).dll&quot; &quot;$(PluginGamePath)$(AssemblyName).dll&quot;" />
+  </Target>
+  
   <ItemGroup>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
     <PackageReference Include="BepInEx.Core" Version="5.*" />
@@ -22,38 +39,39 @@
   
   <ItemGroup>
     <Reference Include="0Harmony">
-      <HintPath>..\..\4.1.16 Mods\lib\0Harmony.dll</HintPath>
+      <HintPath>..\lib\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass">
-      <HintPath>..\..\4.1.16 Mods\lib\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>..\lib\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\4.1.16 Mods\lib\Assembly-CSharp-publicized.dll</HintPath>
+      <HintPath>..\lib\Assembly-CSharp-publicized.dll</HintPath>
     </Reference>
     <Reference Include="BepInEx">
-      <HintPath>..\..\4.1.16 Mods\lib\BepInEx.dll</HintPath>
+      <HintPath>..\lib\BepInEx.dll</HintPath>
     </Reference>
     <Reference Include="DOTween">
       <HintPath>..\lib\DOTween.dll</HintPath>
     </Reference>
     <Reference Include="InControl">
-      <HintPath>..\..\4.1.16 Mods\lib\InControl.dll</HintPath>
+      <HintPath>..\lib\InControl.dll</HintPath>
     </Reference>
     <Reference Include="RTFunctions">
-      <HintPath>..\..\4.1.16 Mods\RTFunctions\bin\Debug\net46\RTFunctions.dll</HintPath>
+      <!-- Change this to wherever you have the latest build of RTFunctions stored.-->
+      <HintPath>..\RTFunctions\bin\Debug\net46\RTFunctions.dll</HintPath>
     </Reference>
     <Reference Include="System.Windows.Forms" />
     <Reference Include="Unity.TextMeshPro">
       <HintPath>..\lib\Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>..\..\4.1.16 Mods\lib\UnityEngine.dll</HintPath>
+      <HintPath>..\lib\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\4.1.16 Mods\lib\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>..\lib\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>..\..\4.1.16 Mods\lib\UnityEngine.UI.dll</HintPath>
+      <HintPath>..\lib\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>

@@ -18,7 +18,7 @@ using UnityEngine.UI;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.5")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.6")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -112,6 +112,7 @@ namespace EditorManagement
             KeybindManager.AllowKeys = EditorConfig.AllowEditorKeybindsWithEditorCam.Value;
             PrefabEditorManager.ImportPrefabsDirectly = EditorConfig.ImportPrefabsDirectly.Value;
             ThemeEditorManager.themesPerPage = EditorConfig.ThemesPerPage.Value;
+            ThemeEditorManager.eventThemesPerPage = EditorConfig.ThemesEventKeyframePerPage.Value;
             RTEditor.DraggingPlaysSound = EditorConfig.DraggingPlaysSound.Value;
             RTEditor.DraggingPlaysSoundBPM = EditorConfig.DraggingPlaysSoundOnlyWithBPM.Value;
             RTEditor.ShowModdedUI = EditorConfig.ShowModdedFeaturesInEditor.Value;
@@ -202,6 +203,7 @@ namespace EditorManagement
             EditorConfig.ThemeTemplateFX18.SettingChanged += ThemeTemplateChanged;
 
             EditorConfig.ThemesPerPage.SettingChanged += ThemePopupChanged;
+            EditorConfig.ThemesEventKeyframePerPage.SettingChanged += ThemeEventKeyframeChanged;
 
             EditorConfig.WaveformRerender.SettingChanged += TimelineWaveformChanged;
 
@@ -218,6 +220,28 @@ namespace EditorManagement
             EditorConfig.RoundedUI.SettingChanged += EditorThemeChanged;
 
             EditorConfig.AutosaveLoopTime.SettingChanged += AutosaveChanged;
+        }
+
+        void ThemeEventKeyframeChanged(object sender, EventArgs e)
+        {
+            ThemeEditorManager.eventThemesPerPage = EditorConfig.ThemesEventKeyframePerPage.Value;
+
+            if (!EditorManager.inst)
+                return;
+
+            var p = Mathf.Clamp(ThemeEditorManager.inst.eventThemePage, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+
+            if (ThemeEditorManager.eventPageStorage.inputField.text != p)
+            {
+                ThemeEditorManager.eventPageStorage.inputField.text = p;
+                return;
+            }
+
+
+            var dialogTmp = EventEditor.inst.dialogRight.GetChild(4);
+            if (dialogTmp.gameObject.activeInHierarchy)
+                StartCoroutine(ThemeEditorManager.inst.RenderThemeList(
+                    dialogTmp.Find("theme-search").GetComponent<InputField>().text));
         }
 
         void AutosaveChanged(object sender, EventArgs e)
