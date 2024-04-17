@@ -146,6 +146,11 @@ namespace EditorManagement.Functions.Editors
             functionButton1Storage.button = prefabHolder.Function1Button.GetComponent<Button>();
             functionButton1Storage.text = prefabHolder.Function1Button.transform.GetChild(0).GetComponent<Text>();
 
+            if (!RTFile.FileExists(EditorSettingsPath))
+                CreateGlobalSettings();
+            else
+                LoadGlobalSettings();
+
             SetupNotificationValues();
             SetupTimelineBar();
             SetupTimelineTriggers();
@@ -168,11 +173,6 @@ namespace EditorManagement.Functions.Editors
             CreateDebug();
             CreateAutosavePopup();
             SetupMiscEditorThemes();
-
-            if (!RTFile.FileExists(EditorSettingsPath))
-                CreateGlobalSettings();
-            else
-                LoadGlobalSettings();
 
             // Player Editor
             {
@@ -608,8 +608,6 @@ namespace EditorManagement.Functions.Editors
             jn["timeline"]["l"] = EditorManager.inst.layer.ToString();
             jn["editor"]["t"] = timeEditing.ToString();
             jn["editor"]["a"] = openAmount.ToString();
-            jn["sort"]["f"] = levelFilter.ToString();
-            jn["sort"]["a"] = levelAscend.ToString();
             jn["misc"]["sn"] = SettingEditor.inst.SnapActive.ToString();
             jn["misc"]["so"] = bpmOffset.ToString();
             jn["misc"]["t"] = AudioManager.inst.CurrentAudioSource.time;
@@ -642,12 +640,6 @@ namespace EditorManagement.Functions.Editors
             {
                 savedTimeEditng = jn["editor"]["t"].AsFloat;
                 openAmount = jn["editor"]["a"].AsInt + 1;
-            }
-
-            if (jn["sort"] != null)
-            {
-                levelFilter = jn["sort"]["f"].AsInt;
-                levelAscend = jn["sort"]["a"].AsBool;
             }
 
             if (jn["misc"] != null)
@@ -1302,12 +1294,45 @@ namespace EditorManagement.Functions.Editors
             StartCoroutine(UpdatePrefabs());
         }
 
+        public void UpdateOrderDropdown()
+        {
+            if (!levelOrderDropdown)
+                return;
+
+            levelOrderDropdown.onValueChanged.ClearAll();
+            levelOrderDropdown.value = levelFilter;
+            levelOrderDropdown.onValueChanged.AddListener(delegate (int _value)
+            {
+                levelFilter = _value;
+                StartCoroutine(RefreshLevelList());
+                SaveGlobalSettings();
+            });
+        }
+
+        public void UpdateAscendToggle()
+        {
+            if (!levelAscendToggle)
+                return;
+
+            levelAscendToggle.onValueChanged.ClearAll();
+            levelAscendToggle.isOn = levelAscend;
+            levelAscendToggle.onValueChanged.AddListener(delegate (bool _value)
+            {
+                levelAscend = _value;
+                StartCoroutine(RefreshLevelList());
+                SaveGlobalSettings();
+            });
+        }
+
         public void CreateGlobalSettings()
         {
             if (RTFile.FileExists(EditorSettingsPath))
                 return;
 
             var jn = JSON.Parse("{}");
+
+            jn["sort"]["asc"] = "True";
+            jn["sort"]["order"] = "0";
 
             EditorPath = "editor";
             jn["paths"]["editor"] = EditorPath;
@@ -1338,6 +1363,14 @@ namespace EditorManagement.Functions.Editors
                 return;
 
             var jn = JSON.Parse(RTFile.ReadFromFile(EditorSettingsPath));
+
+            if (!string.IsNullOrEmpty(jn["sort"]["asc"]))
+                levelAscend = jn["sort"]["asc"].AsBool;
+            if (!string.IsNullOrEmpty(jn["sort"]["order"]))
+                levelFilter = jn["sort"]["order"].AsInt;
+
+            UpdateOrderDropdown();
+            UpdateAscendToggle();
 
             if (!string.IsNullOrEmpty(jn["paths"]["editor"]))
                 EditorPath = jn["paths"]["editor"];
@@ -1395,6 +1428,9 @@ namespace EditorManagement.Functions.Editors
         public void SaveGlobalSettings()
         {
             var jn = JSON.Parse("{}");
+
+            jn["sort"]["asc"] = levelAscend.ToString();
+            jn["sort"]["order"] = levelFilter.ToString();
 
             jn["paths"]["editor"] = EditorPath;
             jn["paths"]["themes"] = ThemePath;
@@ -1890,6 +1926,7 @@ namespace EditorManagement.Functions.Editors
             popupInstance.Name = name;
             var popup = EditorManager.inst.GetDialog("Parent Selector").Dialog.gameObject
                 .Duplicate(popups, name);
+            popupInstance.GameObject = popup;
             popup.transform.localPosition = Vector3.zero;
 
             var inSize = size == Vector2.zero ? new Vector2(600f, 450f) : size;
@@ -1921,7 +1958,7 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorPopup(name, popup);
 
-            EditorThemeManager.AddGraphic(popup.GetComponent<Image>(), ThemeGroup.Background_1, true);
+            EditorThemeManager.AddGraphic(popup.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
 
             EditorThemeManager.AddGraphic(popupInstance.TopPanel.GetComponent<Image>(), ThemeGroup.Background_1, true, roundedSide: SpriteManager.RoundedSide.Top);
 
@@ -1941,6 +1978,7 @@ namespace EditorManagement.Functions.Editors
         public class Popup
         {
             public string Name { get; set; }
+            public GameObject GameObject { get; set; }
             public Button Close { get; set; }
             public InputField SearchField { get; set; }
             public Transform Content { get; set; }
@@ -2633,13 +2671,15 @@ namespace EditorManagement.Functions.Editors
             fileInfoPopup.AsRT().sizeDelta = new Vector2(500f, 320f);
         }
 
+        Dropdown levelOrderDropdown;
+        Toggle levelAscendToggle;
         void SetupPaths()
         {
             var sortList = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content/autokill/tod-dropdown")
                 .Duplicate(EditorManager.inst.GetDialog("Open File Popup").Dialog);
 
-            var sortListDD = sortList.GetComponent<Dropdown>();
-            EditorThemeManager.AddDropdown(sortList.GetComponent<Dropdown>());
+            levelOrderDropdown = sortList.GetComponent<Dropdown>();
+            EditorThemeManager.AddDropdown(levelOrderDropdown);
 
             var config = EditorConfig.Instance;
 
@@ -2658,9 +2698,9 @@ namespace EditorManagement.Functions.Editors
             }
 
             Destroy(sortList.GetComponent<HideDropdownOptions>());
-            sortListDD.onValueChanged.RemoveAllListeners();
-            sortListDD.options.Clear();
-            sortListDD.options = new List<Dropdown.OptionData>
+            levelOrderDropdown.onValueChanged.ClearAll();
+            levelOrderDropdown.options.Clear();
+            levelOrderDropdown.options = new List<Dropdown.OptionData>
             {
                 new Dropdown.OptionData("Cover"),
                 new Dropdown.OptionData("Artist"),
@@ -2668,13 +2708,15 @@ namespace EditorManagement.Functions.Editors
                 new Dropdown.OptionData("Folder"),
                 new Dropdown.OptionData("Title"),
                 new Dropdown.OptionData("Difficulty"),
-                new Dropdown.OptionData("Date Edited")
+                new Dropdown.OptionData("Date Edited"),
+                new Dropdown.OptionData("Date Created")
             };
-
-            sortListDD.onValueChanged.AddListener(delegate (int _value)
+            levelOrderDropdown.value = levelFilter;
+            levelOrderDropdown.onValueChanged.AddListener(delegate (int _value)
             {
                 levelFilter = _value;
                 StartCoroutine(RefreshLevelList());
+                SaveGlobalSettings();
             });
 
             var checkDes = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/SettingsDialog/snap/toggle")
@@ -2684,24 +2726,21 @@ namespace EditorManagement.Functions.Editors
             checkDesRT.anchoredPosition = config.OpenLevelTogglePosition.Value;
 
             checkDes.transform.Find("title").GetComponent<Text>().enabled = false;
-            var titleRT = checkDes.transform.Find("title").GetComponent<RectTransform>();
-            titleRT.sizeDelta = new Vector2(110f, 32f);
+            checkDes.transform.Find("title").AsRT().sizeDelta = new Vector2(110f, 32f);
 
-            var toggle = checkDes.transform.Find("toggle").GetComponent<Toggle>();
-            toggle.onValueChanged.ClearAll();
-            toggle.isOn = true;
-            toggle.onValueChanged.AddListener(delegate (bool _value)
+            levelAscendToggle = checkDes.transform.Find("toggle").GetComponent<Toggle>();
+            levelAscendToggle.onValueChanged.ClearAll();
+            levelAscendToggle.isOn = levelAscend;
+            levelAscendToggle.onValueChanged.AddListener(delegate (bool _value)
             {
                 levelAscend = _value;
                 StartCoroutine(RefreshLevelList());
+                SaveGlobalSettings();
             });
 
-            EditorThemeManager.AddToggle(toggle);
+            EditorThemeManager.AddToggle(levelAscendToggle);
 
-            TooltipHelper.AddHoverTooltip(toggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
-
-            CreateGlobalSettings();
-            LoadGlobalSettings();
+            TooltipHelper.AddHoverTooltip(levelAscendToggle.gameObject, new List<HoverTooltip.Tooltip> { sortListTip.tooltipLangauges[0] });
 
             // Editor Path
             {
@@ -4108,58 +4147,49 @@ namespace EditorManagement.Functions.Editors
             {
                 labelGenerator("Add a Tag");
 
-                var multiNameSet = zoom.Duplicate(parent, "name");
+                var multiNameSet = EditorPrefabHolder.Instance.NumberInputField.Duplicate(parent, "name");
                 multiNameSet.transform.localScale = Vector3.one;
+                var inputFieldStorage = multiNameSet.GetComponent<InputFieldStorage>();
 
-                multiNameSet.GetComponent<RectTransform>().sizeDelta = new Vector2(428f, 32f);
+                multiNameSet.transform.AsRT().sizeDelta = new Vector2(428f, 32f);
 
-                var inputField = multiNameSet.transform.GetChild(0).GetComponent<InputField>();
-                inputField.characterValidation = InputField.CharacterValidation.None;
-                inputField.characterLimit = 0;
-                inputField.text = "name";
-                ((Text)inputField.placeholder).text = "Enter tag...";
+                inputFieldStorage.inputField.onValueChanged.ClearAll();
+                inputFieldStorage.inputField.characterValidation = InputField.CharacterValidation.None;
+                inputFieldStorage.inputField.characterLimit = 0;
+                inputFieldStorage.inputField.text = "object group";
+                inputFieldStorage.inputField.transform.AsRT().sizeDelta = new Vector2(300f, 32f);
+                ((Text)inputFieldStorage.inputField.placeholder).text = "Enter a tag...";
 
-                EditorThemeManager.AddInputField(inputField);
+                EditorThemeManager.AddInputField(inputFieldStorage.inputField);
 
-                Destroy(multiNameSet.transform.GetChild(0).Find("<").gameObject);
+                Destroy(inputFieldStorage.leftGreaterButton.gameObject);
+                Destroy(inputFieldStorage.leftButton.gameObject);
+                Destroy(inputFieldStorage.middleButton.gameObject);
+                Destroy(inputFieldStorage.rightGreaterButton.gameObject);
 
-                var add = multiNameSet.transform.GetChild(0).Find(">");
-                add.name = "+";
+                inputFieldStorage.rightButton.name = "+";
 
-                var addButton = add.GetComponent<Button>();
-                var addImage = add.GetComponent<Image>();
-
-                string addFilePath = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/add.png";
+                var addFilePath = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/add.png";
 
                 if (RTFile.FileExists(addFilePath))
-                {
-                    EditorManager.inst.StartCoroutine(EditorManager.inst.GetSprite(addFilePath, new EditorManager.SpriteLimits(), delegate (Sprite cover)
-                    {
-                        addImage.sprite = cover;
-                    }, delegate (string errorFile)
-                    {
-                        addImage.sprite = ArcadeManager.inst.defaultImage;
-                    }));
-                }
+                    inputFieldStorage.rightButton.image.sprite = SpriteManager.LoadSprite(addFilePath);
 
-                var mtnLeftLE = add.gameObject.AddComponent<LayoutElement>();
+                var mtnLeftLE = inputFieldStorage.rightButton.gameObject.AddComponent<LayoutElement>();
                 mtnLeftLE.ignoreLayout = true;
 
-                var mtnLeftRT = add.GetComponent<RectTransform>();
-                mtnLeftRT.anchoredPosition = new Vector2(339f, 0f);
-                mtnLeftRT.sizeDelta = new Vector2(32f, 32f);
+                inputFieldStorage.rightButton.transform.AsRT().anchoredPosition = new Vector2(339f, 0f);
+                inputFieldStorage.rightButton.transform.AsRT().sizeDelta = new Vector2(32f, 32f);
 
-                addButton.onClick.RemoveAllListeners();
-                addButton.onClick.AddListener(delegate ()
+                inputFieldStorage.rightButton.onClick.RemoveAllListeners();
+                inputFieldStorage.rightButton.onClick.AddListener(delegate ()
                 {
                     foreach (var timelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
                     {
-                        timelineObject.GetData<BeatmapObject>().tags.Add(inputField.text);
+                        timelineObject.GetData<BeatmapObject>().tags.Add(inputFieldStorage.inputField.text);
                     }
                 });
-                Destroy(add.GetComponent<Animator>());
-                addButton.transition = Selectable.Transition.ColorTint;
-                EditorThemeManager.AddSelectable(addButton, ThemeGroup.Function_2, false);
+
+                EditorThemeManager.AddSelectable(inputFieldStorage.rightButton, ThemeGroup.Function_2, false);
             }
 
             // Clear data
@@ -5204,6 +5234,7 @@ namespace EditorManagement.Functions.Editors
                 });
             }
 
+
             // Assign Colors
             {
                 labelGenerator("Assign Colors");
@@ -5248,118 +5279,23 @@ namespace EditorManagement.Functions.Editors
 
                 labelGenerator("Opacity");
 
-                var opacityObject = zoom.Duplicate(parent, "opacity");
-                opacityObject.transform.localScale = Vector3.one;
-                var opacityPlaceholder = opacityObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
-                opacityPlaceholder.text = "Enter value... (Keep me empty to not set)";
-                opacityPlaceholder.fontSize = 13;
-
-                ((RectTransform)opacityObject.transform).sizeDelta = new Vector2(428f, 32f);
-
-                var opacityIF = opacityObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                opacityIF.text = "";
-
-                TriggerHelper.AddEventTriggerParams(opacityObject, TriggerHelper.ScrollDelta(opacityIF, max: 1f));
-                TriggerHelper.IncreaseDecreaseButtons(opacityIF, max: 1f);
-
-                EditorThemeManager.AddInputField(opacityIF);
-
-                var opacityButtonLeft = opacityIF.transform.Find("<").GetComponent<Button>();
-                var opacityButtonRight = opacityIF.transform.Find(">").GetComponent<Button>();
-
-                Destroy(opacityButtonLeft.GetComponent<Animator>());
-                Destroy(opacityButtonRight.GetComponent<Animator>());
-                opacityButtonLeft.transition = Selectable.Transition.ColorTint;
-                opacityButtonRight.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddSelectable(opacityButtonLeft, ThemeGroup.Function_2, false);
-                EditorThemeManager.AddSelectable(opacityButtonRight, ThemeGroup.Function_2, false);
+                var opacityIF = CreateInputField("opacity", "", "Enter value... (Keep empty to not set)", parent, isInteger: false);
+                ((Text)opacityIF.placeholder).fontSize = 13;
 
                 labelGenerator("Hue");
 
-                var hueObject = zoom.Duplicate(parent, "hue");
-                hueObject.transform.localScale = Vector3.one;
-                var huePlaceholder = hueObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
-                huePlaceholder.text = "Enter value... (Keep me empty to not set)";
-                huePlaceholder.fontSize = 13;
-
-                ((RectTransform)hueObject.transform).sizeDelta = new Vector2(428f, 32f);
-
-                var hueIF = hueObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                hueIF.text = "";
-
-                TriggerHelper.AddEventTriggerParams(hueObject, TriggerHelper.ScrollDelta(hueIF));
-                TriggerHelper.IncreaseDecreaseButtons(hueIF);
-
-                EditorThemeManager.AddInputField(hueIF);
-
-                var hueButtonLeft = hueIF.transform.Find("<").GetComponent<Button>();
-                var hueButtonRight = hueIF.transform.Find(">").GetComponent<Button>();
-
-                Destroy(hueButtonLeft.GetComponent<Animator>());
-                Destroy(hueButtonRight.GetComponent<Animator>());
-                hueButtonLeft.transition = Selectable.Transition.ColorTint;
-                hueButtonRight.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddSelectable(hueButtonLeft, ThemeGroup.Function_2, false);
-                EditorThemeManager.AddSelectable(hueButtonRight, ThemeGroup.Function_2, false);
+                var hueIF = CreateInputField("hue", "", "Enter value... (Keep empty to not set)", parent, isInteger: false);
+                ((Text)hueIF.placeholder).fontSize = 13;
 
                 labelGenerator("Saturation");
 
-                var satObject = zoom.Duplicate(parent, "sat");
-                satObject.transform.localScale = Vector3.one;
-                var satPlaceholder = satObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
-                satPlaceholder.text = "Enter value... (Keep me empty to not set)";
-                satPlaceholder.fontSize = 13;
-
-                ((RectTransform)satObject.transform).sizeDelta = new Vector2(428f, 32f);
-
-                var satIF = satObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                satIF.text = "";
-
-                TriggerHelper.AddEventTriggerParams(satObject, TriggerHelper.ScrollDelta(satIF));
-                TriggerHelper.IncreaseDecreaseButtons(satIF);
-
-                EditorThemeManager.AddInputField(satIF);
-
-                var satButtonLeft = satIF.transform.Find("<").GetComponent<Button>();
-                var satButtonRight = satIF.transform.Find(">").GetComponent<Button>();
-                Destroy(satButtonLeft.GetComponent<Animator>());
-                Destroy(satButtonRight.GetComponent<Animator>());
-                satButtonLeft.transition = Selectable.Transition.ColorTint;
-                satButtonRight.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddSelectable(satButtonLeft, ThemeGroup.Function_2, false);
-                EditorThemeManager.AddSelectable(satButtonRight, ThemeGroup.Function_2, false);
+                var satIF = CreateInputField("sat", "", "Enter value... (Keep empty to not set)", parent, isInteger: false);
+                ((Text)satIF.placeholder).fontSize = 13;
 
                 labelGenerator("Value");
 
-                var valObject = zoom.Duplicate(parent, "sat");
-                valObject.transform.localScale = Vector3.one;
-                var valPlaceholder = valObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>();
-                valPlaceholder.text = "Enter value... (Keep me empty to not set)";
-                valPlaceholder.fontSize = 13;
-
-                ((RectTransform)valObject.transform).sizeDelta = new Vector2(428f, 32f);
-
-                var valIF = valObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                valIF.text = "";
-
-                TriggerHelper.AddEventTriggerParams(valObject, TriggerHelper.ScrollDelta(valIF));
-                TriggerHelper.IncreaseDecreaseButtons(valIF);
-
-                EditorThemeManager.AddInputField(valIF);
-
-                var valButtonLeft = valIF.transform.Find("<").GetComponent<Button>();
-                var valButtonRight = valIF.transform.Find(">").GetComponent<Button>();
-
-                Destroy(valButtonLeft.GetComponent<Animator>());
-                Destroy(valButtonRight.GetComponent<Animator>());
-                valButtonLeft.transition = Selectable.Transition.ColorTint;
-                valButtonRight.transition = Selectable.Transition.ColorTint;
-
-                EditorThemeManager.AddSelectable(valButtonLeft, ThemeGroup.Function_2, false);
-                EditorThemeManager.AddSelectable(valButtonRight, ThemeGroup.Function_2, false);
+                var valIF = CreateInputField("val", "", "Enter value... (Keep empty to not set)", parent, isInteger: false);
+                ((Text)valIF.placeholder).fontSize = 13;
 
                 labelGenerator("Ease Type");
 
@@ -5420,33 +5356,11 @@ namespace EditorManagement.Functions.Editors
                 {
                     labelGenerator("Assign to Index");
 
-                    var gameObject = zoom.Duplicate(parent, "index");
-                    gameObject.transform.localScale = Vector3.one;
-                    gameObject.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
-
-                    ((RectTransform)gameObject.transform).sizeDelta = new Vector2(428f, 32f);
-
-                    var indexIF = gameObject.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                    indexIF.text = "0";
-
-                    TriggerHelper.AddEventTriggerParams(gameObject, TriggerHelper.ScrollDeltaInt(indexIF));
-                    TriggerHelper.IncreaseDecreaseButtonsInt(indexIF);
-
-                    EditorThemeManager.AddInputField(indexIF);
-
-                    var indexButtonLeft = indexIF.transform.Find("<").GetComponent<Button>();
-                    var indexButtonRight = indexIF.transform.Find(">").GetComponent<Button>();
-                    Destroy(indexButtonLeft.GetComponent<Animator>());
-                    Destroy(indexButtonRight.GetComponent<Animator>());
-                    indexButtonLeft.transition = Selectable.Transition.ColorTint;
-                    indexButtonRight.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddSelectable(indexButtonLeft, ThemeGroup.Function_2, false);
-                    EditorThemeManager.AddSelectable(indexButtonRight, ThemeGroup.Function_2, false);
+                    var assignIndex = CreateInputField("index", "0", "Enter index...", parent, maxValue: int.MaxValue);
 
                     buttonGenerator("assign to index", "Assign", parent, delegate ()
                     {
-                        if (int.TryParse(indexIF.text, out int num))
+                        if (int.TryParse(assignIndex.text, out int num))
                         {
                             foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                             {
@@ -5523,29 +5437,7 @@ namespace EditorManagement.Functions.Editors
 
                 // All Types
                 {
-                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
-                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
-                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
-
-                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
-
-                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                    pasteAllTypesToAllIndexIF.text = "0";
-
-                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
-                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
-
-                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
-
-                    var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-                    var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-                    pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
+                    var index = CreateInputField("index", "0", "Enter index...", parent, maxValue: int.MaxValue);
 
                     var pasteAllTypesBase = new GameObject("paste all types");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -5670,7 +5562,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                         {
-                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            if (timelineObject.IsBeatmapObject && int.TryParse(index.text, out int num))
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 if (ObjectEditor.inst.CopiedPositionData != null)
@@ -5746,29 +5638,7 @@ namespace EditorManagement.Functions.Editors
 
                 // Position
                 {
-                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
-                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
-                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
-
-                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
-
-                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                    pasteAllTypesToAllIndexIF.text = "0";
-
-                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
-                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
-
-                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
-
-                    var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-                    var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-                    pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
+                    var index = CreateInputField("index", "0", "Enter index...", parent, maxValue: int.MaxValue);
 
                     var pasteAllTypesBase = new GameObject("paste position");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -5842,7 +5712,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                         {
-                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            if (timelineObject.IsBeatmapObject && int.TryParse(index.text, out int num))
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 if (ObjectEditor.inst.CopiedPositionData != null)
@@ -5870,29 +5740,7 @@ namespace EditorManagement.Functions.Editors
 
                 // Scale
                 {
-                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
-                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
-                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
-
-                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
-
-                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                    pasteAllTypesToAllIndexIF.text = "0";
-
-                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
-                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
-
-                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
-
-                    var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-                    var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-                    pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
+                    var index = CreateInputField("index", "0", "Enter index...", parent, maxValue: int.MaxValue);
 
                     var pasteAllTypesBase = new GameObject("paste scale");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -5966,7 +5814,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                         {
-                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            if (timelineObject.IsBeatmapObject && int.TryParse(index.text, out int num))
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 if (ObjectEditor.inst.CopiedScaleData != null)
@@ -5994,29 +5842,7 @@ namespace EditorManagement.Functions.Editors
 
                 // Rotation
                 {
-                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
-                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
-                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
-
-                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
-
-                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                    pasteAllTypesToAllIndexIF.text = "0";
-
-                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
-                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
-
-                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
-
-                    var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-                    var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-                    pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
+                    var index = CreateInputField("index", "0", "Enter index...", parent, maxValue: int.MaxValue);
 
                     var pasteAllTypesBase = new GameObject("paste rotation");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -6090,7 +5916,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                         {
-                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            if (timelineObject.IsBeatmapObject && int.TryParse(index.text, out int num))
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 if (ObjectEditor.inst.CopiedRotationData != null)
@@ -6118,29 +5944,7 @@ namespace EditorManagement.Functions.Editors
 
                 // Color
                 {
-                    var pasteAllTypesToAllIndex = zoom.Duplicate(parent, "index");
-                    pasteAllTypesToAllIndex.transform.localScale = Vector3.one;
-                    pasteAllTypesToAllIndex.transform.GetChild(0).Find("input/Placeholder").GetComponent<Text>().text = "Enter index...";
-
-                    ((RectTransform)pasteAllTypesToAllIndex.transform).sizeDelta = new Vector2(428f, 32f);
-
-                    var pasteAllTypesToAllIndexIF = pasteAllTypesToAllIndex.transform.GetChild(0).gameObject.GetComponent<InputField>();
-                    pasteAllTypesToAllIndexIF.text = "0";
-
-                    TriggerHelper.AddEventTriggerParams(pasteAllTypesToAllIndex, TriggerHelper.ScrollDeltaInt(pasteAllTypesToAllIndexIF, max: int.MaxValue));
-                    TriggerHelper.IncreaseDecreaseButtonsInt(pasteAllTypesToAllIndexIF, max: int.MaxValue);
-
-                    EditorThemeManager.AddInputField(pasteAllTypesToAllIndexIF);
-
-                    var pasteAllTypesToAllIndexButtonLeft = pasteAllTypesToAllIndexIF.transform.Find("<").GetComponent<Button>();
-                    var pasteAllTypesToAllIndexButtonRight = pasteAllTypesToAllIndexIF.transform.Find(">").GetComponent<Button>();
-                    Destroy(pasteAllTypesToAllIndexButtonLeft.GetComponent<Animator>());
-                    Destroy(pasteAllTypesToAllIndexButtonRight.GetComponent<Animator>());
-                    pasteAllTypesToAllIndexButtonLeft.transition = Selectable.Transition.ColorTint;
-                    pasteAllTypesToAllIndexButtonRight.transition = Selectable.Transition.ColorTint;
-
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonLeft, ThemeGroup.Function_2, false);
-                    EditorThemeManager.AddSelectable(pasteAllTypesToAllIndexButtonRight, ThemeGroup.Function_2, false);
+                    var index = CreateInputField("index", "0", "Enter index...", parent, maxValue: int.MaxValue);
 
                     var pasteAllTypesBase = new GameObject("paste color");
                     pasteAllTypesBase.transform.SetParent(parent);
@@ -6214,7 +6018,7 @@ namespace EditorManagement.Functions.Editors
                     {
                         foreach (var timelineObject in ObjectEditor.inst.SelectedObjects)
                         {
-                            if (timelineObject.IsBeatmapObject && int.TryParse(pasteAllTypesToAllIndexIF.text, out int num))
+                            if (timelineObject.IsBeatmapObject && int.TryParse(index.text, out int num))
                             {
                                 var bm = timelineObject.GetData<BeatmapObject>();
                                 if (ObjectEditor.inst.CopiedColorData != null)
@@ -6241,6 +6045,41 @@ namespace EditorManagement.Functions.Editors
 
             multiObjectEditorDialog.Find("data").AsRT().sizeDelta = new Vector2(810f, 730.11f);
             multiObjectEditorDialog.Find("data/left").AsRT().sizeDelta = new Vector2(355f, 730f);
+        }
+
+        InputField CreateInputField(string name, string value, string placeholder, Transform parent, float length = 340f, bool isInteger = true, float minValue = 0f, float maxValue = 0f)
+        {
+            var gameObject = EditorPrefabHolder.Instance.NumberInputField.Duplicate(parent, name);
+            gameObject.transform.localScale = Vector3.one;
+            var inputFieldStorage = gameObject.GetComponent<InputFieldStorage>();
+
+            inputFieldStorage.inputField.image.rectTransform.sizeDelta = new Vector2(length, 32f);
+            ((Text)inputFieldStorage.inputField.placeholder).text = placeholder;
+
+            ((RectTransform)gameObject.transform).sizeDelta = new Vector2(428f, 32f);
+
+            inputFieldStorage.inputField.text = value;
+
+            if (isInteger)
+            {
+                TriggerHelper.AddEventTriggerParams(gameObject, TriggerHelper.ScrollDeltaInt(inputFieldStorage.inputField, min: (int)minValue, max: (int)maxValue));
+                TriggerHelper.IncreaseDecreaseButtonsInt(inputFieldStorage.inputField, min: (int)minValue, max: (int)maxValue, t: gameObject.transform);
+            }
+            else
+            {
+                TriggerHelper.AddEventTriggerParams(gameObject, TriggerHelper.ScrollDelta(inputFieldStorage.inputField, max: int.MaxValue));
+                TriggerHelper.IncreaseDecreaseButtons(inputFieldStorage.inputField, min: (int)minValue, max: (int)maxValue, t: gameObject.transform);
+            }
+
+            EditorThemeManager.AddInputField(inputFieldStorage.inputField);
+
+            Destroy(inputFieldStorage.leftGreaterButton.gameObject);
+            Destroy(inputFieldStorage.middleButton.gameObject);
+            Destroy(inputFieldStorage.rightGreaterButton.gameObject);
+            EditorThemeManager.AddSelectable(inputFieldStorage.leftButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(inputFieldStorage.rightButton, ThemeGroup.Function_2, false);
+
+            return inputFieldStorage.inputField;
         }
 
         List<MultiColorButton> multiColorButtons = new List<MultiColorButton>();
@@ -8696,21 +8535,88 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public Popup debuggerPopup;
         public List<string> debugs = new List<string>();
+        public List<CustomFunction> customFunctions = new List<CustomFunction>();
         public string debugSearch;
+        public class CustomFunction
+        {
+            public GameObject GameObject { get; set; }
+        }
+        public GameObject GenerateDebugButton(string name, string hint, Action action)
+        {
+            var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
+            debugs.Add(name);
+
+            gameObject.AddComponent<HoverTooltip>().tooltipLangauges.Add(new HoverTooltip.Tooltip
+            {
+                desc = name,
+                hint = hint
+            });
+
+            var button = gameObject.GetComponent<Button>();
+            button.onClick.ClearAll();
+            button.onClick.AddListener(delegate ()
+            {
+                action?.Invoke();
+            });
+
+            EditorThemeManager.ApplySelectable(button, ThemeGroup.List_Button_1);
+            var text = gameObject.transform.GetChild(0).GetComponent<Text>();
+            text.text = name;
+            EditorThemeManager.ApplyLightText(text);
+            return gameObject;
+        }
+
+        public static void Inspect(object obj)
+        {
+            if (!ModCompatibility.mods.ContainsKey("UnityExplorer"))
+                return;
+
+            var ui = UEUIManager;
+            var inspector = UEInspector;
+            ui.GetProperty("ShowMenu").SetValue(ui, true);
+            inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
+            .Invoke(inspector, new object[] { obj, null });
+        }
+
+        static Type UEInspector => ModCompatibility.mods.ContainsKey("UnityExplorer") ? AccessTools.TypeByName("UnityExplorer.InspectorManager") : null;
+        static Type UEUIManager => ModCompatibility.mods.ContainsKey("UnityExplorer") ? AccessTools.TypeByName("UnityExplorer.InspectorManager") : null;
+
         void CreateDebug()
         {
             if (!ModCompatibility.mods.ContainsKey("UnityExplorer"))
                 return;
 
-            var inspector = AccessTools.TypeByName("UnityExplorer.InspectorManager");
-            var uiManager = AccessTools.TypeByName("UnityExplorer.UI.UIManager");
-
-            var debuggerPopup = GeneratePopup("Debugger Popup", "Debugger (Only use this if you know what you're doing)", Vector2.zero, new Vector2(600f, 450f), delegate (string _val)
+            debuggerPopup = GeneratePopup("Debugger Popup", "Debugger (Only use this if you know what you're doing)", Vector2.zero, new Vector2(600f, 450f), delegate (string _val)
             {
                 debugSearch = _val;
                 RefreshDebugger();
             }, placeholderText: "Search for function...");
+
+            var reload = GameObject.Find("TimelineBar/GameObject/play")
+                .Duplicate(debuggerPopup.TopPanel, "reload");
+            UIManager.SetRectTransform(reload.transform.AsRT(), new Vector2(-42f, 0f), Vector2.one, Vector2.one, Vector2.one, new Vector2(32f, 32f));
+
+            reload.AddComponent<HoverTooltip>().tooltipLangauges.Add(new HoverTooltip.Tooltip
+            {
+                desc = "Refresh the function list",
+                hint = "Clicking this will reload the function list."
+            });
+
+            var reloadButton = reload.GetComponent<Button>();
+            reloadButton.onClick.ClearAll();
+            reloadButton.onClick.AddListener(delegate ()
+            {
+                ReloadFunctions();
+            });
+
+            EditorThemeManager.AddSelectable(reloadButton, ThemeGroup.Function_2, false);
+
+            string refreshImage = RTFile.ApplicationDirectory + "BepInEx/plugins/Assets/editor_gui_refresh-white.png";
+
+            if (RTFile.FileExists(refreshImage))
+                reloadButton.image.sprite = SpriteManager.LoadSprite(refreshImage);
 
             EditorHelper.AddEditorDropdown("Debugger", "", "View", SpriteManager.LoadSprite(RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.BepInExAssetsPath + "debugger.png"), delegate ()
             {
@@ -8718,312 +8624,130 @@ namespace EditorManagement.Functions.Editors
                 RefreshDocumentation();
             });
 
-            // Inspect DataManager
+            GenerateDebugButton(
+                "Inspect DataManager",
+                "DataManager is a pretty important storage component of Project Arrhythmia. It contains the GameData, all the external Beatmap Themes, etc.",
+                delegate ()
             {
-                string name = "DataManager";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
+                Inspect(DataManager.inst);
+            });
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "DataManager is a pretty important storage component of Project Arrhythmia.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            GenerateDebugButton(
+                "Inspect EditorManager",
+                "EditorManager handles the main unmodded editor related things.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { DataManager.inst, null });
+                    Inspect(EditorManager.inst);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect EditorManager
-            {
-                string name = "EditorManager";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "EditorManager is the component that handles general editor stuff.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect RTEditor",
+                "EditorManager handles the main modded editor related things.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { EditorManager.inst, null });
+                    Inspect(inst);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect RTEditor
-            {
-                string name = "RTEditor";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "RTEditor is the component that handles modded general editor stuff.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect ObjEditor",
+                "ObjEditor is the component that handles regular object editor stuff.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { inst, null });
+                    Inspect(ObjEditor.inst);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect ObjEditor
-            {
-                string name = "ObjEditor";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "ObjEditor is the component that handles object editor stuff.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect ObjectEditor",
+                "ObjectEditor is the component that handles modded object editor stuff.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { ObjEditor.inst, null });
+                    Inspect(ObjectEditor.inst);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect ObjectEditor
-            {
-                string name = "ObjectEditor";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "ObjectEditor is the component that handles modded object editor stuff.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect ObjectManager",
+                "ObjectManager is the component that handles regular object stuff.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { ObjectEditor.inst, null });
+                    Inspect(ObjectManager.inst);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect ObjectManager
-            {
-                string name = "ObjectManager";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "ObjectManager is the component that handles regular object stuff.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect GameManager",
+                "GameManager normally handles all the level loading, however now it's handled by LevelManager.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { ObjectManager.inst, null });
+                    Inspect(GameManager.inst);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect GameManager
-            {
-                string name = "GameManager";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "GameManager is the component that handles regular object stuff.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect Object Editor UI",
+                "Take a closer look at the Object Editor UI since the parent tree for it is pretty deep.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { GameManager.inst, null });
+                    Inspect(ObjEditor.inst.ObjectView);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect Object Editor UI
-            {
-                string name = "Object Editor UI";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "Object Editor UI.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect LevelProcessor",
+                "LevelProcessor is the main handler for updating object animation and spawning / despawning objects.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { ObjEditor.inst.ObjectView, null });
+                    Inspect(Updater.levelProcessor);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect LevelProcessor
-            {
-                string name = "LevelProcessor";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "LevelProcessor is the main handler for updating object animation and spawning / despawning objects.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Inspect GameData",
+                "GameData stores all the main level data.",
+                delegate ()
                 {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { Updater.levelProcessor, null });
+                    Inspect(GameData.Current);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect GameData
-            {
-                string name = "GameData";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "GameData stores all the level data.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
-                {
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { GameData.Current, null });
-                });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
-
-            // Inspect Current Event Keyframe
-            {
-                string name = "Current Event Keyframe";
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Inspect {name}");
-
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"Inspect {name}";
-                levelTip.hint = "The current selected Event Keyframe. Based on the type and index number.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+            
+            GenerateDebugButton(
+                "Current Event Keyframe",
+                "The current selected Event Keyframe. Based on the type and index number.",
+                delegate ()
                 {
                     if (EventEditor.inst.currentEventType >= GameData.Current.eventObjects.allEvents.Count || EventEditor.inst.currentEvent >= GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType].Count)
                         return;
 
-                    uiManager.GetProperty("ShowMenu").SetValue(uiManager, true);
-                    inspector.GetMethod("Inspect", new[] { typeof(object), AccessTools.TypeByName("UnityExplorer.CacheObject.CacheObjectBase") })
-                    .Invoke(inspector, new object[] { GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent], null });
+                    Inspect(GameData.Current.eventObjects.allEvents[EventEditor.inst.currentEventType][EventEditor.inst.currentEvent]);
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Inspect {name}";
-            }
 
+            ReloadFunctions();
+        }
+
+        void ReloadFunctions()
+        {
             var functions = RTFile.ApplicationDirectory + "beatmaps/functions";
             if (!RTFile.DirectoryExists(functions))
                 return;
+
+            customFunctions.ForEach(x => Destroy(x.GameObject));
+            customFunctions.Clear();
+            debugs.RemoveAll(x => x.Contains("Custom Code Function"));
 
             var files = Directory.GetFiles(functions, "*.cs");
             for (int i = 0; i < files.Length; i++)
             {
                 var file = files[i];
 
-                var gameObject = EditorManager.inst.folderButtonPrefab.Duplicate(debuggerPopup.Content, "Function");
-                debugs.Add($"Custom Code Function: {file}");
+                var gameObject = GenerateDebugButton(
+                    $"Custom Code Function: {Path.GetFileName(file)}",
+                    "A custom code file. Make sure you know what you're doing before using this.",
+                    delegate ()
+                    {
+                        RTCode.Evaluate(RTFile.ReadFromFile(file));
+                    });
 
-                var htt = gameObject.AddComponent<HoverTooltip>();
-
-                var levelTip = new HoverTooltip.Tooltip();
-
-                levelTip.desc = $"{file}";
-                levelTip.hint = "A custom code file. Make sure you know what you're doing before using this.";
-                htt.tooltipLangauges.Add(levelTip);
-
-                var button = gameObject.GetComponent<Button>();
-                button.onClick.ClearAll();
-                button.onClick.AddListener(delegate ()
+                customFunctions.Add(new CustomFunction
                 {
-                    RTCode.Evaluate(RTFile.ReadFromFile(file));
+                    GameObject = gameObject
                 });
-                gameObject.transform.GetChild(0).GetComponent<Text>().text = $"Custom Code Function: {file}";
             }
+
+            RefreshDebugger();
         }
 
         public string autosaveSearch;
@@ -9265,7 +8989,7 @@ namespace EditorManagement.Functions.Editors
                 gameObject.AddComponent<HoverTooltip>().tooltipLangauges.Add(new HoverTooltip.Tooltip
                 {
                     desc = "<#" + LSColors.ColorToHex(difficultyColor) + ">" + metadata.artist.Name + " - " + metadata.song.title,
-                    hint = "</color>" + metadata.song.description,
+                    hint = $"</color>Date Edited: {metadata.beatmap.date_edited}<br>Date Created: {metadata.LevelBeatmap.date_created}<br>Description: {metadata.song.description}",
                 });
 
                 folderButtonStorage.button.onClick.ClearAll();
@@ -9335,15 +9059,23 @@ namespace EditorManagement.Functions.Editors
                 EditorThemeManager.ApplySelectable(folderButtonStorage.button, ThemeGroup.List_Button_1);
                 EditorThemeManager.ApplyLightText(folderButtonStorage.text);
 
+                var iconBase = new GameObject("icon base");
+                iconBase.transform.SetParent(gameObject.transform);
+                iconBase.transform.localScale = Vector3.one;
+                var iconBaseRT = iconBase.AddComponent<RectTransform>();
+                var iconBaseImage = iconBase.AddComponent<Image>();
+                iconBase.AddComponent<Mask>().showMaskGraphic = false;
+                iconBaseRT.anchoredPosition = iconPosition;
+                iconBaseRT.sizeDelta = iconScale;
+                EditorThemeManager.ApplyGraphic(iconBaseImage, ThemeGroup.Null, true);
+
                 var icon = new GameObject("icon");
-                icon.transform.SetParent(gameObject.transform);
+                icon.transform.SetParent(iconBaseRT);
                 icon.transform.localScale = Vector3.one;
-                icon.layer = 5;
                 var iconRT = icon.AddComponent<RectTransform>();
-                icon.AddComponent<CanvasRenderer>();
                 var iconImage = icon.AddComponent<Image>();
 
-                iconRT.anchoredPosition = iconPosition;
+                iconRT.anchoredPosition = Vector3.zero;
                 iconRT.sizeDelta = iconScale;
 
                 // Delete
