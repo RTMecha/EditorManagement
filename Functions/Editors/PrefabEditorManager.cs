@@ -1881,11 +1881,11 @@ namespace EditorManagement.Functions.Editors
             var addPrefabObject = storage.button;
             var delete = storage.deleteButton;
 
-            EditorThemeManager.ApplySelectable(addPrefabObject, ThemeGroup.List_Button_2);
+            EditorThemeManager.ApplySelectable(addPrefabObject, ThemeGroup.List_Button_1);
             EditorThemeManager.ApplyLightText(name);
             EditorThemeManager.ApplyLightText(typeName);
             EditorThemeManager.ApplyGraphic(delete.image, ThemeGroup.Delete, true);
-            EditorThemeManager.ApplyGraphic(delete.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Delete_Text, true);
+            EditorThemeManager.ApplyGraphic(delete.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Delete_Text);
             EditorThemeManager.ApplyGraphic(typeImage, ThemeGroup.Null, true);
             EditorThemeManager.ApplyGraphic(typeImageShade, ThemeGroup.Null, true);
 
@@ -1897,6 +1897,7 @@ namespace EditorManagement.Functions.Editors
             typeImage.color = prefabType.Color;
             typeIconImage.sprite = prefabType.Icon;
 
+            TooltipHelper.AssignTooltip(gameObject, $"{dialog} Prefab List Button", 3.2f);
             TooltipHelper.AddHoverTooltip(gameObject,
                 "<#" + LSColors.ColorToHex(typeImage.color) + ">" + prefab.Name + "</color>",
                 "O: " + prefab.Offset +
