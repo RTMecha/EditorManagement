@@ -9,7 +9,9 @@
         Butter,
         Arrhythmia,
         Modern,
-        Beats
+        Beats,
+        Archives,
+        Void
     }
 
     public enum WaveformType
@@ -76,7 +78,7 @@
         Scrollbar_2,
         Scrollbar_2_Handle,
         Scrollbar_2_Handle_Normal,
-        Scrollbar_2_Handle_Hightlighted,
+        Scrollbar_2_Handle_Highlighted,
         Scrollbar_2_Handle_Selected,
         Scrollbar_2_Handle_Pressed,
         Scrollbar_2_Handle_Disabled,
