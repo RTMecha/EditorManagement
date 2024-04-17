@@ -684,16 +684,22 @@ namespace EditorManagement.Functions.Editors
             StartCoroutine(RenderThemeList(search));
         }
 
+        public static InputFieldStorage eventPageStorage;
+        public int eventThemePage;
+        public static int eventThemesPerPage = 30;
         public IEnumerator RenderThemeList(string search)
         {
             if (!loadingThemes && !EventEditor.inst.eventDrag)
             {
                 loadingThemes = true;
 
+                var layer = eventThemePage + 1;
+                int max = layer * eventThemesPerPage;
+
+                TriggerHelper.AddEventTriggerParams(eventPageStorage.inputField.gameObject, TriggerHelper.ScrollDeltaInt(eventPageStorage.inputField, max: AllThemes.Count / eventThemesPerPage));
+
                 for (int i = 0; i < ThemePanels.Count; i++)
-                {
-                    ThemePanels[i].SetActive(RTHelpers.SearchString(ThemePanels[i].Theme.name, search));
-                }
+                    ThemePanels[i].SetActive(i >= max - eventThemesPerPage && i < max && RTHelpers.SearchString(ThemePanels[i].Theme.name, search));
 
                 loadingThemes = false;
             }

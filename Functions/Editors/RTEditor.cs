@@ -2722,6 +2722,7 @@ namespace EditorManagement.Functions.Editors
                 llTip.hint = "Input the path you want to load levels from within the beatmaps folder. For example: inputting \"editor\" into the input field will load levels from beatmaps/editor. You can also set it to sub-directories, like: \"editor/pa levels\" will take levels from \"beatmaps/editor/pa levels\".";
 
                 levelListTip.tooltipLangauges.Add(llTip);
+                TooltipHelper.AssignTooltip(editorPathGO, "Editor Path", 3f);
 
                 editorPathField = editorPathGO.GetComponent<InputField>();
                 editorPathField.characterValidation = InputField.CharacterValidation.None;
@@ -2798,8 +2799,8 @@ namespace EditorManagement.Functions.Editors
                     .Duplicate(EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme"), "themepathers", 8);
 
                 var themePathGO = timeField.gameObject.Duplicate(themePathSpacer.transform, "themes path");
-                ((RectTransform)themePathGO.transform).anchoredPosition = new Vector2(150f, 0f);
-                ((RectTransform)themePathGO.transform).sizeDelta = new Vector2(300f, 34f);
+                themePathGO.transform.AsRT().anchoredPosition = new Vector2(80f, 0f);
+                themePathGO.transform.AsRT().sizeDelta = new Vector2(160f, 34f);
 
                 var themePathTip = themePathGO.AddComponent<HoverTooltip>();
                 var llTip = new HoverTooltip.Tooltip();
@@ -2855,7 +2856,7 @@ namespace EditorManagement.Functions.Editors
                 };
 
                 var themePathReloader = GameObject.Find("TimelineBar/GameObject/play").Duplicate(themePathSpacer.transform, "reload themes");
-                ((RectTransform)themePathReloader.transform).anchoredPosition = new Vector2(310f, 35f);
+                ((RectTransform)themePathReloader.transform).anchoredPosition = new Vector2(166f, 35f);
                 ((RectTransform)themePathReloader.transform).sizeDelta = new Vector2(32f, 32f);
 
                 var levelListRTip = themePathReloader.AddComponent<HoverTooltip>();
@@ -2879,6 +2880,62 @@ namespace EditorManagement.Functions.Editors
 
                 if (RTFile.FileExists(refreshImage))
                     levelListRButton.image.sprite = SpriteManager.LoadSprite(refreshImage);
+
+                var page = EditorPrefabHolder.Instance.NumberInputField.Duplicate(themePathSpacer.transform, "page");
+                UIManager.SetRectTransform(page.transform.AsRT(), new Vector2(205f, 0f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, 32f));
+                var pageStorage = page.GetComponent<InputFieldStorage>();
+                ThemeEditorManager.eventPageStorage = pageStorage;
+                page.GetComponent<HorizontalLayoutGroup>().spacing = 2f;
+                pageStorage.inputField.image.rectTransform.sizeDelta = new Vector2(60f, 32f);
+
+                pageStorage.inputField.onValueChanged.ClearAll();
+                pageStorage.inputField.text = "0";
+                pageStorage.inputField.onValueChanged.AddListener(delegate (string _val)
+                {
+                    if (int.TryParse(_val, out int p))
+                    {
+                        ThemeEditorManager.inst.eventThemePage = Mathf.Clamp(p, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage);
+
+                        StartCoroutine(ThemeEditorManager.inst.RenderThemeList(
+                            EditorManager.inst.GetDialog("Event Editor").Dialog.Find("data/right/theme/theme-search").GetComponent<InputField>().text));
+                    }
+                });
+
+                pageStorage.leftGreaterButton.onClick.ClearAll();
+                pageStorage.leftGreaterButton.onClick.AddListener(delegate ()
+                {
+                    if (int.TryParse(pageStorage.inputField.text, out int p))
+                        pageStorage.inputField.text = "0";
+                });
+
+                pageStorage.leftButton.onClick.ClearAll();
+                pageStorage.leftButton.onClick.AddListener(delegate ()
+                {
+                    if (int.TryParse(pageStorage.inputField.text, out int p))
+                        pageStorage.inputField.text = Mathf.Clamp(p - 1, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+                });
+
+                pageStorage.rightButton.onClick.ClearAll();
+                pageStorage.rightButton.onClick.AddListener(delegate ()
+                {
+                    if (int.TryParse(pageStorage.inputField.text, out int p))
+                        pageStorage.inputField.text = Mathf.Clamp(p + 1, 0, DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+                });
+
+                pageStorage.rightGreaterButton.onClick.ClearAll();
+                pageStorage.rightGreaterButton.onClick.AddListener(delegate ()
+                {
+                    if (int.TryParse(pageStorage.inputField.text, out int p))
+                        pageStorage.inputField.text = (DataManager.inst.AllThemes.Count / ThemeEditorManager.eventThemesPerPage).ToString();
+                });
+
+                Destroy(pageStorage.middleButton.gameObject);
+
+                EditorThemeManager.AddInputField(pageStorage.inputField);
+                EditorThemeManager.AddSelectable(pageStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(pageStorage.leftButton, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(pageStorage.rightButton, ThemeGroup.Function_2, false);
+                EditorThemeManager.AddSelectable(pageStorage.rightGreaterButton, ThemeGroup.Function_2, false);
             }
 
             // Prefab Path
@@ -9676,6 +9733,9 @@ namespace EditorManagement.Functions.Editors
                 EditorThemeManager.AddGraphic(themeAddButton.transform.Find("text").GetComponent<Text>(), ThemeGroup.List_Button_2_Text);
             }
 
+            var layer = ThemeEditorManager.inst.eventThemePage + 1;
+            int max = layer * ThemeEditorManager.eventThemesPerPage;
+
             int num = 0;
             foreach (var beatmapTheme in DataManager.inst.BeatmapThemes.Select(x => x as BeatmapTheme))
             {
@@ -9719,11 +9779,13 @@ namespace EditorManagement.Functions.Editors
                 themePanel.DeleteButton.interactable = false;
                 themePanel.Name.text = beatmapTheme.name;
 
-                EditorThemeManager.AddGraphic(themePanel.BaseImage, ThemeGroup.List_Button_2_Normal, true);
-                EditorThemeManager.AddGraphic(themePanel.UseButton.image, ThemeGroup.Null, true);
-                EditorThemeManager.AddGraphic(themePanel.EditButton.image, ThemeGroup.List_Button_2_Text);
-                EditorThemeManager.AddGraphic(themePanel.Name, ThemeGroup.List_Button_2_Text);
-                EditorThemeManager.AddSelectable(themePanel.DeleteButton, ThemeGroup.Delete_Keyframe_Button, false);
+                themePanel.SetActive(false);
+
+                EditorThemeManager.ApplyGraphic(themePanel.BaseImage, ThemeGroup.List_Button_2_Normal, true);
+                EditorThemeManager.ApplyGraphic(themePanel.UseButton.image, ThemeGroup.Null, true);
+                EditorThemeManager.ApplyGraphic(themePanel.EditButton.image, ThemeGroup.List_Button_2_Text);
+                EditorThemeManager.ApplyGraphic(themePanel.Name, ThemeGroup.List_Button_2_Text);
+                EditorThemeManager.ApplySelectable(themePanel.DeleteButton, ThemeGroup.Delete_Keyframe_Button, false);
 
                 num++;
             }
@@ -9797,13 +9859,13 @@ namespace EditorManagement.Functions.Editors
                     });
                     themePanel.Name.text = orig.name;
 
-                    themePanel.SetActive(RTHelpers.SearchString(themePanel.Theme.name, search));
+                    themePanel.SetActive(false);
 
-                    EditorThemeManager.AddGraphic(themePanel.BaseImage, ThemeGroup.List_Button_2_Normal, true);
-                    EditorThemeManager.AddGraphic(themePanel.UseButton.image, ThemeGroup.Null, true);
-                    EditorThemeManager.AddGraphic(themePanel.EditButton.image, ThemeGroup.List_Button_2_Text);
-                    EditorThemeManager.AddGraphic(themePanel.Name, ThemeGroup.List_Button_2_Text);
-                    EditorThemeManager.AddSelectable(themePanel.DeleteButton, ThemeGroup.Delete_Keyframe_Button, false);
+                    EditorThemeManager.ApplyGraphic(themePanel.BaseImage, ThemeGroup.List_Button_2_Normal, true);
+                    EditorThemeManager.ApplyGraphic(themePanel.UseButton.image, ThemeGroup.Null, true);
+                    EditorThemeManager.ApplyGraphic(themePanel.EditButton.image, ThemeGroup.List_Button_2_Text);
+                    EditorThemeManager.ApplyGraphic(themePanel.Name, ThemeGroup.List_Button_2_Text);
+                    EditorThemeManager.ApplySelectable(themePanel.DeleteButton, ThemeGroup.Delete_Keyframe_Button, false);
                 }
 
                 if (jn["id"] == null)
@@ -12291,6 +12353,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.HoverUIPlaySound),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ImportPrefabsDirectly),
             new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.ThemesPerPage),
+            new EditorProperty(EditorProperty.ValueType.Int, EditorPlugin.EditorConfig.ThemesEventKeyframePerPage),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.MouseTooltipDisplay),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NotificationWidth),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.NotificationSize),

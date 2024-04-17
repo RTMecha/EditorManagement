@@ -107,6 +107,7 @@ namespace EditorManagement.Functions
             HoverUIPlaySound = Config.Bind("Editor GUI", "Hover UI Play Sound", false, "Plays a sound when the hover UI element is hovered over.");
             ImportPrefabsDirectly = Config.Bind("Editor GUI", "Import Prefabs Directly", false, "When clicking on an External Prefab, instead of importing it directly it'll bring up a Prefab External View Dialog if this config is off.");
             ThemesPerPage = Config.Bind("Editor GUI", "Themes Per Page", 10, "How many themes are shown per page in the Beatmap Themes popup.");
+            ThemesEventKeyframePerPage = Config.Bind("Editor GUI", "Themes (Event Keyframe) Per Page", 30, "How many themes are shown per page in the theme event keyframe.");
             MouseTooltipDisplay = Config.Bind("Editor GUI", "Mouse Tooltip Display", true, "If the mouse tooltip should display.");
             NotificationWidth = Config.Bind("Editor GUI", "Notification Width", 221f, "Width of the notifications.");
             NotificationSize = Config.Bind("Editor GUI", "Notification Size", 1f, "Total size of the notifications.");
@@ -1214,6 +1215,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<bool> HoverUIPlaySound { get; set; }
         public ConfigEntry<bool> ImportPrefabsDirectly { get; set; }
         public ConfigEntry<int> ThemesPerPage { get; set; }
+        public ConfigEntry<int> ThemesEventKeyframePerPage { get; set; }
         public ConfigEntry<bool> MouseTooltipDisplay { get; set; }
         public ConfigEntry<float> NotificationWidth { get; set; }
         public ConfigEntry<float> NotificationSize { get; set; }
