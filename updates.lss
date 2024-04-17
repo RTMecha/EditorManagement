@@ -1,3 +1,9 @@
+2.5.8 > [Apr 18, 2024]
+- Added Archives and Void editor themes.
+- Fixed beatmap themes popup being broken.
+- Added some custom functions to the debugger.
+- Editor level sorting now saves and loads between sessions.
+- Added opened level amount to the info section of the settings window.
 2.5.7 > [Apr 17, 2024]
 - Fixed theme page and search not working together.
 2.5.6 > [Apr 17, 2024]
