@@ -536,73 +536,6 @@ namespace EditorManagement.Functions.Editors
 
         #region Prefabs
 
-        public BeatmapObject Expand(BeatmapObject beatmapObject, Dictionary<string, string> ids, Dictionary<string, string> prefabInstances, float audioTime,
-            BasePrefab prefab, bool select = false, float offset = 0f, bool undone = false, bool regen = false)
-        {
-            var beatmapObjectCopy = BeatmapObject.DeepCopy(beatmapObject, false);
-
-            if (ids.ContainsKey(beatmapObject.id))
-                beatmapObjectCopy.id = ids[beatmapObject.id];
-
-            if (ids.ContainsKey(beatmapObject.parent))
-                beatmapObjectCopy.parent = ids[beatmapObject.parent];
-
-            else if (DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.id == beatmapObject.parent) == -1)
-                beatmapObjectCopy.parent = "";
-
-            beatmapObjectCopy.prefabID = beatmapObject.prefabID;
-            if (regen) // < Probably need to add another setting to have this separate an object from being a prefab or generate a new one
-            {
-                //beatmapObjectCopy.prefabInstanceID = dictionary2[orig.prefabInstanceID];
-                beatmapObjectCopy.prefabID = "";
-                beatmapObjectCopy.prefabInstanceID = "";
-            }
-            else
-            {
-                beatmapObjectCopy.prefabInstanceID = beatmapObject.prefabInstanceID;
-            }
-
-            beatmapObjectCopy.fromPrefab = false;
-
-            beatmapObjectCopy.StartTime += offset == 0.0 ? undone ? prefab.Offset : audioTime + prefab.Offset : offset;
-
-            beatmapObjectCopy.editorData.layer = RTEditor.inst.Layer;
-
-            return beatmapObjectCopy;
-        }
-
-        public IEnumerable<BeatmapObject> PasteBeatmapObjects(BasePrefab prefab, Dictionary<string, string> ids, Dictionary<string, string> prefabInstances, float audioTime,
-            bool select = false, float offset = 0f, bool undone = false, bool regen = false)
-        {
-            foreach (var beatmapObject in prefab.objects)
-            {
-                yield return Expand((BeatmapObject)beatmapObject, ids, prefabInstances, audioTime, prefab, select, offset, undone, regen);
-            }
-        }
-
-        public IEnumerator ToTimelineObjects(IEnumerable<BeatmapObject> beatmapObjects, bool select)
-        {
-            float delay = 0f;
-            int count = beatmapObjects.Count();
-            var timelineObjects = beatmapObjects.Select(x => new TimelineObject(x));
-            foreach (var timelineObject in timelineObjects)
-            {
-                yield return new WaitForSeconds(delay);
-                RenderTimelineObject(timelineObject);
-                if (select)
-                {
-                    if (count > 1)
-                    {
-                        timelineObject.selected = true;
-                        CurrentSelection = timelineObject;
-                    }
-                    else
-                        SetCurrentObject(timelineObject, openDialog: false);
-                }
-                delay += 0.0001f;
-            }
-        }
-
         /// <summary>
         /// Expands a prefab into the level.
         /// </summary>
@@ -640,16 +573,6 @@ namespace EditorManagement.Functions.Editors
                     if (!string.IsNullOrEmpty(beatmapObject.prefabInstanceID) && !prefabInstances.ContainsKey(beatmapObject.prefabInstanceID))
                         prefabInstances.Add(beatmapObject.prefabInstanceID, LSText.randomString(16));
 
-                //var beatmapObjects = PasteBeatmapObjects(prefab, ids, prefabInstances, audioTime, select, offset, undone, regen);
-                //DataManager.inst.gameData.beatmapObjects.AddRange(beatmapObjects);
-
-                //foreach (var beatmapObject in beatmapObjects)
-                //{
-                //    Updater.UpdateProcessor(beatmapObject);
-                //}
-
-                //yield return StartCoroutine(ToTimelineObjects(beatmapObjects, select));
-
                 var pastedObjects = new List<BeatmapObject>();
                 foreach (var beatmapObject in prefab.objects)
                 {
@@ -665,16 +588,13 @@ namespace EditorManagement.Functions.Editors
                         beatmapObjectCopy.parent = "";
 
                     beatmapObjectCopy.prefabID = beatmapObject.prefabID;
-                    if (regen) // < Probably need to add another setting to have this separate an object from being a prefab or generate a new one
+                    if (regen)
                     {
-                        //beatmapObjectCopy.prefabInstanceID = dictionary2[orig.prefabInstanceID];
                         beatmapObjectCopy.prefabID = "";
                         beatmapObjectCopy.prefabInstanceID = "";
                     }
                     else
-                    {
                         beatmapObjectCopy.prefabInstanceID = beatmapObject.prefabInstanceID;
-                    }
 
                     beatmapObjectCopy.fromPrefab = false;
 
@@ -715,7 +635,7 @@ namespace EditorManagement.Functions.Editors
 
             //Prefabs
             {
-                Dictionary<string, string> prefabInstanceIDs = new Dictionary<string, string>();
+                var prefabInstanceIDs = new Dictionary<string, string>();
                 foreach (var prefabObject in prefab.prefabObjects)
                     prefabInstanceIDs.Add(prefabObject.ID, LSText.randomString(16));
 
@@ -742,7 +662,7 @@ namespace EditorManagement.Functions.Editors
 
                     RenderTimelineObject(timelineObject);
 
-                    Updater.AddPrefabToLevel(prefabObject);
+                    StartCoroutine(Updater.IAddPrefabToLevel(prefabObject));
 
                     delay += 0.0001f;
                 }
@@ -1609,6 +1529,38 @@ namespace EditorManagement.Functions.Editors
             storage.eventTrigger.triggers.Add(TriggerHelper.CreateBeatmapObjectEndDragTrigger(timelineObject));
 
             return gameObject;
+        }
+
+        public IEnumerator ICreateTimelineObjects()
+        {
+            if (RTEditor.inst.timelineObjects.Count > 0)
+                RTEditor.inst.timelineObjects.ForEach(x => Destroy(x.GameObject));
+
+            RTEditor.inst.timelineObjects.Clear();
+
+            for (int i = 0; i < DataManager.inst.gameData.beatmapObjects.Count; i++)
+            {
+                var beatmapObject = (BeatmapObject)DataManager.inst.gameData.beatmapObjects[i];
+                if (!string.IsNullOrEmpty(beatmapObject.id) && !beatmapObject.fromPrefab)
+                {
+                    var timelineObject = GetTimelineObject(beatmapObject);
+                    CreateTimelineObject(timelineObject);
+                    RenderTimelineObject(timelineObject);
+                }
+            }
+
+            for (int i = 0; i < DataManager.inst.gameData.prefabObjects.Count; i++)
+            {
+                var prefabObject = DataManager.inst.gameData.prefabObjects[i];
+                if (!string.IsNullOrEmpty(prefabObject.ID))
+                {
+                    var timelineObject = new TimelineObject(prefabObject);
+                    CreateTimelineObject(timelineObject);
+                    RenderTimelineObject(timelineObject);
+                }
+            }
+
+            yield break;
         }
 
         public void CreateTimelineObjects()
