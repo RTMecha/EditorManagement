@@ -13,7 +13,7 @@ namespace EditorManagement.Functions.Components
     {
         public void OnPointerEnter(PointerEventData eventData)
         {
-            if (!EditorConfig.Instance.MouseTooltipDisplay.Value)
+            if (!EditorConfig.Instance.MouseTooltipDisplay.Value || !EditorManager.inst.showHelp)
                 return;
 
             int index = tooltips.FindIndex(x => (int)((Tooltip)x).language == (int)RTFunctions.FunctionsPlugin.Language.Value);

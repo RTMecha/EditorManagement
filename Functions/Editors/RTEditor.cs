@@ -482,7 +482,7 @@ namespace EditorManagement.Functions.Editors
                 mouseTooltip?.SetActive(false);
             }
 
-            if (!EditorConfig.Instance.MouseTooltipDisplay.Value)
+            if (!EditorConfig.Instance.MouseTooltipDisplay.Value || !EditorManager.inst.showHelp)
             {
                 mouseTooltip?.SetActive(false);
             }
@@ -9389,10 +9389,10 @@ namespace EditorManagement.Functions.Editors
             }
 
             SetFileInfo($"Setting first object of [ {name} ]");
-            ObjectEditor.inst.CreateTimelineObjects();
-            ObjectEditor.inst.RenderTimelineObjects();
-            if (timelineObjects.Count > 0)
-                ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
+            StartCoroutine(ObjectEditor.inst.ICreateTimelineObjects());
+            //ObjectEditor.inst.RenderTimelineObjects();
+            //if (timelineObjects.Count > 0)
+            //    ObjectEditor.inst.SetCurrentObject(timelineObjects[0]);
 
             CheckpointEditor.inst.SetCurrentCheckpoint(0);
 
