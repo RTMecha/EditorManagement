@@ -1,3 +1,6 @@
+2.5.9 > [Apr 19, 2024]
+- Loading into levels should be quicker now.
+- Mouse tooltip no longer shows if the user also turns the regular tooltip off.
 2.5.8 > [Apr 18, 2024]
 - Added Archives and Void editor themes.
 - Fixed beatmap themes popup being broken.
