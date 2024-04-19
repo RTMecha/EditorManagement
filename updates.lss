@@ -1,3 +1,6 @@
+2.5.10 > [Apr 20, 2024]
+- Added copying and pasting to Object Modifiers editor. (Currently it's only the regular one, not the Background Modifiers one)
+- Fixed Player shape toggle not being applied to the editor theme.
 2.5.9 > [Apr 19, 2024]
 - Loading into levels should be quicker now.
 - Mouse tooltip no longer shows if the user also turns the regular tooltip off.
