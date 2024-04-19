@@ -144,6 +144,7 @@ namespace EditorManagement.Functions.Editors
             prefabHolder.Function1Button = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TimelineBar/GameObject/event").Duplicate(prefabHolder.PrefabParent, "function 1 button");
             var functionButton1Storage = prefabHolder.Function1Button.AddComponent<FunctionButtonStorage>();
             functionButton1Storage.button = prefabHolder.Function1Button.GetComponent<Button>();
+            functionButton1Storage.button.onClick.ClearAll();
             functionButton1Storage.text = prefabHolder.Function1Button.transform.GetChild(0).GetComponent<Text>();
 
             if (!RTFile.FileExists(EditorSettingsPath))
@@ -1968,7 +1969,9 @@ namespace EditorManagement.Functions.Editors
 
             EditorThemeManager.AddLightText(text);
 
-            EditorThemeManager.AddScrollbar(popup.transform.Find("Scrollbar").GetComponent<Scrollbar>(), scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
+            var scrollbar = popup.transform.Find("Scrollbar").GetComponent<Scrollbar>();
+            scrollbar.value = 1f;
+            EditorThemeManager.AddScrollbar(scrollbar, scrollbarRoundedSide: SpriteManager.RoundedSide.Bottom_Right_I);
 
             EditorThemeManager.AddInputField(popup.transform.Find("search-box/search").GetComponent<InputField>(), ThemeGroup.Search_Field_1, 1, SpriteManager.RoundedSide.Bottom);
 
