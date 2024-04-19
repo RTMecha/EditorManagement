@@ -2538,10 +2538,7 @@ namespace EditorManagement.Functions.Editors
                     if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
                     {
                         image.sprite = ShapeManager.inst.Shapes2D[i][0].Icon;
-                        EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, image.gameObject, new List<Component>
-                        {
-                            image,
-                        }));
+                        EditorThemeManager.ApplyGraphic(image, ThemeGroup.Toggle_1_Check);
                     }
 
                     if (!obj.GetComponent<HoverUI>())
@@ -2599,10 +2596,7 @@ namespace EditorManagement.Functions.Editors
                             if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
                             {
                                 image1.sprite = ShapeManager.inst.Shapes2D[i][j].Icon;
-                                EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.Toggle_1_Check, image1.gameObject, new List<Component>
-                                {
-                                    image1,
-                                }));
+                                EditorThemeManager.ApplyGraphic(image1, ThemeGroup.Toggle_1_Check);
                             }
 
                             if (!opt.GetComponent<HoverUI>())
@@ -2643,7 +2637,10 @@ namespace EditorManagement.Functions.Editors
                     int i = shape.childCount;
                     var obj = shapeButtonPrefab.Duplicate(shape, (i + 1).ToString());
                     if (obj.transform.Find("Image") && obj.transform.Find("Image").gameObject.TryGetComponent(out Image image))
+                    {
                         image.sprite = playerSprite;
+                        EditorThemeManager.ApplyGraphic(image, ThemeGroup.Toggle_1_Check);
+                    }
 
                     var so = shapeSettings.Find((i + 1).ToString());
 
@@ -2677,7 +2674,9 @@ namespace EditorManagement.Functions.Editors
                         ad.color = new Color(1f, 1f, 1f, 0.01f);
                     }
 
-                    shapeToggles.Add(obj.GetComponent<Toggle>());
+                    var shapeToggle = obj.GetComponent<Toggle>();
+                    shapeToggles.Add(shapeToggle);
+                    EditorThemeManager.ApplyToggle(shapeToggle, ThemeGroup.Background_1);
 
                     shapeOptionToggles.Add(new List<Toggle>());
 
@@ -2687,7 +2686,10 @@ namespace EditorManagement.Functions.Editors
                         if (opt.transform.Find("Image") && opt.transform.Find("Image").gameObject.TryGetComponent(out Image image1))
                             image1.sprite = playerSprite;
 
-                        shapeOptionToggles[i].Add(opt.GetComponent<Toggle>());
+                        var shapeOptionToggle = opt.GetComponent<Toggle>();
+                        EditorThemeManager.ApplyToggle(shapeOptionToggle, ThemeGroup.Background_1);
+
+                        shapeOptionToggles[i].Add(shapeOptionToggle);
 
                         var layoutElement = opt.AddComponent<LayoutElement>();
                         layoutElement.layoutPriority = 1;
