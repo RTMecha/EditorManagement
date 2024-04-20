@@ -91,9 +91,9 @@ namespace EditorManagement.Functions.Editors
             foreach (var col in GameManager.inst.LiveTheme.backgroundColors)
             {
                 int colTmp = num;
-                SetColorToggle(col, colTmp, backgroundObject.color, __instance.left.Find("color"), __instance.SetColor);
-                SetColorToggle(col, colTmp, backgroundObject.FadeColor, __instance.left.Find("fade-color"), SetFadeColor);
-                SetColorToggle(col, colTmp, backgroundObject.reactiveCol, __instance.left.Find("reactive-color"), SetReactiveColor);
+                SetColorToggle(col, backgroundObject.color, colTmp, __instance.left.Find("color"), __instance.SetColor);
+                SetColorToggle(col, backgroundObject.FadeColor, colTmp, __instance.left.Find("fade-color"), SetFadeColor);
+                SetColorToggle(col, backgroundObject.reactiveCol, colTmp, __instance.left.Find("reactive-color"), SetReactiveColor);
 
                 num++;
             }
