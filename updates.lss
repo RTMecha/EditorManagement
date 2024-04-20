@@ -1,3 +1,6 @@
+2.5.11 > [Apr 20, 2024]
+- Forgot the select quick prefab button text for editor themes.
+- Added Flip X and Y buttons to the keyframe editors.
 2.5.10 > [Apr 20, 2024]
 - Added copying and pasting to Object Modifiers editor. (Currently it's only the regular one, not the Background Modifiers one)
 - Fixed Player shape toggle not being applied to the editor theme.
