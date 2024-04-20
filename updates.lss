@@ -1,3 +1,5 @@
+2.5.12 > [Apr 20, 2024]
+- Fixed Background colors not being selectable.
 2.5.11 > [Apr 20, 2024]
 - Forgot the select quick prefab button text for editor themes.
 - Added Flip X and Y buttons to the keyframe editors.
