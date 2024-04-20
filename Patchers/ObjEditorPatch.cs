@@ -619,6 +619,55 @@ namespace EditorManagement.Patchers
 
                         EditorThemeManager.AddLightText(toggleLabelText);
                         EditorThemeManager.AddToggle(toggle.GetComponent<Toggle>(), graphic: toggleText);
+
+                        var flipX = button.Duplicate(parent, "flipx");
+                        var flipXText = flipX.transform.GetChild(0).GetComponent<Text>();
+                        flipXText.text = "Flip X";
+                        ((RectTransform)flipX.transform).sizeDelta = new Vector2(366f, 32f);
+                        var flipXButton = flipX.GetComponent<Button>();
+
+                        flipXButton.onClick.ClearAll();
+                        flipXButton.onClick.AddListener(delegate ()
+                        {
+                            foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected))
+                            {
+                                var eventKeyframe = timelineObject.GetData<EventKeyframe>();
+                                eventKeyframe.eventValues[0] = -eventKeyframe.eventValues[0];
+                            }
+
+                            var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                            Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                            ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+                        });
+
+                        EditorThemeManager.AddGraphic(flipXButton.image, ThemeGroup.Function_1, true);
+                        EditorThemeManager.AddGraphic(flipXText, ThemeGroup.Function_1_Text);
+
+                        if (i != 2)
+                        {
+                            var flipY = button.Duplicate(parent, "flipy");
+                            var flipYText = flipY.transform.GetChild(0).GetComponent<Text>();
+                            flipYText.text = "Flip Y";
+                            ((RectTransform)flipY.transform).sizeDelta = new Vector2(366f, 32f);
+                            var flipYButton = flipY.GetComponent<Button>();
+
+                            flipYButton.onClick.ClearAll();
+                            flipYButton.onClick.AddListener(delegate ()
+                            {
+                                foreach (var timelineObject in ObjectEditor.inst.CurrentSelection.InternalSelections.Where(x => x.selected))
+                                {
+                                    var eventKeyframe = timelineObject.GetData<EventKeyframe>();
+                                    eventKeyframe.eventValues[1] = -eventKeyframe.eventValues[1];
+                                }
+
+                                var beatmapObject = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+                                Updater.UpdateProcessor(beatmapObject, "Keyframes");
+                                ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
+                            });
+
+                            EditorThemeManager.AddGraphic(flipYButton.image, ThemeGroup.Function_1, true);
+                            EditorThemeManager.AddGraphic(flipYText, ThemeGroup.Function_1_Text);
+                        }
                     }
 
                     var edit = parent.Find("edit");
