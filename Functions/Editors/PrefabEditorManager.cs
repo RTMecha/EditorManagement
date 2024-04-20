@@ -168,7 +168,8 @@ namespace EditorManagement.Functions.Editors
                     EditorThemeManager.AddGraphic(PrefabEditor.inst.internalPrefabDialog.Find("select_prefab").GetComponent<Image>(), ThemeGroup.Background_2, true, roundedSide: SpriteManager.RoundedSide.Bottom_Left_I);
 
                     EditorThemeManager.AddSelectable(selectQuickPrefabButton, ThemeGroup.Function_2);
-                    EditorThemeManager.AddLightText(selectQuickPrefabText);
+                    EditorThemeManager.AddGraphic(selectQuickPrefabButton.transform.GetChild(0).GetComponent<Text>(), ThemeGroup.Function_2_Text);
+                    EditorThemeManager.AddGraphic(selectQuickPrefabText, ThemeGroup.Light_Text);
 
                     #endregion
                 }
