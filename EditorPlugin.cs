@@ -18,7 +18,7 @@ using UnityEngine.UI;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.12")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.13")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
@@ -369,6 +369,7 @@ namespace EditorManagement
                 ModCompatibility.sharedFunctions.AddSet("ShowDamagable", EditorConfig.OnlyShowDamagable.Value);
 
                 RTObject.Enabled = EditorConfig.ObjectDraggerEnabled.Value;
+                RTObject.CreateKeyframe = EditorConfig.ObjectDraggerCreatesKeyframe.Value;
                 RTObject.HighlightColor = EditorConfig.ObjectHighlightAmount.Value;
                 RTObject.HighlightDoubleColor = EditorConfig.ObjectHighlightDoubleAmount.Value;
                 RTObject.HighlightObjects = EditorConfig.HighlightObjects.Value;
