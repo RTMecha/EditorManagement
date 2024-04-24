@@ -414,7 +414,7 @@ namespace EditorManagement.Functions.Editors
 
             ModCompatibility.sharedFunctions.AddSet("ParentPickerActive", parentPickerEnabled);
             ModCompatibility.sharedFunctions.AddSet("PrefabPickerActive", prefabPickerEnabled);
-            ModCompatibility.sharedFunctions.AddSet("SelectedObjects", ObjectEditor.inst.SelectedObjects);
+            ModCompatibility.sharedFunctions.AddSet("SelectinMultiple", selectingMultiple);
 
             if (RTHelpers.AprilFools && UnityEngine.Random.Range(0, 10000) > 9996)
             {
@@ -13104,6 +13104,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ObjectHighlightAmount),
             new EditorProperty(EditorProperty.ValueType.Color, EditorPlugin.EditorConfig.ObjectHighlightDoubleAmount),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectDraggerEnabled),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ObjectDraggerCreatesKeyframe),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectDraggerRotatorRadius),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectDraggerScalerOffset),
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.ObjectDraggerScalerScale),

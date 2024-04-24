@@ -1122,6 +1122,7 @@ namespace EditorManagement.Functions
             ObjectHighlightAmount = Config.Bind("Preview", "Object Highlight Amount", new Color(0.1f, 0.1f, 0.1f), "If an object is hovered, it adds this amount of color to the hovered object.");
             ObjectHighlightDoubleAmount = Config.Bind("Preview", "Object Highlight Double Amount", new Color(0.5f, 0.5f, 0.5f), "If an object is hovered and shift is held, it adds this amount of color to the hovered object.");
             ObjectDraggerEnabled = Config.Bind("Preview", "Object Dragger Enabled", false, "If an object can be dragged around.");
+            ObjectDraggerCreatesKeyframe = Config.Bind("Preview", "Object Dragger Creates Keyframe", false, "When an object is dragged, create a keyframe.");
             ObjectDraggerRotatorRadius = Config.Bind("Preview", "Object Dragger Rotator Radius", 22f, "The size of the Object Draggers' rotation ring.");
             ObjectDraggerScalerOffset = Config.Bind("Preview", "Object Dragger Scaler Offset", 6f, "The distance of the Object Draggers' scale arrows.");
             ObjectDraggerScalerScale = Config.Bind("Preview", "Object Dragger Scaler Scale", 1.6f, "The size of the Object Draggers' scale arrows.");
@@ -2231,6 +2232,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<Color> ObjectHighlightAmount { get; set; }
         public ConfigEntry<Color> ObjectHighlightDoubleAmount { get; set; }
         public ConfigEntry<bool> ObjectDraggerEnabled { get; set; }
+        public ConfigEntry<bool> ObjectDraggerCreatesKeyframe { get; set; }
         public ConfigEntry<float> ObjectDraggerRotatorRadius { get; set; }
         public ConfigEntry<float> ObjectDraggerScalerOffset { get; set; }
         public ConfigEntry<float> ObjectDraggerScalerScale { get; set; }

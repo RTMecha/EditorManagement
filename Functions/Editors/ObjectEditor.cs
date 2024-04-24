@@ -147,15 +147,9 @@ namespace EditorManagement.Functions.Editors
 
         void Update()
         {
-            if (!ModCompatibility.sharedFunctions.ContainsKey("SelectedObjectCount"))
-                ModCompatibility.sharedFunctions.Add("SelectedObjectCount", SelectedObjectCount);
-            else
-                ModCompatibility.sharedFunctions["SelectedObjectCount"] = SelectedObjectCount;
-
-            if (!ModCompatibility.sharedFunctions.ContainsKey("CurrentSelection"))
-                ModCompatibility.sharedFunctions.Add("CurrentSelection", CurrentSelection);
-            if (ModCompatibility.sharedFunctions.ContainsKey("CurrentSelection"))
-                ModCompatibility.sharedFunctions["CurrentSelection"] = CurrentSelection;
+            ModCompatibility.sharedFunctions.AddSet("SelectedObjectCount", SelectedObjectCount);
+            ModCompatibility.sharedFunctions.AddSet("CurrentSelection", CurrentSelection);
+            ModCompatibility.sharedFunctions.AddSet("SelectedObjects", SelectedObjects);
         }
 
         public IEnumerator Wait()
@@ -225,6 +219,12 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.ClearDialogs();
                     EditorManager.inst.ShowDialog("Object Editor");
                 }
+
+                if (CurrentSelection.ID != beatmapObject.id)
+                    for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
+                    {
+                        LSHelpers.DeleteChildren(ObjEditor.inst.TimelineParents[i]);
+                    }
 
                 StartCoroutine(RefreshObjectGUI(beatmapObject));
                 StartCoroutine(RememberTimeline());
@@ -1216,9 +1216,10 @@ namespace EditorManagement.Functions.Editors
                 RenderTimelineObject(timelineObject);
 
             if (CurrentSelection.IsBeatmapObject && CurrentSelection.ID != timelineObject.ID)
-            {
-                ClearKeyframes(CurrentSelection.GetData<BeatmapObject>());
-            }
+                for (int i = 0; i < ObjEditor.inst.TimelineParents.Count; i++)
+                {
+                    LSHelpers.DeleteChildren(ObjEditor.inst.TimelineParents[i]);
+                }
 
             DeselectAllObjects();
 

@@ -603,58 +603,17 @@ namespace EditorManagement.Functions.Helpers
                             if (!success)
                                 EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
                             else
-                            {
                                 RTEditor.inst.parentPickerEnabled = false;
-                            }
 
                             return;
                         }
 
-                        var dictionary = new Dictionary<string, bool>();
+                        var tryParent = SetParent(ObjectEditor.inst.CurrentSelection, timelineObject);
 
-                        foreach (var obj in DataManager.inst.gameData.beatmapObjects)
-                        {
-                            bool flag = true;
-                            if (!string.IsNullOrEmpty(obj.parent))
-                            {
-                                string parentID = ObjectEditor.inst.CurrentSelection.ID;
-                                while (!string.IsNullOrEmpty(parentID))
-                                {
-                                    if (parentID == obj.parent)
-                                    {
-                                        flag = false;
-                                        break;
-                                    }
-                                    int num2 = DataManager.inst.gameData.beatmapObjects.FindIndex(x => x.parent == parentID);
-                                    if (num2 != -1)
-                                    {
-                                        parentID = DataManager.inst.gameData.beatmapObjects[num2].id;
-                                    }
-                                    else
-                                    {
-                                        parentID = null;
-                                    }
-                                }
-                            }
-                            if (!dictionary.ContainsKey(obj.id))
-                                dictionary.Add(obj.id, flag);
-                        }
-
-                        if (dictionary.ContainsKey(ObjectEditor.inst.CurrentSelection.ID))
-                            dictionary[ObjectEditor.inst.CurrentSelection.ID] = false;
-
-                        if (dictionary.ContainsKey(timelineObject.ID) && dictionary[timelineObject.ID])
-                        {
-                            ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>().parent = timelineObject.ID;
-                            Updater.UpdateProcessor(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
-
-                            RTEditor.inst.parentPickerEnabled = false;
-                            RTEditor.inst.StartCoroutine(ObjectEditor.RefreshObjectGUI(ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>()));
-                        }
-                        else
-                        {
+                        if (!tryParent)
                             EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
-                        }
+                        else
+                            RTEditor.inst.parentPickerEnabled = false;
                     }
                 }
             });
