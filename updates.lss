@@ -1,3 +1,6 @@
+2.5.13 > [Apr 24, 2024]
+- Object dragging now has an option to disable keyframe creation.
+- Attempted to fix a bug where keyframe objects persist in the object timeline when selecting another object in some cases.
 2.5.12 > [Apr 20, 2024]
 - Fixed Background colors not being selectable.
 2.5.11 > [Apr 20, 2024]
