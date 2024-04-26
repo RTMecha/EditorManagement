@@ -615,50 +615,54 @@ namespace EditorManagement.Functions.Editors
 
         public void CollapseCurrentPrefab()
         {
-            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
+            if (!ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
             {
-                var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
-
-                if (!bm || bm.prefabInstanceID == "")
-                    return;
-
-                var editorData = bm.editorData;
-                string prefabInstanceID = bm.prefabInstanceID;
-                float startTime = DataManager.inst.gameData.beatmapObjects.Find(x => x.prefabInstanceID == prefabInstanceID).StartTime;
-
-                var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == bm.prefabID);
-
-                var prefabObject = new PrefabObject(prefab.ID, startTime);
-                prefabObject.editorData.Bin = editorData.Bin;
-                prefabObject.editorData.layer = editorData.layer;
-                var prefab2 = new Prefab(prefab.Name, prefab.Type, prefab.Offset, DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == prefabInstanceID).Select(x => (BeatmapObject)x).ToList(), new List<PrefabObject>());
-
-                prefab2.ID = prefab.ID;
-                int index = DataManager.inst.gameData.prefabs.FindIndex(x => x.ID == bm.prefabID);
-                DataManager.inst.gameData.prefabs[index] = prefab2;
-                var list = RTEditor.inst.TimelineBeatmapObjects.FindAll(x => x.GetData<BeatmapObject>().prefabInstanceID == prefabInstanceID);
-                foreach (var timelineObject in list)
-                {
-                    Destroy(timelineObject.GameObject);
-                    var a = RTEditor.inst.timelineObjects.FindIndex(x => x.ID == timelineObject.ID);
-                    if (a >= 0)
-                        RTEditor.inst.timelineObjects.RemoveAt(a);
-                }
-
-                DataManager.inst.gameData.beatmapObjects.Where(x => x.prefabInstanceID == prefabInstanceID && !x.fromPrefab).ToList().ForEach(x => Updater.UpdateProcessor(x, reinsert: false));
-                DataManager.inst.gameData.beatmapObjects.RemoveAll(x => x.prefabInstanceID == prefabInstanceID && !x.fromPrefab);
-                DataManager.inst.gameData.prefabObjects.Add(prefabObject);
-
-                Updater.AddPrefabToLevel(prefabObject);
-
-                DataManager.inst.gameData.prefabObjects.Where(x => x.prefabID == prefab.ID).ToList().ForEach(x => Updater.UpdatePrefab(x));
-
-                ObjectEditor.inst.SetCurrentObject(new TimelineObject(prefabObject));
-
-                EditorManager.inst.DisplayNotification("Replaced all instances of Prefab!", 2f, EditorManager.NotificationType.Success);
+                EditorManager.inst.DisplayNotification("Can't collapse non-object.", 2f, EditorManager.NotificationType.Error);
+                return;
             }
-            else
-                EditorManager.inst.DisplayNotification("Can't collapse non-object!", 2f, EditorManager.NotificationType.Error);
+
+            var bm = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
+
+            if (!bm || bm.prefabInstanceID == "")
+            {
+                EditorManager.inst.DisplayNotification("Beatmap Object does not have a Prefab Object reference.", 2f, EditorManager.NotificationType.Error);
+                return;
+            }
+
+            var editorData = bm.editorData;
+            string prefabInstanceID = bm.prefabInstanceID;
+            float startTime = DataManager.inst.gameData.beatmapObjects.Where(x => x.prefabInstanceID == prefabInstanceID).Min(x => x.StartTime);
+
+            var prefab = DataManager.inst.gameData.prefabs.Find(x => x.ID == bm.prefabID);
+
+            var prefabObject = new PrefabObject(prefab.ID, startTime - prefab.Offset);
+            prefabObject.editorData.Bin = editorData.Bin;
+            prefabObject.editorData.layer = editorData.layer;
+            var prefab2 = new Prefab(prefab.Name, prefab.Type, prefab.Offset, DataManager.inst.gameData.beatmapObjects.FindAll(x => x.prefabInstanceID == prefabInstanceID).Select(x => (BeatmapObject)x).ToList(), new List<PrefabObject>());
+
+            prefab2.ID = prefab.ID;
+            int index = DataManager.inst.gameData.prefabs.FindIndex(x => x.ID == bm.prefabID);
+            DataManager.inst.gameData.prefabs[index] = prefab2;
+            var list = RTEditor.inst.TimelineBeatmapObjects.FindAll(x => x.GetData<BeatmapObject>().prefabInstanceID == prefabInstanceID);
+            foreach (var timelineObject in list)
+            {
+                Destroy(timelineObject.GameObject);
+                var a = RTEditor.inst.timelineObjects.FindIndex(x => x.ID == timelineObject.ID);
+                if (a >= 0)
+                    RTEditor.inst.timelineObjects.RemoveAt(a);
+            }
+
+            DataManager.inst.gameData.beatmapObjects.Where(x => x.prefabInstanceID == prefabInstanceID && !x.fromPrefab).ToList().ForEach(x => Updater.UpdateProcessor(x, reinsert: false));
+            DataManager.inst.gameData.beatmapObjects.RemoveAll(x => x.prefabInstanceID == prefabInstanceID && !x.fromPrefab);
+            DataManager.inst.gameData.prefabObjects.Add(prefabObject);
+
+            Updater.AddPrefabToLevel(prefabObject);
+
+            DataManager.inst.gameData.prefabObjects.Where(x => x.prefabID == prefab.ID).ToList().ForEach(x => Updater.UpdatePrefab(x));
+
+            ObjectEditor.inst.SetCurrentObject(new TimelineObject(prefabObject));
+
+            EditorManager.inst.DisplayNotification("Replaced all instances of Prefab!", 2f, EditorManager.NotificationType.Success);
         }
 
         public void ExpandCurrentPrefab()
@@ -688,16 +692,19 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.DisplayNotification("Can't expand non-prefab!", 2f, EditorManager.NotificationType.Error);
         }
 
-        public void AddPrefabObjectToLevel(BasePrefab _prefab)
+        public void AddPrefabObjectToLevel(BasePrefab prefab)
         {
-            var prefabObject = new PrefabObject();
-            prefabObject.ID = LSText.randomString(16);
-            prefabObject.prefabID = _prefab.ID;
-            prefabObject.StartTime = EditorManager.inst.CurrentAudioPos;
-            prefabObject.editorData.layer = EditorManager.inst.layer;
+            var prefabObject = new PrefabObject
+            {
+                ID = LSText.randomString(16),
+                prefabID = prefab.ID,
+                StartTime = EditorManager.inst.CurrentAudioPos,
+            };
 
             if (RTEditor.inst.layerType == RTEditor.LayerType.Events)
                 RTEditor.inst.SetLayer(RTEditor.LayerType.Objects);
+
+            prefabObject.editorData.layer = EditorManager.inst.layer;
 
             for (int i = 0; i < prefabObject.events.Count; i++)
                 prefabObject.events[i] = new EventKeyframe(prefabObject.events[i]);
@@ -706,7 +713,9 @@ namespace EditorManagement.Functions.Editors
 
             Updater.AddPrefabToLevel(prefabObject);
 
-            ObjectEditor.inst.RenderTimelineObject(new TimelineObject(prefabObject));
+            var timelineObject = new TimelineObject(prefabObject);
+            ObjectEditor.inst.SetCurrentObject(timelineObject);
+            //ObjectEditor.inst.RenderTimelineObject(timelineObject);
         }
 
         public IEnumerator AddExpandedPrefabToLevel(PrefabObject prefabObject)
