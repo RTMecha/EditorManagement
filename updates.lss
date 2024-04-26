@@ -1,3 +1,7 @@
+2.5.14 > [Apr 26, 2024]
+- Added a warning popup for applying a prefab. Suggested by Sleepyz.
+- Fixed a really old bug with applying prefabs, they no longer offset their start time from where they should be.
+- Added a config for saving level backups when you load another level.
 2.5.13 > [Apr 24, 2024]
 - Object dragging now has an option to disable keyframe creation.
 - Attempted to fix a bug where keyframe objects persist in the object timeline when selecting another object in some cases.
