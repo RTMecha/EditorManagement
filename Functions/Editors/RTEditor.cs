@@ -9212,7 +9212,7 @@ namespace EditorManagement.Functions.Editors
             EditorManager.inst.ClearDialogs();
             EditorManager.inst.ShowDialog("File Info Popup");
 
-            if (EditorManager.inst.hasLoadedLevel && RTFile.DirectoryExists(GameManager.inst.path.Replace("/level.lsb", "")))
+            if (EditorManager.inst.hasLoadedLevel && EditorConfig.Instance.BackupPreviousLoadedLevel.Value && RTFile.DirectoryExists(GameManager.inst.path.Replace("/level.lsb", "")))
             {
                 Debug.Log($"{EditorPlugin.className}Backing up previous level {Path.GetFileName(GameManager.inst.path.Replace("/level.lsb", ""))}...");
                 SetFileInfo($"Backing up previous level [ {Path.GetFileName(GameManager.inst.path.Replace("/level.lsb", ""))} ]");
@@ -12006,6 +12006,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Bool, RTFunctions.FunctionsPlugin.ControllerRumble),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingPlaysSound),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.DraggingPlaysSoundOnlyWithBPM),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ShowCollapsePrefabWarning),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.RoundToNearest),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.ScrollOnEasing),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.PrefabExampleTemplate),
@@ -12066,6 +12067,7 @@ namespace EditorManagement.Functions.Editors
             new EditorProperty(EditorProperty.ValueType.Float, EditorPlugin.EditorConfig.AutosaveLoopTime),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.LevelLoadsLastTime),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.LevelPausesOnStart),
+            new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.BackupPreviousLoadedLevel),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SettingPathReloads),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.SavingSavesThemeOpacity),
             new EditorProperty(EditorProperty.ValueType.Bool, EditorPlugin.EditorConfig.UpdatePrefabListOnFilesChanged),

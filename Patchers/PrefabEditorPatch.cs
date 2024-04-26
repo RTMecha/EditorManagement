@@ -615,6 +615,20 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool CollapseCurrentPrefabPrefix()
         {
+            if (EditorConfig.Instance.ShowCollapsePrefabWarning.Value)
+            {
+                RTEditor.inst.ShowWarningPopup("Are you sure you want to collapse this Prefab group and save the changes to the Internal Prefab?", delegate ()
+                {
+                    PrefabEditorManager.inst.CollapseCurrentPrefab();
+                    EditorManager.inst.HideDialog("Warning Popup");
+                }, delegate ()
+                {
+                    EditorManager.inst.HideDialog("Warning Popup");
+                });
+
+                return false;
+            }
+
             PrefabEditorManager.inst.CollapseCurrentPrefab();
             return false;
         }

@@ -30,6 +30,7 @@ namespace EditorManagement.Functions
             BPMSnapDivisions = Config.Bind("General", "BPM Snap Divisions", 4f, "How many times the snap is divided into. Can be good for songs that don't do 4 divisions.");
             DraggingPlaysSound = Config.Bind("General", "Dragging Plays Sound", true, "If dragging an object plays a sound.");
             DraggingPlaysSoundOnlyWithBPM = Config.Bind("General", "Dragging Plays Sound Only With BPM", true, "If dragging an object plays a sound ONLY when BPM Snap is active.");
+            ShowCollapsePrefabWarning = Config.Bind("General", "Show Collapse Prefab Warning", true, "If a warning should popup when the user is trying to apply a prefab. Can be good for accidental Apply Prefab button clicks.");
             RoundToNearest = Config.Bind("General", "Round To Nearest", true, "If numbers should be rounded up to 3 decimal points (for example, 0.43321245 into 0.433).");
             ScrollOnEasing = Config.Bind("General", "Scroll on Easing Changes Value", true, "If Scolling on an easing dropdown changes the easing.");
             PrefabExampleTemplate = Config.Bind("General", "Prefab Example Template", true, "Example Template prefab will always be generated into the internal prefabs for you to use.");
@@ -85,6 +86,7 @@ namespace EditorManagement.Functions
             AutosaveLoopTime = Config.Bind("Data", "Autosave Loop Time", 600f, "The repeat time of autosave.");
             LevelLoadsLastTime = Config.Bind("Data", "Level Loads Last Time", true, "Sets the editor position (audio time, layer, etc) to the last saved editor position on level load.");
             LevelPausesOnStart = Config.Bind("Data", "Level Pauses on Start", false, "Editor pauses on level load.");
+            BackupPreviousLoadedLevel = Config.Bind("Data", "Backup Previous Loaded Level", false, "Saves the previously loaded level when loading a different level to a level-previous.lsb file.");
             SettingPathReloads = Config.Bind("Data", "Setting Path Reloads", true, "With this setting on, update the list for levels, prefabs and themes when changing the directory.");
             SavingSavesThemeOpacity = Config.Bind("Data", "Saving Saves Theme Opacity", false, "Turn this off if you don't want themes to break in unmodded PA.");
             UpdatePrefabListOnFilesChanged = Config.Bind("Data", "Update Prefab List on Files Changed", false, "When you add a prefab to your prefab path, the editor will automatically update the prefab list for you.");
@@ -1139,6 +1141,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<float> BPMSnapDivisions { get; set; }
         public ConfigEntry<bool> DraggingPlaysSound { get; set; }
         public ConfigEntry<bool> DraggingPlaysSoundOnlyWithBPM { get; set; }
+        public ConfigEntry<bool> ShowCollapsePrefabWarning { get; set; }
         public ConfigEntry<bool> RoundToNearest { get; set; }
         public ConfigEntry<bool> ScrollOnEasing { get; set; }
         public ConfigEntry<bool> PrefabExampleTemplate { get; set; }
@@ -1194,6 +1197,7 @@ namespace EditorManagement.Functions
         public ConfigEntry<float> AutosaveLoopTime { get; set; }
         public ConfigEntry<bool> LevelLoadsLastTime { get; set; }
         public ConfigEntry<bool> LevelPausesOnStart { get; set; }
+        public ConfigEntry<bool> BackupPreviousLoadedLevel { get; set; }
         public ConfigEntry<bool> SettingPathReloads { get; set; }
         public ConfigEntry<bool> SavingSavesThemeOpacity { get; set; }
         public ConfigEntry<bool> UpdatePrefabListOnFilesChanged { get; set; }
