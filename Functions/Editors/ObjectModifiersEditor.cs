@@ -267,14 +267,15 @@ namespace EditorManagement.Functions.Editors
             foreach (var modifier in beatmapObject.modifiers)
             {
                 int index = num;
-                var gameObject = modifierCardPrefab.Duplicate(content, modifier.commands[0]);
+                var name = modifier.commands.Count > 0 ? modifier.commands[0] : "Invalid Modifier";
+                var gameObject = modifierCardPrefab.Duplicate(content, name);
                 EditorThemeManager.ApplyElement(new EditorThemeManager.Element(ThemeGroup.List_Button_1_Normal, gameObject, new List<Component>
                     {
                         gameObject.GetComponent<Image>(),
                     }, true, 1, SpriteManager.RoundedSide.W));
                 gameObject.transform.localScale = Vector3.one;
                 var modifierTitle = gameObject.transform.Find("Label/Text").GetComponent<Text>();
-                modifierTitle.text = modifier.commands[0];
+                modifierTitle.text = name;
                 EditorThemeManager.ApplyLightText(modifierTitle);
 
                 var delete = gameObject.transform.Find("Label/Delete").GetComponent<DeleteButtonStorage>();
@@ -567,6 +568,18 @@ namespace EditorManagement.Functions.Editors
                     EditorThemeManager.ApplyLightText(labelText);
                     EditorThemeManager.ApplyDropdown(d);
                 };
+
+                if (!modifier.verified)
+                {
+                    modifier.verified = true;
+                    RTHelpers.VerifyModifier?.Invoke(modifier);
+                }
+
+                if (modifier.commands.Count < 1)
+                {
+                    EditorManager.inst.DisplayNotification("Modifier does not have a command name and is lacking values.", 2f, EditorManager.NotificationType.Error);
+                    continue;
+                }
 
                 var cmd = modifier.commands[0];
                 switch (cmd)
