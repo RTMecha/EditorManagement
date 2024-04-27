@@ -1,3 +1,8 @@
+2.5.15 > [Apr 27, 2024]
+- Clicking the scrollwheel on a event bin in the event layer will now select a keyframe with the associated type before where the mouse is.
+- Finally fixed marker back and forth selecting keybinds.
+- Forgot to allow Paste Modifier button to be rounded.
+- Multi selection should now be consistent. Holding shift while selecting an already selected object will now deselect the object and if you deselect all but one object, it will change the editor from a multi editor to a singular editor.
 2.5.14 > [Apr 26, 2024]
 - Added a warning popup for applying a prefab. Suggested by Sleepyz.
 - Fixed a really old bug with applying prefabs, they no longer offset their start time from where they should be.
