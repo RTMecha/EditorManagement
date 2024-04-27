@@ -1,3 +1,6 @@
+2.5.16 > [Apr 28, 2024]
+- Prefab Objects can now be dragged around and selected in the editor preview window.
+- Modifiers are checked for invalid value counts and names, for any cases where a modifier is outdated or messed with.
 2.5.15 > [Apr 27, 2024]
 - Clicking the scrollwheel on a event bin in the event layer will now select a keyframe with the associated type before where the mouse is.
 - Finally fixed marker back and forth selecting keybinds.
