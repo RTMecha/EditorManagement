@@ -1324,14 +1324,6 @@ namespace EditorManagement.Functions.Editors
 
         #region Timeline Objects
 
-        public void ClearTimelineObjects()
-        {
-            foreach (var timelineObject in RTEditor.inst.timelineObjects)
-                Destroy(timelineObject.GameObject);
-
-            RTEditor.inst.timelineObjects.Clear();
-        }
-
         /// <summary>
         /// Finds the timeline object with the associated BeatmapObject ID.
         /// </summary>
@@ -1339,16 +1331,13 @@ namespace EditorManagement.Functions.Editors
         /// <returns>Returns either the related TimelineObject or a new TimelineObject if one doesn't exist for whatever reason.</returns>
         public TimelineObject GetTimelineObject(BeatmapObject beatmapObject)
         {
+            if (beatmapObject.fromPrefab && RTEditor.inst.timelineObjects.TryFind(x => x.IsPrefabObject && x.ID == beatmapObject.prefabInstanceID, out TimelineObject timelineObject))
+            {
+                return timelineObject;
+            }
+
             if (!beatmapObject.timelineObject)
                 beatmapObject.timelineObject = new TimelineObject(beatmapObject);
-
-            //if (!beatmapObject.timelineObject)
-            //{
-            //    if (RTEditor.inst.timelineObjects.Has(x => x.IsBeatmapObject && x.ID == beatmapObject.id))
-            //        beatmapObject.timelineObject = RTEditor.inst.timelineObjects.Find(x => x.IsBeatmapObject && x.ID == beatmapObject.id);
-            //    else
-            //        beatmapObject.timelineObject = new TimelineObject(beatmapObject);
-            //}
 
             return beatmapObject.timelineObject;
         }
