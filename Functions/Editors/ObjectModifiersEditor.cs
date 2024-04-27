@@ -1833,7 +1833,7 @@ namespace EditorManagement.Functions.Editors
                     EditorManager.inst.DisplayNotification("Pasted Modifier!", 1.5f, EditorManager.NotificationType.Success);
                 });
 
-                EditorThemeManager.ApplyGraphic(buttonStorage.button.image, ThemeGroup.Paste);
+                EditorThemeManager.ApplyGraphic(buttonStorage.button.image, ThemeGroup.Paste, true);
                 EditorThemeManager.ApplyGraphic(buttonStorage.text, ThemeGroup.Paste_Text);
             }
 
