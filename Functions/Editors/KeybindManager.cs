@@ -94,7 +94,7 @@ namespace EditorManagement.Functions.Editors
                 if (selectionType == SelectionType.Prefab)
                 {
                     Updater.UpdatePrefab(prefabObject, "Offset");
-                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
+                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject);
                 }
             }
 
@@ -106,13 +106,9 @@ namespace EditorManagement.Functions.Editors
             if (dragging)
             {
                 if (selectionType == SelectionType.Object)
-                {
                     ObjectEditor.inst.RenderObjectKeyframesDialog(beatmapObject);
-                }
                 if (selectionType == SelectionType.Prefab)
-                {
-                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
-                }
+                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject);
             }
         }
 

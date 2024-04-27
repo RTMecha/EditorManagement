@@ -725,7 +725,7 @@ namespace EditorManagement.Patchers
             }
 
             EditorManager.inst.ShowDialog("Prefab Selector");
-            PrefabEditorManager.inst.RenderPrefabObjectDialog(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>(), __instance);
+            PrefabEditorManager.inst.RenderPrefabObjectDialog(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>());
 
             return false;
         }

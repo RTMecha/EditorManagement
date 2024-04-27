@@ -286,7 +286,7 @@ namespace EditorManagement
                 if (!prefabSelectorLeft.gameObject.activeInHierarchy)
                     PrefabEditorManager.inst.UpdateModdedVisbility();
                 else if (ObjectEditor.inst.CurrentSelection.IsPrefabObject)
-                    PrefabEditorManager.inst.RenderPrefabObjectDialog(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>(), PrefabEditor.inst);
+                    PrefabEditorManager.inst.RenderPrefabObjectDialog(ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>());
             }
         }
 

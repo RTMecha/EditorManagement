@@ -100,6 +100,7 @@ namespace EditorManagement.Functions.Editors
 
             StartCoroutine(Wait());
 
+            ModCompatibility.mods["EditorManagement"].Methods.AddSet("RenderPrefabObjectDialog", (Action<PrefabObject>)RenderPrefabObjectDialog);
         }
 
         IEnumerator Wait()
@@ -199,8 +200,10 @@ namespace EditorManagement.Functions.Editors
             prefabSelectorLeft.Find("speed").gameObject.SetActive(RTEditor.ShowModdedUI);
         }
 
-        public void RenderPrefabObjectDialog(PrefabObject prefabObject, PrefabEditor __instance)
+        public void RenderPrefabObjectDialog(PrefabObject prefabObject)
         {
+            var __instance = PrefabEditor.inst;
+
             #region Original Code
 
             var currentPrefab = prefabObject;

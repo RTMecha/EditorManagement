@@ -1908,7 +1908,7 @@ namespace EditorManagement.Patchers
                         if (timelineObject.IsPrefabObject)
                         {
                             var prefabObject = timelineObject.GetData<PrefabObject>();
-                            PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject, PrefabEditor.inst);
+                            PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject);
                             Updater.UpdatePrefab(prefabObject, "Start Time");
                         }
                     }
