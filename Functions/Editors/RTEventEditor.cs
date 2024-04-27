@@ -740,7 +740,11 @@ namespace EditorManagement.Functions.Editors
             if (!RTEditor.inst.timelineKeyframes.Has(x => x.Type == type && x.Index == index))
                 CreateEventObjects();
 
-            RTEditor.inst.timelineKeyframes.Find(x => x.Type == type && x.Index == index).selected = true;
+            var kf = RTEditor.inst.timelineKeyframes.Find(x => x.Type == type && x.Index == index);
+            if (SelectedKeyframes.Count > 1)
+                kf.selected = !kf.selected;
+            else
+                kf.selected = true;
 
             EventEditor.inst.currentEventType = type;
             EventEditor.inst.currentEvent = index;

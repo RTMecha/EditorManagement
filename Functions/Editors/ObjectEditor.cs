@@ -1196,12 +1196,20 @@ namespace EditorManagement.Functions.Editors
         {
             if (SelectedObjectCount + 1 > 1)
             {
-                timelineObject.selected = true;
-
                 EditorManager.inst.ClearDialogs();
+
+                var first = SelectedObjects[0];
+                timelineObject.selected = !timelineObject.selected;
+                if (SelectedObjectCount == 0 || SelectedObjectCount == 1)
+                {
+                    SetCurrentObject(SelectedObjectCount == 1 ? SelectedObjects[0] : first);
+                    return;
+                }
+
                 EditorManager.inst.ShowDialog("Multi Object Editor", false);
 
                 RenderTimelineObject(timelineObject);
+
                 return;
             }
 
