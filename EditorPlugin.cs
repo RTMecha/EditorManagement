@@ -18,7 +18,7 @@ using UnityEngine.UI;
 
 namespace EditorManagement
 {
-    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.15")]
+    [BepInPlugin("com.mecha.editormanagement", "EditorManagement", "2.5.16")]
     public class EditorPlugin : BaseUnityPlugin
     {
         public static EditorPlugin inst;
