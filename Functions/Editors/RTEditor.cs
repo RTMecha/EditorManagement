@@ -2203,6 +2203,7 @@ namespace EditorManagement.Functions.Editors
 
             for (int i = 0; i < EventEditor.inst.EventHolders.transform.childCount - 1; i++)
             {
+                int type = i;
                 var et = EventEditor.inst.EventHolders.transform.GetChild(i).GetComponent<EventTrigger>();
                 et.triggers.Clear();
                 et.triggers.Add(TriggerHelper.CreateEntry(EventTriggerType.PointerEnter, delegate (BaseEventData eventData) { isOverMainTimeline = true; }));
@@ -2210,24 +2211,32 @@ namespace EditorManagement.Functions.Editors
                 et.triggers.Add(TriggerHelper.StartDragTrigger());
                 et.triggers.Add(TriggerHelper.DragTrigger());
                 et.triggers.Add(TriggerHelper.EndDragTrigger());
-
-                int typeTmp = i;
-                var eventKeyframeCreation = new EventTrigger.Entry();
-                eventKeyframeCreation.eventID = EventTriggerType.PointerDown;
-                eventKeyframeCreation.callback.AddListener(delegate (BaseEventData eventData)
+                et.triggers.Add(TriggerHelper.CreateEntry(EventTriggerType.PointerDown, delegate (BaseEventData eventData)
                 {
+                    var pointerEventData = (PointerEventData)eventData;
+
                     var layer = Layer + 1;
                     int max = RTEventEditor.EventLimit * layer;
                     int min = max - RTEventEditor.EventLimit;
+                    var currentEvent = min + type;
 
-                    Debug.Log($"{EditorPlugin.className}EventHolder: {typeTmp}\nMax: {max}\nMin: {min}\nCurrent Event: {min + typeTmp}");
-                    if (((PointerEventData)eventData).button == PointerEventData.InputButton.Right)
+                    Debug.Log($"{EditorPlugin.className}EventHolder: {type}\nMax: {max}\nMin: {min}\nCurrent Event: {currentEvent}");
+                    if (pointerEventData.button == PointerEventData.InputButton.Right)
                     {
-                        if (RTEventEditor.EventTypes.Length > min + typeTmp && (ShowModdedUI && DataManager.inst.gameData.eventObjects.allEvents.Count > min + typeTmp || 10 > min + typeTmp))
-                            RTEventEditor.inst.NewKeyframeFromTimeline(min + typeTmp);
+                        if (RTEventEditor.EventTypes.Length > currentEvent && (ShowModdedUI && DataManager.inst.gameData.eventObjects.allEvents.Count > currentEvent || 10 > currentEvent))
+                            RTEventEditor.inst.NewKeyframeFromTimeline(currentEvent);
                     }
-                });
-                et.triggers.Add(eventKeyframeCreation);
+                    if (pointerEventData.button == PointerEventData.InputButton.Middle)
+                    {
+                        if (RTEventEditor.EventTypes.Length > currentEvent && (ShowModdedUI && DataManager.inst.gameData.eventObjects.allEvents.Count > currentEvent || 10 > currentEvent))
+                        {
+                            var index = DataManager.inst.gameData.eventObjects.allEvents[currentEvent].FindLastIndex(x => x.eventTime < EditorManager.inst.GetTimelineTime());
+
+                            if (index >= 0)
+                                RTEventEditor.inst.SetCurrentEvent(currentEvent, index);
+                        }
+                    }
+                }));
             }
 
             TriggerHelper.AddEventTriggerParams(EditorManager.inst.timelineScrollbar, TriggerHelper.CreateEntry(EventTriggerType.Scroll, delegate (BaseEventData baseEventData)
@@ -2287,66 +2296,66 @@ namespace EditorManagement.Functions.Editors
 
         void SetupCreateObjects()
         {
-            var __instance = EditorManager.inst;
+            var dialog = EditorManager.inst.GetDialog("Object Options Popup").Dialog;
 
-            var persistent = __instance.GetDialog("Object Options Popup").Dialog.Find("persistent").gameObject.GetComponent<Button>();
-            EditorManager.inst.GetDialog("Object Options Popup").Dialog.Find("persistent/text").gameObject.GetComponent<Text>().text = "No Autokill";
+            var persistent = dialog.Find("persistent").gameObject.GetComponent<Button>();
+            dialog.Find("persistent/text").gameObject.GetComponent<Text>().text = "No Autokill";
             persistent.onClick.ClearAll();
             persistent.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewNoAutokillObject();
             });
 
-            var empty = __instance.GetDialog("Object Options Popup").Dialog.Find("empty").gameObject.GetComponent<Button>();
+            var empty = dialog.Find("empty").gameObject.GetComponent<Button>();
             empty.onClick.ClearAll();
             empty.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewEmptyObject();
             });
 
-            var decoration = __instance.GetDialog("Object Options Popup").Dialog.Find("decoration").gameObject.GetComponent<Button>();
+            var decoration = dialog.Find("decoration").gameObject.GetComponent<Button>();
             decoration.onClick.ClearAll();
             decoration.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewDecorationObject();
             });
 
-            var helper = __instance.GetDialog("Object Options Popup").Dialog.Find("helper").gameObject.GetComponent<Button>();
+            var helper = dialog.Find("helper").gameObject.GetComponent<Button>();
             helper.onClick.ClearAll();
             helper.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewHelperObject();
             });
 
-            var normal = __instance.GetDialog("Object Options Popup").Dialog.Find("normal").gameObject.GetComponent<Button>();
+            var normal = dialog.Find("normal").gameObject.GetComponent<Button>();
             normal.onClick.ClearAll();
             normal.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewNormalObject();
             });
 
-            var circle = __instance.GetDialog("Object Options Popup").Dialog.Find("shapes/circle").gameObject.GetComponent<Button>();
+            var circle = dialog.Find("shapes/circle").gameObject.GetComponent<Button>();
             circle.onClick.ClearAll();
             circle.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewCircleObject();
             });
 
-            var triangle = __instance.GetDialog("Object Options Popup").Dialog.Find("shapes/triangle").gameObject.GetComponent<Button>();
+            var triangle = dialog.Find("shapes/triangle").gameObject.GetComponent<Button>();
             triangle.onClick.ClearAll();
             triangle.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewTriangleObject();
             });
 
-            var text = __instance.GetDialog("Object Options Popup").Dialog.Find("shapes/text").gameObject.GetComponent<Button>();
+            var text = dialog.Find("shapes/text").gameObject.GetComponent<Button>();
             text.onClick.ClearAll();
             text.onClick.AddListener(delegate ()
             {
                 ObjectEditor.inst.CreateNewTextObject();
             });
 
-            var hexagon = __instance.GetDialog("Object Options Popup").Dialog.Find("shapes/hexagon").gameObject.GetComponent<Button>();
+            var hexagon = dialog.Find("shapes/hexagon").gameObject.GetComponent<Button>();
             hexagon.onClick.ClearAll();
             hexagon.onClick.AddListener(delegate ()
             {
