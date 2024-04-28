@@ -662,7 +662,7 @@ namespace EditorManagement.Functions.Editors
 
                     RenderTimelineObject(timelineObject);
 
-                    StartCoroutine(Updater.IAddPrefabToLevel(prefabObject));
+                    StartCoroutine(Updater.IAddPrefabToLevel(prefabObjectCopy));
 
                     delay += 0.0001f;
                 }
