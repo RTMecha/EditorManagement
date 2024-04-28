@@ -1610,6 +1610,26 @@ namespace EditorManagement.Functions.Editors
 
                             break;
                         }
+                    case "eventOffsetCopyAxis":
+                        {
+                            dropdownGenerator("From Type", 1, new List<string> { "Position", "Scale", "Rotation", "Color" });
+                            dropdownGenerator("From Axis", 2, new List<string> { "X", "Y", "Z" });
+
+                            dropdownGenerator("To Type", 3, RTEventEditor.EventTypes.ToList());
+                            integerGenerator("To Axis", 4, 0);
+
+                            singleGenerator("Delay", 5, 0f);
+
+                            singleGenerator("Multiply", 6, 1f);
+                            singleGenerator("Offset", 7, 0f);
+                            singleGenerator("Min", 8, -99999f);
+                            singleGenerator("Max", 9, 99999f);
+
+                            singleGenerator("Loop", 10, 99999f);
+                            boolGenerator("Use Visual", 11, false);
+
+                            break;
+                        }
                     case "axisEquals":
                     case "axisLesserEquals":
                     case "axisGreaterEquals":
