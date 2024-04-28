@@ -2368,6 +2368,7 @@ namespace EditorManagement.Functions.Editors
             titleBar = GameObject.Find("Editor Systems/Editor GUI/sizer/main/TitleBar").transform;
 
             // Here we fix the naming issues with unmodded Legacy.
+            var saveAs = EditorManager.inst.GetDialog("Save As Popup").Dialog.Find("New File Popup");
             EditorManager.inst.GetDialog("Save As Popup").Dialog.Find("New File Popup/level-name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/EventObjectDialog/data/left/theme/name").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
             GameObject.Find("Editor GUI/sizer/main/EditorDialogs/PrefabDialog/data/name/input").GetComponent<InputField>().characterValidation = InputField.CharacterValidation.None;
@@ -2632,15 +2633,30 @@ namespace EditorManagement.Functions.Editors
 
             EditorHelper.AddEditorDropdown("Clear Sprite Data", "", "Edit", titleBar.Find("File/File Dropdown/Quit to Main Menu/Image").GetComponent<Image>().sprite, delegate ()
             {
-                EditorManager.inst.ShowDialog("Warning Popup");
-                RefreshWarningPopup("Are you sure you want to clear sprite data? Any Image Shapes that use a stored image will have their images cleared and you will need to set them again.", delegate ()
+                ShowWarningPopup("Are you sure you want to clear sprite data? Any Image Shapes that use a stored image will have their images cleared and you will need to set them again.", delegate ()
                 {
                     AssetManager.SpriteAssets.Clear();
+                    EditorManager.inst.HideDialog("Warning Popup");
                 }, delegate ()
                 {
                     EditorManager.inst.HideDialog("Warning Popup");
                 });
             });
+
+            if (ModCompatibility.EventsCoreInstalled)
+                EditorHelper.AddEditorDropdown("Reset Event Offsets", "", "Edit", saveAs.Find("Panel/x/Image").GetComponent<Image>().sprite, delegate ()
+                {
+                    if (!ModCompatibility.sharedFunctions.ContainsKey("EventsCoreEventOffsets"))
+                        return;
+
+                    var list = (List<List<float>>)ModCompatibility.sharedFunctions["EventsCoreEventOffsets"];
+
+                    for (int i = 0; i < list.Count; i++)
+                        for (int j = 0; j < list[i].Count; j++)
+                            list[i][j] = 0f;
+
+                    EditorManager.inst.DisplayNotification("Event Offsets have been reset.", 1.4f, EditorManager.NotificationType.Success);
+                });
 
             if (ModCompatibility.mods.ContainsKey("ExampleCompanion"))
             {
@@ -9883,6 +9899,7 @@ namespace EditorManagement.Functions.Editors
             metaData.song.title = EditorManager.inst.newLevelName;
             metaData.creator.steam_name = SteamWrapper.inst.user.displayName;
             metaData.creator.steam_id = SteamWrapper.inst.user.id;
+            metaData.LevelBeatmap.name = EditorManager.inst.newLevelName;
 
             DataManager.inst.metaData = metaData;
 
