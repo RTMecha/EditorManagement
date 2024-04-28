@@ -216,8 +216,6 @@ namespace EditorManagement.Functions.Editors
             var spawnOnce = parent_more.Find("spawn_once").GetComponent<Toggle>();
             var parentInfo = parentText.GetComponent<HoverTooltip>();
 
-            Debug.Log($"a");
-
             parentText.transform.AsRT().sizeDelta = new Vector2(!string.IsNullOrEmpty(parent) ? 201f : 241f, 32f);
 
             parentParent.onClick.RemoveAllListeners();
@@ -234,13 +232,9 @@ namespace EditorManagement.Functions.Editors
                 RTEditor.inst.parentPickerEnabled = true;
             });
 
-            Debug.Log($"b");
-
             parentClear.gameObject.SetActive(!string.IsNullOrEmpty(parent));
 
             parent_more.AsRT().sizeDelta = new Vector2(351f, 152f);
-
-            Debug.Log($"c");
 
             if (string.IsNullOrEmpty(parent))
             {
@@ -256,8 +250,6 @@ namespace EditorManagement.Functions.Editors
                 return;
             }
 
-            Debug.Log($"d");
-
             string p = null;
 
             if (DataManager.inst.gameData.beatmapObjects.Has(x => x.id == parent))
@@ -271,16 +263,10 @@ namespace EditorManagement.Functions.Editors
                 parentInfo.tooltipLangauges[0].hint = "Object parented to the camera.";
             }
 
-            Debug.Log($"e");
-
             parentText.interactable = p != null;
             parentMore.interactable = p != null;
 
-            Debug.Log($"f");
-
             parent_more.gameObject.SetActive(p != null && advancedParent);
-
-            Debug.Log($"g");
 
             parentClear.onClick.AddListener(delegate ()
             {
@@ -291,8 +277,6 @@ namespace EditorManagement.Functions.Editors
                 RenderPrefabObjectParent(prefabObject);
             });
 
-            Debug.Log($"h");
-
             if (p == null)
             {
                 parentTextText.text = "No Parent Object";
@@ -302,8 +286,6 @@ namespace EditorManagement.Functions.Editors
 
                 return;
             }
-
-            Debug.Log($"i");
 
             parentTextText.text = p;
 
