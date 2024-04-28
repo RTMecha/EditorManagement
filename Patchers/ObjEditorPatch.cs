@@ -929,16 +929,16 @@ namespace EditorManagement.Patchers
                     var parent = objectView.Find("parent_more").GetChild(i + 1);
 
                     if (parent.Find("<<"))
-                        Destroy(parent.Find("<<").gameObject);
+                        DestroyImmediate(parent.Find("<<").gameObject);
 
                     if (parent.Find("<"))
-                        Destroy(parent.Find("<").gameObject);
+                        DestroyImmediate(parent.Find("<").gameObject);
 
                     if (parent.Find(">"))
-                        Destroy(parent.Find(">").gameObject);
+                        DestroyImmediate(parent.Find(">").gameObject);
 
                     if (parent.Find(">>"))
-                        Destroy(parent.Find(">>").gameObject);
+                        DestroyImmediate(parent.Find(">>").gameObject);
 
                     var additive = parent.GetChild(2).gameObject.Duplicate(parent, $"{array[i]}_add");
                     var parallax = parent.GetChild(3).gameObject.Duplicate(parent, $"{array[i]}_parallax");
