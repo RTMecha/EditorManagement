@@ -84,9 +84,9 @@ namespace EditorManagement.Functions.Editors
             "Window Base",
             "Window Position X",
             "Window Position Y",
-			//"Player Force",
-			//"Mosaic",
-		};
+            "Player Force",
+            "Mosaic",
+        };
 
         public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
         {
@@ -1171,14 +1171,20 @@ namespace EditorManagement.Functions.Editors
                     var ratio = GenerateUIElement("anamorphic ratio", "Single", bloom, 14, "Anamorphic Ratio");
                     var colors = SetupColorButtons("colors", "Colors", bloom, 16, bloomColorButtons);
 
+                    var colorShift = GenerateUIElement("colorshift", "Vector3", bloom.transform, 18, "Hue", "Sat", "Val");
+
                     EditorThemeManager.AddInputFields(diffusion["UI"], true, "Event Editor");
                     EditorThemeManager.AddInputFields(threshold["UI"], true, "Event Editor");
                     EditorThemeManager.AddInputFields(ratio["UI"], true, "Event Editor");
+                    EditorThemeManager.AddInputFields(colorShift["UI"], true, "Event Editor");
                 }
 
                 var vignette = EventEditor.inst.dialogRight.Find("vignette");
                 {
                     var colors = SetupColorButtons("colors", "Colors", vignette, 18, vignetteColorButtons);
+
+                    var colorShift = GenerateUIElement("colorshift", "Vector3", vignette.transform, 20, "Hue", "Sat", "Val");
+                    EditorThemeManager.AddInputFields(colorShift["UI"], true, "Event Editor");
                 }
 
                 var lens = EventEditor.inst.dialogRight.Find("lens");
@@ -1247,7 +1253,9 @@ namespace EditorManagement.Functions.Editors
                 {
                     var intensity = GenerateUIElement("introt", "Vector2", gradient.transform, 8, "Intensity", "Rotation");
                     var colorsTop = SetupColorButtons("colors1", "Colors Top", gradient.transform, 10, gradientColor1Buttons, 20);
-                    var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 12, gradientColor2Buttons, 20);
+                    var colorShiftTop = GenerateUIElement("colorshift1", "Vector4", gradient.transform, 12, "Opacity", "Hue", "Sat", "Val");
+                    var colorsBottom = SetupColorButtons("colors2", "Colors Bottom", gradient.transform, 14, gradientColor2Buttons, 20);
+                    var colorShiftBottom = GenerateUIElement("colorshift2", "Vector4", gradient.transform, 16, "Opacity", "Hue", "Sat", "Val");
 
                     var modeLabel = intensity["Label"].Duplicate(gradient.transform);
                     GenerateLabels(modeLabel.transform, "Mode");
@@ -1263,6 +1271,8 @@ namespace EditorManagement.Functions.Editors
                     };
 
                     EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
+                    EditorThemeManager.AddInputFields(colorShiftTop["UI"], true, "Event Editor");
+                    EditorThemeManager.AddInputFields(colorShiftBottom["UI"], true, "Event Editor");
                     EditorThemeManager.AddDropdown(modeDropdown);
                 }
 
@@ -1302,11 +1312,13 @@ namespace EditorManagement.Functions.Editors
                 var bg = GenerateEventDialog("bg");
                 {
                     var colors = SetupColorButtons("colors", "Colors", bg.transform, 8, bgColorButtons);
+                    var colorShift = GenerateUIElement("colorshift", "Vector3", bg.transform, 10, "Hue", "Sat", "Val");
 
-                    var active = GenerateUIElement("active", "Bool", bg.transform, 10, "Background Objects Active");
+                    var active = GenerateUIElement("active", "Bool", bg.transform, 12, "Background Objects Active");
                     var activeText = active["UI"].transform.Find("Text").GetComponent<Text>();
                     activeText.text = "Active";
 
+                    EditorThemeManager.AddInputFields(colorShift["UI"], true, "Event Editor");
                     EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), graphic: activeText);
                 }
 
@@ -1327,11 +1339,13 @@ namespace EditorManagement.Functions.Editors
                     var scale = GenerateUIElement("scale", "Vector2", timeline.transform, 12, "Scale X", "Scale Y");
                     var rotation = GenerateUIElement("rotation", "Single", timeline.transform, 14, "Rotation");
                     var colors = SetupColorButtons("colors", "Colors", timeline.transform, 16, timelineColorButtons);
+                    var colorShift = GenerateUIElement("colorshift", "Vector4", timeline.transform, 18, "Opacity", "Hue", "Sat", "Val");
 
                     EditorThemeManager.AddToggle(active["UI"].GetComponent<Toggle>(), graphic: activeText);
                     EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
                     EditorThemeManager.AddInputFields(scale["UI"], true, "Event Editor");
                     EditorThemeManager.AddInputFields(rotation["UI"], true, "Event Editor");
+                    EditorThemeManager.AddInputFields(colorShift["UI"], true, "Event Editor");
                 }
 
                 var player = GenerateEventDialog("player");
@@ -1460,9 +1474,11 @@ namespace EditorManagement.Functions.Editors
                     var intensity = GenerateUIElement("intensity", "Single", danger.transform, 8, "Intensity");
                     var size = GenerateUIElement("size", "Single", danger.transform, 10, "Size");
                     var colors = SetupColorButtons("colors", "Colors", danger.transform, 12, dangerColorButtons);
+                    var colorShift = GenerateUIElement("colorshift", "Vector4", danger.transform, 18, "Opacity", "Hue", "Sat", "Val");
 
                     EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
                     EditorThemeManager.AddInputFields(size["UI"], true, "Event Editor");
+                    EditorThemeManager.AddInputFields(colorShift["UI"], true, "Event Editor");
                 }
 
                 var rotxy = GenerateEventDialog("3d rotation");
@@ -1508,6 +1524,17 @@ namespace EditorManagement.Functions.Editors
                 {
                     var y = GenerateUIElement("y", "Single", windowPositionY.transform, 8, "Position Y (Requires Force Resolution)");
                     EditorThemeManager.AddInputFields(y["UI"], true, "Event Editor");
+                }
+
+                var playerForce = GenerateEventDialog("playerforce");
+                {
+                    var position = GenerateUIElement("position", "Vector2", playerForce.transform, 8, "Force X", "Force Y");
+                    EditorThemeManager.AddInputFields(position["UI"], true, "Event Editor");
+                }
+
+                var mosaic = GenerateEventDialog("mosaic");
+                {
+                    var amount = GenerateUIElement("amount", "Single", mosaic.transform, 8, "Amount");
                 }
             }
 
@@ -2270,6 +2297,11 @@ namespace EditorManagement.Functions.Editors
 
                             // Bloom Color
                             SetListColor((int)currentKeyframe.eventValues[4], 4, bloomColorButtons, Color.white, Color.black);
+
+                            // Bloom Color Shift
+                            SetFloatInputField(dialogTmp, "colorshift/x", 5);
+                            SetFloatInputField(dialogTmp, "colorshift/y", 6);
+                            SetFloatInputField(dialogTmp, "colorshift/z", 7);
                         }
                         break;
                     }
@@ -2294,8 +2326,15 @@ namespace EditorManagement.Functions.Editors
                         if (EventsCore)
                         {
                             RTEditor.SetActive(dialogTmp.Find("colors").gameObject, RTEditor.ShowModdedUI);
+                            RTEditor.SetActive(dialogTmp.Find("colorshift").gameObject, RTEditor.ShowModdedUI);
                             if (RTEditor.ShowModdedUI)
+                            {
                                 SetListColor((int)currentKeyframe.eventValues[6], 6, vignetteColorButtons, Color.black, Color.black);
+                                // Vignette Color Shift
+                                SetFloatInputField(dialogTmp, "colorshift/x", 7);
+                                SetFloatInputField(dialogTmp, "colorshift/y", 8);
+                                SetFloatInputField(dialogTmp, "colorshift/z", 9);
+                            }
                         }
 
                         break;
@@ -2423,6 +2462,18 @@ namespace EditorManagement.Functions.Editors
                             });
                         }
 
+                        // Gradient Top Color Shift
+                        SetFloatInputField(dialogTmp, "colorshift1/x", 5);
+                        SetFloatInputField(dialogTmp, "colorshift1/y", 6);
+                        SetFloatInputField(dialogTmp, "colorshift1/z", 7);
+                        SetFloatInputField(dialogTmp, "colorshift1/w", 8);
+
+                        // Gradient Bottom Color Shift
+                        SetFloatInputField(dialogTmp, "colorshift2/x", 9);
+                        SetFloatInputField(dialogTmp, "colorshift2/y", 10);
+                        SetFloatInputField(dialogTmp, "colorshift2/z", 11);
+                        SetFloatInputField(dialogTmp, "colorshift2/w", 12);
+
                         break;
                     }
                 case 16: // DoubleVision
@@ -2467,6 +2518,11 @@ namespace EditorManagement.Functions.Editors
 
                         SetToggle(dialogTmp, "active", 1, 0, 1);
 
+                        // BG Color Shift
+                        SetFloatInputField(dialogTmp, "colorshift/x", 2);
+                        SetFloatInputField(dialogTmp, "colorshift/y", 3);
+                        SetFloatInputField(dialogTmp, "colorshift/z", 4);
+
                         break;
                     }
                 case 21: // Invert
@@ -2492,6 +2548,12 @@ namespace EditorManagement.Functions.Editors
 
                         // Timeline Color
                         SetListColor((int)currentKeyframe.eventValues[6], 6, timelineColorButtons, GameManager.inst.LiveTheme.guiColor, Color.black);
+
+                        // Timeline Color Shift
+                        SetFloatInputField(dialogTmp, "colorshift/x", 7);
+                        SetFloatInputField(dialogTmp, "colorshift/y", 8);
+                        SetFloatInputField(dialogTmp, "colorshift/z", 9);
+                        SetFloatInputField(dialogTmp, "colorshift/w", 10);
 
                         break;
                     }
@@ -2640,6 +2702,12 @@ namespace EditorManagement.Functions.Editors
                         // Danger Color
                         SetListColor((int)currentKeyframe.eventValues[2], 2, dangerColorButtons, new Color(0.66f, 0f, 0f), Color.black);
 
+                        // Danger Color Shift
+                        SetFloatInputField(dialogTmp, "colorshift/x", 3);
+                        SetFloatInputField(dialogTmp, "colorshift/y", 4);
+                        SetFloatInputField(dialogTmp, "colorshift/z", 5);
+                        SetFloatInputField(dialogTmp, "colorshift/w", 6);
+
                         break;
                     }
                 case 31: // 3D Rotation
@@ -2676,6 +2744,17 @@ namespace EditorManagement.Functions.Editors
                 case 35: // Window Position Y
                     {
                         SetFloatInputField(dialogTmp, "y/x", 0);
+
+                        break;
+                    }
+                case 36: // Player Force
+                    {
+                        SetVector2InputField(dialogTmp, "position", 0, 1);
+                        break;
+                    }
+                case 37: // Mosaic
+                    {
+                        SetFloatInputField(dialogTmp, "amount/x", 0);
 
                         break;
                     }
