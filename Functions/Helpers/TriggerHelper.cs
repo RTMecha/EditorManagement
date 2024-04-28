@@ -590,13 +590,23 @@ namespace EditorManagement.Functions.Helpers
                         return;
                     }
 
-                    if (RTEditor.inst.parentPickerEnabled && ObjectEditor.inst.CurrentSelection.IsBeatmapObject && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
+                    if (RTEditor.inst.parentPickerEnabled && timelineObject.IsBeatmapObject && pointerEventData.button != PointerEventData.InputButton.Right)
                     {
                         if (RTEditor.inst.selectingMultiple)
                         {
                             bool success = false;
-                            foreach (var otherTimelineObject in ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject))
+                            foreach (var otherTimelineObject in ObjectEditor.inst.SelectedObjects)
                             {
+                                if (otherTimelineObject.IsPrefabObject)
+                                {
+                                    var prefabObject = otherTimelineObject.GetData<PrefabObject>();
+                                    prefabObject.parent = timelineObject.ID;
+                                    Updater.UpdatePrefab(prefabObject);
+                                    PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject);
+
+                                    success = true;
+                                    continue;
+                                }
                                 success = SetParent(otherTimelineObject, timelineObject);
                             }
 
@@ -604,6 +614,17 @@ namespace EditorManagement.Functions.Helpers
                                 EditorManager.inst.DisplayNotification("Cannot set parent to child / self!", 1f, EditorManager.NotificationType.Warning);
                             else
                                 RTEditor.inst.parentPickerEnabled = false;
+
+                            return;
+                        }
+
+                        if (ObjectEditor.inst.CurrentSelection.IsPrefabObject)
+                        {
+                            var prefabObject = ObjectEditor.inst.CurrentSelection.GetData<PrefabObject>();
+                            prefabObject.parent = timelineObject.ID;
+                            Updater.UpdatePrefab(prefabObject);
+                            PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject);
+                            RTEditor.inst.parentPickerEnabled = false;
 
                             return;
                         }

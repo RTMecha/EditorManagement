@@ -872,8 +872,7 @@ namespace EditorManagement.Patchers
         [HarmonyPrefix]
         static bool RenderParentSearchList()
         {
-            if (ObjectEditor.inst.CurrentSelection.IsBeatmapObject)
-                RTEditor.inst.RefreshParentSearch(Instance, ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>());
+            RTEditor.inst.RefreshParentSearch(Instance, ObjectEditor.inst.CurrentSelection);
             return false;
         }
 

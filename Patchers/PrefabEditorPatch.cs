@@ -3,6 +3,7 @@ using EditorManagement.Functions.Components;
 using EditorManagement.Functions.Editors;
 using EditorManagement.Functions.Helpers;
 using HarmonyLib;
+using LSFunctions;
 using RTFunctions.Functions;
 using RTFunctions.Functions.Components;
 using RTFunctions.Functions.Data;
@@ -125,6 +126,29 @@ namespace EditorManagement.Patchers
             PrefabEditorManager.inst.prefabSelectorLeft = dialog.Find("data/left");
             PrefabEditorManager.inst.prefabSelectorRight = dialog.Find("data/right");
 
+            var contentBase = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View/Viewport/Content");
+            var scrollView = GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View").Duplicate(PrefabEditorManager.inst.prefabSelectorLeft);
+
+            var parent = scrollView.transform.Find("Viewport/Content");
+
+            LSHelpers.DeleteChildren(parent, true);
+
+            var objectsToDelete = new List<GameObject>();
+            for (int i = 0; i < parent.childCount; i++)
+                objectsToDelete.Add(parent.GetChild(i).gameObject);
+            foreach (var child in objectsToDelete)
+                DestroyImmediate(child);
+
+            scrollView.transform.AsRT().sizeDelta = new Vector2(383f, 690f);
+
+            var objectsToParent = new List<Transform>();
+            for (int i = 0; i < PrefabEditorManager.inst.prefabSelectorLeft.childCount; i++)
+                objectsToParent.Add(PrefabEditorManager.inst.prefabSelectorLeft.GetChild(i));
+            foreach (var child in objectsToParent)
+                child.SetParent(parent);
+
+            PrefabEditorManager.inst.prefabSelectorLeft = parent;
+
             EditorHelper.LogAvailableInstances<PrefabEditor>();
 
             EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Background_1, dialog.gameObject, new List<Component>
@@ -209,12 +233,70 @@ namespace EditorManagement.Patchers
 
             EditorThemeManager.AddSelectable(setToCurrentButton, ThemeGroup.Function_2, false);
 
+            // Parent
+            var parentUI = contentBase.transform.Find("parent").gameObject.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "parent");
+            var parent_more = contentBase.transform.Find("parent_more").gameObject.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "parent_more");
+
+            var parentTextText = parentUI.transform.Find("text/text").GetComponent<Text>();
+            var parentText = parentUI.transform.Find("text").GetComponent<Button>();
+            var parentMore = parentUI.transform.Find("more").GetComponent<Button>();
+            var parentParent = parentUI.transform.Find("parent").GetComponent<Button>();
+            var parentClear = parentUI.transform.Find("clear parent").GetComponent<Button>();
+            var parentPicker = parentUI.transform.Find("parent picker").GetComponent<Button>();
+            var spawnOnce = parent_more.transform.Find("spawn_once").GetComponent<Toggle>();
+
+            EditorThemeManager.AddGraphic(parentParent.image, ThemeGroup.Function_3, true);
+            EditorThemeManager.AddGraphic(parentParent.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Function_3_Text);
+            EditorThemeManager.AddSelectable(parentClear, ThemeGroup.Close);
+            EditorThemeManager.AddGraphic(parentClear.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Close_X);
+            EditorThemeManager.AddSelectable(parentPicker, ThemeGroup.Picker);
+            EditorThemeManager.AddGraphic(parentPicker.transform.GetChild(0).GetComponent<Image>(), ThemeGroup.Picker_Icon);
+
+            EditorThemeManager.AddSelectable(parentText, ThemeGroup.Function_2);
+            EditorThemeManager.AddGraphic(parentTextText, ThemeGroup.Function_2_Text);
+            EditorThemeManager.AddSelectable(parentMore, ThemeGroup.Function_2, false);
+
+            EditorThemeManager.AddToggle(spawnOnce, graphic: spawnOnce.transform.Find("Text").GetComponent<Text>());
+
+            var array = new string[]
+            {
+                "pos",
+                "sca",
+                "rot",
+            };
+            for (int i = 0; i < 3; i++)
+            {
+                var parentSetting = parent_more.transform.GetChild(i + 2);
+
+                var additive = parentSetting.Find($"{array[i]}_add");
+                var parallax = parentSetting.Find($"{array[i]}_parallax");
+
+                if (parentSetting.Find("text"))
+                {
+                    var text = parentSetting.Find("text").GetComponent<Text>();
+                    text.fontSize = 19;
+                    EditorThemeManager.AddLightText(text);
+                }
+
+                var parentSettingType = parentSetting.Find(array[i]);
+                var parentSettingOffset = parentSetting.Find($"{array[i]}_offset");
+
+                EditorThemeManager.AddToggle(parentSettingType.GetComponent<Toggle>(), ThemeGroup.Background_1);
+                EditorThemeManager.AddGraphic(parentSettingType.transform.Find("Image").GetComponent<Image>(), ThemeGroup.Toggle_1_Check);
+                EditorThemeManager.AddInputField(parentSettingOffset.GetComponent<InputField>());
+                EditorThemeManager.AddToggle(additive.GetComponent<Toggle>(), ThemeGroup.Background_1);
+                var additiveImage = additive.transform.Find("Image").GetComponent<Image>();
+                EditorThemeManager.AddGraphic(additiveImage, ThemeGroup.Toggle_1_Check);
+                EditorThemeManager.AddInputField(parallax.GetComponent<InputField>());
+            }
+
             // Time
             labelGenerator(PrefabEditorManager.inst.prefabSelectorLeft, "time", "Time");
 
             var time = EditorPrefabHolder.Instance.NumberInputField.Duplicate(PrefabEditorManager.inst.prefabSelectorLeft, "time");
             var timeStorage = time.GetComponent<InputFieldStorage>();
             EditorThemeManager.AddInputField(timeStorage.inputField);
+            timeStorage.inputField.transform.AsRT().sizeDelta = new Vector2(135f, 32f);
 
             EditorThemeManager.AddElement(new EditorThemeManager.Element(ThemeGroup.Function_2, timeStorage.leftGreaterButton.gameObject, new List<Component>
             {

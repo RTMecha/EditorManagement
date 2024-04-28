@@ -184,20 +184,227 @@ namespace EditorManagement.Functions.Editors
 
         #region Prefab Objects
 
+        public bool advancedParent;
+
         public void UpdateModdedVisbility()
         {
-            var prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
-
             if (!prefabSelectorLeft.gameObject.activeInHierarchy)
                 return;
 
             prefabSelectorLeft.Find("tod-dropdown label").gameObject.SetActive(RTEditor.ShowModdedUI);
             prefabSelectorLeft.Find("tod-dropdown").gameObject.SetActive(RTEditor.ShowModdedUI);
             prefabSelectorLeft.Find("akoffset").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("parent").gameObject.SetActive(RTEditor.ShowModdedUI);
+            prefabSelectorLeft.Find("parent_more").gameObject.SetActive(RTEditor.ShowModdedUI && advancedParent);
             prefabSelectorLeft.Find("repeat label").gameObject.SetActive(RTEditor.ShowModdedUI);
             prefabSelectorLeft.Find("repeat").gameObject.SetActive(RTEditor.ShowModdedUI);
             prefabSelectorLeft.Find("speed label").gameObject.SetActive(RTEditor.ShowModdedUI);
             prefabSelectorLeft.Find("speed").gameObject.SetActive(RTEditor.ShowModdedUI);
+        }
+
+        public void RenderPrefabObjectParent(PrefabObject prefabObject)
+        {
+            string parent = prefabObject.parent;
+
+            var parentTextText = prefabSelectorLeft.Find("parent/text/text").GetComponent<Text>();
+            var parentText = prefabSelectorLeft.Find("parent/text").GetComponent<Button>();
+            var parentMore = prefabSelectorLeft.Find("parent/more").GetComponent<Button>();
+            var parent_more = prefabSelectorLeft.Find("parent_more");
+            var parentParent = prefabSelectorLeft.Find("parent/parent").GetComponent<Button>();
+            var parentClear = prefabSelectorLeft.Find("parent/clear parent").GetComponent<Button>();
+            var parentPicker = prefabSelectorLeft.Find("parent/parent picker").GetComponent<Button>();
+            var spawnOnce = parent_more.Find("spawn_once").GetComponent<Toggle>();
+            var parentInfo = parentText.GetComponent<HoverTooltip>();
+
+            Debug.Log($"a");
+
+            parentText.transform.AsRT().sizeDelta = new Vector2(!string.IsNullOrEmpty(parent) ? 201f : 241f, 32f);
+
+            parentParent.onClick.RemoveAllListeners();
+            parentParent.onClick.AddListener(delegate ()
+            {
+                EditorManager.inst.OpenParentPopup();
+            });
+
+            parentClear.onClick.RemoveAllListeners();
+
+            parentPicker.onClick.RemoveAllListeners();
+            parentPicker.onClick.AddListener(delegate ()
+            {
+                RTEditor.inst.parentPickerEnabled = true;
+            });
+
+            Debug.Log($"b");
+
+            parentClear.gameObject.SetActive(!string.IsNullOrEmpty(parent));
+
+            parent_more.AsRT().sizeDelta = new Vector2(351f, 152f);
+
+            Debug.Log($"c");
+
+            if (string.IsNullOrEmpty(parent))
+            {
+                parentText.interactable = false;
+                parentMore.interactable = false;
+                parent_more.gameObject.SetActive(false);
+                parentTextText.text = "No Parent Object";
+
+                parentInfo.tooltipLangauges[0].hint = string.IsNullOrEmpty(parent) ? "Object not parented." : "No parent found.";
+                parentText.onClick.ClearAll();
+                parentMore.onClick.ClearAll();
+
+                return;
+            }
+
+            Debug.Log($"d");
+
+            string p = null;
+
+            if (DataManager.inst.gameData.beatmapObjects.Has(x => x.id == parent))
+            {
+                p = DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent).name;
+                parentInfo.tooltipLangauges[0].hint = "Currently selected parent.";
+            }
+            else if (parent == "CAMERA_PARENT")
+            {
+                p = "[CAMERA]";
+                parentInfo.tooltipLangauges[0].hint = "Object parented to the camera.";
+            }
+
+            Debug.Log($"e");
+
+            parentText.interactable = p != null;
+            parentMore.interactable = p != null;
+
+            Debug.Log($"f");
+
+            parent_more.gameObject.SetActive(p != null && advancedParent);
+
+            Debug.Log($"g");
+
+            parentClear.onClick.AddListener(delegate ()
+            {
+                prefabObject.parent = "";
+
+                // Since parent has no affect on the timeline object, we will only need to update the physical object.
+                Updater.UpdatePrefab(prefabObject);
+                RenderPrefabObjectParent(prefabObject);
+            });
+
+            Debug.Log($"h");
+
+            if (p == null)
+            {
+                parentTextText.text = "No Parent Object";
+                parentInfo.tooltipLangauges[0].hint = string.IsNullOrEmpty(parent) ? "Object not parented." : "No parent found.";
+                parentText.onClick.RemoveAllListeners();
+                parentMore.onClick.RemoveAllListeners();
+
+                return;
+            }
+
+            Debug.Log($"i");
+
+            parentTextText.text = p;
+
+            parentText.onClick.RemoveAllListeners();
+            parentText.onClick.AddListener(delegate ()
+            {
+                if (DataManager.inst.gameData.beatmapObjects.Find(x => x.id == parent) != null &&
+                    parent != "CAMERA_PARENT" &&
+                    RTEditor.inst.timelineObjects.TryFind(x => x.ID == parent, out TimelineObject timelineObject))
+                    ObjectEditor.inst.SetCurrentObject(timelineObject);
+                else if (parent == "CAMERA_PARENT")
+                {
+                    RTEditor.inst.SetLayer(RTEditor.LayerType.Events);
+                    EventEditor.inst.SetCurrentEvent(0, RTExtensions.ClosestEventKeyframe(0));
+                }
+            });
+
+            parentMore.onClick.RemoveAllListeners();
+            parentMore.onClick.AddListener(delegate ()
+            {
+                advancedParent = !advancedParent;
+                parent_more.gameObject.SetActive(RTEditor.ShowModdedUI && advancedParent);
+            });
+            parent_more.gameObject.SetActive(RTEditor.ShowModdedUI && advancedParent);
+
+            spawnOnce.onValueChanged.ClearAll();
+            spawnOnce.gameObject.SetActive(true);
+            spawnOnce.isOn = prefabObject.desync;
+            spawnOnce.onValueChanged.AddListener(delegate (bool _val)
+            {
+                prefabObject.desync = _val;
+                Updater.UpdatePrefab(prefabObject);
+            });
+
+            for (int i = 0; i < 3; i++)
+            {
+                var _p = parent_more.GetChild(i + 2);
+
+                var parentOffset = prefabObject.parentOffsets[i];
+
+                var index = i;
+
+                // Parent Type
+                var tog = _p.GetChild(2).GetComponent<Toggle>();
+                tog.onValueChanged.RemoveAllListeners();
+                tog.isOn = prefabObject.GetParentType(i);
+                tog.onValueChanged.AddListener(delegate (bool _value)
+                {
+                    prefabObject.SetParentType(index, _value);
+
+                    // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
+                    Updater.UpdatePrefab(prefabObject);
+                });
+
+                // Parent Offset
+                var pif = _p.GetChild(3).GetComponent<InputField>();
+                var lel = _p.GetChild(3).GetComponent<LayoutElement>();
+                lel.minWidth = 64f;
+                lel.preferredWidth = 64f;
+                pif.onValueChanged.RemoveAllListeners();
+                pif.text = parentOffset.ToString();
+                pif.onValueChanged.AddListener(delegate (string _value)
+                {
+                    if (float.TryParse(_value, out float num))
+                    {
+                        prefabObject.SetParentOffset(index, num);
+
+                        // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
+                        Updater.UpdatePrefab(prefabObject);
+                    }
+                });
+
+                TriggerHelper.AddEventTrigger(pif.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(pif) });
+
+                var additive = _p.GetChild(4).GetComponent<Toggle>();
+                additive.onValueChanged.ClearAll();
+                additive.gameObject.SetActive(true);
+                var parallax = _p.GetChild(5).GetComponent<InputField>();
+                parallax.onValueChanged.RemoveAllListeners();
+                parallax.gameObject.SetActive(true);
+
+                additive.isOn = prefabObject.parentAdditive[i] == '1';
+                additive.onValueChanged.AddListener(delegate (bool _val)
+                {
+                    prefabObject.SetParentAdditive(index, _val);
+                    Updater.UpdatePrefab(prefabObject);
+                });
+                parallax.text = prefabObject.parentParallax[index].ToString();
+                parallax.onValueChanged.AddListener(delegate (string _value)
+                {
+                    if (float.TryParse(_value, out float num))
+                    {
+                        prefabObject.parentParallax[index] = num;
+
+                        // Since updating parent type has no affect on the timeline object, we will only need to update the physical object.
+                        Updater.UpdatePrefab(prefabObject);
+                    }
+                });
+
+                TriggerHelper.AddEventTrigger(parallax.gameObject, new List<EventTrigger.Entry> { TriggerHelper.ScrollDelta(parallax) });
+            }
         }
 
         public void RenderPrefabObjectDialog(PrefabObject prefabObject)
@@ -237,8 +444,6 @@ namespace EditorManagement.Functions.Editors
                 TriggerHelper.IncreaseDecreaseButtons(inputField, t: right.transform.Find("time"));
                 TriggerHelper.AddEventTriggerParams(inputField.gameObject, TriggerHelper.ScrollDelta(inputField));
             });
-
-            var prefabSelectorLeft = EditorManager.inst.GetDialog("Prefab Selector").Dialog.Find("data/left");
 
             prefabSelectorLeft.Find("editor/layer").gameObject.SetActive(false);
             prefabSelectorLeft.Find("editor/bin").gameObject.SetActive(false);
@@ -293,6 +498,8 @@ namespace EditorManagement.Functions.Editors
                                                        currentPrefab.autoKillType == PrefabObject.AutoKillType.SongTime ? AudioManager.inst.CurrentAudioSource.time : -1f;
                     });
                 });
+
+                RenderPrefabObjectParent(prefabObject);
             }
 
             prefabSelectorLeft.Find("time/input").GetComponentAndPerformAction(delegate (InputField inputField)

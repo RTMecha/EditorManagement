@@ -529,8 +529,6 @@ namespace EditorManagement.Functions.Editors
         public bool prefabPickerEnabled = false;
         public bool selectingMultiple = false;
 
-        public BeatmapObject objectToParent;
-
         // Timelime Bar
         public GameObject timelineBar;
         public InputField timeField;
@@ -10250,7 +10248,7 @@ namespace EditorManagement.Functions.Editors
             yield break;
         }
 
-        public void RefreshParentSearch(EditorManager __instance, BeatmapObject beatmapObject)
+        public void RefreshParentSearch(EditorManager __instance, TimelineObject timelineObject)
         {
             var transform = __instance.GetDialog("Parent Selector").Dialog.Find("mask/content");
 
@@ -10269,17 +10267,29 @@ namespace EditorManagement.Functions.Editors
             noParentButton.onClick.ClearAll();
             noParentButton.onClick.AddListener(delegate ()
             {
-                var list = ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject);
+                var list = ObjectEditor.inst.SelectedObjects;
                 foreach (var timelineObject in list)
                 {
+                    if (timelineObject.IsPrefabObject)
+                    {
+                        var prefabObject = timelineObject.GetData<PrefabObject>();
+                        prefabObject.parent = "";
+                        Updater.UpdatePrefab(prefabObject);
+                        PrefabEditorManager.inst.RenderPrefabObjectDialog(prefabObject);
+
+                        continue;
+                    }
+
                     var bm = timelineObject.GetData<BeatmapObject>();
                     bm.parent = "";
                     Updater.UpdateProcessor(bm);
                 }
 
                 EditorManager.inst.HideDialog("Parent Selector");
-                if (list.Count() == 1)
-                    StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+                if (list.Count == 1 && timelineObject.IsBeatmapObject)
+                    StartCoroutine(ObjectEditor.RefreshObjectGUI(timelineObject.GetData<BeatmapObject>()));
+                if (list.Count == 1 && timelineObject.IsPrefabObject)
+                    PrefabEditorManager.inst.RenderPrefabObjectDialog(timelineObject.GetData<PrefabObject>());
             });
 
             EditorThemeManager.ApplySelectable(noParentButton, ThemeGroup.List_Button_1);
@@ -10295,16 +10305,28 @@ namespace EditorManagement.Functions.Editors
                 camButton.onClick.ClearAll();
                 camButton.onClick.AddListener(delegate ()
                 {
-                    var list = ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject).Select(x => x.GetData<BeatmapObject>());
-                    foreach (var bm in list)
+                    var list = ObjectEditor.inst.SelectedObjects;
+                    foreach (var timelineObject in list)
                     {
+                        if (timelineObject.IsPrefabObject)
+                        {
+                            var prefabObject = timelineObject.GetData<PrefabObject>();
+                            prefabObject.parent = "CAMERA_PARENT";
+                            Updater.UpdatePrefab(prefabObject);
+
+                            continue;
+                        }
+
+                        var bm = timelineObject.GetData<BeatmapObject>();
                         bm.parent = "CAMERA_PARENT";
                         Updater.UpdateProcessor(bm);
                     }
 
                     EditorManager.inst.HideDialog("Parent Selector");
-                    if (list.Count() == 1)
-                        StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+                    if (list.Count == 1 && timelineObject.IsBeatmapObject)
+                        StartCoroutine(ObjectEditor.RefreshObjectGUI(timelineObject.GetData<BeatmapObject>()));
+                    if (list.Count == 1 && timelineObject.IsPrefabObject)
+                        PrefabEditorManager.inst.RenderPrefabObjectDialog(timelineObject.GetData<PrefabObject>());
                 });
 
                 EditorThemeManager.ApplySelectable(camButton, ThemeGroup.List_Button_1);
@@ -10317,12 +10339,12 @@ namespace EditorManagement.Functions.Editors
                     continue;
 
                 int index = DataManager.inst.gameData.beatmapObjects.IndexOf(obj);
-                if ((string.IsNullOrEmpty(__instance.parentSearch) || (obj.name + " " + index.ToString("0000")).ToLower().Contains(__instance.parentSearch.ToLower())) && obj.id != beatmapObject.id)
+                if ((string.IsNullOrEmpty(__instance.parentSearch) || (obj.name + " " + index.ToString("0000")).ToLower().Contains(__instance.parentSearch.ToLower())) && obj.id != timelineObject.ID)
                 {
                     bool canParent = true;
                     if (!string.IsNullOrEmpty(obj.parent))
                     {
-                        string parentID = beatmapObject.id;
+                        string parentID = timelineObject.ID;
                         while (!string.IsNullOrEmpty(parentID))
                         {
                             if (parentID == obj.parent)
@@ -10350,17 +10372,30 @@ namespace EditorManagement.Functions.Editors
                     objectToParentButton.onClick.AddListener(delegate ()
                     {
                         string id = obj.id;
-                        var list = ObjectEditor.inst.SelectedObjects.Where(x => x.IsBeatmapObject);
+
+                        var list = ObjectEditor.inst.SelectedObjects;
                         foreach (var timelineObject in list)
                         {
+                            if (timelineObject.IsPrefabObject)
+                            {
+                                var prefabObject = timelineObject.GetData<PrefabObject>();
+                                prefabObject.parent = id;
+                                Updater.UpdatePrefab(prefabObject);
+
+                                continue;
+                            }
+
                             var bm = timelineObject.GetData<BeatmapObject>();
                             TriggerHelper.SetParent(timelineObject, ObjectEditor.inst.GetTimelineObject((BeatmapObject)obj));
                             Updater.UpdateProcessor(bm);
                         }
 
                         EditorManager.inst.HideDialog("Parent Selector");
-                        if (list.Count() == 1)
-                            StartCoroutine(ObjectEditor.RefreshObjectGUI(beatmapObject));
+                        if (list.Count == 1 && timelineObject.IsBeatmapObject)
+                            StartCoroutine(ObjectEditor.RefreshObjectGUI(timelineObject.GetData<BeatmapObject>()));
+                        if (list.Count == 1 && timelineObject.IsPrefabObject)
+                            PrefabEditorManager.inst.RenderPrefabObjectParent(timelineObject.GetData<PrefabObject>());
+
                         Debug.Log($"{__instance.className}Set Parent ID: {id}");
                     });
 
