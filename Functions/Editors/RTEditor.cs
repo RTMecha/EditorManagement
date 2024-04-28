@@ -8607,7 +8607,7 @@ namespace EditorManagement.Functions.Editors
         }
 
         static Type UEInspector => ModCompatibility.mods.ContainsKey("UnityExplorer") ? AccessTools.TypeByName("UnityExplorer.InspectorManager") : null;
-        static Type UEUIManager => ModCompatibility.mods.ContainsKey("UnityExplorer") ? AccessTools.TypeByName("UnityExplorer.InspectorManager") : null;
+        static Type UEUIManager => ModCompatibility.mods.ContainsKey("UnityExplorer") ? AccessTools.TypeByName("UnityExplorer.UI.UIManager") : null;
 
         void CreateDebug()
         {
