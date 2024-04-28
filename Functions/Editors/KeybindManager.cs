@@ -2205,7 +2205,6 @@ namespace EditorManagement.Functions.Editors
                 return;
 
             RTEditor.inst.parentPickerEnabled = true;
-            RTEditor.inst.objectToParent = ObjectEditor.inst.CurrentSelection.GetData<BeatmapObject>();
         }
 
         public static void ToggleMouseTooltip(Keybind keybind)
