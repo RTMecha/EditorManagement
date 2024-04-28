@@ -1,3 +1,7 @@
+2.5.18 > [Apr 29, 2024]
+- Removed debug logs accidentally left in last build.
+- Fixed Prefab Object pasting not updating the objects correctly.
+- Fixed inspect functions in debugger.
 2.5.17 > [Apr 29, 2024]
 - Added the UI for Prefab Object parenting.
 2.5.16 > [Apr 28, 2024]
