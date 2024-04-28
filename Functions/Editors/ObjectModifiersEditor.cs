@@ -750,10 +750,12 @@ namespace EditorManagement.Functions.Editors
                     case "blurOther":
                     case "blurVariable":
                     case "blurVariableOther":
+                    case "blurColored":
+                    case "blurColoredOther":
                         {
                             singleGenerator("Amount", 0, 0.5f);
 
-                            if (cmd == "blur")
+                            if (cmd == "blur" || cmd == "blurColored")
                             {
                                 boolGenerator("Use Opacity", 1, false);
 
@@ -763,7 +765,7 @@ namespace EditorManagement.Functions.Editors
                                 }
                             }
 
-                            if (cmd == "blurVariableOther" || cmd == "blurOther")
+                            if (cmd == "blurVariableOther" || cmd == "blurOther" || cmd == "blurColoredOther")
                                 stringGenerator("Object Group", 1);
 
                             boolGenerator("Set Back to Normal", cmd != "blurVariable" ? 2 : 1, false);
