@@ -2223,7 +2223,6 @@ namespace EditorManagement.Functions.Editors
             parentPicker.onClick.AddListener(delegate ()
             {
                 RTEditor.inst.parentPickerEnabled = true;
-                RTEditor.inst.objectToParent = beatmapObject;
             });
 
             parentClear.gameObject.SetActive(!string.IsNullOrEmpty(parent));
