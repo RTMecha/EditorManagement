@@ -86,6 +86,9 @@ namespace EditorManagement.Patchers
 
             if (!content.Find("creator/link"))
                 content.Find("artist/link").gameObject.Duplicate(content.Find("creator"), "link", 3);
+            
+            if (!content.Find("song/link"))
+                content.Find("artist/link").gameObject.Duplicate(content.Find("song"), "link", 2);
 
             // Tag Prefab
             {
@@ -216,7 +219,9 @@ namespace EditorManagement.Patchers
             EditorThemeManager.AddLightText(creator.Find("cover_art/title").GetComponent<Text>());
             EditorThemeManager.AddLightText(creator.Find("cover_art/title (1)").GetComponent<Text>());
             EditorThemeManager.AddLightText(creator.Find("name/title").GetComponent<Text>());
-            EditorThemeManager.AddLightText(creator.Find("link/title").GetComponent<Text>());
+            var creatorLinkTitle = creator.Find("link/title").GetComponent<Text>();
+            creatorLinkTitle.text = "Creator Link";
+            EditorThemeManager.AddLightText(creatorLinkTitle);
             EditorThemeManager.AddLightText(creator.Find("description/Panel/title").GetComponent<Text>());
             EditorThemeManager.AddLightText(creator.Find("tags/Panel/title").GetComponent<Text>());
             EditorThemeManager.AddLightText(content.Find("agreement/text").GetComponent<Text>());
@@ -246,7 +251,23 @@ namespace EditorManagement.Patchers
 
             EditorThemeManager.AddDropdown(creator.Find("link/inputs/dropdown").GetComponent<Dropdown>());
 
+            EditorThemeManager.AddGraphic(song.Find("link/inputs/openurl").GetComponent<Image>(), ThemeGroup.Function_1, true);
+            EditorThemeManager.AddGraphic(song.Find("link/inputs/openurl/Image").GetComponent<Image>(), ThemeGroup.Function_1_Text);
+
+            EditorThemeManager.AddInputField(song.Find("link/inputs/input").GetComponent<InputField>());
+
+            EditorThemeManager.AddDropdown(song.Find("link/inputs/dropdown").GetComponent<Dropdown>());
+
             EditorThemeManager.AddInputField(creator.Find("description/input").GetComponent<InputField>());
+
+            song.AsRT().sizeDelta = new Vector2(738.5f, 134f);
+            var levelName = creator.Find("name").gameObject.Duplicate(creator, "level_name", 4);
+            var levelNameTitle = levelName.transform.Find("title").GetComponent<Text>();
+            levelNameTitle.text = "Level Name";
+            EditorThemeManager.AddLightText(levelNameTitle);
+            var levelNameInput = levelName.transform.Find("input").GetComponent<InputField>();
+            ((Text)levelNameInput.placeholder).text = "Level Name";
+            EditorThemeManager.AddInputField(levelNameInput);
         }
 
         static void SetToggleList()
@@ -342,10 +363,7 @@ namespace EditorManagement.Patchers
             var artistLinkTypes = content.Find("artist/link/inputs/dropdown").GetComponent<Dropdown>();
             artistLinkTypes.options.Clear();
             artistLinkTypes.onValueChanged.RemoveAllListeners();
-            foreach (var linkType in DataManager.inst.linkTypes)
-            {
-                artistLinkTypes.options.Add(new Dropdown.OptionData(linkType.name));
-            }
+            artistLinkTypes.options = DataManager.inst.linkTypes.Select(x => new Dropdown.OptionData(x.name)).ToList();
             artistLinkTypes.value = DataManager.inst.metaData.artist.LinkType;
             artistLinkTypes.onValueChanged.AddListener(delegate (int _val)
             {
@@ -370,6 +388,16 @@ namespace EditorManagement.Patchers
                 DataManager.inst.metaData.creator.steam_name = _val;
             });
 
+            var moddedMetadata = MetaData.Current;
+
+            var levelName = content.Find("creator/level_name/input").GetComponent<InputField>();
+            levelName.onValueChanged.RemoveAllListeners();
+            levelName.text = moddedMetadata.LevelBeatmap.name;
+            levelName.onValueChanged.AddListener(delegate (string _val)
+            {
+                moddedMetadata.LevelBeatmap.name = _val;
+            });
+
             var songTitle = content.Find("song/title/input").GetComponent<InputField>();
             songTitle.onValueChanged.RemoveAllListeners();
             songTitle.text = DataManager.inst.metaData.song.title;
@@ -377,8 +405,6 @@ namespace EditorManagement.Patchers
             {
                 DataManager.inst.metaData.song.title = _val;
             });
-
-            var moddedMetadata = MetaData.Current;
 
             var openCreatorURL = content.Find("creator/link/inputs/openurl").GetComponent<Button>();
             openCreatorURL.onClick.ClearAll();
@@ -409,11 +435,7 @@ namespace EditorManagement.Patchers
             var creatorLinkTypes = content.Find("creator/link/inputs/dropdown").GetComponent<Dropdown>();
             creatorLinkTypes.options.Clear();
             creatorLinkTypes.onValueChanged.RemoveAllListeners();
-            foreach (var linkType in LevelCreator.creatorLinkTypes)
-            {
-                creatorLinkTypes.options.Add(new Dropdown.OptionData(linkType.name));
-            }
-
+            creatorLinkTypes.options = LevelCreator.creatorLinkTypes.Select(x => new Dropdown.OptionData(x.name)).ToList();
             creatorLinkTypes.value = moddedMetadata.LevelCreator.linkType;
             creatorLinkTypes.onValueChanged.AddListener(delegate (int _val)
             {
@@ -426,6 +448,52 @@ namespace EditorManagement.Patchers
                 }, delegate ()
                 {
                     moddedMetadata.LevelCreator.linkType = oldVal;
+                    Instance.Render();
+                }), false);
+            });
+
+            var openSongURL = content.Find("song/link/inputs/openurl").GetComponent<Button>();
+            openSongURL.onClick.ClearAll();
+            openSongURL.onClick.AddListener(delegate ()
+            {
+                if (!string.IsNullOrEmpty(moddedMetadata.LevelSong.link))
+                    Application.OpenURL(moddedMetadata.SongURL);
+            });
+
+            var songLink = content.Find("song/link/inputs/input").GetComponent<InputField>();
+            songLink.onEndEdit.RemoveAllListeners();
+            songLink.text = moddedMetadata.LevelSong.link;
+            songLink.onEndEdit.AddListener(delegate (string _val)
+            {
+                string oldVal = moddedMetadata.LevelSong.link;
+                moddedMetadata.LevelSong.link = _val;
+                EditorManager.inst.history.Add(new History.Command("Change Artist Link", delegate ()
+                {
+                    moddedMetadata.LevelSong.link = _val;
+                    Instance.Render();
+                }, delegate ()
+                {
+                    moddedMetadata.LevelSong.link = oldVal;
+                    Instance.Render();
+                }), false);
+            });
+
+            var songLinkTypes = content.Find("song/link/inputs/dropdown").GetComponent<Dropdown>();
+            songLinkTypes.options.Clear();
+            songLinkTypes.onValueChanged.RemoveAllListeners();
+            songLinkTypes.options = RTHelpers.InstanceLinks.Select(x => new Dropdown.OptionData(x.name)).ToList();
+            songLinkTypes.value = moddedMetadata.LevelSong.linkType;
+            songLinkTypes.onValueChanged.AddListener(delegate (int _val)
+            {
+                int oldVal = moddedMetadata.LevelSong.linkType;
+                moddedMetadata.LevelSong.linkType = _val;
+                EditorManager.inst.history.Add(new History.Command("Change Creator Link", delegate ()
+                {
+                    moddedMetadata.LevelSong.linkType = _val;
+                    Instance.Render();
+                }, delegate ()
+                {
+                    moddedMetadata.LevelSong.linkType = oldVal;
                     Instance.Render();
                 }), false);
             });
