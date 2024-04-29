@@ -174,6 +174,7 @@ namespace EditorManagement.Functions.Editors
             CreateDebug();
             CreateAutosavePopup();
             SetupMiscEditorThemes();
+            CreateScreenshotsView();
 
             // Player Editor
             {
@@ -8915,6 +8916,105 @@ namespace EditorManagement.Functions.Editors
             }
         }
 
+        public Transform screenshotContent;
+        public InputField screenshotPageField;
+        void CreateScreenshotsView()
+        {
+            var editorDialogObject = Instantiate(EditorManager.inst.GetDialog("Multi Keyframe Editor (Object)").Dialog.gameObject);
+            var editorDialogTransform = editorDialogObject.transform;
+            editorDialogObject.name = "ScreenshotDialog";
+            editorDialogObject.layer = 5;
+            editorDialogTransform.SetParent(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs").transform);
+            editorDialogTransform.localScale = Vector3.one;
+            editorDialogTransform.position = new Vector3(1537.5f, 714.945f, 0f) * EditorManager.inst.ScreenScale;
+            editorDialogTransform.AsRT().sizeDelta = new Vector2(0f, 32f);
+
+            var editorDialogTitle = editorDialogTransform.GetChild(0);
+            editorDialogTitle.GetComponent<Image>().color = LSColors.HexToColor("00FF8C");
+            var title = editorDialogTitle.GetChild(0).GetComponent<Text>();
+            title.text = "- Screenshots -";
+
+            var editorDialogSpacer = editorDialogTransform.GetChild(1);
+            editorDialogSpacer.AsRT().sizeDelta = new Vector2(765f, 54f);
+
+            Destroy(editorDialogTransform.GetChild(2).gameObject);
+
+            EditorHelper.AddEditorDialog("Screenshot Dialog", editorDialogObject);
+
+            var page = EditorPrefabHolder.Instance.NumberInputField.Duplicate(editorDialogTransform.Find("spacer"));
+            var pageStorage = page.GetComponent<InputFieldStorage>();
+            screenshotPageField = pageStorage.inputField;
+
+            pageStorage.inputField.onValueChanged.ClearAll();
+            pageStorage.inputField.text = screenshotPage.ToString();
+            pageStorage.inputField.onValueChanged.AddListener(delegate (string _val)
+            {
+                if (int.TryParse(_val, out int p))
+                {
+                    screenshotPage = Mathf.Clamp(p, 0, screenshotCount / screenshotsPerPage);
+                    RefreshScreenshots();
+                }
+            });
+
+            pageStorage.leftGreaterButton.onClick.ClearAll();
+            pageStorage.leftGreaterButton.onClick.AddListener(delegate ()
+            {
+                if (int.TryParse(pageStorage.inputField.text, out int p))
+                    pageStorage.inputField.text = "0";
+            });
+
+            pageStorage.leftButton.onClick.ClearAll();
+            pageStorage.leftButton.onClick.AddListener(delegate ()
+            {
+                if (int.TryParse(pageStorage.inputField.text, out int p))
+                    pageStorage.inputField.text = Mathf.Clamp(p - 1, 0, screenshotCount / screenshotsPerPage).ToString();
+            });
+
+            pageStorage.rightButton.onClick.ClearAll();
+            pageStorage.rightButton.onClick.AddListener(delegate ()
+            {
+                if (int.TryParse(pageStorage.inputField.text, out int p))
+                    pageStorage.inputField.text = Mathf.Clamp(p + 1, 0, screenshotCount / screenshotsPerPage).ToString();
+            });
+
+            pageStorage.rightGreaterButton.onClick.ClearAll();
+            pageStorage.rightGreaterButton.onClick.AddListener(delegate ()
+            {
+                if (int.TryParse(pageStorage.inputField.text, out int p))
+                    pageStorage.inputField.text = (screenshotCount / screenshotsPerPage).ToString();
+            });
+
+            Destroy(pageStorage.middleButton.gameObject);
+
+            EditorThemeManager.AddInputField(pageStorage.inputField);
+            EditorThemeManager.AddSelectable(pageStorage.leftGreaterButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(pageStorage.leftButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(pageStorage.rightButton, ThemeGroup.Function_2, false);
+            EditorThemeManager.AddSelectable(pageStorage.rightGreaterButton, ThemeGroup.Function_2, false);
+
+            var scrollView = Instantiate(GameObject.Find("Editor Systems/Editor GUI/sizer/main/EditorDialogs/GameObjectDialog/data/left/Scroll View"));
+            screenshotContent = scrollView.transform.Find("Viewport/Content");
+            scrollView.transform.SetParent(editorDialogTransform);
+            scrollView.transform.localScale = Vector3.one;
+            scrollView.name = "Scroll View";
+
+            LSHelpers.DeleteChildren(screenshotContent);
+
+            var scrollViewLE = scrollView.AddComponent<LayoutElement>();
+            scrollViewLE.ignoreLayout = true;
+
+            scrollView.transform.AsRT().anchoredPosition = new Vector2(392.5f, 320f);
+            scrollView.transform.AsRT().sizeDelta = new Vector2(735f, 638f);
+
+            EditorThemeManager.AddGraphic(editorDialogObject.GetComponent<Image>(), ThemeGroup.Background_1);
+
+            EditorHelper.AddEditorDropdown("View Screenshots", "", "View", SearchSprite, delegate ()
+            {
+                EditorManager.inst.ShowDialog("Screenshot Dialog");
+                RefreshScreenshots();
+            });
+        }
+
         #endregion
 
         #region Saving / Loading
@@ -11960,6 +12060,62 @@ namespace EditorManagement.Functions.Editors
                 EditorManager.inst.ActiveDialogs.Remove(EditorManager.inst.EditorDialogsDictionary[dialogName]);
                 if (EditorManager.inst.currentDialog == EditorManager.inst.EditorDialogsDictionary[dialogName] && focus)
                     EditorManager.inst.currentDialog = EditorManager.inst.ActiveDialogs.Count > 0 ? EditorManager.inst.ActiveDialogs.Last() : new EditorManager.EditorDialog();
+            }
+        }
+
+        public int screenshotPage;
+        public int screenshotsPerPage = 5;
+
+        public int CurrentScreenshotPage => screenshotPage + 1;
+        public int MinScreenshots => MaxScreenshots - screenshotsPerPage;
+        public int MaxScreenshots => CurrentScreenshotPage * screenshotsPerPage;
+
+        public int screenshotCount;
+        public void RefreshScreenshots()
+        {
+            var directory = RTFile.ApplicationDirectory + RTFunctions.FunctionsPlugin.ScreenshotsPath.Value;
+
+            LSHelpers.DeleteChildren(screenshotContent);
+            var files = Directory.GetFiles(directory, "*.png", SearchOption.TopDirectoryOnly);
+            screenshotCount = files.Length;
+
+            if (screenshotCount > screenshotsPerPage)
+                TriggerHelper.AddEventTriggerParams(screenshotPageField.gameObject, TriggerHelper.ScrollDeltaInt(screenshotPageField, max: screenshotCount / screenshotsPerPage));
+            else
+                TriggerHelper.AddEventTriggerParams(screenshotPageField.gameObject);
+
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (!(i >= MinScreenshots && i < MaxScreenshots))
+                    continue;
+
+                var index = i;
+
+                var gameObject = new GameObject("screenshot");
+                gameObject.transform.SetParent(screenshotContent);
+                gameObject.transform.localScale = Vector3.one;
+                var rectTransform = gameObject.AddComponent<RectTransform>();
+                rectTransform.sizeDelta = new Vector2(720f, 405f);
+
+                var image = gameObject.AddComponent<Image>();
+                image.enabled = false;
+
+                var button = gameObject.AddComponent<Button>();
+                button.onClick.ClearAll();
+                button.onClick.AddListener(delegate ()
+                {
+                    System.Diagnostics.Process.Start(files[index]);
+                });
+                button.colors = UIManager.SetColorBlock(button.colors, Color.white, new Color(0.9f, 0.9f, 0.9f), new Color(0.7f, 0.7f, 0.7f), Color.white, Color.red);
+
+                StartCoroutine(AlephNetworkManager.DownloadImageTexture($"file://{files[i]}", delegate (Texture2D texture2D)
+                {
+                    if (!image)
+                        return;
+
+                    image.enabled = true;
+                    image.sprite = SpriteManager.CreateSprite(texture2D);
+                }));
             }
         }
 
