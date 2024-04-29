@@ -39,23 +39,14 @@ namespace EditorManagement.Functions.Editors
             if (ModCompatibility.mods.ContainsKey("EditorManagement"))
             {
                 var mod = ModCompatibility.mods["EditorManagement"];
-                if (!mod.Methods.ContainsKey("SetCurrentObject"))
-                    mod.Methods.Add("SetCurrentObject", (Action<TimelineObject, bool>)SetCurrentObjectP);
-                if (!mod.Methods.ContainsKey("AddSelectedObject"))
-                    mod.Methods.Add("AddSelectedObject", (Action<TimelineObject>)AddSelectedObject);
+                mod.Methods.AddSet("SetCurrentObject", (Action<TimelineObject, bool>)SetCurrentObjectP);
+                mod.Methods.AddSet("AddSelectedObject", (Action<TimelineObject>)AddSelectedObject);
+                mod.Methods.AddSet("GetTimelineObject", (TimelineObjectReturn<BeatmapObject>)GetTimelineObject);
+                mod.Methods.AddSet("RenderTimelineObjectVoid", (Action<TimelineObject>)RenderTimelineObjectVoid);
 
-                if (!mod.Methods.ContainsKey("RenderKeyframes"))
-                    mod.Methods.Add("RenderKeyframes", (Action<BeatmapObject>)RenderKeyframes);
-                if (!mod.Methods.ContainsKey("RenderKeyframeDialog"))
-                    mod.Methods.Add("RenderKeyframeDialog", (Action<BeatmapObject>)RenderObjectKeyframesDialog);
-                if (!mod.Methods.ContainsKey("RenderTimelineObjectVoid"))
-                    mod.Methods.Add("RenderTimelineObjectVoid", (Action<TimelineObject>)RenderTimelineObjectVoid);
-
-                if (!mod.Methods.ContainsKey("SetCurrentKeyframe"))
-                    mod.Methods.Add("SetCurrentKeyframe", (Action<BeatmapObject, int, int, bool, bool>)SetCurrentKeyframe);
-
-                if (!mod.Methods.ContainsKey("GetTimelineObject"))
-                    mod.Methods.Add("GetTimelineObject", (TimelineObjectReturn<BeatmapObject>)GetTimelineObject);
+                mod.Methods.AddSet("RenderKeyframes", (Action<BeatmapObject>)RenderKeyframes);
+                mod.Methods.AddSet("SetCurrentKeyframe", (Action<BeatmapObject, int, int, bool, bool>)SetCurrentKeyframe);
+                mod.Methods.AddSet("RenderKeyframeDialog", (Action<BeatmapObject>)RenderObjectKeyframesDialog);
             }
 
             timelinePosScrollbar = ObjEditor.inst.objTimelineContent.parent.parent.GetComponent<ScrollRect>().horizontalScrollbar;
