@@ -343,23 +343,24 @@ namespace EditorManagement.Patchers
                         {
                             try
                             {
-                                foreach (var player in PlayerManager.Players)
-                                {
-                                    if (ModCompatibility.CreativePlayersInstalled && player.PlayerModel != null && player.PlayerModel.basePart != null)
+                                if (InputDataManager.inst.players.Count > 0 && InputDataManager.inst.players.Any(x => x is CustomPlayer))
+                                    foreach (var player in PlayerManager.Players)
                                     {
-                                        player.health = player.PlayerModel.basePart.health;
-                                        player.Player.UpdateTail(player.health, Vector3.zero);
+                                        if (ModCompatibility.CreativePlayersInstalled && player.PlayerModel != null && player.PlayerModel.basePart != null)
+                                        {
+                                            player.health = player.PlayerModel.basePart.health;
+                                            player.Player?.UpdateTail(player.health, Vector3.zero);
+                                        }
+                                        else if (!ModCompatibility.CreativePlayersInstalled)
+                                        {
+                                            player.health = 3;
+                                            player.Player?.UpdateTail(3, Vector3.zero);
+                                        }
                                     }
-                                    else if (!ModCompatibility.CreativePlayersInstalled)
-                                    {
-                                        player.health = 3;
-                                        player.Player.UpdateTail(3, Vector3.zero);
-                                    }
-                                }
                             }
                             catch (Exception ex)
                             {
-                                Debug.LogError($"{ex}");
+                                Debug.LogError($"{EditorPlugin.className}Resetting player health error.\n{ex}");
                             }
                         }
                     }
