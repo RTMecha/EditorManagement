@@ -1,3 +1,7 @@
+2.5.19 > [Apr 29, 2024]
+- 100th update on Github!
+- Fixed preview selection breaking on editor re-entry.
+- Added a screenshot view dialog.
 2.5.18 > [Apr 29, 2024]
 - Removed debug logs accidentally left in last build.
 - Fixed Prefab Object pasting not updating the objects correctly.
