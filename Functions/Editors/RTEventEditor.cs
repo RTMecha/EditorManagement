@@ -86,6 +86,8 @@ namespace EditorManagement.Functions.Editors
             "Window Position Y",
             "Player Force",
             "Mosaic",
+            "Analog Glitch",
+            "Digital Glitch",
         };
 
         public static Dictionary<string, Color> EventTitles => new Dictionary<string, Color>()
@@ -1535,6 +1537,34 @@ namespace EditorManagement.Functions.Editors
                 var mosaic = GenerateEventDialog("mosaic");
                 {
                     var amount = GenerateUIElement("amount", "Single", mosaic.transform, 8, "Amount");
+                    EditorThemeManager.AddInputFields(amount["UI"], true, "Event Editor");
+                }
+
+                var analogGlitch = GenerateEventDialog("analogglitch");
+                {
+                    var enabled = GenerateUIElement("enabled", "Bool", analogGlitch.transform, 8, "Effect Enabled");
+                    var enabledText = enabled["UI"].transform.Find("Text").GetComponent<Text>();
+                    enabledText.text = "Enabled";
+
+                    var colorDrift = GenerateUIElement("colordrift", "Single", analogGlitch.transform, 10, "Color Drift");
+                    EditorThemeManager.AddInputFields(colorDrift["UI"], true, "Event Editor");
+
+                    var horizontalShake = GenerateUIElement("horizontalshake", "Single", analogGlitch.transform, 12, "Horizontal Shake");
+                    EditorThemeManager.AddInputFields(horizontalShake["UI"], true, "Event Editor");
+
+                    var scanLineJitter = GenerateUIElement("scanlinejitter", "Single", analogGlitch.transform, 14, "Scan Line Jitter");
+                    EditorThemeManager.AddInputFields(scanLineJitter["UI"], true, "Event Editor");
+
+                    var verticalJump = GenerateUIElement("verticaljump", "Single", analogGlitch.transform, 16, "Vertical Jump");
+                    EditorThemeManager.AddInputFields(verticalJump["UI"], true, "Event Editor");
+
+                    EditorThemeManager.AddToggle(enabled["UI"].GetComponent<Toggle>(), graphic: enabledText);
+                }
+
+                var digitalGlitch = GenerateEventDialog("digitalglitch");
+                {
+                    var intensity = GenerateUIElement("intensity", "Single", digitalGlitch.transform, 8, "Intensity");
+                    EditorThemeManager.AddInputFields(intensity["UI"], true, "Event Editor");
                 }
             }
 
@@ -2755,6 +2785,22 @@ namespace EditorManagement.Functions.Editors
                 case 37: // Mosaic
                     {
                         SetFloatInputField(dialogTmp, "amount/x", 0);
+
+                        break;
+                    }
+                case 38: // Analog Glitch
+                    {
+                        SetToggle(dialogTmp, "enabled", 0, 1, 0);
+                        SetFloatInputField(dialogTmp, "colordrift/x", 1);
+                        SetFloatInputField(dialogTmp, "horizontalshake/x", 2);
+                        SetFloatInputField(dialogTmp, "scanlinejitter/x", 3);
+                        SetFloatInputField(dialogTmp, "verticaljump/x", 4);
+
+                        break;
+                    }
+                case 39: // Digital Glitch
+                    {
+                        SetFloatInputField(dialogTmp, "intensity/x", 0);
 
                         break;
                     }
