@@ -638,8 +638,9 @@ namespace EditorManagement.Functions.Editors
             if (!_add)
                 DeselectAllKeyframes();
 
-            list.Where(x => RTMath.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform)
-            .Overlaps(RTMath.RectTransformToScreenSpace(x.Image.rectTransform))).ToList().ForEach(delegate (TimelineObject x)
+            list.Where(x => (x.Type / EventLimit) == RTEditor.inst.Layer && RTEditor.inst.layerType == RTEditor.LayerType.Events &&
+            RTMath.RectTransformToScreenSpace(EditorManager.inst.SelectionBoxImage.rectTransform).Overlaps(RTMath.RectTransformToScreenSpace(x.Image.rectTransform))).ToList()
+            .ForEach(delegate (TimelineObject x)
             {
                 x.selected = true;
                 x.timeOffset = 0f;
