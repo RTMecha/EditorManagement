@@ -1,3 +1,6 @@
+2.5.22 > [May 10, 2024]
+- Updating beatmap method now uses current method.
+- Fixed Prefab Offset time setting lagging out the game.
 2.5.21 > [May 5, 2024]
 - Fixed a bug with Event keyframes from editor layers that aren't the current one being selectable.
 2.5.20 > [May 5, 2024]
