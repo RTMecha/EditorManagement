@@ -408,12 +408,11 @@ namespace EditorManagement.Functions.Editors
                     {
                         prefab.Offset = offset;
                         int num = 0;
-                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects)
+                        foreach (var prefabObject in DataManager.inst.gameData.prefabObjects.Where(x => x.prefabID == currentPrefab.prefabID))
                         {
-                            if (prefabObject.editorData.layer == EditorManager.inst.layer && prefabObject.prefabID == currentPrefab.prefabID)
-                            {
+                            if (prefabObject.editorData.layer == EditorManager.inst.layer)
                                 ObjectEditor.inst.RenderTimelineObject(new TimelineObject((PrefabObject)prefabObject));
-                            }
+
                             Updater.UpdatePrefab(prefabObject, "Start Time");
                             num++;
                         }
